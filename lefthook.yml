@@ -1,0 +1,5 @@
+pre-commit:
+  commands:
+    ktlint-format:
+      glob: "*.{kt,kts}"
+      run: ./gradlew --quiet ktlintFormat && git add {staged_files}
