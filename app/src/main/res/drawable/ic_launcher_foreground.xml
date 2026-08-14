@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Habi asomando (logo L3): el bean entra desde el borde inferior del icono. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.62"
+        android:scaleY="0.62"
+        android:translateX="16.8"
+        android:translateY="37.6">
+        <path
+            android:fillColor="#A9C9A1"
+            android:pathData="M60,12 C88,12 100,40 100,72 C100,102 82,118 60,118 C38,118 20,102 20,72 C20,40 32,12 60,12 Z" />
+        <path
+            android:fillColor="#3C352B"
+            android:pathData="M44,48 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0" />
+        <path
+            android:fillColor="#3C352B"
+            android:pathData="M76,48 m-7,0 a7,7 0 1,1 14,0 a7,7 0 1,1 -14,0" />
+        <path
+            android:fillColor="#FBF8F2"
+            android:pathData="M46,45.5 m-2.4,0 a2.4,2.4 0 1,1 4.8,0 a2.4,2.4 0 1,1 -4.8,0" />
+        <path
+            android:fillColor="#FBF8F2"
+            android:pathData="M78,45.5 m-2.4,0 a2.4,2.4 0 1,1 4.8,0 a2.4,2.4 0 1,1 -4.8,0" />
+        <path
+            android:fillColor="#00000000"
+            android:pathData="M50,66 Q60,76 70,66"
+            android:strokeColor="#3C352B"
+            android:strokeLineCap="round"
+            android:strokeWidth="6" />
+    </group>
+</vector>

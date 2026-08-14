@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Variante monocroma (themed icons, Android 13+): silueta de Habi con ojos en negativo. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:scaleX="0.62"
+        android:scaleY="0.62"
+        android:translateX="16.8"
+        android:translateY="37.6">
+        <path
+            android:fillColor="#3C352B"
+            android:fillType="evenOdd"
+            android:pathData="M60,12 C88,12 100,40 100,72 C100,102 82,118 60,118 C38,118 20,102 20,72 C20,40 32,12 60,12 Z M44,41 a7,7 0 1,0 0,14 a7,7 0 1,0 0,-14 Z M76,41 a7,7 0 1,0 0,14 a7,7 0 1,0 0,-14 Z" />
+    </group>
+</vector>

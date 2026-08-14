@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name" translatable="false">Bito</string>
+    <string name="hello_bito">Hello, Bito</string>
+    <string name="milestone_label">M0 · foundations</string>
+</resources>
