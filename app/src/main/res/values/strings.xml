@@ -71,4 +71,19 @@
     <string name="delete_confirm_body">Its whole history goes with it. Points you earned stay yours.</string>
     <string name="delete_confirm_yes">Delete</string>
     <string name="back">Back</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="backups_title">Backups</string>
+    <string name="backups_body">One readable file with everything: habits, history, points and settings.</string>
+    <string name="backup_export">Export backup</string>
+    <string name="backup_import">Import backup</string>
+    <string name="import_preview_title">Restore this backup?</string>
+    <string name="import_preview_meta">From %1$s · app %2$s</string>
+    <string name="import_preview_counts">%1$d habits · %2$d log entries</string>
+    <string name="import_preview_warning">Restoring replaces ALL current data. There is no merge.</string>
+    <string name="import_confirm">Restore</string>
+    <string name="msg_export_done">Backup saved</string>
+    <string name="msg_import_done">Backup restored</string>
+    <string name="msg_invalid_file">That is not a valid Bito backup</string>
+    <string name="msg_io_error">Something went wrong — nothing was changed</string>
 </resources>

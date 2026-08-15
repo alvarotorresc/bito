@@ -67,4 +67,19 @@
     <string name="delete_confirm_body">Todo su historial se va con él. Los puntos ganados son tuyos.</string>
     <string name="delete_confirm_yes">Eliminar</string>
     <string name="back">Atrás</string>
+
+    <string name="settings_title">Ajustes</string>
+    <string name="backups_title">Copias de seguridad</string>
+    <string name="backups_body">Un único archivo legible con todo: hábitos, historial, puntos y ajustes.</string>
+    <string name="backup_export">Exportar copia</string>
+    <string name="backup_import">Importar copia</string>
+    <string name="import_preview_title">¿Restaurar esta copia?</string>
+    <string name="import_preview_meta">Del %1$s · app %2$s</string>
+    <string name="import_preview_counts">%1$d hábitos · %2$d registros</string>
+    <string name="import_preview_warning">Restaurar reemplaza TODOS los datos actuales. No hay fusión.</string>
+    <string name="import_confirm">Restaurar</string>
+    <string name="msg_export_done">Copia guardada</string>
+    <string name="msg_import_done">Copia restaurada</string>
+    <string name="msg_invalid_file">Eso no es una copia válida de Bito</string>
+    <string name="msg_io_error">Algo salió mal — no se cambió nada</string>
 </resources>
