@@ -42,6 +42,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.backup.BackupPreview
@@ -113,7 +115,13 @@ fun SettingsScreen(
         }
 
     val alarmManager = remember { context.getSystemService(AlarmManager::class.java) }
-    val exactAlarmsBlocked = Build.VERSION.SDK_INT >= 31 && alarmManager?.canScheduleExactAlarms() == false
+    // Granting SCHEDULE_EXACT_ALARM happens in the system Settings app, which doesn't kill this
+    // process — nothing recomposes this screen on its own, so the notice is re-checked on every
+    // ON_RESUME (the user coming back from that system screen) rather than computed once.
+    var exactAlarmsBlocked by remember { mutableStateOf(isExactAlarmsBlocked(alarmManager)) }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        exactAlarmsBlocked = isExactAlarmsBlocked(alarmManager)
+    }
 
     Scaffold(
         containerColor = Papel,
@@ -151,12 +159,16 @@ fun SettingsScreen(
                         // gated), but the guard is repeated here so the constant reference itself
                         // is provably safe, not just reachability-safe.
                         if (Build.VERSION.SDK_INT >= 31) {
-                            context.startActivity(
-                                Intent(
-                                    AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                    Uri.parse("package:${context.packageName}"),
-                                ),
-                            )
+                            // Some OEM/Go builds don't ship this settings screen at all
+                            // (ActivityNotFoundException); nothing more useful to do than no-op.
+                            runCatching {
+                                context.startActivity(
+                                    Intent(
+                                        AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                        Uri.parse("package:${context.packageName}"),
+                                    ),
+                                )
+                            }
                         }
                     },
                 )
@@ -398,6 +410,9 @@ private fun formatClock(minutes: Int): String {
     val mm = (minutes % 60).toString().padStart(2, '0')
     return "$hh:$mm"
 }
+
+private fun isExactAlarmsBlocked(alarmManager: AlarmManager?): Boolean =
+    Build.VERSION.SDK_INT >= 31 && alarmManager?.canScheduleExactAlarms() == false
 
 /** Restore confirmation (tech doc §5.4): the warning is Brasa — emotional heat, never interaction. */
 @Composable

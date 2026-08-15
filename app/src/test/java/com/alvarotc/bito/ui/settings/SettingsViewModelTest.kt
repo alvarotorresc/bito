@@ -112,6 +112,24 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `editing a reminder hour lands as one coherent change`() =
+        runTest {
+            advanceUntilIdle()
+
+            vm.addReminder(9 * 60)
+            advanceUntilIdle()
+
+            // The screen composes an edit as removeReminder(old) + addReminder(new) back-to-back,
+            // with no advanceUntilIdle() between the two calls — pins that DataStore.edit's own
+            // serialization (not caller-side sequencing) is what keeps this coherent.
+            vm.removeReminder(9 * 60)
+            vm.addReminder(20 * 60)
+            advanceUntilIdle()
+
+            assertEquals(listOf(20 * 60), vm.state.value?.globalReminderMinutes)
+        }
+
+    @Test
     fun `the review time is a plain write`() =
         runTest {
             advanceUntilIdle()
