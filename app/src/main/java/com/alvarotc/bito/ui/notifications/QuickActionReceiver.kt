@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.notifications
 
+import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -11,9 +12,12 @@ import kotlinx.coroutines.launch
 
 /**
  * Fires when the user taps a quick-log action button on a notification — no app launch. Logs
- * straight through [QuickActionUseCase], clears the notification the action came from, and
- * refreshes the GLOBAL tray honestly from the recalculated state (dead when nothing's left
- * pending, so what's already fulfilled never keeps nagging).
+ * straight through [QuickActionUseCase], clears the notification the action came from, and only
+ * ever refreshes or kills the GLOBAL tray — never conjures it. Spec §6.2's anti-spam rule ("a
+ * notification only fires when something is pending") gates when a *scheduled* reminder may
+ * sound; a user tapping "Done" on their own personal reminder never asked for a fresh global
+ * summary to appear out of nowhere. Refreshing one that's already showing keeps it honest;
+ * creating one from nothing is noise.
  */
 class QuickActionReceiver : BroadcastReceiver() {
     override fun onReceive(
@@ -47,8 +51,15 @@ class QuickActionReceiver : BroadcastReceiver() {
         }
         if (payload == null) {
             Notifier.cancelReminder(context)
-        } else {
+        } else if (notificationId == Notifier.REMINDER_ID || globalReminderIsActive(context)) {
             Notifier.showReminder(context, payload)
         }
     }
+
+    /** Whether the GLOBAL tray is currently showing — never conjured, only refreshed or killed. */
+    private fun globalReminderIsActive(context: Context): Boolean =
+        context
+            .getSystemService(NotificationManager::class.java)
+            .activeNotifications
+            .any { it.id == Notifier.REMINDER_ID }
 }
