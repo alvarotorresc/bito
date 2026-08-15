@@ -6,8 +6,12 @@ import com.alvarotc.bito.ui.today.TodayUiState
 /** Maximum number of quick-log actions a single notification can offer (OS action-button cap). */
 private const val MAX_QUICK_TARGETS = 3
 
-/** A pending habit that can be logged straight from the notification's action buttons. */
-data class QuickTarget(val habitId: String, val name: String, val amount: Int)
+/**
+ * A pending habit that can be logged straight from the notification's action buttons.
+ * [isCheck] decides the action's label: a CHECK habit is "done" in one tap (no honest
+ * "+N" to show — its target is always 1), everything else must say the amount it logs.
+ */
+data class QuickTarget(val habitId: String, val name: String, val amount: Int, val isCheck: Boolean)
 
 /** The pure content of a reminder notification: what's still open, and what can be one-tapped. */
 data class ReminderPayload(val pendingNames: List<String>, val targets: List<QuickTarget>)
@@ -27,7 +31,14 @@ fun buildReminderPayload(state: TodayUiState): ReminderPayload? {
         pending
             .filter { it.kind == CardKind.CHECK || it.kind == CardKind.COUNTER }
             .take(MAX_QUICK_TARGETS)
-            .map { QuickTarget(it.id, it.name, if (it.kind == CardKind.COUNTER) it.step else 1) }
+            .map {
+                QuickTarget(
+                    it.id,
+                    it.name,
+                    if (it.kind == CardKind.COUNTER) it.step else 1,
+                    isCheck = it.kind == CardKind.CHECK,
+                )
+            }
     return ReminderPayload(pendingNames = pending.map { it.name }, targets = targets)
 }
 

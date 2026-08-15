@@ -25,6 +25,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -171,6 +172,7 @@ class ReminderUseCaseTest {
             val remindHabit = pending as ReminderUseCase.Outcome.RemindHabit
             assertEquals("h1", remindHabit.target.habitId)
             assertEquals("Meditar", remindHabit.target.name)
+            assertTrue(remindHabit.target.isCheck)
             assertEquals(SlotKind.HABIT, remindHabit.slot.kind)
 
             db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
@@ -178,6 +180,30 @@ class ReminderUseCaseTest {
             val done = useCase.evaluate("HABIT", "h1")
             assertTrue(done is ReminderUseCase.Outcome.Silent)
             assertEquals(SlotKind.HABIT, (done as ReminderUseCase.Outcome.Silent).slot.kind)
+        }
+
+    @Test
+    fun `a habit slot for a counter habit reports a non-check quick target`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "Agua",
+                    metric = Metric.COUNT,
+                    direction = Direction.AT_LEAST,
+                    target = 8,
+                    step = 2,
+                    reminderMinutes = 600,
+                    createdOnDay = today,
+                ),
+            )
+
+            val outcome = useCase.evaluate("HABIT", "h1")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.RemindHabit)
+            val remindHabit = outcome as ReminderUseCase.Outcome.RemindHabit
+            assertFalse(remindHabit.target.isCheck)
+            assertEquals(2, remindHabit.target.amount)
         }
 
     @Test

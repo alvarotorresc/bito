@@ -7,6 +7,7 @@ import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.TodayUiState
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -58,6 +59,8 @@ class ReminderContentTest {
         val p = buildReminderPayload(state(card("a"), card("b"), counterCard("c", step = 5), card("d")))!!
         assertEquals(3, p.targets.size)
         assertEquals(5, p.targets.first { it.habitId == "c" }.amount)
+        assertFalse(p.targets.first { it.habitId == "c" }.isCheck)
+        assertTrue(p.targets.first { it.habitId == "a" }.isCheck)
         assertEquals(4, p.pendingNames.size)
     }
 
@@ -90,6 +93,7 @@ class ReminderContentTest {
         val p = buildReminderPayload(state(card("d", kind = CardKind.DURATION), card("chk").copy(step = 5)))!!
         assertEquals(1, p.targets.size)
         assertEquals(1, p.targets.single().amount)
+        assertTrue(p.targets.single().isCheck)
     }
 
     @Test

@@ -61,7 +61,7 @@ class ReminderUseCase(
                     Outcome.Silent(slot)
                 } else {
                     val amount = if (card.kind == CardKind.COUNTER) card.step else 1
-                    Outcome.RemindHabit(QuickTarget(card.id, card.name, amount), slot)
+                    Outcome.RemindHabit(QuickTarget(card.id, card.name, amount, isCheck = card.kind == CardKind.CHECK), slot)
                 }
             }
             SlotKind.REVIEW -> if (reviewIsPending(state)) Outcome.Review(slot) else Outcome.Silent(slot)

@@ -39,37 +39,39 @@ object Notifier {
                 .setContentTitle(title)
                 .setStyle(style)
         payload.targets.forEach { target ->
-            builder.addAction(
-                0,
-                context.getString(R.string.notif_target_done, target.name),
-                quickActionIntent(context, target.habitId, target.amount),
-            )
+            val label =
+                if (target.isCheck) {
+                    context.getString(R.string.notif_target_done, target.name)
+                } else {
+                    context.getString(R.string.notif_target_add, target.amount, target.name)
+                }
+            builder.addAction(0, label, quickActionIntent(context, target.habitId, target.amount, REMINDER_ID))
         }
         notify(context, REMINDER_ID, builder)
     }
 
-    /** The HABIT reminder: a single habit's own slot, still open and unfailed. */
+    /**
+     * The HABIT reminder: a single habit's own slot, still open and unfailed. Posted under its
+     * own [QuickTarget.habitId]-derived id so it can stack alongside other per-habit reminders
+     * and the GLOBAL one instead of clobbering them.
+     */
     fun showSingleHabit(
         context: Context,
         target: QuickTarget,
     ) {
+        val id = target.habitId.hashCode()
+        val label =
+            if (target.isCheck) {
+                context.getString(R.string.notif_action_done)
+            } else {
+                context.getString(R.string.notif_action_add, target.amount)
+            }
         val builder =
             baseBuilder(context, NotificationChannels.REMINDERS)
                 .setContentTitle(context.getString(R.string.notif_reminder_single_title, target.name))
                 .setContentText(context.getString(R.string.notif_reminder_single_body))
-                .addAction(
-                    0,
-                    context.getString(R.string.notif_action_done),
-                    quickActionIntent(context, target.habitId, target.amount),
-                )
-        if (target.amount > 1) {
-            builder.addAction(
-                0,
-                context.getString(R.string.notif_action_add, target.amount),
-                quickActionIntent(context, target.habitId, target.amount),
-            )
-        }
-        notify(context, REMINDER_ID, builder)
+                .addAction(0, label, quickActionIntent(context, target.habitId, target.amount, id))
+        notify(context, id, builder)
     }
 
     /** The REVIEW nudge: something is still unsealed or open, on its own channel. */
@@ -104,15 +106,18 @@ object Notifier {
         )
     }
 
+    /** [notificationId] is the tray id this action's notification was posted under, so the receiver can clear it. */
     private fun quickActionIntent(
         context: Context,
         habitId: String,
         amount: Int,
+        notificationId: Int,
     ): PendingIntent {
         val intent =
             Intent(context, QuickActionReceiver::class.java)
                 .putExtra("habitId", habitId)
                 .putExtra("amount", amount)
+                .putExtra("notificationId", notificationId)
         return PendingIntent.getBroadcast(
             context,
             habitId.hashCode(),

@@ -9,6 +9,7 @@
     <string name="notif_action_done">Done</string>
     <string name="notif_action_add" translatable="false">+%1$d</string>
     <string name="notif_target_done">✓ %1$s</string>
+    <string name="notif_target_add" translatable="false">+%1$d %2$s</string>
     <string name="notif_review_title">Close your day</string>
     <string name="notif_review_body">Something is still open — one minute and done</string>
 </resources>
