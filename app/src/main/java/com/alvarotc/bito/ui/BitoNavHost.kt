@@ -11,6 +11,7 @@ import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
+import com.alvarotc.bito.ui.settings.SettingsViewModel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
 
@@ -43,7 +44,8 @@ fun BitoNavHost(container: AppContainer) {
         }
         composable("settings") {
             SettingsScreen(
-                viewModel = viewModel(factory = BackupViewModel.factory(container)),
+                backupViewModel = viewModel(factory = BackupViewModel.factory(container)),
+                settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
                 onBack = { nav.popBackStack() },
             )
         }

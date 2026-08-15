@@ -88,4 +88,14 @@
     <string name="msg_import_done">Backup restored</string>
     <string name="msg_invalid_file">That is not a valid Bito backup</string>
     <string name="msg_io_error">Something went wrong — nothing was changed</string>
+
+    <string name="day_section_title">Your day</string>
+    <string name="cutoff_label">Day cutoff</string>
+    <string name="cutoff_note">Applies from now on; sealed days stay as they are</string>
+    <string name="reminders_section_title">Reminders</string>
+    <string name="reminder_add">Add reminder</string>
+    <string name="reminder_remove">Remove</string>
+    <string name="review_label">Daily review</string>
+    <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
+    <string name="notif_permission_hint">Allow notifications to hear reminders</string>
 </resources>
