@@ -38,6 +38,8 @@ data class HabitFormState(
     val limitMetric: Metric = Metric.DURATION,
     val binaryMode: Boolean = false,
     val step: Int = 1,
+    val reminderMinutes: Int? = null,
+    val saving: Boolean = false,
 ) {
     val isEditing get() = editingId != null
     val canSave get() = name.isNotBlank() && (target >= 1 || (preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL))
@@ -80,7 +82,7 @@ fun HabitFormState.toNewEntity(
         step = step,
         timeBucket = null,
         timeOfDayMinutes = null,
-        reminderMinutes = null,
+        reminderMinutes = reminderMinutes,
         status = HabitStatus.ACTIVE,
         createdAtMillis = nowMillis,
         createdOnDay = today,
@@ -111,6 +113,7 @@ fun HabitEntity.toFormState(): HabitFormState {
         limitMetric = if (direction == Direction.AT_MOST) metric else Metric.DURATION,
         binaryMode = logMode == LogMode.BINARY,
         step = step,
+        reminderMinutes = reminderMinutes,
     )
 }
 

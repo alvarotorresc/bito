@@ -59,6 +59,9 @@
     <string name="binary_mode">Solo cumplido</string>
     <string name="binary_mode_hint">El objetivo es una referencia escrita; registrar es un tap</string>
     <string name="step_label">Cada tap suma</string>
+    <string name="form_reminder_label">Recordatorio</string>
+    <string name="form_reminder_none">Sin recordatorio</string>
+    <string name="form_reminder_clear">Quitar recordatorio</string>
     <string name="save_habit">Guardar</string>
     <string name="delete_habit">Eliminar hábito</string>
     <string name="delete_confirm_title">¿Eliminar para siempre?</string>

@@ -55,6 +55,7 @@ import com.alvarotc.bito.ui.components.NumberInputSheet
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.SpeechBubble
+import com.alvarotc.bito.ui.components.TimePickerSheet
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
@@ -99,11 +100,11 @@ fun HabitFormScreen(
                 onSelectLimitMetric = viewModel::selectLimitMetric,
                 onUnitChange = viewModel::setUnit,
             )
-            MoreOptionsSection(state, viewModel::toggleBinary, viewModel::adjustStep)
+            MoreOptionsSection(state, viewModel::toggleBinary, viewModel::adjustStep, viewModel::setReminder)
             PillButton(
                 text = stringResource(if (state.isEditing) R.string.save_habit else R.string.create_habit),
                 onClick = { viewModel.save(onBack) },
-                enabled = state.canSave,
+                enabled = state.canSave && !state.saving,
                 modifier = Modifier.fillMaxWidth().testTag("save"),
             )
             if (state.isEditing) {
@@ -385,13 +386,18 @@ private fun MinuteStepButton(
     }
 }
 
+/** Minutes-of-day a fresh reminder opens on when none is set yet: 08:00. */
+private const val DEFAULT_REMINDER_MINUTES = 8 * 60
+
 @Composable
 private fun MoreOptionsSection(
     state: HabitFormState,
     onToggleBinary: () -> Unit,
     onAdjustStep: (Int) -> Unit,
+    onSetReminder: (Int?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "more-options-chevron")
 
     BitoCard(modifier = Modifier.fillMaxWidth()) {
@@ -417,6 +423,70 @@ private fun MoreOptionsSection(
                 if (state.preset == HabitPreset.QUANTITY && !state.binaryMode) {
                     StepRow(state.step, onAdjustStep)
                 }
+                // QA1: every preset lands here now — Daily/Weekly/Quit had nothing of their own
+                // before this row, so the panel used to open empty for three of the five presets.
+                // Reminder is deliberately outside every preset gate above and stays editable in
+                // edit mode: it's a schedule detail, not part of the locked (metric/direction) shape.
+                ReminderRow(
+                    reminderMinutes = state.reminderMinutes,
+                    onOpenPicker = { showTimePicker = true },
+                    onClear = { onSetReminder(null) },
+                )
+            }
+        }
+    }
+
+    if (showTimePicker) {
+        TimePickerSheet(
+            title = stringResource(R.string.form_reminder_label),
+            initialMinutes = state.reminderMinutes ?: DEFAULT_REMINDER_MINUTES,
+            onConfirm = {
+                onSetReminder(it)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false },
+        )
+    }
+}
+
+/** "HH:MM", zero-padded, 24h — matches [TimePickerSheet]'s is24Hour clock. */
+private fun formatReminderTime(minutes: Int): String {
+    val hh = (minutes / 60).toString().padStart(2, '0')
+    val mm = (minutes % 60).toString().padStart(2, '0')
+    return "$hh:$mm"
+}
+
+/**
+ * The open-picker tap target and the clear button are siblings, not nested: an icon button
+ * inside a clickable row would give the row two overlapping tap targets fighting for the same
+ * touch area, which is a confusing surface regardless of which one wins the gesture.
+ */
+@Composable
+private fun ReminderRow(
+    reminderMinutes: Int?,
+    onOpenPicker: () -> Unit,
+    onClear: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.weight(1f).clickable { onOpenPicker() }.testTag("reminder-row"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.form_reminder_label),
+                style = MaterialTheme.typography.bodyLarge,
+                color = Tinta,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                reminderMinutes?.let(::formatReminderTime) ?: stringResource(R.string.form_reminder_none),
+                style = MaterialTheme.typography.bodyLarge,
+                color = TintaSuave,
+            )
+        }
+        if (reminderMinutes != null) {
+            IconButton(onClick = onClear, modifier = Modifier.testTag("reminder-clear")) {
+                Icon(BitoIcons.X, contentDescription = stringResource(R.string.form_reminder_clear), tint = TintaSuave)
             }
         }
     }

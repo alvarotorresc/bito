@@ -242,4 +242,44 @@ class HabitFormScreenTest {
 
         compose.onNodeWithText("30").assertExists()
     }
+
+    @Test
+    fun `more options always has content — the reminder row`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("reminder-row").assertExists()
+    }
+
+    @Test
+    fun `tapping the reminder row opens the time picker sheet`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("reminder-row").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("time-picker-confirm").assertExists()
+    }
+
+    @Test
+    fun `an existing reminder shows its time and can be cleared from the row`() {
+        runBlocking {
+            habits.create(habitEntity(id = "h1", reminderMinutes = 9 * 60, createdOnDay = today))
+        }
+        launchScreen(habitId = "h1")
+
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("09:00").assertExists()
+
+        compose.onNodeWithTag("reminder-clear").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("None").assertExists()
+    }
 }

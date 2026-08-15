@@ -64,6 +64,9 @@
     <string name="binary_mode">Just done / not done</string>
     <string name="binary_mode_hint">The goal is a written reference; logging is one tap</string>
     <string name="step_label">Tap adds</string>
+    <string name="form_reminder_label">Reminder</string>
+    <string name="form_reminder_none">None</string>
+    <string name="form_reminder_clear">Remove reminder</string>
     <string name="save_habit">Save</string>
     <string name="delete_habit">Delete habit</string>
     <string name="delete_confirm_title">Delete forever?</string>

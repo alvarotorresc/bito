@@ -82,29 +82,44 @@ class HabitFormViewModel(
 
     fun adjustStep(delta: Int) = formState.update { it.copy(step = (it.step + delta).coerceAtLeast(1)) }
 
-    fun save(onSaved: () -> Unit) =
+    fun setReminder(minutes: Int?) = formState.update { it.copy(reminderMinutes = minutes) }
+
+    /**
+     * The double-tap guard reads and flips [HabitFormState.saving] synchronously, before
+     * [viewModelScope.launch] — not inside the coroutine — so a second tap arriving before the
+     * first coroutine has even started still sees `saving == true` and bails out immediately.
+     */
+    fun save(onSaved: () -> Unit) {
+        val form = formState.value
+        if (form.saving || !form.canSave) return
+        formState.update { it.copy(saving = true) }
         viewModelScope.launch {
-            val form = formState.value
-            if (!form.canSave) return@launch
             val today = LogicalDays.logicalDayOf(now(), settings.settings.first().dayCutoffMinutes, zone())
             val editingId = form.editingId
             if (editingId == null) {
                 val sortOrder = (habits.observeHabits().first().maxOfOrNull { it.sortOrder } ?: -1) + 1
                 habits.create(form.toNewEntity(UUID.randomUUID().toString(), today, now(), sortOrder))
             } else {
-                val existing = habits.habit(editingId) ?: return@launch
+                val existing = habits.habit(editingId)
+                if (existing == null) {
+                    formState.update { it.copy(saving = false) }
+                    return@launch
+                }
                 habits.update(
                     existing.copy(
                         name = form.name.trim(),
                         target = form.target,
                         unit = form.unit.trim().ifBlank { null },
                         step = form.step,
+                        reminderMinutes = form.reminderMinutes,
                     ),
                     today,
                 )
             }
+            formState.update { it.copy(saving = false) }
             onSaved()
         }
+    }
 
     fun delete(onDeleted: () -> Unit) =
         viewModelScope.launch {
