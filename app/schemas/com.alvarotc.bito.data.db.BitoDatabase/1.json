@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f3cae6a38e8473ed445363bebca16c36",
+    "identityHash": "2a6ec9228856a30fcdabd5e2fd1edb93",
     "entities": [
       {
         "tableName": "habits",
@@ -429,7 +429,19 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_points_ledger_reason_refId",
+            "unique": true,
+            "columnNames": [
+              "reason",
+              "refId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_points_ledger_reason_refId` ON `${TABLE_NAME}` (`reason`, `refId`)"
+          }
+        ]
       },
       {
         "tableName": "badges",
@@ -494,7 +506,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f3cae6a38e8473ed445363bebca16c36')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2a6ec9228856a30fcdabd5e2fd1edb93')"
     ]
   }
 }

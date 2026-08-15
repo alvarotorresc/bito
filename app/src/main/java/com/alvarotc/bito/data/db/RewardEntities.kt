@@ -1,11 +1,18 @@
 package com.alvarotc.bito.data.db
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.alvarotc.bito.domain.model.PointsReason
 
-/** One ledger movement. The balance is always derived (SUM of deltas). */
-@Entity(tableName = "points_ledger")
+/**
+ * One ledger movement. The balance is always derived (SUM of deltas).
+ * The unique (reason, refId) index makes re-appending derived grants a no-op; NULL refIds (spends) are never deduplicated.
+ */
+@Entity(
+    tableName = "points_ledger",
+    indices = [Index("reason", "refId", unique = true)],
+)
 data class PointsLedgerEntity(
     @PrimaryKey val id: String,
     val delta: Int,

@@ -39,7 +39,7 @@ class RewardDaosTest {
             db.pointsLedgerDao().insertAll(
                 listOf(
                     pointsLedgerEntity(id = "p1", delta = 5),
-                    pointsLedgerEntity(id = "p2", delta = 3),
+                    pointsLedgerEntity(id = "p2", delta = 3, refId = "h1:20001"),
                     pointsLedgerEntity(id = "p3", delta = -6, reason = PointsReason.BUY_FREEZER, refId = null),
                 ),
             )
@@ -49,9 +49,13 @@ class RewardDaosTest {
     @Test
     fun `ledger comes back ordered by day then creation`() =
         runTest {
-            db.pointsLedgerDao().insert(pointsLedgerEntity(id = "p2", logicalDay = 20_001, createdAtMillis = 5))
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "p2", logicalDay = 20_001, createdAtMillis = 5, refId = "h1:20001a"),
+            )
             db.pointsLedgerDao().insert(pointsLedgerEntity(id = "p1", logicalDay = 20_000, createdAtMillis = 9))
-            db.pointsLedgerDao().insert(pointsLedgerEntity(id = "p3", logicalDay = 20_001, createdAtMillis = 2))
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "p3", logicalDay = 20_001, createdAtMillis = 2, refId = "h1:20001b"),
+            )
             assertEquals(listOf("p1", "p3", "p2"), db.pointsLedgerDao().observeAll().first().map { it.id })
         }
 
@@ -61,6 +65,21 @@ class RewardDaosTest {
             db.badgeDao().insert(BadgeEntity("first-week", unlockedAtMillis = 100))
             db.badgeDao().insert(BadgeEntity("first-week", unlockedAtMillis = 999))
             assertEquals(100L, db.badgeDao().observeAll().first().single().unlockedAtMillis)
+        }
+
+    @Test
+    fun `re-appending the same grant is ignored but null-ref spends repeat`() =
+        runTest {
+            db.pointsLedgerDao().insert(pointsLedgerEntity(id = "p1", delta = 1))
+            db.pointsLedgerDao().insertAll(listOf(pointsLedgerEntity(id = "p2", delta = 1)))
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "s1", delta = -6, reason = PointsReason.BUY_FREEZER, refId = null),
+            )
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "s2", delta = -6, reason = PointsReason.BUY_FREEZER, refId = null),
+            )
+            assertEquals(listOf("p1", "s1", "s2"), db.pointsLedgerDao().observeAll().first().map { it.id }.sorted())
+            assertEquals(1 - 6 - 6, db.pointsLedgerDao().observeBalance().first())
         }
 
     @Test
