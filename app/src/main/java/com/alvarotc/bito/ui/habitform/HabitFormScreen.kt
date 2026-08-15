@@ -215,6 +215,10 @@ private val PERIOD_OPTIONS = listOf(Period.DAY, Period.WEEK, Period.MONTH)
 /**
  * Hidden entirely for DAILY_CHECK. adjustTarget/selectPeriod already carry their own guards
  * (QUIT TOTAL pins at 0, WEEKLY_TIMES fixes WEEK), so this UI needs no extra state guards.
+ *
+ * Rule E2 extends past the preset: [HabitFormViewModel.save]'s edit branch only ever persists
+ * name/target/unit/step, so period, quit-mode and limit-metric are shape, not value — they lock
+ * alongside the preset pills when editing. Target, unit and step do persist and stay live.
  */
 @Composable
 private fun TargetSection(
@@ -226,6 +230,7 @@ private fun TargetSection(
     onUnitChange: (String) -> Unit,
 ) {
     if (state.preset == HabitPreset.DAILY_CHECK) return
+    val shapeLocked = state.isEditing
 
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -234,12 +239,14 @@ private fun TargetSection(
                     options = listOf(stringResource(R.string.quit_total), stringResource(R.string.quit_limit)),
                     selectedIndex = if (state.quitMode == QuitMode.TOTAL) 0 else 1,
                     onSelect = { onSelectQuitMode(if (it == 0) QuitMode.TOTAL else QuitMode.LIMIT) },
+                    enabled = !shapeLocked,
                 )
                 if (state.quitMode == QuitMode.LIMIT) {
                     SegmentedPills(
                         options = listOf(stringResource(R.string.limit_amount), stringResource(R.string.limit_time)),
                         selectedIndex = if (state.limitMetric == Metric.COUNT) 0 else 1,
                         onSelect = { onSelectLimitMetric(if (it == 0) Metric.COUNT else Metric.DURATION) },
+                        enabled = !shapeLocked,
                     )
                 }
             }
@@ -259,6 +266,7 @@ private fun TargetSection(
                         ),
                     selectedIndex = PERIOD_OPTIONS.indexOf(state.period),
                     onSelect = { onSelectPeriod(PERIOD_OPTIONS[it]) },
+                    enabled = !shapeLocked,
                 )
             }
 
@@ -328,7 +336,9 @@ private fun MoreOptionsSection(
         AnimatedVisibility(visible = expanded) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
                 if (state.preset == HabitPreset.QUANTITY || state.preset == HabitPreset.DURATION) {
-                    BinaryModeRow(state.binaryMode, onToggleBinary)
+                    // logMode isn't persisted on edit (Task 10 save() carries name/target/unit/step
+                    // only) — it's shape, like the preset, so it locks the same way.
+                    BinaryModeRow(state.binaryMode, enabled = !state.isEditing, onToggle = onToggleBinary)
                 }
                 if (state.preset == HabitPreset.QUANTITY && !state.binaryMode) {
                     StepRow(state.step, onAdjustStep)
@@ -341,6 +351,7 @@ private fun MoreOptionsSection(
 @Composable
 private fun BinaryModeRow(
     binaryMode: Boolean,
+    enabled: Boolean,
     onToggle: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -352,7 +363,7 @@ private fun BinaryModeRow(
                 color = TintaSuave,
             )
         }
-        Switch(checked = binaryMode, onCheckedChange = { onToggle() })
+        Switch(checked = binaryMode, onCheckedChange = { onToggle() }, enabled = enabled)
     }
 }
 
