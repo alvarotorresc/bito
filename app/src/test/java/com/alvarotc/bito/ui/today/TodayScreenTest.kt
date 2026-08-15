@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
@@ -20,7 +21,10 @@ import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -172,5 +176,56 @@ class TodayScreenTest {
         assertEquals("lectura", editedId)
         val entries = runBlocking { db.entryDao().all().filter { it.habitId == "lectura" } }
         assertTrue(entries.isEmpty())
+    }
+
+    @Test
+    fun `an at-most duration habit clean with partial progress shows its chips`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "redes",
+                    name = "Redes",
+                    metric = Metric.DURATION,
+                    direction = Direction.AT_MOST,
+                    target = 30,
+                    unit = "min",
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "redes", logicalDay = today, value = 10))
+        }
+        compose.waitForIdle()
+
+        // Chips stay visible while clean: that is exactly when you log real usage. Its
+        // TextDecoration cannot be asserted from the semantics tree (Compose does not expose
+        // it there); that half of the guarantee is covered at the pure-decision level by
+        // TodayUiStateTest's `nameStruckThrough` cases.
+        compose.onNodeWithText("Redes", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("max 30 min", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("+5", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a binary WEEK habit with a wide target renders a bar instead of thousands of dots`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "pasos",
+                    name = "Pasos",
+                    metric = Metric.COUNT,
+                    period = Period.WEEK,
+                    logMode = LogMode.BINARY,
+                    target = 9000,
+                    unit = null,
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("period-bar-pasos", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("0 of 9000 this week", useUnmergedTree = true).assertExists()
     }
 }

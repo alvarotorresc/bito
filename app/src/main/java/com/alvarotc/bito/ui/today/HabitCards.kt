@@ -130,11 +130,25 @@ private fun CheckBody(
                 )
             }
         }
-        // WEEK/MONTH habits also carry a period tally; targets stay small here (<= 12).
+        // WEEK/MONTH habits also carry a period tally. The form only clamps 1..7 for
+        // WEEKLY_TIMES — any other binary-logged preset (e.g. a QUANTITY habit switched to
+        // "solo cumplido") can carry an uncapped target, so dots only render up to 12; wider
+        // targets fall back to the bar the way CounterBody already does.
         if (card.period != Period.DAY) {
             Spacer(Modifier.height(10.dp))
             Row(verticalAlignment = Alignment.CenterVertically) {
-                DotProgress(card.progress.coerceIn(0, card.target), card.target)
+                if (card.target <= 12) {
+                    DotProgress(
+                        card.progress.coerceIn(0, card.target),
+                        card.target,
+                        modifier = Modifier.testTag("period-dots-${card.id}"),
+                    )
+                } else {
+                    RoundedBar(
+                        progress = if (card.target == 0) 0f else card.progress.toFloat() / card.target,
+                        modifier = Modifier.width(72.dp).testTag("period-bar-${card.id}"),
+                    )
+                }
                 Spacer(Modifier.width(8.dp))
                 val caption =
                     when (card.period) {
@@ -159,7 +173,7 @@ private fun CounterBody(
     val accent = if (overLimit) Brasa else Hoja
     val unitSuffix = card.unit?.let { " $it" } ?: ""
     Column {
-        HabitNameRow(card.name, strikeThrough = card.doneToday, streak = card.streak, minStreakToShow = 2)
+        HabitNameRow(card.name, strikeThrough = card.nameStruckThrough, streak = card.streak, minStreakToShow = 2)
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -213,7 +227,7 @@ private fun DurationBody(
     val accent = if (overLimit) Brasa else Hoja
     val minLabel = stringResource(R.string.unit_min)
     Column {
-        HabitNameRow(card.name, strikeThrough = card.doneToday, streak = card.streak, minStreakToShow = 2)
+        HabitNameRow(card.name, strikeThrough = card.nameStruckThrough, streak = card.streak, minStreakToShow = 2)
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text("${card.progress}", style = MaterialTheme.typography.displayLarge, color = accent)
@@ -242,7 +256,7 @@ private fun DurationBody(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        if (!card.doneToday) {
+        if (card.showsLoggingChips) {
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 GhostPillButton(stringResource(R.string.add_amount, 5), onClick = { onAdd(5) })

@@ -33,6 +33,24 @@ data class HabitCardUi(
     val streak: Int,
 )
 
+/**
+ * Whether the habit name should render struck through. Only AT_LEAST cards earn this once
+ * today's goal is reached — AT_MOST cards are "done" (clean) from the day's start, so a
+ * strikethrough there would read as an already-completed goal instead of the honest "no
+ * usage logged yet". Their state is carried by the limit caption and the failure tint instead.
+ */
+val HabitCardUi.nameStruckThrough: Boolean
+    get() = direction == Direction.AT_LEAST && doneToday
+
+/**
+ * Whether the card should keep showing its quick-log controls (e.g. DurationBody's
+ * +5/+15/+goal chips). AT_LEAST cards hide them once today's goal is reached — nothing left
+ * to log. AT_MOST cards show them at all times, clean or over the limit: logging real usage
+ * stays honest even after the limit is blown.
+ */
+val HabitCardUi.showsLoggingChips: Boolean
+    get() = direction == Direction.AT_MOST || !doneToday
+
 /** Snapshot the Today screen renders: the ring, the cards, and the pending-seal prompt. */
 data class TodayUiState(
     val today: LogicalDay = 0,

@@ -275,4 +275,42 @@ class TodayUiStateTest {
         assertTrue(result.cards.isEmpty())
         assertFalse(result.loading)
     }
+
+    @Test
+    fun `14 - an at-most habit clean with partial progress keeps its name and shows its logging chips`() {
+        val redes = habit("redes", metric = Metric.DURATION, direction = Direction.AT_MOST, target = 30)
+        val state = stateOf(habits = listOf(redes), entries = listOf(entry("e1", "redes", TODAY, 10)))
+
+        val card = buildTodayUiState(state, emptyMap(), TODAY).cards.single()
+
+        assertTrue(card.doneToday)
+        assertFalse(card.failed)
+        assertFalse(card.nameStruckThrough)
+        assertTrue(card.showsLoggingChips)
+    }
+
+    @Test
+    fun `15 - an at-most habit over its limit still shows its logging chips for honest logging`() {
+        val redes = habit("redes", metric = Metric.DURATION, direction = Direction.AT_MOST, target = 30)
+        val state = stateOf(habits = listOf(redes), entries = listOf(entry("e1", "redes", TODAY, 35)))
+
+        val card = buildTodayUiState(state, emptyMap(), TODAY).cards.single()
+
+        assertTrue(card.failed)
+        assertFalse(card.doneToday)
+        assertFalse(card.nameStruckThrough)
+        assertTrue(card.showsLoggingChips)
+    }
+
+    @Test
+    fun `16 - an at-least habit done today strikes its name and hides its logging chips`() {
+        val guitarra = habit("guitarra", metric = Metric.DURATION, target = 20)
+        val state = stateOf(habits = listOf(guitarra), entries = listOf(entry("e1", "guitarra", TODAY, 20)))
+
+        val card = buildTodayUiState(state, emptyMap(), TODAY).cards.single()
+
+        assertTrue(card.doneToday)
+        assertTrue(card.nameStruckThrough)
+        assertFalse(card.showsLoggingChips)
+    }
 }
