@@ -21,7 +21,7 @@ object ClockTimes {
     ): Long {
         require(minutesOfDay in 0 until MINUTES_PER_DAY) { "minutesOfDay out of range: $minutesOfDay" }
         val today = Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalDate()
-        val candidate = today.atStartOfDay(zone).plusMinutes(minutesOfDay.toLong())
+        val candidate = today.atTime(minutesOfDay / 60, minutesOfDay % 60).atZone(zone)
         val next = if (candidate.toInstant().toEpochMilli() > nowMillis) candidate else candidate.plusDays(1)
         return next.toInstant().toEpochMilli()
     }

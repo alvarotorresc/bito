@@ -41,4 +41,11 @@ class ClockTimesTest {
         val at = ClockTimes.nextOccurrence(0, now, zone)
         assertEquals(millisAt(LocalDate.of(2026, 8, 15), 0, 0), at)
     }
+
+    @Test
+    fun `a slot keeps its wall-clock time across the spring-forward transition`() {
+        val now = millisAt(LocalDate.of(2026, 3, 29), 1, 0)
+        val at = ClockTimes.nextOccurrence(9 * 60, now, zone) // 09:00
+        assertEquals(millisAt(LocalDate.of(2026, 3, 29), 9, 0), at)
+    }
 }
