@@ -79,4 +79,15 @@ class SettingsRepositoryTest {
             assertEquals("Álvaro", settings.userName)
             assertEquals(180, settings.dayCutoffMinutes)
         }
+
+    @Test
+    fun `setting a nullable field back to null removes its stored value`() =
+        runTest {
+            val repository = SettingsRepository(store("null-removal"))
+            repository.update { it.copy(languageTag = "es", backupFolderUri = "content://tree/backups") }
+            repository.update { it.copy(languageTag = null, backupFolderUri = null) }
+            val settings = repository.settings.first()
+            assertNull(settings.languageTag)
+            assertNull(settings.backupFolderUri)
+        }
 }
