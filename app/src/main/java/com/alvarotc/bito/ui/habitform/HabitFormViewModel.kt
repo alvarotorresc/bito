@@ -88,6 +88,15 @@ class HabitFormViewModel(
      * The double-tap guard reads and flips [HabitFormState.saving] synchronously, before
      * [viewModelScope.launch] — not inside the coroutine — so a second tap arriving before the
      * first coroutine has even started still sees `saving == true` and bails out immediately.
+     *
+     * `saving` is deliberately NOT reset on the happy-completion path: once a save actually goes
+     * through, [onSaved] is about to navigate away and tear this ViewModel down, so there is no
+     * legitimate reason to re-enable the button in the meantime. Resetting it there would reopen
+     * the exact window this guard exists to close — a tap that lands after the first save
+     * finished (e.g. during the nav transition) would otherwise sail past the guard and create a
+     * duplicate habit with a fresh UUID. The reset only happens on the early-return branch below
+     * (the habit being edited vanished mid-save), where [onSaved] does NOT run and the form stays
+     * alive, so leaving `saving` latched there would strand the button disabled forever.
      */
     fun save(onSaved: () -> Unit) {
         val form = formState.value
@@ -116,7 +125,6 @@ class HabitFormViewModel(
                     today,
                 )
             }
-            formState.update { it.copy(saving = false) }
             onSaved()
         }
     }

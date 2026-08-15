@@ -372,4 +372,21 @@ class HabitFormViewModelTest {
 
             assertEquals(1, db.habitDao().all().size)
         }
+
+    @Test
+    fun `the save button stays dead after a completed save`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Agua")
+
+            vm.save {}
+            advanceUntilIdle()
+
+            assertTrue(vm.state.value.saving)
+
+            vm.save {}
+            advanceUntilIdle()
+
+            assertEquals(1, db.habitDao().all().size)
+        }
 }
