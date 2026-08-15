@@ -1,0 +1,123 @@
+package com.alvarotc.bito.ui.habitform
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Period
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.time.ZoneId
+import java.util.UUID
+
+/** A WEEKLY_TIMES target counts days, not sessions: 7 is the physical weekly maximum. */
+private const val MAX_WEEKLY_TIMES = 7
+
+/** Backs the habit create/edit form: one state shape drives all five presets. */
+class HabitFormViewModel(
+    private val habits: HabitsRepository,
+    private val settings: SettingsRepository,
+    habitId: String?,
+    private val now: () -> Long = System::currentTimeMillis,
+    private val zone: () -> ZoneId = ZoneId::systemDefault,
+) : ViewModel() {
+    private val formState = MutableStateFlow(HabitFormState(editingId = habitId))
+    val state: StateFlow<HabitFormState> = formState.asStateFlow()
+
+    init {
+        if (habitId != null) {
+            viewModelScope.launch {
+                habits.habit(habitId)?.let { entity -> formState.value = entity.toFormState() }
+            }
+        }
+    }
+
+    fun setName(name: String) = formState.update { it.copy(name = name) }
+
+    fun selectPreset(preset: HabitPreset) =
+        formState.update {
+            it.copy(
+                preset = preset,
+                target = defaultTargetFor(preset, it.quitMode, it.limitMetric),
+                period = if (preset == HabitPreset.WEEKLY_TIMES) Period.WEEK else Period.DAY,
+            )
+        }
+
+    /** Min 1, except QUIT TOTAL which has no target and stays pinned at 0; WEEKLY_TIMES caps at 7. */
+    fun adjustTarget(delta: Int) =
+        formState.update { s ->
+            if (s.preset == HabitPreset.QUIT && s.quitMode == QuitMode.TOTAL) {
+                s.copy(target = 0)
+            } else {
+                val max = if (s.preset == HabitPreset.WEEKLY_TIMES) MAX_WEEKLY_TIMES else Int.MAX_VALUE
+                s.copy(target = (s.target + delta).coerceIn(1, max))
+            }
+        }
+
+    fun setUnit(unit: String) = formState.update { it.copy(unit = unit) }
+
+    fun selectPeriod(period: Period) = formState.update { it.copy(period = period) }
+
+    fun selectQuitMode(mode: QuitMode) =
+        formState.update { it.copy(quitMode = mode, target = defaultTargetFor(it.preset, mode, it.limitMetric)) }
+
+    fun selectLimitMetric(metric: Metric) =
+        formState.update { it.copy(limitMetric = metric, target = defaultTargetFor(it.preset, it.quitMode, metric)) }
+
+    fun toggleBinary() = formState.update { it.copy(binaryMode = !it.binaryMode) }
+
+    fun adjustStep(delta: Int) = formState.update { it.copy(step = (it.step + delta).coerceAtLeast(1)) }
+
+    fun save(onSaved: () -> Unit) =
+        viewModelScope.launch {
+            val form = formState.value
+            if (!form.canSave) return@launch
+            val today = LogicalDays.logicalDayOf(now(), settings.settings.first().dayCutoffMinutes, zone())
+            val editingId = form.editingId
+            if (editingId == null) {
+                val sortOrder = (habits.observeHabits().first().maxOfOrNull { it.sortOrder } ?: -1) + 1
+                habits.create(form.toNewEntity(UUID.randomUUID().toString(), today, now(), sortOrder))
+            } else {
+                val existing = habits.habit(editingId) ?: return@launch
+                habits.update(
+                    existing.copy(
+                        name = form.name.trim(),
+                        target = form.target,
+                        unit = form.unit.trim().ifBlank { null },
+                        step = form.step,
+                    ),
+                    today,
+                )
+            }
+            onSaved()
+        }
+
+    fun delete(onDeleted: () -> Unit) =
+        viewModelScope.launch {
+            val id = formState.value.editingId ?: return@launch
+            habits.delete(id)
+            onDeleted()
+        }
+
+    companion object {
+        fun factory(
+            container: AppContainer,
+            habitId: String?,
+        ): ViewModelProvider.Factory =
+            viewModelFactory {
+                initializer {
+                    HabitFormViewModel(container.habits, container.settings, habitId)
+                }
+            }
+    }
+}
