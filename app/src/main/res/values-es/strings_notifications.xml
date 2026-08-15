@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_reminders">Recordatorios</string>
+    <string name="channel_review">Repaso del día</string>
+    <string name="notif_reminder_title_one">1 hábito pendiente</string>
+    <string name="notif_reminder_title_many">%1$d hábitos pendientes</string>
+    <string name="notif_reminder_single_title">%1$s</string>
+    <string name="notif_reminder_single_body">Sigue abierto hoy</string>
+    <string name="notif_action_done">Hecho</string>
+    <string name="notif_target_done">✓ %1$s</string>
+    <string name="notif_review_title">Cierra tu día</string>
+    <string name="notif_review_body">Queda algo abierto — un minuto y listo</string>
+</resources>
