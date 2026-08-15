@@ -23,7 +23,10 @@ class ReminderReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                handle(context, intent)
+                // DataStore IO reading live state or a TOCTOU SecurityException rescheduling the
+                // next occurrence must not crash the process — finish() below still has to run so
+                // the system doesn't ANR us.
+                runCatching { handle(context, intent) }
             } finally {
                 pendingResult.finish()
             }

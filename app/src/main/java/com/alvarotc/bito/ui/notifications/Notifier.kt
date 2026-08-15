@@ -21,6 +21,11 @@ object Notifier {
     const val REMINDER_ID = 1
     const val REVIEW_ID = 2
 
+    /** Extra keys carried by [quickActionIntent] and read back in [QuickActionReceiver]. */
+    const val EXTRA_HABIT_ID = "habitId"
+    const val EXTRA_AMOUNT = "amount"
+    const val EXTRA_NOTIFICATION_ID = "notificationId"
+
     /** The GLOBAL reminder: one or more habits still open, up to three quick-log actions. */
     fun showReminder(
         context: Context,
@@ -127,9 +132,9 @@ object Notifier {
     ): PendingIntent {
         val intent =
             Intent(context, QuickActionReceiver::class.java)
-                .putExtra("habitId", habitId)
-                .putExtra("amount", amount)
-                .putExtra("notificationId", notificationId)
+                .putExtra(EXTRA_HABIT_ID, habitId)
+                .putExtra(EXTRA_AMOUNT, amount)
+                .putExtra(EXTRA_NOTIFICATION_ID, notificationId)
         val requestCode = 31 * habitId.hashCode() + notificationId
         return PendingIntent.getBroadcast(
             context,

@@ -27,7 +27,9 @@ class QuickActionReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                handle(context, intent)
+                // A journal write or DataStore read failing mid-tap must not crash the process —
+                // finish() below still has to run so the system doesn't ANR us.
+                runCatching { handle(context, intent) }
             } finally {
                 pendingResult.finish()
             }
@@ -38,9 +40,9 @@ class QuickActionReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        val habitId = intent.getStringExtra("habitId") ?: return
-        val amount = intent.getIntExtra("amount", 1)
-        val notificationId = intent.getIntExtra("notificationId", Notifier.REMINDER_ID)
+        val habitId = intent.getStringExtra(Notifier.EXTRA_HABIT_ID) ?: return
+        val amount = intent.getIntExtra(Notifier.EXTRA_AMOUNT, 1)
+        val notificationId = intent.getIntExtra(Notifier.EXTRA_NOTIFICATION_ID, Notifier.REMINDER_ID)
         NotificationChannels.ensure(context)
         val container = (context.applicationContext as BitoApp).container
         val useCase =

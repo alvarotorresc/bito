@@ -56,7 +56,9 @@ object ReminderScheduler {
         nowMillis: Long,
         zone: ZoneId,
     ) {
-        slots.forEach { scheduleSlot(context, it, nowMillis, zone) }
+        // One bad slot (e.g. a TOCTOU SecurityException from canScheduleExactAlarms) must not
+        // stop the remaining slots from being scheduled.
+        slots.forEach { runCatching { scheduleSlot(context, it, nowMillis, zone) } }
     }
 
     /** Schedules a single [slot], exact when the OS allows it, degraded otherwise (tech doc §6.3). */

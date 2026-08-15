@@ -23,7 +23,9 @@ class BootReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                handle(context)
+                // A DataStore IO failure reading settings/habits fresh off boot must not crash the
+                // process — finish() below still has to run so the system doesn't ANR us.
+                runCatching { handle(context) }
             } finally {
                 pendingResult.finish()
             }
