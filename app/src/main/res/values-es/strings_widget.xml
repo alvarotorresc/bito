@@ -1,0 +1,7 @@
+<resources>
+    <string name="widget_description">Los hábitos de hoy, a un tap</string>
+    <string name="widget_title">Hoy</string>
+    <string name="widget_all_done">Todo hecho</string>
+    <string name="widget_log_action">Registrar %1$s</string>
+    <string name="widget_open_action">Abrir %1$s</string>
+</resources>

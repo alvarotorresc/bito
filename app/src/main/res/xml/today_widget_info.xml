@@ -9,6 +9,7 @@
     android:updatePeriodMillis="0"
     android:initialLayout="@layout/glance_default_loading_layout"
     android:configure="com.alvarotc.bito.ui.widget.TodayWidgetConfigActivity"
+    android:description="@string/widget_description"
     android:widgetCategory="home_screen"
     android:widgetFeatures="reconfigurable"
     tools:targetApi="s" />
