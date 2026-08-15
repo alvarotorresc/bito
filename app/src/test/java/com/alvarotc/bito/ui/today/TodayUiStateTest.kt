@@ -313,4 +313,25 @@ class TodayUiStateTest {
         assertTrue(card.nameStruckThrough)
         assertFalse(card.showsLoggingChips)
     }
+
+    @Test
+    fun `17 - a binary-logged at-most habit renders as a CHECK card and keeps its name clean`() {
+        // Reachable from the form: toggle "solo cumplido" while on QUANTITY/DURATION, then
+        // switch to the QUIT preset before saving — binaryMode survives the preset switch.
+        val redes =
+            habit(
+                "redes",
+                metric = Metric.DURATION,
+                direction = Direction.AT_MOST,
+                target = 30,
+                logMode = LogMode.BINARY,
+            )
+        val state = stateOf(habits = listOf(redes))
+
+        val card = buildTodayUiState(state, emptyMap(), TODAY).cards.single()
+
+        assertEquals(CardKind.CHECK, card.kind)
+        assertTrue(card.doneToday)
+        assertFalse(card.nameStruckThrough)
+    }
 }

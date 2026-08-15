@@ -106,8 +106,8 @@ private fun CheckBody(
             Text(
                 card.name,
                 style = MaterialTheme.typography.bodyLarge,
-                color = if (card.doneToday) TintaSuave else Tinta,
-                textDecoration = if (card.doneToday) TextDecoration.LineThrough else null,
+                color = if (card.nameStruckThrough) TintaSuave else Tinta,
+                textDecoration = if (card.nameStruckThrough) TextDecoration.LineThrough else null,
             )
             if (card.streak >= 2) {
                 Spacer(Modifier.width(8.dp))
