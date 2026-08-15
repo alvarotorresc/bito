@@ -6,7 +6,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.DAY_ZERO
 import com.alvarotc.bito.data.customizationItemEntity
 import com.alvarotc.bito.data.db.BitoDatabase
-import com.alvarotc.bito.data.db.CustomizationCategory
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.freezerUseEntity
 import com.alvarotc.bito.data.habitEntity
@@ -103,7 +102,7 @@ class JournalRewardsRepositoryTest {
         runTest {
             rewards.acquire(customizationItemEntity(itemId = "hat-a", equipped = true))
             rewards.acquire(customizationItemEntity(itemId = "hat-b"))
-            rewards.equip("hat-b", CustomizationCategory.UPPER)
+            rewards.equip("hat-b")
             val equipped = db.customizationItemDao().observeAll().first().filter { it.equipped }.map { it.itemId }
             assertEquals(listOf("hat-b"), equipped)
         }

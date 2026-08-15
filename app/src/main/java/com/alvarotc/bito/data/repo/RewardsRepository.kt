@@ -3,7 +3,6 @@ package com.alvarotc.bito.data.repo
 import androidx.room.withTransaction
 import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
-import com.alvarotc.bito.data.db.CustomizationCategory
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.domain.model.LogicalDay
@@ -50,13 +49,11 @@ class RewardsRepository(private val db: BitoDatabase) {
 
     suspend fun acquire(item: CustomizationItemEntity) = db.customizationItemDao().upsert(item)
 
-    /** Equipping is exclusive per category. */
-    suspend fun equip(
-        itemId: String,
-        category: CustomizationCategory,
-    ) = db.withTransaction {
-        val item = db.customizationItemDao().byId(itemId) ?: return@withTransaction
-        db.customizationItemDao().unequipCategory(category)
-        db.customizationItemDao().upsert(item.copy(equipped = true))
-    }
+    /** Equipping is exclusive per category (derived from the stored item). */
+    suspend fun equip(itemId: String) =
+        db.withTransaction {
+            val item = db.customizationItemDao().byId(itemId) ?: return@withTransaction
+            db.customizationItemDao().unequipCategory(item.category)
+            db.customizationItemDao().upsert(item.copy(equipped = true))
+        }
 }
