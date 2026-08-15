@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.habitform
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isToggleable
@@ -222,5 +223,23 @@ class HabitFormScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("40").assertExists()
+    }
+
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun `the minute stepper stays fully visible on a narrow 360dp screen`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-minus10").assertIsDisplayed()
+        compose.onNodeWithTag("target-value").assertIsDisplayed()
+        compose.onNodeWithTag("target-plus10").assertIsDisplayed()
+
+        compose.onNodeWithTag("target-plus10").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("30").assertExists()
     }
 }
