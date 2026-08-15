@@ -27,6 +27,12 @@ abstract class BitoDatabase : RoomDatabase() {
 
     abstract fun pauseIntervalDao(): PauseIntervalDao
 
+    abstract fun entryDao(): EntryDao
+
+    abstract fun daySealDao(): DaySealDao
+
+    abstract fun freezerUseDao(): FreezerUseDao
+
     companion object {
         private const val NAME = "bito.db"
 
