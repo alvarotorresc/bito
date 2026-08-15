@@ -2,4 +2,39 @@
 <resources>
     <string name="hello_bito">Hola, Bito</string>
     <string name="milestone_label">M0 · cimientos</string>
+
+    <string name="today_title">Hoy</string>
+    <string name="today_date_pattern">EEEE, d \'de\' MMMM</string>
+    <string name="ring_of">%1$d de %2$d</string>
+    <string name="ring_caption">hábitos de hoy</string>
+    <string name="unit_min">min</string>
+    <string name="week_progress">%1$d de %2$d esta semana</string>
+    <string name="month_progress">%1$d de %2$d este mes</string>
+    <string name="limit_caption">máx %1$s</string>
+    <string name="clean_today">limpio hoy</string>
+    <string name="relapse_today">recaída registrada</string>
+    <string name="relapse_action">He recaído</string>
+    <string name="relapse_confirm_title">¿Registrar una recaída?</string>
+    <string name="relapse_confirm_body">La racha vuelve a empezar. Sin dramas — mañana cuenta de nuevo.</string>
+    <string name="relapse_confirm_yes">Registrar recaída</string>
+    <string name="cancel">Cancelar</string>
+    <string name="add_target">+objetivo</string>
+    <string name="exact_value_title">Ajustar el total de hoy</string>
+    <string name="exact_value_hint">Total de hoy</string>
+    <string name="save">Guardar</string>
+    <string name="logged_snackbar">Registrado</string>
+    <string name="undo">Deshacer</string>
+    <string name="seal_sheet_title">Estuviste fuera</string>
+    <string name="seal_sheet_body_one">Ayer quedó sin sellar. ¿Todo limpio?</string>
+    <string name="seal_sheet_body_many">%1$d días quedaron sin sellar. ¿Todo limpio?</string>
+    <string name="seal_sheet_confirm_one">Sellar el día</string>
+    <string name="seal_sheet_confirm_many">Sellar %1$d días</string>
+    <string name="seal_sheet_later">Ahora no</string>
+    <string name="empty_today_title">Aquí no hay nada todavía</string>
+    <string name="empty_today_body">Crea tu primer hábito — registrarlo te costará casi nada.</string>
+    <string name="create_habit">Crear hábito</string>
+    <string name="nav_today">Hoy</string>
+    <string name="nav_new_habit">Nuevo hábito</string>
+    <string name="nav_settings">Ajustes</string>
+    <string name="edit_habit_hint">Editar %1$s</string>
 </resources>

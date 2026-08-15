@@ -3,4 +3,41 @@
     <string name="app_name" translatable="false">Bito</string>
     <string name="hello_bito">Hello, Bito</string>
     <string name="milestone_label">M0 · foundations</string>
+
+    <string name="today_title">Today</string>
+    <string name="today_date_pattern">EEEE, MMMM d</string>
+    <string name="ring_of">%1$d of %2$d</string>
+    <string name="ring_caption">habits today</string>
+    <string name="unit_min">min</string>
+    <string name="progress_fraction" translatable="false">%1$s / %2$s</string>
+    <string name="week_progress">%1$d of %2$d this week</string>
+    <string name="month_progress">%1$d of %2$d this month</string>
+    <string name="limit_caption">max %1$s</string>
+    <string name="clean_today">clean today</string>
+    <string name="relapse_today">relapse logged</string>
+    <string name="relapse_action">I slipped</string>
+    <string name="relapse_confirm_title">Log a relapse?</string>
+    <string name="relapse_confirm_body">The streak starts over. No drama — tomorrow counts again.</string>
+    <string name="relapse_confirm_yes">Log relapse</string>
+    <string name="cancel">Cancel</string>
+    <string name="add_amount" translatable="false">+%1$d</string>
+    <string name="add_target">+goal</string>
+    <string name="exact_value_title">Set today\'s total</string>
+    <string name="exact_value_hint">Today\'s total</string>
+    <string name="save">Save</string>
+    <string name="logged_snackbar">Logged</string>
+    <string name="undo">Undo</string>
+    <string name="seal_sheet_title">You were away</string>
+    <string name="seal_sheet_body_one">Yesterday has no seal yet. All clean?</string>
+    <string name="seal_sheet_body_many">%1$d days have no seal yet. All clean?</string>
+    <string name="seal_sheet_confirm_one">Seal the day</string>
+    <string name="seal_sheet_confirm_many">Seal %1$d days</string>
+    <string name="seal_sheet_later">Not now</string>
+    <string name="empty_today_title">Nothing here yet</string>
+    <string name="empty_today_body">Create your first habit — logging it will cost you almost nothing.</string>
+    <string name="create_habit">Create habit</string>
+    <string name="nav_today">Today</string>
+    <string name="nav_new_habit">New habit</string>
+    <string name="nav_settings">Settings</string>
+    <string name="edit_habit_hint">Edit %1$s</string>
 </resources>
