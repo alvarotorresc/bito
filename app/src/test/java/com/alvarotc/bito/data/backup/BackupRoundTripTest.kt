@@ -192,4 +192,16 @@ class BackupRoundTripTest {
             assertEquals(2, preview.habits)
             assertEquals("0.3.0-test", preview.appVersion)
         }
+
+    // Neither seeded habit in seedEverything() ever carries a non-null timeOfDayMinutes
+    // (the entity invariant forbids setting it alongside timeBucket, and the round-trip's
+    // two-habit shape is pinned by the `preview.habits == 2` assertion above). Cover the
+    // field directly on the mapper instead, both directions.
+    @Test
+    fun `habit mapper round-trips a non-null timeOfDayMinutes`() {
+        val entity = habitEntity(id = "h3", timeBucket = null, timeOfDayMinutes = 450, reminderMinutes = 540)
+        val backupHabit = entity.toBackup()
+        assertEquals(450, backupHabit.timeOfDayMinutes)
+        assertEquals(entity, backupHabit.toEntity())
+    }
 }
