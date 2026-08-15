@@ -55,6 +55,8 @@ import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Peligro
+import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -103,6 +105,8 @@ fun HabitFormScreen(
                     text = stringResource(R.string.delete_habit),
                     onClick = { confirmingDelete = true },
                     modifier = Modifier.fillMaxWidth().testTag("delete"),
+                    color = Peligro,
+                    borderColor = PeligroTinte,
                 )
             }
         }
@@ -404,6 +408,7 @@ private fun DeleteConfirmSheet(
                 stringResource(R.string.delete_confirm_yes),
                 onClick = onConfirm,
                 modifier = Modifier.fillMaxWidth(),
+                containerColor = Peligro,
             )
             Spacer(Modifier.height(8.dp))
             GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())

@@ -74,6 +74,7 @@ fun PillButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    containerColor: Color = Hoja,
 ) = Button(
     onClick = onClick,
     modifier = modifier.heightIn(min = 56.dp),
@@ -81,7 +82,7 @@ fun PillButton(
     shape = CircleShape,
     colors =
         ButtonDefaults.buttonColors(
-            containerColor = Hoja,
+            containerColor = containerColor,
             contentColor = Tarjeta,
             disabledContainerColor = HojaTinte,
             disabledContentColor = TintaSuave,
@@ -94,11 +95,12 @@ fun GhostPillButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     color: Color = TintaSuave,
+    borderColor: Color = Borde,
 ) = OutlinedButton(
     onClick = onClick,
     modifier = modifier,
     shape = CircleShape,
-    border = BorderStroke(1.dp, Borde),
+    border = BorderStroke(1.dp, borderColor),
     colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
 ) { Text(text, style = MaterialTheme.typography.labelMedium) }
 
