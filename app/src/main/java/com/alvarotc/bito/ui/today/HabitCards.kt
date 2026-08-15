@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -67,7 +68,7 @@ fun HabitCard(
         when (card.kind) {
             CardKind.CHECK -> CheckBody(card, onPrimary)
             CardKind.COUNTER -> CounterBody(card, onPrimary, onExact)
-            CardKind.DURATION -> DurationBody(card, onAdd, onExact)
+            CardKind.DURATION -> DurationBody(card, onAdd, onExact, onEdit)
             CardKind.ABSTINENCE -> AbstinenceBody(card, onRelapse)
         }
     }
@@ -205,6 +206,7 @@ private fun DurationBody(
     card: HabitCardUi,
     onAdd: (Int) -> Unit,
     onExact: () -> Unit,
+    onEdit: () -> Unit,
 ) {
     val isLimit = card.direction == Direction.AT_MOST
     val overLimit = isLimit && card.failed
@@ -225,10 +227,14 @@ private fun DurationBody(
             Text(caption, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         }
         Spacer(Modifier.height(8.dp))
+        // Padding sits after combinedClickable so it grows the tap/long-press target without
+        // inflating the bar's own visual height (RoundedBar stays 10dp, drawn by GUIA).
         Box(
             Modifier
                 .fillMaxWidth()
-                .combinedClickable(onClick = {}, onLongClick = onExact),
+                .testTag("bar-${card.id}")
+                .combinedClickable(onClick = onEdit, onLongClick = onExact)
+                .padding(vertical = 12.dp),
         ) {
             RoundedBar(
                 progress = if (card.target == 0) 0f else card.progress.toFloat() / card.target,

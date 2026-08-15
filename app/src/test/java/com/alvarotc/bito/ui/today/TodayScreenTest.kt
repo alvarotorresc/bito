@@ -148,4 +148,29 @@ class TodayScreenTest {
 
         assertEquals("agua", editedId)
     }
+
+    @Test
+    fun `tapping the duration bar opens edit instead of swallowing the tap`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "lectura",
+                    name = "Lectura",
+                    metric = Metric.DURATION,
+                    target = 30,
+                    unit = "min",
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("bar-lectura", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertEquals("lectura", editedId)
+        val entries = runBlocking { db.entryDao().all().filter { it.habitId == "lectura" } }
+        assertTrue(entries.isEmpty())
+    }
 }
