@@ -21,6 +21,12 @@ import androidx.room.RoomDatabase
     exportSchema = true,
 )
 abstract class BitoDatabase : RoomDatabase() {
+    abstract fun habitDao(): HabitDao
+
+    abstract fun targetChangeDao(): TargetChangeDao
+
+    abstract fun pauseIntervalDao(): PauseIntervalDao
+
     companion object {
         private const val NAME = "bito.db"
 
