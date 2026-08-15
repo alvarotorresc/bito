@@ -21,4 +21,10 @@ interface PauseIntervalDao {
 
     @Query("SELECT * FROM pause_intervals")
     fun observeAll(): Flow<List<PauseIntervalEntity>>
+
+    @Query("SELECT * FROM pause_intervals")
+    suspend fun all(): List<PauseIntervalEntity>
+
+    @Query("DELETE FROM pause_intervals")
+    suspend fun deleteAll()
 }

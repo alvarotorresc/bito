@@ -20,4 +20,10 @@ interface PointsLedgerDao {
     /** The balance is always derived — never stored (tech doc §3). */
     @Query("SELECT COALESCE(SUM(delta), 0) FROM points_ledger")
     fun observeBalance(): Flow<Int>
+
+    @Query("SELECT * FROM points_ledger")
+    suspend fun all(): List<PointsLedgerEntity>
+
+    @Query("DELETE FROM points_ledger")
+    suspend fun deleteAll()
 }

@@ -18,4 +18,10 @@ interface CustomizationItemDao {
 
     @Query("SELECT * FROM customization_items")
     fun observeAll(): Flow<List<CustomizationItemEntity>>
+
+    @Query("SELECT * FROM customization_items")
+    suspend fun all(): List<CustomizationItemEntity>
+
+    @Query("DELETE FROM customization_items")
+    suspend fun deleteAll()
 }

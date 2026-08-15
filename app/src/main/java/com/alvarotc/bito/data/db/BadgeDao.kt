@@ -14,4 +14,10 @@ interface BadgeDao {
 
     @Query("SELECT * FROM badges")
     fun observeAll(): Flow<List<BadgeEntity>>
+
+    @Query("SELECT * FROM badges")
+    suspend fun all(): List<BadgeEntity>
+
+    @Query("DELETE FROM badges")
+    suspend fun deleteAll()
 }

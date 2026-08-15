@@ -15,4 +15,10 @@ interface TargetChangeDao {
 
     @Query("SELECT * FROM target_changes")
     fun observeAll(): Flow<List<TargetChangeEntity>>
+
+    @Query("SELECT * FROM target_changes")
+    suspend fun all(): List<TargetChangeEntity>
+
+    @Query("DELETE FROM target_changes")
+    suspend fun deleteAll()
 }

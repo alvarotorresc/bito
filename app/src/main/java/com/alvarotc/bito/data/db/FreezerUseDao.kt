@@ -14,4 +14,10 @@ interface FreezerUseDao {
 
     @Query("SELECT * FROM freezer_uses")
     fun observeAll(): Flow<List<FreezerUseEntity>>
+
+    @Query("SELECT * FROM freezer_uses")
+    suspend fun all(): List<FreezerUseEntity>
+
+    @Query("DELETE FROM freezer_uses")
+    suspend fun deleteAll()
 }
