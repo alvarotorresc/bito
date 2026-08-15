@@ -7,6 +7,7 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 
@@ -24,4 +25,5 @@ class AppContainer(context: Context) {
             },
         )
     val backup = BackupRepository(database, settings, BuildConfig.VERSION_NAME)
+    val reconciler = PointsReconciler(domainState, rewards)
 }
