@@ -231,8 +231,9 @@ private val PERIOD_OPTIONS = listOf(Period.DAY, Period.WEEK, Period.MONTH)
  * (QUIT TOTAL pins at 0, WEEKLY_TIMES fixes WEEK), so this UI needs no extra state guards.
  *
  * Rule E2 extends past the preset: [HabitFormViewModel.save]'s edit branch only ever persists
- * name/target/unit/step, so period, quit-mode and limit-metric are shape, not value — they lock
- * alongside the preset pills when editing. Target, unit and step do persist and stay live.
+ * name/target/unit/step/reminderMinutes, so period, quit-mode and limit-metric are shape, not
+ * value — they lock alongside the preset pills when editing. Target, unit, step and reminder do
+ * persist and stay live.
  */
 @Composable
 private fun TargetSection(
@@ -416,8 +417,9 @@ private fun MoreOptionsSection(
         AnimatedVisibility(visible = expanded) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
                 if (state.preset == HabitPreset.QUANTITY || state.preset == HabitPreset.DURATION) {
-                    // logMode isn't persisted on edit (Task 10 save() carries name/target/unit/step
-                    // only) — it's shape, like the preset, so it locks the same way.
+                    // logMode isn't persisted on edit (Task 10 save() carries
+                    // name/target/unit/step/reminderMinutes only) — it's shape, like the preset,
+                    // so it locks the same way.
                     BinaryModeRow(state.binaryMode, enabled = !state.isEditing, onToggle = onToggleBinary)
                 }
                 if (state.preset == HabitPreset.QUANTITY && !state.binaryMode) {

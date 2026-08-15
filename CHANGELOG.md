@@ -7,7 +7,8 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). V
 ### Added
 
 - Widget "Hoy" configurable y multi-instancia, con registro directo desde el escritorio.
-- Recordatorios globales y por hábito con acciones rápidas para registrar desde la propia notificación.
+- Recordatorios globales y por hábito.
+- Acciones rápidas para registrar desde la propia notificación sin abrir la app.
 - Notificación de repaso con protección anti-spam, solo cuando queda algo pendiente.
 - Hora de corte del día configurable.
 - Mejoras de QA por dogfooding: Eliminar en rojo, teclado en mayúscula inicial, stepper ±10 con valor directo, recordatorio por hábito en el formulario y blindaje del doble toque en Guardar.

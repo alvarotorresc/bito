@@ -162,7 +162,7 @@ private fun WidgetRow(item: WidgetItem) {
             )
             if (item.kind == CardKind.COUNTER) {
                 Text(
-                    text = "${item.progress}/${item.target}",
+                    text = context.getString(R.string.widget_progress, item.progress, item.target),
                     style = TextStyle(color = ColorProvider(TintaSuave), fontSize = 12.sp),
                 )
             }
