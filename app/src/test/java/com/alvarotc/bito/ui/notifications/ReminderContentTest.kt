@@ -70,6 +70,29 @@ class ReminderContentTest {
     }
 
     @Test
+    fun `an exceeded limit habit is neither listed nor quick-actionable`() {
+        assertNull(buildReminderPayload(state(limitCard(clean = false))))
+
+        val p = buildReminderPayload(state(limitCard(clean = false), card("other")))!!
+        assertEquals(listOf("other"), p.pendingNames)
+        assertTrue(p.targets.none { it.habitId == "limit" })
+    }
+
+    @Test
+    fun `a relapsed abstinence today makes no reminder noise but still triggers the review`() {
+        val relapsed = card("nofap", kind = CardKind.ABSTINENCE).copy(direction = Direction.ZERO, failed = true)
+        assertNull(buildReminderPayload(state(relapsed)))
+        assertTrue(reviewIsPending(state(relapsed)))
+    }
+
+    @Test
+    fun `a check card ignores its step and a duration card ahead of it does not steal a target slot`() {
+        val p = buildReminderPayload(state(card("d", kind = CardKind.DURATION), card("chk").copy(step = 5)))!!
+        assertEquals(1, p.targets.size)
+        assertEquals(1, p.targets.single().amount)
+    }
+
+    @Test
     fun `the review fires while something is unsealed even if nothing is pending today`() {
         assertTrue(reviewIsPending(state(card("x", done = true)).copy(pendingSealDays = listOf(20678))))
     }

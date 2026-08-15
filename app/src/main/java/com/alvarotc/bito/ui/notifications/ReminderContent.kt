@@ -14,11 +14,14 @@ data class ReminderPayload(val pendingNames: List<String>, val targets: List<Qui
 
 /**
  * Builds the reminder notification's content from [state], or `null` when there is nothing to
- * say — anti-spam: what's already fulfilled never generates noise. `targets` offers at most
- * [MAX_QUICK_TARGETS] quick-loggable (CHECK/COUNTER) pending habits, one tap = [QuickTarget.amount].
+ * say — anti-spam: what's already fulfilled never generates noise, and a failed habit (an
+ * exceeded limit, a relapsed ZERO habit) is excluded too: reminders never nag about something
+ * that can no longer be fixed today, and never offer a quick action that would worsen the log
+ * (anti-sargento). `targets` offers at most [MAX_QUICK_TARGETS] quick-loggable (CHECK/COUNTER)
+ * pending habits, one tap = [QuickTarget.amount].
  */
 fun buildReminderPayload(state: TodayUiState): ReminderPayload? {
-    val pending = state.cards.filter { !it.doneToday }
+    val pending = state.cards.filter { !it.doneToday && !it.failed }
     if (pending.isEmpty()) return null
     val targets =
         pending
