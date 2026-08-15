@@ -19,10 +19,14 @@ class WidgetMidnightReceiver : BroadcastReceiver() {
         val result = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
-                TodayWidget().updateAll(context)
-                val container = (context.applicationContext as BitoApp).container
-                val cutoff = container.settings.settings.first().dayCutoffMinutes
-                WidgetDayAlarm.schedule(context, cutoff)
+                // A DataStore IO failure at rotation time (e.g. a corrupted preferences file) must not
+                // crash the process — finish() below still has to run so the system doesn't ANR us.
+                runCatching {
+                    TodayWidget().updateAll(context)
+                    val container = (context.applicationContext as BitoApp).container
+                    val cutoff = container.settings.settings.first().dayCutoffMinutes
+                    WidgetDayAlarm.schedule(context, cutoff)
+                }
             } finally {
                 result.finish()
             }

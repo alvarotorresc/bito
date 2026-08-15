@@ -33,8 +33,13 @@ object WidgetRefresher {
             ) { _, _, prefs -> prefs }
                 .conflate()
                 .collect { prefs ->
-                    TodayWidget().updateAll(context)
-                    WidgetDayAlarm.schedule(context, prefs.dayCutoffMinutes)
+                    // A bad emission here (e.g. a widget host update throwing) must not cancel this
+                    // collector — that would stop widget refreshes for the rest of the process's life,
+                    // so one failure is swallowed instead of killing the loop.
+                    runCatching {
+                        TodayWidget().updateAll(context)
+                        WidgetDayAlarm.schedule(context, prefs.dayCutoffMinutes)
+                    }
                     delay(250)
                 }
         }

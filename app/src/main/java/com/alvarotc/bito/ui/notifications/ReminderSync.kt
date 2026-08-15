@@ -27,7 +27,12 @@ object ReminderSync {
             }
                 .distinctUntilChanged()
                 .collect { slots ->
-                    ReminderScheduler.scheduleAll(context, slots, System.currentTimeMillis(), ZoneId.systemDefault())
+                    // A TOCTOU exact-alarm revocation surfaces here as a SecurityException; letting it
+                    // escape would cancel this collector and stop syncing reminders for the rest of the
+                    // process's life, so one bad emission is swallowed instead of killing the loop.
+                    runCatching {
+                        ReminderScheduler.scheduleAll(context, slots, System.currentTimeMillis(), ZoneId.systemDefault())
+                    }
                 }
         }
     }
