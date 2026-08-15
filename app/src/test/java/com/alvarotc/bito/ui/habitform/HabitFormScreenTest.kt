@@ -203,4 +203,24 @@ class HabitFormScreenTest {
         compose.onNodeWithTag("target-plus").assertExists()
         compose.onNodeWithTag("target-plus10").assertDoesNotExist()
     }
+
+    @Test
+    fun `a minute limit gets the ten-jump stepper too`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUIT").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("With a limit").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Minutes").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-plus10").assertExists()
+        compose.onNodeWithTag("target-minus10").assertExists()
+
+        compose.onNodeWithTag("target-plus10").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("40").assertExists()
+    }
 }
