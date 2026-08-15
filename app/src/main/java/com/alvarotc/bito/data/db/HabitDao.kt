@@ -18,4 +18,10 @@ interface HabitDao {
 
     @Query("DELETE FROM habits WHERE id = :id")
     suspend fun delete(id: String)
+
+    @Query("SELECT * FROM habits ORDER BY sortOrder")
+    suspend fun all(): List<HabitEntity>
+
+    @Query("DELETE FROM habits")
+    suspend fun deleteAll()
 }

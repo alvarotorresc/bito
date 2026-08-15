@@ -25,4 +25,10 @@ interface EntryDao {
 
     @Query("SELECT * FROM entries")
     fun observeAll(): Flow<List<EntryEntity>>
+
+    @Query("SELECT * FROM entries")
+    suspend fun all(): List<EntryEntity>
+
+    @Query("DELETE FROM entries")
+    suspend fun deleteAll()
 }

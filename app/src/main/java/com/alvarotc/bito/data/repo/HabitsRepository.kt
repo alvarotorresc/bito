@@ -63,4 +63,7 @@ class HabitsRepository(private val db: BitoDatabase) {
         db.pauseIntervalDao().closeOpen(habitId, endDay)
         db.habitDao().upsert(habit.copy(status = HabitStatus.ACTIVE))
     }
+
+    /** Rule E3: cascades wipe the history; earned points are never deducted. */
+    suspend fun delete(id: String) = db.habitDao().delete(id)
 }

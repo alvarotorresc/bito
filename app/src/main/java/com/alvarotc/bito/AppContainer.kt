@@ -2,10 +2,12 @@ package com.alvarotc.bito
 
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 
@@ -22,4 +24,6 @@ class AppContainer(context: Context) {
                 context.filesDir.resolve("settings.preferences_pb")
             },
         )
+    val backup = BackupRepository(database, settings, BuildConfig.VERSION_NAME)
+    val reconciler = PointsReconciler(domainState, rewards)
 }

@@ -21,4 +21,4 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
 
       - name: Lint, format, tests and build
-        run: ./gradlew ktlintCheck lint test assembleDebug --stacktrace
+        run: ./gradlew ktlintCheck lint testDebugUnitTest assembleDebug --stacktrace

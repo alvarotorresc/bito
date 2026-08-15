@@ -17,4 +17,10 @@ interface DaySealDao {
 
     @Query("SELECT * FROM day_seals")
     fun observeAll(): Flow<List<DaySealEntity>>
+
+    @Query("SELECT * FROM day_seals")
+    suspend fun all(): List<DaySealEntity>
+
+    @Query("DELETE FROM day_seals")
+    suspend fun deleteAll()
 }

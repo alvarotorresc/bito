@@ -1,6 +1,87 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">Bito</string>
-    <string name="hello_bito">Hello, Bito</string>
-    <string name="milestone_label">M0 · foundations</string>
+
+    <string name="today_title">Today</string>
+    <string name="today_date_pattern">EEEE, MMMM d</string>
+    <string name="ring_of">%1$d of %2$d</string>
+    <string name="ring_caption">habits today</string>
+    <string name="unit_min">min</string>
+    <string name="progress_fraction" translatable="false">%1$s / %2$s</string>
+    <string name="week_progress">%1$d of %2$d this week</string>
+    <string name="month_progress">%1$d of %2$d this month</string>
+    <string name="limit_caption">max %1$s</string>
+    <string name="clean_today">clean today</string>
+    <string name="relapse_today">relapse logged</string>
+    <string name="relapse_action">I slipped</string>
+    <string name="relapse_confirm_title">Log a relapse?</string>
+    <string name="relapse_confirm_body">The streak starts over. No drama — tomorrow counts again.</string>
+    <string name="relapse_confirm_yes">Log relapse</string>
+    <string name="cancel">Cancel</string>
+    <string name="add_amount" translatable="false">+%1$d</string>
+    <string name="add_target">+goal</string>
+    <string name="exact_value_title">Set today\'s total</string>
+    <string name="exact_value_hint">Today\'s total</string>
+    <string name="save">Save</string>
+    <string name="logged_snackbar">Logged</string>
+    <string name="undo">Undo</string>
+    <string name="seal_sheet_title">You were away</string>
+    <string name="seal_sheet_body_one">Yesterday has no seal yet. All clean?</string>
+    <string name="seal_sheet_body_many">%1$d days have no seal yet. All clean?</string>
+    <string name="seal_sheet_confirm_one">Seal the day</string>
+    <string name="seal_sheet_confirm_many">Seal %1$d days</string>
+    <string name="seal_sheet_later">Not now</string>
+    <string name="empty_today_title">Nothing here yet</string>
+    <string name="empty_today_body">Create your first habit — logging it will cost you almost nothing.</string>
+    <string name="create_habit">Create habit</string>
+    <string name="nav_today">Today</string>
+    <string name="nav_new_habit">New habit</string>
+    <string name="nav_settings">Settings</string>
+    <string name="edit_habit_hint">Edit %1$s</string>
+
+    <string name="form_title_new">New habit</string>
+    <string name="form_title_edit">Edit habit</string>
+    <string name="habi_form_prompt">What habit are we building? Name it and pick its shape — everything else can wait.</string>
+    <string name="habi_speaker" translatable="false">HABI · %1$s</string>
+    <string name="personality_neutra">NEUTRAL</string>
+    <string name="name_hint">Habit name</string>
+    <string name="preset_daily">Daily</string>
+    <string name="preset_quantity">Amount</string>
+    <string name="preset_duration">Time</string>
+    <string name="preset_weekly">Per week</string>
+    <string name="preset_quit">Quit</string>
+    <string name="preset_locked_hint">Type can\'t change — archive and create a new one</string>
+    <string name="quit_total">Cold turkey</string>
+    <string name="quit_limit">With a limit</string>
+    <string name="limit_amount">Times</string>
+    <string name="limit_time">Minutes</string>
+    <string name="period_day">day</string>
+    <string name="period_week">week</string>
+    <string name="period_month">month</string>
+    <string name="unit_hint">Unit (glasses, pages…)</string>
+    <string name="more_options">More options</string>
+    <string name="binary_mode">Just done / not done</string>
+    <string name="binary_mode_hint">The goal is a written reference; logging is one tap</string>
+    <string name="step_label">Tap adds</string>
+    <string name="save_habit">Save</string>
+    <string name="delete_habit">Delete habit</string>
+    <string name="delete_confirm_title">Delete forever?</string>
+    <string name="delete_confirm_body">Its whole history goes with it. Points you earned stay yours.</string>
+    <string name="delete_confirm_yes">Delete</string>
+    <string name="back">Back</string>
+
+    <string name="settings_title">Settings</string>
+    <string name="backups_title">Backups</string>
+    <string name="backups_body">One readable file with everything: habits, history, points and settings.</string>
+    <string name="backup_export">Export backup</string>
+    <string name="backup_import">Import backup</string>
+    <string name="import_preview_title">Restore this backup?</string>
+    <string name="import_preview_meta">From %1$s · app %2$s</string>
+    <string name="import_preview_counts">%1$d habits · %2$d log entries</string>
+    <string name="import_preview_warning">Restoring replaces ALL current data. There is no merge.</string>
+    <string name="import_confirm">Restore</string>
+    <string name="msg_export_done">Backup saved</string>
+    <string name="msg_import_done">Backup restored</string>
+    <string name="msg_invalid_file">That is not a valid Bito backup</string>
+    <string name="msg_io_error">Something went wrong — nothing was changed</string>
 </resources>
