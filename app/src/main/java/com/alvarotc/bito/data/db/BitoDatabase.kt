@@ -33,6 +33,12 @@ abstract class BitoDatabase : RoomDatabase() {
 
     abstract fun freezerUseDao(): FreezerUseDao
 
+    abstract fun pointsLedgerDao(): PointsLedgerDao
+
+    abstract fun badgeDao(): BadgeDao
+
+    abstract fun customizationItemDao(): CustomizationItemDao
+
     companion object {
         private const val NAME = "bito.db"
 
