@@ -16,6 +16,8 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.ui.today.CardKind
+import com.alvarotc.bito.ui.today.HabitCardUi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -26,6 +28,8 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -59,6 +63,25 @@ class ReminderUseCaseTest {
         PreferenceDataStoreFactory.create(
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
+
+    /** A hand-built pending, unfailed card of [kind] — for [quickTargetOf], not the DB harness. */
+    private fun card(
+        kind: CardKind,
+        step: Int = 1,
+    ) = HabitCardUi(
+        id = "h1",
+        name = "Agua",
+        kind = kind,
+        progress = 0,
+        target = 1,
+        unit = null,
+        step = step,
+        direction = Direction.AT_LEAST,
+        period = Period.DAY,
+        doneToday = false,
+        failed = false,
+        streak = 0,
+    )
 
     @Before
     fun setUp() {
@@ -170,9 +193,11 @@ class ReminderUseCaseTest {
             val pending = useCase.evaluate("HABIT", "h1")
             assertTrue(pending is ReminderUseCase.Outcome.RemindHabit)
             val remindHabit = pending as ReminderUseCase.Outcome.RemindHabit
-            assertEquals("h1", remindHabit.target.habitId)
-            assertEquals("Meditar", remindHabit.target.name)
-            assertTrue(remindHabit.target.isCheck)
+            assertEquals("Meditar", remindHabit.name)
+            val target = remindHabit.target
+            assertNotNull(target)
+            assertEquals("h1", target!!.habitId)
+            assertTrue(target.isCheck)
             assertEquals(SlotKind.HABIT, remindHabit.slot.kind)
 
             db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
@@ -202,9 +227,77 @@ class ReminderUseCaseTest {
 
             assertTrue(outcome is ReminderUseCase.Outcome.RemindHabit)
             val remindHabit = outcome as ReminderUseCase.Outcome.RemindHabit
-            assertFalse(remindHabit.target.isCheck)
-            assertEquals(2, remindHabit.target.amount)
+            val target = remindHabit.target
+            assertNotNull(target)
+            assertFalse(target!!.isCheck)
+            assertEquals(2, target.amount)
         }
+
+    @Test
+    fun `a habit slot for a duration habit reports no quick target while still pending`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "Meditar",
+                    metric = Metric.DURATION,
+                    direction = Direction.AT_LEAST,
+                    target = 30,
+                    unit = "min",
+                    reminderMinutes = 600,
+                    createdOnDay = today,
+                ),
+            )
+
+            val outcome = useCase.evaluate("HABIT", "h1")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.RemindHabit)
+            val remindHabit = outcome as ReminderUseCase.Outcome.RemindHabit
+            assertEquals("Meditar", remindHabit.name)
+            assertNull(remindHabit.target)
+        }
+
+    @Test
+    fun `a habit slot whose card is missing from today stays silent`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    metric = Metric.CHECK,
+                    direction = Direction.AT_LEAST,
+                    target = 1,
+                    reminderMinutes = 600,
+                    createdOnDay = today + 5,
+                ),
+            )
+
+            val outcome = useCase.evaluate("HABIT", "h1")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Silent)
+            assertEquals(SlotKind.HABIT, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
+        }
+
+    @Test
+    fun `a check card yields a done quick target`() {
+        val target = quickTargetOf(card(CardKind.CHECK))
+        assertEquals(QuickTarget("h1", "Agua", 1, isCheck = true), target)
+    }
+
+    @Test
+    fun `a counter card yields a quick target sized to its step`() {
+        val target = quickTargetOf(card(CardKind.COUNTER, step = 3))
+        assertEquals(QuickTarget("h1", "Agua", 3, isCheck = false), target)
+    }
+
+    @Test
+    fun `a duration card yields no quick target`() {
+        assertNull(quickTargetOf(card(CardKind.DURATION)))
+    }
+
+    @Test
+    fun `an abstinence card yields no quick target`() {
+        assertNull(quickTargetOf(card(CardKind.ABSTINENCE)))
+    }
 
     @Test
     fun `a habit slot whose card failed today stays silent`() =

@@ -52,25 +52,31 @@ object Notifier {
 
     /**
      * The HABIT reminder: a single habit's own slot, still open and unfailed. Posted under its
-     * own [QuickTarget.habitId]-derived id so it can stack alongside other per-habit reminders
-     * and the GLOBAL one instead of clobbering them.
+     * own [habitId]-derived id so it can stack alongside other per-habit reminders and the
+     * GLOBAL one instead of clobbering them. [target] is `null` for habit kinds with no honest
+     * quick action (DURATION, ABSTINENCE) — the notification still fires, just without a
+     * button; tapping it only opens the app.
      */
     fun showSingleHabit(
         context: Context,
-        target: QuickTarget,
+        habitId: String,
+        name: String,
+        target: QuickTarget?,
     ) {
-        val id = target.habitId.hashCode()
-        val label =
-            if (target.isCheck) {
-                context.getString(R.string.notif_action_done)
-            } else {
-                context.getString(R.string.notif_action_add, target.amount)
-            }
+        val id = habitId.hashCode()
         val builder =
             baseBuilder(context, NotificationChannels.REMINDERS)
-                .setContentTitle(context.getString(R.string.notif_reminder_single_title, target.name))
+                .setContentTitle(context.getString(R.string.notif_reminder_single_title, name))
                 .setContentText(context.getString(R.string.notif_reminder_single_body))
-                .addAction(0, label, quickActionIntent(context, target.habitId, target.amount, id))
+        if (target != null) {
+            val label =
+                if (target.isCheck) {
+                    context.getString(R.string.notif_action_done)
+                } else {
+                    context.getString(R.string.notif_action_add, target.amount)
+                }
+            builder.addAction(0, label, quickActionIntent(context, target.habitId, target.amount, id))
+        }
         notify(context, id, builder)
     }
 
@@ -106,7 +112,13 @@ object Notifier {
         )
     }
 
-    /** [notificationId] is the tray id this action's notification was posted under, so the receiver can clear it. */
+    /**
+     * [notificationId] is the tray id this action's notification was posted under, so the
+     * receiver can clear it. The request code must be unique per (habit, notification) — not
+     * just per habit — because [Intent.filterEquals] ignores extras: the same habit's GLOBAL
+     * and HABIT actions would otherwise collide on the same [PendingIntent] and
+     * `FLAG_UPDATE_CURRENT` would silently rewrite [notificationId] to whichever posted last.
+     */
     private fun quickActionIntent(
         context: Context,
         habitId: String,
@@ -118,9 +130,10 @@ object Notifier {
                 .putExtra("habitId", habitId)
                 .putExtra("amount", amount)
                 .putExtra("notificationId", notificationId)
+        val requestCode = 31 * habitId.hashCode() + notificationId
         return PendingIntent.getBroadcast(
             context,
-            habitId.hashCode(),
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

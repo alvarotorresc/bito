@@ -5,6 +5,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.today.CardKind
+import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
@@ -29,8 +30,12 @@ class ReminderUseCase(
         /** The GLOBAL slot still has pending habits. */
         data class Remind(val payload: ReminderPayload, val slot: Slot) : Outcome
 
-        /** The HABIT slot's own card is still open and unfailed. */
-        data class RemindHabit(val target: QuickTarget, val slot: Slot) : Outcome
+        /**
+         * The HABIT slot's own card is still open and unfailed. [target] is `null` for kinds
+         * with no honest quick action (DURATION, ABSTINENCE — see [quickTargetOf]): the
+         * notification still fires under [name], just without an action button.
+         */
+        data class RemindHabit(val name: String, val target: QuickTarget?, val slot: Slot) : Outcome
 
         /** The REVIEW slot found something unsealed or still open today. */
         data class Review(val slot: Slot) : Outcome
@@ -60,11 +65,24 @@ class ReminderUseCase(
                 if (card == null || card.doneToday || card.failed) {
                     Outcome.Silent(slot)
                 } else {
-                    val amount = if (card.kind == CardKind.COUNTER) card.step else 1
-                    Outcome.RemindHabit(QuickTarget(card.id, card.name, amount, isCheck = card.kind == CardKind.CHECK), slot)
+                    Outcome.RemindHabit(card.name, quickTargetOf(card), slot)
                 }
             }
             SlotKind.REVIEW -> if (reviewIsPending(state)) Outcome.Review(slot) else Outcome.Silent(slot)
         }
     }
 }
+
+/**
+ * The quick action a personal HABIT reminder can honestly offer for [card], or `null` when
+ * there isn't one: a DURATION or ABSTINENCE card has no single-tap action that logs the right
+ * thing (a "+1" on an abstinence habit would log a relapse — the exact anti-sargento violation
+ * [buildReminderPayload] already avoids on the GLOBAL path). Only CHECK/COUNTER get a button;
+ * everything else still gets its reminder, just without one.
+ */
+fun quickTargetOf(card: HabitCardUi): QuickTarget? =
+    when (card.kind) {
+        CardKind.CHECK -> QuickTarget(card.id, card.name, amount = 1, isCheck = true)
+        CardKind.COUNTER -> QuickTarget(card.id, card.name, amount = card.step, isCheck = false)
+        CardKind.DURATION, CardKind.ABSTINENCE -> null
+    }

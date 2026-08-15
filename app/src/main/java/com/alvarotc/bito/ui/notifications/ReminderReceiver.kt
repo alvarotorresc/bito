@@ -46,7 +46,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.RemindHabit -> {
-                Notifier.showSingleHabit(context, outcome.target)
+                Notifier.showSingleHabit(context, outcome.slot.key, outcome.name, outcome.target)
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.Review -> {
