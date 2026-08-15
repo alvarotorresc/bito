@@ -21,7 +21,7 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 The following Lucide icons ported in BitoIcons.kt are derived from the
 Feather project and remain additionally covered by Feather's MIT license:
-check, chevron-down, chevron-left, download, trash-2, upload, x.
+check, chevron-down, chevron-left, download, minus, plus, trash-2, upload, x.
 
 The MIT License (MIT) (for the icons listed above)
 
