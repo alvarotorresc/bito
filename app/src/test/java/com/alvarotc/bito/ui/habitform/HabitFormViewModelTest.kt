@@ -283,4 +283,40 @@ class HabitFormViewModelTest {
             assertFalse(saved)
             assertTrue(db.habitDao().all().isEmpty())
         }
+
+    @Test
+    fun `setTarget clamps like the stepper does`() =
+        runTest {
+            val vm = newViewModel()
+            vm.selectPreset(HabitPreset.QUANTITY) // default target 8
+
+            vm.setTarget(500)
+            assertEquals(500, vm.state.value.target)
+
+            vm.setTarget(0)
+            assertEquals(1, vm.state.value.target)
+        }
+
+    @Test
+    fun `weekly times still cap at seven through direct input`() =
+        runTest {
+            val vm = newViewModel()
+            vm.selectPreset(HabitPreset.WEEKLY_TIMES) // default target 3
+
+            vm.setTarget(12)
+
+            assertEquals(7, vm.state.value.target)
+        }
+
+    @Test
+    fun `setTarget keeps a QUIT TOTAL target pinned at zero`() =
+        runTest {
+            val vm = newViewModel()
+            vm.selectPreset(HabitPreset.QUIT)
+            vm.selectQuitMode(QuitMode.TOTAL)
+
+            vm.setTarget(50)
+
+            assertEquals(0, vm.state.value.target)
+        }
 }

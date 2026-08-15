@@ -166,4 +166,41 @@ class HabitFormScreenTest {
         assertEquals(LogMode.COUNTER, updated.logMode)
         assertEquals(9, updated.target)
     }
+
+    @Test
+    fun `duration targets jump by ten`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-plus10").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("30").assertExists()
+    }
+
+    @Test
+    fun `tapping the target number opens direct input`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-value").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-input").assertExists()
+    }
+
+    @Test
+    fun `quantity targets keep the single-step stepper`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-plus").assertExists()
+        compose.onNodeWithTag("target-plus10").assertDoesNotExist()
+    }
 }

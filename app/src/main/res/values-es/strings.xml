@@ -53,6 +53,7 @@
     <string name="period_day">día</string>
     <string name="period_week">semana</string>
     <string name="period_month">mes</string>
+    <string name="target_input_title">Pon el objetivo</string>
     <string name="unit_hint">Unidad (vasos, páginas…)</string>
     <string name="more_options">Más opciones</string>
     <string name="binary_mode">Solo cumplido</string>

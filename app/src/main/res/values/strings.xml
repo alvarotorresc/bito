@@ -58,6 +58,7 @@
     <string name="period_day">day</string>
     <string name="period_week">week</string>
     <string name="period_month">month</string>
+    <string name="target_input_title">Set the target</string>
     <string name="unit_hint">Unit (glasses, pages…)</string>
     <string name="more_options">More options</string>
     <string name="binary_mode">Just done / not done</string>

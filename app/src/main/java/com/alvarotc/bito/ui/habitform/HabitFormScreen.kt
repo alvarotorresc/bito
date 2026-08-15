@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -40,6 +41,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
@@ -47,6 +49,7 @@ import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostPillButton
+import com.alvarotc.bito.ui.components.NumberInputSheet
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.SpeechBubble
@@ -88,6 +91,7 @@ fun HabitFormScreen(
             TargetSection(
                 state = state,
                 onAdjustTarget = viewModel::adjustTarget,
+                onSetTarget = viewModel::setTarget,
                 onSelectPeriod = viewModel::selectPeriod,
                 onSelectQuitMode = viewModel::selectQuitMode,
                 onSelectLimitMetric = viewModel::selectLimitMetric,
@@ -166,6 +170,9 @@ private fun NameField(
             placeholder = { Text(stringResource(R.string.name_hint), color = TintaSuave) },
             textStyle = MaterialTheme.typography.titleMedium.copy(color = Tinta),
             colors = borderlessFieldColors(),
+            // QA3: names read better sentence-cased ("Meditar" not "meditar"); the keyboard
+            // itself opens on a capital letter instead of forcing a manual shift.
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         )
     }
 }
@@ -228,6 +235,7 @@ private val PERIOD_OPTIONS = listOf(Period.DAY, Period.WEEK, Period.MONTH)
 private fun TargetSection(
     state: HabitFormState,
     onAdjustTarget: (Int) -> Unit,
+    onSetTarget: (Int) -> Unit,
     onSelectPeriod: (Period) -> Unit,
     onSelectQuitMode: (QuitMode) -> Unit,
     onSelectLimitMetric: (Metric) -> Unit,
@@ -255,7 +263,7 @@ private fun TargetSection(
                 }
             }
 
-            TargetStepper(state, onAdjustTarget)
+            TargetStepper(state, onAdjustTarget, onSetTarget)
 
             val showPeriod =
                 state.preset == HabitPreset.QUANTITY || state.preset == HabitPreset.DURATION ||
@@ -275,6 +283,8 @@ private fun TargetSection(
             }
 
             if (state.preset == HabitPreset.QUANTITY) {
+                // QA3 deliberately stops at the name field: units are written lowercase by
+                // convention ("vasos", "min"), so no KeyboardCapitalization here — noted for the PR.
                 TextField(
                     value = state.unit,
                     onValueChange = onUnitChange,
@@ -287,23 +297,41 @@ private fun TargetSection(
     }
 }
 
+/**
+ * QA4/QA5: minute targets (Duración, or a QUIT limit measured in minutes) are painful to reach
+ * one tap at a time, so they get an extra ±10 stride. The central value is always tappable —
+ * across every preset this stepper renders for — and opens [NumberInputSheet] for direct entry.
+ */
 @Composable
 private fun TargetStepper(
     state: HabitFormState,
     onAdjustTarget: (Int) -> Unit,
+    onSetTarget: (Int) -> Unit,
 ) {
     val isQuitLimitTime = state.preset == HabitPreset.QUIT && state.quitMode == QuitMode.LIMIT && state.limitMetric == Metric.DURATION
+    val isMinuteTarget = state.preset == HabitPreset.DURATION || isQuitLimitTime
     val unitLabel =
         when {
-            state.preset == HabitPreset.DURATION || isQuitLimitTime -> stringResource(R.string.unit_min)
+            isMinuteTarget -> stringResource(R.string.unit_min)
             state.preset == HabitPreset.QUANTITY -> state.unit.takeIf(String::isNotBlank)
             else -> null
         }
+    var showNumberInput by remember { mutableStateOf(false) }
+
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+        if (isMinuteTarget) {
+            IconButton(onClick = { onAdjustTarget(-10) }, modifier = Modifier.testTag("target-minus10")) {
+                Text("−10", style = MaterialTheme.typography.labelMedium, color = Tinta)
+            }
+        }
         IconButton(onClick = { onAdjustTarget(-1) }, modifier = Modifier.testTag("target-minus")) {
             Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta)
         }
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.clickable { showNumberInput = true }.testTag("target-value"),
+        ) {
             Text("${state.target}", style = MaterialTheme.typography.displayLarge, color = Tinta)
             if (unitLabel != null) {
                 Text(unitLabel, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
@@ -312,6 +340,23 @@ private fun TargetStepper(
         IconButton(onClick = { onAdjustTarget(1) }, modifier = Modifier.testTag("target-plus")) {
             Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta)
         }
+        if (isMinuteTarget) {
+            IconButton(onClick = { onAdjustTarget(10) }, modifier = Modifier.testTag("target-plus10")) {
+                Text("+10", style = MaterialTheme.typography.labelMedium, color = Tinta)
+            }
+        }
+    }
+
+    if (showNumberInput) {
+        NumberInputSheet(
+            title = stringResource(R.string.target_input_title),
+            initial = state.target,
+            onConfirm = {
+                onSetTarget(it)
+                showNumberInput = false
+            },
+            onDismiss = { showNumberInput = false },
+        )
     }
 }
 

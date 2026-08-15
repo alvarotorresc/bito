@@ -23,6 +23,15 @@ import java.util.UUID
 /** A WEEKLY_TIMES target counts days, not sessions: 7 is the physical weekly maximum. */
 private const val MAX_WEEKLY_TIMES = 7
 
+/** Single source of truth for target clamping, shared by [HabitFormViewModel.adjustTarget] and [HabitFormViewModel.setTarget]. */
+private fun HabitFormState.clampTarget(raw: Int): Int =
+    if (preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL) {
+        0
+    } else {
+        val max = if (preset == HabitPreset.WEEKLY_TIMES) MAX_WEEKLY_TIMES else Int.MAX_VALUE
+        raw.coerceIn(1, max)
+    }
+
 /** Backs the habit create/edit form: one state shape drives all five presets. */
 class HabitFormViewModel(
     private val habits: HabitsRepository,
@@ -54,15 +63,10 @@ class HabitFormViewModel(
         }
 
     /** Min 1, except QUIT TOTAL which has no target and stays pinned at 0; WEEKLY_TIMES caps at 7. */
-    fun adjustTarget(delta: Int) =
-        formState.update { s ->
-            if (s.preset == HabitPreset.QUIT && s.quitMode == QuitMode.TOTAL) {
-                s.copy(target = 0)
-            } else {
-                val max = if (s.preset == HabitPreset.WEEKLY_TIMES) MAX_WEEKLY_TIMES else Int.MAX_VALUE
-                s.copy(target = (s.target + delta).coerceIn(1, max))
-            }
-        }
+    fun adjustTarget(delta: Int) = formState.update { s -> s.copy(target = s.clampTarget(s.target + delta)) }
+
+    /** Direct numeric entry from [com.alvarotc.bito.ui.components.NumberInputSheet] — same clamp as [adjustTarget]. */
+    fun setTarget(value: Int) = formState.update { s -> s.copy(target = s.clampTarget(value)) }
 
     fun setUnit(unit: String) = formState.update { it.copy(unit = unit) }
 
