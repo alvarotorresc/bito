@@ -40,4 +40,35 @@
     <string name="nav_new_habit">New habit</string>
     <string name="nav_settings">Settings</string>
     <string name="edit_habit_hint">Edit %1$s</string>
+
+    <string name="form_title_new">New habit</string>
+    <string name="form_title_edit">Edit habit</string>
+    <string name="habi_form_prompt">What habit are we building? Name it and pick its shape — everything else can wait.</string>
+    <string name="habi_speaker" translatable="false">HABI · %1$s</string>
+    <string name="personality_neutra">NEUTRAL</string>
+    <string name="name_hint">Habit name</string>
+    <string name="preset_daily">Daily</string>
+    <string name="preset_quantity">Amount</string>
+    <string name="preset_duration">Time</string>
+    <string name="preset_weekly">Per week</string>
+    <string name="preset_quit">Quit</string>
+    <string name="preset_locked_hint">Type can\'t change — archive and create a new one</string>
+    <string name="quit_total">Cold turkey</string>
+    <string name="quit_limit">With a limit</string>
+    <string name="limit_amount">Times</string>
+    <string name="limit_time">Minutes</string>
+    <string name="period_day">day</string>
+    <string name="period_week">week</string>
+    <string name="period_month">month</string>
+    <string name="unit_hint">Unit (glasses, pages…)</string>
+    <string name="more_options">More options</string>
+    <string name="binary_mode">Just done / not done</string>
+    <string name="binary_mode_hint">The goal is a written reference; logging is one tap</string>
+    <string name="step_label">Tap adds</string>
+    <string name="save_habit">Save</string>
+    <string name="delete_habit">Delete habit</string>
+    <string name="delete_confirm_title">Delete forever?</string>
+    <string name="delete_confirm_body">Its whole history goes with it. Points you earned stay yours.</string>
+    <string name="delete_confirm_yes">Delete</string>
+    <string name="back">Back</string>
 </resources>
