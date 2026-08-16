@@ -19,6 +19,10 @@ import com.alvarotc.bito.ui.habitform.HabitFormViewModel
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
+import com.alvarotc.bito.ui.stats.NumbersScreen
+import com.alvarotc.bito.ui.stats.NumbersViewModel
+import com.alvarotc.bito.ui.stats.RecordsScreen
+import com.alvarotc.bito.ui.stats.RecordsViewModel
 import com.alvarotc.bito.ui.stats.StatsScreen
 import com.alvarotc.bito.ui.stats.StatsViewModel
 import com.alvarotc.bito.ui.theme.Papel
@@ -94,6 +98,18 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = StatsViewModel.factory(container)),
                     onOpenRecords = { nav.navigate("records") },
                     onOpenNumbers = { nav.navigate("numbers") },
+                )
+            }
+            composable("records") {
+                RecordsScreen(
+                    viewModel = viewModel(factory = RecordsViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
+                )
+            }
+            composable("numbers") {
+                NumbersScreen(
+                    viewModel = viewModel(factory = NumbersViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
                 )
             }
         }
