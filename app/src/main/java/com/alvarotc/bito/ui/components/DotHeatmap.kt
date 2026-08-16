@@ -51,7 +51,9 @@ fun DotHeatmap(
     val cells: List<HeatmapDay?> = List(leadingBlanks) { null } + days
     Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         cells.chunked(COLUMNS).forEach { week ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            // 3dp (not 4dp): part of the touch-floor fix — see HeatmapSection's comment in
+            // DetailScreen.kt for the full horizontal-budget accounting.
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 week.forEach { day -> HeatmapCell(day, onDayTap, Modifier.weight(1f)) }
                 // Pad a short last row so every column keeps its width, matching the full rows.
                 repeat(COLUMNS - week.size) { Box(Modifier.weight(1f).heightIn(min = 44.dp)) }

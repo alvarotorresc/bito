@@ -267,28 +267,42 @@ private fun HeatmapSection(
 ) {
     val currentRealMonth = remember(current.today) { YearMonth.from(LocalDate.ofEpochDay(current.today.toLong())) }
     val nextDisabled = current.month >= currentRealMonth
-    BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            GhostIconButton(
-                BitoIcons.ChevronLeft,
-                contentDescription = stringResource(R.string.previous_month),
-                onClick = onPrevMonth,
-            )
-            Text(
-                current.month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())),
-                style = MaterialTheme.typography.titleMedium,
-                color = Tinta,
-                modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
-            )
-            GhostIconButton(
-                BitoIcons.ChevronRight,
-                contentDescription = stringResource(R.string.next_month),
-                onClick = { if (!nextDisabled) onNextMonth() },
-                color = if (nextDisabled) TintaSuave.copy(alpha = 0.4f) else TintaSuave,
+    // The month header keeps the card's usual 20dp inset; only the day grid gets a tighter one of
+    // its own (8dp, plus a 3dp inter-cell gap instead of 4dp) — at BitoCard's default 20dp on all
+    // sides, 7 columns landed at ~41-44dp, under the guide's ≥44dp touch floor at the narrowest
+    // supported width. Trimming just the grid's budget (not the header's) clears it with headroom
+    // at both w393dp and w411dp without touching the screen's 20dp margins.
+    BitoCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
+        Column(Modifier.padding(vertical = 20.dp)) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                GhostIconButton(
+                    BitoIcons.ChevronLeft,
+                    contentDescription = stringResource(R.string.previous_month),
+                    onClick = onPrevMonth,
+                )
+                Text(
+                    current.month.atDay(1).format(DateTimeFormatter.ofPattern("MMMM yyyy", Locale.getDefault())),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Tinta,
+                    modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
+                )
+                GhostIconButton(
+                    BitoIcons.ChevronRight,
+                    contentDescription = stringResource(R.string.next_month),
+                    onClick = { if (!nextDisabled) onNextMonth() },
+                    color = if (nextDisabled) TintaSuave.copy(alpha = 0.4f) else TintaSuave,
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            DotHeatmap(
+                days = current.heatmap,
+                onDayTap = onDayTap,
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).testTag("heatmap"),
             )
         }
-        Spacer(Modifier.height(12.dp))
-        DotHeatmap(days = current.heatmap, onDayTap = onDayTap, modifier = Modifier.fillMaxWidth().testTag("heatmap"))
     }
 }
 

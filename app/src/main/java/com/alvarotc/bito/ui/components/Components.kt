@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.BitoTheme
@@ -57,17 +58,20 @@ fun BitoCard(
     modifier: Modifier = Modifier,
     container: Color = Tarjeta,
     border: Color = Borde,
+    // 20dp on every call site but the habit-detail heatmap, which needs its day grid tighter than
+    // the card's usual inset to clear the ≥44dp touch floor — see DetailScreen.kt's HeatmapSection.
+    contentPadding: Dp = 20.dp,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = RoundedCornerShape(24.dp)
     if (onClick != null) {
         Surface(onClick = onClick, modifier = modifier, shape = shape, color = container, border = BorderStroke(1.dp, border)) {
-            Column(Modifier.padding(20.dp), content = content)
+            Column(Modifier.padding(contentPadding), content = content)
         }
     } else {
         Surface(modifier = modifier, shape = shape, color = container, border = BorderStroke(1.dp, border)) {
-            Column(Modifier.padding(20.dp), content = content)
+            Column(Modifier.padding(contentPadding), content = content)
         }
     }
 }

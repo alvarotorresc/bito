@@ -2,9 +2,12 @@ package com.alvarotc.bito.ui.detail
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -133,6 +136,27 @@ class DetailScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag("day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `heatmap day cells meet the 44dp touch floor`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        // The suite's own qualifier (w411dp-h891dp) is where the pre-fix 20dp BitoCard padding +
+        // 4dp gaps measured exactly 44.0dp per cell — the guide's floor with zero margin, and
+        // Compose's assertIsAtLeast has its own ~0.5dp tolerance, so asserting the bare 44.dp
+        // floor would not actually fail against that value. 46dp sits with real headroom above
+        // the pre-fix measurement and below the post-fix one (48.0dp), so this is a genuine
+        // regression guard rather than a boundary-exact check the tolerance would swallow — see
+        // DetailScreen.kt's HeatmapSection comment for the fix and the w393dp/w411dp accounting.
+        compose.onNodeWithTag("heatmap-day-$today", useUnmergedTree = true)
+            .assertWidthIsAtLeast(46.dp)
+            .assertHeightIsAtLeast(46.dp)
     }
 
     @Test
