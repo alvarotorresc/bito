@@ -77,4 +77,51 @@ object BitoIcons {
             "M14 11v6",
         )
     }
+    val ChartColumn by lazy {
+        lucide(
+            "chart-no-axes-column",
+            "M5 21v-6",
+            "M12 21V3",
+            "M19 21V9",
+        )
+    }
+    val Snowflake by lazy {
+        lucide(
+            "snowflake",
+            "m10 20-1.25-2.5L6 18",
+            "M10 4 8.75 6.5 6 6",
+            "m14 20 1.25-2.5L18 18",
+            "m14 4 1.25 2.5L18 6",
+            "m17 21-3-6h-4",
+            "m17 3-3 6 1.5 3",
+            "M2 12h6.5L10 9",
+            "m20 10-1.5 2 1.5 2",
+            "M22 12h-6.5L14 15",
+            "m4 10 1.5 2L4 14",
+            "m7 21 3-6-1.5-3",
+            "m7 3 3 6h4",
+        )
+    }
+    val Pause by lazy {
+        lucide(
+            "pause",
+            "M15 3h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z",
+            "M6 3h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z",
+        )
+    }
+    val Play by lazy {
+        lucide(
+            "play",
+            "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z",
+        )
+    }
+    val Archive by lazy {
+        lucide(
+            "archive",
+            "M3 3h18a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z",
+            "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8",
+            "M10 12h4",
+        )
+    }
+    val ChevronRight by lazy { lucide("chevron-right", "m9 18 6-6-6-6") }
 }

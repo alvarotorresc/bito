@@ -72,4 +72,31 @@ class BitoNavHostTest {
 
         compose.onNodeWithText("Today", useUnmergedTree = true).assertExists()
     }
+
+    @Test
+    fun `the stats tab navigates to the stats screen and keeps the bottom bar`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Stats", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the bottom bar hides on the habit form but survives on stats`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
 }

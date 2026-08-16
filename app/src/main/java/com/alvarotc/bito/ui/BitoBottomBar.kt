@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,11 +29,15 @@ import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 
-/** Lives above the NavHost (in the shared Scaffold) so it survives route changes. */
+/**
+ * Lives above the NavHost (in the shared Scaffold) so it survives route changes.
+ * Visual order: Hoy · Stats · «+» · Ajustes (M6 slots Habi between «+» and Ajustes).
+ */
 @Composable
 fun BitoBottomBar(
     currentRoute: String?,
     onToday: () -> Unit,
+    onStats: () -> Unit,
     onCreate: () -> Unit,
     onSettings: () -> Unit,
 ) {
@@ -46,21 +51,8 @@ fun BitoBottomBar(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(20.dp),
             ) {
-                if (currentRoute == "today") {
-                    Box(
-                        Modifier.size(40.dp).clip(CircleShape).background(HojaTinte),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(BitoIcons.Home, contentDescription = stringResource(R.string.nav_today), tint = Tinta)
-                    }
-                } else {
-                    Icon(
-                        BitoIcons.Home,
-                        contentDescription = stringResource(R.string.nav_today),
-                        tint = TintaSuave,
-                        modifier = Modifier.size(24.dp).clickable(onClick = onToday),
-                    )
-                }
+                NavSlot(BitoIcons.Home, stringResource(R.string.nav_today), currentRoute == "today", onToday)
+                NavSlot(BitoIcons.ChartColumn, stringResource(R.string.nav_stats), currentRoute == "stats", onStats)
                 Box(
                     Modifier
                         .size(56.dp)
@@ -71,22 +63,33 @@ fun BitoBottomBar(
                 ) {
                     Icon(BitoIcons.Plus, contentDescription = stringResource(R.string.nav_new_habit), tint = Tarjeta)
                 }
-                if (currentRoute == "settings") {
-                    Box(
-                        Modifier.size(40.dp).clip(CircleShape).background(HojaTinte),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(BitoIcons.Settings, contentDescription = stringResource(R.string.nav_settings), tint = Tinta)
-                    }
-                } else {
-                    Icon(
-                        BitoIcons.Settings,
-                        contentDescription = stringResource(R.string.nav_settings),
-                        tint = TintaSuave,
-                        modifier = Modifier.size(24.dp).clickable(onClick = onSettings),
-                    )
-                }
+                NavSlot(BitoIcons.Settings, stringResource(R.string.nav_settings), currentRoute == "settings", onSettings)
             }
         }
+    }
+}
+
+/** One bottom-bar destination: a highlighted, non-interactive circle when [selected], a plain tappable glyph otherwise. */
+@Composable
+private fun NavSlot(
+    icon: ImageVector,
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+) {
+    if (selected) {
+        Box(
+            Modifier.size(40.dp).clip(CircleShape).background(HojaTinte),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(icon, contentDescription = label, tint = Tinta)
+        }
+    } else {
+        Icon(
+            icon,
+            contentDescription = label,
+            tint = TintaSuave,
+            modifier = Modifier.size(24.dp).clickable(onClick = onClick),
+        )
     }
 }

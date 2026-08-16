@@ -17,6 +17,7 @@ import com.alvarotc.bito.ui.habitform.HabitFormViewModel
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
+import com.alvarotc.bito.ui.stats.StatsScreen
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
@@ -29,10 +30,11 @@ fun BitoNavHost(container: AppContainer) {
     Scaffold(
         containerColor = Papel,
         bottomBar = {
-            if (currentRoute == "today" || currentRoute == "settings") {
+            if (currentRoute in setOf("today", "stats", "settings")) {
                 BitoBottomBar(
                     currentRoute = currentRoute,
                     onToday = { nav.popBackStack("today", inclusive = false) },
+                    onStats = { nav.navigate("stats") { launchSingleTop = true } },
                     onCreate = { nav.navigate("habit") },
                     onSettings = { nav.navigate("settings") { launchSingleTop = true } },
                 )
@@ -75,6 +77,9 @@ fun BitoNavHost(container: AppContainer) {
                     settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
                 )
+            }
+            composable("stats") {
+                StatsScreen()
             }
         }
     }

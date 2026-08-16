@@ -32,6 +32,7 @@
     <string name="empty_today_body">Crea tu primer hábito — registrarlo te costará casi nada.</string>
     <string name="create_habit">Crear hábito</string>
     <string name="nav_today">Hoy</string>
+    <string name="nav_stats">Estadísticas</string>
     <string name="nav_new_habit">Nuevo hábito</string>
     <string name="nav_settings">Ajustes</string>
     <string name="edit_habit_hint">Editar %1$s</string>
