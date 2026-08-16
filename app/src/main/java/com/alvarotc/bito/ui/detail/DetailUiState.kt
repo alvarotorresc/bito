@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.detail
 
+import com.alvarotc.bito.domain.Compliance
 import com.alvarotc.bito.domain.HabitStats
 import com.alvarotc.bito.domain.Heatmap
 import com.alvarotc.bito.domain.HeatmapDay
@@ -35,6 +36,11 @@ data class DetailUiState(
     val windows: List<WindowStats>,
     val month: YearMonth,
     val heatmap: List<HeatmapDay>,
+    // The displayed month's per-day logged total (COUNTER/DURATION) or day-count (CHECK), keyed
+    // by day. Lets the day sheet prefill what was actually logged instead of a bare 0 — without it
+    // `setDayValue`'s replace-the-day-total write silently discards a day's history whenever the
+    // sheet is opened and dismissed without the user noticing the field was empty.
+    val dayValues: Map<LogicalDay, Int>,
     val freezersOwned: Int,
     val freezerPrice: Int,
     val balance: Int,
@@ -65,6 +71,13 @@ fun buildDetailUiState(
     // inventory is meaningless on the detail of a WEEK/MONTH habit, so it is zeroed here rather
     // than left for the screen to remember to ignore.
     val freezersOwned = if (habit.period == Period.DAY) PointsEngine.freezersOwned(state) else 0
+    val monthStart = month.atDay(1).toEpochDay().toInt()
+    val monthEnd = month.atEndOfMonth().toEpochDay().toInt()
+    val dayValues =
+        state.entries
+            .filter { it.habitId == habitId && it.logicalDay in monthStart..monthEnd }
+            .groupBy { it.logicalDay }
+            .mapValues { (_, dayEntries) -> Compliance.progressOf(habit, dayEntries) }
     return DetailUiState(
         habitId = habit.id,
         name = habit.name,
@@ -78,6 +91,7 @@ fun buildDetailUiState(
         windows = WINDOW_SIZES.map { HabitStats.windowStats(state, habit, today, it) },
         month = month,
         heatmap = Heatmap.monthOf(state, habit, month, today),
+        dayValues = dayValues,
         freezersOwned = freezersOwned,
         freezerPrice = economy.freezerPrice,
         balance = PointsEngine.balance(state.pointsLedger),

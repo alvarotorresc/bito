@@ -7,6 +7,7 @@ import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.TODAY
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
+import com.alvarotc.bito.domain.entryOn
 import com.alvarotc.bito.domain.ledgerEntry
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
@@ -64,6 +65,18 @@ class DetailUiStateTest {
         val dailyState = domainState(habits = listOf(daily), ledger = listOf(ledgerEntry(delta = -30, reason = PointsReason.BUY_FREEZER)))
         val dailyResult = buildDetailUiState(dailyState, daily.id, YearMonth.of(2026, 8), TODAY)!!
         assertEquals(1, dailyResult.freezersOwned)
+    }
+
+    @Test
+    fun `day values sum a counter habit's entries so the day sheet can prefill instead of losing history`() {
+        val habit = RealHabits.water
+        val entries = listOf(entryOn(habit, TODAY - 1, value = 3), entryOn(habit, TODAY - 1, value = 2))
+        val state = domainState(habits = listOf(habit), entries = entries)
+
+        val result = buildDetailUiState(state, habit.id, YearMonth.of(2026, 8), TODAY)!!
+
+        assertEquals(5, result.dayValues[TODAY - 1])
+        assertNull(result.dayValues[TODAY - 2])
     }
 
     @Test

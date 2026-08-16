@@ -140,7 +140,7 @@ fun DetailScreen(
         DaySheet(
             day = day,
             kind = current.kind,
-            currentValue = 0,
+            currentValue = current.dayValues[day] ?: 0,
             freezerOffered = freezerOffered,
             freezersOwned = current.freezersOwned,
             actions =
