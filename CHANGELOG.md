@@ -2,6 +2,33 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [0.5.0] - 2026-08-16
+
+### Added
+
+- Pantalla de detalle de cada hábito: la racha actual en grande con su récord, un calendario mensual de puntos con el día de hoy destacado, y el porcentaje de cumplimiento a 7 días, 30 días y un año.
+- Registro retroactivo desde el calendario: toca cualquier día pasado para corregirlo — marcar hecho, poner el valor exacto, apuntar una recaída o dejar el día limpio y sellado.
+- Congeladores de racha: se compran con puntos y se aplican a mano sobre un día fallado para que no rompa la racha (precio provisional hasta la sesión de economía).
+- Pantalla de Estadísticas: Habi comenta cómo vas, días perfectos, tu semana hábito a hábito con comparación contra la anterior, y el muro de rachas activas.
+- Pantallas de Récords (mejores rachas de siempre, archivados incluidos) y Tus números (totales de registros, puntos, congeladores y hábitos).
+- Pausar y archivar hábitos: la pausa no rompe la racha y se ve en las estadísticas; archivar conserva todo el historial y se puede deshacer desde Ajustes.
+
+### Changed
+
+- Tocar una tarjeta en Hoy ahora abre su detalle; editar vive en el lápiz del detalle.
+- "He recaído" se muda de la tarjeta de Hoy al detalle del hábito.
+- La barra inferior gana la pestaña de Estadísticas.
+- Los hábitos en pausa aparecen agrupados al final de Hoy para poder reanudarlos con un toque.
+
+### Fixed
+
+- Los avisos ya no mienten: registrar dentro de la app actualiza o retira la notificación pendiente, y las actualizaciones no vuelven a sonar.
+- Al recuperar el permiso de alarmas exactas, los avisos vuelven a ser puntuales al momento, sin esperar al siguiente disparo.
+- Crear un recordatorio por hábito ahora pide el permiso de notificaciones si falta.
+- En los hábitos de dejar algo, la fila de recordatorio explica por qué no hay avisos (Bito no te recuerda lo que intentas evitar).
+- El progreso semanal ya no se infla con registros hechos en días pausados.
+- Archivar un hábito pausado cierra la pausa para que al reactivarlo vuelva a contar de verdad.
+
 ## [0.4.0] - 2026-08-16
 
 ### Added
