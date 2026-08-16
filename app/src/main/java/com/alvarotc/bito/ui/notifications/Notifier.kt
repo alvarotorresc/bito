@@ -106,6 +106,11 @@ object Notifier {
             .setColor(Hoja.toArgb())
             .setContentIntent(contentIntent(context))
             .setAutoCancel(true)
+            // TrayRefresher re-posts the GLOBAL reminder on every in-app write while it's showing
+            // (recomputed content, same id) — without this, each of those updates would re-alert
+            // (sound/vibration) exactly like a brand-new notification. Only the very first post
+            // should alert; every refresh after that is silent.
+            .setOnlyAlertOnce(true)
 
     private fun contentIntent(context: Context): PendingIntent {
         val intent = Intent(context, MainActivity::class.java)

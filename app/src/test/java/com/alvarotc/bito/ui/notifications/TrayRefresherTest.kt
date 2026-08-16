@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.notifications
 
+import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
 import androidx.core.app.NotificationCompat
@@ -25,8 +26,10 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -88,6 +91,14 @@ class TrayRefresherTest {
         NotificationManagerCompat.from(context).notify(Notifier.REMINDER_ID, notification)
     }
 
+    /** [Notification.EXTRA_TITLE] of whatever is currently posted under [Notifier.REMINDER_ID], or `null`. */
+    private fun postedTitle(): String? =
+        shadowOf(notificationManager)
+            .getNotification(Notifier.REMINDER_ID)
+            ?.extras
+            ?.getCharSequence(Notification.EXTRA_TITLE)
+            ?.toString()
+
     @Test
     fun `a pending payload only refreshes an already shown notification`() =
         runTest(dispatcher) {
@@ -99,10 +110,25 @@ class TrayRefresherTest {
             TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
 
-            // Once the tray is already up, the same pending payload refreshes it.
+            // Once the tray is already up, the same pending payload refreshes its actual content —
+            // proven by the title moving off the stand-in "stale" text to the real payload title,
+            // not just by a notification of *some* kind still existing under the id.
             postStaleReminder()
             TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
-            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
+            assertEquals(context.getString(R.string.notif_reminder_title_one), postedTitle())
+        }
+
+    @Test
+    fun `treatAsActive refreshes the payload even when nothing is currently showing`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1),
+            )
+            assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
+
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true)
+
+            assertEquals(context.getString(R.string.notif_reminder_title_one), postedTitle())
         }
 
     @Test
@@ -116,5 +142,19 @@ class TrayRefresherTest {
             TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
 
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
+        }
+
+    @Test
+    fun `a refreshed reminder only alerts once, not on every re-post`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1),
+            )
+
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true)
+
+            val notification = shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID)
+            assertNotNull(notification)
+            assertTrue((notification!!.flags and Notification.FLAG_ONLY_ALERT_ONCE) != 0)
         }
 }
