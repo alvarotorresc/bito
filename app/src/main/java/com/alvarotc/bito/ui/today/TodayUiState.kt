@@ -5,7 +5,6 @@ import com.alvarotc.bito.domain.ComplianceStatus
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.Streaks
-import com.alvarotc.bito.domain.Targets
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Habit
@@ -94,15 +93,11 @@ private fun cardOf(
     val periodKey = LogicalDays.periodKeyOf(today, habit.period)
     val periodDays = LogicalDays.daysOf(periodKey, habit.period)
     val compliance = Compliance.complianceOf(state, habit, periodKey, today)
-    val entries = state.entries.filter { it.habitId == habit.id && it.logicalDay in periodDays }
+    val requirableDays = Compliance.requirableDaysOf(state, habit, periodKey)
+    val entries = state.entries.filter { it.habitId == habit.id && it.logicalDay in requirableDays }
+    val progress = Compliance.progressOf(habit, entries)
+    val target = Compliance.targetOf(state, habit, periodDays.last)
     val binaryLike = habit.metric == Metric.CHECK || habit.logMode == LogMode.BINARY
-    val progress = if (binaryLike) entries.distinctBy { it.logicalDay }.size else entries.sumOf { it.value }
-    val target =
-        if (habit.logMode == LogMode.BINARY && habit.period == Period.DAY) {
-            1
-        } else {
-            Targets.targetOn(habit, state.targetChanges, periodDays.last)
-        }
     val failed = compliance == ComplianceStatus.FAILED
     val doneToday =
         when (habit.direction) {

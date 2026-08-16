@@ -3,6 +3,10 @@ package com.alvarotc.bito.ui.today
 import com.alvarotc.bito.domain.Compliance
 import com.alvarotc.bito.domain.ComplianceStatus
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.RealHabits
+import com.alvarotc.bito.domain.THIS_MONDAY
+import com.alvarotc.bito.domain.domainState
+import com.alvarotc.bito.domain.entriesOn
 import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
@@ -14,6 +18,7 @@ import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PauseInterval
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.TargetChange
+import com.alvarotc.bito.domain.pauseOn
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -333,5 +338,20 @@ class TodayUiStateTest {
         assertEquals(CardKind.CHECK, card.kind)
         assertTrue(card.doneToday)
         assertFalse(card.nameStruckThrough)
+    }
+
+    @Test
+    fun `18 - entries on paused days do not inflate the weekly card progress`() {
+        // forces 3x/week; logged Monday and Tuesday, then a retroactive pause covers Monday-Tuesday
+        val habit = RealHabits.strengthTraining
+        val state =
+            domainState(
+                habits = listOf(habit),
+                entries = entriesOn(habit, listOf(THIS_MONDAY, THIS_MONDAY + 1)),
+                pauses = listOf(pauseOn(habit, THIS_MONDAY, THIS_MONDAY + 1)),
+            )
+        val card = buildTodayUiState(state, emptyMap(), com.alvarotc.bito.domain.TODAY).cards.single()
+        // complianceOf excludes those days; the card must count the same: 0, not 2
+        assertEquals(0, card.progress)
     }
 }

@@ -62,11 +62,9 @@ object Compliance {
     ): ComplianceStatus {
         val days = LogicalDays.daysOf(periodKey, habit.period)
         if (days.first > today) return ComplianceStatus.NOT_APPLICABLE
+        if (days.none { isAliveOn(habit, it) }) return ComplianceStatus.NOT_APPLICABLE
 
-        val aliveDays = days.filter { isAliveOn(habit, it) }
-        if (aliveDays.isEmpty()) return ComplianceStatus.NOT_APPLICABLE
-
-        val requirableDays = aliveDays.filterNot { isPausedOn(state, habit.id, it) }
+        val requirableDays = requirableDaysOf(state, habit, periodKey)
         if (requirableDays.isEmpty()) return ComplianceStatus.PAUSED
 
         val entries = state.entries.filter { it.habitId == habit.id && it.logicalDay in requirableDays }
@@ -112,6 +110,22 @@ object Compliance {
         day: LogicalDay,
     ): Boolean = isAliveOn(habit, day) && !isPausedOn(state, habit.id, day)
 
+    /**
+     * The days of the period identified by [periodKey] that actually demand
+     * something: inside the habit's life and outside every pause. Shared by
+     * [complianceOf] and the Today card builder so both count progress over
+     * the same days — otherwise a paused day could inflate a card's progress
+     * while the engine excludes it from the same period's compliance.
+     */
+    fun requirableDaysOf(
+        state: DomainState,
+        habit: Habit,
+        periodKey: Int,
+    ): List<LogicalDay> =
+        LogicalDays.daysOf(periodKey, habit.period)
+            .filter { isAliveOn(habit, it) }
+            .filterNot { isPausedOn(state, habit.id, it) }
+
     /** Whether [day] is inside any pause interval of [habitId]. */
     fun isPausedOn(
         state: DomainState,
@@ -138,7 +152,12 @@ object Compliance {
         }
     }
 
-    private fun progressOf(
+    /**
+     * The only progress arithmetic in the app: how far [entries] carry [habit]
+     * toward its goal. Public so the Today card builder shares it instead of
+     * re-deriving its own rules (they used to drift apart).
+     */
+    fun progressOf(
         habit: Habit,
         entries: List<Entry>,
     ): Int =
@@ -150,7 +169,12 @@ object Compliance {
             entries.sumOf { it.value }
         }
 
-    private fun targetOf(
+    /**
+     * The goal [habit] must reach over a period ending on [lastDayOfPeriod].
+     * Public for the same reason as [progressOf]: it is the only target
+     * arithmetic, shared by the engine and the Today card builder.
+     */
+    fun targetOf(
         state: DomainState,
         habit: Habit,
         lastDayOfPeriod: LogicalDay,
