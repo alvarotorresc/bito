@@ -251,6 +251,23 @@ class TodayViewModelTest {
         }
 
     @Test
+    fun `reorder persists the new order and the cards follow it`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(id = "a", metric = Metric.CHECK, target = 1, createdOnDay = today, sortOrder = 0),
+            )
+            habitsRepo.create(
+                habitEntity(id = "b", metric = Metric.CHECK, target = 1, createdOnDay = today, sortOrder = 1),
+            )
+            assertEquals(listOf("a", "b"), state().cards.map { it.id })
+
+            vm.reorder(listOf("b", "a"))
+            advanceUntilIdle()
+
+            assertEquals(listOf("b", "a"), state().cards.map { it.id })
+        }
+
+    @Test
     fun `sealPendingDays seals every pending day`() =
         runTest {
             habitsRepo.create(

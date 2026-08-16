@@ -63,6 +63,18 @@ class HabitsRepositoryTest {
         }
 
     @Test
+    fun `reorder rewrites sortOrder to match the given id order`() =
+        runTest {
+            repository.create(habitEntity(id = "a", sortOrder = 0, createdOnDay = DAY_ZERO))
+            repository.create(habitEntity(id = "b", sortOrder = 1, createdOnDay = DAY_ZERO))
+            repository.create(habitEntity(id = "c", sortOrder = 2, createdOnDay = DAY_ZERO))
+
+            repository.reorder(listOf("c", "a", "b"))
+
+            assertEquals(listOf("c", "a", "b"), db.habitDao().all().map { it.id })
+        }
+
+    @Test
     fun `archive stamps status and both archive fields`() =
         runTest {
             repository.create(habitEntity(id = "h1", createdOnDay = DAY_ZERO))

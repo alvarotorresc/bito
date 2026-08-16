@@ -64,6 +64,12 @@ class HabitsRepository(private val db: BitoDatabase) {
         db.habitDao().upsert(habit.copy(status = HabitStatus.ACTIVE))
     }
 
+    /** Persists a manual ordering: each habit takes its position in [orderedIds] as sortOrder. */
+    suspend fun reorder(orderedIds: List<String>) =
+        db.withTransaction {
+            orderedIds.forEachIndexed { index, id -> db.habitDao().updateSortOrder(id, index) }
+        }
+
     /** Rule E3: cascades wipe the history; earned points are never deducted. */
     suspend fun delete(id: String) = db.habitDao().delete(id)
 }

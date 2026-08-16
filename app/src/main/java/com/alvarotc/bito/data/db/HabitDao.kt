@@ -16,6 +16,12 @@ interface HabitDao {
     @Query("SELECT * FROM habits ORDER BY sortOrder, createdAtMillis")
     fun observeAll(): Flow<List<HabitEntity>>
 
+    @Query("UPDATE habits SET sortOrder = :sortOrder WHERE id = :id")
+    suspend fun updateSortOrder(
+        id: String,
+        sortOrder: Int,
+    )
+
     @Query("DELETE FROM habits WHERE id = :id")
     suspend fun delete(id: String)
 
