@@ -26,6 +26,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -188,6 +189,41 @@ class DetailScreenTest {
         setContent("check")
 
         compose.onNodeWithTag("relapse-pill", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `an archived habit only offers reactivation`() {
+        runBlocking {
+            // ZERO/target 0 so the relapse pill would render if not gated by status; period DAY
+            // so the freezer chip would render if not gated either. archivedOnDay = today - 1
+            // leaves today - 3 as a real pre-archive day with data still on the heatmap — the
+            // exact regression D2's review flagged (a past day still opening a write sheet).
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "h1",
+                    name = "No fumar",
+                    metric = Metric.CHECK,
+                    direction = Direction.ZERO,
+                    target = 0,
+                    period = Period.DAY,
+                    status = HabitStatus.ARCHIVED,
+                    createdOnDay = today - 5,
+                    archivedOnDay = today - 1,
+                ),
+            )
+        }
+        setContent("h1")
+
+        compose.onNodeWithTag("freezer-chip", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("relapse-pill", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithTag("heatmap-day-${today - 3}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("day-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithTag("pause", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("archive", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("reactivate", useUnmergedTree = true).assertExists()
     }
 
     @Test

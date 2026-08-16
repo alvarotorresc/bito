@@ -104,14 +104,17 @@ fun DetailScreen(
         ) {
             DetailHeader(current.name, onBack, { onEdit(current.habitId) })
             Monument(current)
-            if (current.period == Period.DAY) {
+            // Archived: data stays visible (monument, heatmap, % pills) but every write surface
+            // closes — no freezer purchase, no day-tap sheet, no relapse (already gated below).
+            val archived = current.status == HabitStatus.ARCHIVED
+            if (current.period == Period.DAY && !archived) {
                 FreezerChip(current.freezersOwned, onClick = { showFreezerSheet = true })
             }
             HeatmapSection(
                 current = current,
                 onPrevMonth = viewModel::previousMonth,
                 onNextMonth = viewModel::nextMonth,
-                onDayTap = { daySheetFor = it },
+                onDayTap = { day -> if (!archived) daySheetFor = day },
             )
             ComplianceSection(current.windows, windowIndex, onSelect = { windowIndex = it })
             if (current.kind == CardKind.ABSTINENCE && current.status != HabitStatus.ARCHIVED) {
