@@ -72,7 +72,7 @@ class TodayScreenTest {
     private val today = LogicalDays.logicalDayOf(fixedNow, 0, utc)
 
     private lateinit var db: BitoDatabase
-    private var editedId: String? = null
+    private var openedId: String? = null
 
     private fun settingsStore(name: String): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -111,7 +111,7 @@ class TodayScreenTest {
 
         compose.setContent {
             BitoTheme {
-                TodayScreen(vm, onCreateHabit = {}, onEditHabit = { editedId = it })
+                TodayScreen(vm, onCreateHabit = {}, onOpenHabit = { openedId = it })
             }
         }
         compose.waitForIdle()
@@ -159,15 +159,15 @@ class TodayScreenTest {
     }
 
     @Test
-    fun `tapping a card invokes onEditHabit with its id`() {
+    fun `tapping the card surface opens the detail route`() {
         compose.onNodeWithTag("card-agua", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        assertEquals("agua", editedId)
+        assertEquals("agua", openedId)
     }
 
     @Test
-    fun `tapping the duration bar opens edit instead of swallowing the tap`() {
+    fun `tapping the duration bar opens the habit detail instead of swallowing the tap`() {
         runBlocking {
             HabitsRepository(db).create(
                 habitEntity(
@@ -186,7 +186,7 @@ class TodayScreenTest {
         compose.onNodeWithTag("bar-lectura", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        assertEquals("lectura", editedId)
+        assertEquals("lectura", openedId)
         val entries = runBlocking { db.entryDao().all().filter { it.habitId == "lectura" } }
         assertTrue(entries.isEmpty())
     }

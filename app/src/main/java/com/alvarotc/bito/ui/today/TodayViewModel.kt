@@ -97,8 +97,6 @@ class TodayViewModel(
         loggedEntry.value = null
     }
 
-    fun logRelapse(card: HabitCardUi) = log(card.id, 1)
-
     fun undo() {
         val id = loggedEntry.value ?: return
         loggedEntry.value = null

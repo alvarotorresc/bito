@@ -12,6 +12,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ui.detail.DetailScreen
+import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
 import com.alvarotc.bito.ui.settings.BackupViewModel
@@ -53,7 +55,7 @@ fun BitoNavHost(container: AppContainer) {
                 TodayScreen(
                     viewModel = viewModel(factory = TodayViewModel.factory(container)),
                     onCreateHabit = { nav.navigate("habit") },
-                    onEditHabit = { nav.navigate("habit?id=$it") },
+                    onOpenHabit = { nav.navigate("detail/$it") },
                 )
             }
             composable(
@@ -69,6 +71,14 @@ fun BitoNavHost(container: AppContainer) {
                 HabitFormScreen(
                     viewModel = viewModel(factory = HabitFormViewModel.factory(container, entry.arguments?.getString("id"))),
                     onBack = { nav.popBackStack() },
+                )
+            }
+            composable("detail/{habitId}") { entry ->
+                val habitId = entry.arguments?.getString("habitId") ?: return@composable
+                DetailScreen(
+                    viewModel = viewModel(factory = DetailViewModel.factory(container, habitId)),
+                    onBack = { nav.popBackStack() },
+                    onEdit = { nav.navigate("habit?id=$it") },
                 )
             }
             composable("settings") {

@@ -58,13 +58,12 @@ import java.util.Locale
 fun TodayScreen(
     viewModel: TodayViewModel,
     onCreateHabit: () -> Unit,
-    onEditHabit: (String) -> Unit,
+    onOpenHabit: (String) -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     var exactFor by remember { mutableStateOf<HabitCardUi?>(null) }
-    var relapseFor by remember { mutableStateOf<HabitCardUi?>(null) }
     var sealDismissed by rememberSaveable { mutableStateOf(false) }
     val loggedLabel = stringResource(R.string.logged_snackbar)
     val undoLabel = stringResource(R.string.undo)
@@ -114,8 +113,7 @@ fun TodayScreen(
                         onPrimary = { viewModel.tapPrimary(card) },
                         onAdd = { viewModel.addAmount(card, it) },
                         onExact = { exactFor = card },
-                        onRelapse = { relapseFor = card },
-                        onEdit = { onEditHabit(card.id) },
+                        onOpen = { onOpenHabit(card.id) },
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -137,12 +135,6 @@ fun TodayScreen(
             viewModel.setExactToday(card, it)
             exactFor = null
         }, onDismiss = { exactFor = null })
-    }
-    relapseFor?.let { card ->
-        RelapseSheet(card.name, onConfirm = {
-            viewModel.logRelapse(card)
-            relapseFor = null
-        }, onDismiss = { relapseFor = null })
     }
     if (state.pendingSealDays.isNotEmpty() && !sealDismissed) {
         BatchSealSheet(state.pendingSealDays.size, onSealAll = { viewModel.sealPendingDays() }, onDismiss = { sealDismissed = true })
