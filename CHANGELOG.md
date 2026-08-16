@@ -12,6 +12,12 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). V
 - Notificación de repaso con protección anti-spam, solo cuando queda algo pendiente.
 - Hora de corte del día configurable.
 - Mejoras de QA por dogfooding: Eliminar en rojo, teclado en mayúscula inicial, stepper ±10 con valor directo, recordatorio por hábito en el formulario y blindaje del doble toque en Guardar.
+- Reordenar hábitos en Hoy manteniendo pulsada la tarjeta y arrastrando.
+- Chip visible de valor exacto en los hábitos de tiempo (el toque largo en la barra queda como atajo).
+
+### Changed
+
+- Segunda ronda de QA por dogfooding: barra de navegación persistente también en Ajustes, avisos de "Deshacer" con el diseño propio de la app, el flujo de recaída en rojo destructivo, la fila del stepper ±10 rediseñada con chips uniformes con borde, el selector de hora ya no sale cortado ni desalineado, y los textos de Ajustes explicados para cualquiera ("Fin de tu día" con su porqué, avisos y repaso con descripción).
 
 ## [0.3.0] - 2026-08-15
 
