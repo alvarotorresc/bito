@@ -266,6 +266,19 @@ class HabitFormScreenTest {
     }
 
     @Test
+    fun `quit presets disable the reminder row with a hint`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUIT").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("reminder-row").assertIsNotEnabled()
+        compose.onNodeWithText("No reminders: Bito won't nag you about what you're avoiding").assertIsDisplayed()
+    }
+
+    @Test
     fun `an existing reminder shows its time and can be cleared from the row`() {
         runBlocking {
             habits.create(habitEntity(id = "h1", reminderMinutes = 9 * 60, createdOnDay = today))

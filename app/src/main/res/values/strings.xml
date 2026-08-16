@@ -72,6 +72,7 @@
     <string name="form_reminder_label">Reminder</string>
     <string name="form_reminder_none">None</string>
     <string name="form_reminder_clear">Remove reminder</string>
+    <string name="form_reminder_quit_hint">No reminders: Bito won\'t nag you about what you\'re avoiding</string>
     <string name="save_habit">Save</string>
     <string name="delete_habit">Delete habit</string>
     <string name="delete_confirm_title">Delete forever?</string>

@@ -67,6 +67,7 @@
     <string name="form_reminder_label">Recordatorio</string>
     <string name="form_reminder_none">Sin recordatorio</string>
     <string name="form_reminder_clear">Quitar recordatorio</string>
+    <string name="form_reminder_quit_hint">Sin avisos: Bito no te recuerda lo que intentas evitar</string>
     <string name="save_habit">Guardar</string>
     <string name="delete_habit">Eliminar hábito</string>
     <string name="delete_confirm_title">¿Eliminar para siempre?</string>
