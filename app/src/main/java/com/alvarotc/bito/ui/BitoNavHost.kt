@@ -20,6 +20,7 @@ import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
 import com.alvarotc.bito.ui.stats.StatsScreen
+import com.alvarotc.bito.ui.stats.StatsViewModel
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
@@ -89,7 +90,11 @@ fun BitoNavHost(container: AppContainer) {
                 )
             }
             composable("stats") {
-                StatsScreen()
+                StatsScreen(
+                    viewModel = viewModel(factory = StatsViewModel.factory(container)),
+                    onOpenRecords = { nav.navigate("records") },
+                    onOpenNumbers = { nav.navigate("numbers") },
+                )
             }
         }
     }

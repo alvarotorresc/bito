@@ -46,6 +46,8 @@
     <string name="habi_form_prompt">What habit are we building? Name it and pick its shape — everything else can wait.</string>
     <string name="habi_speaker" translatable="false">HABI · %1$s</string>
     <string name="personality_neutra">NEUTRAL</string>
+    <string name="personality_sargento">SERGEANT</string>
+    <string name="personality_cheerleader">CHEERLEADER</string>
     <string name="name_hint">Habit name</string>
     <string name="preset_daily">Daily</string>
     <string name="preset_quantity">Amount</string>
