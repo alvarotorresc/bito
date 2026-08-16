@@ -10,6 +10,7 @@ import com.alvarotc.bito.domain.model.HabitStatus
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -97,6 +98,24 @@ class HabitsRepositoryTest {
             assertEquals(HabitStatus.ACTIVE, stored.status)
             assertEquals(null, stored.archivedOnDay)
             assertEquals(null, stored.archivedAtMillis)
+        }
+
+    @Test
+    fun `archiving a paused habit closes its open pause interval`() =
+        runTest {
+            repository.create(habitEntity(id = "h1", createdOnDay = DAY_ZERO))
+            repository.pause("h1", startDay = DAY_ZERO + 3, note = null)
+
+            repository.archive("h1", today = DAY_ZERO + 10, nowMillis = 9_000L)
+
+            val pause = db.pauseIntervalDao().forHabit("h1").single()
+            assertEquals(DAY_ZERO + 10, pause.endDay)
+
+            // Unarchiving must hand back a genuinely requirable habit, not one still trapped by
+            // the stale open interval — the bug this test guards against.
+            repository.unarchive("h1")
+            assertEquals(HabitStatus.ACTIVE, repository.habit("h1")!!.status)
+            assertTrue(db.pauseIntervalDao().forHabit("h1").all { it.endDay != null })
         }
 
     @Test

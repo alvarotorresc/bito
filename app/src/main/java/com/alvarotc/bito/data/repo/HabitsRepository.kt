@@ -40,6 +40,10 @@ class HabitsRepository(private val db: BitoDatabase) {
         nowMillis: Long,
     ) = db.withTransaction {
         val habit = db.habitDao().byId(id) ?: return@withTransaction
+        // A pause semantically ends where the habit's own life pauses too: archiving a PAUSED
+        // habit without closing its open interval leaves it stuck paused forever once
+        // unarchive() brings status back to ACTIVE (isPausedOn keys off the interval, not status).
+        db.pauseIntervalDao().closeOpen(id, today)
         db.habitDao().upsert(
             habit.copy(status = HabitStatus.ARCHIVED, archivedOnDay = today, archivedAtMillis = nowMillis),
         )
