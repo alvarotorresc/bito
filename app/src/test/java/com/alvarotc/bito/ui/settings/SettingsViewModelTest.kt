@@ -1,13 +1,21 @@
 package com.alvarotc.bito.ui.settings
 
+import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.model.HabitStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -17,21 +25,32 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.io.File
 
+/**
+ * Room now backs [SettingsViewModel.archivedHabits], so this suite runs on Robolectric with an
+ * in-memory database — same shape as [BackupViewModelTest]: one scheduler backs Dispatchers.Main
+ * and both Room's executors and the DataStore's write-actor scope, so advanceUntilIdle() is
+ * deterministic end to end.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
 class SettingsViewModelTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    // Same scheduler backs Dispatchers.Main and the DataStore's write-actor scope, matching the
-    // pattern in BackupViewModelTest/HabitFormViewModelTest so advanceUntilIdle() is deterministic.
     private val dispatcher = StandardTestDispatcher()
 
+    private lateinit var db: BitoDatabase
     private lateinit var repository: SettingsRepository
     private lateinit var vm: SettingsViewModel
 
@@ -43,13 +62,21 @@ class SettingsViewModelTest {
     @Before
     fun setUp() {
         Dispatchers.setMain(dispatcher)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db =
+            Room.inMemoryDatabaseBuilder(context, BitoDatabase::class.java)
+                .setQueryExecutor(dispatcher.asExecutor())
+                .setTransactionExecutor(dispatcher.asExecutor())
+                .allowMainThreadQueries()
+                .build()
         repository = SettingsRepository(store("settings-vm"))
-        vm = SettingsViewModel(repository)
+        vm = SettingsViewModel(repository, HabitsRepository(db))
     }
 
     @After
     fun tearDown() {
         Dispatchers.resetMain()
+        db.close()
     }
 
     @Test
@@ -138,5 +165,29 @@ class SettingsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(22 * 60, vm.state.value?.reviewTimeMinutes)
+        }
+
+    @Test
+    fun `archivedHabits starts empty and is empty until a habit is archived`() =
+        runTest {
+            val habits = HabitsRepository(db)
+            habits.create(habitEntity(id = "h1", name = "Meditar"))
+            advanceUntilIdle()
+
+            assertTrue(vm.archivedHabits.value.isEmpty())
+        }
+
+    @Test
+    fun `archivedHabits reflects only archived habits, not active or paused ones`() =
+        runTest {
+            val habits = HabitsRepository(db)
+            habits.create(habitEntity(id = "active", name = "Agua"))
+            habits.create(habitEntity(id = "paused", name = "Yoga", status = HabitStatus.PAUSED))
+            habits.create(habitEntity(id = "gone", name = "Fumar", status = HabitStatus.ARCHIVED, archivedOnDay = 20_010))
+            advanceUntilIdle()
+
+            assertEquals(listOf("gone"), vm.archivedHabits.value.map { it.id })
+            assertEquals("Fumar", vm.archivedHabits.value.single().name)
+            assertEquals(20_010, vm.archivedHabits.value.single().archivedOnDay)
         }
 }

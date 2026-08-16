@@ -16,6 +16,7 @@ import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
@@ -91,6 +92,14 @@ fun BitoNavHost(container: AppContainer) {
                     backupViewModel = viewModel(factory = BackupViewModel.factory(container)),
                     settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
+                    onOpenArchived = { nav.navigate("archived") },
+                )
+            }
+            composable("archived") {
+                ArchivedScreen(
+                    viewModel = viewModel(factory = SettingsViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
+                    onOpenHabit = { nav.navigate("detail/$it") },
                 )
             }
             composable("stats") {

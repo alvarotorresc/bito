@@ -45,6 +45,15 @@ class HabitsRepository(private val db: BitoDatabase) {
         )
     }
 
+    /** Undoes [archive]: back to ACTIVE, both archive fields cleared — no history is rewritten. */
+    suspend fun unarchive(id: String) =
+        db.withTransaction {
+            val habit = db.habitDao().byId(id) ?: return@withTransaction
+            db.habitDao().upsert(
+                habit.copy(status = HabitStatus.ACTIVE, archivedAtMillis = null, archivedOnDay = null),
+            )
+        }
+
     suspend fun pause(
         habitId: String,
         startDay: LogicalDay,

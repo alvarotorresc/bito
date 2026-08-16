@@ -17,6 +17,7 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
@@ -177,6 +178,20 @@ class DetailViewModelTest {
             advanceUntilIdle()
 
             assertTrue(db.entryDao().all().none { it.habitId == "h1" && it.logicalDay == today - 2 })
+        }
+
+    @Test
+    fun `unarchive restores an archived habit to active`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today - 5))
+            habitsRepo.archive("h1", today = today, nowMillis = fixedNow)
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            vm.unarchive()
+            advanceUntilIdle()
+
+            assertEquals(HabitStatus.ACTIVE, habitsRepo.habit("h1")!!.status)
         }
 
     @Test

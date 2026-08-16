@@ -106,4 +106,11 @@
     <string name="review_hint">An evening nudge to look back on the day and close it.</string>
     <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
     <string name="notif_permission_hint">Allow notifications to hear reminders</string>
+
+    <string name="general_section_title">General</string>
+    <string name="archived_habits_row">Archived habits (%1$d)</string>
+    <string name="archived_title">Archived habits</string>
+    <string name="archived_since">Since %1$s</string>
+    <string name="unarchive_habit">Reactivate</string>
+    <string name="paused_since">Paused since %1$s</string>
 </resources>

@@ -86,6 +86,20 @@ class HabitsRepositoryTest {
         }
 
     @Test
+    fun `unarchive restores an archived habit to active`() =
+        runTest {
+            repository.create(habitEntity(id = "h1", createdOnDay = DAY_ZERO))
+            repository.archive("h1", today = DAY_ZERO + 40, nowMillis = 9_000L)
+
+            repository.unarchive("h1")
+
+            val stored = repository.habit("h1")!!
+            assertEquals(HabitStatus.ACTIVE, stored.status)
+            assertEquals(null, stored.archivedOnDay)
+            assertEquals(null, stored.archivedAtMillis)
+        }
+
+    @Test
     fun `pause opens an interval and sets status, resume closes it`() =
         runTest {
             repository.create(habitEntity(id = "h1", createdOnDay = DAY_ZERO))

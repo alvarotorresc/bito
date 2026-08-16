@@ -121,6 +121,10 @@ class DetailViewModel(
 
     fun archive() = write { today, nowMillis -> habits.archive(habitId, today, nowMillis) }
 
+    // A mutation like any other habit lifecycle write: goes through `write` so the reconcile
+    // call runs afterward, consistent with pause/resume/archive above.
+    fun unarchive() = write { _, _ -> habits.unarchive(habitId) }
+
     companion object {
         fun factory(
             container: AppContainer,

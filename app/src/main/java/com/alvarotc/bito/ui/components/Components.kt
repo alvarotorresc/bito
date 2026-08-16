@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -122,13 +123,20 @@ fun GhostPillButton(
     modifier: Modifier = Modifier,
     color: Color = TintaSuave,
     borderColor: Color = Borde,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
 ) = OutlinedButton(
     onClick = onClick,
     modifier = modifier,
     shape = CircleShape,
     border = BorderStroke(1.dp, borderColor),
     colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
-) { Text(text, style = MaterialTheme.typography.labelMedium) }
+) {
+    if (icon != null) {
+        Icon(icon, contentDescription = null, modifier = Modifier.size(16.dp))
+        Spacer(Modifier.width(6.dp))
+    }
+    Text(text, style = MaterialTheme.typography.labelMedium)
+}
 
 /**
  * Bito-styled snackbar body. The M3 default reads the inverse* slots this theme deliberately

@@ -74,9 +74,11 @@ fun SettingsScreen(
     backupViewModel: BackupViewModel,
     settingsViewModel: SettingsViewModel,
     onBack: () -> Unit,
+    onOpenArchived: () -> Unit,
 ) {
     val backupState by backupViewModel.state.collectAsStateWithLifecycle()
     val settings by settingsViewModel.state.collectAsStateWithLifecycle()
+    val archivedHabits by settingsViewModel.archivedHabits.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val snackbar = remember { SnackbarHostState() }
 
@@ -179,6 +181,7 @@ fun SettingsScreen(
                     },
                 )
             }
+            GeneralSectionCard(archivedCount = archivedHabits.size, onOpenArchived = onOpenArchived)
             BackupsCard(
                 onExport = { exportLauncher.launch(backupViewModel.suggestedFileName()) },
                 // SAF can't filter on a custom ".bito" extension, so accept anything and let
@@ -332,6 +335,20 @@ private fun ReminderHourRow(
         IconButton(onClick = onRemove) {
             Icon(BitoIcons.X, contentDescription = stringResource(R.string.reminder_remove), tint = TintaSuave)
         }
+    }
+}
+
+/** Hidden outright when there is nothing archived — a group with a single, sometimes-absent row. */
+@Composable
+private fun GeneralSectionCard(
+    archivedCount: Int,
+    onOpenArchived: () -> Unit,
+) {
+    if (archivedCount == 0) return
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.general_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
+        Spacer(Modifier.height(4.dp))
+        SettingsRow(label = stringResource(R.string.archived_habits_row, archivedCount), onClick = onOpenArchived)
     }
 }
 

@@ -43,6 +43,7 @@ import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.DotHeatmap
 import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.GhostPillButton
+import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Brasa
@@ -124,9 +125,11 @@ fun DetailScreen(
             }
             FooterActions(
                 status = current.status,
+                pausedSinceDay = current.pausedSinceDay,
                 onPause = { showPauseSheet = true },
                 onResume = viewModel::resume,
                 onArchive = { showArchiveSheet = true },
+                onUnarchive = viewModel::unarchive,
             )
         }
     }
@@ -339,22 +342,43 @@ private fun ComplianceSection(
 @Composable
 private fun FooterActions(
     status: HabitStatus,
+    pausedSinceDay: LogicalDay?,
     onPause: () -> Unit,
     onResume: () -> Unit,
     onArchive: () -> Unit,
+    onUnarchive: () -> Unit,
 ) {
-    // Archived habits offer only "Reactivar" (Task 7) — no registration/lifecycle actions here yet.
-    if (status == HabitStatus.ARCHIVED) return
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (status == HabitStatus.PAUSED) {
-            GhostPillButton(stringResource(R.string.resume_habit), onClick = onResume, modifier = Modifier.testTag("resume"))
-        } else {
-            GhostPillButton(stringResource(R.string.pause_habit), onClick = onPause, modifier = Modifier.testTag("pause"))
+    // Archived habits offer only "Reactivar" — every other registration/lifecycle action is
+    // gated off the screen above (freezer chip, day-tap sheet, relapse pill).
+    if (status == HabitStatus.ARCHIVED) {
+        PillButton(stringResource(R.string.unarchive_habit), onClick = onUnarchive, modifier = Modifier.testTag("reactivate"))
+        return
+    }
+    Column {
+        if (status == HabitStatus.PAUSED && pausedSinceDay != null) {
+            val since =
+                remember(pausedSinceDay) {
+                    LocalDate.ofEpochDay(pausedSinceDay.toLong()).format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
+                }
+            Text(stringResource(R.string.paused_since, since), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            Spacer(Modifier.height(8.dp))
         }
-        GhostPillButton(
-            stringResource(R.string.archive_habit),
-            onClick = onArchive,
-            modifier = Modifier.testTag("archive"),
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (status == HabitStatus.PAUSED) {
+                GhostPillButton(
+                    stringResource(R.string.resume_habit),
+                    onClick = onResume,
+                    modifier = Modifier.testTag("resume"),
+                    icon = BitoIcons.Play,
+                )
+            } else {
+                GhostPillButton(stringResource(R.string.pause_habit), onClick = onPause, modifier = Modifier.testTag("pause"))
+            }
+            GhostPillButton(
+                stringResource(R.string.archive_habit),
+                onClick = onArchive,
+                modifier = Modifier.testTag("archive"),
+            )
+        }
     }
 }

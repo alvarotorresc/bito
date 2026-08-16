@@ -6,8 +6,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.model.HabitStatus
+import com.alvarotc.bito.domain.model.LogicalDay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -19,18 +22,35 @@ import kotlin.math.roundToInt
 internal const val MAX_CUTOFF_MINUTES = 6 * 60
 internal const val CUTOFF_STEP_MINUTES = 30
 
+/** One archived habit's row on the Ajustes "archived" list and screen. */
+data class ArchivedHabitUi(val id: String, val name: String, val archivedOnDay: LogicalDay?)
+
 /**
  * Backs the Ajustes "day" and "reminders" cards (day cutoff, global reminder hours, review
- * time). `state` is null until the repository's first emission lands — the screen renders those
- * cards only once it has a real value to show.
+ * time) plus the archived-habits row/list. `state` is null until the repository's first
+ * emission lands — the screen renders those cards only once it has a real value to show.
  */
-class SettingsViewModel(private val settings: SettingsRepository) : ViewModel() {
+class SettingsViewModel(
+    private val settings: SettingsRepository,
+    private val habits: HabitsRepository,
+) : ViewModel() {
     private val settingsState = MutableStateFlow<Settings?>(null)
     val state: StateFlow<Settings?> = settingsState.asStateFlow()
+
+    private val archivedState = MutableStateFlow<List<ArchivedHabitUi>>(emptyList())
+    val archivedHabits: StateFlow<List<ArchivedHabitUi>> = archivedState.asStateFlow()
 
     init {
         viewModelScope.launch {
             settings.settings.collect { settingsState.value = it }
+        }
+        viewModelScope.launch {
+            habits.observeHabits().collect { entities ->
+                archivedState.value =
+                    entities
+                        .filter { it.status == HabitStatus.ARCHIVED }
+                        .map { ArchivedHabitUi(it.id, it.name, it.archivedOnDay) }
+            }
         }
     }
 
@@ -54,7 +74,7 @@ class SettingsViewModel(private val settings: SettingsRepository) : ViewModel() 
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {
-                initializer { SettingsViewModel(container.settings) }
+                initializer { SettingsViewModel(container.settings, container.habits) }
             }
     }
 }
