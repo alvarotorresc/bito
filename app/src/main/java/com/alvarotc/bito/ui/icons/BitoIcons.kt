@@ -48,6 +48,14 @@ object BitoIcons {
         )
     }
     val Home by lazy { lucide("house", "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "M9 22V12h6v10") }
+    val Pencil by lazy {
+        lucide(
+            "pencil",
+            "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 " +
+                ".623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
+            "m15 5 4 4",
+        )
+    }
     val Settings by lazy {
         lucide(
             "settings-2",

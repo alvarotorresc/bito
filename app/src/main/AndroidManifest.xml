@@ -1,8 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- Bito no declara el permiso INTERNET a propósito: la garantía "tus datos
          jamás salen del móvil" es verificable por cualquiera en este manifest. -->
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- lint la marca como ProtectedPermissions bajo compileSdk 35; es de uso
+         normal para recordatorios de usuario, no de sistema. -->
+    <uses-permission
+        android:name="android.permission.SCHEDULE_EXACT_ALARM"
+        tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
         android:name=".BitoApp"
@@ -21,6 +30,32 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".ui.widget.TodayWidgetConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Bito">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+
+        <receiver android:name=".ui.widget.TodayWidgetReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/today_widget_info" />
+        </receiver>
+        <receiver android:name=".ui.widget.WidgetMidnightReceiver" android:exported="false" />
+        <receiver android:name=".ui.notifications.ReminderReceiver" android:exported="false" />
+        <receiver android:name=".ui.notifications.QuickActionReceiver" android:exported="false" />
+        <receiver android:name=".ui.notifications.BootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 
 </manifest>

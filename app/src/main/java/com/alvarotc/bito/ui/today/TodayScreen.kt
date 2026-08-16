@@ -1,10 +1,6 @@
 package com.alvarotc.bito.ui.today
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,15 +12,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.Icon
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,9 +27,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -43,16 +39,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.ui.components.BitoCard
+import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.DayRing
 import com.alvarotc.bito.ui.components.PillButton
-import com.alvarotc.bito.ui.icons.BitoIcons
-import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
-import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import sh.calvin.reorderable.ReorderableItem
+import sh.calvin.reorderable.rememberReorderableLazyListState
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -63,7 +59,6 @@ fun TodayScreen(
     viewModel: TodayViewModel,
     onCreateHabit: () -> Unit,
     onEditHabit: (String) -> Unit,
-    onOpenSettings: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -81,13 +76,28 @@ fun TodayScreen(
         }
     }
 
+    // Reordering works on a local copy so the drag previews instantly; the DB write happens once,
+    // on drag end, and the re-emitted flow rebuilds this list in the exact same order (no jump).
+    val orderedCards = remember(state.cards) { state.cards.toMutableStateList() }
+    val listState = rememberLazyListState()
+    val reorderState =
+        rememberReorderableLazyListState(listState) { from, to ->
+            // Matching by key, not index: the list has two header items before the cards.
+            val fromIndex = orderedCards.indexOfFirst { it.id == from.key }
+            val toIndex = orderedCards.indexOfFirst { it.id == to.key }
+            if (fromIndex != -1 && toIndex != -1) {
+                orderedCards.add(toIndex, orderedCards.removeAt(fromIndex))
+            }
+        }
+    val haptics = LocalHapticFeedback.current
+
     Scaffold(
         containerColor = Papel,
-        snackbarHost = { SnackbarHost(snackbar) },
-        bottomBar = { BitoBottomBar(onCreateHabit, onOpenSettings) },
+        snackbarHost = { SnackbarHost(snackbar) { BitoSnackbar(it) } },
     ) { padding ->
         LazyColumn(
             Modifier.padding(padding),
+            state = listState,
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
@@ -97,16 +107,27 @@ fun TodayScreen(
             } else {
                 item { RingCard(state.ringDone, state.ringTotal) }
             }
-            items(state.cards, key = { it.id }) { card ->
-                HabitCard(
-                    card = card,
-                    onPrimary = { viewModel.tapPrimary(card) },
-                    onAdd = { viewModel.addAmount(card, it) },
-                    onExact = { exactFor = card },
-                    onRelapse = { relapseFor = card },
-                    onEdit = { onEditHabit(card.id) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+            items(orderedCards, key = { it.id }) { card ->
+                ReorderableItem(reorderState, key = card.id) {
+                    HabitCard(
+                        card = card,
+                        onPrimary = { viewModel.tapPrimary(card) },
+                        onAdd = { viewModel.addAmount(card, it) },
+                        onExact = { exactFor = card },
+                        onRelapse = { relapseFor = card },
+                        onEdit = { onEditHabit(card.id) },
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                // Long press anywhere on the card starts the drag — except the
+                                // duration bar and the counter's +, whose inner combinedClickable
+                                // consumes its own long press (exact-value shortcut) first.
+                                .longPressDraggableHandle(
+                                    onDragStarted = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
+                                    onDragStopped = { viewModel.reorder(orderedCards.map { it.id }) },
+                                ),
+                    )
+                }
             }
         }
     }
@@ -180,44 +201,5 @@ private fun EmptyToday(onCreate: () -> Unit) {
         Text(stringResource(R.string.empty_today_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
         Spacer(Modifier.height(16.dp))
         PillButton(stringResource(R.string.create_habit), onClick = onCreate)
-    }
-}
-
-@Composable
-private fun BitoBottomBar(
-    onCreate: () -> Unit,
-    onSettings: () -> Unit,
-) {
-    Box(Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
-        Surface(shape = CircleShape, color = Tarjeta, border = BorderStroke(1.dp, Borde)) {
-            Row(
-                Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(20.dp),
-            ) {
-                Box(
-                    Modifier.size(40.dp).clip(CircleShape).background(HojaTinte),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(BitoIcons.Home, contentDescription = stringResource(R.string.nav_today), tint = Tinta)
-                }
-                Box(
-                    Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(Hoja)
-                        .clickable(onClick = onCreate),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(BitoIcons.Plus, contentDescription = stringResource(R.string.nav_new_habit), tint = Tarjeta)
-                }
-                Icon(
-                    BitoIcons.Settings,
-                    contentDescription = stringResource(R.string.nav_settings),
-                    tint = TintaSuave,
-                    modifier = Modifier.size(24.dp).clickable(onClick = onSettings),
-                )
-            }
-        }
     }
 }

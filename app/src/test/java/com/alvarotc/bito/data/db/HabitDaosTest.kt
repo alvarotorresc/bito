@@ -81,6 +81,16 @@ class HabitDaosTest {
         }
 
     @Test
+    fun `updateSortOrder moves one habit and leaves the rest untouched`() =
+        runTest {
+            db.habitDao().upsert(habitEntity(id = "a", sortOrder = 0))
+            db.habitDao().upsert(habitEntity(id = "b", sortOrder = 1))
+            db.habitDao().updateSortOrder("a", 7)
+            assertEquals(7, db.habitDao().byId("a")!!.sortOrder)
+            assertEquals(1, db.habitDao().byId("b")!!.sortOrder)
+        }
+
+    @Test
     fun `deleting a habit cascades to target changes and pauses`() =
         runTest {
             db.habitDao().upsert(habitEntity(id = "h1"))

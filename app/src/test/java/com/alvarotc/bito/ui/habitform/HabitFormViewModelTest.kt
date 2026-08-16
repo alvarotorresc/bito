@@ -283,4 +283,110 @@ class HabitFormViewModelTest {
             assertFalse(saved)
             assertTrue(db.habitDao().all().isEmpty())
         }
+
+    @Test
+    fun `setTarget clamps like the stepper does`() =
+        runTest {
+            val vm = newViewModel()
+            vm.selectPreset(HabitPreset.QUANTITY) // default target 8
+
+            vm.setTarget(500)
+            assertEquals(500, vm.state.value.target)
+
+            vm.setTarget(0)
+            assertEquals(1, vm.state.value.target)
+        }
+
+    @Test
+    fun `weekly times still cap at seven through direct input`() =
+        runTest {
+            val vm = newViewModel()
+            vm.selectPreset(HabitPreset.WEEKLY_TIMES) // default target 3
+
+            vm.setTarget(12)
+
+            assertEquals(7, vm.state.value.target)
+        }
+
+    @Test
+    fun `setTarget keeps a QUIT TOTAL target pinned at zero`() =
+        runTest {
+            val vm = newViewModel()
+            vm.selectPreset(HabitPreset.QUIT)
+            vm.selectQuitMode(QuitMode.TOTAL)
+
+            vm.setTarget(50)
+
+            assertEquals(0, vm.state.value.target)
+        }
+
+    @Test
+    fun `a reminder time survives the round trip to the entity`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Meditar")
+            vm.setReminder(9 * 60)
+
+            vm.save {}
+            advanceUntilIdle()
+
+            val stored = db.habitDao().all().single()
+            assertEquals(540, stored.reminderMinutes)
+        }
+
+    @Test
+    fun `editing prefills the stored reminder`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", reminderMinutes = 540, createdOnDay = today))
+
+            val vm = newViewModel(habitId = "h1")
+            advanceUntilIdle()
+
+            assertEquals(540, vm.state.value.reminderMinutes)
+        }
+
+    @Test
+    fun `clearing the reminder writes null`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", reminderMinutes = 540, createdOnDay = today))
+            val vm = newViewModel(habitId = "h1")
+            advanceUntilIdle()
+
+            vm.setReminder(null)
+            vm.save {}
+            advanceUntilIdle()
+
+            val updated = db.habitDao().byId("h1")!!
+            assertNull(updated.reminderMinutes)
+        }
+
+    @Test
+    fun `a double tap on save creates exactly one habit`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Agua")
+
+            vm.save {}
+            vm.save {}
+            advanceUntilIdle()
+
+            assertEquals(1, db.habitDao().all().size)
+        }
+
+    @Test
+    fun `the save button stays dead after a completed save`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Agua")
+
+            vm.save {}
+            advanceUntilIdle()
+
+            assertTrue(vm.state.value.saving)
+
+            vm.save {}
+            advanceUntilIdle()
+
+            assertEquals(1, db.habitDao().all().size)
+        }
 }

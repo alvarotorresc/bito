@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_description">Today\'s habits, one tap away</string>
+    <string name="widget_title">Today</string>
+    <string name="widget_progress" translatable="false">%1$d/%2$d</string>
+    <string name="widget_all_done">All done</string>
+    <string name="widget_log_action">Log %1$s</string>
+    <string name="widget_open_action">Open %1$s</string>
+    <string name="widget_config_title">Choose habits</string>
+    <string name="widget_config_body">Empty selection shows every pending habit</string>
+    <string name="widget_config_save">Save</string>
+</resources>

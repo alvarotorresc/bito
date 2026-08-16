@@ -5,8 +5,11 @@ package com.alvarotc.bito.ui.habitform
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -15,8 +18,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -36,10 +42,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
@@ -47,14 +55,18 @@ import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostPillButton
+import com.alvarotc.bito.ui.components.NumberInputSheet
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.SpeechBubble
+import com.alvarotc.bito.ui.components.TimePickerSheet
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Peligro
+import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -86,16 +98,17 @@ fun HabitFormScreen(
             TargetSection(
                 state = state,
                 onAdjustTarget = viewModel::adjustTarget,
+                onSetTarget = viewModel::setTarget,
                 onSelectPeriod = viewModel::selectPeriod,
                 onSelectQuitMode = viewModel::selectQuitMode,
                 onSelectLimitMetric = viewModel::selectLimitMetric,
                 onUnitChange = viewModel::setUnit,
             )
-            MoreOptionsSection(state, viewModel::toggleBinary, viewModel::adjustStep)
+            MoreOptionsSection(state, viewModel::toggleBinary, viewModel::adjustStep, viewModel::setReminder)
             PillButton(
                 text = stringResource(if (state.isEditing) R.string.save_habit else R.string.create_habit),
                 onClick = { viewModel.save(onBack) },
-                enabled = state.canSave,
+                enabled = state.canSave && !state.saving,
                 modifier = Modifier.fillMaxWidth().testTag("save"),
             )
             if (state.isEditing) {
@@ -103,6 +116,8 @@ fun HabitFormScreen(
                     text = stringResource(R.string.delete_habit),
                     onClick = { confirmingDelete = true },
                     modifier = Modifier.fillMaxWidth().testTag("delete"),
+                    color = Peligro,
+                    borderColor = PeligroTinte,
                 )
             }
         }
@@ -162,6 +177,9 @@ private fun NameField(
             placeholder = { Text(stringResource(R.string.name_hint), color = TintaSuave) },
             textStyle = MaterialTheme.typography.titleMedium.copy(color = Tinta),
             colors = borderlessFieldColors(),
+            // QA3: names read better sentence-cased ("Meditar" not "meditar"); the keyboard
+            // itself opens on a capital letter instead of forcing a manual shift.
+            keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences),
         )
     }
 }
@@ -217,13 +235,15 @@ private val PERIOD_OPTIONS = listOf(Period.DAY, Period.WEEK, Period.MONTH)
  * (QUIT TOTAL pins at 0, WEEKLY_TIMES fixes WEEK), so this UI needs no extra state guards.
  *
  * Rule E2 extends past the preset: [HabitFormViewModel.save]'s edit branch only ever persists
- * name/target/unit/step, so period, quit-mode and limit-metric are shape, not value — they lock
- * alongside the preset pills when editing. Target, unit and step do persist and stay live.
+ * name/target/unit/step/reminderMinutes, so period, quit-mode and limit-metric are shape, not
+ * value — they lock alongside the preset pills when editing. Target, unit, step and reminder do
+ * persist and stay live.
  */
 @Composable
 private fun TargetSection(
     state: HabitFormState,
     onAdjustTarget: (Int) -> Unit,
+    onSetTarget: (Int) -> Unit,
     onSelectPeriod: (Period) -> Unit,
     onSelectQuitMode: (QuitMode) -> Unit,
     onSelectLimitMetric: (Metric) -> Unit,
@@ -251,7 +271,7 @@ private fun TargetSection(
                 }
             }
 
-            TargetStepper(state, onAdjustTarget)
+            TargetStepper(state, onAdjustTarget, onSetTarget)
 
             val showPeriod =
                 state.preset == HabitPreset.QUANTITY || state.preset == HabitPreset.DURATION ||
@@ -271,6 +291,8 @@ private fun TargetSection(
             }
 
             if (state.preset == HabitPreset.QUANTITY) {
+                // QA3 deliberately stops at the name field: units are written lowercase by
+                // convention ("vasos", "min"), so no KeyboardCapitalization here — noted for the PR.
                 TextField(
                     value = state.unit,
                     onValueChange = onUnitChange,
@@ -283,41 +305,124 @@ private fun TargetSection(
     }
 }
 
+/**
+ * QA4/QA5: minute targets (Duración, or a QUIT limit measured in minutes) are painful to reach
+ * one tap at a time, so they get an extra ±10 stride. The central value is always tappable —
+ * across every preset this stepper renders for — and opens [NumberInputSheet] for direct entry.
+ */
 @Composable
 private fun TargetStepper(
     state: HabitFormState,
     onAdjustTarget: (Int) -> Unit,
+    onSetTarget: (Int) -> Unit,
 ) {
     val isQuitLimitTime = state.preset == HabitPreset.QUIT && state.quitMode == QuitMode.LIMIT && state.limitMetric == Metric.DURATION
+    val isMinuteTarget = state.preset == HabitPreset.DURATION || isQuitLimitTime
     val unitLabel =
         when {
-            state.preset == HabitPreset.DURATION || isQuitLimitTime -> stringResource(R.string.unit_min)
+            isMinuteTarget -> stringResource(R.string.unit_min)
             state.preset == HabitPreset.QUANTITY -> state.unit.takeIf(String::isNotBlank)
             else -> null
         }
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        IconButton(onClick = { onAdjustTarget(-1) }, modifier = Modifier.testTag("target-minus")) {
-            Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta)
+    var showNumberInput by remember { mutableStateOf(false) }
+
+    // The minute row packs five controls (±10, ±1, value) into one line. A Material3 IconButton
+    // enforces a 48dp touch target no matter what size modifier it's given, so reusing it for
+    // ±10 would overflow a ~360dp-wide screen once card/screen padding is subtracted (see the
+    // narrow-width regression test). StepChip opts out of that enforced minimum — it's a
+    // smaller, purpose-built tap target shared by all four step controls — and the row's own
+    // spacing tightens only while the extra pair is present; the three-control case is untouched.
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(if (isMinuteTarget) 4.dp else 12.dp),
+    ) {
+        if (isMinuteTarget) {
+            StepChip(onClick = { onAdjustTarget(-10) }, modifier = Modifier.testTag("target-minus10")) {
+                Text(
+                    "−10",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Tinta,
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                )
+            }
         }
-        Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        StepChip(onClick = { onAdjustTarget(-1) }, modifier = Modifier.testTag("target-minus")) {
+            Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
+        }
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.clickable { showNumberInput = true }.testTag("target-value"),
+        ) {
             Text("${state.target}", style = MaterialTheme.typography.displayLarge, color = Tinta)
             if (unitLabel != null) {
                 Text(unitLabel, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             }
         }
-        IconButton(onClick = { onAdjustTarget(1) }, modifier = Modifier.testTag("target-plus")) {
-            Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta)
+        StepChip(onClick = { onAdjustTarget(1) }, modifier = Modifier.testTag("target-plus")) {
+            Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
+        }
+        if (isMinuteTarget) {
+            StepChip(onClick = { onAdjustTarget(10) }, modifier = Modifier.testTag("target-plus10")) {
+                Text(
+                    "+10",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Tinta,
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                )
+            }
         }
     }
+
+    if (showNumberInput) {
+        NumberInputSheet(
+            title = stringResource(R.string.target_input_title),
+            initial = state.target,
+            onConfirm = {
+                onSetTarget(it)
+                showNumberInput = false
+            },
+            onDismiss = { showNumberInput = false },
+        )
+    }
 }
+
+/**
+ * The single visual language for all four [TargetStepper] step controls (±1, ±10) — see the
+ * row-overflow comment above its call site for why this isn't a Material3 IconButton.
+ */
+@Composable
+private fun StepChip(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    Box(
+        modifier
+            .height(40.dp)
+            .widthIn(min = 40.dp)
+            .clip(CircleShape)
+            .background(Tarjeta)
+            .border(1.dp, Borde, CircleShape)
+            .clickable(onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        content()
+    }
+}
+
+/** Minutes-of-day a fresh reminder opens on when none is set yet: 08:00. */
+private const val DEFAULT_REMINDER_MINUTES = 8 * 60
 
 @Composable
 private fun MoreOptionsSection(
     state: HabitFormState,
     onToggleBinary: () -> Unit,
     onAdjustStep: (Int) -> Unit,
+    onSetReminder: (Int?) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
+    var showTimePicker by remember { mutableStateOf(false) }
     val rotation by animateFloatAsState(if (expanded) 180f else 0f, label = "more-options-chevron")
 
     BitoCard(modifier = Modifier.fillMaxWidth()) {
@@ -336,13 +441,78 @@ private fun MoreOptionsSection(
         AnimatedVisibility(visible = expanded) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.padding(top = 12.dp)) {
                 if (state.preset == HabitPreset.QUANTITY || state.preset == HabitPreset.DURATION) {
-                    // logMode isn't persisted on edit (Task 10 save() carries name/target/unit/step
-                    // only) — it's shape, like the preset, so it locks the same way.
+                    // logMode isn't persisted on edit (Task 10 save() carries
+                    // name/target/unit/step/reminderMinutes only) — it's shape, like the preset,
+                    // so it locks the same way.
                     BinaryModeRow(state.binaryMode, enabled = !state.isEditing, onToggle = onToggleBinary)
                 }
                 if (state.preset == HabitPreset.QUANTITY && !state.binaryMode) {
                     StepRow(state.step, onAdjustStep)
                 }
+                // QA1: every preset lands here now — Daily/Weekly/Quit had nothing of their own
+                // before this row, so the panel used to open empty for three of the five presets.
+                // Reminder is deliberately outside every preset gate above and stays editable in
+                // edit mode: it's a schedule detail, not part of the locked (metric/direction) shape.
+                ReminderRow(
+                    reminderMinutes = state.reminderMinutes,
+                    onOpenPicker = { showTimePicker = true },
+                    onClear = { onSetReminder(null) },
+                )
+            }
+        }
+    }
+
+    if (showTimePicker) {
+        TimePickerSheet(
+            title = stringResource(R.string.form_reminder_label),
+            initialMinutes = state.reminderMinutes ?: DEFAULT_REMINDER_MINUTES,
+            onConfirm = {
+                onSetReminder(it)
+                showTimePicker = false
+            },
+            onDismiss = { showTimePicker = false },
+        )
+    }
+}
+
+/** "HH:MM", zero-padded, 24h — matches [TimePickerSheet]'s is24Hour clock. */
+private fun formatReminderTime(minutes: Int): String {
+    val hh = (minutes / 60).toString().padStart(2, '0')
+    val mm = (minutes % 60).toString().padStart(2, '0')
+    return "$hh:$mm"
+}
+
+/**
+ * The open-picker tap target and the clear button are siblings, not nested: an icon button
+ * inside a clickable row would give the row two overlapping tap targets fighting for the same
+ * touch area, which is a confusing surface regardless of which one wins the gesture.
+ */
+@Composable
+private fun ReminderRow(
+    reminderMinutes: Int?,
+    onOpenPicker: () -> Unit,
+    onClear: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Row(
+            Modifier.weight(1f).clickable { onOpenPicker() }.testTag("reminder-row"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.form_reminder_label),
+                style = MaterialTheme.typography.bodyLarge,
+                color = Tinta,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                reminderMinutes?.let(::formatReminderTime) ?: stringResource(R.string.form_reminder_none),
+                style = MaterialTheme.typography.bodyLarge,
+                color = TintaSuave,
+            )
+        }
+        if (reminderMinutes != null) {
+            IconButton(onClick = onClear, modifier = Modifier.testTag("reminder-clear")) {
+                Icon(BitoIcons.X, contentDescription = stringResource(R.string.form_reminder_clear), tint = TintaSuave)
             }
         }
     }
@@ -404,6 +574,7 @@ private fun DeleteConfirmSheet(
                 stringResource(R.string.delete_confirm_yes),
                 onClick = onConfirm,
                 modifier = Modifier.fillMaxWidth(),
+                containerColor = Peligro,
             )
             Spacer(Modifier.height(8.dp))
             GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())

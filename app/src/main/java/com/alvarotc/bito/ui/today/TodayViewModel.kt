@@ -29,7 +29,7 @@ import java.util.UUID
 /** Backs the Today screen: derives its state and runs every registration action. */
 class TodayViewModel(
     domainState: DomainStateRepository,
-    habits: HabitsRepository,
+    private val habits: HabitsRepository,
     private val journal: JournalRepository,
     private val settings: SettingsRepository,
     private val reconciler: PointsReconciler,
@@ -107,6 +107,11 @@ class TodayViewModel(
 
     fun consumeLogged() {
         loggedEntry.value = null
+    }
+
+    /** No [write] wrapper: ordering has no journal or points effect, it's pure presentation. */
+    fun reorder(orderedIds: List<String>) {
+        viewModelScope.launch { habits.reorder(orderedIds) }
     }
 
     fun sealPendingDays() = write { _, nowMillis -> uiState.value.pendingSealDays.forEach { journal.sealDay(it, nowMillis) } }

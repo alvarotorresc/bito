@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="channel_reminders">Reminders</string>
+    <string name="channel_review">Daily review</string>
+    <string name="notif_reminder_title_one">1 habit waiting</string>
+    <string name="notif_reminder_title_many">%1$d habits waiting</string>
+    <string name="notif_reminder_single_title" translatable="false">%1$s</string>
+    <string name="notif_reminder_single_body">Still open today</string>
+    <string name="notif_action_done">Done</string>
+    <string name="notif_action_add" translatable="false">+%1$d</string>
+    <string name="notif_target_done">✓ %1$s</string>
+    <string name="notif_target_add" translatable="false">+%1$d %2$s</string>
+    <string name="notif_review_title">Close your day</string>
+    <string name="notif_review_body">Something is still open — one minute and done</string>
+</resources>

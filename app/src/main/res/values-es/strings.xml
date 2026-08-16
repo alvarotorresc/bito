@@ -18,6 +18,7 @@
     <string name="add_target">+objetivo</string>
     <string name="exact_value_title">Ajustar el total de hoy</string>
     <string name="exact_value_hint">Total de hoy</string>
+    <string name="exact_value_action">Escribir el total exacto</string>
     <string name="save">Guardar</string>
     <string name="logged_snackbar">Registrado</string>
     <string name="undo">Deshacer</string>
@@ -53,11 +54,15 @@
     <string name="period_day">día</string>
     <string name="period_week">semana</string>
     <string name="period_month">mes</string>
+    <string name="target_input_title">Pon el objetivo</string>
     <string name="unit_hint">Unidad (vasos, páginas…)</string>
     <string name="more_options">Más opciones</string>
     <string name="binary_mode">Solo cumplido</string>
     <string name="binary_mode_hint">El objetivo es una referencia escrita; registrar es un tap</string>
     <string name="step_label">Cada tap suma</string>
+    <string name="form_reminder_label">Recordatorio</string>
+    <string name="form_reminder_none">Sin recordatorio</string>
+    <string name="form_reminder_clear">Quitar recordatorio</string>
     <string name="save_habit">Guardar</string>
     <string name="delete_habit">Eliminar hábito</string>
     <string name="delete_confirm_title">¿Eliminar para siempre?</string>
@@ -79,4 +84,17 @@
     <string name="msg_import_done">Copia restaurada</string>
     <string name="msg_invalid_file">Eso no es una copia válida de Bito</string>
     <string name="msg_io_error">Algo salió mal — no se cambió nada</string>
+
+    <string name="day_section_title">Tu día</string>
+    <string name="day_section_body">Si registras algo de madrugada antes de esa hora, cuenta para el día anterior.</string>
+    <string name="cutoff_label">Fin de tu día</string>
+    <string name="cutoff_note">Aplica desde ahora; los días sellados no se tocan</string>
+    <string name="reminders_section_title">Recordatorios</string>
+    <string name="reminders_section_body">Avisos en el móvil para que no se te olvide registrar tus hábitos.</string>
+    <string name="reminder_add">Añadir aviso</string>
+    <string name="reminder_remove">Quitar</string>
+    <string name="review_label">Repaso del día</string>
+    <string name="review_hint">Un aviso por la noche para repasar el día y cerrarlo.</string>
+    <string name="reminder_exact_notice">Las alarmas exactas están desactivadas — los avisos pueden desviarse. Toca para permitirlas.</string>
+    <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
 </resources>

@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.habitform
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.isToggleable
@@ -165,5 +166,120 @@ class HabitFormScreenTest {
         assertEquals(Period.DAY, updated.period)
         assertEquals(LogMode.COUNTER, updated.logMode)
         assertEquals(9, updated.target)
+    }
+
+    @Test
+    fun `duration targets jump by ten`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-plus10").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("30").assertExists()
+    }
+
+    @Test
+    fun `tapping the target number opens direct input`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-value").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-input").assertExists()
+    }
+
+    @Test
+    fun `quantity targets keep the single-step stepper`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-plus").assertExists()
+        compose.onNodeWithTag("target-plus10").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a minute limit gets the ten-jump stepper too`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUIT").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("With a limit").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Minutes").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-plus10").assertExists()
+        compose.onNodeWithTag("target-minus10").assertExists()
+
+        compose.onNodeWithTag("target-plus10").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("40").assertExists()
+    }
+
+    @Config(qualifiers = "w360dp-h800dp")
+    @Test
+    fun `the minute stepper stays fully visible on a narrow 360dp screen`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-minus10").assertIsDisplayed()
+        compose.onNodeWithTag("target-value").assertIsDisplayed()
+        compose.onNodeWithTag("target-plus10").assertIsDisplayed()
+
+        compose.onNodeWithTag("target-plus10").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("30").assertExists()
+    }
+
+    @Test
+    fun `more options always has content — the reminder row`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("reminder-row").assertExists()
+    }
+
+    @Test
+    fun `tapping the reminder row opens the time picker sheet`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("reminder-row").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("time-picker-confirm").assertIsDisplayed()
+    }
+
+    @Test
+    fun `an existing reminder shows its time and can be cleared from the row`() {
+        runBlocking {
+            habits.create(habitEntity(id = "h1", reminderMinutes = 9 * 60, createdOnDay = today))
+        }
+        launchScreen(habitId = "h1")
+
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("09:00").assertExists()
+
+        compose.onNodeWithTag("reminder-clear").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("None").assertExists()
     }
 }
