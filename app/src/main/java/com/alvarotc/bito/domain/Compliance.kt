@@ -137,8 +137,14 @@ object Compliance {
             pause.habitId == habitId && day >= pause.startDay && (endDay == null || day <= endDay)
         }
 
-    /** Whether the habit already existed on [day] and had not been archived yet. */
-    private fun isAliveOn(
+    /**
+     * Whether the habit already existed on [day] and had not been archived
+     * yet. Internal (module-visible) rather than private so [Heatmap] can
+     * tell OFF (outside the habit's life) apart from PAUSED without
+     * re-deriving this rule — the same drift Task 1 fixed between the engine
+     * and the Today card builder.
+     */
+    internal fun isAliveOn(
         habit: Habit,
         day: LogicalDay,
     ): Boolean {

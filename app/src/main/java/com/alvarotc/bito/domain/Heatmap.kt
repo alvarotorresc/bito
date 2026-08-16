@@ -2,7 +2,6 @@ package com.alvarotc.bito.domain
 
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Habit
-import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Period
 import java.time.YearMonth
@@ -47,7 +46,7 @@ object Heatmap {
         day: LogicalDay,
         today: LogicalDay,
     ): DayDot {
-        if (day > today || !isAliveOn(habit, day)) return DayDot.OFF
+        if (day > today || !Compliance.isAliveOn(habit, day)) return DayDot.OFF
         if (Compliance.isPausedOn(state, habit.id, day)) return DayDot.PAUSED
         return if (habit.period == Period.DAY) {
             dailyDotOf(state, habit, day, today)
@@ -83,18 +82,4 @@ object Heatmap {
         habit: Habit,
         day: LogicalDay,
     ): Boolean = state.freezerUses.any { it.habitId == habit.id && it.protectedDay == day }
-
-    /** Same rule as [Compliance]'s private isAliveOn, needed here to tell OFF apart from PAUSED. */
-    private fun isAliveOn(
-        habit: Habit,
-        day: LogicalDay,
-    ): Boolean {
-        if (day < habit.createdOnDay) return false
-        val archivedOnDay = habit.archivedOnDay
-        return when {
-            archivedOnDay != null -> day < archivedOnDay
-            habit.status == HabitStatus.ARCHIVED -> false
-            else -> true
-        }
-    }
 }
