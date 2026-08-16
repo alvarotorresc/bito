@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -128,9 +130,12 @@ fun SettingsScreen(
         containerColor = Papel,
         snackbarHost = { SnackbarHost(snackbar) { BitoSnackbar(it) } },
     ) { padding ->
+        // Without scroll the last card gets whatever height is left and collapses once the
+        // persistent bottom bar + section subtitles outgrow the viewport.
         Column(
             Modifier
                 .padding(padding)
+                .verticalScroll(rememberScrollState())
                 .padding(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {

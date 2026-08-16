@@ -10,9 +10,15 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Cross-lane smoke test: start() must not throw and must leave both channels behind. */
+/**
+ * Cross-lane smoke test: start() must not throw and must leave both channels behind.
+ * Uses a bare [Application] so the manifest's BitoApp doesn't boot its own AppContainer in
+ * onCreate() — that second DataStore on the same settings file crashes a background coroutine
+ * ("multiple DataStores active") that surfaces as UncaughtExceptionsBeforeTest in whichever
+ * test runs next on the worker.
+ */
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35])
+@Config(sdk = [35], application = Application::class)
 class AppStartupTest {
     @Test
     fun `start does not throw and creates both notification channels`() {
