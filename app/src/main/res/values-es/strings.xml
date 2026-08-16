@@ -31,6 +31,7 @@
     <string name="empty_today_title">Aquí no hay nada todavía</string>
     <string name="empty_today_body">Crea tu primer hábito — registrarlo te costará casi nada.</string>
     <string name="create_habit">Crear hábito</string>
+    <string name="paused_section_title">En pausa</string>
     <string name="nav_today">Hoy</string>
     <string name="nav_stats">Estadísticas</string>
     <string name="nav_new_habit">Nuevo hábito</string>

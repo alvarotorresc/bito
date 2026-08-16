@@ -8,6 +8,7 @@ import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Habit
+import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Metric
@@ -50,12 +51,16 @@ val HabitCardUi.nameStruckThrough: Boolean
 val HabitCardUi.showsLoggingChips: Boolean
     get() = direction == Direction.AT_MOST || !doneToday
 
+/** A paused habit's compact row in Today's "paused" section — no progress, just a way back in. */
+data class PausedHabitUi(val id: String, val name: String)
+
 /** Snapshot the Today screen renders: the ring, the cards, and the pending-seal prompt. */
 data class TodayUiState(
     val today: LogicalDay = 0,
     val ringDone: Int = 0,
     val ringTotal: Int = 0,
     val cards: List<HabitCardUi> = emptyList(),
+    val pausedHabits: List<PausedHabitUi> = emptyList(),
     val pendingSealDays: List<LogicalDay> = emptyList(),
     val loading: Boolean = true,
 )
@@ -75,11 +80,24 @@ fun buildTodayUiState(
             .filter { Compliance.isRequirableOn(state, it, today) }
             .map { habit -> cardOf(state, habit, today) }
             .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
+    // Paused, not archived: a habit "counts" as paused either by its own status flag or by
+    // carrying an open pause interval — the two are written together by
+    // HabitsRepository.pause/resume, but domain-level fixtures (this file's own `pause()`
+    // helper, used by test 10 and above) can set one without the other.
+    val pausedHabits =
+        state.habits
+            .filter { it.status != HabitStatus.ARCHIVED }
+            .filter { habit ->
+                habit.status == HabitStatus.PAUSED ||
+                    state.pauseIntervals.any { it.habitId == habit.id && it.endDay == null }
+            }
+            .map { PausedHabitUi(it.id, it.name) }
     return TodayUiState(
         today = today,
         ringDone = cards.count { it.doneToday },
         ringTotal = cards.size,
         cards = cards,
+        pausedHabits = pausedHabits,
         pendingSealDays = Sealing.pendingSealDays(state, today),
         loading = false,
     )

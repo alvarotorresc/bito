@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.today
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -7,12 +8,14 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -42,6 +45,7 @@ import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.DayRing
 import com.alvarotc.bito.ui.components.PillButton
+import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
@@ -127,6 +131,18 @@ fun TodayScreen(
                     )
                 }
             }
+            if (state.pausedHabits.isNotEmpty()) {
+                item {
+                    Text(
+                        stringResource(R.string.paused_section_title),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = TintaSuave,
+                    )
+                }
+                items(state.pausedHabits, key = { "paused-${it.id}" }) { paused ->
+                    PausedHabitRow(paused, onOpen = { onOpenHabit(paused.id) })
+                }
+            }
         }
     }
 
@@ -182,6 +198,26 @@ private fun RingCard(
                 )
             }
         }
+    }
+}
+
+/** One compact row in the paused section: no progress, just a name and a way back into detail. */
+@Composable
+private fun PausedHabitRow(
+    paused: PausedHabitUi,
+    onOpen: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable(onClick = onOpen)
+            .testTag("paused-${paused.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(BitoIcons.Pause, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(16.dp))
+        Text(paused.name, style = MaterialTheme.typography.bodyLarge, color = Tinta)
     }
 }
 

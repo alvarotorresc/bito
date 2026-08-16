@@ -243,6 +243,24 @@ class TodayScreenTest {
     }
 
     @Test
+    fun `a paused habit drops off the cards and its row opens detail`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "yoga", name = "Yoga", metric = Metric.CHECK, target = 1, createdOnDay = today, sortOrder = 3),
+            )
+            HabitsRepository(db).pause("yoga", startDay = today, note = null)
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("card-yoga", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Paused", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("paused-yoga", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertEquals("yoga", openedId)
+    }
+
+    @Test
     fun `a binary WEEK habit with a wide target renders a bar instead of thousands of dots`() {
         runBlocking {
             HabitsRepository(db).create(

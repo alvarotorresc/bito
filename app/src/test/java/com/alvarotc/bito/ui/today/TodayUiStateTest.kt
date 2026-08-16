@@ -341,6 +341,32 @@ class TodayUiStateTest {
     }
 
     @Test
+    fun `19 - paused habits leave the cards and appear in the paused section`() {
+        val markedPaused = habit("marked-paused", status = HabitStatus.PAUSED)
+        val state =
+            stateOf(
+                habits = listOf(markedPaused),
+                pauses = listOf(pause("marked-paused", startDay = 18)),
+            )
+
+        val result = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertTrue(result.cards.isEmpty())
+        assertEquals(listOf(PausedHabitUi("marked-paused", "marked-paused")), result.pausedHabits)
+    }
+
+    @Test
+    fun `20 - archived habits appear nowhere on today`() {
+        val archivedHabit = habit("archived-habit", status = HabitStatus.ARCHIVED)
+        val state = stateOf(habits = listOf(archivedHabit))
+
+        val result = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertTrue(result.cards.isEmpty())
+        assertTrue(result.pausedHabits.isEmpty())
+    }
+
+    @Test
     fun `18 - entries on paused days do not inflate the weekly card progress`() {
         // forces 3x/week; logged Monday and Tuesday, then a retroactive pause covers Monday-Tuesday
         val habit = RealHabits.strengthTraining
