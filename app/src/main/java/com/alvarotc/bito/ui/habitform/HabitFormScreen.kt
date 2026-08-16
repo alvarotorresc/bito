@@ -5,6 +5,8 @@ package com.alvarotc.bito.ui.habitform
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +18,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -325,18 +329,25 @@ private fun TargetStepper(
     // The minute row packs five controls (±10, ±1, value) into one line. A Material3 IconButton
     // enforces a 48dp touch target no matter what size modifier it's given, so reusing it for
     // ±10 would overflow a ~360dp-wide screen once card/screen padding is subtracted (see the
-    // narrow-width regression test). MinuteStepButton opts out of that enforced minimum — it's a
-    // smaller, purpose-built tap target instead of the standard icon button — and the row's own
+    // narrow-width regression test). StepChip opts out of that enforced minimum — it's a
+    // smaller, purpose-built tap target shared by all four step controls — and the row's own
     // spacing tightens only while the extra pair is present; the three-control case is untouched.
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(if (isMinuteTarget) 4.dp else 12.dp),
     ) {
         if (isMinuteTarget) {
-            MinuteStepButton("−10", onClick = { onAdjustTarget(-10) }, modifier = Modifier.testTag("target-minus10"))
+            StepChip(onClick = { onAdjustTarget(-10) }, modifier = Modifier.testTag("target-minus10")) {
+                Text(
+                    "−10",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Tinta,
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                )
+            }
         }
-        IconButton(onClick = { onAdjustTarget(-1) }, modifier = Modifier.testTag("target-minus")) {
-            Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta)
+        StepChip(onClick = { onAdjustTarget(-1) }, modifier = Modifier.testTag("target-minus")) {
+            Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
         }
         Row(
             verticalAlignment = Alignment.Bottom,
@@ -348,11 +359,18 @@ private fun TargetStepper(
                 Text(unitLabel, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             }
         }
-        IconButton(onClick = { onAdjustTarget(1) }, modifier = Modifier.testTag("target-plus")) {
-            Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta)
+        StepChip(onClick = { onAdjustTarget(1) }, modifier = Modifier.testTag("target-plus")) {
+            Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
         }
         if (isMinuteTarget) {
-            MinuteStepButton("+10", onClick = { onAdjustTarget(10) }, modifier = Modifier.testTag("target-plus10"))
+            StepChip(onClick = { onAdjustTarget(10) }, modifier = Modifier.testTag("target-plus10")) {
+                Text(
+                    "+10",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = Tinta,
+                    modifier = Modifier.padding(horizontal = 10.dp),
+                )
+            }
         }
     }
 
@@ -369,21 +387,27 @@ private fun TargetStepper(
     }
 }
 
-/** A compact ±10 tap target for [TargetStepper] — see the row-overflow comment above its call site. */
+/**
+ * The single visual language for all four [TargetStepper] step controls (±1, ±10) — see the
+ * row-overflow comment above its call site for why this isn't a Material3 IconButton.
+ */
 @Composable
-private fun MinuteStepButton(
-    label: String,
+private fun StepChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
 ) {
     Box(
         modifier
+            .height(40.dp)
+            .widthIn(min = 40.dp)
             .clip(CircleShape)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 6.dp, vertical = 14.dp),
+            .background(Tarjeta)
+            .border(1.dp, Borde, CircleShape)
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = MaterialTheme.typography.labelMedium, color = Tinta)
+        content()
     }
 }
 

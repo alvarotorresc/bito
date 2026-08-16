@@ -7,14 +7,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -45,9 +49,15 @@ fun TimePickerSheet(
             initialMinute = initialMinutes % 60,
             is24Hour = true,
         )
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium, color = Tinta)
+    // skipPartiallyExpanded: the clock face plus the Save button don't fit in the half-expanded
+    // sheet height, so a partial state clips the confirm button below the viewport.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = Tarjeta) {
+        Column(
+            Modifier.padding(20.dp).verticalScroll(rememberScrollState()),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = Tinta, modifier = Modifier.fillMaxWidth())
             Spacer(Modifier.height(16.dp))
             TimePicker(
                 state = state,

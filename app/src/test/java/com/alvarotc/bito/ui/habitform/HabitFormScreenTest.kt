@@ -262,7 +262,7 @@ class HabitFormScreenTest {
         compose.onNodeWithTag("reminder-row").performScrollTo().performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("time-picker-confirm").assertExists()
+        compose.onNodeWithTag("time-picker-confirm").assertIsDisplayed()
     }
 
     @Test
