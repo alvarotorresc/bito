@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -24,8 +25,10 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +38,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.ui.icons.BitoIcons
@@ -89,6 +93,24 @@ fun PillButton(
         ),
 ) { Text(text, style = MaterialTheme.typography.titleMedium) }
 
+/** [GhostPillButton]'s icon-only twin, for actions whose label lives in the content description. */
+@Composable
+fun GhostIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String?,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    color: Color = TintaSuave,
+    borderColor: Color = Borde,
+) = OutlinedButton(
+    onClick = onClick,
+    modifier = modifier,
+    shape = CircleShape,
+    border = BorderStroke(1.dp, borderColor),
+    colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
+    contentPadding = PaddingValues(horizontal = 12.dp),
+) { Icon(icon, contentDescription = contentDescription, modifier = Modifier.size(16.dp)) }
+
 @Composable
 fun GhostPillButton(
     text: String,
@@ -103,6 +125,44 @@ fun GhostPillButton(
     border = BorderStroke(1.dp, borderColor),
     colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
 ) { Text(text, style = MaterialTheme.typography.labelMedium) }
+
+/**
+ * Bito-styled snackbar body. The M3 default reads the inverse* slots this theme deliberately
+ * doesn't define, falling back to Material's near-black + purple — pass this to every
+ * [androidx.compose.material3.SnackbarHost] so transient messages speak Crema like the rest.
+ */
+@Composable
+fun BitoSnackbar(
+    data: SnackbarData,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.padding(12.dp).testTag("bito-snackbar"),
+        shape = RoundedCornerShape(24.dp),
+        color = Tarjeta,
+        border = BorderStroke(1.dp, Borde),
+        shadowElevation = 6.dp,
+    ) {
+        Row(
+            Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                data.visuals.message,
+                style = MaterialTheme.typography.bodyLarge,
+                color = Tinta,
+                modifier = Modifier.weight(1f),
+            )
+            data.visuals.actionLabel?.let { label ->
+                Spacer(Modifier.size(12.dp))
+                TextButton(
+                    onClick = data::performAction,
+                    colors = ButtonDefaults.textButtonColors(contentColor = Hoja),
+                ) { Text(label, style = MaterialTheme.typography.titleMedium) }
+            }
+        }
+    }
+}
 
 /** «El progreso son puntitos»: filled dots toward small targets (≤ 12). */
 @Composable

@@ -18,6 +18,7 @@
     <string name="add_target">+objetivo</string>
     <string name="exact_value_title">Ajustar el total de hoy</string>
     <string name="exact_value_hint">Total de hoy</string>
+    <string name="exact_value_action">Escribir el total exacto</string>
     <string name="save">Guardar</string>
     <string name="logged_snackbar">Registrado</string>
     <string name="undo">Deshacer</string>
@@ -85,12 +86,15 @@
     <string name="msg_io_error">Algo salió mal — no se cambió nada</string>
 
     <string name="day_section_title">Tu día</string>
-    <string name="cutoff_label">Hora de corte</string>
+    <string name="day_section_body">Si registras algo de madrugada antes de esa hora, cuenta para el día anterior.</string>
+    <string name="cutoff_label">Fin de tu día</string>
     <string name="cutoff_note">Aplica desde ahora; los días sellados no se tocan</string>
     <string name="reminders_section_title">Recordatorios</string>
+    <string name="reminders_section_body">Avisos en el móvil para que no se te olvide registrar tus hábitos.</string>
     <string name="reminder_add">Añadir aviso</string>
     <string name="reminder_remove">Quitar</string>
     <string name="review_label">Repaso del día</string>
+    <string name="review_hint">Un aviso por la noche para repasar el día y cerrarlo.</string>
     <string name="reminder_exact_notice">Las alarmas exactas están desactivadas — los avisos pueden desviarse. Toca para permitirlas.</string>
     <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
 </resources>
