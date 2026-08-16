@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="open_habit_hint">Abrir %1$s</string>
+
+    <string name="unit_days">días</string>
+    <string name="unit_weeks">semanas</string>
+    <string name="unit_months">meses</string>
+    <string name="record_chip">Récord: %1$d</string>
+
+    <string name="freezer_chip_label">%1$d congeladores</string>
+
+    <string name="previous_month">Mes anterior</string>
+    <string name="next_month">Mes siguiente</string>
+
+    <string name="window_7">7 días</string>
+    <string name="window_30">30 días</string>
+    <string name="window_year">Año</string>
+    <string name="compliance_fraction">%1$d de %2$d</string>
+
+    <string name="pause_habit">Pausar</string>
+    <string name="resume_habit">Reanudar</string>
+    <string name="archive_habit">Archivar</string>
+
+    <string name="day_done">Hecho</string>
+    <string name="day_not_done">No lo hice</string>
+    <string name="day_value_title">Ajustar el total del día</string>
+    <string name="relapsed_that_day">Recaí ese día</string>
+    <string name="stayed_clean">Estuve limpio</string>
+    <string name="seal_day_hint">Sellará el día entero, como el sellado en lote.</string>
+    <string name="use_freezer_action">Usar congelador (tienes %1$d)</string>
+
+    <string name="freezer_sheet_title">Congeladores</string>
+    <string name="freezer_sheet_body">Un congelador protege un día fallado sin romper tu racha.</string>
+    <string name="freezers_owned_label">Tienes %1$d</string>
+    <string name="buy_freezer_action">Comprar por %1$d pts</string>
+    <string name="buy_freezer_missing">Te faltan %1$d pts</string>
+
+    <string name="pause_sheet_title">¿Pausar este hábito?</string>
+    <string name="pause_note_hint">Nota (opcional)</string>
+
+    <string name="archive_sheet_title">¿Archivar este hábito?</string>
+    <string name="archive_sheet_body">Archivar lo conserva todo — podrás reactivarlo más tarde.</string>
+</resources>
