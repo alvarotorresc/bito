@@ -53,7 +53,11 @@ fun RecordsScreen(
             RecordsHeader(onBack)
             val best = state.records.firstOrNull()
             if (best == null) {
-                Text(stringResource(R.string.records_empty), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+                // In a data screen empty is poverty, not reward — the structure (the card) still
+                // renders, only its body swaps for the empty line. Mirrors StatsScreen's streak wall.
+                BitoCard(modifier = Modifier.fillMaxWidth()) {
+                    Text(stringResource(R.string.records_empty), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+                }
             } else {
                 BestRecordHero(best)
                 RecordsList(state.records)
