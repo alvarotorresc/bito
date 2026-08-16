@@ -35,6 +35,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.DotProgress
+import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.RoundedBar
 import com.alvarotc.bito.ui.components.StreakChip
@@ -42,6 +43,8 @@ import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
+import com.alvarotc.bito.ui.theme.Peligro
+import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -265,6 +268,14 @@ private fun DurationBody(
                     stringResource(R.string.add_target),
                     onClick = { onAdd((card.target - card.progress).coerceAtLeast(1)) },
                 )
+                // QA: the long press on the bar is invisible — this chip is the discoverable way
+                // into the exact-value sheet; the gesture stays as a shortcut.
+                GhostIconButton(
+                    BitoIcons.Pencil,
+                    contentDescription = stringResource(R.string.exact_value_action),
+                    onClick = onExact,
+                    modifier = Modifier.testTag("exact-${card.id}"),
+                )
             }
         }
     }
@@ -286,7 +297,12 @@ private fun AbstinenceBody(
             )
             Spacer(Modifier.weight(1f))
             if (!card.failed) {
-                GhostPillButton(stringResource(R.string.relapse_action), onClick = onRelapse, color = TintaSuave)
+                GhostPillButton(
+                    stringResource(R.string.relapse_action),
+                    onClick = onRelapse,
+                    color = Peligro,
+                    borderColor = PeligroTinte,
+                )
             }
         }
     }

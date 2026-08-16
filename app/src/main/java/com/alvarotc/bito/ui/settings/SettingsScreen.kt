@@ -48,6 +48,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.backup.BackupPreview
 import com.alvarotc.bito.ui.components.BitoCard
+import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.TimePickerSheet
@@ -125,7 +126,7 @@ fun SettingsScreen(
 
     Scaffold(
         containerColor = Papel,
-        snackbarHost = { SnackbarHost(snackbar) },
+        snackbarHost = { SnackbarHost(snackbar) { BitoSnackbar(it) } },
     ) { padding ->
         Column(
             Modifier
@@ -207,6 +208,8 @@ private fun DaySectionCard(
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.day_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
+        Text(stringResource(R.string.day_section_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        Spacer(Modifier.height(4.dp))
         SettingsRow(label = stringResource(R.string.cutoff_label), value = formatClock(cutoffMinutes), onClick = { showSheet = true })
     }
     if (showSheet) {
@@ -246,11 +249,14 @@ private fun RemindersSectionCard(
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.reminders_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
+        Text(stringResource(R.string.reminders_section_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        Spacer(Modifier.height(4.dp))
         reminderMinutes.forEach { minutes ->
             ReminderHourRow(minutes = minutes, onEdit = { editingReminder = minutes }, onRemove = { onRemoveReminder(minutes) })
         }
         SettingsRow(label = stringResource(R.string.reminder_add), onClick = { showAddSheet = true })
         SettingsRow(label = stringResource(R.string.review_label), value = formatClock(reviewMinutes), onClick = { showReviewSheet = true })
+        Text(stringResource(R.string.review_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         if (exactAlarmsBlocked) {
             SettingsRow(
                 label = stringResource(R.string.reminder_exact_notice),

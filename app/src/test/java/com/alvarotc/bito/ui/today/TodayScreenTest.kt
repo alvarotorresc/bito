@@ -111,7 +111,7 @@ class TodayScreenTest {
 
         compose.setContent {
             BitoTheme {
-                TodayScreen(vm, onCreateHabit = {}, onEditHabit = { editedId = it }, onOpenSettings = {})
+                TodayScreen(vm, onCreateHabit = {}, onEditHabit = { editedId = it })
             }
         }
         compose.waitForIdle()
@@ -146,6 +146,19 @@ class TodayScreenTest {
     }
 
     @Test
+    fun `logging shows the Bito-styled snackbar and its undo action reverts the entry`() {
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("bito-snackbar", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Undo", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        val entries = runBlocking { db.entryDao().all().filter { it.habitId == "cama" } }
+        assertTrue(entries.isEmpty())
+    }
+
+    @Test
     fun `tapping a card invokes onEditHabit with its id`() {
         compose.onNodeWithTag("card-agua", useUnmergedTree = true).performClick()
         compose.waitForIdle()
@@ -176,6 +189,29 @@ class TodayScreenTest {
         assertEquals("lectura", editedId)
         val entries = runBlocking { db.entryDao().all().filter { it.habitId == "lectura" } }
         assertTrue(entries.isEmpty())
+    }
+
+    @Test
+    fun `the duration card offers a visible exact-value chip that opens the sheet`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "lectura",
+                    name = "Lectura",
+                    metric = Metric.DURATION,
+                    target = 30,
+                    unit = "min",
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("exact-lectura", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Set today's total").assertExists()
     }
 
     @Test

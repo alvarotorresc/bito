@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
+import com.alvarotc.bito.ui.theme.Peligro
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -104,8 +105,13 @@ fun RelapseSheet(
             Spacer(Modifier.height(8.dp))
             Text(stringResource(R.string.relapse_confirm_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
             Spacer(Modifier.height(16.dp))
-            // Hoja is fine here: the decision, not the emotion, is what's on the button.
-            PillButton(stringResource(R.string.relapse_confirm_yes), onClick = onConfirm, modifier = Modifier.fillMaxWidth())
+            // QA: destructive action, so it reads red, not the usual confirm green.
+            PillButton(
+                stringResource(R.string.relapse_confirm_yes),
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth(),
+                containerColor = Peligro,
+            )
             Spacer(Modifier.height(8.dp))
             GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
