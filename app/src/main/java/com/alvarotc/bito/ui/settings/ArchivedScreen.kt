@@ -49,8 +49,12 @@ fun ArchivedScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             ArchivedHeader(onBack)
-            archived.forEach { habit ->
-                ArchivedRow(habit, onClick = { onOpenHabit(habit.id) })
+            if (archived.isEmpty()) {
+                Text(stringResource(R.string.archived_empty), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+            } else {
+                archived.forEach { habit ->
+                    ArchivedRow(habit, onClick = { onOpenHabit(habit.id) })
+                }
             }
         }
     }

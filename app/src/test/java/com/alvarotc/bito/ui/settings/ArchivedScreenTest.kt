@@ -76,6 +76,19 @@ class ArchivedScreenTest {
     }
 
     @Test
+    fun `shows an empty state when nothing is archived`() {
+        val vm = SettingsViewModel(SettingsRepository(settingsStore()), HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                ArchivedScreen(viewModel = vm, onBack = {}, onOpenHabit = { openedId = it })
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Nothing archived yet", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun `lists archived habits with their archive date and opens detail on tap`() {
         runBlocking {
             HabitsRepository(db).create(

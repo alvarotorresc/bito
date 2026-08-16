@@ -261,6 +261,18 @@ class TodayScreenTest {
     }
 
     @Test
+    fun `pausing every habit hides the empty-today prompt and shows the paused section`() {
+        runBlocking {
+            HabitsRepository(db).pause("agua", startDay = today, note = null)
+            HabitsRepository(db).pause("cama", startDay = today, note = null)
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Paused", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun `a binary WEEK habit with a wide target renders a bar instead of thousands of dots`() {
         runBlocking {
             HabitsRepository(db).create(

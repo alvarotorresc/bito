@@ -106,6 +106,7 @@
     <string name="archived_habits_row">Hábitos archivados (%1$d)</string>
     <string name="archived_title">Hábitos archivados</string>
     <string name="archived_since">Desde %1$s</string>
+    <string name="archived_empty">Todavía no hay nada archivado</string>
     <string name="unarchive_habit">Reactivar</string>
     <string name="paused_since">En pausa desde %1$s</string>
 </resources>

@@ -105,7 +105,9 @@ fun TodayScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { TodayHeader(state.today) }
-            if (state.cards.isEmpty() && !state.loading) {
+            // Empty is only true poverty when there is nothing at all — a habit merely paused
+            // still has a home in the section below, so it must not trip "create your first habit".
+            if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty()) {
                 item { EmptyToday(onCreateHabit) }
             } else {
                 item { RingCard(state.ringDone, state.ringTotal) }
