@@ -101,6 +101,7 @@
     <string name="cutoff_note">Applies from now on; sealed days stay as they are</string>
     <string name="reminders_section_title">Reminders</string>
     <string name="reminders_section_body">Phone nudges so you don\'t forget to log your habits.</string>
+    <string name="reminder_none_hint">No reminders set — add a time so Bito can nudge you.</string>
     <string name="reminder_add">Add reminder</string>
     <string name="reminder_remove">Remove</string>
     <string name="review_label">Daily review</string>

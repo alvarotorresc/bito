@@ -96,6 +96,7 @@
     <string name="cutoff_note">Aplica desde ahora; los días sellados no se tocan</string>
     <string name="reminders_section_title">Recordatorios</string>
     <string name="reminders_section_body">Avisos en el móvil para que no se te olvide registrar tus hábitos.</string>
+    <string name="reminder_none_hint">Sin avisos configurados — añade una hora para que Bito te avise.</string>
     <string name="reminder_add">Añadir aviso</string>
     <string name="reminder_remove">Quitar</string>
     <string name="review_label">Repaso del día</string>

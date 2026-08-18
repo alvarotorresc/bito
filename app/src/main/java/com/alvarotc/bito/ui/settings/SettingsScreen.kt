@@ -262,6 +262,10 @@ private fun RemindersSectionCard(
         reminderMinutes.forEach { minutes ->
             ReminderHourRow(minutes = minutes, onEdit = { editingReminder = minutes }, onRemove = { onRemoveReminder(minutes) })
         }
+        if (reminderMinutes.isEmpty()) {
+            Text(stringResource(R.string.reminder_none_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            Spacer(Modifier.height(4.dp))
+        }
         SettingsRow(label = stringResource(R.string.reminder_add), onClick = { showAddSheet = true })
         SettingsRow(label = stringResource(R.string.review_label), value = formatClock(reviewMinutes), onClick = { showReviewSheet = true })
         Text(stringResource(R.string.review_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)

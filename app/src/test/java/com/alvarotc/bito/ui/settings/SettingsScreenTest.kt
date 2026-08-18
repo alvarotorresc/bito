@@ -134,4 +134,37 @@ class SettingsScreenTest {
 
         assertTrue(opened)
     }
+
+    @Test
+    fun `the reminders card hints when no hours are configured`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-no-reminders"))
+        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("No reminders set", substring = true, useUnmergedTree = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `the reminders hint disappears once an hour is configured`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-with-reminder"))
+        runBlocking { settings.update { it.copy(globalReminderMinutes = listOf(9 * 60)) } }
+        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("No reminders set", substring = true, useUnmergedTree = true).assertDoesNotExist()
+    }
 }
