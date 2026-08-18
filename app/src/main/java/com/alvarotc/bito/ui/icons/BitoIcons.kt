@@ -136,4 +136,12 @@ object BitoIcons {
         )
     }
     val ArrowUp by lazy { lucide("arrow-up", "M5 12l7-7 7 7", "M12 19V5") }
+    val Info by lazy {
+        lucide(
+            "info",
+            "M22 12A10 10 0 1 0 2 12A10 10 0 1 0 22 12Z",
+            "M12 16v-4",
+            "M12 8h.01",
+        )
+    }
 }

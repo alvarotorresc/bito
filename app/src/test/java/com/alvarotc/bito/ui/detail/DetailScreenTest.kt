@@ -179,6 +179,21 @@ class DetailScreenTest {
     }
 
     @Test
+    fun `the freezer info sheet opens from the info icon`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        compose.onNodeWithTag("freezer-info", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Freezers").assertExists()
+    }
+
+    @Test
     fun `heatmap day cells meet the 44dp touch floor`() {
         runBlocking {
             HabitsRepository(db).create(

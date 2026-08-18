@@ -37,6 +37,11 @@
     <string name="buy_freezer_action">Comprar por %1$d pts</string>
     <string name="buy_freezer_missing">Te faltan %1$d pts</string>
 
+    <string name="freezer_info_hint">Información de congeladores</string>
+    <string name="freezer_info_sheet_title">Congeladores</string>
+    <string name="freezer_info_sheet_body">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Se compran con puntos y se usan desde el calendario, tocando el día que quieras proteger. 1 congelador = 1 hábito × 1 día.</string>
+    <string name="got_it">Entendido</string>
+
     <string name="pause_sheet_title">¿Pausar este hábito?</string>
     <string name="pause_note_hint">Nota (opcional)</string>
 

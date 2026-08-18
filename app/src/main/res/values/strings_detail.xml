@@ -38,6 +38,11 @@
     <string name="buy_freezer_action">Buy for %1$d pts</string>
     <string name="buy_freezer_missing">%1$d pts short</string>
 
+    <string name="freezer_info_hint">Freezer info</string>
+    <string name="freezer_info_sheet_title">Freezers</string>
+    <string name="freezer_info_sheet_body">A freezer protects a failed day: your streak skips it instead of breaking. Buy them with points and spend them from the calendar by tapping the day you want to protect. 1 freezer = 1 habit × 1 day.</string>
+    <string name="got_it">Got it</string>
+
     <string name="pause_sheet_title">Pause this habit?</string>
     <string name="pause_note_hint">Note (optional)</string>
 

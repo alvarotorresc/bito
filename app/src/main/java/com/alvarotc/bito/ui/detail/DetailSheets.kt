@@ -214,6 +214,23 @@ fun FreezerSheet(
     }
 }
 
+/**
+ * What freezers are and how to spend them — pure info, dismissed by its own "Entendido"/"Got it"
+ * button, no write of any kind. Body copy is provisional Neutra voice; the per-personality voice
+ * (sergeant/cheerleader/etc.) arrives with M6.
+ */
+@Composable
+fun FreezerInfoSheet(onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp).testTag("freezer-info-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.freezer_info_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Text(stringResource(R.string.freezer_info_sheet_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+            Spacer(Modifier.height(4.dp))
+            PillButton(stringResource(R.string.got_it), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
 /** Pausing suspends registration and streak judgment until resumed; the note is optional context. */
 @Composable
 fun PauseSheet(

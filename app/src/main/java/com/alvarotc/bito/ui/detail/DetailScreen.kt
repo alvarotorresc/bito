@@ -54,6 +54,7 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.DotHeatmap
+import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.icons.BitoIcons
@@ -103,6 +104,7 @@ fun DetailScreen(
 
     var daySheetFor by remember { mutableStateOf<LogicalDay?>(null) }
     var showFreezerSheet by remember { mutableStateOf(false) }
+    var showFreezerInfoSheet by remember { mutableStateOf(false) }
     var showPauseSheet by remember { mutableStateOf(false) }
     var showArchiveSheet by remember { mutableStateOf(false) }
     var relapseSheetOpen by remember { mutableStateOf(false) }
@@ -127,6 +129,7 @@ fun DetailScreen(
                 freezersOwned = current.freezersOwned,
                 onRelapseClick = { relapseSheetOpen = true },
                 onFreezerClick = { showFreezerSheet = true },
+                onFreezerInfoClick = { showFreezerInfoSheet = true },
             )
             HeatmapSection(
                 current = current,
@@ -178,6 +181,9 @@ fun DetailScreen(
             onBuy = viewModel::buyFreezer,
             onDismiss = { showFreezerSheet = false },
         )
+    }
+    if (showFreezerInfoSheet) {
+        FreezerInfoSheet(onDismiss = { showFreezerInfoSheet = false })
     }
     if (showPauseSheet) {
         PauseSheet(onPause = viewModel::pause, onDismiss = { showPauseSheet = false })
@@ -317,8 +323,11 @@ private fun RecordChip(bestStreak: Int) {
 
 /**
  * The pill row under the monument card: "He recaído" (ZERO habits) and the freezer pill (DAY
- * period), each Row-weight-equal so a lone survivor takes the full row on its own. Neither gate
- * changes from the old standalone call sites — only their position and shape do.
+ * period), each Row-weight-equal so a lone survivor takes the full row on its own — that still
+ * holds when only the relapse pill shows. The freezer pill instead shares its cell with a small
+ * ⓘ affordance at the row's right edge, own tap target (no nested-clickable stealing the pill's
+ * own tap), opening [FreezerInfoSheet]. Neither pill's gate changes from the old standalone call
+ * sites — only their position and shape do.
  */
 @Composable
 private fun MonumentActionsRow(
@@ -327,14 +336,25 @@ private fun MonumentActionsRow(
     freezersOwned: Int,
     onRelapseClick: () -> Unit,
     onFreezerClick: () -> Unit,
+    onFreezerInfoClick: () -> Unit,
 ) {
     if (!showRelapsePill && !showFreezerPill) return
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         if (showRelapsePill) {
             RelapsePill(onClick = onRelapseClick, modifier = Modifier.weight(1f).testTag("relapse-pill"))
         }
         if (showFreezerPill) {
             FreezerPill(freezersOwned, onClick = onFreezerClick, modifier = Modifier.weight(1f).testTag("freezer-chip"))
+            GhostIconButton(
+                BitoIcons.Info,
+                contentDescription = stringResource(R.string.freezer_info_hint),
+                onClick = onFreezerInfoClick,
+                modifier = Modifier.testTag("freezer-info"),
+            )
         }
     }
 }
