@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.stats
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,10 +19,12 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -38,23 +42,35 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.ActiveStreak
 import com.alvarotc.bito.domain.DayDot
+import com.alvarotc.bito.domain.HabitRecord
 import com.alvarotc.bito.domain.PerfectDaysSummary
 import com.alvarotc.bito.domain.WeekRow
 import com.alvarotc.bito.domain.WeekSummary
 import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
-import com.alvarotc.bito.ui.theme.BrasaTinte
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import java.text.NumberFormat
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.Locale
+
+/** The dot cell size and gap the week strip's rows use — the header row mirrors both exactly so its 7 labels land above the right columns. */
+private val WeekDotSize = 16.dp
+private val WeekDotGap = 6.dp
+private val WeekDotsWidth = WeekDotSize * 7 + WeekDotGap * 6
+private val WeekTallyGap = 12.dp
+private val WeekTallyMinWidth = 40.dp
 
 /** The Stats tab: commentator, perfect days, the week strip, active streaks and the two teasers. */
 @Composable
@@ -76,8 +92,8 @@ fun StatsScreen(
             CommentatorBubble(state.mood, state.personality)
             PerfectDaysCard(state.perfectDays)
             WeekCard(state.week)
-            StreaksCard(state.activeStreaks)
-            Teasers(onOpenRecords, onOpenNumbers)
+            StreaksSection(state.activeStreaks)
+            Teasers(state.bestRecord, state.totalEntries, onOpenRecords, onOpenNumbers)
         }
     }
 }
@@ -109,7 +125,11 @@ private fun moodTextRes(mood: Mood): Int =
         Mood.DRAMATIC -> R.string.stats_habi_dramatic
     }
 
-/** THE single solid-accent card on the screen: total perfect days, "N this month". */
+/**
+ * THE single solid-accent card on the screen: perfect days THIS YEAR (rule 1 of the 3a mockup) —
+ * an outlined check-circle at the left, the hero number + "this year" inline to its right, the
+ * "Perfect days" label below both.
+ */
 @Composable
 private fun PerfectDaysCard(summary: PerfectDaysSummary) {
     BitoCard(
@@ -117,23 +137,36 @@ private fun PerfectDaysCard(summary: PerfectDaysSummary) {
         border = Hoja,
         modifier = Modifier.fillMaxWidth().testTag("accent"),
     ) {
-        Text(
-            stringResource(R.string.stats_perfect_days_label),
-            style = MaterialTheme.typography.labelMedium,
-            color = Tarjeta.copy(alpha = 0.8f),
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            "${summary.total}",
-            style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
-            color = Tarjeta,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            stringResource(R.string.stats_perfect_days_this_month, summary.thisMonth),
-            style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
-            color = Tarjeta.copy(alpha = 0.8f),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier.size(44.dp).border(2.dp, Tarjeta, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(BitoIcons.Check, contentDescription = null, tint = Tarjeta, modifier = Modifier.size(22.dp))
+            }
+            Spacer(Modifier.width(16.dp))
+            Column {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        "${summary.thisYear}",
+                        style = MaterialTheme.typography.displayLarge.copy(fontSize = 48.sp),
+                        color = Tarjeta,
+                    )
+                    Spacer(Modifier.width(6.dp))
+                    Text(
+                        stringResource(R.string.stats_perfect_days_year_label),
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
+                        color = Tarjeta.copy(alpha = 0.8f),
+                        modifier = Modifier.padding(bottom = 6.dp),
+                    )
+                }
+                Text(
+                    stringResource(R.string.stats_perfect_days_label),
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                    color = Tarjeta,
+                )
+            }
+        }
     }
 }
 
@@ -153,7 +186,10 @@ private fun WeekCard(week: WeekSummary) {
             if (delta != null && delta >= 0) {
                 Row(
                     Modifier.clip(CircleShape).background(HojaTinte).padding(horizontal = 14.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    Icon(BitoIcons.ArrowUp, contentDescription = null, tint = Hoja, modifier = Modifier.size(14.dp))
+                    Spacer(Modifier.width(4.dp))
                     Text(
                         stringResource(R.string.stats_week_delta, delta),
                         style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
@@ -167,9 +203,32 @@ private fun WeekCard(week: WeekSummary) {
             Text(stringResource(R.string.stats_week_empty), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
         } else {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                WeekColumnHeader()
                 week.rows.forEach { row -> WeekRowLine(row) }
             }
         }
+    }
+}
+
+/** L M X J V S D (or locale-equivalent), aligned above [WeekRowLine]'s dot cluster only — not the habit-name or tally columns. */
+@Composable
+private fun WeekColumnHeader() {
+    val locale = Locale.getDefault()
+    Row(Modifier.fillMaxWidth()) {
+        Spacer(Modifier.weight(1f))
+        Row(Modifier.width(WeekDotsWidth), horizontalArrangement = Arrangement.spacedBy(WeekDotGap)) {
+            for (ordinal in 1..7) {
+                Box(Modifier.size(WeekDotSize), contentAlignment = Alignment.Center) {
+                    Text(
+                        DayOfWeek.of(ordinal).getDisplayName(TextStyle.NARROW, locale),
+                        style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                        color = TintaSuave,
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.width(WeekTallyGap))
+        Spacer(Modifier.widthIn(min = WeekTallyMinWidth))
     }
 }
 
@@ -184,8 +243,21 @@ private fun WeekRowLine(row: WeekRow) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(Modifier.width(WeekDotsWidth), horizontalArrangement = Arrangement.spacedBy(WeekDotGap)) {
             row.dots.forEach { dot -> WeekDayDot(dot) }
+        }
+        Spacer(Modifier.width(WeekTallyGap))
+        Row(Modifier.widthIn(min = WeekTallyMinWidth), horizontalArrangement = Arrangement.End) {
+            Text(
+                "${row.done}",
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
+                color = Tinta,
+            )
+            Text(
+                "/${row.target}",
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
+                color = TintaSuave,
+            )
         }
     }
 }
@@ -199,7 +271,7 @@ private fun WeekRowLine(row: WeekRow) {
  */
 @Composable
 private fun WeekDayDot(dot: DayDot) {
-    val size = 16.dp
+    val size = WeekDotSize
     when (dot) {
         DayDot.FULFILLED, DayDot.ACTIVITY -> Box(Modifier.size(size).clip(CircleShape).background(Hoja))
         DayDot.FAILED, DayDot.EMPTY -> Box(Modifier.size(size).clip(CircleShape).background(Borde))
@@ -213,97 +285,155 @@ private fun WeekDayDot(dot: DayDot) {
     }
 }
 
+/** Bare section title (no card) above a [LazyRow] wall of mini streak cards — rule 3 of the 3a mockup. */
 @Composable
-private fun StreaksCard(streaks: List<ActiveStreak>) {
-    BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.stats_streaks_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
+private fun StreaksSection(streaks: List<ActiveStreak>) {
+    Column {
+        Text(
+            stringResource(R.string.stats_streaks_title),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
+            color = TintaSuave,
+        )
         Spacer(Modifier.height(12.dp))
         if (streaks.isEmpty()) {
             Text(stringResource(R.string.stats_streaks_empty), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
         } else {
             LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                items(streaks, key = { it.habitId }) { streak -> StreakWallChip(streak) }
+                items(streaks, key = { it.habitId }) { streak -> StreakWallCard(streak) }
             }
         }
     }
 }
 
 /**
- * Muro de llamas: one pill per streak, canon chip colors (BrasaTinte bg, Brasa flame) but with
- * the count as the dato grande and the habit name riding along small beside it. Display-only —
- * no clickable modifier, brasa here is emotional heat, never interaction (mirrors
- * [com.alvarotc.bito.ui.components.StreakChip]).
+ * One mini card of the streak wall: flame + count is the dato grande, the habit name rides
+ * centered below it. Display-only — no clickable modifier, brasa here is emotional heat, never
+ * interaction (mirrors [com.alvarotc.bito.ui.components.StreakChip]).
  */
 @Composable
-private fun StreakWallChip(streak: ActiveStreak) {
-    Row(
-        Modifier
-            .clip(CircleShape)
-            .background(BrasaTinte)
-            .padding(horizontal = 16.dp, vertical = 10.dp)
-            .testTag("streak-${streak.habitId}"),
-        verticalAlignment = Alignment.CenterVertically,
+private fun StreakWallCard(streak: ActiveStreak) {
+    Surface(
+        modifier = Modifier.width(140.dp).testTag("streak-${streak.habitId}"),
+        shape = RoundedCornerShape(20.dp),
+        color = Tarjeta,
+        border = BorderStroke(1.dp, Borde),
     ) {
-        Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(
-            "${streak.length}",
-            style = MaterialTheme.typography.displayLarge.copy(fontSize = 20.sp),
-            color = Brasa,
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            streak.name,
-            style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
-            color = Tinta,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.widthIn(max = 140.dp),
-        )
+        Column(
+            Modifier.padding(16.dp).fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.size(18.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    "${streak.length}",
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 40.sp),
+                    color = Tinta,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                streak.name,
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
+                color = TintaSuave,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
+        }
     }
 }
 
 @Composable
 private fun Teasers(
+    bestRecord: HabitRecord?,
+    totalEntries: Int,
     onOpenRecords: () -> Unit,
     onOpenNumbers: () -> Unit,
 ) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        TeaserCard(
-            label = stringResource(R.string.stats_teaser_records),
+        RecordsTeaserCard(
+            record = bestRecord,
             onClick = onOpenRecords,
             modifier = Modifier.weight(1f).testTag("teaser-records"),
         )
-        TeaserCard(
-            label = stringResource(R.string.stats_teaser_numbers),
+        NumbersTeaserCard(
+            totalEntries = totalEntries,
             onClick = onOpenNumbers,
             modifier = Modifier.weight(1f).testTag("teaser-numbers"),
         )
     }
 }
 
+/** Trophy top-left, chevron top-right, then the best-streak hero — empty state keeps the hero slot with "—". */
 @Composable
-private fun TeaserCard(
-    label: String,
+private fun RecordsTeaserCard(
+    record: HabitRecord?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    BitoCard(modifier = modifier, onClick = onClick) {
-        Row(
-            Modifier.fillMaxWidth().heightIn(min = 72.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // No maxLines/ellipsis here: unlike the week rows (a fixed habit name against a strict
-            // dot budget), this label is one of two known app strings — heightIn(min = 72.dp) above
-            // already absorbs a two-line wrap at this width, so both teasers land at the same 72dp
-            // whether their label takes one line or two, with nothing truncated.
-            Text(
-                label,
-                style = MaterialTheme.typography.titleMedium,
-                color = Tinta,
-                modifier = Modifier.weight(1f),
-            )
+    BitoCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
+        Row(Modifier.fillMaxWidth()) {
+            Icon(BitoIcons.Trophy, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.weight(1f))
             Icon(BitoIcons.ChevronRight, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(20.dp))
         }
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                record?.best?.toString() ?: stringResource(R.string.no_data_placeholder),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 34.sp),
+                color = Tinta,
+            )
+            if (record != null) {
+                Spacer(Modifier.width(4.dp))
+                Text(
+                    stringResource(periodUnitRes(record.period)),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.stats_teaser_records_caption),
+            style = MaterialTheme.typography.labelMedium,
+            color = TintaSuave,
+        )
     }
 }
+
+/** Chevron top-right, then the total-entries hero formatted with the locale thousands separator. */
+@Composable
+private fun NumbersTeaserCard(
+    totalEntries: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    BitoCard(modifier = modifier.fillMaxWidth(), onClick = onClick) {
+        Row(Modifier.fillMaxWidth()) {
+            Spacer(Modifier.weight(1f))
+            Icon(BitoIcons.ChevronRight, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            NumberFormat.getIntegerInstance().format(totalEntries),
+            style = MaterialTheme.typography.displayLarge.copy(fontSize = 34.sp),
+            color = Tinta,
+        )
+        Spacer(Modifier.height(4.dp))
+        Text(
+            stringResource(R.string.stats_teaser_numbers_caption),
+            style = MaterialTheme.typography.labelMedium,
+            color = TintaSuave,
+        )
+    }
+}
+
+private fun periodUnitRes(period: Period): Int =
+    when (period) {
+        Period.DAY -> R.string.unit_days
+        Period.WEEK -> R.string.unit_weeks
+        Period.MONTH -> R.string.unit_months
+    }

@@ -7,6 +7,7 @@
 
     <string name="stats_perfect_days_label">Perfect days</string>
     <string name="stats_perfect_days_this_month">%1$d this month</string>
+    <string name="stats_perfect_days_year_label">this year</string>
 
     <string name="stats_week_title">Your week</string>
     <string name="stats_week_delta">+%1$d%% vs last week</string>
@@ -17,6 +18,8 @@
 
     <string name="stats_teaser_records">Records</string>
     <string name="stats_teaser_numbers">Your numbers</string>
+    <string name="stats_teaser_records_caption">Records · your best streak</string>
+    <string name="stats_teaser_numbers_caption">Your numbers · total entries</string>
 
     <string name="records_best_label">Best streak</string>
     <string name="records_empty">No records yet</string>
