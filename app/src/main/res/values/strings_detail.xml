@@ -3,6 +3,7 @@
     <string name="open_habit_hint">Open %1$s</string>
 
     <string name="unit_days">days</string>
+    <string name="unit_days_clean">clean days</string>
     <string name="unit_weeks">weeks</string>
     <string name="unit_months">months</string>
     <string name="record_chip">Record: %1$d</string>
@@ -16,6 +17,7 @@
     <string name="window_30">30 days</string>
     <string name="window_year">Year</string>
     <string name="compliance_fraction">%1$d of %2$d</string>
+    <string name="compliance_caption">compliance · %1$s</string>
     <string name="no_data_placeholder" translatable="false">—</string>
 
     <string name="pause_habit">Pause</string>

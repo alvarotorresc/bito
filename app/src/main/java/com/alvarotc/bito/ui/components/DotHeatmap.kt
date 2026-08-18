@@ -49,12 +49,12 @@ private const val COLUMNS = 7
 // touching the cell's own tap-target math.
 private val DOT_SIZE = 26.dp
 
-// OFF read as dust at 10dp/35% alpha — a young habit whose month is mostly OFF looked like an
-// empty card instead of a calendar grid. 14dp/40% keeps it visibly smaller and fainter than a
-// judged day (still unmistakably "off") while staying legible as a grid cell.
-private val OFF_DOT_SIZE = 14.dp
 private val TODAY_RING_WIDTH = 2.5.dp
 private val PENDING_RING_WIDTH = 2.dp
+
+// Fidelidad ajuste 2 (2a mockup): future/out-of-range days now read as a hollow ring, same DOT_SIZE
+// as every other dot — the grid always looks complete, replacing the old small/faint OFF dot.
+private val OFF_RING_WIDTH = 2.dp
 private val FROZEN_ICON_SIZE = 14.dp
 
 /**
@@ -72,10 +72,13 @@ fun DotHeatmap(
     if (days.isEmpty()) return
     val leadingBlanks = (LocalDate.ofEpochDay(days.first().day.toLong()).dayOfWeek.value - 1).coerceIn(0, COLUMNS - 1)
     val cells: List<HeatmapDay?> = List(leadingBlanks) { null } + days
-    // 6dp: only the row-to-row gap, no effect on any single cell's own measured width/height —
+    // 4dp: only the row-to-row gap, no effect on any single cell's own measured width/height —
     // the ≥46dp touch floor is entirely a function of the Row's 3dp inter-cell gap below, which
-    // stays untouched (see that Row's own comment).
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+    // stays untouched (see that Row's own comment). Tightened from 6dp for the 2a mockup's denser
+    // grid — cells still can't shrink below the touch floor, so ~22dp (dot-to-cell padding) is the
+    // real floor on the visual gap regardless of this value; this is just the closest the two rows
+    // of dots can be pulled without touching the cells themselves.
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
         WeekdayHeaderRow()
         cells.chunked(COLUMNS).forEach { week ->
             // 3dp (not 4dp): part of the touch-floor fix — see HeatmapSection's comment in
@@ -128,10 +131,10 @@ private fun HeatmapCell(
 
 @Composable
 private fun DayDotGlyph(day: HeatmapDay) {
-    // OFF stays small and faint regardless of isToday (a day can't actually be both, but the
-    // guide is explicit this is the one state allowed to look like a speck).
+    // OFF renders as a hollow ring regardless of isToday (a day can't actually be both) — same
+    // DOT_SIZE as every judged day, so the grid always reads as a complete calendar.
     if (day.dot == DayDot.OFF) {
-        Box(Modifier.size(OFF_DOT_SIZE).clip(CircleShape).background(Borde.copy(alpha = 0.4f)))
+        Box(Modifier.size(DOT_SIZE).clip(CircleShape).border(OFF_RING_WIDTH, Borde, CircleShape))
         return
     }
     val base = Modifier.size(DOT_SIZE).clip(CircleShape)
