@@ -76,8 +76,12 @@ fun DetailScreen(
     // `uiState` seeds `null` before its first real emission AND when the habit genuinely does not
     // exist — the two are indistinguishable by type. `hasLoaded` tells them apart for the only
     // case that matters in practice: a habit deleted (from Settings/import) while its detail is
-    // open bounces back once it was seen to exist; a cold-start null never fires onBack.
-    var hasLoaded by rememberSaveable { mutableStateOf(false) }
+    // open bounces back once it was seen to exist; a cold-start null never fires onBack. Plain
+    // `remember`, not `rememberSaveable`: a recreated VM after process death re-seeds `uiState`
+    // at `null` too, so a saveable `true` here would false-positive onBack on the very first
+    // frame. Config changes (the only other case `rememberSaveable` would help) are already
+    // covered by the VM's cached StateFlow re-emitting its last value.
+    var hasLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(state) {
         if (state != null) {
             hasLoaded = true
