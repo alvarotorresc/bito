@@ -18,6 +18,57 @@ class StatsEngineTest {
     }
 
     @Test
+    fun `perfect days also isolates the count for the current calendar year`() {
+        // Born mid-2025 so a perfect day from last December is possible alongside two this year.
+        val habit = RealHabits.makeBed.createdOn(dayOf(2025, 6, 1))
+        val state =
+            domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(dayOf(2025, 12, 31), TODAY - 1, TODAY)))
+
+        val summary = StatsEngine.perfectDays(state, TODAY)
+
+        assertEquals(3, summary.total)
+        assertEquals(2, summary.thisYear) // 2025-12-31 is last year; TODAY-1 and TODAY are both 2026
+    }
+
+    @Test
+    fun `week row tallies fulfilled days over requirable days for a DAY habit`() {
+        val habit = RealHabits.makeBed
+        val state = domainState(habits = listOf(habit), entries = entriesOn(habit, THIS_MONDAY..TODAY))
+
+        val summary = StatsEngine.weekSummary(state, TODAY)
+
+        val row = summary.rows.single()
+        assertEquals(5, row.done) // Monday..Friday fulfilled
+        assertEquals(7, row.target) // alive and unpaused the whole week
+    }
+
+    @Test
+    fun `week row tallies progress over target for a WEEK habit using its own period`() {
+        val habit = RealHabits.strengthTraining // AT_LEAST 3x/week
+
+        val state = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(THIS_MONDAY, THIS_MONDAY + 2)))
+
+        val summary = StatsEngine.weekSummary(state, TODAY)
+
+        val row = summary.rows.single()
+        assertEquals(2, row.done)
+        assertEquals(3, row.target)
+    }
+
+    @Test
+    fun `week row tallies progress over target for a MONTH habit using its own period, not the ISO week`() {
+        val habit = RealHabits.booksFinished // AT_LEAST 2/month
+
+        val state = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(TODAY - 3)))
+
+        val summary = StatsEngine.weekSummary(state, TODAY)
+
+        val row = summary.rows.single()
+        assertEquals(1, row.done)
+        assertEquals(2, row.target)
+    }
+
+    @Test
     fun `week summary delta compares this week against the full previous week`() {
         val habit = RealHabits.makeBed
         val state =

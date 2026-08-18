@@ -219,6 +219,17 @@ class LogicalDaysTest {
     }
 
     // -----------------------------------------------------------------------
+    // Calendar year
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `yearOf reads the calendar year a logical day falls in`() {
+        assertEquals(2026, LogicalDays.yearOf(TODAY))
+        assertEquals(2025, LogicalDays.yearOf(dayOf(2025, 12, 31)))
+        assertEquals(2026, LogicalDays.yearOf(dayOf(2026, 1, 1)))
+    }
+
+    // -----------------------------------------------------------------------
     // Coherence between periodKeyOf and daysOf
     // -----------------------------------------------------------------------
 

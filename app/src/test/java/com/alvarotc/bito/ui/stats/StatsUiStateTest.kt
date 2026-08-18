@@ -9,6 +9,7 @@ import com.alvarotc.bito.domain.model.Personality
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class StatsUiStateTest {
@@ -50,6 +51,25 @@ class StatsUiStateTest {
         assertEquals(0, result.perfectDays.thisMonth)
         assertTrue(result.week.rows.isEmpty())
         assertTrue(result.activeStreaks.isEmpty())
+        assertNull(result.bestRecord)
+        assertEquals(0, result.totalEntries)
         assertFalse(result.loading)
+    }
+
+    @Test
+    fun `the teasers surface the best record and the total entry count`() {
+        val onARun = RealHabits.makeBed
+        val other = RealHabits.meditate
+        val state =
+            domainState(
+                habits = listOf(onARun, other),
+                entries = entriesOn(onARun, listOf(TODAY - 2, TODAY - 1, TODAY)) + entriesOn(other, listOf(TODAY)),
+            )
+
+        val result = buildStatsUiState(state, Personality.NEUTRA, TODAY)
+
+        assertEquals(onARun.id, result.bestRecord?.habitId)
+        assertEquals(3, result.bestRecord?.best)
+        assertEquals(4, result.totalEntries)
     }
 }

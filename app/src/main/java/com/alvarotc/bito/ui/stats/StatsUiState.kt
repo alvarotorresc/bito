@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.stats
 
 import com.alvarotc.bito.domain.ActiveStreak
+import com.alvarotc.bito.domain.HabitRecord
 import com.alvarotc.bito.domain.MoodEngine
 import com.alvarotc.bito.domain.PerfectDaysSummary
 import com.alvarotc.bito.domain.StatsEngine
@@ -10,13 +11,18 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 
-/** Snapshot the Stats screen renders: commentator mood, perfect days, week strip, active streaks. */
+/**
+ * Snapshot the Stats screen renders: commentator mood, perfect days, week strip, active streaks,
+ * and the two teasers' data ([bestRecord] and [totalEntries] — the Récords/Tus números cards).
+ */
 data class StatsUiState(
     val mood: Mood = Mood.NORMAL,
     val personality: Personality = Personality.NEUTRA,
-    val perfectDays: PerfectDaysSummary = PerfectDaysSummary(total = 0, thisMonth = 0),
+    val perfectDays: PerfectDaysSummary = PerfectDaysSummary(total = 0, thisMonth = 0, thisYear = 0),
     val week: WeekSummary = WeekSummary(rows = emptyList(), thisWeekPercent = null, deltaVsLastWeek = null),
     val activeStreaks: List<ActiveStreak> = emptyList(),
+    val bestRecord: HabitRecord? = null,
+    val totalEntries: Int = 0,
     val loading: Boolean = true,
 )
 
@@ -37,6 +43,8 @@ fun buildStatsUiState(
         perfectDays = StatsEngine.perfectDays(state, today),
         week = StatsEngine.weekSummary(state, today),
         activeStreaks = StatsEngine.activeStreaks(state, today),
+        bestRecord = StatsEngine.records(state, today).firstOrNull(),
+        totalEntries = StatsEngine.totals(state, today).entriesCount,
         loading = false,
     )
 }
