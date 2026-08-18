@@ -3,6 +3,7 @@
 package com.alvarotc.bito.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,6 +31,9 @@ import com.alvarotc.bito.ui.theme.Tinta
 /**
  * Direct numeric entry for any target/stepper value across the app — the shared twin of
  * `TodaySheets.ExactValueSheet`'s visual pattern, but without a dependency on `HabitCardUi`.
+ * [extraContent], when given, renders below the Save button inside the same [Column] — e.g.
+ * [com.alvarotc.bito.ui.detail.DaySheet]'s freezer row for a failed COUNTER/DURATION day —
+ * leaving every other caller's plain input-then-save layout untouched.
  */
 @Composable
 fun NumberInputSheet(
@@ -37,6 +41,7 @@ fun NumberInputSheet(
     initial: Int,
     onConfirm: (Int) -> Unit,
     onDismiss: () -> Unit,
+    extraContent: @Composable (ColumnScope.() -> Unit)? = null,
 ) {
     var text by remember { mutableStateOf(initial.toString()) }
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
@@ -56,6 +61,7 @@ fun NumberInputSheet(
                 enabled = text.toIntOrNull() != null,
                 modifier = Modifier.fillMaxWidth(),
             )
+            extraContent?.invoke(this)
         }
     }
 }

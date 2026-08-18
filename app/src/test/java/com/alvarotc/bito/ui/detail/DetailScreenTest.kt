@@ -1,11 +1,13 @@
 package com.alvarotc.bito.ui.detail
 
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
@@ -16,6 +18,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -27,6 +30,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +42,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -137,6 +142,40 @@ class DetailScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag("day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a counter daily habit's failed day offers the freezer row`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                // COUNT metric == CardKind.COUNTER; no entry on today - 2 with an AT_LEAST target
+                // leaves that day FAILED, the eligibility FreezerEngine (and the chip) already
+                // agree on — this is the day sheet regression: freezerOffered reaches DaySheet
+                // but the COUNTER branch used to drop it silently instead of offering the row.
+                habitEntity(id = "h1", name = "Agua", metric = Metric.COUNT, target = 8, createdOnDay = today - 5),
+            )
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "buy1", delta = 0, reason = PointsReason.BUY_FREEZER, refId = null, logicalDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        compose.onNodeWithTag("heatmap-day-${today - 2}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        val freezerRow = compose.onNodeWithText("Use a freezer (you have 1)")
+        freezerRow.assertExists()
+        // Not performClick(): synthesized touch gestures don't reach a button inside a
+        // ModalBottomSheet under this Robolectric harness (confirmed in isolation — the gesture
+        // reports success against a displayed, clickable node but never runs the callback), so
+        // invoking the row's own OnClick action directly is what actually proves tapping it calls
+        // onUseFreezer.
+        freezerRow.fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+        compose.waitForIdle()
+
+        runBlocking {
+            assertEquals("h1", db.freezerUseDao().all().single().habitId)
+        }
     }
 
     @Test

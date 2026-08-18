@@ -4,7 +4,9 @@ package com.alvarotc.bito.ui.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -45,9 +47,10 @@ data class DaySheetActions(
 
 /**
  * Retroactive registration for one heatmap day. The body varies by [kind]: CHECK/BINARY toggles
- * done/not-done; COUNTER/DURATION delegates entirely to [NumberInputSheet]; ABSTINENCE offers
- * "I stayed clean" (seals the day) or "I slipped that day". A freezer row only appears when the
- * day is [freezerOffered] (eligible AND at least one is owned).
+ * done/not-done; COUNTER/DURATION delegates to [NumberInputSheet]; ABSTINENCE offers "I stayed
+ * clean" (seals the day) or "I slipped that day". A freezer row only appears when the day is
+ * [freezerOffered] (eligible AND at least one is owned) — every variant, including COUNTER/
+ * DURATION, offers it via [NumberInputSheet]'s `extraContent` slot.
  */
 @Composable
 fun DaySheet(
@@ -63,7 +66,28 @@ fun DaySheet(
         CardKind.CHECK ->
             CheckDaySheet(freezerOffered, freezersOwned, actions.onMarkDone, actions.onMarkNotDone, actions.onUseFreezer, onDismiss)
         CardKind.COUNTER, CardKind.DURATION ->
-            NumberInputSheet(stringResource(R.string.day_value_title), currentValue, actions.onSetValue, onDismiss)
+            NumberInputSheet(
+                title = stringResource(R.string.day_value_title),
+                initial = currentValue,
+                onConfirm = actions.onSetValue,
+                onDismiss = onDismiss,
+                extraContent =
+                    if (freezerOffered) {
+                        {
+                            Spacer(Modifier.height(16.dp))
+                            GhostPillButton(
+                                stringResource(R.string.use_freezer_action, freezersOwned),
+                                onClick = {
+                                    actions.onUseFreezer()
+                                    onDismiss()
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                            )
+                        }
+                    } else {
+                        null
+                    },
+            )
         CardKind.ABSTINENCE ->
             AbstinenceDaySheet(freezerOffered, freezersOwned, actions.onRelapse, actions.onStayedClean, actions.onUseFreezer, onDismiss)
     }
