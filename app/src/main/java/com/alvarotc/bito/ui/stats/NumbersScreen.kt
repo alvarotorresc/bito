@@ -17,7 +17,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.Totals
@@ -96,8 +98,16 @@ private fun NumberTileCard(
     modifier: Modifier = Modifier,
 ) {
     BitoCard(modifier = modifier.fillMaxWidth()) {
-        Text(tile.value, style = MaterialTheme.typography.headlineLarge, color = Tinta)
+        Text(
+            tile.value,
+            style = MaterialTheme.typography.headlineLarge.copy(fontSize = 28.sp, fontWeight = FontWeight.Bold),
+            color = Tinta,
+        )
         Spacer(Modifier.height(4.dp))
-        Text(stringResource(tile.labelRes), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        Text(
+            stringResource(tile.labelRes),
+            style = MaterialTheme.typography.labelMedium,
+            color = TintaSuave,
+        )
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -22,7 +23,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Period
@@ -86,9 +89,13 @@ private fun BestRecordHero(best: RecordRow) {
         Text(stringResource(R.string.records_best_label), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         Spacer(Modifier.height(4.dp))
         Row(verticalAlignment = Alignment.Bottom) {
-            Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.height(40.dp))
+            Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.height(32.dp))
             Spacer(Modifier.width(8.dp))
-            Text("${best.best}", style = MaterialTheme.typography.displayLarge, color = Tinta)
+            Text(
+                "${best.best}",
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
+                color = Brasa,
+            )
             Spacer(Modifier.width(8.dp))
             Text(stringResource(periodUnitRes(best.period)), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         }
@@ -125,11 +132,14 @@ private fun RecordLine(row: RecordRow) {
             }
         }
         Row(
-            Modifier.clip(CircleShape).background(BrasaTinte).padding(horizontal = 10.dp, vertical = 4.dp),
+            Modifier.clip(CircleShape).background(BrasaTinte).padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
+            Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.size(14.dp))
+            Spacer(Modifier.width(6.dp))
             Text(
                 stringResource(R.string.record_chip, row.best),
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                 color = Brasa,
             )
         }

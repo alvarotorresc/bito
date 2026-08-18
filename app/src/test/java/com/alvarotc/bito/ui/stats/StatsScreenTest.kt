@@ -3,11 +3,13 @@ package com.alvarotc.bito.ui.stats
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -126,6 +128,17 @@ class StatsScreenTest {
 
         assertTrue(openedRecords)
         assertTrue(openedNumbers)
+    }
+
+    @Test
+    fun `teaser cards get dato-grande presence regardless of label length`() {
+        // "Tus números" wraps to two lines at half-card width where "Récords" doesn't — both must
+        // still land at the same real height (heightIn(min = 72.dp) on the teaser row) rather than
+        // one card being visibly thinner than the other.
+        setContent()
+
+        compose.onNodeWithTag("teaser-records", useUnmergedTree = true).assertHeightIsAtLeast(72.dp)
+        compose.onNodeWithTag("teaser-numbers", useUnmergedTree = true).assertHeightIsAtLeast(72.dp)
     }
 
     @Test
