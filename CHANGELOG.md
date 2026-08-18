@@ -15,6 +15,7 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). V
 
 ### Changed
 
+- Tercera ronda de QA por dogfooding: el detalle y las estadísticas se rehacen fieles al diseño — el número de racha enorme con su llama, el calendario con puntos gorditos y los días de la semana, el selector 7/30/año a ancho completo, Pausar y Archivar visibles con icono, los puntos de "Tu semana" legibles de un vistazo y el muro de rachas con el nombre de cada hábito.
 - Tocar una tarjeta en Hoy ahora abre su detalle; editar vive en el lápiz del detalle.
 - "He recaído" se muda de la tarjeta de Hoy al detalle del hábito.
 - La barra inferior gana la pestaña de Estadísticas.
