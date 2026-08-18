@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.detail
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -8,13 +9,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +32,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,6 +52,7 @@ import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.BrasaTinte
 import com.alvarotc.bito.ui.theme.Hoja
@@ -107,13 +114,14 @@ fun DetailScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             DetailHeader(current.name, onBack, { onEdit(current.habitId) })
-            Monument(current)
             // Archived: data stays visible (monument, heatmap, % pills) but every write surface
             // closes — no freezer purchase, no day-tap sheet, no relapse (already gated below).
             val archived = current.status == HabitStatus.ARCHIVED
-            if (current.period == Period.DAY && !archived) {
-                FreezerChip(current.freezersOwned, onClick = { showFreezerSheet = true })
-            }
+            Monument(
+                state = current,
+                showFreezerChip = current.period == Period.DAY && !archived,
+                onFreezerClick = { showFreezerSheet = true },
+            )
             HeatmapSection(
                 current = current,
                 onPrevMonth = viewModel::previousMonth,
@@ -214,9 +222,18 @@ private fun DetailHeader(
     }
 }
 
-/** The typographic monument: no solid accent card — the racha number itself is the protagonist. */
+/**
+ * The typographic monument: no solid accent card — the racha number itself is the protagonist,
+ * the biggest number in the app. [showFreezerChip] mirrors the freezer chip's old standalone
+ * gate (DAY-period habits, not archived) — it now sits beside the record chip instead of on its
+ * own row.
+ */
 @Composable
-private fun Monument(state: DetailUiState) {
+private fun Monument(
+    state: DetailUiState,
+    showFreezerChip: Boolean,
+    onFreezerClick: () -> Unit,
+) {
     val unitRes =
         when (state.period) {
             Period.DAY -> R.string.unit_days
@@ -225,26 +242,47 @@ private fun Monument(state: DetailUiState) {
         }
     Column {
         Row(verticalAlignment = Alignment.Bottom) {
-            Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.height(40.dp))
-            Spacer(Modifier.width(8.dp))
+            Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.size(44.dp))
+            Spacer(Modifier.width(10.dp))
             Text(
                 "${state.currentStreak}",
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 48.sp, fontWeight = FontWeight.Bold),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp, fontWeight = FontWeight.Bold),
                 color = Tinta,
+                modifier = Modifier.alignByBaseline(),
             )
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(unitRes), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(
-            Modifier.clip(CircleShape).background(BrasaTinte).padding(horizontal = 10.dp, vertical = 4.dp),
-        ) {
+            // Dato grande, unidad pequeña: the unit sits on the number's own baseline, not the
+            // Row's bottom edge — alignByBaseline (not the Row's Alignment.Bottom, which lines up
+            // text *boxes*) is what keeps a 16sp word level with a 64sp number's baseline.
             Text(
-                stringResource(R.string.record_chip, state.bestStreak),
-                style = MaterialTheme.typography.labelMedium,
-                color = Brasa,
+                stringResource(unitRes),
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                color = TintaSuave,
+                modifier = Modifier.alignByBaseline(),
             )
         }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            RecordChip(state.bestStreak)
+            if (showFreezerChip) FreezerChip(state.freezersOwned, onClick = onFreezerClick)
+        }
+    }
+}
+
+/** Chip canon: 8dp vertical / 14dp horizontal padding, 13sp SemiBold content. */
+@Composable
+private fun RecordChip(bestStreak: Int) {
+    Row(
+        Modifier.clip(CircleShape).background(BrasaTinte).padding(horizontal = 14.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.size(14.dp))
+        Spacer(Modifier.width(6.dp))
+        Text(
+            stringResource(R.string.record_chip, bestStreak),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+            color = Brasa,
+        )
     }
 }
 
@@ -258,13 +296,17 @@ private fun FreezerChip(
             .clip(CircleShape)
             .background(HojaTinte)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp)
             .testTag("freezer-chip"),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.height(16.dp))
+        Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(6.dp))
-        Text(stringResource(R.string.freezer_chip_label, owned), style = MaterialTheme.typography.labelMedium, color = Tinta)
+        Text(
+            stringResource(R.string.freezer_chip_label, owned),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+            color = Tinta,
+        )
     }
 }
 
@@ -326,20 +368,28 @@ private fun ComplianceSection(
     val selected = windows.getOrNull(selectedIndex)
     val percent = selected?.percent
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        SegmentedPills(options = labels, selectedIndex = selectedIndex, onSelect = onSelect)
+        SegmentedPills(
+            options = labels,
+            selectedIndex = selectedIndex,
+            onSelect = onSelect,
+            modifier = Modifier.fillMaxWidth(),
+            fillWidth = true,
+        )
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text(
                 percent?.let { "$it%" } ?: stringResource(R.string.no_data_placeholder),
-                style = MaterialTheme.typography.displayLarge,
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 48.sp, fontWeight = FontWeight.Bold),
                 color = if (percent != null && percent >= 80) Hoja else Tinta,
+                modifier = Modifier.alignByBaseline(),
             )
             if (selected != null && percent != null) {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     stringResource(R.string.compliance_fraction, selected.fulfilled, selected.judged),
-                    style = MaterialTheme.typography.labelMedium,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
                     color = TintaSuave,
+                    modifier = Modifier.alignByBaseline(),
                 )
             }
         }
@@ -358,7 +408,11 @@ private fun FooterActions(
     // Archived habits offer only "Reactivar" — every other registration/lifecycle action is
     // gated off the screen above (freezer chip, day-tap sheet, relapse pill).
     if (status == HabitStatus.ARCHIVED) {
-        PillButton(stringResource(R.string.unarchive_habit), onClick = onUnarchive, modifier = Modifier.testTag("reactivate"))
+        PillButton(
+            stringResource(R.string.unarchive_habit),
+            onClick = onUnarchive,
+            modifier = Modifier.fillMaxWidth().testTag("reactivate"),
+        )
         return
     }
     Column {
@@ -370,22 +424,51 @@ private fun FooterActions(
             Text(stringResource(R.string.paused_since, since), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             Spacer(Modifier.height(8.dp))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (status == HabitStatus.PAUSED) {
-                GhostPillButton(
-                    stringResource(R.string.resume_habit),
-                    onClick = onResume,
-                    modifier = Modifier.testTag("resume"),
+                LifecycleActionButton(
+                    text = stringResource(R.string.resume_habit),
                     icon = BitoIcons.Play,
+                    onClick = onResume,
+                    modifier = Modifier.weight(1f).testTag("resume"),
                 )
             } else {
-                GhostPillButton(stringResource(R.string.pause_habit), onClick = onPause, modifier = Modifier.testTag("pause"))
+                LifecycleActionButton(
+                    text = stringResource(R.string.pause_habit),
+                    icon = BitoIcons.Pause,
+                    onClick = onPause,
+                    modifier = Modifier.weight(1f).testTag("pause"),
+                )
             }
-            GhostPillButton(
-                stringResource(R.string.archive_habit),
+            LifecycleActionButton(
+                text = stringResource(R.string.archive_habit),
+                icon = BitoIcons.Archive,
                 onClick = onArchive,
-                modifier = Modifier.testTag("archive"),
+                modifier = Modifier.weight(1f).testTag("archive"),
             )
         }
     }
+}
+
+/**
+ * Pausar/Archivar canon: two equal-weight outlined pills, 52dp tall, icon + 15sp label — no
+ * longer [GhostPillButton]'s smaller ghost treatment, which stays as-is for its other call sites
+ * (sheets, forms, settings) not touched by this fix.
+ */
+@Composable
+private fun LifecycleActionButton(
+    text: String,
+    icon: ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) = OutlinedButton(
+    onClick = onClick,
+    modifier = modifier.heightIn(min = 52.dp),
+    shape = CircleShape,
+    border = BorderStroke(1.dp, Borde),
+    colors = ButtonDefaults.outlinedButtonColors(contentColor = TintaSuave),
+) {
+    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
+    Spacer(Modifier.width(8.dp))
+    Text(text, style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium))
 }

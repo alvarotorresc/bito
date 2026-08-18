@@ -3,7 +3,6 @@ package com.alvarotc.bito.ui.components
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,15 +33,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.BitoTheme
 import com.alvarotc.bito.ui.theme.Borde
@@ -50,6 +53,7 @@ import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.BrasaTinte
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
+import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -245,6 +249,17 @@ fun StreakChip(
     }
 }
 
+/**
+ * A pill-shaped option switcher, canon per design/components/pills.html: a Papel trough holding
+ * Tarjeta-raised selected options.
+ *
+ * [fillWidth] opts into the compliance-window canon — each option gets equal [RowScope.weight]
+ * and the whole control stretches to the caller's width (DetailScreen's `Modifier.fillMaxWidth()`
+ * call site). It defaults to `false` so [options] keep sizing to their own text everywhere else
+ * (HabitFormScreen's quit-mode/limit-metric/period toggles) — weight-based children always
+ * consume the Row's full incoming width regardless of the modifier passed in, so making that the
+ * default would stretch those compact toggles across their card too.
+ */
 @Composable
 fun SegmentedPills(
     options: List<String>,
@@ -252,21 +267,29 @@ fun SegmentedPills(
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    fillWidth: Boolean = false,
 ) {
     Row(
-        modifier.clip(CircleShape).background(Tarjeta).border(1.dp, Borde, CircleShape).padding(4.dp),
+        modifier.clip(CircleShape).background(Papel).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         options.forEachIndexed { i, label ->
             val selected = i == selectedIndex
             Box(
-                Modifier
+                (if (fillWidth) Modifier.weight(1f) else Modifier)
+                    .shadow(elevation = if (selected) 2.dp else 0.dp, shape = CircleShape, clip = false)
                     .clip(CircleShape)
-                    .background(if (selected) HojaTinte else Color.Transparent)
+                    .background(if (selected) Tarjeta else Color.Transparent)
                     .clickable(enabled = enabled) { onSelect(i) }
                     .padding(horizontal = 14.dp, vertical = 8.dp),
+                contentAlignment = Alignment.Center,
             ) {
-                Text(label, style = MaterialTheme.typography.labelMedium, color = if (selected) Tinta else TintaSuave)
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
+                    color = if (selected) Tinta else TintaSuave,
+                    textAlign = TextAlign.Center,
+                )
             }
         }
     }

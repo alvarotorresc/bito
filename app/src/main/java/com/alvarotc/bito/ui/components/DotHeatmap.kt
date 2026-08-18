@@ -13,13 +13,18 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.alvarotc.bito.domain.DayDot
 import com.alvarotc.bito.domain.HeatmapDay
 import com.alvarotc.bito.domain.model.LogicalDay
@@ -29,10 +34,24 @@ import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
+import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.format.TextStyle
+import java.util.Locale
 
 private const val COLUMNS = 7
+
+// Visual dot diameter — the touch cell around it stays >=46dp (see HeatmapCell); at the 48dp
+// cells this grid actually renders (w411dp), a 26dp dot keeps the same ~54% dot-to-cell ratio as
+// the canon mock (22px dot in a ~40.6px column), so the grid reads as dense as the mock without
+// touching the cell's own tap-target math.
+private val DOT_SIZE = 26.dp
+private val OFF_DOT_SIZE = 10.dp
+private val TODAY_RING_WIDTH = 2.5.dp
+private val PENDING_RING_WIDTH = 2.dp
+private val FROZEN_ICON_SIZE = 14.dp
 
 /**
  * A calendar-month grid of [days], 7 columns Monday-first, one dot per day. Leading blanks pad
@@ -49,7 +68,11 @@ fun DotHeatmap(
     if (days.isEmpty()) return
     val leadingBlanks = (LocalDate.ofEpochDay(days.first().day.toLong()).dayOfWeek.value - 1).coerceIn(0, COLUMNS - 1)
     val cells: List<HeatmapDay?> = List(leadingBlanks) { null } + days
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    // 6dp: only the row-to-row gap, no effect on any single cell's own measured width/height —
+    // the ≥46dp touch floor is entirely a function of the Row's 3dp inter-cell gap below, which
+    // stays untouched (see that Row's own comment).
+    Column(modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        WeekdayHeaderRow()
         cells.chunked(COLUMNS).forEach { week ->
             // 3dp (not 4dp): part of the touch-floor fix — see HeatmapSection's comment in
             // DetailScreen.kt for the full horizontal-budget accounting.
@@ -57,6 +80,23 @@ fun DotHeatmap(
                 week.forEach { day -> HeatmapCell(day, onDayTap, Modifier.weight(1f)) }
                 // Pad a short last row so every column keeps its width, matching the full rows.
                 repeat(COLUMNS - week.size) { Box(Modifier.weight(1f).heightIn(min = 44.dp)) }
+            }
+        }
+    }
+}
+
+/** L M X J V S D (or locale-equivalent), one per column, aligned with the day grid below it. */
+@Composable
+private fun WeekdayHeaderRow() {
+    val locale = Locale.getDefault()
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+        for (ordinal in 1..COLUMNS) {
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(
+                    DayOfWeek.of(ordinal).getDisplayName(TextStyle.NARROW, locale),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 11.sp, fontWeight = FontWeight.Medium),
+                    color = TintaSuave,
+                )
             }
         }
     }
@@ -84,27 +124,45 @@ private fun HeatmapCell(
 
 @Composable
 private fun DayDotGlyph(day: HeatmapDay) {
-    val ringModifier = Modifier.size(18.dp).clip(CircleShape)
-    val core: @Composable () -> Unit = {
-        when (day.dot) {
-            DayDot.FULFILLED, DayDot.ACTIVITY -> Box(ringModifier.background(Hoja))
-            DayDot.FAILED -> Box(ringModifier.border(1.5.dp, TintaSuave, CircleShape))
-            DayDot.FROZEN ->
-                Box(ringModifier.background(HojaTinte), contentAlignment = Alignment.Center) {
-                    Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(10.dp))
-                }
-            DayDot.PAUSED -> Box(Modifier.size(10.dp).clip(CircleShape).background(Borde))
-            DayDot.PENDING -> Box(ringModifier.border(1.5.dp, TintaSuave.copy(alpha = 0.4f), CircleShape))
-            DayDot.EMPTY -> Box(ringModifier.border(1.5.dp, Borde, CircleShape))
-            DayDot.OFF -> Box(Modifier.size(4.dp).clip(CircleShape).background(Borde.copy(alpha = 0.3f)))
-        }
+    // OFF stays small and faint regardless of isToday (a day can't actually be both, but the
+    // guide is explicit this is the one state allowed to look like a speck).
+    if (day.dot == DayDot.OFF) {
+        Box(Modifier.size(OFF_DOT_SIZE).clip(CircleShape).background(Borde.copy(alpha = 0.35f)))
+        return
     }
+    val base = Modifier.size(DOT_SIZE).clip(CircleShape)
     if (day.isToday) {
-        Box(Modifier.size(22.dp).border(1.dp, Brasa, CircleShape), contentAlignment = Alignment.Center) { core() }
-    } else {
-        core()
+        val (fill, showSnowflake) = todayFillFor(day.dot)
+        Box(base.background(fill).border(TODAY_RING_WIDTH, Brasa, CircleShape), contentAlignment = Alignment.Center) {
+            if (showSnowflake) {
+                Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(FROZEN_ICON_SIZE))
+            }
+        }
+        return
+    }
+    when (day.dot) {
+        DayDot.PENDING -> Box(base.border(PENDING_RING_WIDTH, TintaSuave, CircleShape))
+        DayDot.FROZEN ->
+            Box(base.background(HojaTinte), contentAlignment = Alignment.Center) {
+                Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(FROZEN_ICON_SIZE))
+            }
+        DayDot.FULFILLED, DayDot.ACTIVITY -> Box(base.background(Hoja))
+        DayDot.FAILED, DayDot.EMPTY -> Box(base.background(Borde))
+        DayDot.PAUSED -> Box(base.background(TintaSuave))
+        DayDot.OFF -> Unit // handled above
     }
 }
+
+/** Today's fill per its state; PENDING (nothing logged yet) reads as an empty card slot. */
+private fun todayFillFor(dot: DayDot): Pair<Color, Boolean> =
+    when (dot) {
+        DayDot.FULFILLED, DayDot.ACTIVITY -> Hoja to false
+        DayDot.FAILED, DayDot.EMPTY -> Borde to false
+        DayDot.FROZEN -> HojaTinte to true
+        DayDot.PAUSED -> TintaSuave to false
+        DayDot.PENDING -> Tarjeta to false
+        DayDot.OFF -> Borde to false // unreachable: OFF returns before this branch
+    }
 
 @Preview(showBackground = true)
 @Composable
