@@ -48,7 +48,11 @@ private const val COLUMNS = 7
 // the canon mock (22px dot in a ~40.6px column), so the grid reads as dense as the mock without
 // touching the cell's own tap-target math.
 private val DOT_SIZE = 26.dp
-private val OFF_DOT_SIZE = 10.dp
+
+// OFF read as dust at 10dp/35% alpha — a young habit whose month is mostly OFF looked like an
+// empty card instead of a calendar grid. 14dp/40% keeps it visibly smaller and fainter than a
+// judged day (still unmistakably "off") while staying legible as a grid cell.
+private val OFF_DOT_SIZE = 14.dp
 private val TODAY_RING_WIDTH = 2.5.dp
 private val PENDING_RING_WIDTH = 2.dp
 private val FROZEN_ICON_SIZE = 14.dp
@@ -127,7 +131,7 @@ private fun DayDotGlyph(day: HeatmapDay) {
     // OFF stays small and faint regardless of isToday (a day can't actually be both, but the
     // guide is explicit this is the one state allowed to look like a speck).
     if (day.dot == DayDot.OFF) {
-        Box(Modifier.size(OFF_DOT_SIZE).clip(CircleShape).background(Borde.copy(alpha = 0.35f)))
+        Box(Modifier.size(OFF_DOT_SIZE).clip(CircleShape).background(Borde.copy(alpha = 0.4f)))
         return
     }
     val base = Modifier.size(DOT_SIZE).clip(CircleShape)
