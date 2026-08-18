@@ -21,9 +21,15 @@
     <string name="stats_teaser_records_caption">Récords · tu mejor racha</string>
     <string name="stats_teaser_numbers_caption">Tus números · registros totales</string>
 
-    <string name="records_best_label">Mejor racha</string>
     <string name="records_empty">Aún no hay récords</string>
     <string name="records_archived_label">Archivado</string>
+    <string name="records_best_caption">tu mejor racha de siempre</string>
+    <string name="records_current_streak">ahora: %1$d %2$s</string>
+    <string name="records_no_current_streak">sin racha ahora</string>
+
+    <string name="numbers_section_log">Registro</string>
+    <string name="numbers_section_rewards">Recompensas</string>
+    <string name="numbers_section_habits">Hábitos</string>
 
     <string name="numbers_entries">Registros</string>
     <string name="numbers_points_earned">Puntos ganados</string>

@@ -21,9 +21,15 @@
     <string name="stats_teaser_records_caption">Records · your best streak</string>
     <string name="stats_teaser_numbers_caption">Your numbers · total entries</string>
 
-    <string name="records_best_label">Best streak</string>
     <string name="records_empty">No records yet</string>
     <string name="records_archived_label">Archived</string>
+    <string name="records_best_caption">your all-time best streak</string>
+    <string name="records_current_streak">now: %1$d %2$s</string>
+    <string name="records_no_current_streak">no streak right now</string>
+
+    <string name="numbers_section_log">Log</string>
+    <string name="numbers_section_rewards">Rewards</string>
+    <string name="numbers_section_habits">Habits</string>
 
     <string name="numbers_entries">Entries logged</string>
     <string name="numbers_points_earned">Points earned</string>
