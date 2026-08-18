@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -31,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -70,7 +70,12 @@ private val WeekDotSize = 16.dp
 private val WeekDotGap = 6.dp
 private val WeekDotsWidth = WeekDotSize * 7 + WeekDotGap * 6
 private val WeekTallyGap = 12.dp
-private val WeekTallyMinWidth = 40.dp
+
+// Fixed (not a min) so the header's trailing reserve always matches a row's tally column exactly —
+// a widthIn(min=) only reserves slack, so it stops right-aligning consistently once a tally's
+// digits (e.g. "12/24") exceed the reserved width. Long values overflow past this rather than
+// shifting every other row's dot cluster out of alignment with the header.
+private val WeekTallyWidth = 40.dp
 
 /** The Stats tab: commentator, perfect days, the week strip, active streaks and the two teasers. */
 @Composable
@@ -228,7 +233,7 @@ private fun WeekColumnHeader() {
             }
         }
         Spacer(Modifier.width(WeekTallyGap))
-        Spacer(Modifier.widthIn(min = WeekTallyMinWidth))
+        Spacer(Modifier.width(WeekTallyWidth))
     }
 }
 
@@ -247,7 +252,7 @@ private fun WeekRowLine(row: WeekRow) {
             row.dots.forEach { dot -> WeekDayDot(dot) }
         }
         Spacer(Modifier.width(WeekTallyGap))
-        Row(Modifier.widthIn(min = WeekTallyMinWidth), horizontalArrangement = Arrangement.End) {
+        Row(Modifier.width(WeekTallyWidth), horizontalArrangement = Arrangement.End) {
             Text(
                 "${row.done}",
                 style = MaterialTheme.typography.labelMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
@@ -417,8 +422,9 @@ private fun NumbersTeaserCard(
             Icon(BitoIcons.ChevronRight, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.height(12.dp))
+        val locale = LocalConfiguration.current.locales[0]
         Text(
-            NumberFormat.getIntegerInstance().format(totalEntries),
+            NumberFormat.getIntegerInstance(locale).format(totalEntries),
             style = MaterialTheme.typography.displayLarge.copy(fontSize = 34.sp),
             color = Tinta,
         )
