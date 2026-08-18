@@ -2,6 +2,9 @@ package com.alvarotc.bito.ui
 
 import android.app.Application
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -30,6 +33,14 @@ class BitoNavHostTest {
     @get:Rule
     val compose = createComposeRule()
 
+    /**
+     * The screen title Text, as opposed to a bottom-bar tab wearing the same label — the bar now
+     * shows visible Hoy/Stats/Ajustes labels too (this restyle's rule 5), so a bare
+     * `onNodeWithText(text)` is ambiguous whenever both are on screen together.
+     */
+    private fun screenTitleNode(text: String) =
+        compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("bottom-bar")).not(), useUnmergedTree = true)
+
     private fun setContent() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
@@ -56,7 +67,7 @@ class BitoNavHostTest {
             compose.onAllNodesWithText(reminderCopy, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        compose.onNodeWithText("Settings", useUnmergedTree = true).assertExists()
+        screenTitleNode("Settings").assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
         compose.onNodeWithText(reminderCopy, useUnmergedTree = true).assertExists()
     }
@@ -70,6 +81,33 @@ class BitoNavHostTest {
         compose.onNodeWithContentDescription("Today", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("Today", useUnmergedTree = true).assertExists()
+        screenTitleNode("Today").assertExists()
+    }
+
+    @Test
+    fun `the stats tab navigates to the stats screen and keeps the bottom bar`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        screenTitleNode("Stats").assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the bottom bar hides on the habit form but survives on stats`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
     }
 }

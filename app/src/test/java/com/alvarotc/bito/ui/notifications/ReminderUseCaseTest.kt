@@ -320,4 +320,25 @@ class ReminderUseCaseTest {
             assertTrue(outcome is ReminderUseCase.Outcome.Silent)
             assertEquals(SlotKind.HABIT, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
         }
+
+    @Test
+    fun `a habit slot whose card is clean today stays silent`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "No fumar",
+                    metric = Metric.CHECK,
+                    direction = Direction.ZERO,
+                    period = Period.DAY,
+                    reminderMinutes = 600,
+                    createdOnDay = today,
+                ),
+            )
+
+            val outcome = useCase.evaluate("HABIT", "h1")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Silent)
+            assertEquals(SlotKind.HABIT, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
+        }
 }

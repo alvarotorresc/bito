@@ -35,7 +35,9 @@
     <string name="empty_today_title">Nothing here yet</string>
     <string name="empty_today_body">Create your first habit — logging it will cost you almost nothing.</string>
     <string name="create_habit">Create habit</string>
+    <string name="paused_section_title">Paused</string>
     <string name="nav_today">Today</string>
+    <string name="nav_stats">Stats</string>
     <string name="nav_new_habit">New habit</string>
     <string name="nav_settings">Settings</string>
     <string name="edit_habit_hint">Edit %1$s</string>
@@ -45,6 +47,8 @@
     <string name="habi_form_prompt">What habit are we building? Name it and pick its shape — everything else can wait.</string>
     <string name="habi_speaker" translatable="false">HABI · %1$s</string>
     <string name="personality_neutra">NEUTRAL</string>
+    <string name="personality_sargento">SERGEANT</string>
+    <string name="personality_cheerleader">CHEERLEADER</string>
     <string name="name_hint">Habit name</string>
     <string name="preset_daily">Daily</string>
     <string name="preset_quantity">Amount</string>
@@ -68,6 +72,7 @@
     <string name="form_reminder_label">Reminder</string>
     <string name="form_reminder_none">None</string>
     <string name="form_reminder_clear">Remove reminder</string>
+    <string name="form_reminder_quit_hint">No reminders: Bito won\'t nag you about what you\'re avoiding</string>
     <string name="save_habit">Save</string>
     <string name="delete_habit">Delete habit</string>
     <string name="delete_confirm_title">Delete forever?</string>
@@ -96,10 +101,19 @@
     <string name="cutoff_note">Applies from now on; sealed days stay as they are</string>
     <string name="reminders_section_title">Reminders</string>
     <string name="reminders_section_body">Phone nudges so you don\'t forget to log your habits.</string>
+    <string name="reminder_none_hint">No reminders set — add a time so Bito can nudge you.</string>
     <string name="reminder_add">Add reminder</string>
     <string name="reminder_remove">Remove</string>
     <string name="review_label">Daily review</string>
     <string name="review_hint">An evening nudge to look back on the day and close it.</string>
     <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
     <string name="notif_permission_hint">Allow notifications to hear reminders</string>
+
+    <string name="general_section_title">General</string>
+    <string name="archived_habits_row">Archived habits (%1$d)</string>
+    <string name="archived_title">Archived habits</string>
+    <string name="archived_since">Since %1$s</string>
+    <string name="archived_empty">Nothing archived yet</string>
+    <string name="unarchive_habit">Reactivate</string>
+    <string name="paused_since">Paused since %1$s</string>
 </resources>

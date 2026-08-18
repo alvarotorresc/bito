@@ -22,3 +22,6 @@ captures/
 # --- Bito: material de diseño y documentación (se publicará al final) ---
 /docs/
 /design/
+
+# Scratch de proceso local
+.superpowers/

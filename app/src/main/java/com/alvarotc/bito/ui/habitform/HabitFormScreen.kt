@@ -2,6 +2,10 @@
 
 package com.alvarotc.bito.ui.habitform
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
@@ -45,10 +49,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Metric
@@ -80,6 +86,11 @@ fun HabitFormScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     var confirmingDelete by remember { mutableStateOf(false) }
 
+    // Same launcher SettingsScreen.kt uses for the first GLOBAL reminder: fire-and-forget, the
+    // save below never waits on nor blocks on the result.
+    val context = LocalContext.current
+    val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
+
     Scaffold(containerColor = Papel) { padding ->
         Column(
             Modifier
@@ -107,7 +118,20 @@ fun HabitFormScreen(
             MoreOptionsSection(state, viewModel::toggleBinary, viewModel::adjustStep, viewModel::setReminder)
             PillButton(
                 text = stringResource(if (state.isEditing) R.string.save_habit else R.string.create_habit),
-                onClick = { viewModel.save(onBack) },
+                onClick = {
+                    // QUIT's own reminder can never fire (ReminderUseCase.kt HABIT branch: a QUIT
+                    // card is always doneToday or failed) — asking for the permission here would be
+                    // fishing for access with nothing to justify it (same rule SettingsScreen.kt
+                    // documents for its own first-reminder prompt).
+                    if (state.reminderMinutes != null &&
+                        state.preset != HabitPreset.QUIT &&
+                        Build.VERSION.SDK_INT >= 33 &&
+                        !NotificationManagerCompat.from(context).areNotificationsEnabled()
+                    ) {
+                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                    viewModel.save(onBack)
+                },
                 enabled = state.canSave && !state.saving,
                 modifier = Modifier.fillMaxWidth().testTag("save"),
             )
@@ -453,8 +477,11 @@ private fun MoreOptionsSection(
                 // before this row, so the panel used to open empty for three of the five presets.
                 // Reminder is deliberately outside every preset gate above and stays editable in
                 // edit mode: it's a schedule detail, not part of the locked (metric/direction) shape.
+                // QUIT is the one exception: its own reminder can never fire (see the save-button
+                // comment above), so the row is honest about that instead of offering a dead control.
                 ReminderRow(
                     reminderMinutes = state.reminderMinutes,
+                    disabled = state.preset == HabitPreset.QUIT,
                     onOpenPicker = { showTimePicker = true },
                     onClear = { onSetReminder(null) },
                 )
@@ -486,34 +513,49 @@ private fun formatReminderTime(minutes: Int): String {
  * The open-picker tap target and the clear button are siblings, not nested: an icon button
  * inside a clickable row would give the row two overlapping tap targets fighting for the same
  * touch area, which is a confusing surface regardless of which one wins the gesture.
+ *
+ * [disabled] (QUIT presets — gap d) turns off the tap target and hides the clear button instead
+ * of removing the row outright: the stored [reminderMinutes] survives a preset switch (nothing
+ * clears it), so an honest hint explains why it's inert rather than pretending it doesn't exist.
  */
 @Composable
 private fun ReminderRow(
     reminderMinutes: Int?,
+    disabled: Boolean,
     onOpenPicker: () -> Unit,
     onClear: () -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Row(
-            Modifier.weight(1f).clickable { onOpenPicker() }.testTag("reminder-row"),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+    Column {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                Modifier.weight(1f).clickable(enabled = !disabled) { onOpenPicker() }.testTag("reminder-row"),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    stringResource(R.string.form_reminder_label),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = if (disabled) TintaSuave else Tinta,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    reminderMinutes?.let(::formatReminderTime) ?: stringResource(R.string.form_reminder_none),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = TintaSuave,
+                )
+            }
+            if (!disabled && reminderMinutes != null) {
+                IconButton(onClick = onClear, modifier = Modifier.testTag("reminder-clear")) {
+                    Icon(BitoIcons.X, contentDescription = stringResource(R.string.form_reminder_clear), tint = TintaSuave)
+                }
+            }
+        }
+        if (disabled) {
+            Spacer(Modifier.height(6.dp))
             Text(
-                stringResource(R.string.form_reminder_label),
-                style = MaterialTheme.typography.bodyLarge,
-                color = Tinta,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                reminderMinutes?.let(::formatReminderTime) ?: stringResource(R.string.form_reminder_none),
-                style = MaterialTheme.typography.bodyLarge,
+                stringResource(R.string.form_reminder_quit_hint),
+                style = MaterialTheme.typography.labelMedium,
                 color = TintaSuave,
             )
-        }
-        if (reminderMinutes != null) {
-            IconButton(onClick = onClear, modifier = Modifier.testTag("reminder-clear")) {
-                Icon(BitoIcons.X, contentDescription = stringResource(R.string.form_reminder_clear), tint = TintaSuave)
-            }
         }
     }
 }

@@ -31,7 +31,9 @@
     <string name="empty_today_title">Aquí no hay nada todavía</string>
     <string name="empty_today_body">Crea tu primer hábito — registrarlo te costará casi nada.</string>
     <string name="create_habit">Crear hábito</string>
+    <string name="paused_section_title">En pausa</string>
     <string name="nav_today">Hoy</string>
+    <string name="nav_stats">Estadísticas</string>
     <string name="nav_new_habit">Nuevo hábito</string>
     <string name="nav_settings">Ajustes</string>
     <string name="edit_habit_hint">Editar %1$s</string>
@@ -40,6 +42,8 @@
     <string name="form_title_edit">Editar hábito</string>
     <string name="habi_form_prompt">¿Qué hábito construimos? Ponle nombre y elige su forma — lo demás puede esperar.</string>
     <string name="personality_neutra">NEUTRA</string>
+    <string name="personality_sargento">SARGENTO</string>
+    <string name="personality_cheerleader">CHEERLEADER</string>
     <string name="name_hint">Nombre del hábito</string>
     <string name="preset_daily">Diario</string>
     <string name="preset_quantity">Cantidad</string>
@@ -63,6 +67,7 @@
     <string name="form_reminder_label">Recordatorio</string>
     <string name="form_reminder_none">Sin recordatorio</string>
     <string name="form_reminder_clear">Quitar recordatorio</string>
+    <string name="form_reminder_quit_hint">Sin avisos: Bito no te recuerda lo que intentas evitar</string>
     <string name="save_habit">Guardar</string>
     <string name="delete_habit">Eliminar hábito</string>
     <string name="delete_confirm_title">¿Eliminar para siempre?</string>
@@ -91,10 +96,19 @@
     <string name="cutoff_note">Aplica desde ahora; los días sellados no se tocan</string>
     <string name="reminders_section_title">Recordatorios</string>
     <string name="reminders_section_body">Avisos en el móvil para que no se te olvide registrar tus hábitos.</string>
+    <string name="reminder_none_hint">Sin avisos configurados — añade una hora para que Bito te avise.</string>
     <string name="reminder_add">Añadir aviso</string>
     <string name="reminder_remove">Quitar</string>
     <string name="review_label">Repaso del día</string>
     <string name="review_hint">Un aviso por la noche para repasar el día y cerrarlo.</string>
     <string name="reminder_exact_notice">Las alarmas exactas están desactivadas — los avisos pueden desviarse. Toca para permitirlas.</string>
     <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
+
+    <string name="general_section_title">General</string>
+    <string name="archived_habits_row">Hábitos archivados (%1$d)</string>
+    <string name="archived_title">Hábitos archivados</string>
+    <string name="archived_since">Desde %1$s</string>
+    <string name="archived_empty">Todavía no hay nada archivado</string>
+    <string name="unarchive_habit">Reactivar</string>
+    <string name="paused_since">En pausa desde %1$s</string>
 </resources>

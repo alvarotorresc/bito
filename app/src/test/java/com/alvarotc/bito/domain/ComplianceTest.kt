@@ -783,6 +783,26 @@ class ComplianceTest {
     }
 
     // -----------------------------------------------------------------------
+    // requirableDaysOf
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `requirableDaysOf excludes paused days and days outside the habit's life`() {
+        // strengthTraining is WEEK-period: periodKeyOf(TODAY, WEEK) covers THIS_MONDAY..THIS_SUNDAY.
+        val habit = RealHabits.strengthTraining.createdOn(THIS_MONDAY + 1)
+        val state =
+            domainState(
+                habits = listOf(habit),
+                pauses = listOf(pauseOn(habit, THIS_MONDAY + 2, THIS_MONDAY + 2)),
+            )
+        val week = LogicalDays.periodKeyOf(TODAY, Period.WEEK)
+        val days = Compliance.requirableDaysOf(state, habit, week)
+        assertFalse(THIS_MONDAY in days) // antes de crearse
+        assertFalse(THIS_MONDAY + 2 in days) // pausado
+        assertTrue(THIS_MONDAY + 1 in days)
+    }
+
+    // -----------------------------------------------------------------------
     // Integridad de los fixtures reales
     // -----------------------------------------------------------------------
 

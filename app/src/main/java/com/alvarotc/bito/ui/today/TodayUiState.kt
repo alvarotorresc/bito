@@ -5,10 +5,10 @@ import com.alvarotc.bito.domain.ComplianceStatus
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.Streaks
-import com.alvarotc.bito.domain.Targets
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Habit
+import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Metric
@@ -51,12 +51,16 @@ val HabitCardUi.nameStruckThrough: Boolean
 val HabitCardUi.showsLoggingChips: Boolean
     get() = direction == Direction.AT_MOST || !doneToday
 
+/** A paused habit's compact row in Today's "paused" section — no progress, just a way back in. */
+data class PausedHabitUi(val id: String, val name: String)
+
 /** Snapshot the Today screen renders: the ring, the cards, and the pending-seal prompt. */
 data class TodayUiState(
     val today: LogicalDay = 0,
     val ringDone: Int = 0,
     val ringTotal: Int = 0,
     val cards: List<HabitCardUi> = emptyList(),
+    val pausedHabits: List<PausedHabitUi> = emptyList(),
     val pendingSealDays: List<LogicalDay> = emptyList(),
     val loading: Boolean = true,
 )
@@ -76,11 +80,24 @@ fun buildTodayUiState(
             .filter { Compliance.isRequirableOn(state, it, today) }
             .map { habit -> cardOf(state, habit, today) }
             .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
+    // Paused, not archived: a habit "counts" as paused either by its own status flag or by
+    // carrying an open pause interval — the two are written together by
+    // HabitsRepository.pause/resume, but domain-level fixtures (this file's own `pause()`
+    // helper, used by test 10 and above) can set one without the other.
+    val pausedHabits =
+        state.habits
+            .filter { it.status != HabitStatus.ARCHIVED }
+            .filter { habit ->
+                habit.status == HabitStatus.PAUSED ||
+                    state.pauseIntervals.any { it.habitId == habit.id && it.endDay == null }
+            }
+            .map { PausedHabitUi(it.id, it.name) }
     return TodayUiState(
         today = today,
         ringDone = cards.count { it.doneToday },
         ringTotal = cards.size,
         cards = cards,
+        pausedHabits = pausedHabits,
         pendingSealDays = Sealing.pendingSealDays(state, today),
         loading = false,
     )
@@ -94,15 +111,11 @@ private fun cardOf(
     val periodKey = LogicalDays.periodKeyOf(today, habit.period)
     val periodDays = LogicalDays.daysOf(periodKey, habit.period)
     val compliance = Compliance.complianceOf(state, habit, periodKey, today)
-    val entries = state.entries.filter { it.habitId == habit.id && it.logicalDay in periodDays }
+    val requirableDays = Compliance.requirableDaysOf(state, habit, periodKey)
+    val entries = state.entries.filter { it.habitId == habit.id && it.logicalDay in requirableDays }
+    val progress = Compliance.progressOf(habit, entries)
+    val target = Compliance.targetOf(state, habit, periodDays.last)
     val binaryLike = habit.metric == Metric.CHECK || habit.logMode == LogMode.BINARY
-    val progress = if (binaryLike) entries.distinctBy { it.logicalDay }.size else entries.sumOf { it.value }
-    val target =
-        if (habit.logMode == LogMode.BINARY && habit.period == Period.DAY) {
-            1
-        } else {
-            Targets.targetOn(habit, state.targetChanges, periodDays.last)
-        }
     val failed = compliance == ComplianceStatus.FAILED
     val doneToday =
         when (habit.direction) {

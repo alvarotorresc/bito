@@ -12,11 +12,20 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ui.detail.DetailScreen
+import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
+import com.alvarotc.bito.ui.stats.NumbersScreen
+import com.alvarotc.bito.ui.stats.NumbersViewModel
+import com.alvarotc.bito.ui.stats.RecordsScreen
+import com.alvarotc.bito.ui.stats.RecordsViewModel
+import com.alvarotc.bito.ui.stats.StatsScreen
+import com.alvarotc.bito.ui.stats.StatsViewModel
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
@@ -29,10 +38,11 @@ fun BitoNavHost(container: AppContainer) {
     Scaffold(
         containerColor = Papel,
         bottomBar = {
-            if (currentRoute == "today" || currentRoute == "settings") {
+            if (currentRoute in setOf("today", "stats", "settings")) {
                 BitoBottomBar(
                     currentRoute = currentRoute,
                     onToday = { nav.popBackStack("today", inclusive = false) },
+                    onStats = { nav.navigate("stats") { launchSingleTop = true } },
                     onCreate = { nav.navigate("habit") },
                     onSettings = { nav.navigate("settings") { launchSingleTop = true } },
                 )
@@ -51,7 +61,7 @@ fun BitoNavHost(container: AppContainer) {
                 TodayScreen(
                     viewModel = viewModel(factory = TodayViewModel.factory(container)),
                     onCreateHabit = { nav.navigate("habit") },
-                    onEditHabit = { nav.navigate("habit?id=$it") },
+                    onOpenHabit = { nav.navigate("detail/$it") },
                 )
             }
             composable(
@@ -69,10 +79,45 @@ fun BitoNavHost(container: AppContainer) {
                     onBack = { nav.popBackStack() },
                 )
             }
+            composable("detail/{habitId}") { entry ->
+                val habitId = entry.arguments?.getString("habitId") ?: return@composable
+                DetailScreen(
+                    viewModel = viewModel(factory = DetailViewModel.factory(container, habitId)),
+                    onBack = { nav.popBackStack() },
+                    onEdit = { nav.navigate("habit?id=$it") },
+                )
+            }
             composable("settings") {
                 SettingsScreen(
                     backupViewModel = viewModel(factory = BackupViewModel.factory(container)),
                     settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
+                    onOpenArchived = { nav.navigate("archived") },
+                )
+            }
+            composable("archived") {
+                ArchivedScreen(
+                    viewModel = viewModel(factory = SettingsViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
+                    onOpenHabit = { nav.navigate("detail/$it") },
+                )
+            }
+            composable("stats") {
+                StatsScreen(
+                    viewModel = viewModel(factory = StatsViewModel.factory(container)),
+                    onOpenRecords = { nav.navigate("records") },
+                    onOpenNumbers = { nav.navigate("numbers") },
+                )
+            }
+            composable("records") {
+                RecordsScreen(
+                    viewModel = viewModel(factory = RecordsViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
+                )
+            }
+            composable("numbers") {
+                NumbersScreen(
+                    viewModel = viewModel(factory = NumbersViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
                 )
             }

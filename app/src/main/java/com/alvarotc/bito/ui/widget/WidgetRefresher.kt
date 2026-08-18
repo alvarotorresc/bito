@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.widget
 import android.content.Context
 import androidx.glance.appwidget.updateAll
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ui.notifications.TrayRefresher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -17,7 +18,9 @@ import kotlinx.coroutines.launch
  * they wake the process and `BitoApp.onCreate` starts this collector, so
  * their writes refresh the widget without coupling to it. Rescheduling the
  * day-rotation alarm on every emission means a cutoff change moves the
- * rotation with no extra wiring.
+ * rotation with no extra wiring. The same in-app writes that move the widget
+ * also refresh (or cancel) the GLOBAL reminder tray via [TrayRefresher], so an
+ * in-app log or edit keeps the tray honest the same way a quick-action tap does.
  */
 object WidgetRefresher {
     fun start(
@@ -39,6 +42,7 @@ object WidgetRefresher {
                     runCatching {
                         TodayWidget().updateAll(context)
                         WidgetDayAlarm.schedule(context, prefs.dayCutoffMinutes)
+                        TrayRefresher.refresh(context, container)
                     }
                     delay(250)
                 }

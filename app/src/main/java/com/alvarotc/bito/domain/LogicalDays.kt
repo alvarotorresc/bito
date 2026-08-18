@@ -57,6 +57,9 @@ object LogicalDays {
             }
         }
 
+    /** The calendar year [day] falls in, in the local (zone-less) calendar the logical day already encodes. */
+    fun yearOf(day: LogicalDay): Int = LocalDate.ofEpochDay(day.toLong()).year
+
     /** Inclusive range of logical days covered by a period key. */
     fun daysOf(
         periodKey: Int,

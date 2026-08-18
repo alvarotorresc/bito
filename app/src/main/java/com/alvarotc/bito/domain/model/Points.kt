@@ -42,4 +42,5 @@ data class EconomyConfig(
     val perfectMonthPoints: Int = 50,
     /** Streak length (in the habit's period unit) -> points. */
     val streakMilestonePoints: Map<Int, Int> = mapOf(7 to 5, 30 to 20, 100 to 75, 365 to 300),
+    val freezerPrice: Int = 30,
 )

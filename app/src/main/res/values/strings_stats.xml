@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stats_habi_radiant">Streak after streak. This is a lifestyle now.</string>
+    <string name="stats_habi_normal">Steady as it goes. Keep at it.</string>
+    <string name="stats_habi_wilted">Rough stretch. One small win turns it around.</string>
+    <string name="stats_habi_dramatic">It has been a while. Still here.</string>
+
+    <string name="stats_perfect_days_label">Perfect days</string>
+    <string name="stats_perfect_days_this_month">%1$d this month</string>
+    <string name="stats_perfect_days_year_label">this year</string>
+
+    <string name="stats_week_title">Your week</string>
+    <string name="stats_week_delta">+%1$d%% vs last week</string>
+    <string name="stats_week_empty">No active habits this week</string>
+
+    <string name="stats_streaks_title">Active streaks</string>
+    <string name="stats_streaks_empty">No streaks to show off yet</string>
+
+    <string name="stats_teaser_records">Records</string>
+    <string name="stats_teaser_numbers">Your numbers</string>
+    <string name="stats_teaser_records_caption">Records · your best streak</string>
+    <string name="stats_teaser_numbers_caption">Your numbers · total entries</string>
+
+    <string name="records_empty">No records yet</string>
+    <string name="records_archived_label">Archived</string>
+    <string name="records_best_caption">your all-time best streak</string>
+    <string name="records_current_streak">now: %1$d %2$s</string>
+    <string name="records_no_current_streak">no streak right now</string>
+
+    <string name="numbers_section_log">Log</string>
+    <string name="numbers_section_rewards">Rewards</string>
+    <string name="numbers_section_habits">Habits</string>
+
+    <string name="numbers_entries">Entries logged</string>
+    <string name="numbers_points_earned">Points earned</string>
+    <string name="numbers_balance">Balance</string>
+    <string name="numbers_freezers_used">Freezers used</string>
+    <string name="numbers_freezers_owned">Freezers owned</string>
+    <string name="numbers_active_habits">Active habits</string>
+    <string name="numbers_paused_habits">Paused habits</string>
+    <string name="numbers_archived_habits">Archived habits</string>
+    <string name="numbers_days_since_first">Since first habit</string>
+</resources>

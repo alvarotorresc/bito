@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="stats_habi_radiant">Racha tras racha. Esto ya es un estilo de vida.</string>
+    <string name="stats_habi_normal">Constante como siempre. Sigue así.</string>
+    <string name="stats_habi_wilted">Racha difícil. Una pequeña victoria y le das la vuelta.</string>
+    <string name="stats_habi_dramatic">Cuánto tiempo. Aquí seguimos.</string>
+
+    <string name="stats_perfect_days_label">Días perfectos</string>
+    <string name="stats_perfect_days_this_month">%1$d este mes</string>
+    <string name="stats_perfect_days_year_label">este año</string>
+
+    <string name="stats_week_title">Tu semana</string>
+    <string name="stats_week_delta">+%1$d%% vs semana pasada</string>
+    <string name="stats_week_empty">Sin hábitos activos esta semana</string>
+
+    <string name="stats_streaks_title">Rachas activas</string>
+    <string name="stats_streaks_empty">Aún no hay rachas que presumir</string>
+
+    <string name="stats_teaser_records">Récords</string>
+    <string name="stats_teaser_numbers">Tus números</string>
+    <string name="stats_teaser_records_caption">Récords · tu mejor racha</string>
+    <string name="stats_teaser_numbers_caption">Tus números · registros totales</string>
+
+    <string name="records_empty">Aún no hay récords</string>
+    <string name="records_archived_label">Archivado</string>
+    <string name="records_best_caption">tu mejor racha de siempre</string>
+    <string name="records_current_streak">ahora: %1$d %2$s</string>
+    <string name="records_no_current_streak">sin racha ahora</string>
+
+    <string name="numbers_section_log">Registro</string>
+    <string name="numbers_section_rewards">Recompensas</string>
+    <string name="numbers_section_habits">Hábitos</string>
+
+    <string name="numbers_entries">Registros</string>
+    <string name="numbers_points_earned">Puntos ganados</string>
+    <string name="numbers_balance">Saldo</string>
+    <string name="numbers_freezers_used">Congeladores usados</string>
+    <string name="numbers_freezers_owned">Congeladores</string>
+    <string name="numbers_active_habits">Hábitos activos</string>
+    <string name="numbers_paused_habits">Hábitos en pausa</string>
+    <string name="numbers_archived_habits">Hábitos archivados</string>
+    <string name="numbers_days_since_first">Desde el primer hábito</string>
+</resources>

@@ -1,6 +1,5 @@
 package com.alvarotc.bito.ui.notifications
 
-import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -12,9 +11,9 @@ import kotlinx.coroutines.launch
 
 /**
  * Fires when the user taps a quick-log action button on a notification — no app launch. Logs
- * straight through [QuickActionUseCase], clears the notification the action came from, and only
- * ever refreshes or kills the GLOBAL tray — never conjures it. Spec §6.2's anti-spam rule ("a
- * notification only fires when something is pending") gates when a *scheduled* reminder may
+ * straight through [QuickActionUseCase], clears the notification the action came from, and
+ * hands the GLOBAL tray off to [TrayRefresher] — never conjures it. Spec §6.2's anti-spam rule
+ * ("a notification only fires when something is pending") gates when a *scheduled* reminder may
  * sound; a user tapping "Done" on their own personal reminder never asked for a fresh global
  * summary to appear out of nowhere. Refreshing one that's already showing keeps it honest;
  * creating one from nothing is noise.
@@ -47,21 +46,12 @@ class QuickActionReceiver : BroadcastReceiver() {
         val container = (context.applicationContext as BitoApp).container
         val useCase =
             QuickActionUseCase(container.journal, container.reconciler, container.domainState, container.habits, container.settings)
-        val payload = useCase.log(habitId, amount)
+        useCase.log(habitId, amount)
         if (notificationId != Notifier.REMINDER_ID) {
             NotificationManagerCompat.from(context).cancel(notificationId)
         }
-        if (payload == null) {
-            Notifier.cancelReminder(context)
-        } else if (notificationId == Notifier.REMINDER_ID || globalReminderIsActive(context)) {
-            Notifier.showReminder(context, payload)
-        }
+        // The action came from the GLOBAL tray's own button when notificationId == REMINDER_ID —
+        // that always refreshes it, even if the system no longer lists it as active.
+        TrayRefresher.refresh(context, container, treatAsActive = notificationId == Notifier.REMINDER_ID)
     }
-
-    /** Whether the GLOBAL tray is currently showing — never conjured, only refreshed or killed. */
-    private fun globalReminderIsActive(context: Context): Boolean =
-        context
-            .getSystemService(NotificationManager::class.java)
-            .activeNotifications
-            .any { it.id == Notifier.REMINDER_ID }
 }

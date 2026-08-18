@@ -43,8 +43,6 @@ import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
-import com.alvarotc.bito.ui.theme.Peligro
-import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -56,23 +54,22 @@ fun HabitCard(
     onPrimary: () -> Unit,
     onAdd: (Int) -> Unit,
     onExact: () -> Unit,
-    onRelapse: () -> Unit,
-    onEdit: () -> Unit,
+    onOpen: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val editLabel = stringResource(R.string.edit_habit_hint, card.name)
+    val openLabel = stringResource(R.string.open_habit_hint, card.name)
     BitoCard(
         modifier =
             modifier
                 .testTag("card-${card.id}")
-                .semantics { contentDescription = editLabel },
-        onClick = onEdit,
+                .semantics { contentDescription = openLabel },
+        onClick = onOpen,
     ) {
         when (card.kind) {
             CardKind.CHECK -> CheckBody(card, onPrimary)
             CardKind.COUNTER -> CounterBody(card, onPrimary, onExact)
-            CardKind.DURATION -> DurationBody(card, onAdd, onExact, onEdit)
-            CardKind.ABSTINENCE -> AbstinenceBody(card, onRelapse)
+            CardKind.DURATION -> DurationBody(card, onAdd, onExact, onOpen)
+            CardKind.ABSTINENCE -> AbstinenceBody(card)
         }
     }
 }
@@ -223,7 +220,7 @@ private fun DurationBody(
     card: HabitCardUi,
     onAdd: (Int) -> Unit,
     onExact: () -> Unit,
-    onEdit: () -> Unit,
+    onOpen: () -> Unit,
 ) {
     val isLimit = card.direction == Direction.AT_MOST
     val overLimit = isLimit && card.failed
@@ -250,7 +247,7 @@ private fun DurationBody(
             Modifier
                 .fillMaxWidth()
                 .testTag("bar-${card.id}")
-                .combinedClickable(onClick = onEdit, onLongClick = onExact)
+                .combinedClickable(onClick = onOpen, onLongClick = onExact)
                 .padding(vertical = 12.dp),
         ) {
             RoundedBar(
@@ -281,29 +278,19 @@ private fun DurationBody(
     }
 }
 
+/**
+ * Registration for abstinence habits is read-only here: the relapse pill moved to the habit
+ * Detail screen, reached by tapping the card surface (see [HabitCard]'s own `onClick`).
+ */
 @Composable
-private fun AbstinenceBody(
-    card: HabitCardUi,
-    onRelapse: () -> Unit,
-) {
+private fun AbstinenceBody(card: HabitCardUi) {
     Column {
         HabitNameRow(card.name, strikeThrough = false, streak = card.streak, minStreakToShow = 1)
         Spacer(Modifier.height(10.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                if (card.failed) stringResource(R.string.relapse_today) else stringResource(R.string.clean_today),
-                style = MaterialTheme.typography.labelMedium,
-                color = if (card.failed) Brasa else Hoja,
-            )
-            Spacer(Modifier.weight(1f))
-            if (!card.failed) {
-                GhostPillButton(
-                    stringResource(R.string.relapse_action),
-                    onClick = onRelapse,
-                    color = Peligro,
-                    borderColor = PeligroTinte,
-                )
-            }
-        }
+        Text(
+            if (card.failed) stringResource(R.string.relapse_today) else stringResource(R.string.clean_today),
+            style = MaterialTheme.typography.labelMedium,
+            color = if (card.failed) Brasa else Hoja,
+        )
     }
 }

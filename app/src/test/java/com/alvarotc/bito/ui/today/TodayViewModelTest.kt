@@ -205,23 +205,6 @@ class TodayViewModelTest {
         }
 
     @Test
-    fun `logRelapse on a ZERO habit logs value 1 and fails the card`() =
-        runTest {
-            habitsRepo.create(
-                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.ZERO, period = Period.DAY, createdOnDay = today),
-            )
-            val card = state().cards.single { it.id == "h1" }
-            assertFalse(card.failed)
-
-            vm.logRelapse(card)
-            advanceUntilIdle()
-
-            assertTrue(state().cards.single { it.id == "h1" }.failed)
-            val entry = db.entryDao().all().single { it.habitId == "h1" }
-            assertEquals(1, entry.value)
-        }
-
-    @Test
     fun `undo removes the last entry and consumeLogged clears lastLogged`() =
         runTest {
             habitsRepo.create(
