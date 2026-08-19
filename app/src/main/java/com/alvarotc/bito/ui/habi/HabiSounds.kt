@@ -32,9 +32,16 @@ enum class HabiSound { GREETING, CELEBRATION, SAD, PURCHASE }
  * check and the actual playback both happen inside a coroutine it launches on its own scope,
  * reading the CURRENT [Settings] via [SettingsRepository.settings]'s `first()` each time rather
  * than trusting a value cached from some earlier collection. [shouldPlay] is split out as a pure,
- * directly-testable gate — [soundPool] is a private lazy field with no handle exposed outside this
+ * directly-testable gate — [soundPool] is a private field with no handle exposed outside this
  * class, so a test can't assert on it directly; keeping the actual gate logic pure and testable in
  * isolation is what makes that acceptable instead of a gap.
+ *
+ * [soundPool] and [soundIds] are built eagerly at construction, not lazily on first [play] — this
+ * class is itself constructed once, eagerly, in `AppContainer` at app start, so preloading here
+ * gives `SoundPool.load`'s async decode the whole time between app launch and the user's first tap
+ * to finish. Deferring it to inside the first [play] call (the previous behavior) started the
+ * decode and requested playback in the same instant, so the very first cue of a session was
+ * frequently silent — `SoundPool.play` is a no-op for a sample whose decode hasn't completed yet.
  */
 class HabiSounds(
     private val context: Context,
@@ -45,7 +52,7 @@ class HabiSounds(
 ) {
     private val scope by lazy { CoroutineScope(SupervisorJob() + dispatcher) }
 
-    private val soundPool: SoundPool by lazy {
+    private val soundPool: SoundPool =
         SoundPool.Builder()
             .setMaxStreams(MAX_STREAMS)
             .setAudioAttributes(
@@ -55,16 +62,14 @@ class HabiSounds(
                     .build(),
             )
             .build()
-    }
 
-    private val soundIds: Map<HabiSound, Int> by lazy {
+    private val soundIds: Map<HabiSound, Int> =
         mapOf(
             HabiSound.GREETING to soundPool.load(context, R.raw.habi_meeh, 1),
             HabiSound.CELEBRATION to soundPool.load(context, R.raw.habi_cheer, 1),
             HabiSound.SAD to soundPool.load(context, R.raw.habi_sad, 1),
             HabiSound.PURCHASE to soundPool.load(context, R.raw.habi_pop, 1),
         )
-    }
 
     /** No-ops silently when Habi sounds are off in Ajustes — otherwise plays regardless of ringer mode. */
     fun play(sound: HabiSound) {

@@ -72,6 +72,20 @@ class HabiSoundsTest {
         assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false)))
     }
 
+    // --- construction: preloads eagerly, not lazily on the first play() ----------------------
+
+    /**
+     * Robolectric's `SoundPool` shadow doesn't model the real async decode this preload targets
+     * (see class KDoc "ceiling of what's checkable here"), so this can only prove construction
+     * itself never throws now that it eagerly builds the pool and calls `load` four times — not
+     * that the decode actually finishes before a same-instant `play()` on a real device. The fix
+     * itself is that `soundPool`/`soundIds` are no longer `by lazy`: this line alone loads them.
+     */
+    @Test
+    fun `constructing HabiSounds preloads the four samples without a play call first`() {
+        HabiSounds(context, SettingsRepository(settingsStore("habi-sounds-preload")))
+    }
+
     // --- play: never crashes, respects the flag, ignores the ringer -------------------------
 
     @Test
