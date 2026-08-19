@@ -91,6 +91,7 @@ fun buildTodayUiState(
                 habit.status == HabitStatus.PAUSED ||
                     state.pauseIntervals.any { it.habitId == habit.id && it.endDay == null }
             }
+            .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
             .map { PausedHabitUi(it.id, it.name) }
     return TodayUiState(
         today = today,

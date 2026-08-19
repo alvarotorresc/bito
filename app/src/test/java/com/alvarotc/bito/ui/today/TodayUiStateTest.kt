@@ -380,4 +380,21 @@ class TodayUiStateTest {
         // complianceOf excludes those days; the card must count the same: 0, not 2
         assertEquals(0, card.progress)
     }
+
+    @Test
+    fun `21 - paused habits are ordered by sortOrder like actives`() {
+        val a = habit("a", status = HabitStatus.PAUSED)
+        val b = habit("b", status = HabitStatus.PAUSED)
+        val c = habit("c", status = HabitStatus.PAUSED)
+        val state =
+            stateOf(
+                habits = listOf(a, b, c),
+                pauses = listOf(pause("a", startDay = 18), pause("b", startDay = 18), pause("c", startDay = 18)),
+            )
+        val sortOrder = mapOf("c" to 0, "a" to 1, "b" to 2)
+
+        val result = buildTodayUiState(state, sortOrder, TODAY)
+
+        assertEquals(listOf("c", "a", "b"), result.pausedHabits.map { it.id })
+    }
 }
