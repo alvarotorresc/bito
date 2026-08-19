@@ -58,6 +58,8 @@ import com.alvarotc.bito.ui.components.DotHeatmap
 import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
+import com.alvarotc.bito.ui.components.formatDayMedium
+import com.alvarotc.bito.ui.components.formatMonthLabel
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
@@ -71,8 +73,6 @@ import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.RelapseSheet
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** [SegmentedPills] order for the compliance windows, matching [DetailUiState.windows]' [7, 30, 365] order. */
 private val WINDOW_LABEL_RES = listOf(R.string.window_7, R.string.window_30, R.string.window_year)
@@ -443,13 +443,7 @@ private fun HeatmapSection(
     // at both w393dp and w411dp without touching the screen's 20dp margins.
     // Lowercase per the mockup ("agosto"); the year only joins in when it isn't the current one
     // ("agosto 2025"), same as a plain "MMMM" vs "MMMM yyyy" pattern switch.
-    val monthLabel =
-        remember(current.month, currentRealMonth) {
-            val pattern = if (current.month.year != currentRealMonth.year) "MMMM yyyy" else "MMMM"
-            current.month.atDay(1)
-                .format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
-                .lowercase(Locale.getDefault())
-        }
+    val monthLabel = remember(current.month, currentRealMonth) { formatMonthLabel(current.month, currentRealMonth) }
     BitoCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
         Column(Modifier.padding(vertical = 20.dp)) {
             Row(
@@ -546,10 +540,7 @@ private fun FooterActions(
     }
     Column {
         if (status == HabitStatus.PAUSED && pausedSinceDay != null) {
-            val since =
-                remember(pausedSinceDay) {
-                    LocalDate.ofEpochDay(pausedSinceDay.toLong()).format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
-                }
+            val since = remember(pausedSinceDay) { formatDayMedium(pausedSinceDay) }
             Text(stringResource(R.string.paused_since, since), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             Spacer(Modifier.height(8.dp))
         }

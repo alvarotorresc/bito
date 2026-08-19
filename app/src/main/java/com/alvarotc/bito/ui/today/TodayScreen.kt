@@ -45,6 +45,7 @@ import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.DayRing
 import com.alvarotc.bito.ui.components.PillButton
+import com.alvarotc.bito.ui.components.formatDayWithPattern
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -53,9 +54,6 @@ import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** The flagship screen: today's ring, every requirable habit, and its registration flows. */
 @Composable
@@ -164,10 +162,7 @@ private fun TodayHeader(today: LogicalDay) {
     Column {
         Text(stringResource(R.string.today_title), style = MaterialTheme.typography.headlineLarge, color = Tinta)
         val pattern = stringResource(R.string.today_date_pattern)
-        val date =
-            remember(today, pattern) {
-                LocalDate.ofEpochDay(today.toLong()).format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
-            }
+        val date = remember(today, pattern) { formatDayWithPattern(today, pattern) }
         Text(date, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
     }
 }

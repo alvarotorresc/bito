@@ -24,13 +24,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostIconButton
+import com.alvarotc.bito.ui.components.formatDayMedium
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** Every archived habit, list-by-pattern like [com.alvarotc.bito.ui.stats.RecordsScreen]: a tap opens its (read-only) detail. */
 @Composable
@@ -82,10 +80,7 @@ private fun ArchivedRow(
         Text(habit.name, style = MaterialTheme.typography.bodyLarge, color = Tinta)
         habit.archivedOnDay?.let { day ->
             Spacer(Modifier.height(4.dp))
-            val date =
-                remember(day) {
-                    LocalDate.ofEpochDay(day.toLong()).format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
-                }
+            val date = remember(day) { formatDayMedium(day) }
             Text(stringResource(R.string.archived_since, date), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         }
     }
