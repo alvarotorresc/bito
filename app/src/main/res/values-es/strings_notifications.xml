@@ -4,6 +4,7 @@
     <string name="channel_review">Repaso del día</string>
     <plurals name="notif_reminder_title">
         <item quantity="one">%1$d hábito pendiente</item>
+        <item quantity="many">%1$d hábitos pendientes</item>
         <item quantity="other">%1$d hábitos pendientes</item>
     </plurals>
     <string name="notif_reminder_single_body">Sigue abierto hoy</string>

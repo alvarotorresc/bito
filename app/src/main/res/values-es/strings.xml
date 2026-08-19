@@ -85,10 +85,12 @@
     <string name="import_preview_counts">%1$s · %2$s</string>
     <plurals name="import_preview_habits">
         <item quantity="one">%1$d hábito</item>
+        <item quantity="many">%1$d hábitos</item>
         <item quantity="other">%1$d hábitos</item>
     </plurals>
     <plurals name="import_preview_entries">
         <item quantity="one">%1$d registro</item>
+        <item quantity="many">%1$d registros</item>
         <item quantity="other">%1$d registros</item>
     </plurals>
     <string name="import_preview_warning">Restaurar reemplaza TODOS los datos actuales. No hay fusión.</string>
@@ -115,6 +117,7 @@
     <string name="general_section_title">General</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Hábito archivado (%1$d)</item>
+        <item quantity="many">Hábitos archivados (%1$d)</item>
         <item quantity="other">Hábitos archivados (%1$d)</item>
     </plurals>
     <string name="archived_title">Hábitos archivados</string>

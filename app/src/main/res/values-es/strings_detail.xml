@@ -10,6 +10,9 @@
 
     <plurals name="freezer_chip_label">
         <item quantity="one">%1$d congelador</item>
+        <!-- es CLDR's "many" only fires on huge round numbers (millions+); freezer counts never
+             reach that range, so this mirrors "other" — added to satisfy lint's completeness check. -->
+        <item quantity="many">%1$d congeladores</item>
         <item quantity="other">%1$d congeladores</item>
     </plurals>
 
