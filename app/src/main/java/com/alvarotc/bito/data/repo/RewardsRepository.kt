@@ -5,6 +5,10 @@ import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
+import com.alvarotc.bito.data.db.toDomain
+import com.alvarotc.bito.domain.PointsEngine
+import com.alvarotc.bito.domain.model.CatalogItem
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
@@ -69,4 +73,31 @@ class RewardsRepository(private val db: BitoDatabase) {
             db.customizationItemDao().unequipCategory(item.category)
             db.customizationItemDao().upsert(item.copy(equipped = true))
         }
+
+    /**
+     * Buys [item] atomically: ledger spend + acquired row, equipped on the spot
+     * (docs/05 §4). Returns false — writing nothing — when the item is not
+     * purchasable, is already owned, or the balance does not cover it.
+     */
+    suspend fun purchase(
+        item: CatalogItem,
+        day: LogicalDay,
+        nowMillis: Long,
+    ): Boolean =
+        db.withTransaction {
+            val price = item.price ?: return@withTransaction false
+            if (db.customizationItemDao().byId(item.id) != null) return@withTransaction false
+            val ledger = db.pointsLedgerDao().all().map { it.toDomain() }
+            if (!PointsEngine.canSpend(ledger, price)) return@withTransaction false
+            db.pointsLedgerDao().insert(
+                PointsLedgerEntity(UUID.randomUUID().toString(), -price, PointsReason.BUY_ITEM, item.id, day, nowMillis),
+            )
+            db.customizationItemDao().unequipCategory(item.category)
+            db.customizationItemDao().upsert(CustomizationItemEntity(item.id, item.category, nowMillis, equipped = true))
+            true
+        }
+
+    suspend fun unequip(category: CustomizationCategory) = db.customizationItemDao().unequipCategory(category)
+
+    fun observeOwnedItems(): Flow<List<CustomizationItemEntity>> = db.customizationItemDao().observeAll()
 }
