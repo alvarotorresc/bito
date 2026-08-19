@@ -37,6 +37,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
@@ -46,6 +47,9 @@ import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.DayRing
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.formatDayWithPattern
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -61,6 +65,7 @@ fun TodayScreen(
     viewModel: TodayViewModel,
     onCreateHabit: () -> Unit,
     onOpenHabit: (String) -> Unit,
+    onOpenHabi: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -102,7 +107,7 @@ fun TodayScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { TodayHeader(state.today) }
+            item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi) }
             // Empty is only true poverty when there is nothing at all — a habit merely paused
             // still has a home in the section below, so it must not trip "create your first habit".
             if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty()) {
@@ -158,12 +163,32 @@ fun TodayScreen(
 }
 
 @Composable
-private fun TodayHeader(today: LogicalDay) {
-    Column {
-        Text(stringResource(R.string.today_title), style = MaterialTheme.typography.headlineLarge, color = Tinta)
-        val pattern = stringResource(R.string.today_date_pattern)
-        val date = remember(today, pattern) { formatDayWithPattern(today, pattern) }
-        Text(date, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+private fun TodayHeader(
+    today: LogicalDay,
+    spec: HabiSpec,
+    userName: String,
+    onOpenHabi: () -> Unit,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.today_title), style = MaterialTheme.typography.headlineLarge, color = Tinta)
+            val pattern = stringResource(R.string.today_date_pattern)
+            val date = remember(today, pattern) { formatDayWithPattern(today, pattern) }
+            Text(date, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            val fallbackName = stringResource(R.string.habi_name_fallback)
+            Text(
+                stringResource(HabiVoice.greetingRes(spec.mood, spec.personality), userName.ifBlank { fallbackName }),
+                style = MaterialTheme.typography.labelMedium,
+                color = TintaSuave,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        // Static in the corner (T9's `animated` gate off): an infinite bob/blink here would
+        // never let a plain waitForIdle() settle in TodayScreenTest — same reasoning that keeps
+        // StatsScreen's embedded commentator avatar frozen. The tap squash-and-stretch is
+        // untouched by this gate, so it still answers onOpenHabi.
+        HabiAvatar(spec, Modifier.size(56.dp), animated = false, onTap = onOpenHabi)
     }
 }
 

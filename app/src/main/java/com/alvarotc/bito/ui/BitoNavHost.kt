@@ -80,6 +80,12 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = TodayViewModel.factory(container)),
                     onCreateHabit = { nav.navigate("habit") },
                     onOpenHabit = { nav.navigate("detail/$it") },
+                    onOpenHabi = {
+                        nav.navigate("habi") {
+                            popUpTo("today")
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
             composable(

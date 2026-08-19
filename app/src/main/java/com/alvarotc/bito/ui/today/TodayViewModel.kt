@@ -11,6 +11,7 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
@@ -36,6 +37,7 @@ class TodayViewModel(
     private val journal: JournalRepository,
     private val settings: SettingsRepository,
     private val reconciler: PointsReconciler,
+    private val rewards: RewardsRepository,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
@@ -43,8 +45,20 @@ class TodayViewModel(
     defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     val uiState: StateFlow<TodayUiState> =
-        combine(domainState.observe(), habits.observeHabits(), settings.settings) { state, entities, prefs ->
-            buildTodayUiState(state, entities.associate { it.id to it.sortOrder }, todayOf(prefs))
+        combine(
+            domainState.observe(),
+            habits.observeHabits(),
+            settings.settings,
+            rewards.observeOwnedItems(),
+        ) { state, entities, prefs, owned ->
+            buildTodayUiState(
+                state,
+                entities.associate { it.id to it.sortOrder },
+                todayOf(prefs),
+                prefs.personality,
+                owned,
+                prefs.userName,
+            )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
@@ -125,7 +139,14 @@ class TodayViewModel(
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    TodayViewModel(container.domainState, container.habits, container.journal, container.settings, container.reconciler)
+                    TodayViewModel(
+                        container.domainState,
+                        container.habits,
+                        container.journal,
+                        container.settings,
+                        container.reconciler,
+                        container.rewards,
+                    )
                 }
             }
     }

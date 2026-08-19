@@ -67,6 +67,7 @@ class TodayViewModelTest {
     private lateinit var habitsRepo: HabitsRepository
     private lateinit var journal: JournalRepository
     private lateinit var settingsRepo: SettingsRepository
+    private lateinit var rewardsRepo: RewardsRepository
     private lateinit var reconciler: PointsReconciler
     private lateinit var vm: TodayViewModel
 
@@ -82,6 +83,7 @@ class TodayViewModelTest {
             journal,
             settingsRepo,
             reconciler,
+            rewardsRepo,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
@@ -104,7 +106,8 @@ class TodayViewModelTest {
         habitsRepo = HabitsRepository(db)
         journal = JournalRepository(db)
         settingsRepo = SettingsRepository(settingsStore("today-vm"))
-        reconciler = PointsReconciler(domainStateRepo, RewardsRepository(db))
+        rewardsRepo = RewardsRepository(db)
+        reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
         vm = newViewModel()
     }
 

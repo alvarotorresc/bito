@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui
 import android.app.Application
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -104,10 +105,13 @@ class BitoNavHostTest {
         compose.mainClock.autoAdvance = false
 
         // The Habi tab's content description ("Habi") collides with HabiAvatar's own
-        // (habi_avatar_cd is also "Habi") once the screen renders — this still resolves to a
-        // single node here, since Habi hasn't been navigated to yet. Assert arrival by testTag,
-        // not by content description, to avoid that collision.
-        compose.onNodeWithContentDescription("Habi", useUnmergedTree = true).performClick()
+        // (habi_avatar_cd is also "Habi") twice over here: once the Habi screen renders its own
+        // avatar, AND already on Today, whose header now carries its own corner HabiAvatar (T14)
+        // — scope to the bottom bar to pick the tab, not either avatar. Assert arrival by
+        // testTag, not by content description, to avoid the same collision on the way in.
+        compose
+            .onNode(hasContentDescription("Habi") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .performClick()
         // Not waitForIdle(): with autoAdvance false it pumps no frames at all, so the nav
         // recomposition from the click above would never actually run. A couple of manual frames
         // is enough to let it settle (route change -> HabiScreen mounts) without ever giving the

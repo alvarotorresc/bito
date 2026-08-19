@@ -1,18 +1,26 @@
 package com.alvarotc.bito.ui.today
 
+import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.Compliance
 import com.alvarotc.bito.domain.ComplianceStatus
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.MoodEngine
 import com.alvarotc.bito.domain.Sealing
+import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.ui.habi.HabiSpec
 
 /** Visual treatment of a habit card, derived from its metric/log mode/direction. */
 enum class CardKind { CHECK, COUNTER, DURATION, ABSTINENCE }
@@ -54,7 +62,11 @@ val HabitCardUi.showsLoggingChips: Boolean
 /** A paused habit's compact row in Today's "paused" section — no progress, just a way back in. */
 data class PausedHabitUi(val id: String, val name: String)
 
-/** Snapshot the Today screen renders: the ring, the cards, and the pending-seal prompt. */
+/**
+ * Snapshot the Today screen renders: the ring, the cards, and the pending-seal prompt.
+ * [spec] and [userName] feed the header's corner avatar and greeting (T14) — the same
+ * [HabiSpec] shape the Habi and Stats screens' own avatars use.
+ */
 data class TodayUiState(
     val today: LogicalDay = 0,
     val ringDone: Int = 0,
@@ -62,19 +74,28 @@ data class TodayUiState(
     val cards: List<HabitCardUi> = emptyList(),
     val pausedHabits: List<PausedHabitUi> = emptyList(),
     val pendingSealDays: List<LogicalDay> = emptyList(),
+    val spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
+    val userName: String = "",
     val loading: Boolean = true,
 )
 
 /**
  * Derives the Today screen state from [state] as seen on [today]. Pure — no
  * side effects, no storage, no clock reads — so it is trivially testable and
- * safe to call on every state change.
+ * safe to call on every state change. [personality], [owned] and [userName] default so
+ * existing positional callers (tests predating the header avatar) keep compiling unchanged.
  */
 fun buildTodayUiState(
     state: DomainState,
     sortOrder: Map<String, Int>,
     today: LogicalDay,
+    personality: Personality = Personality.NEUTRA,
+    owned: List<CustomizationItemEntity> = emptyList(),
+    userName: String = "",
 ): TodayUiState {
+    val lastActivityDay = StatsEngine.lastActivityDay(state)
+    val mood = MoodEngine.moodOf(state, today, lastActivityDay)
+    val equippedIds = owned.filter { it.equipped }.map { it.itemId }
     val cards =
         state.habits
             .filter { Compliance.isRequirableOn(state, it, today) }
@@ -100,6 +121,8 @@ fun buildTodayUiState(
         cards = cards,
         pausedHabits = pausedHabits,
         pendingSealDays = Sealing.pendingSealDays(state, today),
+        spec = HabiSpec(mood, personality, equippedSetOf(equippedIds)),
+        userName = userName,
         loading = false,
     )
 }
