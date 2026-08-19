@@ -82,6 +82,20 @@ fun TodayScreen(
         }
     }
 
+    // Habi's celebration cue (T16) fires once, exactly on a false→true completion edge that
+    // HAPPENS while the screen is open — never on every recomposition of an already-complete
+    // ring. null = nothing observed yet: the first real emission only SEEDS the flag, so arriving
+    // at an already-complete day (opening Today, returning from Habi, a rotation) stays silent
+    // instead of reading as a false→true edge from the initial placeholder state.
+    // ringTotal == 0 covers both that placeholder and a day with nothing required.
+    var wasRingComplete by remember { mutableStateOf<Boolean?>(null) }
+    LaunchedEffect(state.ringDone, state.ringTotal) {
+        if (state.ringTotal == 0) return@LaunchedEffect
+        val isComplete = state.ringDone == state.ringTotal
+        if (wasRingComplete == false && isComplete) viewModel.celebrate()
+        wasRingComplete = isComplete
+    }
+
     // Reordering works on a local copy so the drag previews instantly; the DB write happens once,
     // on drag end, and the re-emitted flow rebuilds this list in the exact same order (no jump).
     val orderedCards = remember(state.cards) { state.cards.toMutableStateList() }

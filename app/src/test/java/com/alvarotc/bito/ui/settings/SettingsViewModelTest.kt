@@ -168,6 +168,21 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `setHabiSounds persists the toggle`() =
+        runTest {
+            advanceUntilIdle()
+            assertTrue(vm.state.value?.habiSoundsEnabled == true) // default (T7)
+
+            vm.setHabiSounds(false)
+            advanceUntilIdle()
+            assertEquals(false, vm.state.value?.habiSoundsEnabled)
+
+            vm.setHabiSounds(true)
+            advanceUntilIdle()
+            assertEquals(true, vm.state.value?.habiSoundsEnabled)
+        }
+
+    @Test
     fun `archivedHabits starts empty and is empty until a habit is archived`() =
         runTest {
             val habits = HabitsRepository(db)

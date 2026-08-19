@@ -65,6 +65,7 @@ class HabiViewModelTest {
     private lateinit var rewardsRepo: RewardsRepository
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var reconciler: PointsReconciler
+    private lateinit var habiSounds: HabiSounds
 
     private fun settingsStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -77,6 +78,7 @@ class HabiViewModelTest {
             rewardsRepo,
             settingsRepo,
             reconciler,
+            habiSounds,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
@@ -109,6 +111,7 @@ class HabiViewModelTest {
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore())
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
+        habiSounds = HabiSounds(context, settingsRepo)
     }
 
     @After

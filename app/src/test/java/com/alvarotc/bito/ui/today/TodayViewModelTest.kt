@@ -20,6 +20,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.habi.HabiSounds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -69,6 +70,7 @@ class TodayViewModelTest {
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var rewardsRepo: RewardsRepository
     private lateinit var reconciler: PointsReconciler
+    private lateinit var habiSounds: HabiSounds
     private lateinit var vm: TodayViewModel
 
     private fun settingsStore(name: String): DataStore<Preferences> =
@@ -84,6 +86,7 @@ class TodayViewModelTest {
             settingsRepo,
             reconciler,
             rewardsRepo,
+            habiSounds,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
@@ -108,6 +111,7 @@ class TodayViewModelTest {
         settingsRepo = SettingsRepository(settingsStore("today-vm"))
         rewardsRepo = RewardsRepository(db)
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
+        habiSounds = HabiSounds(context, settingsRepo)
         vm = newViewModel()
     }
 

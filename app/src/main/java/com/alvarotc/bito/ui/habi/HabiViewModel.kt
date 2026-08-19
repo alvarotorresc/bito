@@ -47,6 +47,7 @@ class HabiViewModel(
     private val rewards: RewardsRepository,
     private val settings: SettingsRepository,
     private val reconciler: PointsReconciler,
+    private val habiSounds: HabiSounds,
     private val economy: EconomyConfig = EconomyConfig(),
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
@@ -107,6 +108,11 @@ class HabiViewModel(
         previewItemId.value = itemId
     }
 
+    /** Tapping the stage avatar (T16): Habi's greeting cue, gated on the Ajustes toggle and ringer mode. */
+    fun onAvatarTap() {
+        habiSounds.play(HabiSound.GREETING)
+    }
+
     /**
      * Buys the previewed item. On success the preview clears — [RewardsRepository.purchase]
      * already equips it atomically, so there is nothing left to reconcile. This is
@@ -120,7 +126,10 @@ class HabiViewModel(
         val item = HabiCatalog.byId(itemId) ?: return
         viewModelScope.launch {
             val today = todayOf(settings.settings.first())
-            if (rewards.purchase(item, today, now())) preview(null)
+            if (rewards.purchase(item, today, now())) {
+                preview(null)
+                habiSounds.play(HabiSound.PURCHASE)
+            }
         }
     }
 
@@ -134,6 +143,7 @@ class HabiViewModel(
             val ledger = domainState.snapshot().pointsLedger
             if (PointsEngine.canSpend(ledger, economy.freezerPrice)) {
                 rewards.spend(-economy.freezerPrice, PointsReason.BUY_FREEZER, UUID.randomUUID().toString(), today, nowMillis)
+                habiSounds.play(HabiSound.PURCHASE)
             }
         }
 
@@ -141,7 +151,13 @@ class HabiViewModel(
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    HabiViewModel(container.domainState, container.rewards, container.settings, container.reconciler)
+                    HabiViewModel(
+                        container.domainState,
+                        container.rewards,
+                        container.settings,
+                        container.reconciler,
+                        container.habiSounds,
+                    )
                 }
             }
     }

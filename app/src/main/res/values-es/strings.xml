@@ -115,6 +115,10 @@
     <string name="reminder_exact_notice">Las alarmas exactas están desactivadas — los avisos pueden desviarse. Toca para permitirlas.</string>
     <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
 
+    <string name="settings_habi_section">Habi</string>
+    <string name="settings_habi_sounds">Sonidos de Habi</string>
+    <string name="settings_habi_sounds_hint">Saluditos y celebraciones. Nunca en notificaciones.</string>
+
     <string name="general_section_title">General</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Hábito archivado (%1$d)</item>

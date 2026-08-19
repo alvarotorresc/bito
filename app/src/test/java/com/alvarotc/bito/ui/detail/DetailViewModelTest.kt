@@ -20,6 +20,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.ui.habi.HabiSounds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -65,6 +66,7 @@ class DetailViewModelTest {
     private lateinit var rewardsRepo: RewardsRepository
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var reconciler: PointsReconciler
+    private lateinit var habiSounds: HabiSounds
 
     private fun settingsStore(name: String): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -80,6 +82,7 @@ class DetailViewModelTest {
             rewardsRepo,
             settingsRepo,
             reconciler,
+            habiSounds,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
@@ -101,6 +104,7 @@ class DetailViewModelTest {
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore("detail-vm"))
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
+        habiSounds = HabiSounds(context, settingsRepo)
     }
 
     @After

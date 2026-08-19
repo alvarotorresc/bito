@@ -64,7 +64,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             BalanceChip(state.balance, modifier = Modifier.align(Alignment.End))
-            Stage(spec = state.spec, modifier = Modifier.fillMaxWidth())
+            Stage(spec = state.spec, onTap = viewModel::onAvatarTap, modifier = Modifier.fillMaxWidth())
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }
@@ -126,6 +126,7 @@ private val HabiStageColor = Color(0xFFDDE9D6)
 @Composable
 private fun Stage(
     spec: HabiSpec,
+    onTap: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier, contentAlignment = Alignment.Center) {
@@ -144,7 +145,7 @@ private fun Stage(
                 .clip(RoundedCornerShape(percent = 50))
                 .background(Borde.copy(alpha = 0.6f)),
         )
-        HabiAvatar(spec = spec, modifier = Modifier.size(150.dp), onTap = {}) // T16 wires the tap sound
+        HabiAvatar(spec = spec, modifier = Modifier.size(150.dp), onTap = onTap)
     }
 }
 

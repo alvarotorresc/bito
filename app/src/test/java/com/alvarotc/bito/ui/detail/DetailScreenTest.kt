@@ -33,6 +33,7 @@ import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -111,6 +112,7 @@ class DetailScreenTest {
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore())
         val reconciler = PointsReconciler(domainState, RewardsRepository(db))
+        val habiSounds = HabiSounds(ApplicationProvider.getApplicationContext(), settings)
         val vm =
             DetailViewModel(
                 habitId,
@@ -120,6 +122,7 @@ class DetailScreenTest {
                 RewardsRepository(db),
                 settings,
                 reconciler,
+                habiSounds,
                 now = { fixedNow },
                 zone = { utc },
                 defaultDispatcher = dispatcher,

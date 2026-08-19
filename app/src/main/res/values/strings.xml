@@ -118,6 +118,10 @@
     <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
     <string name="notif_permission_hint">Allow notifications to hear reminders</string>
 
+    <string name="settings_habi_section">Habi</string>
+    <string name="settings_habi_sounds">Habi sounds</string>
+    <string name="settings_habi_sounds_hint">Little greetings and celebrations. Never in notifications.</string>
+
     <string name="general_section_title">General</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Archived habit (%1$d)</item>

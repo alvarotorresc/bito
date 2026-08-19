@@ -30,6 +30,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -181,6 +183,7 @@ fun SettingsScreen(
                         }
                     },
                 )
+                HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
             }
             GeneralSectionCard(archivedCount = archivedHabits.size, onOpenArchived = onOpenArchived)
             BackupsCard(
@@ -339,6 +342,33 @@ private fun ReminderHourRow(
         }
         IconButton(onClick = onRemove) {
             Icon(BitoIcons.X, contentDescription = stringResource(R.string.reminder_remove), tint = TintaSuave)
+        }
+    }
+}
+
+/** One row, [Switch] pattern EXACT to habitform's `BinaryModeRow`: label + hint on the left, the toggle on the right. */
+@Composable
+private fun HabiSectionCard(
+    soundsEnabled: Boolean,
+    onSetHabiSounds: (Boolean) -> Unit,
+) {
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_habi_section), style = MaterialTheme.typography.titleMedium, color = Tinta)
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_habi_sounds), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+                Text(
+                    stringResource(R.string.settings_habi_sounds_hint),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                )
+            }
+            Switch(
+                checked = soundsEnabled,
+                onCheckedChange = onSetHabiSounds,
+                modifier = Modifier.testTag("habi-sounds-switch"),
+            )
         }
     }
 }
