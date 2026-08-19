@@ -169,18 +169,35 @@ class HabiDrawingTest {
 
     @Test
     fun `each pattern renders distinct pixels`() {
-        val bare = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
-        val motas = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = "pattern-motas"))
-        val rayitas = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = "pattern-rayitas"))
+        // All 7 catalog patterns, not just motas/rayitas — a pairwise scan catches a swapped
+        // positions-list or glyph-function between any two (e.g. corazones/estrellas), which
+        // compiles cleanly either way and would otherwise go unverified.
+        val patternIds =
+            listOf(
+                "pattern-motas",
+                "pattern-rayitas",
+                "pattern-corazones",
+                "pattern-estrellas",
+                "pattern-flores",
+                "pattern-chispas",
+                "pattern-llamas",
+            )
         val points = bodyBoundingBoxPixels(size)
+        val bareBitmap = renderHabiBitmap(HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()), size)
+        val bitmaps =
+            patternIds.associateWith { id ->
+                renderHabiBitmap(HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = id)), size)
+            }
 
-        val bareBitmap = renderHabiBitmap(bare, size)
-        val motasBitmap = renderHabiBitmap(motas, size)
-        val rayitasBitmap = renderHabiBitmap(rayitas, size)
-
-        assertTrue("motas should differ from no pattern", anyPixelDiffers(bareBitmap, motasBitmap, points))
-        assertTrue("rayitas should differ from no pattern", anyPixelDiffers(bareBitmap, rayitasBitmap, points))
-        assertTrue("motas should differ from rayitas", anyPixelDiffers(motasBitmap, rayitasBitmap, points))
+        for (id in patternIds) {
+            assertTrue("$id should differ from no pattern", anyPixelDiffers(bareBitmap, bitmaps.getValue(id), points))
+        }
+        for (i in patternIds.indices) {
+            for (j in i + 1 until patternIds.size) {
+                val (a, b) = patternIds[i] to patternIds[j]
+                assertTrue("$a should differ from $b", anyPixelDiffers(bitmaps.getValue(a), bitmaps.getValue(b), points))
+            }
+        }
     }
 
     @Test
