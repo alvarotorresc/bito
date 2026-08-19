@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.customizationItemEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest

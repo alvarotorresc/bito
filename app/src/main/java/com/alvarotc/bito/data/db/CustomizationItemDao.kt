@@ -3,6 +3,7 @@ package com.alvarotc.bito.data.db
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.Upsert
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import kotlinx.coroutines.flow.Flow
 
 @Dao

@@ -3,6 +3,7 @@ package com.alvarotc.bito.data.db
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.PointsReason
 
 /**
@@ -28,9 +29,6 @@ data class BadgeEntity(
     @PrimaryKey val badgeId: String,
     val unlockedAtMillis: Long,
 )
-
-/** Customization axis of an item (tech doc §3); catalog in code (M6). */
-enum class CustomizationCategory { BODY_COLOR, PATTERN, EYE_COLOR, UPPER, LOWER }
 
 /** An acquired customization item; equipped is per-category exclusive. */
 @Entity(tableName = "customization_items")

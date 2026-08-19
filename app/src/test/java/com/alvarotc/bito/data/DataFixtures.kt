@@ -1,6 +1,5 @@
 package com.alvarotc.bito.data
 
-import com.alvarotc.bito.data.db.CustomizationCategory
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.DaySealEntity
 import com.alvarotc.bito.data.db.EntryEntity
@@ -10,6 +9,7 @@ import com.alvarotc.bito.data.db.PauseIntervalEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.db.TargetChangeEntity
 import com.alvarotc.bito.data.db.TimeBucket
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
