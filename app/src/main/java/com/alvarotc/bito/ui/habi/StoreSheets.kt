@@ -4,6 +4,7 @@ package com.alvarotc.bito.ui.habi
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +36,52 @@ import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 
 /**
+ * The store's shared bottom-sheet shell: [PurchaseSheet] and [FreezerSheet] both open a
+ * `ModalBottomSheet(containerColor = Tarjeta)` around a padded, test-tagged `Column` — this is
+ * that wrapper, extracted so neither sheet repeats it. [testTag] is what distinguishes them in
+ * compose tests ("purchase-sheet" / "freezer-sheet") and is unchanged from before this refactor.
+ */
+@Composable
+private fun BitoSheet(
+    onDismiss: () -> Unit,
+    testTag: String,
+    verticalArrangement: Arrangement.Vertical,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(
+            Modifier.padding(20.dp).testTag(testTag),
+            verticalArrangement = verticalArrangement,
+            content = content,
+        )
+    }
+}
+
+/**
+ * The buy pill both sheets end on: tapping it always fires [onBuy] then [onDismiss] — the sheet
+ * closes on tap regardless of whether the purchase itself is later confirmed or refused, which is
+ * why [enabled] is what actually gates a real refusal (see [HabiViewModel.purchase]'s KDoc).
+ */
+@Composable
+private fun BuyButton(
+    text: String,
+    enabled: Boolean,
+    onBuy: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    PillButton(
+        text,
+        onClick = {
+            onBuy()
+            onDismiss()
+        },
+        enabled = enabled,
+        modifier = modifier,
+    )
+}
+
+/**
  * The store's purchase confirmation (mockups 4b affordable / 4c insufficient balance). The grid
  * never hides the price behind a refusal — this sheet is the ONLY place "te faltan X pts" shows
  * (GUIA Fidelidad M6 checkpoint ruling): Comprar disables itself on [balance] < [item].price and
@@ -49,54 +96,50 @@ fun PurchaseSheet(
 ) {
     val price = item.price ?: return // exclusives never reach a live preview — nothing to sell.
     val canAfford = balance >= price
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("purchase-sheet"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    BitoSheet(onDismiss, testTag = "purchase-sheet", verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            stringResource(R.string.store_buy_title, stringResource(itemNameRes(item.id))),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
+            color = Tinta,
+        )
+        Spacer(Modifier.height(12.dp))
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(BitoIcons.Sparkle, contentDescription = null, tint = Hoja, modifier = Modifier.size(24.dp))
             Text(
-                stringResource(R.string.store_buy_title, stringResource(itemNameRes(item.id))),
-                style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
+                "$price",
+                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.Bold),
                 color = Tinta,
             )
-            Spacer(Modifier.height(12.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                Icon(BitoIcons.Sparkle, contentDescription = null, tint = Hoja, modifier = Modifier.size(24.dp))
-                Text(
-                    "$price",
-                    style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp, fontWeight = FontWeight.Bold),
-                    color = Tinta,
-                )
-                Text(stringResource(R.string.store_pts_label), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            }
-            Spacer(Modifier.height(6.dp))
-            Text(
-                if (canAfford) {
-                    stringResource(R.string.store_balance_after, balance - price)
-                } else {
-                    stringResource(R.string.store_your_balance, balance)
-                },
-                style = MaterialTheme.typography.labelMedium,
-                color = TintaSuave,
+            Text(stringResource(R.string.store_pts_label), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            if (canAfford) {
+                stringResource(R.string.store_balance_after, balance - price)
+            } else {
+                stringResource(R.string.store_your_balance, balance)
+            },
+            style = MaterialTheme.typography.labelMedium,
+            color = TintaSuave,
+        )
+        Spacer(Modifier.height(16.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            BuyButton(
+                stringResource(R.string.store_buy_button),
+                enabled = canAfford,
+                onBuy = onBuy,
+                onDismiss = onDismiss,
+                modifier = Modifier.weight(1f).testTag("buy-item"),
             )
-            Spacer(Modifier.height(16.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PillButton(
-                    stringResource(R.string.store_buy_button),
-                    onClick = {
-                        onBuy()
-                        onDismiss()
-                    },
-                    enabled = canAfford,
-                    modifier = Modifier.weight(1f).testTag("buy-item"),
-                )
-                GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
-            }
-            if (!canAfford) {
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    stringResource(R.string.store_missing_pts, price - balance),
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
-                    color = Brasa,
-                )
-            }
+            GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.weight(1f))
+        }
+        if (!canAfford) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                stringResource(R.string.store_missing_pts, price - balance),
+                style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+                color = Brasa,
+            )
         }
     }
 }
@@ -115,25 +158,21 @@ fun FreezerSheet(
     onDismiss: () -> Unit,
 ) {
     val canSpend = balance >= price
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("freezer-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.freezer_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            Text(stringResource(R.string.freezer_sheet_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
-            Text(stringResource(R.string.freezers_owned_label, owned), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            PillButton(
-                text =
-                    if (canSpend) {
-                        stringResource(R.string.buy_freezer_action, price)
-                    } else {
-                        stringResource(R.string.buy_freezer_missing, price - balance)
-                    },
-                onClick = {
-                    onBuy()
-                    onDismiss()
+    BitoSheet(onDismiss, testTag = "freezer-sheet", verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(stringResource(R.string.freezer_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
+        Text(stringResource(R.string.freezer_sheet_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+        Text(stringResource(R.string.freezers_owned_label, owned), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        BuyButton(
+            text =
+                if (canSpend) {
+                    stringResource(R.string.buy_freezer_action, price)
+                } else {
+                    stringResource(R.string.buy_freezer_missing, price - balance)
                 },
-                enabled = canSpend,
-                modifier = Modifier.fillMaxWidth().testTag("buy-freezer"),
-            )
-        }
+            enabled = canSpend,
+            onBuy = onBuy,
+            onDismiss = onDismiss,
+            modifier = Modifier.fillMaxWidth().testTag("buy-freezer"),
+        )
     }
 }

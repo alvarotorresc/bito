@@ -109,8 +109,12 @@ class HabiViewModel(
 
     /**
      * Buys the previewed item. On success the preview clears — [RewardsRepository.purchase]
-     * already equips it atomically, so there is nothing left to reconcile. On refusal (already
-     * owned, unaffordable) the preview is left alone: the sheet stays open showing the shortfall.
+     * already equips it atomically, so there is nothing left to reconcile. This is
+     * belt-and-suspenders in the wired UI: `PurchaseSheet`'s Comprar button already calls
+     * `onDismiss()` (== `preview(null)`) synchronously the moment it's tapped, and it's disabled
+     * whenever a refusal (already owned, unaffordable) would happen — so a real refusal is never
+     * reachable through that button. The preview-on-success clearing here only matters to a
+     * caller that invokes [purchase] directly without going through that gate (e.g. a test).
      */
     fun purchase(itemId: String) {
         val item = HabiCatalog.byId(itemId) ?: return
