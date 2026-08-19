@@ -42,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -352,7 +353,7 @@ private fun GeneralSectionCard(
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.general_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
-        SettingsRow(label = stringResource(R.string.archived_habits_row, archivedCount), onClick = onOpenArchived)
+        SettingsRow(label = pluralStringResource(R.plurals.archived_habits_row, archivedCount, archivedCount), onClick = onOpenArchived)
     }
 }
 
@@ -463,8 +464,10 @@ private fun ImportPreviewSheet(
                 color = TintaSuave,
             )
             Spacer(Modifier.height(8.dp))
+            val habitsCount = pluralStringResource(R.plurals.import_preview_habits, preview.habits, preview.habits)
+            val entriesCount = pluralStringResource(R.plurals.import_preview_entries, preview.entries, preview.entries)
             Text(
-                stringResource(R.string.import_preview_counts, preview.habits, preview.entries),
+                stringResource(R.string.import_preview_counts, habitsCount, entriesCount),
                 style = MaterialTheme.typography.bodyLarge,
                 color = Tinta,
             )

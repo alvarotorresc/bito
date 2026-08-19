@@ -127,7 +127,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Archived habits (1)", useUnmergedTree = true)
+        compose.onNodeWithText("Archived habit (1)", useUnmergedTree = true)
             .performScrollTo()
             .performClick()
         compose.waitForIdle()

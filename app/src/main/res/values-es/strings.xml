@@ -82,7 +82,15 @@
     <string name="backup_import">Importar copia</string>
     <string name="import_preview_title">¿Restaurar esta copia?</string>
     <string name="import_preview_meta">Del %1$s · app %2$s</string>
-    <string name="import_preview_counts">%1$d hábitos · %2$d registros</string>
+    <string name="import_preview_counts">%1$s · %2$s</string>
+    <plurals name="import_preview_habits">
+        <item quantity="one">%1$d hábito</item>
+        <item quantity="other">%1$d hábitos</item>
+    </plurals>
+    <plurals name="import_preview_entries">
+        <item quantity="one">%1$d registro</item>
+        <item quantity="other">%1$d registros</item>
+    </plurals>
     <string name="import_preview_warning">Restaurar reemplaza TODOS los datos actuales. No hay fusión.</string>
     <string name="import_confirm">Restaurar</string>
     <string name="msg_export_done">Copia guardada</string>
@@ -105,7 +113,10 @@
     <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
 
     <string name="general_section_title">General</string>
-    <string name="archived_habits_row">Hábitos archivados (%1$d)</string>
+    <plurals name="archived_habits_row">
+        <item quantity="one">Hábito archivado (%1$d)</item>
+        <item quantity="other">Hábitos archivados (%1$d)</item>
+    </plurals>
     <string name="archived_title">Hábitos archivados</string>
     <string name="archived_since">Desde %1$s</string>
     <string name="archived_empty">Todavía no hay nada archivado</string>

@@ -31,12 +31,8 @@ object Notifier {
         context: Context,
         payload: ReminderPayload,
     ) {
-        val title =
-            if (payload.pendingNames.size == 1) {
-                context.getString(R.string.notif_reminder_title_one)
-            } else {
-                context.getString(R.string.notif_reminder_title_many, payload.pendingNames.size)
-            }
+        val count = payload.pendingNames.size
+        val title = context.resources.getQuantityString(R.plurals.notif_reminder_title, count, count)
         val style = NotificationCompat.InboxStyle()
         payload.pendingNames.forEach(style::addLine)
         val builder =

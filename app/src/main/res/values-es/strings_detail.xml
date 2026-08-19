@@ -8,7 +8,10 @@
     <string name="unit_months">meses</string>
     <string name="record_chip">Récord: %1$d</string>
 
-    <string name="freezer_chip_label">%1$d congeladores</string>
+    <plurals name="freezer_chip_label">
+        <item quantity="one">%1$d congelador</item>
+        <item quantity="other">%1$d congeladores</item>
+    </plurals>
 
     <string name="previous_month">Mes anterior</string>
     <string name="next_month">Mes siguiente</string>

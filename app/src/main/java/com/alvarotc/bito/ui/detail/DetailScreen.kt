@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -386,7 +387,7 @@ private fun RelapsePill(
  * The freezer pill: architect override keeps the old chip's hoja-tinte fill / hoja+tinta content
  * against the mockup's plain outline, resized into the mockup's 56dp pill. The count renders bold
  * and larger than the trailing word — [buildAnnotatedString] splits the localized "%1$d word"
- * string on its first space rather than hardcoding word order, since [R.string.freezer_chip_label]
+ * string on its first space rather than hardcoding word order, since [R.plurals.freezer_chip_label]
  * already puts the digits first in both shipped locales.
  */
 @Composable
@@ -407,7 +408,7 @@ private fun FreezerPill(
     ) {
         Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
-        val label = stringResource(R.string.freezer_chip_label, owned)
+        val label = pluralStringResource(R.plurals.freezer_chip_label, owned, owned)
         val splitAt = label.indexOf(' ').let { if (it == -1) label.length else it }
         Text(
             buildAnnotatedString {
