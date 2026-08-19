@@ -96,6 +96,30 @@ class BitoNavHostTest {
     }
 
     @Test
+    fun `the habi tab shows in the bar and navigates to the habi screen`() {
+        setContent()
+        // HabiAvatar's infinite bob/blink transitions never settle on their own — freeze the
+        // clock BEFORE navigating there, so the framework's post-click idle-sync doesn't spin
+        // forever trying to reach a steady state that never comes (T9 note).
+        compose.mainClock.autoAdvance = false
+
+        // The Habi tab's content description ("Habi") collides with HabiAvatar's own
+        // (habi_avatar_cd is also "Habi") once the screen renders — this still resolves to a
+        // single node here, since Habi hasn't been navigated to yet. Assert arrival by testTag,
+        // not by content description, to avoid that collision.
+        compose.onNodeWithContentDescription("Habi", useUnmergedTree = true).performClick()
+        // Not waitForIdle(): with autoAdvance false it pumps no frames at all, so the nav
+        // recomposition from the click above would never actually run. A couple of manual frames
+        // is enough to let it settle (route change -> HabiScreen mounts) without ever giving the
+        // clock a chance to auto-advance into HabiAvatar's infinite transition.
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeByFrame()
+
+        compose.onNodeWithTag("habi-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun `the bottom bar hides on the habit form but survives on stats`() {
         setContent()
 

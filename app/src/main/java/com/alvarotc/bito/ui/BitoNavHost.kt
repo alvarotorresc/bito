@@ -14,6 +14,8 @@ import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
+import com.alvarotc.bito.ui.habi.HabiScreen
+import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
 import com.alvarotc.bito.ui.settings.ArchivedScreen
@@ -38,7 +40,7 @@ fun BitoNavHost(container: AppContainer) {
     Scaffold(
         containerColor = Papel,
         bottomBar = {
-            if (currentRoute in setOf("today", "stats", "settings")) {
+            if (currentRoute in setOf("today", "stats", "habi", "settings")) {
                 BitoBottomBar(
                     currentRoute = currentRoute,
                     onToday = { nav.popBackStack("today", inclusive = false) },
@@ -49,6 +51,12 @@ fun BitoNavHost(container: AppContainer) {
                         }
                     },
                     onCreate = { nav.navigate("habit") },
+                    onHabi = {
+                        nav.navigate("habi") {
+                            popUpTo("today")
+                            launchSingleTop = true
+                        }
+                    },
                     onSettings = {
                         nav.navigate("settings") {
                             popUpTo("today")
@@ -111,6 +119,9 @@ fun BitoNavHost(container: AppContainer) {
                     onBack = { nav.popBackStack() },
                     onOpenHabit = { nav.navigate("detail/$it") },
                 )
+            }
+            composable("habi") {
+                HabiScreen(viewModel = viewModel(factory = HabiViewModel.factory(container)))
             }
             composable("stats") {
                 StatsScreen(
