@@ -270,8 +270,8 @@ private fun WeekRowLine(row: WeekRow) {
  * Small, tap-free twin of [com.alvarotc.bito.ui.components.DotHeatmap]'s per-day glyph mapping —
  * DotProgress-canon 16dp solid dots, same fill/ring per state as the fixed heatmap (FULFILLED/
  * ACTIVITY solid Hoja, FAILED/EMPTY solid Borde, PAUSED solid TintaSuave, PENDING a 2dp
- * TintaSuave ring). OFF stays its own small/faint speck at 35% (not the heatmap's 40% — this
- * strip is a smaller, denser component).
+ * TintaSuave ring, OFF a 2dp Borde ring for future/unreached days). Grid always reads complete
+ * and aligned with header.
  */
 @Composable
 private fun WeekDayDot(dot: DayDot) {
@@ -285,7 +285,7 @@ private fun WeekDayDot(dot: DayDot) {
             }
         DayDot.PAUSED -> Box(Modifier.size(size).clip(CircleShape).background(TintaSuave))
         DayDot.PENDING -> Box(Modifier.size(size).clip(CircleShape).border(2.dp, TintaSuave, CircleShape))
-        DayDot.OFF -> Box(Modifier.size(6.dp).clip(CircleShape).background(Borde.copy(alpha = 0.35f)))
+        DayDot.OFF -> Box(Modifier.size(size).clip(CircleShape).border(2.dp, Borde, CircleShape))
     }
 }
 
