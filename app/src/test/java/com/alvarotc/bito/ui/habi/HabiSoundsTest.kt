@@ -28,16 +28,20 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 /**
- * [HabiSounds.shouldPlay] is the real unit under test — a pure gate, checked over every
- * enabled/ringer combination directly, no Robolectric shadow involved. The rest of this suite is
- * a thinner smoke check: a real [HabiSounds] wired to a real (Robolectric) [Context] and
- * [SettingsRepository] never crashes calling [HabiSounds.play], on or off, for every [HabiSound].
- * Its `SoundPool` is a private lazy field with no handle exposed outside the class, so there's no
- * way to assert it was actually told to play — "doesn't crash and reaches the SoundPool call" is
- * the ceiling of what's checkable here (docs §5.3 / task-16 brief), which is exactly why
- * [HabiSounds.shouldPlay] is split out as pure in the first place. [HabiSounds] takes an
- * injectable dispatcher for exactly this: so `play`'s internally-launched coroutine can be driven
- * deterministically by [advanceUntilIdle] instead of racing a real background thread.
+ * [HabiSounds.shouldPlay] is the real unit under test — a pure gate, checked directly, no
+ * Robolectric shadow involved. Per the architect's 2026-08-19 ruling (class KDoc), it depends
+ * ONLY on `habiSoundsEnabled`: these cues are routed as `USAGE_GAME` (media stream), so the
+ * ringer mode is never a factor — a QA Pixel in vibrate mode stayed silent under the previous
+ * `USAGE_ASSISTANCE_SONIFICATION` routing, which this ruling fixes. The rest of this suite is a
+ * thinner smoke check: a real [HabiSounds] wired to a real (Robolectric) [Context] and
+ * [SettingsRepository] never crashes calling [HabiSounds.play], on or off, for every [HabiSound],
+ * and — explicitly — across every ringer mode while enabled, demonstrating the ringer is no
+ * longer consulted. Its `SoundPool` is a private lazy field with no handle exposed outside the
+ * class, so there's no way to assert it was actually told to play — "doesn't crash and reaches
+ * the SoundPool call" is the ceiling of what's checkable here (docs §5.3 / task-16 brief), which
+ * is exactly why [HabiSounds.shouldPlay] is split out as pure in the first place. [HabiSounds]
+ * takes an injectable dispatcher for exactly this: so `play`'s internally-launched coroutine can
+ * be driven deterministically by [advanceUntilIdle] instead of racing a real background thread.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -56,41 +60,25 @@ class HabiSoundsTest {
 
     private fun audioManager(): AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-    // --- shouldPlay: the pure gate --------------------------------------------------------
+    // --- shouldPlay: the pure gate, habiSoundsEnabled ONLY (architect ruling 2026-08-19) -----
 
     @Test
-    fun `shouldPlay is true only when sounds are enabled and the ringer is normal`() {
-        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true), AudioManager.RINGER_MODE_NORMAL))
+    fun `shouldPlay is true when sounds are enabled`() {
+        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true)))
     }
 
     @Test
-    fun `shouldPlay is false when the toggle is off, even with a normal ringer`() {
-        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false), AudioManager.RINGER_MODE_NORMAL))
+    fun `shouldPlay is false when the toggle is off`() {
+        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false)))
     }
 
-    @Test
-    fun `shouldPlay is false in silent mode, even with the toggle on`() {
-        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true), AudioManager.RINGER_MODE_SILENT))
-    }
-
-    @Test
-    fun `shouldPlay is false in vibrate mode, even with the toggle on`() {
-        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true), AudioManager.RINGER_MODE_VIBRATE))
-    }
-
-    @Test
-    fun `shouldPlay is false when the ringer mode is unknown`() {
-        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true), ringerMode = null))
-    }
-
-    // --- play: never crashes, respects the flag ---------------------------------------------
+    // --- play: never crashes, respects the flag, ignores the ringer -------------------------
 
     @Test
     fun `play no-ops without crashing when habiSoundsEnabled is false`() =
         runTest(dispatcher) {
             val settings = SettingsRepository(settingsStore("habi-sounds-off"))
             settings.update { it.copy(habiSoundsEnabled = false) }
-            audioManager().ringerMode = AudioManager.RINGER_MODE_NORMAL
             val habiSounds = HabiSounds(context, settings, dispatcher = dispatcher)
 
             HabiSound.entries.forEach { habiSounds.play(it) }
@@ -98,26 +86,34 @@ class HabiSoundsTest {
         }
 
     @Test
-    fun `play does not crash for every sound when enabled and the ringer is normal`() =
+    fun `play does not crash for every sound when enabled`() =
         runTest(dispatcher) {
             val settings = SettingsRepository(settingsStore("habi-sounds-on"))
             settings.update { it.copy(habiSoundsEnabled = true) }
-            audioManager().ringerMode = AudioManager.RINGER_MODE_NORMAL
             val habiSounds = HabiSounds(context, settings, dispatcher = dispatcher)
 
             HabiSound.entries.forEach { habiSounds.play(it) }
             advanceUntilIdle()
         }
 
+    /**
+     * The architect's ruling in one exercised path: media-stream routing means the ringer mode is
+     * simply never read by [HabiSounds.play] any more (no [android.media.AudioManager] dependency
+     * left in production code at all) — enabled sounds proceed through every ringer mode alike.
+     * This can only prove "doesn't crash across ringer modes" (see suite header), not that audio
+     * is actually audible on vibrate — that's the Pixel check the architect already ran.
+     */
     @Test
-    fun `play no-ops without crashing in silent mode even when enabled`() =
+    fun `play proceeds across every ringer mode when enabled — ringer mode is not consulted`() =
         runTest(dispatcher) {
-            val settings = SettingsRepository(settingsStore("habi-sounds-silent"))
+            val settings = SettingsRepository(settingsStore("habi-sounds-ringer-independent"))
             settings.update { it.copy(habiSoundsEnabled = true) }
-            audioManager().ringerMode = AudioManager.RINGER_MODE_SILENT
             val habiSounds = HabiSounds(context, settings, dispatcher = dispatcher)
 
-            habiSounds.play(HabiSound.GREETING)
+            listOf(AudioManager.RINGER_MODE_NORMAL, AudioManager.RINGER_MODE_VIBRATE, AudioManager.RINGER_MODE_SILENT).forEach { mode ->
+                audioManager().ringerMode = mode
+                habiSounds.play(HabiSound.GREETING)
+            }
             advanceUntilIdle()
         }
 
