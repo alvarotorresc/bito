@@ -70,8 +70,11 @@ object StatsEngine {
     }
 
     /**
-     * One dot row per ACTIVE habit over the ISO week containing [today]
-     * (Monday..Sunday, [Heatmap.dayDotOf]'s mapping — future days render OFF).
+     * One dot row per habit that was requirable on at least one day of the ISO week containing
+     * [today] (Monday..Sunday, [Heatmap.dayDotOf]'s mapping — future days render OFF) — the same
+     * [Compliance.isRequirableOn] rule [dailyComplianceRate] judges its days by below, so a habit
+     * archived or paused mid-week still gets a row for the days it was alive and unpaused, instead
+     * of vanishing from the list while [WeekSummary.thisWeekPercent] still counts those days.
      * The global rate judges only DAY-period habits, on their requirable days
      * (FULFILLED / (FULFILLED + FAILED)); [WeekSummary.deltaVsLastWeek] compares
      * it against the same rate over the full previous ISO week, null if either
@@ -86,7 +89,7 @@ object StatsEngine {
         val lastWeekDays = LogicalDays.daysOf(weekKey - 1, Period.WEEK)
         val rows =
             state.habits
-                .filter { it.status == HabitStatus.ACTIVE }
+                .filter { habit -> thisWeekDays.any { day -> Compliance.isRequirableOn(state, habit, day) } }
                 .map { habit ->
                     val (done, target) = weekTallyOf(state, habit, thisWeekDays, today)
                     WeekRow(
