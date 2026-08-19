@@ -42,9 +42,19 @@ fun BitoNavHost(container: AppContainer) {
                 BitoBottomBar(
                     currentRoute = currentRoute,
                     onToday = { nav.popBackStack("today", inclusive = false) },
-                    onStats = { nav.navigate("stats") { launchSingleTop = true } },
+                    onStats = {
+                        nav.navigate("stats") {
+                            popUpTo("today")
+                            launchSingleTop = true
+                        }
+                    },
                     onCreate = { nav.navigate("habit") },
-                    onSettings = { nav.navigate("settings") { launchSingleTop = true } },
+                    onSettings = {
+                        nav.navigate("settings") {
+                            popUpTo("today")
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
         },
