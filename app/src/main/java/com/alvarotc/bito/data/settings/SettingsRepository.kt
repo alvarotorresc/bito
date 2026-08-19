@@ -29,6 +29,7 @@ data class Settings(
     val backupCopies: Int = 5,
     val backupEncryption: Boolean = false,
     val onboardingDone: Boolean = false,
+    val habiSoundsEnabled: Boolean = true,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -45,6 +46,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val backupCopies = intPreferencesKey("backup_copies")
         val backupEncryption = booleanPreferencesKey("backup_encryption")
         val onboardingDone = booleanPreferencesKey("onboarding_done")
+        val habiSoundsEnabled = booleanPreferencesKey("habi_sounds_enabled")
     }
 
     val settings: Flow<Settings> = dataStore.data.map { it.toSettings() }
@@ -73,6 +75,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             backupCopies = this[Keys.backupCopies] ?: defaults.backupCopies,
             backupEncryption = this[Keys.backupEncryption] ?: defaults.backupEncryption,
             onboardingDone = this[Keys.onboardingDone] ?: defaults.onboardingDone,
+            habiSoundsEnabled = this[Keys.habiSoundsEnabled] ?: defaults.habiSoundsEnabled,
         )
     }
 
@@ -89,5 +92,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.backupCopies] = backupCopies
         prefs[Keys.backupEncryption] = backupEncryption
         prefs[Keys.onboardingDone] = onboardingDone
+        prefs[Keys.habiSoundsEnabled] = habiSoundsEnabled
     }
 }

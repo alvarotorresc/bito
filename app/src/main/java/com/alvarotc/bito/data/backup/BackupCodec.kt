@@ -9,7 +9,8 @@ class BackupFormatException(message: String, cause: Throwable? = null) : Excepti
 private data class SchemaProbe(val schemaVersion: Int = -1)
 
 object BackupCodec {
-    const val SCHEMA_VERSION = 1
+    // v2 (M6): + settings.habiSoundsEnabled (defaults to true when absent).
+    const val SCHEMA_VERSION = 2
 
     private val json =
         Json {

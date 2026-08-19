@@ -61,6 +61,7 @@ class BackupRoundTripTest {
             backupCopies = 3,
             backupEncryption = true,
             onboardingDone = true,
+            habiSoundsEnabled = false,
         )
 
     @Before
