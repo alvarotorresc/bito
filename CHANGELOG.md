@@ -2,6 +2,29 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [0.6.0] - 2026-08-19
+
+### Added
+
+- Habi cobra vida: pantalla propia con pestaña en la barra inferior, escenario dinámico que refleja su estado de ánimo, selector de personalidad (Sargento, Animadora o Neutra) que cambia cómo habla, y tienda de accesorios con prueba en vivo antes de comprar. Colores, patrones y accesorios se ganan con puntos; cuatro artículos exclusivos se desbloquean por alcanzar rachas.
+- Habi saluda cuando abres la app desde la pantalla Hoy y comenta tu progreso en Estadísticas con su voz según su personalidad.
+- Habi aparece en el widget con su estado de ánimo actual.
+- Sonidos suaves de Habi para cada momento: saludo al abrir, celebración por éxito, sonido de compra al acceder a accesorios, y sonido de recaída. Un interruptor en Ajustes silencia todos los sonidos de Habi.
+
+### Changed
+
+- Los congeladores de racha ahora se compran en la tienda de Habi por 100 puntos; es el precio final tras la sesión de economía.
+- El detalle del hábito conserva la vista de tu inventario (colores, patrones, accesorios) y explica cómo se usan.
+- Todos los precios en puntos y las cantidades en recompensas quedan fijados por Habi.
+
+### Fixed
+
+- El porcentaje semanal en Estadísticas ahora coincide con las filas cuando un hábito se archiva en mitad de la semana.
+- La sección de hábitos pausados respeta el orden en que los pausaste manualmente.
+- La navegación de la barra inferior ya no acumula pantallas en el historial de atrás.
+- Los textos que muestran cantidades usan el plural correcto en todos los casos.
+- Mejoras de accesibilidad: las flechas para cambiar mes son más fáciles de pulsar.
+
 ## [0.5.0] - 2026-08-18
 
 ### Added
