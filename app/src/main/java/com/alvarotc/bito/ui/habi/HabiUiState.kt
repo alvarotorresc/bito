@@ -62,6 +62,10 @@ fun buildHabiUiState(
     today: LogicalDay,
     previewItemId: String? = null,
     userName: String = "",
+    // Defaults to the same EconomyConfig() the field's own default resolves to — callers that
+    // don't pass one (every pre-existing test) are unaffected. HabiViewModel passes its injected
+    // economy.freezerPrice so the store card and buyFreezer() can never disagree on the price.
+    freezerPrice: Int = EconomyConfig().freezerPrice,
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -89,7 +93,7 @@ fun buildHabiUiState(
         spec = HabiSpec(mood, personality, displayEquipped),
         balance = balance,
         freezersOwned = PointsEngine.freezersOwned(state),
-        freezerPrice = EconomyConfig().freezerPrice,
+        freezerPrice = freezerPrice,
         store = store,
         previewItemId = previewItemId,
         userName = userName,

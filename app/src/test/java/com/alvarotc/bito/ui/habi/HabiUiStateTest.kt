@@ -202,6 +202,21 @@ class HabiUiStateTest {
     }
 
     @Test
+    fun `freezerPrice passed in surfaces untouched, not the EconomyConfig default`() {
+        val result =
+            buildHabiUiState(
+                domainState(),
+                owned = emptyList(),
+                balance = 0,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                freezerPrice = 250,
+            )
+
+        assertEquals(250, result.freezerPrice)
+    }
+
+    @Test
     fun `an empty state still produces a full, non-empty store`() {
         val result = buildHabiUiState(domainState(), owned = emptyList(), balance = 0, personality = Personality.NEUTRA, today = TODAY)
 

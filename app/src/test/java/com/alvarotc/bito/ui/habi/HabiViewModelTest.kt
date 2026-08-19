@@ -15,6 +15,7 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineScope
@@ -72,13 +73,14 @@ class HabiViewModelTest {
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "habi-vm.preferences_pb") }
 
-    private fun newViewModel() =
+    private fun newViewModel(economy: EconomyConfig = EconomyConfig()) =
         HabiViewModel(
             domainStateRepo,
             rewardsRepo,
             settingsRepo,
             reconciler,
             habiSounds,
+            economy = economy,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
@@ -187,6 +189,18 @@ class HabiViewModelTest {
 
             assertEquals(1, vm.uiState.value.freezersOwned)
             assertEquals(0, vm.uiState.value.balance)
+        }
+
+    @Test
+    fun `uiState freezerPrice comes from the injected economy, not a hardcoded default`() =
+        runTest {
+            // 250, not EconomyConfig()'s default 100 — a discriminating value: this would only
+            // pass if buildHabiUiState actually threads the VM's injected economy through.
+            val vm = newViewModel(economy = EconomyConfig(freezerPrice = 250))
+            backgroundScope.launch { vm.uiState.collect {} }
+            advanceUntilIdle()
+
+            assertEquals(250, vm.uiState.value.freezerPrice)
         }
 
     @Test
