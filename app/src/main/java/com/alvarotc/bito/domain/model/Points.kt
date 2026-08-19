@@ -32,8 +32,7 @@ data class PointsEvent(
 )
 
 /**
- * PROVISIONAL numbers — the economy session (before M6) will set the final
- * values. Kept as a config so tests and the session only touch one place.
+ * Final numbers from the economy session (docs/05-economia-catalogo.md, 2026-08-19).
  */
 data class EconomyConfig(
     val habitDonePoints: Int = 1,
@@ -42,5 +41,5 @@ data class EconomyConfig(
     val perfectMonthPoints: Int = 50,
     /** Streak length (in the habit's period unit) -> points. */
     val streakMilestonePoints: Map<Int, Int> = mapOf(7 to 5, 30 to 20, 100 to 75, 365 to 300),
-    val freezerPrice: Int = 30,
+    val freezerPrice: Int = 100,
 )
