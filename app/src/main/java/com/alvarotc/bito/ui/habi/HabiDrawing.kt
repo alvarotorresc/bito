@@ -52,7 +52,11 @@ private const val HIGHLIGHT_RY = 0.035f
 private const val EYE_Y = 0.45f
 private const val EYE_DX = 0.145f
 private const val EYE_BASE_RX = 0.052f
-private const val EYE_HEIGHT_MULT = 1.4f
+
+// Architect review (post-T10 grids): round eyes match the mockup — was 1.4 (oval); 1.0 makes
+// rx == ry, a true circle when fully open. Blink still reads fine: ryOpen shrinks toward 0 as
+// blink -> 1, same "closing eyelid" motion, just starting from a circle instead of an oval.
+private const val EYE_HEIGHT_MULT = 1.0f
 
 private const val CHEEK_Y = 0.58f
 private const val CHEEK_DX = 0.19f

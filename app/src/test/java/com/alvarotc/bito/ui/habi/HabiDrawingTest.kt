@@ -46,7 +46,18 @@ class HabiDrawingTest {
     /** Mirrors the left-eye normalized center from the drawing spec (y=0.45, x=0.5-0.145). */
     private fun leftEyePixel(sizePx: Int) = px(0.5f - 0.145f, sizePx) to px(0.45f, sizePx)
 
-    /** Mirrors the first sparkle's offset from the drawing spec, relative to the left eye. */
+    /**
+     * Mirrors the first sparkle's offset from the drawing spec, relative to the left eye.
+     * `eyeRy = eyeRx * 1.0` mirrors EYE_HEIGHT_MULT (round eyes per architect review, was 1.4/oval).
+     *
+     * Uses `.toInt()` (truncate toward zero, i.e. floor for these always-positive coordinates),
+     * not `.roundToInt()`: a bitmap pixel index `i` represents the half-open continuous interval
+     * `[i, i+1)`, so the pixel containing a continuous point is `floor(point)`, not
+     * `round(point)`. This tiny sparkle glyph (~1.3px radius) is small enough that the two
+     * conventions disagree — verified empirically with a direct pixel-neighborhood probe (temp
+     * test, deleted) after the round-eyes change shifted this offset: `round()` landed one pixel
+     * off the fully-opaque sparkle pixel; `toInt()` lands exactly on it.
+     */
     private fun leftEyeSparklePixel(
         sizePx: Int,
         eyeScale: Float,
@@ -54,10 +65,10 @@ class HabiDrawingTest {
         val eyeCenterX = (0.5f - 0.145f) * sizePx
         val eyeCenterY = 0.45f * sizePx
         val eyeRx = 0.052f * eyeScale * sizePx
-        val eyeRy = eyeRx * 1.4f
+        val eyeRy = eyeRx * 1.0f
         val x = eyeCenterX + eyeRx * 0.55f
         val y = eyeCenterY - eyeRy * 0.75f
-        return x.roundToInt() to y.roundToInt()
+        return x.toInt() to y.toInt()
     }
 
     private fun px(

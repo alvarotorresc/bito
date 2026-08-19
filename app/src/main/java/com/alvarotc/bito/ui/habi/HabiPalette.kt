@@ -50,8 +50,12 @@ object HabiPalette {
     // Accessory tones (T10) — fixed per item, not a purchasable axis, so no map/fallback needed.
     // Afinables contra mockup (design/mockups/m6/4-habi-pantalla.png).
 
-    /** upper-corona — same gold family as body-dorado: exclusives read as "premium" together. */
-    val CoronaGold = Color(0xFFE3C169)
+    /**
+     * upper-corona. Architect review (post-T10 grids): was `0xFFE3C169`, identical to body-dorado
+     * — the crown disappeared over a dorado body. Darker antique gold reads as gold over both
+     * salvia and dorado without collapsing into either.
+     */
+    val CoronaGold = Color(0xFFC99A3E)
 
     /** upper-gorro-lana fold band — Brasa hand-darkened to separate it from the dome above it. */
     val GorroLanaBand = Color(0xFFB85A3B)
