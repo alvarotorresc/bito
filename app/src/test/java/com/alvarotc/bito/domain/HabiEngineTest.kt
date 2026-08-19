@@ -30,6 +30,13 @@ class HabiEngineTest {
         val sevenDayHabit =
             RealHabits.all.first { it.metric == Metric.CHECK && it.period == Period.DAY && it.direction == Direction.AT_LEAST }
         val thirtyDayHabit = RealHabits.meditate
+        assertEquals(
+            setOf("pattern-chispas"),
+            HabiEngine.earnedExclusives(
+                domainState(habits = listOf(sevenDayHabit), entries = entriesOn(sevenDayHabit, (TODAY - 6)..TODAY)),
+                TODAY,
+            ),
+        )
         val state =
             domainState(
                 habits = listOf(sevenDayHabit, thirtyDayHabit),
