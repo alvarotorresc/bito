@@ -17,14 +17,19 @@ data class PerfectDaysSummary(val total: Int, val thisMonth: Int, val thisYear: 
  * - DAY habits: [done] is the count of this-week days [ComplianceStatus.FULFILLED] (a FROZEN day
  *   still reads as its underlying FAILED, same as [PerfectDays.isPerfectDay]); [target] is the
  *   count of this-week days the habit was actually requirable on (alive, unpaused) — a habit
- *   paused for the whole week renders "0/0".
+ *   paused or archived for PART of the week renders that partial tally (e.g. "1/2"); a habit with
+ *   no requirable day at all this week gets no row (see [WeekSummary]), never a bare "0/0".
  * - WEEK/MONTH habits: [done] and [target] are the habit's own current-period progress and target
  *   (e.g. "3x per week" habit mid-week is "2/3"), independent of the week strip's Monday..Sunday
  *   window — a MONTH habit's tally is its month-to-date progress, not anything about this ISO week.
  */
 data class WeekRow(val habitId: String, val name: String, val dots: List<DayDot>, val done: Int, val target: Int)
 
-/** The week strip: every active habit's row, plus the global weekly rate and its trend. */
+/**
+ * The week strip: one row per habit requirable on at least one day of the week (ACTIVE, or PAUSED
+ * / ARCHIVED partway through it — see [StatsEngine.weekSummary]), plus the global weekly rate and
+ * its trend.
+ */
 data class WeekSummary(val rows: List<WeekRow>, val thisWeekPercent: Int?, val deltaVsLastWeek: Int?)
 
 /** A habit currently on a run, for the Stats "active streaks" list. */
