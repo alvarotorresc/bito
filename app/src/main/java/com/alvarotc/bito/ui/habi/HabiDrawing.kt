@@ -54,12 +54,15 @@ private const val CHEEK_Y = 0.58f
 private const val CHEEK_DX = 0.19f
 private const val BLUSH_RADIUS = 0.055f
 
-// War paint sits right under the eyes (mockup 4a), not down at BLUSH's cheek height.
-private const val WAR_PAINT_Y = 0.505f
-private const val WAR_PAINT_DX = 0.195f
-private const val WAR_PAINT_LENGTH = 0.085f
-private const val WAR_PAINT_WIDTH = 0.022f
+// War paint sits right under the eyes (mockup 4a), not down at BLUSH's cheek height. Clear of the
+// eye oval's own bottom edge (EYE_Y + eye ry) so it reads as a separate mark, not camouflaged
+// against the eye's outline.
+private const val WAR_PAINT_Y = 0.55f
+private const val WAR_PAINT_DX = 0.145f
+private const val WAR_PAINT_LENGTH = 0.09f
+private const val WAR_PAINT_WIDTH = 0.03f
 private const val WAR_PAINT_ANGLE_DEG = 20f
+private const val WAR_PAINT_ALPHA = 0.95f
 
 private const val BROW_Y = 0.34f
 private const val BROW_LENGTH = 0.11f
@@ -70,7 +73,12 @@ private const val MOUTH_HALF_WIDTH = 0.08f
 private const val MOUTH_STROKE_WIDTH = 0.02f
 private const val MOUTH_CURVE_DEPTH = 0.06f
 private const val MOUTH_OPEN_BASE_HEIGHT = 0.03f
-private const val MOUTH_OPEN_HEIGHT_SCALE = 0.09f
+private const val MOUTH_OPEN_HEIGHT_SCALE = 0.15f
+
+// The "return" curve bows to the OPPOSITE side of the corner line from the main bulge, at this
+// fraction of openHeight — straddling the corner line gives the shape real thickness through the
+// middle instead of tapering to a razor-thin sliver (a single-sided lens read as a thin stroke).
+private const val MOUTH_OPEN_NEAR_FACTOR = 0.22f
 private const val SMIRK_SHIFT_X = 0.04f
 private const val SMIRK_TILT_DEG = 6f
 
@@ -165,12 +173,17 @@ private fun DrawScope.drawBody(
         }
     }
 
-    val highlight = vp.point(HIGHLIGHT_CX, HIGHLIGHT_CY)
-    drawOval(
-        color = Tarjeta.copy(alpha = 0.8f),
-        topLeft = Offset(highlight.x - vp.len(HIGHLIGHT_RX), highlight.y - vp.len(HIGHLIGHT_RY)),
-        size = Size(vp.len(HIGHLIGHT_RX * 2f), vp.len(HIGHLIGHT_RY * 2f)),
-    )
+    // Always on (no upper-slot gating — a hat simply draws over it later, by layer order alone).
+    // Clipped to bodyPath: at HIGHLIGHT_CY - HIGHLIGHT_RY it would otherwise poke past the egg's
+    // own apex (BODY_CY - BODY_RY) by a visible sliver at real sizes.
+    clipPath(bodyPath) {
+        val highlight = vp.point(HIGHLIGHT_CX, HIGHLIGHT_CY)
+        drawOval(
+            color = Tarjeta.copy(alpha = 0.8f),
+            topLeft = Offset(highlight.x - vp.len(HIGHLIGHT_RX), highlight.y - vp.len(HIGHLIGHT_RY)),
+            size = Size(vp.len(HIGHLIGHT_RX * 2f), vp.len(HIGHLIGHT_RY * 2f)),
+        )
+    }
 }
 
 /** T10 adds patterned overlays (motas/rayitas/...); intentionally a no-op until then. */
@@ -201,7 +214,7 @@ private fun DrawScope.drawCheeks(
                 val center = vp.point(BODY_CX + side * WAR_PAINT_DX, WAR_PAINT_Y)
                 val (dx, dy) = angleOffset(side * -WAR_PAINT_ANGLE_DEG, length / 2f)
                 drawLine(
-                    color = Tinta.copy(alpha = 0.85f),
+                    color = Tinta.copy(alpha = WAR_PAINT_ALPHA),
                     start = Offset(center.x - dx, center.y - dy),
                     end = Offset(center.x + dx, center.y + dy),
                     strokeWidth = strokeWidth,
@@ -231,8 +244,10 @@ private fun DrawScope.drawEyes(
                 topLeft = Offset(center.x - rx, center.y - ryOpen),
                 size = Size(rx * 2f, ryOpen * 2f),
             )
+            // Sparkles ride on the open eye only — a mid-blink eye is covered by body color, so a
+            // sparkle floating over it would read as a stray dot with nothing under it.
+            drawSparkles(vp, center, rx, ry, face.sparkles)
         }
-        drawSparkles(vp, center, rx, ry, face.sparkles)
     }
 }
 
@@ -290,15 +305,18 @@ private fun DrawScope.drawMouth(
 
     rotate(degrees = tiltDeg, pivot = Offset(centerX, y)) {
         if (face.mouthOpen > 0.01f) {
-            // The lens bulges toward mouthCurve's sign: down or a happy "open smile" (radiant),
-            // up for a distressed wail (dramatic cheerleader's mouthOpen=0.8, mouthCurve=-0.8).
+            // The lens bulges toward mouthCurve's sign: down for a happy open smile (radiant), up
+            // for a distressed wail (dramatic cheerleader's mouthOpen=0.8, mouthCurve=-0.8). The
+            // return curve bows to the OPPOSITE side (MOUTH_OPEN_NEAR_FACTOR) so the shape straddles
+            // the corner line and reads as a genuine open hole, not a thin one-sided sliver.
             val direction = if (face.mouthCurve < 0f) -1f else 1f
-            val openHeight = direction * vp.len(MOUTH_OPEN_BASE_HEIGHT + MOUTH_OPEN_HEIGHT_SCALE * face.mouthOpen)
+            val farY = y + direction * vp.len(MOUTH_OPEN_BASE_HEIGHT + MOUTH_OPEN_HEIGHT_SCALE * face.mouthOpen)
+            val nearY = y - direction * vp.len(MOUTH_OPEN_BASE_HEIGHT + MOUTH_OPEN_HEIGHT_SCALE * face.mouthOpen) * MOUTH_OPEN_NEAR_FACTOR
             val path =
                 Path().apply {
                     moveTo(centerX - halfWidth, y)
-                    quadraticTo(centerX, y + openHeight, centerX + halfWidth, y)
-                    quadraticTo(centerX, y + openHeight * 0.35f, centerX - halfWidth, y)
+                    quadraticTo(centerX, farY, centerX + halfWidth, y)
+                    quadraticTo(centerX, nearY, centerX - halfWidth, y)
                     close()
                 }
             drawPath(path, color = Tinta)

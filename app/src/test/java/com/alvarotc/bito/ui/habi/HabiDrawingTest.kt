@@ -13,6 +13,7 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.HabiSalvia
+import com.alvarotc.bito.ui.theme.Tarjeta
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Test
@@ -43,6 +44,20 @@ class HabiDrawingTest {
 
     /** Mirrors the left-eye normalized center from the drawing spec (y=0.45, x=0.5-0.145). */
     private fun leftEyePixel(sizePx: Int) = px(0.5f - 0.145f, sizePx) to px(0.45f, sizePx)
+
+    /** Mirrors the first sparkle's offset from the drawing spec, relative to the left eye. */
+    private fun leftEyeSparklePixel(
+        sizePx: Int,
+        eyeScale: Float,
+    ): Pair<Int, Int> {
+        val eyeCenterX = (0.5f - 0.145f) * sizePx
+        val eyeCenterY = 0.45f * sizePx
+        val eyeRx = 0.052f * eyeScale * sizePx
+        val eyeRy = eyeRx * 1.4f
+        val x = eyeCenterX + eyeRx * 0.55f
+        val y = eyeCenterY - eyeRy * 0.75f
+        return x.roundToInt() to y.roundToInt()
+    }
 
     private fun px(
         fraction: Float,
@@ -113,6 +128,20 @@ class HabiDrawingTest {
         val closed = renderWithBlink(spec, size, blink = 1f).getPixel(x, y)
 
         assertNotEquals(open, closed)
+        assertEquals(HabiSalvia.toArgb(), closed)
+    }
+
+    @Test
+    fun `sparkles do not render over a blinked-shut eye`() {
+        // CHEERLEADER RADIANT: eyeScale 1.2 (1.15 base + 0.05 radiant), sparkles 3 — a sparkle is
+        // guaranteed to land at the offset leftEyeSparklePixel computes.
+        val spec = HabiSpec(Mood.RADIANT, Personality.CHEERLEADER, EquippedSet())
+        val (x, y) = leftEyeSparklePixel(size, eyeScale = 1.2f)
+
+        val open = renderWithBlink(spec, size, blink = 0f).getPixel(x, y)
+        val closed = renderWithBlink(spec, size, blink = 1f).getPixel(x, y)
+
+        assertEquals(Tarjeta.toArgb(), open)
         assertEquals(HabiSalvia.toArgb(), closed)
     }
 }
