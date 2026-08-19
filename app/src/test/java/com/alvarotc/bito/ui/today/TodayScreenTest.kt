@@ -97,7 +97,7 @@ class TodayScreenTest {
         val settings = SettingsRepository(settingsStore("today-screen"))
         val rewards = RewardsRepository(db)
         val reconciler = PointsReconciler(domainState, rewards)
-        val habiSounds = HabiSounds(context, settings)
+        val habiSounds = HabiSounds(context, settings, dispatcher = dispatcher)
 
         // Both habits must be created today: an older createdOnDay (the fixture default,
         // DAY_ZERO) would leave hundreds of pending seal days and the BatchSealSheet would

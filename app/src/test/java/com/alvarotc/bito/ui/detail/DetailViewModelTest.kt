@@ -104,7 +104,7 @@ class DetailViewModelTest {
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore("detail-vm"))
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
-        habiSounds = HabiSounds(context, settingsRepo)
+        habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
     }
 
     @After

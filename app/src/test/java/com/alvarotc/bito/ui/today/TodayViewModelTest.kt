@@ -111,7 +111,7 @@ class TodayViewModelTest {
         settingsRepo = SettingsRepository(settingsStore("today-vm"))
         rewardsRepo = RewardsRepository(db)
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
-        habiSounds = HabiSounds(context, settingsRepo)
+        habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
         vm = newViewModel()
     }
 

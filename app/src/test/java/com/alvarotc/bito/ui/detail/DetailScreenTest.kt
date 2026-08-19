@@ -112,7 +112,7 @@ class DetailScreenTest {
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore())
         val reconciler = PointsReconciler(domainState, RewardsRepository(db))
-        val habiSounds = HabiSounds(ApplicationProvider.getApplicationContext(), settings)
+        val habiSounds = HabiSounds(ApplicationProvider.getApplicationContext(), settings, dispatcher = dispatcher)
         val vm =
             DetailViewModel(
                 habitId,
