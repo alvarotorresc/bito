@@ -9,7 +9,6 @@ import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.WindowStats
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
-import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
@@ -42,8 +41,6 @@ data class DetailUiState(
     // sheet is opened and dismissed without the user noticing the field was empty.
     val dayValues: Map<LogicalDay, Int>,
     val freezersOwned: Int,
-    val freezerPrice: Int,
-    val balance: Int,
     // Not in the brief's literal field list, added deliberately: the screen needs "today" both to
     // disable the heatmap's next-month chevron once `month` reaches it and to log the abstinence
     // pill's relapse on the right day when a past month is on screen — the same reason
@@ -64,7 +61,6 @@ fun buildDetailUiState(
     today: LogicalDay,
 ): DetailUiState? {
     val habit = state.habits.find { it.id == habitId } ?: return null
-    val economy = EconomyConfig()
     val streaks = Streaks.streaksOf(state, habit, today)
     val openPause = state.pauseIntervals.filter { it.habitId == habitId && it.endDay == null }.maxByOrNull { it.startDay }
     // Freezers only ever protect DAY-period habits (FreezerEngine.eligibilityOf): the global
@@ -93,8 +89,6 @@ fun buildDetailUiState(
         heatmap = Heatmap.monthOf(state, habit, month, today),
         dayValues = dayValues,
         freezersOwned = freezersOwned,
-        freezerPrice = economy.freezerPrice,
-        balance = PointsEngine.balance(state.pointsLedger),
         today = today,
         loading = false,
     )

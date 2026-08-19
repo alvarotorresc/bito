@@ -20,7 +20,6 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
-import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -109,19 +108,6 @@ class DetailViewModelTest {
         Dispatchers.resetMain()
         db.close()
     }
-
-    @Test
-    fun `buy freezer refuses without balance`() =
-        runTest {
-            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
-            val vm = newViewModel()
-            advanceUntilIdle()
-
-            vm.buyFreezer()
-            advanceUntilIdle()
-
-            assertTrue(db.pointsLedgerDao().all().none { it.reason == PointsReason.BUY_FREEZER })
-        }
 
     @Test
     fun `apply freezer writes the use and reconciles with the actual today`() =

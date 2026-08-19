@@ -103,6 +103,7 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = DetailViewModel.factory(container, habitId)),
                     onBack = { nav.popBackStack() },
                     onEdit = { nav.navigate("habit?id=$it") },
+                    onOpenHabi = { nav.navigate("habi") { launchSingleTop = true } },
                 )
             }
             composable("settings") {

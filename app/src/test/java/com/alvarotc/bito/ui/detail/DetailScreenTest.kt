@@ -80,6 +80,7 @@ class DetailScreenTest {
 
     private lateinit var db: BitoDatabase
     private var storeIndex = 0
+    private var habiOpened = false
 
     private fun settingsStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -125,7 +126,7 @@ class DetailScreenTest {
             )
         compose.setContent {
             BitoTheme {
-                DetailScreen(viewModel = vm, onBack = {}, onEdit = {})
+                DetailScreen(viewModel = vm, onBack = {}, onEdit = {}, onOpenHabi = { habiOpened = true })
             }
         }
         compose.waitForIdle()
@@ -210,6 +211,24 @@ class DetailScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Freezers").assertExists()
+    }
+
+    @Test
+    fun `the freezer pill opens the habi store instead of a purchase sheet`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        // T12: the Detail screen no longer buys freezers itself — tapping the pill navigates
+        // away to the store instead of opening a purchase sheet in place.
+        compose.onNodeWithTag("freezer-chip", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertEquals(true, habiOpened)
+        compose.onNodeWithTag("freezer-sheet", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

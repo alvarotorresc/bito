@@ -181,39 +181,6 @@ private fun AbstinenceDaySheet(
     }
 }
 
-/** Buying a freezer: shows the running inventory and a price disabled when the balance is short. */
-@Composable
-fun FreezerSheet(
-    owned: Int,
-    price: Int,
-    balance: Int,
-    onBuy: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val canSpend = balance >= price
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("freezer-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.freezer_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            Text(stringResource(R.string.freezer_sheet_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
-            Text(stringResource(R.string.freezers_owned_label, owned), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            PillButton(
-                text =
-                    if (canSpend) {
-                        stringResource(R.string.buy_freezer_action, price)
-                    } else {
-                        stringResource(R.string.buy_freezer_missing, price - balance)
-                    },
-                onClick = {
-                    onBuy()
-                    onDismiss()
-                },
-                enabled = canSpend,
-                modifier = Modifier.fillMaxWidth().testTag("buy-freezer"),
-            )
-        }
-    }
-}
-
 /**
  * What freezers are and how to spend them — pure info, dismissed by its own "Entendido"/"Got it"
  * button, no write of any kind. Body copy is provisional Neutra voice; the per-personality voice

@@ -16,10 +16,7 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
-import com.alvarotc.bito.domain.PointsEngine
-import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.LogicalDay
-import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +43,6 @@ class DetailViewModel(
     private val rewards: RewardsRepository,
     private val settings: SettingsRepository,
     private val reconciler: PointsReconciler,
-    private val economy: EconomyConfig = EconomyConfig(),
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Overridable so tests can swap in their TestDispatcher — buildDetailUiState off Main (perf)
@@ -109,14 +105,6 @@ class DetailViewModel(
         write { _, nowMillis ->
             journal.setDayTotal(habitId, day, 0, nowMillis)
             journal.sealDay(day, nowMillis)
-        }
-
-    fun buyFreezer() =
-        write { today, nowMillis ->
-            val ledger = domainState.snapshot().pointsLedger
-            if (PointsEngine.canSpend(ledger, economy.freezerPrice)) {
-                rewards.spend(-economy.freezerPrice, PointsReason.BUY_FREEZER, UUID.randomUUID().toString(), today, nowMillis)
-            }
         }
 
     fun applyFreezer(day: LogicalDay) =

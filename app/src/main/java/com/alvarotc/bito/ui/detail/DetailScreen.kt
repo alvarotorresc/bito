@@ -83,6 +83,7 @@ fun DetailScreen(
     viewModel: DetailViewModel,
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
+    onOpenHabi: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // `uiState` seeds `null` before its first real emission AND when the habit genuinely does not
@@ -104,7 +105,6 @@ fun DetailScreen(
     val current = state ?: return
 
     var daySheetFor by remember { mutableStateOf<LogicalDay?>(null) }
-    var showFreezerSheet by remember { mutableStateOf(false) }
     var showFreezerInfoSheet by remember { mutableStateOf(false) }
     var showPauseSheet by remember { mutableStateOf(false) }
     var showArchiveSheet by remember { mutableStateOf(false) }
@@ -129,7 +129,7 @@ fun DetailScreen(
                 showFreezerPill = current.period == Period.DAY && !archived,
                 freezersOwned = current.freezersOwned,
                 onRelapseClick = { relapseSheetOpen = true },
-                onFreezerClick = { showFreezerSheet = true },
+                onFreezerClick = onOpenHabi,
                 onFreezerInfoClick = { showFreezerInfoSheet = true },
             )
             HeatmapSection(
@@ -172,15 +172,6 @@ fun DetailScreen(
                     onUseFreezer = { viewModel.applyFreezer(day) },
                 ),
             onDismiss = { daySheetFor = null },
-        )
-    }
-    if (showFreezerSheet) {
-        FreezerSheet(
-            owned = current.freezersOwned,
-            price = current.freezerPrice,
-            balance = current.balance,
-            onBuy = viewModel::buyFreezer,
-            onDismiss = { showFreezerSheet = false },
         )
     }
     if (showFreezerInfoSheet) {
