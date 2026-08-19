@@ -1,5 +1,9 @@
 package com.alvarotc.bito.ui.widget
 
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.TodayUiState
@@ -20,8 +24,10 @@ class WidgetModelTest {
         doneToday = done, failed = false, streak = 0,
     )
 
-    private fun state(vararg cards: HabitCardUi) =
-        TodayUiState(today = 20679, ringDone = 0, ringTotal = cards.size, cards = cards.toList(), loading = false)
+    private fun state(
+        vararg cards: HabitCardUi,
+        spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, equippedSetOf(emptyList())),
+    ) = TodayUiState(today = 20679, ringDone = 0, ringTotal = cards.size, cards = cards.toList(), spec = spec, loading = false)
 
     @Test
     fun `completed habits disappear from the widget`() {
@@ -60,5 +66,14 @@ class WidgetModelTest {
         assertEquals(3, model.items.first { it.habitId == "agua" }.step)
         assertFalse(model.items.first { it.habitId == "guitarra" }.tapLogs)
         assertFalse(model.items.first { it.habitId == "fumar" }.tapLogs)
+    }
+
+    @Test
+    fun `the widget's Habi mirrors the live mood, personality and equipped look`() {
+        val spec = HabiSpec(Mood.RADIANT, Personality.CHEERLEADER, equippedSetOf(listOf("body-dorado")))
+        val model = buildWidgetModel(state(card("agua"), spec = spec), selectedIds = null)
+        assertEquals(Mood.RADIANT, model.spec.mood)
+        assertEquals(Personality.CHEERLEADER, model.spec.personality)
+        assertEquals("body-dorado", model.spec.equipped.bodyColor)
     }
 }
