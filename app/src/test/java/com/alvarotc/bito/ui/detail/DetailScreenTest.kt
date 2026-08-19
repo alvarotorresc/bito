@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -143,6 +145,22 @@ class DetailScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag("day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the next-month chevron is truly disabled, not just tinted, once the displayed month reaches today's`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        // The screen opens on today's own calendar month, so the next-month chevron starts
+        // disabled with no navigation needed — PlainIconButton's enabled param must reach
+        // Modifier.clickable so this is real a11y semantics, not just a dimmed icon that still
+        // eats the tap in its handler.
+        setContent("h1")
+
+        compose.onNodeWithContentDescription("Next month").assertIsNotEnabled()
     }
 
     @Test
