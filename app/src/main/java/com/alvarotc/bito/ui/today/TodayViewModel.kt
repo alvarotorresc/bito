@@ -15,12 +15,15 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.LogicalDay
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -35,11 +38,15 @@ class TodayViewModel(
     private val reconciler: PointsReconciler,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
+    // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
+    // must not race a runTest's virtual scheduler the way the real Dispatchers.Default would.
+    defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     val uiState: StateFlow<TodayUiState> =
         combine(domainState.observe(), habits.observeHabits(), settings.settings) { state, entities, prefs ->
             buildTodayUiState(state, entities.associate { it.id to it.sortOrder }, todayOf(prefs))
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
+        }.flowOn(defaultDispatcher)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
     private val loggedEntry = MutableStateFlow<String?>(null)
     val lastLogged: StateFlow<String?> = loggedEntry.asStateFlow()

@@ -107,7 +107,17 @@ class TodayScreenTest {
             )
         }
 
-        val vm = TodayViewModel(domainState, habits, journal, settings, reconciler, now = { fixedNow }, zone = { utc })
+        val vm =
+            TodayViewModel(
+                domainState,
+                habits,
+                journal,
+                settings,
+                reconciler,
+                now = { fixedNow },
+                zone = { utc },
+                defaultDispatcher = dispatcher,
+            )
 
         compose.setContent {
             BitoTheme {

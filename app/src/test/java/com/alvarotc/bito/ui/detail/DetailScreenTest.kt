@@ -119,6 +119,7 @@ class DetailScreenTest {
                 reconciler,
                 now = { fixedNow },
                 zone = { utc },
+                defaultDispatcher = dispatcher,
             )
         compose.setContent {
             BitoTheme {

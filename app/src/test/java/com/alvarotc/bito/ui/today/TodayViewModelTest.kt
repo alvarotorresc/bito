@@ -76,7 +76,16 @@ class TodayViewModelTest {
         ) { File(tmp.root, "$name.preferences_pb") }
 
     private fun newViewModel() =
-        TodayViewModel(domainStateRepo, habitsRepo, journal, settingsRepo, reconciler, now = { fixedNow }, zone = { utc })
+        TodayViewModel(
+            domainStateRepo,
+            habitsRepo,
+            journal,
+            settingsRepo,
+            reconciler,
+            now = { fixedNow },
+            zone = { utc },
+            defaultDispatcher = dispatcher,
+        )
 
     @Before
     fun setUp() {

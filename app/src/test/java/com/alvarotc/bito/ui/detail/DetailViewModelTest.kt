@@ -83,6 +83,7 @@ class DetailViewModelTest {
             reconciler,
             now = { fixedNow },
             zone = { utc },
+            defaultDispatcher = dispatcher,
         )
 
     @Before

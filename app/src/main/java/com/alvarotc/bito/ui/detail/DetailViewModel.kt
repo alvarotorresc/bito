@@ -20,12 +20,15 @@ import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsReason
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -46,6 +49,9 @@ class DetailViewModel(
     private val economy: EconomyConfig = EconomyConfig(),
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
+    // Overridable so tests can swap in their TestDispatcher — buildDetailUiState off Main (perf)
+    // must not race a runTest's virtual scheduler the way the real Dispatchers.Default would.
+    defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     // Seeded with a cutoff-agnostic "today" — only used as the starting point for month
     // navigation before the first real settings emission; a few hours' drift around a cutoff
@@ -57,7 +63,8 @@ class DetailViewModel(
     val uiState: StateFlow<DetailUiState?> =
         combine(domainState.observe(), settings.settings, _month) { state, prefs, m ->
             buildDetailUiState(state, habitId, m, todayOf(prefs))
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        }.flowOn(defaultDispatcher)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
         write { _, _ -> } // opening the screen reconciles pending grants
