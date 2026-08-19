@@ -5,6 +5,7 @@ import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
+import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsReason
@@ -48,6 +49,18 @@ class RewardsRepository(private val db: BitoDatabase) {
     ) = db.badgeDao().insert(BadgeEntity(badgeId, nowMillis))
 
     suspend fun acquire(item: CustomizationItemEntity) = db.customizationItemDao().upsert(item)
+
+    suspend fun ownedItemIds(): Set<String> = db.customizationItemDao().all().mapTo(mutableSetOf()) { it.itemId }
+
+    /** Achievement grants: insert-ignore so re-derivation never touches existing rows. */
+    suspend fun grantItems(
+        itemIds: Set<String>,
+        nowMillis: Long,
+    ) = db.customizationItemDao().insertAll(
+        itemIds.mapNotNull { id ->
+            HabiCatalog.byId(id)?.let { CustomizationItemEntity(id, it.category, nowMillis, equipped = false) }
+        },
+    )
 
     /** Equipping is exclusive per category (derived from the stored item). */
     suspend fun equip(itemId: String) =
