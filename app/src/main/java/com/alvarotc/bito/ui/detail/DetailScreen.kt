@@ -239,11 +239,12 @@ private fun PlainIconButton(
     modifier: Modifier = Modifier,
     color: Color = Tinta,
     iconSize: Dp = 24.dp,
+    enabled: Boolean = true,
 ) = Box(
     modifier
         .size(44.dp)
         .clip(CircleShape)
-        .clickable(onClick = onClick),
+        .clickable(enabled = enabled, onClick = onClick),
     contentAlignment = Alignment.Center,
 ) {
     Icon(icon, contentDescription = contentDescription, tint = color, modifier = Modifier.size(iconSize))
@@ -470,9 +471,10 @@ private fun HeatmapSection(
                 PlainIconButton(
                     BitoIcons.ChevronRight,
                     contentDescription = stringResource(R.string.next_month),
-                    onClick = { if (!nextDisabled) onNextMonth() },
+                    onClick = onNextMonth,
                     color = if (nextDisabled) TintaSuave.copy(alpha = 0.4f) else TintaSuave,
                     iconSize = 20.dp,
+                    enabled = !nextDisabled,
                 )
             }
             Spacer(Modifier.height(8.dp))
