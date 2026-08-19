@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.habi
 
 import android.graphics.Bitmap
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
@@ -15,6 +16,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.alvarotc.bito.domain.model.CheekStyle
@@ -23,6 +25,8 @@ import com.alvarotc.bito.domain.model.FaceParams
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.faceParamsOf
+import com.alvarotc.bito.ui.theme.Brasa
+import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Mofletes
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
@@ -84,6 +88,116 @@ private const val SMIRK_TILT_DEG = 6f
 
 private const val DORADO_BODY_ITEM = "body-dorado"
 
+// --- Pattern layer (T10) — clipped to the body silhouette. Tint = darkened body tone unless noted
+// (llamas). Every glyph list below is a fixed, hand-placed scatter — no randomness at runtime.
+// Numbers are art-phase-tunable against design/mockups/m6/4-habi-pantalla.png.
+private const val PATTERN_TINT_FACTOR = 0.82f // multiply body RGB for the pattern tint.
+
+private const val MOTAS_RADIUS = 0.03f
+private const val MOTAS_SPACING = 0.14f
+private const val MOTAS_ROW_OFFSET = MOTAS_SPACING / 2f
+
+private const val RAYITAS_STROKE = 0.02f
+private const val RAYITAS_SPACING = 0.12f
+private const val RAYITAS_ANGLE_DEG = 45f
+
+private const val HEART_SIZE = 0.05f
+private const val STAR_OUTER_RADIUS = 0.045f
+private const val STAR_INNER_RATIO = 0.5f
+private const val FLOWER_PETAL_RADIUS = 0.018f
+private const val FLOWER_PETAL_ORBIT = 0.022f
+private const val FLOWER_CENTER_RADIUS = 0.012f
+private const val SPARKLE_OUTER_RADIUS = 0.05f
+private const val SPARKLE_INNER_RATIO = 0.35f
+
+// Fixed scatter positions (fraction of viewport), one list per glyph pattern — hand-placed inside
+// the body's bounding box (cx=0.5±0.34, cy=0.55±0.42); clipPath trims whatever falls outside the
+// egg so these don't need to hug the silhouette precisely.
+private val CORAZONES_POSITIONS =
+    listOf(0.38f to 0.30f, 0.63f to 0.28f, 0.30f to 0.50f, 0.70f to 0.50f, 0.50f to 0.40f, 0.40f to 0.70f, 0.60f to 0.72f)
+private val ESTRELLAS_POSITIONS =
+    listOf(0.35f to 0.24f, 0.65f to 0.26f, 0.25f to 0.46f, 0.75f to 0.46f, 0.50f to 0.36f, 0.38f to 0.66f, 0.62f to 0.68f)
+private val FLORES_POSITIONS =
+    listOf(0.36f to 0.28f, 0.64f to 0.30f, 0.28f to 0.52f, 0.72f to 0.52f, 0.50f to 0.44f, 0.50f to 0.72f)
+private val CHISPAS_POSITIONS =
+    listOf(
+        0.34f to 0.26f,
+        0.66f to 0.24f,
+        0.24f to 0.48f,
+        0.76f to 0.48f,
+        0.50f to 0.34f,
+        0.38f to 0.68f,
+        0.62f to 0.70f,
+        0.50f to 0.82f,
+    )
+
+private const val LLAMA_TINT_BLEND = 0.2f // 0 = pure Brasa; blends toward body color so it still reads as "this body's fire".
+private const val LLAMA_BASE_Y = 0.90f // where the body is still wide (not the tapering bottom tip at 0.97).
+
+// Fixed tongues: (base x offset from BODY_CX, height, width) — heights within the 0.15-0.25 spec range.
+private val LLAMA_TONGUES =
+    listOf(
+        Triple(-0.20f, 0.18f, 0.10f),
+        Triple(-0.09f, 0.24f, 0.09f),
+        Triple(0.01f, 0.20f, 0.11f),
+        Triple(0.11f, 0.25f, 0.09f),
+        Triple(0.21f, 0.17f, 0.10f),
+    )
+
+// --- Upper slot (T10) — anchored at the head top, center x=BODY_CX. Half-widths are checked
+// against the egg's own half-width at that y (see eggPath) so hats hug the head instead of
+// floating past it; the top hat's brim is the one deliberate exception (brims overhang).
+private const val GORRO_DOME_TOP_Y = 0.035f
+private const val GORRO_DOME_BOTTOM_Y = 0.185f
+private const val GORRO_DOME_RX = 0.15f
+private const val GORRO_BAND_TOP_Y = 0.175f
+private const val GORRO_BAND_BOTTOM_Y = 0.215f
+private const val GORRO_BAND_RX = 0.165f
+private const val GORRO_POMPOM_Y = 0.025f
+private const val GORRO_POMPOM_RADIUS = 0.028f
+
+// Knot is centered on the body highlight (HIGHLIGHT_CY=0.16) with radius > highlight's own rx/ry
+// (0.05/0.035) so it fully covers the highlight — a circle centered on an ellipse's center always
+// contains it once its radius exceeds the ellipse's larger semi-axis. Wings pinch to a point at the
+// neck, so they can't help with that; the knot alone has to do it.
+private const val LAZO_CENTER_Y = HIGHLIGHT_CY
+private const val LAZO_WING_HALF_WIDTH = 0.11f
+private const val LAZO_WING_HALF_HEIGHT = 0.065f
+private const val LAZO_KNOT_RADIUS = 0.06f
+
+// Brim's bottom edge (COPA_BRIM_Y + COPA_BRIM_RY) must reach past the highlight's bottom
+// (HIGHLIGHT_CY + HIGHLIGHT_RY = 0.195), and the cylinder must reach the brim's top with no gap.
+private const val COPA_CYLINDER_TOP_Y = 0.02f
+private const val COPA_CYLINDER_BOTTOM_Y = 0.16f
+private const val COPA_CYLINDER_RX = 0.09f
+private const val COPA_BAND_TOP_Y = 0.105f
+private const val COPA_BAND_BOTTOM_Y = 0.125f
+private const val COPA_BRIM_Y = 0.178f
+private const val COPA_BRIM_RX = 0.17f
+private const val COPA_BRIM_RY = 0.02f
+
+private const val CORONA_BASE_Y = 0.205f
+private const val CORONA_BAND_TOP_Y = 0.165f
+private const val CORONA_RX = 0.165f
+private const val CORONA_PEAK_CENTER_Y = 0.035f
+private const val CORONA_PEAK_SIDE_Y = 0.095f
+private const val CORONA_VALLEY_Y = 0.14f
+
+// --- Lower slot (T10) — anchored below the body (drawn last, so it always paints over the egg's
+// tapering bottom rather than being occluded by it). Both items share the same DX/anchor so a
+// single probe point covers either.
+private const val LOWER_DX = 0.20f
+private const val SOCK_TOP_Y = 0.845f
+private const val SOCK_BOTTOM_Y = 0.965f
+private const val SOCK_HALF_WIDTH = 0.05f
+private const val SOCK_STRIPE_TOP_Y = 0.875f
+private const val SOCK_STRIPE_BOTTOM_Y = 0.905f
+
+private const val SNEAKER_TOP_Y = 0.86f
+private const val SNEAKER_BOTTOM_Y = 0.95f
+private const val SNEAKER_HALF_WIDTH = 0.065f
+private const val SNEAKER_SOLE_HEIGHT = 0.022f
+
 /**
  * Maps the normalized 0..1 viewport (of `min(size.width, size.height)`) used by every drawing
  * helper below onto the actual [DrawScope] pixels, centering the square viewport in a non-square
@@ -108,8 +222,7 @@ private class HabiViewport(size: Size) {
 
 /**
  * Paints Habi: body (tinted) -> pattern -> cheeks -> eyes+highlights -> brows -> mouth -> upper ->
- * lower (tech doc §7.1, layer order is LAW). Pattern/upper/lower are not implemented yet (T10) —
- * they are named no-op stubs below so this stays the single call site later tasks extend.
+ * lower (tech doc §7.1, layer order is LAW) — this is the single call site every layer hangs off.
  */
 fun DrawScope.drawHabi(
     spec: HabiSpec,
@@ -120,7 +233,7 @@ fun DrawScope.drawHabi(
     val eyeColor = HabiPalette.eyeColor(spec.equipped.eyeColor)
 
     drawBody(vp, spec.equipped.bodyColor)
-    drawPattern(vp, spec.equipped.pattern)
+    drawPattern(vp, spec.equipped.pattern, spec.equipped.bodyColor)
     drawCheeks(vp, face)
     drawEyes(vp, face, blink, eyeColor)
     drawBrows(vp, face)
@@ -154,11 +267,14 @@ fun renderHabiBitmap(
     return imageBitmap.asAndroidBitmap()
 }
 
+/** The body/pattern silhouette — extracted so drawBody and drawPattern can't drift apart. */
+private fun bodyPath(vp: HabiViewport): Path = eggPath(vp, BODY_CX, BODY_CY, BODY_RX, BODY_RY, BODY_BULGE)
+
 private fun DrawScope.drawBody(
     vp: HabiViewport,
     bodyItemId: String,
 ) {
-    val bodyPath = eggPath(vp, BODY_CX, BODY_CY, BODY_RX, BODY_RY, BODY_BULGE)
+    val bodyPath = bodyPath(vp)
     drawPath(bodyPath, color = HabiPalette.bodyColor(bodyItemId))
 
     if (bodyItemId == DORADO_BODY_ITEM) {
@@ -186,14 +302,202 @@ private fun DrawScope.drawBody(
     }
 }
 
-/** T10 adds patterned overlays (motas/rayitas/...); intentionally a no-op until then. */
-@Suppress("UNUSED_PARAMETER")
+/** Patterned overlay clipped to the body silhouette; an unknown or null id draws nothing. */
 private fun DrawScope.drawPattern(
     vp: HabiViewport,
     patternId: String?,
+    bodyItemId: String,
 ) {
-    // no-op: pattern layer arrives in T10.
+    if (patternId == null) return
+    val bodyColor = HabiPalette.bodyColor(bodyItemId)
+    val tint = bodyColor.darken()
+
+    clipPath(bodyPath(vp)) {
+        when (patternId) {
+            "pattern-motas" -> drawPatternMotas(vp, tint)
+            "pattern-rayitas" -> drawPatternRayitas(vp, tint)
+            "pattern-corazones" -> drawPatternGlyphs(vp, CORAZONES_POSITIONS, tint, ::heartPath)
+            "pattern-estrellas" -> drawPatternGlyphs(vp, ESTRELLAS_POSITIONS, tint, ::starPath)
+            "pattern-flores" -> drawPatternFlores(vp, tint)
+            "pattern-chispas" -> drawPatternGlyphs(vp, CHISPAS_POSITIONS, tint, ::sparklePath)
+            "pattern-llamas" -> drawPatternLlamas(vp, lerp(Brasa, bodyColor, LLAMA_TINT_BLEND))
+            else -> Unit // unknown catalog id (forward compat): no-op, never crash.
+        }
+    }
 }
+
+/** Staggered grid of dots, alternate rows offset by half the spacing — deterministic, no randomness. */
+private fun DrawScope.drawPatternMotas(
+    vp: HabiViewport,
+    tint: Color,
+) {
+    val radius = vp.len(MOTAS_RADIUS)
+    val rows = (BODY_RY * 2f / MOTAS_SPACING).toInt() + 2
+    val cols = (BODY_RX * 2f / MOTAS_SPACING).toInt() + 2
+    for (row in 0..rows) {
+        val y = BODY_CY - BODY_RY + row * MOTAS_SPACING
+        val rowOffset = if (row % 2 == 1) MOTAS_ROW_OFFSET else 0f
+        for (col in 0..cols) {
+            val x = BODY_CX - BODY_RX - MOTAS_SPACING + rowOffset + col * MOTAS_SPACING
+            drawCircle(color = tint, radius = radius, center = vp.point(x, y))
+        }
+    }
+}
+
+/** Diagonal pinstripes: horizontal lines drawn inside a rotated frame, spaced evenly. */
+private fun DrawScope.drawPatternRayitas(
+    vp: HabiViewport,
+    tint: Color,
+) {
+    val strokeWidth = vp.len(RAYITAS_STROKE)
+    val span = BODY_RX.coerceAtLeast(BODY_RY) * 3f // long enough that rotation never leaves a corner uncovered.
+    rotate(degrees = RAYITAS_ANGLE_DEG, pivot = vp.point(BODY_CX, BODY_CY)) {
+        val lineCount = (BODY_RY * 4f / RAYITAS_SPACING).toInt() + 2
+        for (i in 0..lineCount) {
+            val y = BODY_CY - BODY_RY * 2f + i * RAYITAS_SPACING
+            drawLine(
+                color = tint,
+                start = vp.point(BODY_CX - span, y),
+                end = vp.point(BODY_CX + span, y),
+                strokeWidth = strokeWidth,
+            )
+        }
+    }
+}
+
+/** Shared driver for the fixed-position glyph patterns (corazones/estrellas/chispas). */
+private fun DrawScope.drawPatternGlyphs(
+    vp: HabiViewport,
+    positions: List<Pair<Float, Float>>,
+    tint: Color,
+    glyph: (HabiViewport, Float, Float) -> Path,
+) {
+    for ((x, y) in positions) {
+        drawPath(glyph(vp, x, y), color = tint)
+    }
+}
+
+private fun DrawScope.drawPatternFlores(
+    vp: HabiViewport,
+    tint: Color,
+) {
+    for ((x, y) in FLORES_POSITIONS) {
+        val orbit = vp.len(FLOWER_PETAL_ORBIT)
+        val petalRadius = vp.len(FLOWER_PETAL_RADIUS)
+        val center = vp.point(x, y)
+        for (i in 0 until 5) {
+            val angle = Math.toRadians(-90.0 + 72.0 * i)
+            val petalCenter =
+                Offset(center.x + orbit * cos(angle).toFloat(), center.y + orbit * sin(angle).toFloat())
+            drawCircle(color = tint, radius = petalRadius, center = petalCenter)
+        }
+        drawCircle(color = tint, radius = vp.len(FLOWER_CENTER_RADIUS), center = center)
+    }
+}
+
+/** Wavy flame tongues rising from where the body is still wide, not the tapering bottom tip. */
+private fun DrawScope.drawPatternLlamas(
+    vp: HabiViewport,
+    tint: Color,
+) {
+    for ((dx, height, width) in LLAMA_TONGUES) {
+        drawPath(flamePath(vp, BODY_CX + dx, height, width), color = tint)
+    }
+}
+
+/**
+ * The tip leans sideways off-center and each side bulges then pinches on the way up — a straight
+ * symmetric triangle reads as a spike, not a flame; the lean + pinch is what makes it flicker.
+ */
+private fun flamePath(
+    vp: HabiViewport,
+    baseX: Float,
+    height: Float,
+    width: Float,
+): Path {
+    val lean = width * 0.35f
+    val leftBase = vp.point(baseX - width / 2f, LLAMA_BASE_Y)
+    val rightBase = vp.point(baseX + width / 2f, LLAMA_BASE_Y)
+    val tip = vp.point(baseX + lean, LLAMA_BASE_Y - height)
+    val leftBulge = vp.point(baseX - width * 0.62f, LLAMA_BASE_Y - height * 0.35f)
+    val leftPinch = vp.point(baseX + lean * 0.3f, LLAMA_BASE_Y - height * 0.72f)
+    val rightBulge = vp.point(baseX + width * 0.7f, LLAMA_BASE_Y - height * 0.28f)
+    val rightPinch = vp.point(baseX + lean * 0.6f, LLAMA_BASE_Y - height * 0.6f)
+    return Path().apply {
+        moveTo(leftBase.x, leftBase.y)
+        cubicTo(leftBulge.x, leftBulge.y, leftPinch.x, leftPinch.y, tip.x, tip.y)
+        cubicTo(rightPinch.x, rightPinch.y, rightBulge.x, rightBulge.y, rightBase.x, rightBase.y)
+        close()
+    }
+}
+
+/**
+ * A two-lobe heart via cubic Beziers: a center top notch, two rounded lobes bulging out and up,
+ * meeting at a bottom tip. Points expressed as (dx, dy) multiples of [HEART_SIZE] from center.
+ */
+private fun heartPath(
+    vp: HabiViewport,
+    cx: Float,
+    cy: Float,
+): Path {
+    fun pt(
+        dx: Float,
+        dy: Float,
+    ) = vp.point(cx + dx * HEART_SIZE, cy + dy * HEART_SIZE)
+
+    val notch = pt(0f, -0.35f)
+    val tip = pt(0f, 0.9f)
+    return Path().apply {
+        moveTo(notch.x, notch.y)
+        // Left lobe: up and out, around the bulge, down to where it meets the tip curve.
+        cubicTo(pt(-0.6f, -1.0f).x, pt(-0.6f, -1.0f).y, pt(-1.3f, -0.15f).x, pt(-1.3f, -0.15f).y, pt(-0.8f, 0.35f).x, pt(-0.8f, 0.35f).y)
+        cubicTo(pt(-0.5f, 0.75f).x, pt(-0.5f, 0.75f).y, pt(-0.2f, 1.0f).x, pt(-0.2f, 1.0f).y, tip.x, tip.y)
+        // Mirror for the right lobe, back to the notch.
+        cubicTo(pt(0.2f, 1.0f).x, pt(0.2f, 1.0f).y, pt(0.5f, 0.75f).x, pt(0.5f, 0.75f).y, pt(0.8f, 0.35f).x, pt(0.8f, 0.35f).y)
+        cubicTo(pt(1.3f, -0.15f).x, pt(1.3f, -0.15f).y, pt(0.6f, -1.0f).x, pt(0.6f, -1.0f).y, notch.x, notch.y)
+        close()
+    }
+}
+
+/** N-point star polygon via alternating outer/inner radii — used for estrellas (5pt) and chispas (4pt, spikier). */
+private fun starPolygon(
+    vp: HabiViewport,
+    cx: Float,
+    cy: Float,
+    points: Int,
+    outerRadius: Float,
+    innerRatio: Float,
+): Path {
+    val center = vp.point(cx, cy)
+    val innerRadius = outerRadius * innerRatio
+    val step = Math.PI / points
+    val path = Path()
+    for (i in 0 until points * 2) {
+        val radius = vp.len(if (i % 2 == 0) outerRadius else innerRadius)
+        val angle = -Math.PI / 2 + i * step
+        val x = center.x + radius * cos(angle).toFloat()
+        val y = center.y + radius * sin(angle).toFloat()
+        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+    }
+    path.close()
+    return path
+}
+
+private fun starPath(
+    vp: HabiViewport,
+    cx: Float,
+    cy: Float,
+): Path = starPolygon(vp, cx, cy, points = 5, outerRadius = STAR_OUTER_RADIUS, innerRatio = STAR_INNER_RATIO)
+
+private fun sparklePath(
+    vp: HabiViewport,
+    cx: Float,
+    cy: Float,
+): Path = starPolygon(vp, cx, cy, points = 4, outerRadius = SPARKLE_OUTER_RADIUS, innerRatio = SPARKLE_INNER_RATIO)
+
+/** Darkened variant of a body tone for pattern tinting — multiply RGB, alpha untouched. */
+private fun Color.darken(factor: Float = PATTERN_TINT_FACTOR): Color =
+    copy(red = red * factor, green = green * factor, blue = blue * factor)
 
 private fun DrawScope.drawCheeks(
     vp: HabiViewport,
@@ -336,22 +640,178 @@ private fun DrawScope.drawMouth(
     }
 }
 
-/** T10 adds the equipped headwear; intentionally a no-op until then. */
-@Suppress("UNUSED_PARAMETER")
+/** Equipped headwear, drawn over the body's top so it occludes the highlight naturally. */
 private fun DrawScope.drawUpper(
     vp: HabiViewport,
     upperId: String?,
 ) {
-    // no-op: upper slot arrives in T10.
+    when (upperId) {
+        "upper-gorro-lana" -> drawGorroLana(vp)
+        "upper-lazo" -> drawLazo(vp)
+        "upper-copa" -> drawCopa(vp)
+        "upper-corona" -> drawCorona(vp)
+        else -> Unit // null or unknown catalog id: no-op, never crash.
+    }
 }
 
-/** T10 adds the equipped footwear; intentionally a no-op until then. */
-@Suppress("UNUSED_PARAMETER")
+/** Knitted beanie: dome cap + folded brim band + pompom (mockup 4a: brasa-toned wool, cream pompom). */
+private fun DrawScope.drawGorroLana(vp: HabiViewport) {
+    val kappa = 0.5522847498f
+    val top = vp.point(BODY_CX, GORRO_DOME_TOP_Y)
+    val left = vp.point(BODY_CX - GORRO_DOME_RX, GORRO_DOME_BOTTOM_Y)
+    val right = vp.point(BODY_CX + GORRO_DOME_RX, GORRO_DOME_BOTTOM_Y)
+    val kx = vp.len(GORRO_DOME_RX) * kappa
+    val ky = vp.len(GORRO_DOME_BOTTOM_Y - GORRO_DOME_TOP_Y) * kappa
+    val dome =
+        Path().apply {
+            moveTo(left.x, left.y)
+            cubicTo(left.x, left.y - ky, top.x - kx, top.y, top.x, top.y)
+            cubicTo(top.x + kx, top.y, right.x, right.y - ky, right.x, right.y)
+            lineTo(left.x, left.y)
+            close()
+        }
+    drawPath(dome, color = Brasa)
+
+    drawRoundRect(
+        color = HabiPalette.GorroLanaBand,
+        topLeft = vp.point(BODY_CX - GORRO_BAND_RX, GORRO_BAND_TOP_Y),
+        size = Size(vp.len(GORRO_BAND_RX * 2f), vp.len(GORRO_BAND_BOTTOM_Y - GORRO_BAND_TOP_Y)),
+        cornerRadius = CornerRadius(vp.len((GORRO_BAND_BOTTOM_Y - GORRO_BAND_TOP_Y) / 2f)),
+    )
+
+    drawCircle(color = Tarjeta, radius = vp.len(GORRO_POMPOM_RADIUS), center = vp.point(BODY_CX, GORRO_POMPOM_Y))
+}
+
+/** Bow: two rounded "wing" petals pinched to a point at the center, plus a contrasting knot. */
+private fun DrawScope.drawLazo(vp: HabiViewport) {
+    val wingColor = HabiPalette.LazoTono
+    for (side in SIDES) {
+        drawPath(bowWingPath(vp, side), color = wingColor)
+    }
+    drawCircle(color = Brasa, radius = vp.len(LAZO_KNOT_RADIUS), center = vp.point(BODY_CX, LAZO_CENTER_Y))
+}
+
+/**
+ * A petal shape pinched to a point at the center (neck) and bulging outward past the nominal tip
+ * x — that outward overshoot on the belly control point is what reads as a rounded loop rather than
+ * a thin triangular sliver.
+ */
+private fun bowWingPath(
+    vp: HabiViewport,
+    side: Float,
+): Path {
+    val neck = vp.point(BODY_CX, LAZO_CENTER_Y)
+    val tipTop = vp.point(BODY_CX + side * LAZO_WING_HALF_WIDTH, LAZO_CENTER_Y - LAZO_WING_HALF_HEIGHT)
+    val tipBottom = vp.point(BODY_CX + side * LAZO_WING_HALF_WIDTH, LAZO_CENTER_Y + LAZO_WING_HALF_HEIGHT)
+    val ctrlUpper = vp.point(BODY_CX + side * LAZO_WING_HALF_WIDTH * 0.5f, LAZO_CENTER_Y - LAZO_WING_HALF_HEIGHT * 1.3f)
+    val ctrlBelly = vp.point(BODY_CX + side * LAZO_WING_HALF_WIDTH * 1.35f, LAZO_CENTER_Y)
+    val ctrlLower = vp.point(BODY_CX + side * LAZO_WING_HALF_WIDTH * 0.5f, LAZO_CENTER_Y + LAZO_WING_HALF_HEIGHT * 1.3f)
+    return Path().apply {
+        moveTo(neck.x, neck.y)
+        quadraticTo(ctrlUpper.x, ctrlUpper.y, tipTop.x, tipTop.y)
+        quadraticTo(ctrlBelly.x, ctrlBelly.y, tipBottom.x, tipBottom.y)
+        quadraticTo(ctrlLower.x, ctrlLower.y, neck.x, neck.y)
+        close()
+    }
+}
+
+/** Top hat: cylinder + band + brim (the one upper allowed to overhang the head — brims do). */
+private fun DrawScope.drawCopa(vp: HabiViewport) {
+    val cylinderSize = Size(vp.len(COPA_CYLINDER_RX * 2f), vp.len(COPA_CYLINDER_BOTTOM_Y - COPA_CYLINDER_TOP_Y))
+    drawRect(color = Tinta, topLeft = vp.point(BODY_CX - COPA_CYLINDER_RX, COPA_CYLINDER_TOP_Y), size = cylinderSize)
+
+    drawRect(
+        color = Tarjeta,
+        topLeft = vp.point(BODY_CX - COPA_CYLINDER_RX, COPA_BAND_TOP_Y),
+        size = Size(vp.len(COPA_CYLINDER_RX * 2f), vp.len(COPA_BAND_BOTTOM_Y - COPA_BAND_TOP_Y)),
+    )
+
+    val brimCenter = vp.point(BODY_CX, COPA_BRIM_Y)
+    drawOval(
+        color = Tinta,
+        topLeft = Offset(brimCenter.x - vp.len(COPA_BRIM_RX), brimCenter.y - vp.len(COPA_BRIM_RY)),
+        size = Size(vp.len(COPA_BRIM_RX * 2f), vp.len(COPA_BRIM_RY * 2f)),
+    )
+}
+
+/** Exclusive: 3-point zigzag crown on a base band, gold (same family as body-dorado). */
+private fun DrawScope.drawCorona(vp: HabiViewport) {
+    val baseLeft = vp.point(BODY_CX - CORONA_RX, CORONA_BASE_Y)
+    val baseRight = vp.point(BODY_CX + CORONA_RX, CORONA_BASE_Y)
+    val bandLeft = vp.point(BODY_CX - CORONA_RX, CORONA_BAND_TOP_Y)
+    val bandRight = vp.point(BODY_CX + CORONA_RX, CORONA_BAND_TOP_Y)
+    val peakLeft = vp.point(BODY_CX - CORONA_RX * 0.6f, CORONA_PEAK_SIDE_Y)
+    val peakCenter = vp.point(BODY_CX, CORONA_PEAK_CENTER_Y)
+    val peakRight = vp.point(BODY_CX + CORONA_RX * 0.6f, CORONA_PEAK_SIDE_Y)
+    val valleyLeft = vp.point(BODY_CX - CORONA_RX * 0.3f, CORONA_VALLEY_Y)
+    val valleyRight = vp.point(BODY_CX + CORONA_RX * 0.3f, CORONA_VALLEY_Y)
+
+    val path =
+        Path().apply {
+            moveTo(baseLeft.x, baseLeft.y)
+            lineTo(bandLeft.x, bandLeft.y)
+            lineTo(peakLeft.x, peakLeft.y)
+            lineTo(valleyLeft.x, valleyLeft.y)
+            lineTo(peakCenter.x, peakCenter.y)
+            lineTo(valleyRight.x, valleyRight.y)
+            lineTo(peakRight.x, peakRight.y)
+            lineTo(bandRight.x, bandRight.y)
+            lineTo(baseRight.x, baseRight.y)
+            close()
+        }
+    drawPath(path, color = HabiPalette.CoronaGold)
+}
+
+/**
+ * Equipped footwear, drawn last: it always paints over the egg's tapering bottom rather than being
+ * occluded by it, so the pair reads as peeking out from under the body.
+ */
 private fun DrawScope.drawLower(
     vp: HabiViewport,
     lowerId: String?,
 ) {
-    // no-op: lower slot arrives in T10.
+    when (lowerId) {
+        "lower-calcetines" -> drawCalcetines(vp)
+        "lower-zapatillas" -> drawZapatillas(vp)
+        else -> Unit // null or unknown catalog id: no-op, never crash.
+    }
+}
+
+/** Two half-capsule socks, Tarjeta with a Hoja stripe. */
+private fun DrawScope.drawCalcetines(vp: HabiViewport) {
+    val size = Size(vp.len(SOCK_HALF_WIDTH * 2f), vp.len(SOCK_BOTTOM_Y - SOCK_TOP_Y))
+    val cornerRadius = CornerRadius(vp.len(SOCK_HALF_WIDTH))
+    for (side in SIDES) {
+        val centerX = BODY_CX + side * LOWER_DX
+        drawRoundRect(color = Tarjeta, topLeft = vp.point(centerX - SOCK_HALF_WIDTH, SOCK_TOP_Y), size = size, cornerRadius = cornerRadius)
+        drawRoundRect(
+            color = Hoja,
+            topLeft = vp.point(centerX - SOCK_HALF_WIDTH, SOCK_STRIPE_TOP_Y),
+            size = Size(vp.len(SOCK_HALF_WIDTH * 2f), vp.len(SOCK_STRIPE_BOTTOM_Y - SOCK_STRIPE_TOP_Y)),
+            cornerRadius = CornerRadius(vp.len(SOCK_HALF_WIDTH * 0.25f)),
+        )
+    }
+}
+
+/** Two capsule sneakers: Tinta upper, Tarjeta sole. */
+private fun DrawScope.drawZapatillas(vp: HabiViewport) {
+    val upperSize = Size(vp.len(SNEAKER_HALF_WIDTH * 2f), vp.len(SNEAKER_BOTTOM_Y - SNEAKER_TOP_Y))
+    val upperCorner = CornerRadius(vp.len(SNEAKER_HALF_WIDTH * 0.6f))
+    for (side in SIDES) {
+        val centerX = BODY_CX + side * LOWER_DX
+        drawRoundRect(
+            color = Tinta,
+            topLeft = vp.point(centerX - SNEAKER_HALF_WIDTH, SNEAKER_TOP_Y),
+            size = upperSize,
+            cornerRadius = upperCorner,
+        )
+        drawRoundRect(
+            color = Tarjeta,
+            topLeft = vp.point(centerX - SNEAKER_HALF_WIDTH, SNEAKER_BOTTOM_Y - SNEAKER_SOLE_HEIGHT),
+            size = Size(vp.len(SNEAKER_HALF_WIDTH * 2f), vp.len(SNEAKER_SOLE_HEIGHT)),
+            cornerRadius = CornerRadius(vp.len(SNEAKER_SOLE_HEIGHT / 2f)),
+        )
+    }
 }
 
 /** -1f (left) / +1f (right) — every paired feature (eyes, cheeks, brows) mirrors across these. */

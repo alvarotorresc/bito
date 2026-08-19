@@ -16,6 +16,7 @@ import com.alvarotc.bito.ui.theme.HabiSalvia
 import com.alvarotc.bito.ui.theme.Tarjeta
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -143,5 +144,89 @@ class HabiDrawingTest {
 
         assertEquals(Tarjeta.toArgb(), open)
         assertEquals(HabiSalvia.toArgb(), closed)
+    }
+
+    // --- T10: patterns and accessories ---------------------------------------------------------
+
+    /** Larger canvas than [size]: upper/lower probes sit close to the body edge, where antialiasing
+     * at 96px can flip a pixel's alpha. 256px keeps the transparent-vs-opaque margin unambiguous. */
+    private val accessorySize = 256
+
+    /** Every pixel in the body's bounding box, for a scan that survives pattern geometry retuning. */
+    private fun bodyBoundingBoxPixels(sizePx: Int): List<Pair<Int, Int>> {
+        val minX = px(0.5f - 0.34f, sizePx)
+        val maxX = px(0.5f + 0.34f, sizePx)
+        val minY = px(0.55f - 0.42f, sizePx)
+        val maxY = px(0.55f + 0.42f, sizePx)
+        return (minX..maxX).flatMap { x -> (minY..maxY).map { y -> x to y } }
+    }
+
+    private fun anyPixelDiffers(
+        a: Bitmap,
+        b: Bitmap,
+        points: List<Pair<Int, Int>>,
+    ) = points.any { (x, y) -> a.getPixel(x, y) != b.getPixel(x, y) }
+
+    @Test
+    fun `each pattern renders distinct pixels`() {
+        val bare = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val motas = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = "pattern-motas"))
+        val rayitas = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = "pattern-rayitas"))
+        val points = bodyBoundingBoxPixels(size)
+
+        val bareBitmap = renderHabiBitmap(bare, size)
+        val motasBitmap = renderHabiBitmap(motas, size)
+        val rayitasBitmap = renderHabiBitmap(rayitas, size)
+
+        assertTrue("motas should differ from no pattern", anyPixelDiffers(bareBitmap, motasBitmap, points))
+        assertTrue("rayitas should differ from no pattern", anyPixelDiffers(bareBitmap, rayitasBitmap, points))
+        assertTrue("motas should differ from rayitas", anyPixelDiffers(motasBitmap, rayitasBitmap, points))
+    }
+
+    @Test
+    fun `upper items draw above the body apex`() {
+        // Apex is BODY_CY - BODY_RY = 0.55 - 0.42 = 0.13; probe just above it, inside the beanie dome.
+        val withUpper = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(upper = "upper-gorro-lana"))
+        val withoutUpper = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (x, y) = px(0.5f, accessorySize) to px(0.10f, accessorySize)
+
+        val equippedAlpha = android.graphics.Color.alpha(renderHabiBitmap(withUpper, accessorySize).getPixel(x, y))
+        val bareAlpha = android.graphics.Color.alpha(renderHabiBitmap(withoutUpper, accessorySize).getPixel(x, y))
+
+        assertNotEquals(0, equippedAlpha)
+        assertEquals(0, bareAlpha)
+    }
+
+    @Test
+    fun `lower items draw below the body`() {
+        // LOWER_DX = 0.20 (both lower items' shared anchor); probe at 0.22 clears the bare egg's
+        // antialiased edge at this y (measured: alpha 11 at 0.20, 0 at 0.22) while staying inside
+        // both the sock (half-width 0.05) and sneaker (half-width 0.065) shapes drawn at the anchor.
+        val withLower = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(lower = "lower-calcetines"))
+        val withoutLower = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (x, y) = px(0.5f + 0.22f, accessorySize) to px(0.90f, accessorySize)
+
+        val equippedAlpha = android.graphics.Color.alpha(renderHabiBitmap(withLower, accessorySize).getPixel(x, y))
+        val bareAlpha = android.graphics.Color.alpha(renderHabiBitmap(withoutLower, accessorySize).getPixel(x, y))
+
+        assertNotEquals(0, equippedAlpha)
+        assertEquals(0, bareAlpha)
+    }
+
+    @Test
+    fun `unknown pattern or accessory ids draw nothing and do not crash`() {
+        val spec =
+            HabiSpec(
+                Mood.NORMAL,
+                Personality.NEUTRA,
+                EquippedSet(pattern = "pattern-nope", upper = "upper-nope", lower = "lower-nope"),
+            )
+        val bare = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+
+        val unknownBitmap = renderHabiBitmap(spec, size)
+        val bareBitmap = renderHabiBitmap(bare, size)
+        val (x, y) = bodyCenterPixel(size)
+
+        assertEquals(bareBitmap.getPixel(x, y), unknownBitmap.getPixel(x, y))
     }
 }
