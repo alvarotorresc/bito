@@ -121,7 +121,15 @@ fun DrawScope.drawHabi(
     drawLower(vp, spec.equipped.lower)
 }
 
-/** Offscreen render for consumers that need a plain bitmap (the widget, T15). Transparent background. */
+/**
+ * Offscreen render for consumers that need a plain bitmap (the widget, T15). Transparent background.
+ *
+ * Real Android handles the internal `Bitmap.createBitmap(DisplayMetrics, ...)` overload Compose's
+ * `ImageBitmap(w, h)` calls just fine. Robolectric does not, under its default LEGACY graphics mode:
+ * that overload isn't shadowed there and falls through to a real native call that fails. Any
+ * Robolectric test that pixel-checks this function's output needs
+ * `@GraphicsMode(GraphicsMode.Mode.NATIVE)` (see HabiDrawingTest) — without it, this call crashes.
+ */
 fun renderHabiBitmap(
     spec: HabiSpec,
     sizePx: Int,
@@ -282,7 +290,10 @@ private fun DrawScope.drawMouth(
 
     rotate(degrees = tiltDeg, pivot = Offset(centerX, y)) {
         if (face.mouthOpen > 0.01f) {
-            val openHeight = vp.len(MOUTH_OPEN_BASE_HEIGHT + MOUTH_OPEN_HEIGHT_SCALE * face.mouthOpen)
+            // The lens bulges toward mouthCurve's sign: down or a happy "open smile" (radiant),
+            // up for a distressed wail (dramatic cheerleader's mouthOpen=0.8, mouthCurve=-0.8).
+            val direction = if (face.mouthCurve < 0f) -1f else 1f
+            val openHeight = direction * vp.len(MOUTH_OPEN_BASE_HEIGHT + MOUTH_OPEN_HEIGHT_SCALE * face.mouthOpen)
             val path =
                 Path().apply {
                     moveTo(centerX - halfWidth, y)
