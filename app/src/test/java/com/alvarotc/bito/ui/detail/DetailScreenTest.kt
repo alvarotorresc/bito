@@ -211,6 +211,10 @@ class DetailScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Freezers").assertExists()
+        // T13: the sheet's body is now HabiVoice's personality-voiced text behind a speaker
+        // label — Settings.personality defaults to NEUTRA, so "HABI · NEUTRAL" (values/strings.xml).
+        compose.onNodeWithText("HABI · NEUTRAL").assertExists()
+        compose.onNodeWithText("Got it").assertExists()
     }
 
     @Test

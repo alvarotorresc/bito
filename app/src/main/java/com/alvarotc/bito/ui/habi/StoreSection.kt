@@ -42,6 +42,7 @@ import com.alvarotc.bito.domain.StoreItemState
 import com.alvarotc.bito.domain.model.CatalogItem
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.HabiCatalog
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.PillButton
@@ -78,7 +79,14 @@ fun StoreSection(
         if (state.store.isNotEmpty()) {
             StoreCard(state.store, onPreview, onEquip, onUnequipDefault, onUnequip)
         }
-        FreezerCard(state.freezersOwned, state.freezerPrice, state.balance, onBuyFreezer)
+        FreezerCard(
+            owned = state.freezersOwned,
+            price = state.freezerPrice,
+            balance = state.balance,
+            personality = state.spec.personality,
+            userName = state.userName,
+            onBuy = onBuyFreezer,
+        )
     }
 
     val previewedItem = state.previewItemId?.let(HabiCatalog::byId)
@@ -292,6 +300,8 @@ private fun FreezerCard(
     owned: Int,
     price: Int,
     balance: Int,
+    personality: Personality,
+    userName: String,
     onBuy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -331,7 +341,7 @@ private fun FreezerCard(
         FreezerSheet(owned = owned, price = price, balance = balance, onBuy = onBuy, onDismiss = { showBuySheet = false })
     }
     if (showInfoSheet) {
-        FreezerInfoSheet(onDismiss = { showInfoSheet = false })
+        FreezerInfoSheet(personality = personality, userName = userName, onDismiss = { showInfoSheet = false })
     }
 }
 

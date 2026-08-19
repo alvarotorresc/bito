@@ -46,11 +46,15 @@ import com.alvarotc.bito.domain.HabitRecord
 import com.alvarotc.bito.domain.PerfectDaysSummary
 import com.alvarotc.bito.domain.WeekRow
 import com.alvarotc.bito.domain.WeekSummary
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.SpeechBubble
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
@@ -94,7 +98,7 @@ fun StatsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(stringResource(R.string.nav_stats), style = MaterialTheme.typography.headlineLarge, color = Tinta)
-            CommentatorBubble(state.mood, state.personality)
+            CommentatorBubble(state.mood, state.personality, state.equipped)
             PerfectDaysCard(state.perfectDays)
             WeekCard(state.week)
             StreaksSection(state.activeStreaks)
@@ -103,15 +107,18 @@ fun StatsScreen(
     }
 }
 
+/** The commentator's mini-avatar wears whatever is really equipped — never a store preview (Stats has none). */
 @Composable
 private fun CommentatorBubble(
     mood: Mood,
     personality: Personality,
+    equipped: EquippedSet,
 ) {
     SpeechBubble(
         speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
-        text = stringResource(moodTextRes(mood)),
+        text = stringResource(HabiVoice.bubbleRes(mood, personality)),
         modifier = Modifier.fillMaxWidth(),
+        avatar = { HabiAvatar(HabiSpec(mood, personality, equipped), Modifier.size(40.dp), animated = false) },
     )
 }
 
@@ -120,14 +127,6 @@ private fun personalityLabelRes(personality: Personality): Int =
         Personality.SARGENTO -> R.string.personality_sargento
         Personality.CHEERLEADER -> R.string.personality_cheerleader
         Personality.NEUTRA -> R.string.personality_neutra
-    }
-
-private fun moodTextRes(mood: Mood): Int =
-    when (mood) {
-        Mood.RADIANT -> R.string.stats_habi_radiant
-        Mood.NORMAL -> R.string.stats_habi_normal
-        Mood.WILTED -> R.string.stats_habi_wilted
-        Mood.DRAMATIC -> R.string.stats_habi_dramatic
     }
 
 /**

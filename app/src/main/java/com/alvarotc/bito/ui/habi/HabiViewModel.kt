@@ -67,7 +67,7 @@ class HabiViewModel(
             previewItemId,
         ) { state, owned, balance, prefs, preview ->
             val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-            buildHabiUiState(state, owned, balance, prefs.personality, today, preview)
+            buildHabiUiState(state, owned, balance, prefs.personality, today, preview, prefs.userName)
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HabiUiState())
 

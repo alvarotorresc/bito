@@ -35,7 +35,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
-import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.icons.BitoIcons
@@ -71,11 +70,14 @@ fun HabiScreen(viewModel: HabiViewModel) {
             }
             SpeechBubble(
                 speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(state.spec.personality))),
-                // Placeholder copy: reuses Stats' generic per-mood texts (stats_habi_*) until T13's
-                // HabiVoice introduces a dedicated habi_home context with the user's name
-                // interpolated (GUIA Fidelidad M6: "¿Me has traído algo, Álvaro?"). Mapping copied
-                // from StatsScreen's CommentatorBubble.
-                text = stringResource(moodTextRes(state.spec.mood)),
+                // The Habi screen's OWN playful, name-addressed voice — distinct from the Stats
+                // commentator's mood-only bubble (HabiVoice.bubbleRes). No avatar slot here: the
+                // big Stage above already IS Habi, so a second mini-face would be redundant.
+                text =
+                    stringResource(
+                        HabiVoice.homeRes(state.spec.mood, state.spec.personality),
+                        state.userName.ifBlank { stringResource(R.string.habi_name_fallback) },
+                    ),
                 modifier = Modifier.fillMaxWidth(),
             )
             PersonalityPills(
@@ -218,12 +220,4 @@ private fun personalityLabelRes(personality: Personality): Int =
         Personality.SARGENTO -> R.string.personality_sargento
         Personality.CHEERLEADER -> R.string.personality_cheerleader
         Personality.NEUTRA -> R.string.personality_neutra
-    }
-
-private fun moodTextRes(mood: Mood): Int =
-    when (mood) {
-        Mood.RADIANT -> R.string.stats_habi_radiant
-        Mood.NORMAL -> R.string.stats_habi_normal
-        Mood.WILTED -> R.string.stats_habi_wilted
-        Mood.DRAMATIC -> R.string.stats_habi_dramatic
     }

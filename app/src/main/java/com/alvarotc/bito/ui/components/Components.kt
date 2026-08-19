@@ -295,17 +295,35 @@ fun SegmentedPills(
     }
 }
 
-/** Habi speaks in a card-bubble; texts are provisional Neutra until M9. */
+/**
+ * Habi speaks in a card-bubble; texts are personality-voiced provisional copy until M9
+ * ([com.alvarotc.bito.ui.habi.HabiVoice]). [avatar] is an optional leading element — a mini Habi
+ * face — rendered to the left of the speaker/text column; default null keeps every existing call
+ * site's layout unchanged.
+ */
 @Composable
 fun SpeechBubble(
     speaker: String,
     text: String,
     modifier: Modifier = Modifier,
+    avatar: (@Composable () -> Unit)? = null,
 ) {
     BitoCard(modifier) {
-        Text(speaker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-        Spacer(Modifier.height(4.dp))
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        if (avatar != null) {
+            Row(verticalAlignment = Alignment.Top) {
+                avatar()
+                Spacer(Modifier.width(12.dp))
+                Column {
+                    Text(speaker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+                    Spacer(Modifier.height(4.dp))
+                    Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+                }
+            }
+        } else {
+            Text(speaker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            Spacer(Modifier.height(4.dp))
+            Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        }
     }
 }
 

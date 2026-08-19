@@ -34,6 +34,9 @@ data class HabiUiState(
     // What Habi is trying on before buying it — ephemeral UI state, never written to the DB
     // (docs/05 §4). Non-null both drives `spec.equipped` below AND opens the PurchaseSheet.
     val previewItemId: String? = null,
+    // Settings.userName, may be blank until M9's onboarding writes it — callers fall back to
+    // R.string.habi_name_fallback when interpolating a HabiVoice %1$s.
+    val userName: String = "",
     val loading: Boolean = true,
 )
 
@@ -58,6 +61,7 @@ fun buildHabiUiState(
     personality: Personality,
     today: LogicalDay,
     previewItemId: String? = null,
+    userName: String = "",
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -88,6 +92,7 @@ fun buildHabiUiState(
         freezerPrice = EconomyConfig().freezerPrice,
         store = store,
         previewItemId = previewItemId,
+        userName = userName,
         loading = false,
     )
 }

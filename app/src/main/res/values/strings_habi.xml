@@ -2,6 +2,59 @@
 <resources>
     <string name="habi_avatar_cd">Habi</string>
     <string name="habi_balance_points">points</string>
+    <string name="habi_name_fallback">champ</string>
+
+    <!--
+        Habi's personality-voiced texts (T13, HabiVoice) — PROVISIONAL copy, definitive wording
+        lands in the M9 economy/copy session. Four contexts:
+        habi_bubble_* — Stats commentator, mood-only (no name).
+        habi_home_*   — Habi screen's own bubble, playful home-context, %1$s = user name.
+        habi_greeting_* — Today's Habi corner, short, %1$s = user name (consumed by T14).
+        freezer_info_* — the freezers ⓘ sheet body, %1$s = user name. The price is deliberately
+        never baked in here — it lives in EconomyConfig.
+    -->
+    <string name="habi_bubble_sargento_radiant">A flawless week. That\'s how it\'s done, recruit.</string>
+    <string name="habi_bubble_sargento_normal">Acceptable. But I\'ve seen better weeks.</string>
+    <string name="habi_bubble_sargento_wilted">This is a disaster. Get up and do your habits.</string>
+    <string name="habi_bubble_sargento_dramatic">Three days without showing up? Don\'t you dare give up now.</string>
+    <string name="habi_bubble_cheerleader_radiant">A SPECTACULAAAR week! You\'re unstoppable!</string>
+    <string name="habi_bubble_cheerleader_normal">Good week! Let\'s keep stacking wins!</string>
+    <string name="habi_bubble_cheerleader_wilted">It\'s been a tough week… but tomorrow we bounce back together!</string>
+    <string name="habi_bubble_cheerleader_dramatic">Three days without you?! I missed you! Let\'s get back at it!</string>
+    <string name="habi_bubble_neutra_radiant">A very solid week: over 80 percent completed.</string>
+    <string name="habi_bubble_neutra_normal">An average week. Keep it up.</string>
+    <string name="habi_bubble_neutra_wilted">A weak week: under half done. One habit today is enough to restart.</string>
+    <string name="habi_bubble_neutra_dramatic">Three days with no entries. Whenever you\'re ready, I\'m here.</string>
+
+    <string name="habi_home_sargento_radiant">Recruit %1$s, reporting in top shape. Attention!</string>
+    <string name="habi_home_sargento_normal">Did you bring me something, %1$s?</string>
+    <string name="habi_home_sargento_wilted">%1$s, this isn\'t a camp for slackers. Get back out there.</string>
+    <string name="habi_home_sargento_dramatic">Where have you been, %1$s? No one abandons their post here.</string>
+    <string name="habi_home_cheerleader_radiant">%1$s! Look at you! We\'re ON FIRE!</string>
+    <string name="habi_home_cheerleader_normal">Hi, %1$s! So happy to see you here!</string>
+    <string name="habi_home_cheerleader_wilted">%1$s… it\'s been rough, but we\'re in this together, okay?</string>
+    <string name="habi_home_cheerleader_dramatic">Where were you, %1$s?! I was waiting for you so eagerly!</string>
+    <string name="habi_home_neutra_radiant">Good pace this week, %1$s.</string>
+    <string name="habi_home_neutra_normal">Hi, %1$s. All in order.</string>
+    <string name="habi_home_neutra_wilted">%1$s, it\'s time to pick a habit back up.</string>
+    <string name="habi_home_neutra_dramatic">Haven\'t seen you in days, %1$s.</string>
+
+    <string name="habi_greeting_sargento_radiant">Stand firm, %1$s. Keep it up.</string>
+    <string name="habi_greeting_sargento_normal">Move out, %1$s.</string>
+    <string name="habi_greeting_sargento_wilted">%1$s, those habits won\'t do themselves.</string>
+    <string name="habi_greeting_sargento_dramatic">%1$s, break\'s over.</string>
+    <string name="habi_greeting_cheerleader_radiant">You\'re on fire, %1$s!</string>
+    <string name="habi_greeting_cheerleader_normal">Hi, %1$s! Let\'s get today!</string>
+    <string name="habi_greeting_cheerleader_wilted">Cheer up, %1$s! Today\'s a good day.</string>
+    <string name="habi_greeting_cheerleader_dramatic">Missed you, %1$s!</string>
+    <string name="habi_greeting_neutra_radiant">Good momentum, %1$s.</string>
+    <string name="habi_greeting_neutra_normal">Hi, %1$s.</string>
+    <string name="habi_greeting_neutra_wilted">%1$s, today\'s a good day to restart.</string>
+    <string name="habi_greeting_neutra_dramatic">%1$s, welcome back.</string>
+
+    <string name="freezer_info_sargento">A freezer saves ONE habit\'s streak for ONE day. They cost a small fortune and are used from the habit\'s detail. Don\'t waste them, %1$s.</string>
+    <string name="freezer_info_cheerleader">A freezer saves your streak if you slip ONE day on ONE habit! Activate it from the habit\'s detail. Always keep one handy, %1$s!</string>
+    <string name="freezer_info_neutra">A freezer protects a failed day: your streak skips it instead of breaking. It\'s activated from the habit\'s detail. 1 freezer = 1 habit × 1 day, %1$s.</string>
 
     <string name="store_title">Store</string>
     <string name="store_axis_colors">Colors</string>

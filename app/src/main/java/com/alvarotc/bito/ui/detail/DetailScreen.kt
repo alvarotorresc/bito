@@ -175,7 +175,11 @@ fun DetailScreen(
         )
     }
     if (showFreezerInfoSheet) {
-        FreezerInfoSheet(onDismiss = { showFreezerInfoSheet = false })
+        FreezerInfoSheet(
+            personality = current.personality,
+            userName = current.userName,
+            onDismiss = { showFreezerInfoSheet = false },
+        )
     }
     if (showPauseSheet) {
         PauseSheet(onPause = viewModel::pause, onDismiss = { showPauseSheet = false })
