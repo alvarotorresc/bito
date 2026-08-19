@@ -144,6 +144,38 @@ class HabiUiStateTest {
     }
 
     @Test
+    fun `a live preview dresses the spec without touching what the store thinks is owned or equipped`() {
+        val state = domainState()
+        val owned = listOf(ownedItem("body-terracota", CustomizationCategory.BODY_COLOR, equipped = true))
+
+        // 90 is upper-lazo's exact price — Affordable, not MissingPoints.
+        val previewing =
+            buildHabiUiState(
+                state,
+                owned = owned,
+                balance = 90,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                previewItemId = "upper-lazo",
+            )
+
+        // The avatar wears the preview on top of what's really equipped...
+        assertEquals("body-terracota", previewing.spec.equipped.bodyColor)
+        assertEquals("upper-lazo", previewing.spec.equipped.upper)
+        assertEquals("upper-lazo", previewing.previewItemId)
+        // ...but the store grid never lies: the previewed item is still just Affordable/Owned/etc,
+        // derived from the real DB-backed equipped set, not "Equipped" because it's on screen.
+        val previewedEntry = previewing.store.getValue(CustomizationCategory.UPPER).first { it.item.id == "upper-lazo" }
+        assertEquals(StoreItemState.Affordable, previewedEntry.state)
+
+        val notPreviewing =
+            buildHabiUiState(state, owned = owned, balance = 0, personality = Personality.NEUTRA, today = TODAY)
+
+        assertEquals(null, notPreviewing.spec.equipped.upper)
+        assertEquals(null, notPreviewing.previewItemId)
+    }
+
+    @Test
     fun `freezersOwned is threaded straight through PointsEngine`() {
         val state =
             domainState(

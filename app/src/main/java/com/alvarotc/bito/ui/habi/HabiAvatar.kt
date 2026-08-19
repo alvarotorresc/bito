@@ -51,33 +51,50 @@ private const val TAP_SCALE_Y = 0.94f
  * The living Habi bean: idle bob, periodic blink, and (when [onTap] is given) a squash-and-stretch
  * tap response. Purely presentational — [spec] already carries mood, personality and the equipped
  * set; this composable owns no state about what Habi wears or feels.
+ *
+ * [animated] gates BOTH infinite loops (bob + blink) at once, frozen to their rest frame when
+ * false — a constant per call site (never toggled mid-lifetime here), so branching composable
+ * calls on it is safe. Exists for compose tests: `captureToImage`/`waitUntil` never settle against
+ * an infinite transition, so a test that needs a stable frame passes `animated = false` instead of
+ * fighting the clock. Every real screen keeps the default `true`.
  */
 @Composable
 fun HabiAvatar(
     spec: HabiSpec,
     modifier: Modifier = Modifier,
+    animated: Boolean = true,
     onTap: (() -> Unit)? = null,
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "habi-bob")
-    val bobPhase by
-        infiniteTransition.animateFloat(
-            initialValue = -1f,
-            targetValue = 1f,
-            animationSpec =
-                infiniteRepeatable(
-                    animation = tween(BOB_PERIOD_MS, easing = EaseInOut),
-                    repeatMode = RepeatMode.Reverse,
-                ),
-            label = "habi-bob-phase",
-        )
+    val density = LocalDensity.current
+    val bobPx: Float
+    val blinkValue: Float
+    if (animated) {
+        val infiniteTransition = rememberInfiniteTransition(label = "habi-bob")
+        val bobPhase by
+            infiniteTransition.animateFloat(
+                initialValue = -1f,
+                targetValue = 1f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(BOB_PERIOD_MS, easing = EaseInOut),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "habi-bob-phase",
+            )
+        bobPx = with(density) { (bobPhase * BOB_HALF_RANGE_DP).dp.toPx() }
 
-    val blink = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        while (true) {
-            delay(Random.nextLong(BLINK_MIN_DELAY_MS, BLINK_MAX_DELAY_MS))
-            blink.animateTo(1f, tween(BLINK_HALF_DURATION_MS, easing = LinearEasing))
-            blink.animateTo(0f, tween(BLINK_HALF_DURATION_MS, easing = LinearEasing))
+        val blink = remember { Animatable(0f) }
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(Random.nextLong(BLINK_MIN_DELAY_MS, BLINK_MAX_DELAY_MS))
+                blink.animateTo(1f, tween(BLINK_HALF_DURATION_MS, easing = LinearEasing))
+                blink.animateTo(0f, tween(BLINK_HALF_DURATION_MS, easing = LinearEasing))
+            }
         }
+        blinkValue = blink.value
+    } else {
+        bobPx = 0f
+        blinkValue = 0f
     }
 
     val interactionSource = remember { MutableInteractionSource() }
@@ -96,8 +113,6 @@ fun HabiAvatar(
         )
 
     val contentDescription = stringResource(R.string.habi_avatar_cd)
-    val density = LocalDensity.current
-    val bobPx = with(density) { (bobPhase * BOB_HALF_RANGE_DP).dp.toPx() }
 
     val canvasModifier =
         modifier
@@ -116,7 +131,7 @@ fun HabiAvatar(
             }
 
     Canvas(canvasModifier) {
-        drawHabi(spec, blink = blink.value)
+        drawHabi(spec, blink = blinkValue)
     }
 }
 

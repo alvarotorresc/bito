@@ -2,4 +2,57 @@
 <resources>
     <string name="habi_avatar_cd">Habi</string>
     <string name="habi_balance_points">puntos</string>
+
+    <string name="store_title">Tienda</string>
+    <string name="store_axis_colors">Colores</string>
+    <string name="store_axis_patterns">Patrones</string>
+    <string name="store_axis_eyes">Ojos</string>
+    <string name="store_axis_upper">Arriba</string>
+    <string name="store_axis_lower">Abajo</string>
+    <string name="store_equipped">equipado</string>
+    <string name="store_tap_to_equip">tocar para equipar</string>
+    <string name="store_pts_label">pts</string>
+    <string name="store_locked_streak">racha %1$d</string>
+    <string name="store_trying">probando: %1$s</string>
+    <string name="store_buy_title">¿Comprar %1$s?</string>
+    <string name="store_buy_button">Comprar</string>
+    <string name="store_balance_after">saldo después: %1$d pts</string>
+    <string name="store_your_balance">tu saldo: %1$d pts</string>
+    <string name="store_missing_pts">te faltan %1$d pts</string>
+    <string name="store_freezer_buy">comprar · %1$d pts</string>
+
+    <string name="item_body_salvia">Salvia</string>
+    <string name="item_body_vainilla">Vainilla</string>
+    <string name="item_body_melocoton">Melocotón</string>
+    <string name="item_body_cielo">Cielo</string>
+    <string name="item_body_lavanda">Lavanda</string>
+    <string name="item_body_rosa">Rosa empolvado</string>
+    <string name="item_body_oliva">Oliva</string>
+    <string name="item_body_terracota">Terracota</string>
+    <string name="item_body_carbon">Carbón</string>
+    <string name="item_body_dorado">Dorado</string>
+
+    <string name="item_eyes_tinta">Tinta</string>
+    <string name="item_eyes_avellana">Avellana</string>
+    <string name="item_eyes_verde">Verde hoja</string>
+    <string name="item_eyes_azul">Azul</string>
+    <string name="item_eyes_ambar">Ámbar</string>
+    <string name="item_eyes_violeta">Violeta</string>
+    <string name="item_eyes_granate">Granate</string>
+
+    <string name="item_pattern_motas">Motas</string>
+    <string name="item_pattern_rayitas">Rayitas</string>
+    <string name="item_pattern_corazones">Corazones</string>
+    <string name="item_pattern_estrellas">Estrellas</string>
+    <string name="item_pattern_flores">Flores</string>
+    <string name="item_pattern_chispas">Chispas</string>
+    <string name="item_pattern_llamas">Llamas</string>
+
+    <string name="item_upper_gorro_lana">Gorrito de lana</string>
+    <string name="item_upper_lazo">Lazo</string>
+    <string name="item_upper_copa">Sombrero de copa</string>
+    <string name="item_upper_corona">Corona</string>
+
+    <string name="item_lower_calcetines">Calcetines</string>
+    <string name="item_lower_zapatillas">Zapatillas</string>
 </resources>

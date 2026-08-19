@@ -2,4 +2,57 @@
 <resources>
     <string name="habi_avatar_cd">Habi</string>
     <string name="habi_balance_points">points</string>
+
+    <string name="store_title">Store</string>
+    <string name="store_axis_colors">Colors</string>
+    <string name="store_axis_patterns">Patterns</string>
+    <string name="store_axis_eyes">Eyes</string>
+    <string name="store_axis_upper">Upper</string>
+    <string name="store_axis_lower">Lower</string>
+    <string name="store_equipped">equipped</string>
+    <string name="store_tap_to_equip">tap to equip</string>
+    <string name="store_pts_label">pts</string>
+    <string name="store_locked_streak">streak %1$d</string>
+    <string name="store_trying">trying on: %1$s</string>
+    <string name="store_buy_title">Buy %1$s?</string>
+    <string name="store_buy_button">Buy</string>
+    <string name="store_balance_after">balance after: %1$d pts</string>
+    <string name="store_your_balance">your balance: %1$d pts</string>
+    <string name="store_missing_pts">%1$d pts short</string>
+    <string name="store_freezer_buy">buy · %1$d pts</string>
+
+    <string name="item_body_salvia">Sage</string>
+    <string name="item_body_vainilla">Vanilla</string>
+    <string name="item_body_melocoton">Peach</string>
+    <string name="item_body_cielo">Sky</string>
+    <string name="item_body_lavanda">Lavender</string>
+    <string name="item_body_rosa">Dusty pink</string>
+    <string name="item_body_oliva">Olive</string>
+    <string name="item_body_terracota">Terracotta</string>
+    <string name="item_body_carbon">Charcoal</string>
+    <string name="item_body_dorado">Golden</string>
+
+    <string name="item_eyes_tinta">Ink</string>
+    <string name="item_eyes_avellana">Hazel</string>
+    <string name="item_eyes_verde">Leaf green</string>
+    <string name="item_eyes_azul">Blue</string>
+    <string name="item_eyes_ambar">Amber</string>
+    <string name="item_eyes_violeta">Violet</string>
+    <string name="item_eyes_granate">Garnet</string>
+
+    <string name="item_pattern_motas">Dots</string>
+    <string name="item_pattern_rayitas">Pinstripes</string>
+    <string name="item_pattern_corazones">Hearts</string>
+    <string name="item_pattern_estrellas">Stars</string>
+    <string name="item_pattern_flores">Flowers</string>
+    <string name="item_pattern_chispas">Sparks</string>
+    <string name="item_pattern_llamas">Flames</string>
+
+    <string name="item_upper_gorro_lana">Wool beanie</string>
+    <string name="item_upper_lazo">Bow</string>
+    <string name="item_upper_copa">Top hat</string>
+    <string name="item_upper_corona">Crown</string>
+
+    <string name="item_lower_calcetines">Socks</string>
+    <string name="item_lower_zapatillas">Sneakers</string>
 </resources>

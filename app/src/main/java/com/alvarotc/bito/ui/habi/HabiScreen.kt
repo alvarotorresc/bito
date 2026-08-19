@@ -47,9 +47,10 @@ import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 
 /**
- * Habi's home: mood stage, points balance, and the personality selector. No screen title (mockup
- * 4a): the balance chip in the top-right corner carries the header instead. The store card itself
- * is T12's — this screen only leaves the seam ([StoreSection]) for it to fill.
+ * Habi's home: mood stage, points balance, the personality selector, and the store. No screen
+ * title (mockup 4a): the balance chip in the top-right corner carries the header instead. Buying
+ * something in [StoreSection] previews live here too — the trying-on chip sits right under the
+ * stage, and the avatar itself already wears the preview via `state.spec` (see [buildHabiUiState]).
  */
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
@@ -65,6 +66,9 @@ fun HabiScreen(viewModel: HabiViewModel) {
         ) {
             BalanceChip(state.balance, modifier = Modifier.align(Alignment.End))
             Stage(spec = state.spec, modifier = Modifier.fillMaxWidth())
+            state.previewItemId?.let { previewId ->
+                TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
             SpeechBubble(
                 speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(state.spec.personality))),
                 // Placeholder copy: reuses Stats' generic per-mood texts (stats_habi_*) until T13's
@@ -79,8 +83,38 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 onSelect = viewModel::setPersonality,
                 modifier = Modifier.fillMaxWidth(),
             )
-            StoreSection(state)
+            StoreSection(
+                state = state,
+                onPreview = viewModel::preview,
+                onEquip = viewModel::equip,
+                onUnequipDefault = viewModel::unequipDefault,
+                onUnequip = viewModel::unequip,
+                onBuy = viewModel::purchase,
+                onBuyFreezer = viewModel::buyFreezer,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+    }
+}
+
+/** "probando: <ítem>" (mockup 4b), under the stage while Habi is trying something on. */
+@Composable
+private fun TryingChip(
+    nameRes: Int,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        modifier = modifier.testTag("trying-chip"),
+        shape = CircleShape,
+        color = Tarjeta,
+        border = BorderStroke(1.dp, Borde),
+    ) {
+        Text(
+            stringResource(R.string.store_trying, stringResource(nameRes)),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
+            color = Tinta,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+        )
     }
 }
 
@@ -164,7 +198,7 @@ private fun PersonalityPills(
                     .clip(CircleShape)
                     .background(if (active) Tinta else Tarjeta)
                     .then(if (active) Modifier else Modifier.border(1.dp, Borde, CircleShape))
-                    .clickable { onSelect(personality) }
+                    .then(if (!active) Modifier.clickable { onSelect(personality) } else Modifier)
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -176,16 +210,6 @@ private fun PersonalityPills(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun StoreSection(
-    state: HabiUiState,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier) {
-        // La tienda la monta T12: pills por eje sobre state.store + rejilla de ítems + congeladores.
     }
 }
 
