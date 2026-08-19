@@ -7,9 +7,9 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). V
 ### Added
 
 - Habi cobra vida: pantalla propia con pestaña en la barra inferior, escenario dinámico que refleja su estado de ánimo, selector de personalidad (Sargento, Animadora o Neutra) que cambia cómo habla, y tienda de accesorios con prueba en vivo antes de comprar. Colores, patrones y accesorios se ganan con puntos; cuatro artículos exclusivos se desbloquean por alcanzar rachas.
-- Habi saluda cuando abres la app desde la pantalla Hoy y comenta tu progreso en Estadísticas con su voz según su personalidad.
+- Habi te saluda con un mensaje cuando abres la app desde la pantalla Hoy y comenta tu progreso en Estadísticas con su voz según su personalidad.
 - Habi aparece en el widget con su estado de ánimo actual.
-- Sonidos suaves de Habi para cada momento: saludo al abrir, celebración por éxito, sonido de compra al acceder a accesorios, y sonido de recaída. Un interruptor en Ajustes silencia todos los sonidos de Habi.
+- Sonidos suaves de Habi para cada momento: saludo al tocarlo en su pantalla, celebración por éxito, sonido de compra al acceder a accesorios, y sonido de recaída. Un interruptor en Ajustes silencia todos los sonidos de Habi.
 
 ### Changed
 
