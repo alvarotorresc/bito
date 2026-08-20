@@ -18,6 +18,8 @@ import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.review.ReviewScreen
+import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
@@ -147,6 +149,14 @@ fun BitoNavHost(container: AppContainer) {
                 NumbersScreen(
                     viewModel = viewModel(factory = NumbersViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
+                )
+            }
+            // No bottom nav: the review is its own flow, not a bar destination (see the
+            // bottomBar route set above, which deliberately omits "review").
+            composable("review") {
+                ReviewScreen(
+                    viewModel = viewModel(factory = ReviewViewModel.factory(container)),
+                    onClose = { nav.popBackStack() },
                 )
             }
         }
