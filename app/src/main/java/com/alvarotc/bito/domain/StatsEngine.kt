@@ -64,9 +64,7 @@ object StatsEngine {
         state: DomainState,
         today: LogicalDay,
     ): PerfectDaysSummary {
-        val firstDay = state.habits.minOfOrNull { it.createdOnDay } ?: return PerfectDaysSummary(0, 0, 0)
-        if (firstDay > today) return PerfectDaysSummary(0, 0, 0)
-        val perfectDays = (firstDay..today).filter { PerfectDays.isPerfectDay(state, it, today) }
+        val perfectDays = PerfectDays.perfectDaysUpTo(state, today)
         val thisMonthKey = LogicalDays.periodKeyOf(today, Period.MONTH)
         val thisMonth = perfectDays.count { LogicalDays.periodKeyOf(it, Period.MONTH) == thisMonthKey }
         val thisYearValue = LogicalDays.yearOf(today)
