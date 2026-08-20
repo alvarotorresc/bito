@@ -42,6 +42,11 @@ class BadgeStringsTest {
     }
 
     @Test
+    fun `every catalog badge resolves an icon`() {
+        BadgeCatalog.all.forEach { def -> BadgeStrings.badgeIcon(def) }
+    }
+
+    @Test
     fun `every family resolves a distinct resource`() {
         val ids = BadgeFamily.entries.map { BadgeStrings.badgeFamilyRes(it) }
 

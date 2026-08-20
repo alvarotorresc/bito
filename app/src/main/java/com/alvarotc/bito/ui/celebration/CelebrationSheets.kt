@@ -107,8 +107,7 @@ fun PerfectDaySheet(
 
 /**
  * Global badge-unlock celebration sheet: every badge earned since the shelf was last opened,
- * listed by name, with Habi's line naming the first one. Ruling R1 (T10): every row wears
- * [BitoIcons.Sparkle] as a stand-in until T14 swaps in `badgeIcon(def)`.
+ * listed by name and its own icon ([BadgeStrings.badgeIcon]), with Habi's line naming the first one.
  */
 @Composable
 fun BadgeUnlockSheet(
@@ -179,7 +178,7 @@ private fun BadgeRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        Icon(BitoIcons.Sparkle, contentDescription = null, tint = Hoja, modifier = Modifier.size(20.dp))
+        Icon(BadgeStrings.badgeIcon(def), contentDescription = null, tint = Hoja, modifier = Modifier.size(20.dp))
         Text(stringResource(BadgeStrings.badgeNameRes(def.id)), style = MaterialTheme.typography.titleMedium, color = Tinta)
     }
 }

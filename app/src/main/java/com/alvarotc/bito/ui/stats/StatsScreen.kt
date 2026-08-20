@@ -6,6 +6,8 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,6 +89,7 @@ fun StatsScreen(
     viewModel: StatsViewModel,
     onOpenRecords: () -> Unit,
     onOpenNumbers: () -> Unit,
+    onOpenBadges: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     Scaffold(containerColor = Papel) { padding ->
@@ -103,6 +106,7 @@ fun StatsScreen(
             WeekCard(state.week)
             StreaksSection(state.activeStreaks)
             Teasers(state.bestRecord, state.totalEntries, onOpenRecords, onOpenNumbers)
+            AchievementsSection(state, onOpenBadges)
         }
     }
 }
@@ -432,6 +436,49 @@ private fun NumbersTeaserCard(
             stringResource(R.string.stats_teaser_numbers_caption),
             style = MaterialTheme.typography.labelMedium,
             color = TintaSuave,
+        )
+    }
+}
+
+/**
+ * The Logros section (GUIA 3a v2): title + "N of M" count + chevron, a [FlowRow] wall of every
+ * catalog badge — unlocked ones first (catalog order), then locked — and a "see all" footer. A
+ * normal [BitoCard], never the screen's solid accent: [PerfectDaysCard] alone keeps that role.
+ * Renders the full grid even at zero unlocked — in a data screen empty is poverty, not reward,
+ * the same rule [StreaksSection] and [RecordsScreen]'s empty state follow.
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun AchievementsSection(
+    state: StatsUiState,
+    onOpenBadges: () -> Unit,
+) {
+    BitoCard(onClick = onOpenBadges, modifier = Modifier.fillMaxWidth().testTag("achievements")) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                stringResource(R.string.stats_badges_title),
+                style = MaterialTheme.typography.titleMedium,
+                color = Tinta,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                stringResource(R.string.stats_badges_count, state.badgesUnlocked, state.badgesTotal),
+                style = MaterialTheme.typography.labelMedium,
+                color = TintaSuave,
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(BitoIcons.ChevronRight, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(20.dp))
+        }
+        Spacer(Modifier.height(12.dp))
+        val (unlocked, locked) = state.badges.partition { it.unlockedAtMillis != null }
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            (unlocked + locked).forEach { badge -> BadgeChip(badge) }
+        }
+        Spacer(Modifier.height(12.dp))
+        Text(
+            stringResource(R.string.stats_badges_all),
+            style = MaterialTheme.typography.labelMedium,
+            color = Hoja,
         )
     }
 }

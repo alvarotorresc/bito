@@ -1,8 +1,11 @@
 package com.alvarotc.bito.ui.stats
 
 import androidx.annotation.StringRes
+import androidx.compose.ui.graphics.vector.ImageVector
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.BadgeDef
 import com.alvarotc.bito.domain.model.BadgeFamily
+import com.alvarotc.bito.ui.icons.BitoIcons
 
 /**
  * Resolves the string resources for the 14 catalog badges ([com.alvarotc.bito.domain.model.BadgeCatalog])
@@ -13,6 +16,7 @@ import com.alvarotc.bito.domain.model.BadgeFamily
  * - [badgeNameRes] — the badge's own name, personality never changes it (docs/06-badges.md §2).
  * - [badgeHowRes] — the unlock condition, plugged into `R.string.badge_how_prefix`.
  * - [badgeFamilyRes] — the [BadgeFamily] label the Badges list groups by.
+ * - [badgeIcon] — the badge's own glyph, one per shape of achievement rather than one per id.
  */
 object BadgeStrings {
     @StringRes
@@ -61,5 +65,22 @@ object BadgeStrings {
             BadgeFamily.STREAK -> R.string.badge_family_streak
             BadgeFamily.CONSTANCY -> R.string.badge_family_constancy
             BadgeFamily.MOMENT -> R.string.badge_family_moment
+        }
+
+    /**
+     * The glyph for [def]: one per family for the STREAK badges (flame), and one per unlock
+     * shape for CONSTANCY/MOMENT — a perfect-day count is a check, a perfect week/month is a
+     * calendar-check, and each MOMENT badge gets its own icon (docs/06-badges.md §2).
+     */
+    fun badgeIcon(def: BadgeDef): ImageVector =
+        when {
+            def.family == BadgeFamily.STREAK -> BitoIcons.Flame
+            def.id.startsWith("perfect-day") -> BitoIcons.CircleCheck
+            def.id == "perfect-week" || def.id == "perfect-month" -> BitoIcons.CalendarCheck
+            def.id == "first-habit" -> BitoIcons.Footprints
+            def.id == "first-week" -> BitoIcons.CalendarDays
+            def.id == "resurrection" -> BitoIcons.Sprout
+            def.id == "first-freezer" -> BitoIcons.Snowflake
+            else -> throw IllegalArgumentException("Unknown badge id: ${def.id}")
         }
 }

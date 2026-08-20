@@ -221,8 +221,7 @@ private fun StreaksAdvancedChip(
 
 /**
  * A new badge's chip, [StreakChip][com.alvarotc.bito.ui.components.StreakChip]-styled on
- * HojaTinte. Ruling R1 (T10): the badge's own icon ([BitoIcons.Sparkle] stand-in) lands in T14
- * once `badgeIcon(def)` exists — [BadgeStrings.badgeNameRes] already resolves the label.
+ * HojaTinte: the badge's own icon ([BadgeStrings.badgeIcon]) and name ([BadgeStrings.badgeNameRes]).
  */
 @Composable
 private fun NewBadgeChip(
@@ -238,7 +237,7 @@ private fun NewBadgeChip(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Icon(BitoIcons.Sparkle, contentDescription = null, tint = Hoja, modifier = Modifier.size(14.dp))
+        Icon(BadgeStrings.badgeIcon(def), contentDescription = null, tint = Hoja, modifier = Modifier.size(14.dp))
         Text(
             stringResource(BadgeStrings.badgeNameRes(def.id)),
             style = MaterialTheme.typography.labelMedium,

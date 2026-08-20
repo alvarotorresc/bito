@@ -1,0 +1,156 @@
+package com.alvarotc.bito.ui.stats
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.alvarotc.bito.R
+import com.alvarotc.bito.ui.components.BitoCard
+import com.alvarotc.bito.ui.components.GhostIconButton
+import com.alvarotc.bito.ui.components.formatMillisMedium
+import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.theme.Brasa
+import com.alvarotc.bito.ui.theme.Hoja
+import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Tinta
+import com.alvarotc.bito.ui.theme.TintaSuave
+
+/** The Badges secondary screen: every catalog badge, grouped by family, unlocked or not. */
+@Composable
+fun BadgesScreen(
+    viewModel: BadgesViewModel,
+    onBack: () -> Unit,
+) {
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    Scaffold(containerColor = Papel) { padding ->
+        Column(
+            Modifier
+                .padding(padding)
+                .verticalScroll(rememberScrollState())
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp),
+        ) {
+            BadgesHeader(onBack)
+            BadgesHero(state.unlocked, state.total)
+            state.groups.forEach { group -> BadgeFamilySection(group) }
+        }
+    }
+}
+
+@Composable
+private fun BadgesHeader(onBack: () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        GhostIconButton(BitoIcons.ChevronLeft, contentDescription = stringResource(R.string.back), onClick = onBack)
+        Text(
+            stringResource(R.string.badges_title),
+            style = MaterialTheme.typography.headlineLarge,
+            color = Tinta,
+            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
+        )
+    }
+}
+
+/** Trophy, then the dato grande (badges unlocked so far), then the Logros caption — mirrors [RecordsScreen]'s hero scale. */
+@Composable
+private fun BadgesHero(
+    unlocked: Int,
+    total: Int,
+) {
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(BitoIcons.Trophy, contentDescription = null, tint = Brasa, modifier = Modifier.size(28.dp))
+            Spacer(Modifier.height(8.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    "$unlocked",
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
+                    color = Brasa,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    stringResource(R.string.stats_badges_count, unlocked, total),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.stats_badges_title), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        }
+    }
+}
+
+/** One family's slice: its label outside the card (rule: bare titles sit above their card, per [StatsScreen]'s StreaksSection), then a card of rows. */
+@Composable
+private fun BadgeFamilySection(group: BadgeGroupUi) {
+    Column {
+        Text(
+            stringResource(BadgeStrings.badgeFamilyRes(group.family)),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp),
+            color = TintaSuave,
+        )
+        Spacer(Modifier.height(12.dp))
+        BitoCard(modifier = Modifier.fillMaxWidth()) {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                group.badges.forEach { badge -> BadgeListRow(badge) }
+            }
+        }
+    }
+}
+
+/** Icon + name + caption (unlock date, or how to earn it); locked rows dim to 0.6 alpha with a trailing lock. */
+@Composable
+private fun BadgeListRow(badge: BadgeUi) {
+    val unlockedAt = badge.unlockedAtMillis
+    val unlocked = unlockedAt != null
+    Row(
+        Modifier.fillMaxWidth().alpha(if (unlocked) 1f else 0.6f).testTag("badge-${badge.def.id}"),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            BadgeStrings.badgeIcon(badge.def),
+            contentDescription = null,
+            tint = if (unlocked) Hoja else TintaSuave,
+            modifier = Modifier.size(24.dp),
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(BadgeStrings.badgeNameRes(badge.def.id)),
+                style = MaterialTheme.typography.bodyLarge,
+                color = Tinta,
+            )
+            val caption =
+                if (unlockedAt != null) {
+                    stringResource(R.string.badge_unlocked_on, formatMillisMedium(unlockedAt))
+                } else {
+                    stringResource(R.string.badge_how_prefix, stringResource(BadgeStrings.badgeHowRes(badge.def.id)))
+                }
+            Text(caption, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        }
+        if (!unlocked) {
+            Icon(BitoIcons.Lock, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(16.dp))
+        }
+    }
+}

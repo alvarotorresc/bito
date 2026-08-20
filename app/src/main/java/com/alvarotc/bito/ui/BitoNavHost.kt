@@ -30,6 +30,8 @@ import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
+import com.alvarotc.bito.ui.stats.BadgesScreen
+import com.alvarotc.bito.ui.stats.BadgesViewModel
 import com.alvarotc.bito.ui.stats.NumbersScreen
 import com.alvarotc.bito.ui.stats.NumbersViewModel
 import com.alvarotc.bito.ui.stats.RecordsScreen
@@ -144,6 +146,7 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = StatsViewModel.factory(container)),
                     onOpenRecords = { nav.navigate("records") },
                     onOpenNumbers = { nav.navigate("numbers") },
+                    onOpenBadges = { nav.navigate("badges") },
                 )
             }
             composable("records") {
@@ -155,6 +158,14 @@ fun BitoNavHost(container: AppContainer) {
             composable("numbers") {
                 NumbersScreen(
                     viewModel = viewModel(factory = NumbersViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
+                )
+            }
+            // Secondary screen, not in the bottom-bar route set above and not deep-link
+            // allowlisted (NavRequests) — reached only from Stats' Logros section.
+            composable("badges") {
+                BadgesScreen(
+                    viewModel = viewModel(factory = BadgesViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
                 )
             }
