@@ -71,7 +71,12 @@ private fun BadgesHeader(onBack: () -> Unit) {
     }
 }
 
-/** Trophy, then the dato grande (badges unlocked so far), then the Logros caption — mirrors [RecordsScreen]'s hero scale. */
+/**
+ * Trophy, then the dato grande, then the Logros caption — mirrors [RecordsScreen]'s hero scale.
+ * The dato grande is the whole `stats_badges_count` string ("N of M"), not just [unlocked] alone
+ * — with no single-arg "of M" resource in strings_badges.xml, showing [unlocked] again beside it
+ * would render the digit twice adjacently ("12 12 of 14").
+ */
 @Composable
 private fun BadgesHero(
     unlocked: Int,
@@ -81,20 +86,11 @@ private fun BadgesHero(
         Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(BitoIcons.Trophy, contentDescription = null, tint = Brasa, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(8.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    "$unlocked",
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
-                    color = Brasa,
-                )
-                Spacer(Modifier.width(6.dp))
-                Text(
-                    stringResource(R.string.stats_badges_count, unlocked, total),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TintaSuave,
-                    modifier = Modifier.padding(bottom = 8.dp),
-                )
-            }
+            Text(
+                stringResource(R.string.stats_badges_count, unlocked, total),
+                style = MaterialTheme.typography.displayLarge.copy(fontSize = 40.sp),
+                color = Brasa,
+            )
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.stats_badges_title), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         }
