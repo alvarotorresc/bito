@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
@@ -236,8 +237,23 @@ class ReviewViewModelTest {
             advanceUntilIdle()
             assertEquals(today, settingsRepo.settings.first().perfectDayCelebratedDay)
 
+            // No badges shown: markBadgesSeen falls back to the wall clock.
             vm.markBadgesSeen()
             advanceUntilIdle()
             assertEquals(fixedNow, settingsRepo.settings.first().badgesSeenUntilMillis)
+        }
+
+    // Was vacuous under the old "always now()" behavior too — seeding badges whose unlock
+    // stamps are both BELOW fixedNow proves the marker takes the latest unlock, not the clock.
+    @Test
+    fun `markBadgesSeen records the latest shown unlock, not the wall clock`() =
+        runTest {
+            db.badgeDao().insert(BadgeEntity(badgeId = "first-habit", unlockedAtMillis = fixedNow - 20_000))
+            db.badgeDao().insert(BadgeEntity(badgeId = "streak-7", unlockedAtMillis = fixedNow - 5_000))
+
+            vm.markBadgesSeen()
+            advanceUntilIdle()
+
+            assertEquals(fixedNow - 5_000, settingsRepo.settings.first().badgesSeenUntilMillis)
         }
 }

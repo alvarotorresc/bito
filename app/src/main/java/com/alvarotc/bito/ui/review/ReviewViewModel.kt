@@ -123,7 +123,21 @@ class ReviewViewModel(
 
     fun markCelebrated() = write { today, _ -> settings.update { it.copy(perfectDayCelebratedDay = today) } }
 
-    fun markBadgesSeen() = write { _, nowMillis -> settings.update { it.copy(badgesSeenUntilMillis = nowMillis) } }
+    /**
+     * Marks every badge currently shown as seen. The marker is the latest of those badges' own
+     * unlock stamps, not the wall clock — same rule as
+     * [com.alvarotc.bito.ui.celebration.CelebrationsViewModel.dismissBadges]. Falls back to
+     * [nowMillis] only when there is nothing shown to unlock a stamp from.
+     */
+    fun markBadgesSeen() =
+        write { _, nowMillis ->
+            val current = settings.settings.first().badgesSeenUntilMillis
+            val latestShownUnlock =
+                rewards.observeBadges().first()
+                    .filter { it.unlockedAtMillis > current }
+                    .maxOfOrNull { it.unlockedAtMillis }
+            settings.update { it.copy(badgesSeenUntilMillis = maxOf(current, latestShownUnlock ?: nowMillis)) }
+        }
 
     // The screen's LaunchedEffect(state.todaySealed, state.perfectToday) re-runs on every
     // recomposition that keeps both keys true (e.g. an activity recreation with no configChanges

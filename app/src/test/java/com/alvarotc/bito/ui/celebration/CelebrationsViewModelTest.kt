@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
@@ -122,7 +123,7 @@ class CelebrationsViewModelTest {
         }
 
     @Test
-    fun `dismissBadges writes now as seen`() =
+    fun `dismissBadges falls back to now when nothing is shown`() =
         runTest {
             state()
 
@@ -130,6 +131,21 @@ class CelebrationsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(fixedNow, settingsRepo.settings.first().badgesSeenUntilMillis)
+        }
+
+    // Was vacuous under the old "always now()" behavior too — seeding badges whose unlock
+    // stamps are both BELOW fixedNow proves the marker takes the latest unlock, not the clock.
+    @Test
+    fun `dismissBadges records the latest shown unlock, not the wall clock`() =
+        runTest {
+            db.badgeDao().insert(BadgeEntity(badgeId = "first-habit", unlockedAtMillis = fixedNow - 20_000))
+            db.badgeDao().insert(BadgeEntity(badgeId = "streak-7", unlockedAtMillis = fixedNow - 5_000))
+            state()
+
+            vm.dismissBadges()
+            advanceUntilIdle()
+
+            assertEquals(fixedNow - 5_000, settingsRepo.settings.first().badgesSeenUntilMillis)
         }
 
     // R7: CelebrationsViewModel outlives the composition (survives rotation), so BitoNavHost's

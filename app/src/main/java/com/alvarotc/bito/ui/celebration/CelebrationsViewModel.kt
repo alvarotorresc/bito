@@ -33,7 +33,7 @@ import java.time.ZoneId
 class CelebrationsViewModel(
     domainState: DomainStateRepository,
     private val settings: SettingsRepository,
-    rewards: RewardsRepository,
+    private val rewards: RewardsRepository,
     private val habiSounds: HabiSounds,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
@@ -62,10 +62,21 @@ class CelebrationsViewModel(
         }
     }
 
-    /** Marks every badge unlocked up to now as seen so the badges sheet does not reappear. */
+    /**
+     * Marks every badge currently shown as seen so the badges sheet does not reappear. The
+     * marker is the latest of those badges' own unlock stamps, not the wall clock — earning one
+     * days after actually unlocking it (e.g. reopening the app later) must not swallow badges
+     * that unlock in between. Falls back to [now] only when there is nothing shown to unlock a
+     * stamp from.
+     */
     fun dismissBadges() {
         viewModelScope.launch {
-            settings.update { it.copy(badgesSeenUntilMillis = now()) }
+            val current = settings.settings.first().badgesSeenUntilMillis
+            val latestShownUnlock =
+                rewards.observeBadges().first()
+                    .filter { it.unlockedAtMillis > current }
+                    .maxOfOrNull { it.unlockedAtMillis }
+            settings.update { it.copy(badgesSeenUntilMillis = maxOf(current, latestShownUnlock ?: now())) }
         }
     }
 
