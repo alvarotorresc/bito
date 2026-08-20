@@ -10,11 +10,21 @@ import kotlinx.coroutines.flow.asStateFlow
  * to it, then [consume]s it so the request only ever fires once.
  */
 object NavRequests {
+    /**
+     * Routes an [android.content.Intent] extra is allowed to open. `MainActivity` is exported
+     * (it's the LAUNCHER activity), so its extras are untrusted input from any app on the
+     * device: without this allowlist, an arbitrary string would reach
+     * `NavController.navigate(String)` in [BitoNavHost] and crash Bito with
+     * `IllegalArgumentException` for any route that isn't a real destination.
+     */
+    private val deepLinkable = setOf("review")
+
     private val _pending = MutableStateFlow<String?>(null)
     val pending: StateFlow<String?> = _pending.asStateFlow()
 
+    /** No-ops for anything outside [deepLinkable] instead of forwarding it to the NavHost. */
     fun open(route: String) {
-        _pending.value = route
+        if (route in deepLinkable) _pending.value = route
     }
 
     fun consume() {

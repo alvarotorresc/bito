@@ -27,6 +27,9 @@ class MainActivity : ComponentActivity() {
     // the foreground or the back stack, so this is what actually delivers the route extra then.
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // Standard singleTop idiom: without this, getIntent() would keep returning the stale
+        // launch Intent instead of this one for as long as the activity stays alive.
+        setIntent(intent)
         handleIntent(intent)
     }
 
@@ -42,8 +45,13 @@ class MainActivity : ComponentActivity() {
 
     /**
      * Bridges a notification tap's [Notifier.EXTRA_OPEN_ROUTE] extra to [NavRequests]. Clears
-     * the extra afterwards so a later recreation of this same Intent (e.g. a rotation) never
-     * replays the same navigation.
+     * the extra afterwards: it only matters for the `onCreate`/rotation path — `getIntent()`
+     * keeps returning this same stored Intent across an activity recreation (e.g. a rotation),
+     * so without this, `onCreate` would re-read the already-consumed extra and replay the
+     * navigation. `onNewIntent`'s own delivery doesn't depend on it (each tap hands this a fresh
+     * Intent that's already been forwarded above); it matters there too only because
+     * [onNewIntent] now calls `setIntent` first, folding that same Intent into the activity's
+     * stored one for any recreation that happens afterward.
      */
     private fun handleIntent(intent: Intent?) {
         intent?.getStringExtra(Notifier.EXTRA_OPEN_ROUTE)?.let(NavRequests::open)
