@@ -26,7 +26,6 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
-import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -98,7 +97,6 @@ class TodayScreenTest {
         val settings = SettingsRepository(settingsStore("today-screen"))
         val rewards = RewardsRepository(db)
         val reconciler = PointsReconciler(domainState, rewards)
-        val habiSounds = HabiSounds(context, settings, dispatcher = dispatcher)
 
         // Both habits must be created today: an older createdOnDay (the fixture default,
         // DAY_ZERO) would leave hundreds of pending seal days and the BatchSealSheet would
@@ -120,7 +118,6 @@ class TodayScreenTest {
                 settings,
                 reconciler,
                 rewards,
-                habiSounds,
                 now = { fixedNow },
                 zone = { utc },
                 defaultDispatcher = dispatcher,

@@ -16,7 +16,6 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.LogicalDay
-import com.alvarotc.bito.ui.habi.HabiSounds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,10 +38,6 @@ class TodayViewModel(
     private val settings: SettingsRepository,
     private val reconciler: PointsReconciler,
     private val rewards: RewardsRepository,
-    // Unused since T12 moved the ring's completion cue to the global celebration sheets
-    // (CelebrationsViewModel.cue()) — kept in the signature rather than touched here, out of
-    // this task's scoped files (TodayViewModel.kt:140-144 only).
-    private val habiSounds: HabiSounds,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
@@ -151,7 +146,6 @@ class TodayViewModel(
                         container.settings,
                         container.reconciler,
                         container.rewards,
-                        container.habiSounds,
                     )
                 }
             }
