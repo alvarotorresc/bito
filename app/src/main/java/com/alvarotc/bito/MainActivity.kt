@@ -15,7 +15,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        handleIntent(intent)
+        // Process death redelivers the ORIGINAL launch Intent (a fresh parcel, extra intact —
+        // removeExtra below never touched it) alongside a non-null savedInstanceState, so without
+        // this guard a resurrected activity would replay whatever route the user tapped before
+        // the process died. onNewIntent covers every fresh tap on its own, independent of this.
+        if (savedInstanceState == null) handleIntent(intent)
         setContent {
             BitoTheme {
                 BitoNavHost((application as BitoApp).container)
@@ -44,14 +48,13 @@ class MainActivity : ComponentActivity() {
     }
 
     /**
-     * Bridges a notification tap's [Notifier.EXTRA_OPEN_ROUTE] extra to [NavRequests]. Clears
-     * the extra afterwards: it only matters for the `onCreate`/rotation path — `getIntent()`
-     * keeps returning this same stored Intent across an activity recreation (e.g. a rotation),
-     * so without this, `onCreate` would re-read the already-consumed extra and replay the
-     * navigation. `onNewIntent`'s own delivery doesn't depend on it (each tap hands this a fresh
-     * Intent that's already been forwarded above); it matters there too only because
-     * [onNewIntent] now calls `setIntent` first, folding that same Intent into the activity's
-     * stored one for any recreation that happens afterward.
+     * Bridges a notification tap's [Notifier.EXTRA_OPEN_ROUTE] extra to [NavRequests]. Clears the
+     * extra afterwards as defense in depth so the same consumed value is never read twice off the
+     * same Intent object — [onCreate]'s `savedInstanceState == null` guard is what actually stops
+     * a recreated activity (rotation or process death alike) from replaying it. `onNewIntent`'s
+     * own delivery doesn't depend on the clear (each tap hands this a fresh Intent that's already
+     * been forwarded above); it still matters there because [onNewIntent] calls `setIntent` first,
+     * folding that same Intent into the activity's stored one.
      */
     private fun handleIntent(intent: Intent?) {
         intent?.getStringExtra(Notifier.EXTRA_OPEN_ROUTE)?.let(NavRequests::open)
