@@ -28,7 +28,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostIconButton
-import com.alvarotc.bito.ui.components.formatMillisMedium
+import com.alvarotc.bito.ui.components.formatDayMedium
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
@@ -72,10 +72,10 @@ private fun BadgesHeader(onBack: () -> Unit) {
 }
 
 /**
- * Trophy, then the dato grande, then the Logros caption — mirrors [RecordsScreen]'s hero scale.
- * The dato grande is the whole `stats_badges_count` string ("N of M"), not just [unlocked] alone
- * — with no single-arg "of M" resource in strings_badges.xml, showing [unlocked] again beside it
- * would render the digit twice adjacently ("12 12 of 14").
+ * Trophy, then the dato grande, then the Logros caption — same shape as [RecordsScreen]'s
+ * `BestRecordHero`: the unlocked count on its own at `displayLarge` 56dp, `badge_of_total`
+ * riding its baseline as the unit (mirrors [periodUnitRes] there), then [stats_badges_title] as
+ * the closing caption below both.
  */
 @Composable
 private fun BadgesHero(
@@ -86,11 +86,20 @@ private fun BadgesHero(
         Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(BitoIcons.Trophy, contentDescription = null, tint = Brasa, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(8.dp))
-            Text(
-                stringResource(R.string.stats_badges_count, unlocked, total),
-                style = MaterialTheme.typography.displayLarge.copy(fontSize = 40.sp),
-                color = Brasa,
-            )
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    "$unlocked",
+                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 56.sp),
+                    color = Brasa,
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    stringResource(R.string.badge_of_total, total),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+            }
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.stats_badges_title), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         }
@@ -115,11 +124,15 @@ private fun BadgeFamilySection(group: BadgeGroupUi) {
     }
 }
 
-/** Icon + name + caption (unlock date, or how to earn it); locked rows dim to 0.6 alpha with a trailing lock. */
+/**
+ * Icon + name + caption (unlock date, or how to earn it); locked rows dim to 0.6 alpha with a
+ * trailing lock. [BadgeRowUi.unlockedDay] is already a [com.alvarotc.bito.domain.model.LogicalDay]
+ * resolved through the day-cutoff model by [buildBadgesUiState] — this only formats it.
+ */
 @Composable
-private fun BadgeListRow(badge: BadgeUi) {
-    val unlockedAt = badge.unlockedAtMillis
-    val unlocked = unlockedAt != null
+private fun BadgeListRow(badge: BadgeRowUi) {
+    val unlockedDay = badge.unlockedDay
+    val unlocked = unlockedDay != null
     Row(
         Modifier.fillMaxWidth().alpha(if (unlocked) 1f else 0.6f).testTag("badge-${badge.def.id}"),
         verticalAlignment = Alignment.CenterVertically,
@@ -138,8 +151,8 @@ private fun BadgeListRow(badge: BadgeUi) {
                 color = Tinta,
             )
             val caption =
-                if (unlockedAt != null) {
-                    stringResource(R.string.badge_unlocked_on, formatMillisMedium(unlockedAt))
+                if (unlockedDay != null) {
+                    stringResource(R.string.badge_unlocked_on, formatDayMedium(unlockedDay))
                 } else {
                     stringResource(R.string.badge_how_prefix, stringResource(BadgeStrings.badgeHowRes(badge.def.id)))
                 }
