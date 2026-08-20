@@ -20,6 +20,7 @@ import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
@@ -96,7 +97,8 @@ class StatsScreenTest {
     ) {
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore())
-        val vm = StatsViewModel(domainState, settings, now = { fixedNow }, zone = { utc })
+        val rewards = RewardsRepository(db)
+        val vm = StatsViewModel(domainState, settings, rewards, now = { fixedNow }, zone = { utc })
         compose.setContent {
             BitoTheme {
                 StatsScreen(viewModel = vm, onOpenRecords = onOpenRecords, onOpenNumbers = onOpenNumbers)

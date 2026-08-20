@@ -9,13 +9,13 @@ import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.WindowStats
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
-import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.today.CardKind
 import java.time.YearMonth
 
@@ -42,13 +42,17 @@ data class DetailUiState(
     // sheet is opened and dismissed without the user noticing the field was empty.
     val dayValues: Map<LogicalDay, Int>,
     val freezersOwned: Int,
-    val freezerPrice: Int,
-    val balance: Int,
     // Not in the brief's literal field list, added deliberately: the screen needs "today" both to
     // disable the heatmap's next-month chevron once `month` reaches it and to log the abstinence
     // pill's relapse on the right day when a past month is on screen — the same reason
     // ui.today.TodayUiState already carries its own `today`.
     val today: LogicalDay,
+    // Both source from Settings, threaded through so the freezers ⓘ sheet can speak in the
+    // user's chosen personality and address them by name (HabiVoice.freezerInfoRes) — the same
+    // sheet the Habi screen's store opens (StoreSection.kt's FreezerCard), so both call sites
+    // need these two fields even though most of DetailUiState has nothing to do with Habi.
+    val personality: Personality = Personality.NEUTRA,
+    val userName: String = "",
     val loading: Boolean = false,
 )
 
@@ -62,9 +66,10 @@ fun buildDetailUiState(
     habitId: String,
     month: YearMonth,
     today: LogicalDay,
+    personality: Personality = Personality.NEUTRA,
+    userName: String = "",
 ): DetailUiState? {
     val habit = state.habits.find { it.id == habitId } ?: return null
-    val economy = EconomyConfig()
     val streaks = Streaks.streaksOf(state, habit, today)
     val openPause = state.pauseIntervals.filter { it.habitId == habitId && it.endDay == null }.maxByOrNull { it.startDay }
     // Freezers only ever protect DAY-period habits (FreezerEngine.eligibilityOf): the global
@@ -93,9 +98,9 @@ fun buildDetailUiState(
         heatmap = Heatmap.monthOf(state, habit, month, today),
         dayValues = dayValues,
         freezersOwned = freezersOwned,
-        freezerPrice = economy.freezerPrice,
-        balance = PointsEngine.balance(state.pointsLedger),
         today = today,
+        personality = personality,
+        userName = userName,
         loading = false,
     )
 }

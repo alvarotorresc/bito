@@ -37,6 +37,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -57,6 +58,8 @@ import com.alvarotc.bito.ui.components.DotHeatmap
 import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
+import com.alvarotc.bito.ui.components.formatDayMedium
+import com.alvarotc.bito.ui.components.formatMonthLabel
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
@@ -70,8 +73,6 @@ import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.RelapseSheet
 import java.time.LocalDate
 import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 /** [SegmentedPills] order for the compliance windows, matching [DetailUiState.windows]' [7, 30, 365] order. */
 private val WINDOW_LABEL_RES = listOf(R.string.window_7, R.string.window_30, R.string.window_year)
@@ -82,6 +83,7 @@ fun DetailScreen(
     viewModel: DetailViewModel,
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
+    onOpenHabi: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // `uiState` seeds `null` before its first real emission AND when the habit genuinely does not
@@ -103,7 +105,6 @@ fun DetailScreen(
     val current = state ?: return
 
     var daySheetFor by remember { mutableStateOf<LogicalDay?>(null) }
-    var showFreezerSheet by remember { mutableStateOf(false) }
     var showFreezerInfoSheet by remember { mutableStateOf(false) }
     var showPauseSheet by remember { mutableStateOf(false) }
     var showArchiveSheet by remember { mutableStateOf(false) }
@@ -128,7 +129,7 @@ fun DetailScreen(
                 showFreezerPill = current.period == Period.DAY && !archived,
                 freezersOwned = current.freezersOwned,
                 onRelapseClick = { relapseSheetOpen = true },
-                onFreezerClick = { showFreezerSheet = true },
+                onFreezerClick = onOpenHabi,
                 onFreezerInfoClick = { showFreezerInfoSheet = true },
             )
             HeatmapSection(
@@ -173,17 +174,12 @@ fun DetailScreen(
             onDismiss = { daySheetFor = null },
         )
     }
-    if (showFreezerSheet) {
-        FreezerSheet(
-            owned = current.freezersOwned,
-            price = current.freezerPrice,
-            balance = current.balance,
-            onBuy = viewModel::buyFreezer,
-            onDismiss = { showFreezerSheet = false },
-        )
-    }
     if (showFreezerInfoSheet) {
-        FreezerInfoSheet(onDismiss = { showFreezerInfoSheet = false })
+        FreezerInfoSheet(
+            personality = current.personality,
+            userName = current.userName,
+            onDismiss = { showFreezerInfoSheet = false },
+        )
     }
     if (showPauseSheet) {
         PauseSheet(onPause = viewModel::pause, onDismiss = { showPauseSheet = false })
@@ -239,11 +235,12 @@ private fun PlainIconButton(
     modifier: Modifier = Modifier,
     color: Color = Tinta,
     iconSize: Dp = 24.dp,
+    enabled: Boolean = true,
 ) = Box(
     modifier
         .size(44.dp)
         .clip(CircleShape)
-        .clickable(onClick = onClick),
+        .clickable(enabled = enabled, onClick = onClick),
     contentAlignment = Alignment.Center,
 ) {
     Icon(icon, contentDescription = contentDescription, tint = color, modifier = Modifier.size(iconSize))
@@ -385,7 +382,7 @@ private fun RelapsePill(
  * The freezer pill: architect override keeps the old chip's hoja-tinte fill / hoja+tinta content
  * against the mockup's plain outline, resized into the mockup's 56dp pill. The count renders bold
  * and larger than the trailing word — [buildAnnotatedString] splits the localized "%1$d word"
- * string on its first space rather than hardcoding word order, since [R.string.freezer_chip_label]
+ * string on its first space rather than hardcoding word order, since [R.plurals.freezer_chip_label]
  * already puts the digits first in both shipped locales.
  */
 @Composable
@@ -406,7 +403,7 @@ private fun FreezerPill(
     ) {
         Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(18.dp))
         Spacer(Modifier.width(8.dp))
-        val label = stringResource(R.string.freezer_chip_label, owned)
+        val label = pluralStringResource(R.plurals.freezer_chip_label, owned, owned)
         val splitAt = label.indexOf(' ').let { if (it == -1) label.length else it }
         Text(
             buildAnnotatedString {
@@ -441,13 +438,7 @@ private fun HeatmapSection(
     // at both w393dp and w411dp without touching the screen's 20dp margins.
     // Lowercase per the mockup ("agosto"); the year only joins in when it isn't the current one
     // ("agosto 2025"), same as a plain "MMMM" vs "MMMM yyyy" pattern switch.
-    val monthLabel =
-        remember(current.month, currentRealMonth) {
-            val pattern = if (current.month.year != currentRealMonth.year) "MMMM yyyy" else "MMMM"
-            current.month.atDay(1)
-                .format(DateTimeFormatter.ofPattern(pattern, Locale.getDefault()))
-                .lowercase(Locale.getDefault())
-        }
+    val monthLabel = remember(current.month, currentRealMonth) { formatMonthLabel(current.month, currentRealMonth) }
     BitoCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
         Column(Modifier.padding(vertical = 20.dp)) {
             Row(
@@ -470,9 +461,10 @@ private fun HeatmapSection(
                 PlainIconButton(
                     BitoIcons.ChevronRight,
                     contentDescription = stringResource(R.string.next_month),
-                    onClick = { if (!nextDisabled) onNextMonth() },
+                    onClick = onNextMonth,
                     color = if (nextDisabled) TintaSuave.copy(alpha = 0.4f) else TintaSuave,
                     iconSize = 20.dp,
+                    enabled = !nextDisabled,
                 )
             }
             Spacer(Modifier.height(8.dp))
@@ -543,10 +535,7 @@ private fun FooterActions(
     }
     Column {
         if (status == HabitStatus.PAUSED && pausedSinceDay != null) {
-            val since =
-                remember(pausedSinceDay) {
-                    LocalDate.ofEpochDay(pausedSinceDay.toLong()).format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
-                }
+            val since = remember(pausedSinceDay) { formatDayMedium(pausedSinceDay) }
             Text(stringResource(R.string.paused_since, since), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             Spacer(Modifier.height(8.dp))
         }

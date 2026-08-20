@@ -10,6 +10,7 @@ import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.ui.habi.HabiSounds
 
 /** Hand-built DI (tech doc §1.4: no framework — constructors). */
 class AppContainer(context: Context) {
@@ -24,6 +25,7 @@ class AppContainer(context: Context) {
                 context.filesDir.resolve("settings.preferences_pb")
             },
         )
+    val habiSounds = HabiSounds(context, settings)
     val backup = BackupRepository(database, settings, BuildConfig.VERSION_NAME)
     val reconciler = PointsReconciler(domainState, rewards)
 }

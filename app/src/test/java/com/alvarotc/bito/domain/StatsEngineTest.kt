@@ -87,6 +87,37 @@ class StatsEngineTest {
     }
 
     @Test
+    fun `week percent agrees with rows when a habit is archived mid-week`() {
+        // Archived Wednesday: only Monday and Tuesday stay requirable for this habit this week.
+        // Fulfilled Monday, left Tuesday unfulfilled — the row must show 1/2, not drop out
+        // of `rows` just because the habit is no longer ACTIVE (it used to: rows filtered by
+        // status while thisWeekPercent counted every DAY habit regardless of status).
+        val archived = RealHabits.makeBed.archivedOn(TODAY - 2)
+        // A second, still-ACTIVE habit fulfilled Monday..Friday, so the aggregate percent has to
+        // combine both habits' requirable days, not just echo the archived habit's own row.
+        val active = RealHabits.meditate
+        val state =
+            domainState(
+                habits = listOf(archived, active),
+                entries = entriesOn(archived, listOf(THIS_MONDAY)) + entriesOn(active, (THIS_MONDAY..TODAY).toList()),
+            )
+
+        val summary = StatsEngine.weekSummary(state, TODAY)
+
+        assertEquals(listOf(archived.id, active.id), summary.rows.map { it.habitId })
+        val archivedRow = summary.rows.single { it.habitId == archived.id }
+        assertEquals(1, archivedRow.done) // Monday only; Tuesday unfulfilled, Wed onward not alive
+        assertEquals(2, archivedRow.target) // Mon + Tue, the only requirable days before Wednesday's archive
+        val activeRow = summary.rows.single { it.habitId == active.id }
+        assertEquals(5, activeRow.done) // Mon..Fri fulfilled
+        assertEquals(7, activeRow.target) // alive and unpaused the whole week
+        // 1 (archived, Mon) + 5 (active, Mon..Fri) fulfilled over 2 (archived, Mon+Tue) + 5
+        // (active, Mon..Fri; Sat/Sun still pending) judged = 6/7 -> 85%, the same requirable
+        // days the two rows above are built from.
+        assertEquals(85, summary.thisWeekPercent)
+    }
+
+    @Test
     fun `active streaks lists only active habits with current streak, longest first`() {
         val onARun = RealHabits.makeBed
         val justStarted = RealHabits.meditate

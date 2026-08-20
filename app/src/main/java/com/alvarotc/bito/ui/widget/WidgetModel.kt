@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.widget
 
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.TodayUiState
 
@@ -13,8 +14,14 @@ data class WidgetItem(
     val tapLogs: Boolean,
 )
 
-data class WidgetModel(val done: Int, val total: Int, val items: List<WidgetItem>)
+/** [spec] mirrors Habi's live mood/personality/equipped look (T15) — a mini avatar in the widget header. */
+data class WidgetModel(val done: Int, val total: Int, val items: List<WidgetItem>, val spec: HabiSpec)
 
+/**
+ * [state]'s own [TodayUiState.spec] already carries mood x personality x equipped (T14's
+ * `buildTodayUiState`, fed by the same domain state/settings/owned items the widget reads) — no
+ * need to re-derive it here, just thread it through unchanged.
+ */
 fun buildWidgetModel(
     state: TodayUiState,
     selectedIds: Set<String>?,
@@ -32,5 +39,5 @@ fun buildWidgetModel(
                 tapLogs = it.kind == CardKind.CHECK || it.kind == CardKind.COUNTER,
             )
         }
-    return WidgetModel(done = visible.count { it.doneToday }, total = visible.size, items = items)
+    return WidgetModel(done = visible.count { it.doneToday }, total = visible.size, items = items, spec = state.spec)
 }

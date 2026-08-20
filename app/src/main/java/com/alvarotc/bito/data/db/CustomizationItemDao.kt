@@ -1,14 +1,21 @@
 package com.alvarotc.bito.data.db
 
 import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Upsert
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface CustomizationItemDao {
     @Upsert
     suspend fun upsert(item: CustomizationItemEntity)
+
+    /** Achievement grants: existing rows (and their equipped flag) are never touched. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(items: List<CustomizationItemEntity>)
 
     @Query("SELECT * FROM customization_items WHERE itemId = :itemId")
     suspend fun byId(itemId: String): CustomizationItemEntity?

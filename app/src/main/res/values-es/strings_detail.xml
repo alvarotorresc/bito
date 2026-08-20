@@ -8,7 +8,13 @@
     <string name="unit_months">meses</string>
     <string name="record_chip">Récord: %1$d</string>
 
-    <string name="freezer_chip_label">%1$d congeladores</string>
+    <plurals name="freezer_chip_label">
+        <item quantity="one">%1$d congelador</item>
+        <!-- es CLDR's "many" only fires on huge round numbers (millions+); freezer counts never
+             reach that range, so this mirrors "other" — added to satisfy lint's completeness check. -->
+        <item quantity="many">%1$d congeladores</item>
+        <item quantity="other">%1$d congeladores</item>
+    </plurals>
 
     <string name="previous_month">Mes anterior</string>
     <string name="next_month">Mes siguiente</string>
@@ -39,7 +45,6 @@
 
     <string name="freezer_info_hint">Información de congeladores</string>
     <string name="freezer_info_sheet_title">Congeladores</string>
-    <string name="freezer_info_sheet_body">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Se compran con puntos y se usan desde el calendario, tocando el día que quieras proteger. 1 congelador = 1 hábito × 1 día.</string>
     <string name="got_it">Entendido</string>
 
     <string name="pause_sheet_title">¿Pausar este hábito?</string>

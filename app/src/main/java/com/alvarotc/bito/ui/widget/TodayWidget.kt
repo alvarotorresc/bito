@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.widget
 
 import android.content.Context
+import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -8,6 +9,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
@@ -39,6 +42,7 @@ import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.ui.habi.renderHabiBitmap
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
@@ -49,6 +53,9 @@ import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 
+/** Offscreen render size (px) for the header's mini Habi — Glance only paints bitmaps (tech doc §6.1). */
+private const val HABI_BITMAP_SIZE_PX = 96
+
 class TodayWidget : GlanceAppWidget() {
     override suspend fun provideGlance(
         context: Context,
@@ -58,11 +65,22 @@ class TodayWidget : GlanceAppWidget() {
         val prefs = container.settings.settings.first()
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
         val entities = container.habits.observeHabits().first()
-        val state = buildTodayUiState(container.domainState.snapshot(), entities.associate { it.id to it.sortOrder }, today)
+        val owned = container.rewards.observeOwnedItems().first()
+        val state =
+            buildTodayUiState(
+                container.domainState.snapshot(),
+                entities.associate { it.id to it.sortOrder },
+                today,
+                prefs.personality,
+                owned,
+            )
+        // Rendered once here, outside provideContent's composable scope, so a recomposition
+        // triggered by currentState<Preferences>() (the per-instance selection) never re-paints it.
+        val habiBitmap = renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX)
         provideContent {
             val widgetPrefs = currentState<Preferences>()
             val selected = widgetPrefs[TodayWidgetKeys.selectedIds]
-            WidgetContent(buildWidgetModel(state, selected))
+            WidgetContent(buildWidgetModel(state, selected), habiBitmap)
         }
     }
 }
@@ -76,7 +94,10 @@ object TodayWidgetKeys {
 }
 
 @Composable
-private fun WidgetContent(model: WidgetModel) {
+private fun WidgetContent(
+    model: WidgetModel,
+    habiBitmap: Bitmap,
+) {
     val context = LocalContext.current
     Column(
         modifier =
@@ -89,9 +110,14 @@ private fun WidgetContent(model: WidgetModel) {
             modifier = GlanceModifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+            Image(
+                provider = ImageProvider(habiBitmap),
+                contentDescription = null,
+                modifier = GlanceModifier.size(36.dp),
+            )
             Text(
                 text = context.getString(R.string.widget_title),
-                modifier = GlanceModifier.defaultWeight(),
+                modifier = GlanceModifier.defaultWeight().padding(start = 8.dp),
                 style = TextStyle(color = ColorProvider(Tinta), fontSize = 16.sp, fontWeight = FontWeight.Medium),
             )
             Text(

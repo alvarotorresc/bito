@@ -11,16 +11,22 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.LogicalDay
+import com.alvarotc.bito.ui.habi.HabiSound
+import com.alvarotc.bito.ui.habi.HabiSounds
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -33,13 +39,31 @@ class TodayViewModel(
     private val journal: JournalRepository,
     private val settings: SettingsRepository,
     private val reconciler: PointsReconciler,
+    private val rewards: RewardsRepository,
+    private val habiSounds: HabiSounds,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
+    // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
+    // must not race a runTest's virtual scheduler the way the real Dispatchers.Default would.
+    defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     val uiState: StateFlow<TodayUiState> =
-        combine(domainState.observe(), habits.observeHabits(), settings.settings) { state, entities, prefs ->
-            buildTodayUiState(state, entities.associate { it.id to it.sortOrder }, todayOf(prefs))
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
+        combine(
+            domainState.observe(),
+            habits.observeHabits(),
+            settings.settings,
+            rewards.observeOwnedItems(),
+        ) { state, entities, prefs, owned ->
+            buildTodayUiState(
+                state,
+                entities.associate { it.id to it.sortOrder },
+                todayOf(prefs),
+                prefs.personality,
+                owned,
+                prefs.userName,
+            )
+        }.flowOn(defaultDispatcher)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
     private val loggedEntry = MutableStateFlow<String?>(null)
     val lastLogged: StateFlow<String?> = loggedEntry.asStateFlow()
@@ -114,11 +138,24 @@ class TodayViewModel(
 
     fun sealPendingDays() = write { _, nowMillis -> uiState.value.pendingSealDays.forEach { journal.sealDay(it, nowMillis) } }
 
+    /** The ring's false→true completion transition (T16): Habi's celebration cue. Pure presentation — no [write]. */
+    fun celebrate() {
+        habiSounds.play(HabiSound.CELEBRATION)
+    }
+
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    TodayViewModel(container.domainState, container.habits, container.journal, container.settings, container.reconciler)
+                    TodayViewModel(
+                        container.domainState,
+                        container.habits,
+                        container.journal,
+                        container.settings,
+                        container.reconciler,
+                        container.rewards,
+                        container.habiSounds,
+                    )
                 }
             }
     }

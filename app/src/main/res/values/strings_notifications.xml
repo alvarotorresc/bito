@@ -2,8 +2,10 @@
 <resources>
     <string name="channel_reminders">Reminders</string>
     <string name="channel_review">Daily review</string>
-    <string name="notif_reminder_title_one">1 habit waiting</string>
-    <string name="notif_reminder_title_many">%1$d habits waiting</string>
+    <plurals name="notif_reminder_title">
+        <item quantity="one">%1$d habit waiting</item>
+        <item quantity="other">%1$d habits waiting</item>
+    </plurals>
     <string name="notif_reminder_single_title" translatable="false">%1$s</string>
     <string name="notif_reminder_single_body">Still open today</string>
     <string name="notif_action_done">Done</string>

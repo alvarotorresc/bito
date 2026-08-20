@@ -30,6 +30,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -42,6 +43,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -180,6 +183,7 @@ fun SettingsScreen(
                         }
                     },
                 )
+                HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
             }
             GeneralSectionCard(archivedCount = archivedHabits.size, onOpenArchived = onOpenArchived)
             BackupsCard(
@@ -342,6 +346,33 @@ private fun ReminderHourRow(
     }
 }
 
+/** One row, [Switch] pattern EXACT to habitform's `BinaryModeRow`: label + hint on the left, the toggle on the right. */
+@Composable
+private fun HabiSectionCard(
+    soundsEnabled: Boolean,
+    onSetHabiSounds: (Boolean) -> Unit,
+) {
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_habi_section), style = MaterialTheme.typography.titleMedium, color = Tinta)
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_habi_sounds), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+                Text(
+                    stringResource(R.string.settings_habi_sounds_hint),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                )
+            }
+            Switch(
+                checked = soundsEnabled,
+                onCheckedChange = onSetHabiSounds,
+                modifier = Modifier.testTag("habi-sounds-switch"),
+            )
+        }
+    }
+}
+
 /** Hidden outright when there is nothing archived — a group with a single, sometimes-absent row. */
 @Composable
 private fun GeneralSectionCard(
@@ -352,7 +383,7 @@ private fun GeneralSectionCard(
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.general_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
-        SettingsRow(label = stringResource(R.string.archived_habits_row, archivedCount), onClick = onOpenArchived)
+        SettingsRow(label = pluralStringResource(R.plurals.archived_habits_row, archivedCount, archivedCount), onClick = onOpenArchived)
     }
 }
 
@@ -463,8 +494,10 @@ private fun ImportPreviewSheet(
                 color = TintaSuave,
             )
             Spacer(Modifier.height(8.dp))
+            val habitsCount = pluralStringResource(R.plurals.import_preview_habits, preview.habits, preview.habits)
+            val entriesCount = pluralStringResource(R.plurals.import_preview_entries, preview.entries, preview.entries)
             Text(
-                stringResource(R.string.import_preview_counts, preview.habits, preview.entries),
+                stringResource(R.string.import_preview_counts, habitsCount, entriesCount),
                 style = MaterialTheme.typography.bodyLarge,
                 color = Tinta,
             )

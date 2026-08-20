@@ -524,4 +524,15 @@ class PointsEngineTest {
 
         assertEquals(0, PointsEngine.freezersOwned(state))
     }
+
+    @Test
+    fun `economy numbers are the ones settled in the economy session`() {
+        val economy = EconomyConfig()
+        assertEquals(1, economy.habitDonePoints)
+        assertEquals(3, economy.perfectDayPoints)
+        assertEquals(10, economy.perfectWeekPoints)
+        assertEquals(50, economy.perfectMonthPoints)
+        assertEquals(mapOf(7 to 5, 30 to 20, 100 to 75, 365 to 300), economy.streakMilestonePoints)
+        assertEquals(100, economy.freezerPrice)
+    }
 }

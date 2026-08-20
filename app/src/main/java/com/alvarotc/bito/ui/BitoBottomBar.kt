@@ -38,7 +38,7 @@ import com.alvarotc.bito.ui.theme.TintaSuave
 
 /**
  * Lives above the NavHost (in the shared Scaffold) so it survives route changes.
- * Visual order: Hoy · Stats · «+» · Ajustes (M6 slots Habi between «+» and Ajustes).
+ * Visual order: Hoy · Stats · «+» · Habi · Ajustes.
  */
 @Composable
 fun BitoBottomBar(
@@ -46,6 +46,7 @@ fun BitoBottomBar(
     onToday: () -> Unit,
     onStats: () -> Unit,
     onCreate: () -> Unit,
+    onHabi: () -> Unit,
     onSettings: () -> Unit,
 ) {
     Box(
@@ -70,6 +71,7 @@ fun BitoBottomBar(
                 ) {
                     Icon(BitoIcons.Plus, contentDescription = stringResource(R.string.nav_new_habit), tint = Tarjeta)
                 }
+                NavSlot(BitoIcons.Habi, stringResource(R.string.nav_habi), currentRoute == "habi", onHabi)
                 NavSlot(BitoIcons.Settings, stringResource(R.string.nav_settings), currentRoute == "settings", onSettings)
             }
         }

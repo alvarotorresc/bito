@@ -20,6 +20,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.habi.HabiSounds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -67,7 +68,9 @@ class TodayViewModelTest {
     private lateinit var habitsRepo: HabitsRepository
     private lateinit var journal: JournalRepository
     private lateinit var settingsRepo: SettingsRepository
+    private lateinit var rewardsRepo: RewardsRepository
     private lateinit var reconciler: PointsReconciler
+    private lateinit var habiSounds: HabiSounds
     private lateinit var vm: TodayViewModel
 
     private fun settingsStore(name: String): DataStore<Preferences> =
@@ -76,7 +79,18 @@ class TodayViewModelTest {
         ) { File(tmp.root, "$name.preferences_pb") }
 
     private fun newViewModel() =
-        TodayViewModel(domainStateRepo, habitsRepo, journal, settingsRepo, reconciler, now = { fixedNow }, zone = { utc })
+        TodayViewModel(
+            domainStateRepo,
+            habitsRepo,
+            journal,
+            settingsRepo,
+            reconciler,
+            rewardsRepo,
+            habiSounds,
+            now = { fixedNow },
+            zone = { utc },
+            defaultDispatcher = dispatcher,
+        )
 
     @Before
     fun setUp() {
@@ -95,7 +109,9 @@ class TodayViewModelTest {
         habitsRepo = HabitsRepository(db)
         journal = JournalRepository(db)
         settingsRepo = SettingsRepository(settingsStore("today-vm"))
-        reconciler = PointsReconciler(domainStateRepo, RewardsRepository(db))
+        rewardsRepo = RewardsRepository(db)
+        reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
+        habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
         vm = newViewModel()
     }
 

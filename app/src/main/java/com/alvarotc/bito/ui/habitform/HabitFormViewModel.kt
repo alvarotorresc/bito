@@ -11,10 +11,14 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -42,6 +46,14 @@ class HabitFormViewModel(
 ) : ViewModel() {
     private val formState = MutableStateFlow(HabitFormState(editingId = habitId))
     val state: StateFlow<HabitFormState> = formState.asStateFlow()
+
+    // The real personality for the form's SpeechBubble speaker label (habi_speaker), which used
+    // to hardcode personality_neutra — this is a separate StateFlow rather than a HabitFormState
+    // field, since the form's own state is about the habit being built, not Habi's voice.
+    val personality: StateFlow<Personality> =
+        settings.settings
+            .map { it.personality }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Personality.NEUTRA)
 
     init {
         if (habitId != null) {

@@ -1,8 +1,8 @@
 package com.alvarotc.bito.data.backup
 
-import com.alvarotc.bito.data.db.CustomizationCategory
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
@@ -59,7 +59,7 @@ class BackupCodecTest {
     fun `encoded backup is human readable json`() {
         val text = BackupCodec.encode(sampleFile())
         assertTrue(text.contains("\n")) // pretty-printed (§5.1 data sovereignty)
-        assertTrue(text.contains("\"schemaVersion\": 1"))
+        assertTrue(text.contains("\"schemaVersion\": 2"))
         assertTrue(text.contains("\"Beber agua\""))
     }
 
@@ -73,6 +73,21 @@ class BackupCodecTest {
     fun `decode rejects a newer schema version`() {
         val newer = BackupCodec.encode(sampleFile().copy(schemaVersion = 99))
         assertFailsWith<BackupFormatException> { BackupCodec.decode(newer) }
+    }
+
+    @Test
+    fun `a v1 backup without the sounds field imports with sounds on`() {
+        // Seed sounds off so a leftover field (regex failing to strip it) would fail this
+        // assertion instead of passing vacuously against the field's own default.
+        val fileWithSoundsOff = sampleFile().copy(settings = sampleFile().settings.copy(habiSoundsEnabled = false))
+        val v1Json =
+            BackupCodec.encode(fileWithSoundsOff)
+                .replace("\"schemaVersion\": 2", "\"schemaVersion\": 1")
+                .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
+
+        val decoded = BackupCodec.decode(v1Json)
+
+        assertTrue(decoded.settings.habiSoundsEnabled)
     }
 
     @Test

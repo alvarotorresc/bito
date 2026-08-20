@@ -15,8 +15,10 @@ import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.PauseInterval
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.TargetChange
 import com.alvarotc.bito.domain.pauseOn
 import kotlin.test.Test
@@ -379,5 +381,61 @@ class TodayUiStateTest {
         val card = buildTodayUiState(state, emptyMap(), com.alvarotc.bito.domain.TODAY).cards.single()
         // complianceOf excludes those days; the card must count the same: 0, not 2
         assertEquals(0, card.progress)
+    }
+
+    @Test
+    fun `21 - paused habits are ordered by sortOrder like actives`() {
+        val a = habit("a", status = HabitStatus.PAUSED)
+        val b = habit("b", status = HabitStatus.PAUSED)
+        val c = habit("c", status = HabitStatus.PAUSED)
+        val state =
+            stateOf(
+                habits = listOf(a, b, c),
+                pauses = listOf(pause("a", startDay = 18), pause("b", startDay = 18), pause("c", startDay = 18)),
+            )
+        val sortOrder = mapOf("c" to 0, "a" to 1, "b" to 2)
+
+        val result = buildTodayUiState(state, sortOrder, TODAY)
+
+        assertEquals(listOf("c", "a", "b"), result.pausedHabits.map { it.id })
+    }
+
+    @Test
+    fun `22 - the header spec's mood follows the mood engine and carries the given personality`() {
+        val habit = RealHabits.makeBed
+        val radiantState =
+            domainState(
+                habits = listOf(habit),
+                entries = entriesOn(habit, (com.alvarotc.bito.domain.TODAY - 7)..(com.alvarotc.bito.domain.TODAY - 1)),
+            )
+
+        val radiant =
+            buildTodayUiState(radiantState, emptyMap(), com.alvarotc.bito.domain.TODAY, Personality.CHEERLEADER)
+
+        assertEquals(Mood.RADIANT, radiant.spec.mood)
+        assertEquals(Personality.CHEERLEADER, radiant.spec.personality)
+
+        // Same engine, different branch: 5 silent days trigger DRAMATIC regardless of ratio,
+        // proving the builder threads StatsEngine.lastActivityDay into MoodEngine.moodOf, just
+        // like buildStatsUiState's own mood test.
+        val dramaticState =
+            domainState(
+                habits = listOf(habit),
+                entries = entriesOn(habit, listOf(com.alvarotc.bito.domain.TODAY - 5)),
+            )
+
+        val dramatic =
+            buildTodayUiState(dramaticState, emptyMap(), com.alvarotc.bito.domain.TODAY, Personality.CHEERLEADER)
+
+        assertEquals(Mood.DRAMATIC, dramatic.spec.mood)
+    }
+
+    @Test
+    fun `23 - userName passes through to the ui state unchanged`() {
+        val state = stateOf(habits = emptyList())
+
+        val result = buildTodayUiState(state, emptyMap(), TODAY, userName = "Alvaro")
+
+        assertEquals("Alvaro", result.userName)
     }
 }

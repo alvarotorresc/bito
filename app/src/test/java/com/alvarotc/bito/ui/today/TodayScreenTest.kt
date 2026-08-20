@@ -11,6 +11,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.R
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
@@ -25,6 +26,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -93,7 +95,9 @@ class TodayScreenTest {
         val journal = JournalRepository(db)
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore("today-screen"))
-        val reconciler = PointsReconciler(domainState, RewardsRepository(db))
+        val rewards = RewardsRepository(db)
+        val reconciler = PointsReconciler(domainState, rewards)
+        val habiSounds = HabiSounds(context, settings, dispatcher = dispatcher)
 
         // Both habits must be created today: an older createdOnDay (the fixture default,
         // DAY_ZERO) would leave hundreds of pending seal days and the BatchSealSheet would
@@ -107,11 +111,23 @@ class TodayScreenTest {
             )
         }
 
-        val vm = TodayViewModel(domainState, habits, journal, settings, reconciler, now = { fixedNow }, zone = { utc })
+        val vm =
+            TodayViewModel(
+                domainState,
+                habits,
+                journal,
+                settings,
+                reconciler,
+                rewards,
+                habiSounds,
+                now = { fixedNow },
+                zone = { utc },
+                defaultDispatcher = dispatcher,
+            )
 
         compose.setContent {
             BitoTheme {
-                TodayScreen(vm, onCreateHabit = {}, onOpenHabit = { openedId = it })
+                TodayScreen(vm, onCreateHabit = {}, onOpenHabit = { openedId = it }, onOpenHabi = {})
             }
         }
         compose.waitForIdle()
@@ -293,5 +309,18 @@ class TodayScreenTest {
 
         compose.onNodeWithTag("period-bar-pasos", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("0 of 9000 this week", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the header greets with Habi's fallback name when no userName is set`() {
+        // Resolved through the same resources HabiVoice maps to, not hardcoded — the copy is
+        // PROVISIONAL (HabiVoice's own KDoc) and M9 rewrites it. Neither habit above has any
+        // entry yet, so lastActivityDay is null and the 7-day window is empty: NORMAL mood,
+        // and Settings' default personality is NEUTRA.
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val fallbackName = context.getString(R.string.habi_name_fallback)
+        val greeting = context.getString(R.string.habi_greeting_neutra_normal, fallbackName)
+
+        compose.onNodeWithText(greeting, useUnmergedTree = true).assertExists()
     }
 }

@@ -46,11 +46,15 @@ import com.alvarotc.bito.domain.HabitRecord
 import com.alvarotc.bito.domain.PerfectDaysSummary
 import com.alvarotc.bito.domain.WeekRow
 import com.alvarotc.bito.domain.WeekSummary
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.SpeechBubble
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
@@ -94,7 +98,7 @@ fun StatsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(stringResource(R.string.nav_stats), style = MaterialTheme.typography.headlineLarge, color = Tinta)
-            CommentatorBubble(state.mood, state.personality)
+            CommentatorBubble(state.mood, state.personality, state.equipped)
             PerfectDaysCard(state.perfectDays)
             WeekCard(state.week)
             StreaksSection(state.activeStreaks)
@@ -103,15 +107,18 @@ fun StatsScreen(
     }
 }
 
+/** The commentator's mini-avatar wears whatever is really equipped — never a store preview (Stats has none). */
 @Composable
 private fun CommentatorBubble(
     mood: Mood,
     personality: Personality,
+    equipped: EquippedSet,
 ) {
     SpeechBubble(
         speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
-        text = stringResource(moodTextRes(mood)),
+        text = stringResource(HabiVoice.bubbleRes(mood, personality)),
         modifier = Modifier.fillMaxWidth(),
+        avatar = { HabiAvatar(HabiSpec(mood, personality, equipped), Modifier.size(40.dp), animated = false) },
     )
 }
 
@@ -120,14 +127,6 @@ private fun personalityLabelRes(personality: Personality): Int =
         Personality.SARGENTO -> R.string.personality_sargento
         Personality.CHEERLEADER -> R.string.personality_cheerleader
         Personality.NEUTRA -> R.string.personality_neutra
-    }
-
-private fun moodTextRes(mood: Mood): Int =
-    when (mood) {
-        Mood.RADIANT -> R.string.stats_habi_radiant
-        Mood.NORMAL -> R.string.stats_habi_normal
-        Mood.WILTED -> R.string.stats_habi_wilted
-        Mood.DRAMATIC -> R.string.stats_habi_dramatic
     }
 
 /**
@@ -271,8 +270,8 @@ private fun WeekRowLine(row: WeekRow) {
  * Small, tap-free twin of [com.alvarotc.bito.ui.components.DotHeatmap]'s per-day glyph mapping —
  * DotProgress-canon 16dp solid dots, same fill/ring per state as the fixed heatmap (FULFILLED/
  * ACTIVITY solid Hoja, FAILED/EMPTY solid Borde, PAUSED solid TintaSuave, PENDING a 2dp
- * TintaSuave ring). OFF stays its own small/faint speck at 35% (not the heatmap's 40% — this
- * strip is a smaller, denser component).
+ * TintaSuave ring, OFF a 2dp Borde ring for future/unreached days). Grid always reads complete
+ * and aligned with header.
  */
 @Composable
 private fun WeekDayDot(dot: DayDot) {
@@ -286,7 +285,7 @@ private fun WeekDayDot(dot: DayDot) {
             }
         DayDot.PAUSED -> Box(Modifier.size(size).clip(CircleShape).background(TintaSuave))
         DayDot.PENDING -> Box(Modifier.size(size).clip(CircleShape).border(2.dp, TintaSuave, CircleShape))
-        DayDot.OFF -> Box(Modifier.size(6.dp).clip(CircleShape).background(Borde.copy(alpha = 0.35f)))
+        DayDot.OFF -> Box(Modifier.size(size).clip(CircleShape).border(2.dp, Borde, CircleShape))
     }
 }
 

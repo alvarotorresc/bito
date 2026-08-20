@@ -115,7 +115,7 @@ class TrayRefresherTest {
             // not just by a notification of *some* kind still existing under the id.
             postStaleReminder()
             TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
-            assertEquals(context.getString(R.string.notif_reminder_title_one), postedTitle())
+            assertEquals(context.resources.getQuantityString(R.plurals.notif_reminder_title, 1, 1), postedTitle())
         }
 
     @Test
@@ -128,7 +128,7 @@ class TrayRefresherTest {
 
             TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true)
 
-            assertEquals(context.getString(R.string.notif_reminder_title_one), postedTitle())
+            assertEquals(context.resources.getQuantityString(R.plurals.notif_reminder_title, 1, 1), postedTitle())
         }
 
     @Test

@@ -122,6 +122,7 @@ fun Settings.toBackup() =
         backupCopies = backupCopies,
         backupEncryption = backupEncryption,
         onboardingDone = onboardingDone,
+        habiSoundsEnabled = habiSoundsEnabled,
     )
 
 fun BackupSettings.toSettings() =
@@ -138,4 +139,5 @@ fun BackupSettings.toSettings() =
         backupCopies = backupCopies,
         backupEncryption = backupEncryption,
         onboardingDone = onboardingDone,
+        habiSoundsEnabled = habiSoundsEnabled,
     )

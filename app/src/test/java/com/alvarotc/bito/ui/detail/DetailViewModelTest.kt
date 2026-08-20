@@ -20,7 +20,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
-import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.habi.HabiSounds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -66,6 +66,7 @@ class DetailViewModelTest {
     private lateinit var rewardsRepo: RewardsRepository
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var reconciler: PointsReconciler
+    private lateinit var habiSounds: HabiSounds
 
     private fun settingsStore(name: String): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -81,8 +82,10 @@ class DetailViewModelTest {
             rewardsRepo,
             settingsRepo,
             reconciler,
+            habiSounds,
             now = { fixedNow },
             zone = { utc },
+            defaultDispatcher = dispatcher,
         )
 
     @Before
@@ -101,6 +104,7 @@ class DetailViewModelTest {
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore("detail-vm"))
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
+        habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
     }
 
     @After
@@ -108,19 +112,6 @@ class DetailViewModelTest {
         Dispatchers.resetMain()
         db.close()
     }
-
-    @Test
-    fun `buy freezer refuses without balance`() =
-        runTest {
-            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
-            val vm = newViewModel()
-            advanceUntilIdle()
-
-            vm.buyFreezer()
-            advanceUntilIdle()
-
-            assertTrue(db.pointsLedgerDao().all().none { it.reason == PointsReason.BUY_FREEZER })
-        }
 
     @Test
     fun `apply freezer writes the use and reconciles with the actual today`() =

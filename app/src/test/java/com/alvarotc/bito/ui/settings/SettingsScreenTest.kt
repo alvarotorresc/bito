@@ -1,9 +1,13 @@
 package com.alvarotc.bito.ui.settings
 
 import android.content.Context
+import android.net.Uri
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
@@ -14,6 +18,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
@@ -24,11 +29,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -36,7 +43,9 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import java.io.ByteArrayInputStream
 
 /**
  * Drives the real settings screen over isolated dependencies (in-memory Room, tmp DataStore) —
@@ -127,7 +136,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Archived habits (1)", useUnmergedTree = true)
+        compose.onNodeWithText("Archived habit (1)", useUnmergedTree = true)
             .performScrollTo()
             .performClick()
         compose.waitForIdle()
@@ -166,5 +175,104 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("No reminders set", substring = true, useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the Habi section shows the sounds toggle, on by default`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-habi-default"))
+        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Habi sounds", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).assertIsOn()
+    }
+
+    @Test
+    fun `tapping the Habi sounds toggle flips and persists the setting`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-habi-toggle"))
+        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).assertIsOff()
+        assertFalse(runBlocking { settings.settings.first() }.habiSoundsEnabled)
+    }
+
+    /**
+     * Covers the import preview's "%1\$s · %2\$s" join of two independent pluralStringResource
+     * calls (habits, log entries) — the nit 6 follow-up parameter wiring a format regression could
+     * slip through silently, since the string itself no longer carries any `%1$d`.
+     */
+    @Test
+    fun `the import preview pluralizes both the habit and entry counts`() {
+        runBlocking {
+            val habits = HabitsRepository(db)
+            repeat(3) { i -> habits.create(habitEntity(id = "ip-h$i", name = "Habit $i")) }
+            repeat(12) { i -> db.entryDao().insert(entryEntity(id = "ip-e$i", habitId = "ip-h0", logicalDay = i)) }
+        }
+        val settings = SettingsRepository(settingsStore("settings-screen-import-preview-many"))
+        val backupRepo = BackupRepository(db, settings, "test")
+        val exported = runBlocking { backupRepo.exportJson(0L) }
+        val backupVm = BackupViewModel(backupRepo, ioDispatcher = dispatcher)
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        val resolver = ApplicationProvider.getApplicationContext<Context>().contentResolver
+        val uri = Uri.parse("content://bito/import-preview-many.bito")
+        shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(exported.toByteArray()))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        backupVm.loadImport(resolver, uri)
+        compose.waitForIdle()
+
+        // ImportPreviewSheet is a ModalBottomSheet, its own layout root outside the settings
+        // screen's scrollable column — nothing to scroll to, it renders fully visible on open.
+        compose.onNodeWithText("3 habits · 12 log entries", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /** Same path as above at the singular edge, where a bare %1\$d format would have read "1 habits · 1 log entries". */
+    @Test
+    fun `the import preview keeps singular grammar at a count of one`() {
+        runBlocking {
+            val habits = HabitsRepository(db)
+            habits.create(habitEntity(id = "ip-h0", name = "Habit"))
+            db.entryDao().insert(entryEntity(id = "ip-e0", habitId = "ip-h0", logicalDay = 0))
+        }
+        val settings = SettingsRepository(settingsStore("settings-screen-import-preview-one"))
+        val backupRepo = BackupRepository(db, settings, "test")
+        val exported = runBlocking { backupRepo.exportJson(0L) }
+        val backupVm = BackupViewModel(backupRepo, ioDispatcher = dispatcher)
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        val resolver = ApplicationProvider.getApplicationContext<Context>().contentResolver
+        val uri = Uri.parse("content://bito/import-preview-one.bito")
+        shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(exported.toByteArray()))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        backupVm.loadImport(resolver, uri)
+        compose.waitForIdle()
+
+        compose.onNodeWithText("1 habit · 1 log entry", useUnmergedTree = true).assertIsDisplayed()
     }
 }

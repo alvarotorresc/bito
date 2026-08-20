@@ -67,6 +67,8 @@ class SettingsViewModel(
 
     fun setReviewTime(minutes: Int) = write { it.copy(reviewTimeMinutes = minutes) }
 
+    fun setHabiSounds(enabled: Boolean) = write { it.copy(habiSoundsEnabled = enabled) }
+
     private fun write(transform: (Settings) -> Settings) {
         viewModelScope.launch { settings.update(transform) }
     }

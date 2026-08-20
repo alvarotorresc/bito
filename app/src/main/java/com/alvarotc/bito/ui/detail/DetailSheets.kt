@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -23,10 +24,17 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.LogicalDay
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.NumberInputSheet
 import com.alvarotc.bito.ui.components.PillButton
+import com.alvarotc.bito.ui.components.SpeechBubble
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Peligro
 import com.alvarotc.bito.ui.theme.PeligroTinte
@@ -181,55 +189,49 @@ private fun AbstinenceDaySheet(
     }
 }
 
-/** Buying a freezer: shows the running inventory and a price disabled when the balance is short. */
-@Composable
-fun FreezerSheet(
-    owned: Int,
-    price: Int,
-    balance: Int,
-    onBuy: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    val canSpend = balance >= price
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("freezer-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.freezer_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            Text(stringResource(R.string.freezer_sheet_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
-            Text(stringResource(R.string.freezers_owned_label, owned), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            PillButton(
-                text =
-                    if (canSpend) {
-                        stringResource(R.string.buy_freezer_action, price)
-                    } else {
-                        stringResource(R.string.buy_freezer_missing, price - balance)
-                    },
-                onClick = {
-                    onBuy()
-                    onDismiss()
-                },
-                enabled = canSpend,
-                modifier = Modifier.fillMaxWidth().testTag("buy-freezer"),
-            )
-        }
-    }
-}
-
 /**
  * What freezers are and how to spend them — pure info, dismissed by its own "Entendido"/"Got it"
- * button, no write of any kind. Body copy is provisional Neutra voice; the per-personality voice
- * (sergeant/cheerleader/etc.) arrives with M6.
+ * button, no write of any kind. Mockup 4d: title, then an inner card with a mini Habi face,
+ * "HABI · <personality>" and the personality-voiced body ([HabiVoice.freezerInfoRes]) — the same
+ * [SpeechBubble] avatar slot the Stats commentator uses. Opened both from the habit Detail screen
+ * and from the Habi store's [com.alvarotc.bito.ui.habi.StoreSection] freezer card.
  */
 @Composable
-fun FreezerInfoSheet(onDismiss: () -> Unit) {
+fun FreezerInfoSheet(
+    personality: Personality,
+    userName: String,
+    onDismiss: () -> Unit,
+) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("freezer-info-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(Modifier.padding(20.dp).testTag("freezer-info-sheet"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.freezer_info_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            Text(stringResource(R.string.freezer_info_sheet_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
-            Spacer(Modifier.height(4.dp))
+            SpeechBubble(
+                speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
+                text =
+                    stringResource(
+                        HabiVoice.freezerInfoRes(personality),
+                        userName.ifBlank { stringResource(R.string.habi_name_fallback) },
+                    ),
+                modifier = Modifier.fillMaxWidth(),
+                avatar = {
+                    HabiAvatar(
+                        HabiSpec(Mood.NORMAL, personality, EquippedSet()),
+                        Modifier.size(40.dp),
+                        animated = false,
+                    )
+                },
+            )
             PillButton(stringResource(R.string.got_it), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
     }
 }
+
+private fun personalityLabelRes(personality: Personality): Int =
+    when (personality) {
+        Personality.SARGENTO -> R.string.personality_sargento
+        Personality.CHEERLEADER -> R.string.personality_cheerleader
+        Personality.NEUTRA -> R.string.personality_neutra
+    }
 
 /** Pausing suspends registration and streak judgment until resumed; the note is optional context. */
 @Composable

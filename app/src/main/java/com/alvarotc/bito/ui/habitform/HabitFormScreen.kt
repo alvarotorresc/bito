@@ -59,6 +59,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.NumberInputSheet
@@ -84,6 +85,7 @@ fun HabitFormScreen(
     onBack: () -> Unit,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val personality by viewModel.personality.collectAsStateWithLifecycle()
     var confirmingDelete by remember { mutableStateOf(false) }
 
     // Same launcher SettingsScreen.kt uses for the first GLOBAL reminder: fire-and-forget, the
@@ -101,7 +103,7 @@ fun HabitFormScreen(
         ) {
             FormHeader(state.isEditing, onBack)
             SpeechBubble(
-                stringResource(R.string.habi_speaker, stringResource(R.string.personality_neutra)),
+                stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
                 stringResource(R.string.habi_form_prompt),
             )
             NameField(state.name, viewModel::setName)
@@ -623,3 +625,10 @@ private fun DeleteConfirmSheet(
         }
     }
 }
+
+private fun personalityLabelRes(personality: Personality): Int =
+    when (personality) {
+        Personality.SARGENTO -> R.string.personality_sargento
+        Personality.CHEERLEADER -> R.string.personality_cheerleader
+        Personality.NEUTRA -> R.string.personality_neutra
+    }

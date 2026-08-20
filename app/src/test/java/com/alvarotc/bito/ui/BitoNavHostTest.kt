@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui
 import android.app.Application
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -92,6 +93,33 @@ class BitoNavHostTest {
         compose.waitForIdle()
 
         screenTitleNode("Stats").assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the habi tab shows in the bar and navigates to the habi screen`() {
+        setContent()
+        // HabiAvatar's infinite bob/blink transitions never settle on their own — freeze the
+        // clock BEFORE navigating there, so the framework's post-click idle-sync doesn't spin
+        // forever trying to reach a steady state that never comes (T9 note).
+        compose.mainClock.autoAdvance = false
+
+        // The Habi tab's content description ("Habi") collides with HabiAvatar's own
+        // (habi_avatar_cd is also "Habi") twice over here: once the Habi screen renders its own
+        // avatar, AND already on Today, whose header now carries its own corner HabiAvatar (T14)
+        // — scope to the bottom bar to pick the tab, not either avatar. Assert arrival by
+        // testTag, not by content description, to avoid the same collision on the way in.
+        compose
+            .onNode(hasContentDescription("Habi") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .performClick()
+        // Not waitForIdle(): with autoAdvance false it pumps no frames at all, so the nav
+        // recomposition from the click above would never actually run. A couple of manual frames
+        // is enough to let it settle (route change -> HabiScreen mounts) without ever giving the
+        // clock a chance to auto-advance into HabiAvatar's infinite transition.
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeByFrame()
+
+        compose.onNodeWithTag("habi-screen", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
     }
 

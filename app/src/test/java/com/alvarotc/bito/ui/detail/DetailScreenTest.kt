@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertHeightIsAtLeast
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -31,6 +33,7 @@ import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -78,6 +81,7 @@ class DetailScreenTest {
 
     private lateinit var db: BitoDatabase
     private var storeIndex = 0
+    private var habiOpened = false
 
     private fun settingsStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -108,6 +112,7 @@ class DetailScreenTest {
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore())
         val reconciler = PointsReconciler(domainState, RewardsRepository(db))
+        val habiSounds = HabiSounds(ApplicationProvider.getApplicationContext(), settings, dispatcher = dispatcher)
         val vm =
             DetailViewModel(
                 habitId,
@@ -117,12 +122,14 @@ class DetailScreenTest {
                 RewardsRepository(db),
                 settings,
                 reconciler,
+                habiSounds,
                 now = { fixedNow },
                 zone = { utc },
+                defaultDispatcher = dispatcher,
             )
         compose.setContent {
             BitoTheme {
-                DetailScreen(viewModel = vm, onBack = {}, onEdit = {})
+                DetailScreen(viewModel = vm, onBack = {}, onEdit = {}, onOpenHabi = { habiOpened = true })
             }
         }
         compose.waitForIdle()
@@ -142,6 +149,22 @@ class DetailScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag("day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the next-month chevron is truly disabled, not just tinted, once the displayed month reaches today's`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        // The screen opens on today's own calendar month, so the next-month chevron starts
+        // disabled with no navigation needed — PlainIconButton's enabled param must reach
+        // Modifier.clickable so this is real a11y semantics, not just a dimmed icon that still
+        // eats the tap in its handler.
+        setContent("h1")
+
+        compose.onNodeWithContentDescription("Next month").assertIsNotEnabled()
     }
 
     @Test
@@ -191,6 +214,28 @@ class DetailScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Freezers").assertExists()
+        // T13: the sheet's body is now HabiVoice's personality-voiced text behind a speaker
+        // label — Settings.personality defaults to NEUTRA, so "HABI · NEUTRAL" (values/strings.xml).
+        compose.onNodeWithText("HABI · NEUTRAL").assertExists()
+        compose.onNodeWithText("Got it").assertExists()
+    }
+
+    @Test
+    fun `the freezer pill opens the habi store instead of a purchase sheet`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        // T12: the Detail screen no longer buys freezers itself — tapping the pill navigates
+        // away to the store instead of opening a purchase sheet in place.
+        compose.onNodeWithTag("freezer-chip", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertEquals(true, habiOpened)
+        compose.onNodeWithTag("freezer-sheet", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

@@ -9,7 +9,6 @@ import com.alvarotc.bito.data.customizationItemEntity
 import com.alvarotc.bito.data.daySealEntity
 import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
-import com.alvarotc.bito.data.db.CustomizationCategory
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.freezerUseEntity
@@ -20,6 +19,7 @@ import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.data.targetChangeEntity
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
@@ -61,6 +61,7 @@ class BackupRoundTripTest {
             backupCopies = 3,
             backupEncryption = true,
             onboardingDone = true,
+            habiSoundsEnabled = false,
         )
 
     @Before

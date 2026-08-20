@@ -7,11 +7,14 @@ import com.alvarotc.bito.data.DAY_ZERO
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -25,6 +28,7 @@ class PointsReconcilerTest {
     private lateinit var db: BitoDatabase
     private lateinit var habits: HabitsRepository
     private lateinit var journal: JournalRepository
+    private lateinit var rewards: RewardsRepository
     private lateinit var reconciler: PointsReconciler
 
     @Before
@@ -33,7 +37,8 @@ class PointsReconcilerTest {
         db = Room.inMemoryDatabaseBuilder(context, BitoDatabase::class.java).build()
         habits = HabitsRepository(db)
         journal = JournalRepository(db)
-        reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db))
+        rewards = RewardsRepository(db)
+        reconciler = PointsReconciler(DomainStateRepository(db), rewards)
     }
 
     @After
@@ -71,5 +76,48 @@ class PointsReconcilerTest {
             journal.remove("e1")
             reconciler.reconcile(DAY_ZERO, 20L)
             assertTrue(db.pointsLedgerDao().all().any { it.refId == "cama:$DAY_ZERO" })
+        }
+
+    @Test
+    fun `reconcile grants the sparks pattern when a habit reaches a 7-day streak`() =
+        runTest {
+            val today = DAY_ZERO + 6
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1))
+            for (day in DAY_ZERO..today) {
+                journal.log(entryEntity(id = "e$day", habitId = "cama", logicalDay = day, value = 1))
+            }
+            reconciler.reconcile(today = today, nowMillis = 10L)
+            val granted = db.customizationItemDao().all().single { it.itemId == "pattern-chispas" }
+            assertEquals(CustomizationCategory.PATTERN, granted.category)
+            assertFalse(granted.equipped)
+        }
+
+    @Test
+    fun `reconcile never touches an already granted item`() =
+        runTest {
+            val today = DAY_ZERO + 6
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1))
+            for (day in DAY_ZERO..today) {
+                journal.log(entryEntity(id = "e$day", habitId = "cama", logicalDay = day, value = 1))
+            }
+            reconciler.reconcile(today = today, nowMillis = 10L)
+            rewards.equip("pattern-chispas")
+            for (day in DAY_ZERO..today) journal.remove("e$day")
+
+            reconciler.reconcile(today = today, nowMillis = 20L)
+
+            val granted = db.customizationItemDao().all().single { it.itemId == "pattern-chispas" }
+            assertTrue(granted.equipped)
+        }
+
+    @Test
+    fun `grantItems is idempotent thanks to insert-ignore`() =
+        runTest {
+            rewards.grantItems(setOf("pattern-chispas"), 10L)
+            rewards.equip("pattern-chispas")
+            rewards.grantItems(setOf("pattern-chispas"), 20L)
+            val rows = db.customizationItemDao().all().filter { it.itemId == "pattern-chispas" }
+            assertEquals(1, rows.size)
+            assertTrue(rows.single().equipped)
         }
 }

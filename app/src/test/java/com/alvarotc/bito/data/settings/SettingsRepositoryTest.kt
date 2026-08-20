@@ -44,6 +44,7 @@ class SettingsRepositoryTest {
             assertEquals(5, settings.backupCopies)
             assertFalse(settings.backupEncryption)
             assertFalse(settings.onboardingDone)
+            assertEquals(true, settings.habiSoundsEnabled)
         }
 
     @Test
@@ -64,6 +65,7 @@ class SettingsRepositoryTest {
                     backupCopies = 3,
                     backupEncryption = true,
                     onboardingDone = true,
+                    habiSoundsEnabled = false,
                 )
             repository.update { written }
             assertEquals(written, repository.settings.first())

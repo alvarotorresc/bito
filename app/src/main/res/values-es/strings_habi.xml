@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="habi_avatar_cd">Habi</string>
+    <string name="habi_balance_points">puntos</string>
+    <string name="habi_name_fallback">campeón</string>
+
+    <!--
+        Textos con voz de personalidad de Habi (T13, HabiVoice) — copia PROVISIONAL, la definitiva
+        llega en la sesión de economía/copy de M9. Cuatro contextos:
+        habi_bubble_* — comentarista de Stats, solo por ánimo (sin nombre).
+        habi_home_*   — globo propio de la pantalla Habi, tono jugador de hogar, %1$s = nombre.
+        habi_greeting_* — esquina de Habi en Hoy, corto, %1$s = nombre (lo consume T14).
+        freezer_info_* — cuerpo de la hoja ⓘ de congeladores, %1$s = nombre. El precio nunca se
+        hardcodea aquí a propósito — vive en EconomyConfig.
+    -->
+    <string name="habi_bubble_sargento_radiant">Una semana impecable. Así se hace, recluta.</string>
+    <string name="habi_bubble_sargento_normal">Aceptable. Pero yo he visto semanas mejores.</string>
+    <string name="habi_bubble_sargento_wilted">Esto es un desastre. Levanta y haz tus hábitos.</string>
+    <string name="habi_bubble_sargento_dramatic">¿Tres días sin aparecer? Ni se te ocurra rendirte ahora.</string>
+    <string name="habi_bubble_cheerleader_radiant">¡Semana ESPECTACULAAAR! ¡Eres imparable!</string>
+    <string name="habi_bubble_cheerleader_normal">¡Buena semana! ¡Sigamos sumando!</string>
+    <string name="habi_bubble_cheerleader_wilted">Ha sido una semana dura… ¡pero mañana lo remontamos!</string>
+    <string name="habi_bubble_cheerleader_dramatic">¡¿Tres días sin verte?! ¡Te he echado de menos! ¡Vuelve al lío!</string>
+    <string name="habi_bubble_neutra_radiant">Semana muy sólida: más del 80 por ciento cumplido.</string>
+    <string name="habi_bubble_neutra_normal">Semana dentro de lo normal. Sigue así.</string>
+    <string name="habi_bubble_neutra_wilted">Semana floja: menos de la mitad cumplido. Un hábito hoy basta para arrancar.</string>
+    <string name="habi_bubble_neutra_dramatic">Tres días sin registros. Cuando quieras, aquí sigo.</string>
+
+    <string name="habi_home_sargento_radiant">Recluta %1$s, reportando en plena forma. ¡Firmes!</string>
+    <string name="habi_home_sargento_normal">¿Me has traído algo, %1$s?</string>
+    <string name="habi_home_sargento_wilted">%1$s, esto no es un cuartel de vagos. Vuelve al terreno.</string>
+    <string name="habi_home_sargento_dramatic">¿Dónde te habías metido, %1$s? Aquí no se abandona el puesto.</string>
+    <string name="habi_home_cheerleader_radiant">¡%1$s! ¡Mírate! ¡Estamos ON FIRE!</string>
+    <string name="habi_home_cheerleader_normal">¡Hola, %1$s! ¡Qué ganas de verte por aquí!</string>
+    <string name="habi_home_cheerleader_wilted">%1$s… ha sido duro, pero seguimos en esto, ¿vale?</string>
+    <string name="habi_home_cheerleader_dramatic">¡¿Dónde estabas, %1$s?! ¡Te esperaba con muchas ganas!</string>
+    <string name="habi_home_neutra_radiant">Buen ritmo esta semana, %1$s.</string>
+    <string name="habi_home_neutra_normal">Hola, %1$s. Todo en orden.</string>
+    <string name="habi_home_neutra_wilted">%1$s, va siendo hora de retomar algún hábito.</string>
+    <string name="habi_home_neutra_dramatic">Hace días que no te veía, %1$s.</string>
+
+    <string name="habi_greeting_sargento_radiant">Firme, %1$s. Sigue así.</string>
+    <string name="habi_greeting_sargento_normal">En marcha, %1$s.</string>
+    <string name="habi_greeting_sargento_wilted">%1$s, esos hábitos no se hacen solos.</string>
+    <string name="habi_greeting_sargento_dramatic">%1$s, se acabó el descanso.</string>
+    <string name="habi_greeting_cheerleader_radiant">¡Vas que vuelas, %1$s!</string>
+    <string name="habi_greeting_cheerleader_normal">¡Hola, %1$s! ¡A por hoy!</string>
+    <string name="habi_greeting_cheerleader_wilted">¡Ánimo, %1$s! Hoy es un buen día.</string>
+    <string name="habi_greeting_cheerleader_dramatic">¡Te echaba de menos, %1$s!</string>
+    <string name="habi_greeting_neutra_radiant">Buen momento, %1$s.</string>
+    <string name="habi_greeting_neutra_normal">Hola, %1$s.</string>
+    <string name="habi_greeting_neutra_wilted">%1$s, hoy es un buen día para retomar.</string>
+    <string name="habi_greeting_neutra_dramatic">%1$s, qué bien verte de vuelta.</string>
+
+    <string name="freezer_info_sargento">Un congelador salva la racha de UN hábito durante UN día. Cuestan una fortuna y se activan desde el detalle del hábito. No los malgastes, %1$s.</string>
+    <string name="freezer_info_cheerleader">¡Un congelador salva tu racha si fallas UN día en UN hábito! Actívalo desde el detalle del hábito. ¡Tenlo siempre a mano, %1$s!</string>
+    <string name="freezer_info_neutra">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Se activa desde el detalle del hábito. 1 congelador = 1 hábito × 1 día, %1$s.</string>
+
+    <string name="store_title">Tienda</string>
+    <string name="store_axis_colors">Colores</string>
+    <string name="store_axis_patterns">Patrones</string>
+    <string name="store_axis_eyes">Ojos</string>
+    <string name="store_axis_upper">Arriba</string>
+    <string name="store_axis_lower">Abajo</string>
+    <string name="store_equipped">equipado</string>
+    <string name="store_tap_to_equip">tocar para equipar</string>
+    <string name="store_pts_label">pts</string>
+    <string name="store_locked_streak">racha %1$d</string>
+    <string name="store_trying">probando: %1$s</string>
+    <string name="store_buy_title">¿Comprar %1$s?</string>
+    <string name="store_buy_button">Comprar</string>
+    <string name="store_balance_after">saldo después: %1$d pts</string>
+    <string name="store_your_balance">tu saldo: %1$d pts</string>
+    <string name="store_missing_pts">te faltan %1$d pts</string>
+    <string name="store_freezer_buy">comprar · %1$d pts</string>
+
+    <string name="item_body_salvia">Salvia</string>
+    <string name="item_body_vainilla">Vainilla</string>
+    <string name="item_body_melocoton">Melocotón</string>
+    <string name="item_body_cielo">Cielo</string>
+    <string name="item_body_lavanda">Lavanda</string>
+    <string name="item_body_rosa">Rosa empolvado</string>
+    <string name="item_body_oliva">Oliva</string>
+    <string name="item_body_terracota">Terracota</string>
+    <string name="item_body_carbon">Carbón</string>
+    <string name="item_body_dorado">Dorado</string>
+
+    <string name="item_eyes_tinta">Tinta</string>
+    <string name="item_eyes_avellana">Avellana</string>
+    <string name="item_eyes_verde">Verde hoja</string>
+    <string name="item_eyes_azul">Azul</string>
+    <string name="item_eyes_ambar">Ámbar</string>
+    <string name="item_eyes_violeta">Violeta</string>
+    <string name="item_eyes_granate">Granate</string>
+
+    <string name="item_pattern_motas">Motas</string>
+    <string name="item_pattern_rayitas">Rayitas</string>
+    <string name="item_pattern_corazones">Corazones</string>
+    <string name="item_pattern_estrellas">Estrellas</string>
+    <string name="item_pattern_flores">Flores</string>
+    <string name="item_pattern_chispas">Chispas</string>
+    <string name="item_pattern_llamas">Llamas</string>
+
+    <string name="item_upper_gorro_lana">Gorrito de lana</string>
+    <string name="item_upper_lazo">Lazo</string>
+    <string name="item_upper_copa">Sombrero de copa</string>
+    <string name="item_upper_corona">Corona</string>
+
+    <string name="item_lower_calcetines">Calcetines</string>
+    <string name="item_lower_zapatillas">Zapatillas</string>
+</resources>
