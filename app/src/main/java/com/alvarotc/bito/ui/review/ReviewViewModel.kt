@@ -72,6 +72,10 @@ class ReviewViewModel(
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ReviewUiState())
 
+    init {
+        write { _, _ -> } // opening the review reconciles pending grants (same as Today/Detail)
+    }
+
     private fun todayOf(prefs: Settings) = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
 
     /** Every mutation recomputes grants right after (idempotent append). */

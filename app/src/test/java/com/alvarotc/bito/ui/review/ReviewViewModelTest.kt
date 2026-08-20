@@ -159,11 +159,15 @@ class ReviewViewModelTest {
     @Test
     fun `sealToday seals today, reconciles and flips todaySealed`() =
         runTest {
+            // Warm the flow first so the constructor's own reconcile (no habits yet, a no-op)
+            // runs and settles before h1's entry exists — otherwise the "ledger still empty"
+            // assertion below would race that queued coroutine once it finally runs.
+            assertFalse(state().todaySealed)
+
             habitsRepo.create(
                 habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
             )
             journal.log(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
-            assertFalse(state().todaySealed)
             assertTrue(db.pointsLedgerDao().all().isEmpty())
 
             vm.sealToday()
