@@ -109,6 +109,11 @@ class BadgeEngineTest {
     }
 
     @Test
+    fun `every badge id the engine can emit is in the catalog, and every catalog id can be emitted`() {
+        assertEquals(com.alvarotc.bito.domain.model.BadgeCatalog.all.map { it.id }.toSet(), BadgeEngine.allEmittableIds)
+    }
+
+    @Test
     fun `missingBadges never proposes revoking`() {
         assertEquals(emptySet<String>(), BadgeEngine.missingBadges(emptySet(), setOf("first-habit")))
         assertEquals(setOf("streak-7"), BadgeEngine.missingBadges(setOf("streak-7", "first-habit"), setOf("first-habit")))
