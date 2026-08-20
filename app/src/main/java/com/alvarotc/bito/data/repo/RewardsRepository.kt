@@ -47,10 +47,15 @@ class RewardsRepository(private val db: BitoDatabase) {
         PointsLedgerEntity(UUID.randomUUID().toString(), delta, reason, refId, day, nowMillis),
     )
 
-    suspend fun unlockBadge(
-        badgeId: String,
+    /** Achievement grants: insert-ignore so re-derivation never touches an already-unlocked badge. */
+    suspend fun unlockBadges(
+        ids: Set<String>,
         nowMillis: Long,
-    ) = db.badgeDao().insert(BadgeEntity(badgeId, nowMillis))
+    ) = db.badgeDao().insertAll(ids.map { BadgeEntity(it, nowMillis) })
+
+    suspend fun unlockedBadgeIds(): Set<String> = db.badgeDao().all().mapTo(mutableSetOf()) { it.badgeId }
+
+    fun observeBadges(): Flow<List<BadgeEntity>> = db.badgeDao().observeAll()
 
     suspend fun acquire(item: CustomizationItemEntity) = db.customizationItemDao().upsert(item)
 

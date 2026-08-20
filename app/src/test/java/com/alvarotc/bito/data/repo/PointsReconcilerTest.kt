@@ -120,4 +120,38 @@ class PointsReconcilerTest {
             assertEquals(1, rows.size)
             assertTrue(rows.single().equipped)
         }
+
+    @Test
+    fun `reconcile unlocks first-habit and returns what it granted`() =
+        runTest {
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, target = 1))
+            val result = reconciler.reconcile(today = DAY_ZERO, nowMillis = 10L)
+            assertTrue("first-habit" in result.newBadges)
+            assertEquals(setOf("first-habit"), db.badgeDao().all().map { it.badgeId }.toSet())
+            assertEquals(10L, db.badgeDao().all().single().unlockedAtMillis)
+        }
+
+    @Test
+    fun `reconcile twice unlocks nothing twice and reports nothing new`() =
+        runTest {
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, target = 1))
+            reconciler.reconcile(DAY_ZERO, 10L)
+            val second = reconciler.reconcile(DAY_ZERO, 20L)
+            assertTrue(second.newBadges.isEmpty())
+            assertTrue(second.newEvents.isEmpty())
+            assertEquals(10L, db.badgeDao().all().single().unlockedAtMillis)
+        }
+
+    @Test
+    fun `a perfect day reports reachedPerfectDay for that day only`() =
+        runTest {
+            habits.create(
+                habitEntity(id = "cama", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = DAY_ZERO),
+            )
+            journal.log(entryEntity(id = "e1", habitId = "cama", logicalDay = DAY_ZERO, value = 1))
+            val result = reconciler.reconcile(DAY_ZERO, 10L)
+            assertTrue(result.reachedPerfectDay(DAY_ZERO))
+            assertFalse(result.reachedPerfectDay(DAY_ZERO + 1))
+            assertTrue("perfect-day-1" in result.newBadges)
+        }
 }
