@@ -29,6 +29,7 @@ data class CelebrationsUiState(
     val spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
     val personality: Personality = Personality.NEUTRA,
     val userName: String = "",
+    val today: LogicalDay = 0,
 )
 
 /**
@@ -59,5 +60,6 @@ fun buildCelebrationsUiState(
             ),
         personality = prefs.personality,
         userName = prefs.userName,
+        today = today,
     )
 }

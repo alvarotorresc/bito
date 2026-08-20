@@ -31,7 +31,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -50,7 +49,9 @@ class CelebrationsViewModelTest {
     val tmp = TemporaryFolder()
 
     private val dispatcher = StandardTestDispatcher()
-    private val fixedNow = 1_755_216_000_000L // 2025-08-15T00:00:00Z
+
+    // var (not val): the day-scoping cue test below advances the clock across a logical day.
+    private var fixedNow = 1_755_216_000_000L // 2025-08-15T00:00:00Z
     private val utc = ZoneId.of("UTC")
 
     private lateinit var db: BitoDatabase
@@ -148,23 +149,56 @@ class CelebrationsViewModelTest {
             vm.cue()
             vm.cue()
 
-            assertEquals("perfect-day", vm.lastCued)
+            assertEquals("$today:perfect-day", vm.lastCued)
         }
 
+    // Was vacuous: dismissing before the first cue() left lastCuedSignature null both before and
+    // after, so "dismissal makes cue() inert" and "cue() was never called" were indistinguishable.
+    // Cues first, asserts the day-scoped signature stuck, THEN dismisses and re-cues to prove the
+    // dismissal itself doesn't clear or change it.
     @Test
-    fun `cue does nothing once the perfect day is dismissed and no badges are pending`() =
+    fun `cue does nothing new once the perfect day is dismissed`() =
         runTest {
             val today = LogicalDays.logicalDayOf(fixedNow, 0, utc)
             db.pointsLedgerDao().insert(
                 pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
             )
             state()
+            vm.cue()
+            assertEquals("$today:perfect-day", vm.lastCued)
+
             vm.dismissPerfectDay()
             advanceUntilIdle()
+            state()
+            vm.cue()
+
+            assertEquals("$today:perfect-day", vm.lastCued)
+        }
+
+    // R7 follow-up: a second perfect day (e.g. the next calendar day) must still cue even though
+    // perfectDayPending reads the same `true` it did on the first — only the day-scoped signature
+    // tells them apart. Inserting tomorrow's PERFECT_DAY row is both what advances the clock's
+    // logical day AND the DB write that makes uiState (a combine over Room flows) re-emit.
+    @Test
+    fun `cue produces a new signature for a different perfect day`() =
+        runTest {
+            val today = LogicalDays.logicalDayOf(fixedNow, 0, utc)
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
+            )
+            state()
+            vm.cue()
+            assertEquals("$today:perfect-day", vm.lastCued)
+
+            fixedNow += 86_400_000L
+            val tomorrow = today + 1
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "p2", reason = PointsReason.PERFECT_DAY, refId = "day:$tomorrow", logicalDay = tomorrow),
+            )
             state()
 
             vm.cue()
 
-            assertNull(vm.lastCued)
+            assertEquals("$tomorrow:perfect-day", vm.lastCued)
         }
 }

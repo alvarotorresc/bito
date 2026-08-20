@@ -85,13 +85,15 @@ class CelebrationsViewModel(
      * Habi's celebration cue for the sheet. Pure presentation — no [settings] write. Idempotent
      * per pending sheet: plays at most once for a given [CelebrationsUiState.perfectDayPending]
      * or [CelebrationsUiState.newBadges] set, no matter how many times the host effect that calls
-     * this re-runs (e.g. across a rotation) while that same sheet stays pending.
+     * this re-runs (e.g. across a rotation) while that same sheet stays pending. The perfect-day
+     * signature is scoped to [CelebrationsUiState.today] so a fresh perfect day cues again even
+     * though [CelebrationsUiState.perfectDayPending] reads the same `true` it did yesterday.
      */
     fun cue() {
         val state = uiState.value
         val signature =
             when {
-                state.perfectDayPending -> "perfect-day"
+                state.perfectDayPending -> "${state.today}:perfect-day"
                 state.newBadges.isNotEmpty() -> "badges:" + state.newBadges.joinToString(",") { it.id }
                 else -> return
             }
