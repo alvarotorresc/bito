@@ -215,6 +215,20 @@ class ReviewViewModelTest {
             assertTrue(seals.none { it == today })
         }
 
+    // R7 follow-up: the screen's LaunchedEffect(state.todaySealed, state.perfectToday) can re-run
+    // with both keys still true (e.g. an activity recreation), which would replay the sound for
+    // the very same sealed day if cue() itself weren't guarded — see cuedForDay's KDoc.
+    @Test
+    fun `cue plays once per day`() =
+        runTest {
+            state() // warms uiState so today isn't ReviewUiState()'s default 0
+
+            vm.cue()
+            vm.cue()
+
+            assertEquals(today, vm.cuedDay)
+        }
+
     @Test
     fun `markCelebrated and markBadgesSeen write the settings markers`() =
         runTest {

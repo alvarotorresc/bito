@@ -125,9 +125,26 @@ class ReviewViewModel(
 
     fun markBadgesSeen() = write { _, nowMillis -> settings.update { it.copy(badgesSeenUntilMillis = nowMillis) } }
 
-    /** The perfect-day celebration cue (E2), fired once by the screen. Pure presentation — no [write]. */
+    // The screen's LaunchedEffect(state.todaySealed, state.perfectToday) re-runs on every
+    // recomposition that keeps both keys true (e.g. an activity recreation with no configChanges
+    // exemption), so this VM instance guards against replaying the sound for the same logical
+    // day. Once per day, per VM instance — a rotation gets a fresh VM only if the OS actually
+    // tears the process down; whether the cue should ALSO stay silent once the global celebration
+    // sheet (CelebrationsViewModel) has already played it for the same perfect day is a product
+    // call left to the architect, out of this fix's scope.
+    private var cuedForDay: LogicalDay? = null
+
+    /** Exposed for tests — [HabiSounds] has no seam to assert a sound actually played. */
+    internal val cuedDay: LogicalDay?
+        get() = cuedForDay
+
+    /** The perfect-day celebration cue (E2), fired once per logical day by the screen. Pure presentation — no [write]. */
     fun cue() {
-        habiSounds.play(HabiSound.CELEBRATION)
+        val day = uiState.value.today
+        if (cuedForDay != day) {
+            cuedForDay = day
+            habiSounds.play(HabiSound.CELEBRATION)
+        }
     }
 
     companion object {
