@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -14,7 +15,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.pointsLedgerEntity
+import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertNull
 import org.junit.Rule
@@ -22,6 +27,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.ZoneId
 
 /**
  * The bottom bar lives above the NavHost now; these tests guard it surviving a route change.
@@ -60,6 +66,26 @@ class BitoNavHostTest {
             }
         }
         compose.waitForIdle()
+    }
+
+    /** Like [setContent], but [seed] runs against the container's real database first. */
+    private fun setContentSeeded(seed: suspend AppContainer.() -> Unit) {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        runBlocking { container.seed() }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private suspend fun seedPerfectDayToday(container: AppContainer) {
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        container.database.pointsLedgerDao().insert(
+            pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
+        )
     }
 
     @Test
@@ -160,5 +186,40 @@ class BitoNavHostTest {
         compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
         assertNull(NavRequests.pending.value)
+    }
+
+    @Test
+    fun `a pending perfect day shows the sheet on today`() {
+        setContentSeeded { seedPerfectDayToday(this) }
+
+        // CelebrationsViewModel's uiState combines off Dispatchers.Default (real, not the
+        // test's) — same hazard the settings-reminder test above documents, so waitForIdle
+        // alone doesn't pump it.
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a pending perfect day is suppressed on the review route and reappears back on today`() {
+        // Set BEFORE setContent, same as the notification-route test above.
+        NavRequests.open("review")
+
+        setContentSeeded { seedPerfectDayToday(this) }
+
+        // Not a waitUntil here on purpose: this alone would pass identically whether suppression
+        // actually works or the celebrations flow simply hasn't emitted yet. The leg below —
+        // popping back to today and waiting for the sheet to appear — is what actually proves
+        // the state was pending and the review route was the reason it stayed hidden.
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
     }
 }

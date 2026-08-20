@@ -15,6 +15,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
+import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
+import com.alvarotc.bito.ui.celebration.PerfectDaySheet
 import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habi.HabiScreen
@@ -176,6 +179,24 @@ fun BitoNavHost(container: AppContainer) {
             pendingRoute?.let {
                 nav.navigate(it) { launchSingleTop = true }
                 NavRequests.consume()
+            }
+        }
+
+        // T12: the two global celebration sheets, overlaid above the NavHost everywhere except
+        // the `review` route — E2's SealedDayContent already owns that beat there (its own
+        // LaunchedEffect fires the cue and marks it celebrated). The perfect day always wins
+        // first: dismissing it re-evaluates this `when`, and the badge sheet (if any) follows.
+        val celebrations: CelebrationsViewModel = viewModel(factory = CelebrationsViewModel.factory(container))
+        val cState by celebrations.uiState.collectAsStateWithLifecycle()
+        if (currentRoute != "review") {
+            when {
+                cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
+                cState.newBadges.isNotEmpty() -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
+            }
+        }
+        LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute) {
+            if (currentRoute != "review" && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
+                celebrations.cue()
             }
         }
     }
