@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.review
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -148,8 +149,11 @@ private fun OpenState(
 /**
  * E2: today is already sealed. Renders [SealedDayContent] and owns its two effects — the
  * celebration cue fires once per perfect-day entry (the `markCelebrated` marker keeps the global
- * celebration sheet elsewhere in the app from repeating it), and closing marks the badge shelf
- * seen before handing off to the NavHost's own `onClose`.
+ * celebration sheet elsewhere in the app from repeating it), and leaving — by the close button OR
+ * the system back gesture — marks the badge shelf seen before handing off to the NavHost's own
+ * `onClose`. [close] is not a `DisposableEffect`: the marker write launches in `viewModelScope`,
+ * which is cancelled the moment this entry pops, so it has to run BEFORE `onClose()` navigates
+ * away rather than on composition teardown.
  */
 @Composable
 private fun SealedState(
@@ -163,13 +167,15 @@ private fun SealedState(
             viewModel.markCelebrated()
         }
     }
+    val close = {
+        viewModel.markBadgesSeen()
+        onClose()
+    }
+    BackHandler(onBack = close)
     Scaffold(containerColor = Papel) { padding ->
         SealedDayContent(
             state = state,
-            onClose = {
-                viewModel.markBadgesSeen()
-                onClose()
-            },
+            onClose = close,
             modifier = Modifier.padding(padding),
         )
     }

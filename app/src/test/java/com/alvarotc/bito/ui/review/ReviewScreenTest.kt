@@ -1,6 +1,10 @@
 package com.alvarotc.bito.ui.review
 
 import android.content.Context
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -10,6 +14,8 @@ import androidx.compose.ui.test.performClick
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleRegistry
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.daySealEntity
@@ -98,7 +104,10 @@ class ReviewScreenTest {
         db.close()
     }
 
-    private fun setContent(onClose: () -> Unit = {}) {
+    private fun setContent(
+        onClose: () -> Unit = {},
+        backDispatcherOwner: OnBackPressedDispatcherOwner? = null,
+    ) {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val domainState = DomainStateRepository(db)
         val habits = HabitsRepository(db)
@@ -122,10 +131,34 @@ class ReviewScreenTest {
             )
         compose.setContent {
             BitoTheme {
-                ReviewScreen(viewModel = vm, onClose = onClose)
+                if (backDispatcherOwner != null) {
+                    CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides backDispatcherOwner) {
+                        ReviewScreen(viewModel = vm, onClose = onClose)
+                    }
+                } else {
+                    ReviewScreen(viewModel = vm, onClose = onClose)
+                }
             }
         }
         compose.waitForIdle()
+    }
+
+    /**
+     * Minimal [OnBackPressedDispatcherOwner] the test drives directly: `createComposeRule()` has
+     * no `Espresso.pressBack()` and no exposed `.activity`, so the only way to trigger
+     * [androidx.activity.compose.BackHandler]'s callback deterministically is to hand the
+     * composition our OWN dispatcher instance and invoke it ourselves from outside the
+     * composition. [lifecycle] only exists to satisfy the interface — [BackHandler] actually
+     * reads `LocalLifecycleOwner`, which the compose test host already provides and resumes.
+     */
+    private class FakeBackDispatcherOwner : OnBackPressedDispatcherOwner {
+        private val lifecycleRegistry = LifecycleRegistry(this)
+        override val lifecycle: Lifecycle = lifecycleRegistry
+        override val onBackPressedDispatcher = OnBackPressedDispatcher()
+
+        init {
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        }
     }
 
     @Test
@@ -266,5 +299,23 @@ class ReviewScreenTest {
 
         assertTrue(closed)
         assertEquals(fixedNow, runBlocking { settingsRepo.settings.first() }.badgesSeenUntilMillis)
+    }
+
+    @Test
+    fun `leaving the sealed day by back also marks badges as seen`() {
+        runBlocking {
+            db.daySealDao().insert(daySealEntity(logicalDay = today, sealedAtMillis = fixedNow))
+        }
+        var closed = false
+        val backOwner = FakeBackDispatcherOwner()
+        setContent(onClose = { closed = true }, backDispatcherOwner = backOwner)
+
+        compose.runOnIdle {
+            backOwner.onBackPressedDispatcher.onBackPressed()
+        }
+        compose.waitForIdle()
+
+        assertTrue(closed)
+        assertTrue(runBlocking { settingsRepo.settings.first() }.badgesSeenUntilMillis > 0)
     }
 }
