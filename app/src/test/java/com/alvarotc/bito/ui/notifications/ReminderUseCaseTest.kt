@@ -11,6 +11,7 @@ import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
@@ -56,6 +57,7 @@ class ReminderUseCaseTest {
     private lateinit var db: BitoDatabase
     private lateinit var domainStateRepo: DomainStateRepository
     private lateinit var habitsRepo: HabitsRepository
+    private lateinit var journal: JournalRepository
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var useCase: ReminderUseCase
 
@@ -94,6 +96,7 @@ class ReminderUseCaseTest {
                 .build()
         domainStateRepo = DomainStateRepository(db)
         habitsRepo = HabitsRepository(db)
+        journal = JournalRepository(db)
         settingsRepo = SettingsRepository(settingsStore("reminder-use-case"))
         useCase = ReminderUseCase(domainStateRepo, habitsRepo, settingsRepo, now = { fixedNow }, zone = { utc })
     }
@@ -173,6 +176,20 @@ class ReminderUseCaseTest {
             val settled = useCase.evaluate("REVIEW", "")
             assertTrue(settled is ReminderUseCase.Outcome.Silent)
             assertEquals(SlotKind.REVIEW, (settled as ReminderUseCase.Outcome.Silent).slot.kind)
+        }
+
+    @Test
+    fun `the review slot goes silent once today is sealed, even with an unlogged habit`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+            )
+            journal.sealDay(today, fixedNow)
+
+            val outcome = useCase.evaluate("REVIEW", "")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Silent)
+            assertEquals(SlotKind.REVIEW, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
         }
 
     @Test

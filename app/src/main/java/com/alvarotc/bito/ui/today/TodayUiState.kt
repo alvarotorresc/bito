@@ -74,6 +74,7 @@ data class TodayUiState(
     val cards: List<HabitCardUi> = emptyList(),
     val pausedHabits: List<PausedHabitUi> = emptyList(),
     val pendingSealDays: List<LogicalDay> = emptyList(),
+    val todaySealed: Boolean = false,
     val spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
     val userName: String = "",
     val loading: Boolean = true,
@@ -121,13 +122,14 @@ fun buildTodayUiState(
         cards = cards,
         pausedHabits = pausedHabits,
         pendingSealDays = Sealing.pendingSealDays(state, today),
+        todaySealed = Sealing.isSealed(state, today),
         spec = HabiSpec(mood, personality, equippedSetOf(equippedIds)),
         userName = userName,
         loading = false,
     )
 }
 
-private fun cardOf(
+internal fun cardOf(
     state: DomainState,
     habit: Habit,
     today: LogicalDay,
