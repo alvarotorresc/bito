@@ -22,14 +22,15 @@ class WidgetLogger(
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
 ) {
+    /** Logs [amount] for [habitId] and returns whether this write is the one that made today perfect. */
     suspend fun log(
         habitId: String,
         amount: Int,
-    ) {
+    ): Boolean {
         val prefs = settings.settings.first()
         val nowMillis = now()
         val today = LogicalDays.logicalDayOf(nowMillis, prefs.dayCutoffMinutes, zone())
         journal.log(EntryEntity(UUID.randomUUID().toString(), habitId, today, amount, nowMillis))
-        reconciler.reconcile(today, nowMillis)
+        return reconciler.reconcile(today, nowMillis).reachedPerfectDay(today)
     }
 }
