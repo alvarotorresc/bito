@@ -20,6 +20,7 @@ import com.alvarotc.bito.ui.theme.Hoja
 object Notifier {
     const val REMINDER_ID = 1
     const val REVIEW_ID = 2
+    const val CELEBRATION_ID = 3
 
     /** Extra keys carried by [quickActionIntent] and read back in [QuickActionReceiver]. */
     const val EXTRA_HABIT_ID = "habitId"
@@ -93,6 +94,23 @@ object Notifier {
                 .setContentText(context.getString(R.string.notif_review_body))
                 .setContentIntent(contentIntent(context, "review", 2))
         notify(context, REVIEW_ID, builder)
+    }
+
+    /**
+     * The CELEBRATIONS nudge: [PerfectDayNotifier] already decided this write is worth
+     * announcing outside the app — this just renders [body] under its own channel and id.
+     * Tapping it opens Today bare, the same default [contentIntent] every other route falls
+     * back to, where the in-app perfect-day sheet takes over from there.
+     */
+    fun showPerfectDay(
+        context: Context,
+        body: String,
+    ) {
+        val builder =
+            baseBuilder(context, NotificationChannels.CELEBRATIONS)
+                .setContentTitle(context.getString(R.string.notif_perfect_day_title))
+                .setContentText(body)
+        notify(context, CELEBRATION_ID, builder)
     }
 
     /** Clears a stale reminder notification (e.g. its habit got logged some other way). */

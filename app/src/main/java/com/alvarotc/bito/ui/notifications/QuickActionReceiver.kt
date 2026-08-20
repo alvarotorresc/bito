@@ -46,7 +46,8 @@ class QuickActionReceiver : BroadcastReceiver() {
         val container = (context.applicationContext as BitoApp).container
         val useCase =
             QuickActionUseCase(container.journal, container.reconciler, container.domainState, container.habits, container.settings)
-        useCase.log(habitId, amount)
+        val result = useCase.log(habitId, amount)
+        PerfectDayNotifier.maybeNotify(context, container, result.perfectDayReached)
         if (notificationId != Notifier.REMINDER_ID) {
             NotificationManagerCompat.from(context).cancel(notificationId)
         }

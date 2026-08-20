@@ -6,6 +6,7 @@ import androidx.glance.action.ActionParameters
 import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.updateAll
 import com.alvarotc.bito.BitoApp
+import com.alvarotc.bito.ui.notifications.PerfectDayNotifier
 
 /** Runs a widget tap: logs the habit and refreshes every instance with the new state. */
 class LogHabitAction : ActionCallback {
@@ -17,7 +18,8 @@ class LogHabitAction : ActionCallback {
         val habitId = parameters[HABIT_ID] ?: return
         val amount = parameters[AMOUNT] ?: 1
         val container = (context.applicationContext as BitoApp).container
-        WidgetLogger(container.journal, container.reconciler, container.settings).log(habitId, amount)
+        val reached = WidgetLogger(container.journal, container.reconciler, container.settings).log(habitId, amount)
+        PerfectDayNotifier.maybeNotify(context, container, reached)
         TodayWidget().updateAll(context)
     }
 

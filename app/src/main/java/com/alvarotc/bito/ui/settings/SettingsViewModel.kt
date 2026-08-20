@@ -69,6 +69,8 @@ class SettingsViewModel(
 
     fun setHabiSounds(enabled: Boolean) = write { it.copy(habiSoundsEnabled = enabled) }
 
+    fun setPerfectDayCelebration(enabled: Boolean) = write { it.copy(perfectDayCelebration = enabled) }
+
     private fun write(transform: (Settings) -> Settings) {
         viewModelScope.launch { settings.update(transform) }
     }

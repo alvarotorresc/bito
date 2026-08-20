@@ -212,6 +212,26 @@ class SettingsScreenTest {
         assertFalse(runBlocking { settings.settings.first() }.habiSoundsEnabled)
     }
 
+    @Test
+    fun `the celebration switch writes the setting`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-celebration-toggle"))
+        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).assertIsOff()
+        assertFalse(runBlocking { settings.settings.first() }.perfectDayCelebration)
+    }
+
     /**
      * Covers the import preview's "%1\$s · %2\$s" join of two independent pluralStringResource
      * calls (habits, log entries) — the nit 6 follow-up parameter wiring a format regression could

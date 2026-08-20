@@ -183,6 +183,21 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `setPerfectDayCelebration writes`() =
+        runTest {
+            advanceUntilIdle()
+            assertTrue(vm.state.value?.perfectDayCelebration == true) // default
+
+            vm.setPerfectDayCelebration(false)
+            advanceUntilIdle()
+            assertEquals(false, vm.state.value?.perfectDayCelebration)
+
+            vm.setPerfectDayCelebration(true)
+            advanceUntilIdle()
+            assertEquals(true, vm.state.value?.perfectDayCelebration)
+        }
+
+    @Test
     fun `archivedHabits starts empty and is empty until a habit is archived`() =
         runTest {
             val habits = HabitsRepository(db)
