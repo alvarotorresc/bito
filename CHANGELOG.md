@@ -2,6 +2,22 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [0.7.0] - 2026-08-20
+
+### Added
+
+- Repaso del día: una pantalla para cerrar la jornada con solo lo que queda por hacer — marcar hecho o dejarlo pasar sin culpa, sumar lo que falte, confirmar el día limpio o apuntar una recaída — y sellar el día. Al sellar, Habi aparece en su escenario con el anillo final, los puntos ganados hoy y las rachas que avanzan. Si llevas días sin abrir la app, el repaso ofrece sellarlos de golpe.
+- «Cerrar el día» desde la tarjeta del anillo en Hoy; la notificación del repaso abre el repaso directamente.
+- Logros: catorce insignias con nombre propio en tres familias (rachas, constancia y momentos) que se desbloquean solas con tu historial y no se pierden nunca. Sección de Logros en Estadísticas y lista completa con la fecha de desbloqueo o cómo se gana cada una.
+- Celebración de día perfecto: Habi lo celebra dentro de la app (una sola vez, también si lo cierras desde el repaso) y, si lo completas desde el widget o una notificación con la app cerrada, te lo cuenta con un aviso en su voz, en un canal propio. Un interruptor en Ajustes controla solo ese aviso; dentro de la app siempre se celebra.
+- Cada logro nuevo se celebra con su hoja y la voz de la personalidad activa.
+
+### Changed
+
+- El repaso deja de avisar cuando el día ya está sellado, aunque queden hábitos sin hacer; un hábito de dejar algo con recaída registrada tampoco mantiene el aviso.
+- El sonido de celebración de Habi ya no suena al completar el anillo de Hoy: suena con el día perfecto y con cada logro.
+- La copia de seguridad pasa a la versión 3 (guarda qué celebraciones has visto); las copias anteriores siguen restaurando.
+
 ## [0.6.0] - 2026-08-19
 
 ### Added
