@@ -1,9 +1,11 @@
 package com.alvarotc.bito.ui.review
 
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -20,6 +22,7 @@ import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.theme.BitoTheme
@@ -171,6 +174,34 @@ class ReviewScreenTest {
         compose.onNodeWithTag("review-row-h1", useUnmergedTree = true).assertDoesNotExist()
         val entries = runBlocking { db.entryDao().all() }
         assertTrue(entries.isEmpty())
+    }
+
+    @Test
+    fun `tapping He recaido opens the relapse sheet and confirming logs it`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Fumar", metric = Metric.CHECK, direction = Direction.ZERO, target = 0, createdOnDay = today),
+            )
+        }
+        setContent()
+
+        compose.onNodeWithTag("review-relapse-h1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Log a relapse?", useUnmergedTree = true).assertExists()
+        // Not performClick(): synthesized touch gestures don't reach a button inside a
+        // ModalBottomSheet under this Robolectric harness (same limitation documented in
+        // DetailScreenTest's freezer-sheet test) — invoking the node's own OnClick action
+        // directly is what actually proves tapping "Log relapse" calls onConfirm. Merged tree
+        // (no useUnmergedTree) so the match lands on the Button's own node, which is what
+        // actually carries the OnClick action — the unmerged Text child underneath does not.
+        val confirm = compose.onNodeWithText("Log relapse")
+        confirm.assertExists()
+        confirm.fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+        compose.waitForIdle()
+
+        val entries = runBlocking { db.entryDao().all() }
+        assertTrue(entries.any { it.habitId == "h1" && it.value == 1 })
+        compose.onNodeWithTag("review-row-h1", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
