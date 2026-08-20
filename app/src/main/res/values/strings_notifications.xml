@@ -2,6 +2,7 @@
 <resources>
     <string name="channel_reminders">Reminders</string>
     <string name="channel_review">Daily review</string>
+    <string name="channel_celebrations">Celebrations</string>
     <plurals name="notif_reminder_title">
         <item quantity="one">%1$d habit waiting</item>
         <item quantity="other">%1$d habits waiting</item>
@@ -14,4 +15,5 @@
     <string name="notif_target_add" translatable="false">+%1$d %2$s</string>
     <string name="notif_review_title">Close your day</string>
     <string name="notif_review_body">Something is still open — one minute and done</string>
+    <string name="notif_perfect_day_title">Perfect day</string>
 </resources>
