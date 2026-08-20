@@ -1,6 +1,8 @@
 package com.alvarotc.bito.domain
 
+import com.alvarotc.bito.domain.model.Period
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -224,5 +226,20 @@ class PerfectDaysTest {
             )
 
         assertTrue(PerfectDays.isPerfectDay(state, TODAY - 1, TODAY))
+    }
+
+    @Test
+    fun `perfectDaysUpTo lists every perfect day since the first habit`() {
+        val habit = RealHabits.makeBed.createdOn(TODAY - 3)
+        val state = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(TODAY - 3, TODAY - 1)))
+        assertEquals(setOf(TODAY - 3, TODAY - 1), PerfectDays.perfectDaysUpTo(state, TODAY))
+    }
+
+    @Test
+    fun `perfectPeriodKeys only counts periods with all their days perfect`() {
+        val fullWeek = (LAST_MONDAY..LAST_SUNDAY).toSet()
+        val keys = PerfectDays.perfectPeriodKeys(fullWeek, Period.WEEK, LAST_MONDAY - 7, TODAY)
+        assertEquals(listOf(LogicalDays.periodKeyOf(LAST_MONDAY, Period.WEEK)), keys)
+        assertEquals(emptyList<Int>(), PerfectDays.perfectPeriodKeys(fullWeek - LAST_FRIDAY, Period.WEEK, LAST_MONDAY - 7, TODAY))
     }
 }

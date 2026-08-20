@@ -202,4 +202,12 @@ class StatsEngineTest {
     fun `last activity day is null with no history`() {
         assertNull(StatsEngine.lastActivityDay(domainState()))
     }
+
+    @Test
+    fun `streaksAdvancedToday counts fulfilled-today habits with a live streak`() {
+        val done = RealHabits.makeBed
+        val notYet = RealHabits.meditate
+        val state = domainState(habits = listOf(done, notYet), entries = entriesOn(done, (TODAY - 2)..TODAY))
+        assertEquals(1, StatsEngine.streaksAdvancedToday(state, TODAY))
+    }
 }

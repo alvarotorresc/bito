@@ -70,6 +70,18 @@ object PointsEngine {
         return bought - state.freezerUses.size
     }
 
+    /** Points earned on [day]: the sum of every positive ledger delta dated that day. */
+    fun pointsEarnedOn(
+        ledger: List<PointsLedgerEntry>,
+        day: LogicalDay,
+    ): Int = ledger.filter { it.logicalDay == day && it.delta > 0 }.sumOf { it.delta }
+
+    /** Whether [day]'s PERFECT_DAY grant is already in the ledger. */
+    fun perfectDayGranted(
+        ledger: List<PointsLedgerEntry>,
+        day: LogicalDay,
+    ): Boolean = ledger.any { it.reason == PointsReason.PERFECT_DAY && it.refId == "day:$day" }
+
     private fun habitDoneEvents(
         state: DomainState,
         today: LogicalDay,
@@ -127,7 +139,7 @@ object PointsEngine {
         val firstDay = state.habits.minOfOrNull { it.createdOnDay } ?: return emptyList()
         if (firstDay > today) return emptyList()
 
-        val perfectDays = (firstDay..today).filter { PerfectDays.isPerfectDay(state, it, today) }.toSet()
+        val perfectDays = PerfectDays.perfectDaysUpTo(state, today)
         val dayEvents =
             perfectDays.sorted().map { day ->
                 PointsEvent(PointsReason.PERFECT_DAY, "day:$day", day, config.perfectDayPoints)
@@ -145,20 +157,15 @@ object PointsEngine {
         points: Int,
         firstDay: LogicalDay,
         today: LogicalDay,
-    ): List<PointsEvent> {
-        val firstKey = LogicalDays.periodKeyOf(firstDay, period)
-        val lastKey = LogicalDays.periodKeyOf(today, period)
-        return (firstKey..lastKey)
-            .filter { periodKey -> LogicalDays.daysOf(periodKey, period).all { it in perfectDays } }
-            .map { periodKey ->
-                PointsEvent(
-                    reason = PointsReason.PERFECT_DAY,
-                    refId = "$refPrefix:$periodKey",
-                    logicalDay = LogicalDays.daysOf(periodKey, period).last,
-                    delta = points,
-                )
-            }
-    }
+    ): List<PointsEvent> =
+        PerfectDays.perfectPeriodKeys(perfectDays, period, firstDay, today).map { periodKey ->
+            PointsEvent(
+                reason = PointsReason.PERFECT_DAY,
+                refId = "$refPrefix:$periodKey",
+                logicalDay = LogicalDays.daysOf(periodKey, period).last,
+                delta = points,
+            )
+        }
 
     private fun streakMilestoneEvents(
         state: DomainState,

@@ -526,6 +526,20 @@ class PointsEngineTest {
     }
 
     @Test
+    fun `pointsEarnedOn sums only positive deltas dated that day`() {
+        val ledger =
+            listOf(
+                ledgerEntry(1, PointsReason.HABIT_DONE, "a:1", day = TODAY),
+                ledgerEntry(3, PointsReason.PERFECT_DAY, "day:$TODAY", day = TODAY),
+                ledgerEntry(-100, PointsReason.BUY_FREEZER, null, day = TODAY),
+                ledgerEntry(5, PointsReason.STREAK_MILESTONE, "a:7", day = TODAY - 1),
+            )
+        assertEquals(4, PointsEngine.pointsEarnedOn(ledger, TODAY))
+        assertTrue(PointsEngine.perfectDayGranted(ledger, TODAY))
+        assertFalse(PointsEngine.perfectDayGranted(ledger, TODAY - 1))
+    }
+
+    @Test
     fun `economy numbers are the ones settled in the economy session`() {
         val economy = EconomyConfig()
         assertEquals(1, economy.habitDonePoints)

@@ -56,6 +56,38 @@ object Streaks {
         return milestones.filter { it <= longestRun }.toSet()
     }
 
+    /**
+     * Whether [habit] ever broke a run of at least [minRun] periods (a real BREAKS — a FAILED
+     * period with no pause/freezer bridge, not an ENDS_WALK) and later counted a period again.
+     * The badge celebrates the comeback, not the reconstruction: reaching [minRun] again after
+     * the break is not required, only that history counts at least once more afterward.
+     */
+    fun hasResurrected(
+        state: DomainState,
+        habit: Habit,
+        today: LogicalDay,
+        minRun: Int = 30,
+    ): Boolean {
+        val firstKey = LogicalDays.periodKeyOf(habit.createdOnDay, habit.period)
+        val lastKey = LogicalDays.periodKeyOf(today, habit.period)
+        var run = 0
+        var brokeAfterLongRun = false
+        for (key in firstKey..lastKey) {
+            when (outcomeOf(state, habit, key, today)) {
+                PeriodOutcome.COUNTS -> {
+                    if (brokeAfterLongRun) return true
+                    run++
+                }
+                PeriodOutcome.BRIDGES, PeriodOutcome.ENDS_WALK -> Unit
+                PeriodOutcome.BREAKS -> {
+                    if (run >= minRun) brokeAfterLongRun = true
+                    run = 0
+                }
+            }
+        }
+        return false
+    }
+
     private fun currentStreak(
         state: DomainState,
         habit: Habit,

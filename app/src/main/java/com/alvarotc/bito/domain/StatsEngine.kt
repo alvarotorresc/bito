@@ -156,6 +156,17 @@ object StatsEngine {
         )
     }
 
+    /** Habits requirable today whose period containing today is FULFILLED and whose current streak is ≥ 1. */
+    fun streaksAdvancedToday(
+        state: DomainState,
+        today: LogicalDay,
+    ): Int =
+        state.habits.count { habit ->
+            Compliance.isRequirableOn(state, habit, today) &&
+                Compliance.complianceOf(state, habit, LogicalDays.periodKeyOf(today, habit.period), today) == ComplianceStatus.FULFILLED &&
+                Streaks.streaksOf(state, habit, today).current >= 1
+        }
+
     /** The most recent day with any entry or seal — feeds [MoodEngine.moodOf]. Null when history is empty. */
     fun lastActivityDay(state: DomainState): LogicalDay? =
         (state.entries.asSequence().map { it.logicalDay } + state.daySeals.asSequence().map { it.logicalDay })
