@@ -10,15 +10,19 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,7 +61,11 @@ fun PerfectDaySheet(
     state: CelebrationsUiState,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+    // skipPartiallyExpanded + scrollable content, same TimePickerSheet precedent (QA finding,
+    // M7): a half-expanded sheet on a short device can otherwise clip "Continue" below the
+    // viewport, reachable only by a drag the user never discovers.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = Tarjeta) {
         // Entrance scale 0.9 -> 1 (200ms ease-out), same beat as E2's SealedDayContent.
         var entered by remember { mutableStateOf(false) }
         val scale by
@@ -73,6 +81,8 @@ fun PerfectDaySheet(
                 .fillMaxWidth()
                 .scale(scale)
                 .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
                 .testTag("perfect-day-sheet"),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -107,14 +117,17 @@ fun PerfectDaySheet(
 
 /**
  * Global badge-unlock celebration sheet: every badge earned since the shelf was last opened,
- * listed by name and its own icon ([BadgeStrings.badgeIcon]), with Habi's line naming the first one.
+ * listed by name and its own icon ([BadgeStrings.badgeIcon]), with Habi's line naming the first
+ * one. `skipPartiallyExpanded` + a scrollable [Column] (QA finding, M7): a night with many badges
+ * (10 seen live on the Pixel) overflows a half-expanded sheet, leaving "Continue" unreachable.
  */
 @Composable
 fun BadgeUnlockSheet(
     state: CelebrationsUiState,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState, containerColor = Tarjeta) {
         var entered by remember { mutableStateOf(false) }
         val scale by
             animateFloatAsState(
@@ -129,6 +142,8 @@ fun BadgeUnlockSheet(
                 .fillMaxWidth()
                 .scale(scale)
                 .padding(20.dp)
+                .verticalScroll(rememberScrollState())
+                .navigationBarsPadding()
                 .testTag("badge-sheet"),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),

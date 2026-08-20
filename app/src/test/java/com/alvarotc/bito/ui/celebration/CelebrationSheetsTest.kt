@@ -2,10 +2,12 @@ package com.alvarotc.bito.ui.celebration
 
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performScrollTo
 import com.alvarotc.bito.domain.model.BadgeCatalog
 import com.alvarotc.bito.domain.model.BadgeDef
 import com.alvarotc.bito.domain.model.EquippedSet
@@ -98,5 +100,23 @@ class CelebrationSheetsTest {
         compose.waitForIdle()
 
         assertTrue(dismissed)
+    }
+
+    @Test
+    fun `continue stays reachable with many new badges`() {
+        // QA finding (task-14 review): a night with 10 new badges overflowed a half-expanded
+        // sheet and left "Continue" clipped below the viewport. skipPartiallyExpanded plus a
+        // scrollable Column fix this — proven here by scrolling to the button and asserting it
+        // actually renders on screen, not merely that the node exists in the tree.
+        val manyBadges = BadgeCatalog.all.take(10)
+        compose.setContent {
+            BitoTheme {
+                BadgeUnlockSheet(state(newBadges = manyBadges), onDismiss = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("badge-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Continue").performScrollTo().assertIsDisplayed()
     }
 }
