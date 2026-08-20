@@ -69,9 +69,36 @@ class CelebrationsViewModel(
         }
     }
 
-    /** Habi's celebration cue for the sheet. Pure presentation — no [settings] write. */
+    // R7: CelebrationsViewModel outlives the composition (survives Activity recreation — e.g.
+    // rotation, since MainActivity has no configChanges), but BitoNavHost's cue LaunchedEffect is
+    // composition-scoped and keyed on (perfectDayPending, hasNewBadges, currentRoute). Rotating
+    // while a sheet is pending re-runs that effect with the same keys, which would call cue()
+    // again for the very same sheet. Idempotency has to live here, in the survivor, not in the
+    // effect.
+    private var lastCuedSignature: String? = null
+
+    /** Exposed for tests — [HabiSounds] has no seam to assert a sound actually played. */
+    internal val lastCued: String?
+        get() = lastCuedSignature
+
+    /**
+     * Habi's celebration cue for the sheet. Pure presentation — no [settings] write. Idempotent
+     * per pending sheet: plays at most once for a given [CelebrationsUiState.perfectDayPending]
+     * or [CelebrationsUiState.newBadges] set, no matter how many times the host effect that calls
+     * this re-runs (e.g. across a rotation) while that same sheet stays pending.
+     */
     fun cue() {
-        habiSounds.play(HabiSound.CELEBRATION)
+        val state = uiState.value
+        val signature =
+            when {
+                state.perfectDayPending -> "perfect-day"
+                state.newBadges.isNotEmpty() -> "badges:" + state.newBadges.joinToString(",") { it.id }
+                else -> return
+            }
+        if (signature != lastCuedSignature) {
+            lastCuedSignature = signature
+            habiSounds.play(HabiSound.CELEBRATION)
+        }
     }
 
     companion object {

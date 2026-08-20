@@ -7,10 +7,12 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.habi.HabiSounds
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,6 +31,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -126,5 +129,42 @@ class CelebrationsViewModelTest {
             advanceUntilIdle()
 
             assertEquals(fixedNow, settingsRepo.settings.first().badgesSeenUntilMillis)
+        }
+
+    // R7: CelebrationsViewModel outlives the composition (survives rotation), so BitoNavHost's
+    // composition-scoped cue LaunchedEffect re-running with the same keys after recreation must
+    // not double-play the sound for the same pending sheet — the idempotency lives in cue()
+    // itself via lastCuedSignature. HabiSounds has no seam to assert playback directly, so these
+    // assert through the exposed signature instead.
+    @Test
+    fun `cue plays once for a pending perfect day and is a no-op on a second call`() =
+        runTest {
+            val today = LogicalDays.logicalDayOf(fixedNow, 0, utc)
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
+            )
+            state()
+
+            vm.cue()
+            vm.cue()
+
+            assertEquals("perfect-day", vm.lastCued)
+        }
+
+    @Test
+    fun `cue does nothing once the perfect day is dismissed and no badges are pending`() =
+        runTest {
+            val today = LogicalDays.logicalDayOf(fixedNow, 0, utc)
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
+            )
+            state()
+            vm.dismissPerfectDay()
+            advanceUntilIdle()
+            state()
+
+            vm.cue()
+
+            assertNull(vm.lastCued)
         }
 }
