@@ -123,6 +123,8 @@ fun Settings.toBackup() =
         backupEncryption = backupEncryption,
         onboardingDone = onboardingDone,
         habiSoundsEnabled = habiSoundsEnabled,
+        perfectDayCelebratedDay = perfectDayCelebratedDay,
+        badgesSeenUntilMillis = badgesSeenUntilMillis,
     )
 
 fun BackupSettings.toSettings() =
@@ -140,4 +142,6 @@ fun BackupSettings.toSettings() =
         backupEncryption = backupEncryption,
         onboardingDone = onboardingDone,
         habiSoundsEnabled = habiSoundsEnabled,
+        perfectDayCelebratedDay = perfectDayCelebratedDay,
+        badgesSeenUntilMillis = badgesSeenUntilMillis,
     )

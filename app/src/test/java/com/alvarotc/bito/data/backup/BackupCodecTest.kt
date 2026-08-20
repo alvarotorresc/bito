@@ -59,7 +59,7 @@ class BackupCodecTest {
     fun `encoded backup is human readable json`() {
         val text = BackupCodec.encode(sampleFile())
         assertTrue(text.contains("\n")) // pretty-printed (§5.1 data sovereignty)
-        assertTrue(text.contains("\"schemaVersion\": 2"))
+        assertTrue(text.contains("\"schemaVersion\": 3"))
         assertTrue(text.contains("\"Beber agua\""))
     }
 
@@ -82,12 +82,25 @@ class BackupCodecTest {
         val fileWithSoundsOff = sampleFile().copy(settings = sampleFile().settings.copy(habiSoundsEnabled = false))
         val v1Json =
             BackupCodec.encode(fileWithSoundsOff)
-                .replace("\"schemaVersion\": 2", "\"schemaVersion\": 1")
+                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
                 .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
 
         val decoded = BackupCodec.decode(v1Json)
 
         assertTrue(decoded.settings.habiSoundsEnabled)
+    }
+
+    @Test
+    fun `a v2 backup without the celebration markers imports with their defaults`() {
+        val seeded = sampleFile().copy(settings = sampleFile().settings.copy(perfectDayCelebratedDay = 20679, badgesSeenUntilMillis = 77L))
+        val v2Json =
+            BackupCodec.encode(seeded)
+                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 2")
+                .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
+                .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
+        val decoded = BackupCodec.decode(v2Json)
+        assertEquals(-1, decoded.settings.perfectDayCelebratedDay)
+        assertEquals(0L, decoded.settings.badgesSeenUntilMillis)
     }
 
     @Test

@@ -10,7 +10,8 @@ private data class SchemaProbe(val schemaVersion: Int = -1)
 
 object BackupCodec {
     // v2 (M6): + settings.habiSoundsEnabled (defaults to true when absent).
-    const val SCHEMA_VERSION = 2
+    // v3 (M7): + settings.perfectDayCelebratedDay (-1 when absent) and settings.badgesSeenUntilMillis (0 when absent).
+    const val SCHEMA_VERSION = 3
 
     private val json =
         Json {
