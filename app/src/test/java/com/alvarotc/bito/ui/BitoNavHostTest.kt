@@ -15,6 +15,8 @@ import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.ui.theme.BitoTheme
+import org.junit.After
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,6 +35,13 @@ import org.robolectric.annotation.Config
 class BitoNavHostTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @After
+    fun tearDown() {
+        // NavRequests is a process-wide singleton (T11): a route left pending here would leak
+        // into whichever test class runs next in this JVM fork.
+        NavRequests.consume()
+    }
 
     /**
      * The screen title Text, as opposed to a bottom-bar tab wearing the same label — the bar now
@@ -137,5 +146,19 @@ class BitoNavHostTest {
         compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a pending review request opens the review flow and hides the bar`() {
+        // Set BEFORE setContent: BitoNavHost's LaunchedEffect must observe the already-pending
+        // route on its very first composition, the same way a notification tap's Intent extra
+        // would already be waiting when onCreate() first builds the NavHost.
+        NavRequests.open("review")
+
+        setContent()
+
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(NavRequests.pending.value)
     }
 }

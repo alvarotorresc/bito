@@ -75,6 +75,7 @@ class TodayScreenTest {
 
     private lateinit var db: BitoDatabase
     private var openedId: String? = null
+    private var reviewOpened = false
 
     private fun settingsStore(name: String): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -127,7 +128,13 @@ class TodayScreenTest {
 
         compose.setContent {
             BitoTheme {
-                TodayScreen(vm, onCreateHabit = {}, onOpenHabit = { openedId = it }, onOpenHabi = {})
+                TodayScreen(
+                    vm,
+                    onCreateHabit = {},
+                    onOpenHabit = { openedId = it },
+                    onOpenHabi = {},
+                    onOpenReview = { reviewOpened = true },
+                )
             }
         }
         compose.waitForIdle()
@@ -137,6 +144,14 @@ class TodayScreenTest {
     fun tearDown() {
         Dispatchers.resetMain()
         db.close()
+    }
+
+    @Test
+    fun `the ring card offers to close the day`() {
+        compose.onNodeWithTag("close-day", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertTrue(reviewOpened)
     }
 
     @Test

@@ -45,6 +45,7 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.DayRing
+import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.formatDayWithPattern
 import com.alvarotc.bito.ui.habi.HabiAvatar
@@ -66,6 +67,7 @@ fun TodayScreen(
     onCreateHabit: () -> Unit,
     onOpenHabit: (String) -> Unit,
     onOpenHabi: () -> Unit,
+    onOpenReview: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -127,7 +129,7 @@ fun TodayScreen(
             if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty()) {
                 item { EmptyToday(onCreateHabit) }
             } else {
-                item { RingCard(state.ringDone, state.ringTotal) }
+                item { RingCard(state.ringDone, state.ringTotal, onOpenReview) }
             }
             items(orderedCards, key = { it.id }) { card ->
                 ReorderableItem(reorderState, key = card.id) {
@@ -206,11 +208,12 @@ private fun TodayHeader(
     }
 }
 
-/** THE single solid-accent card on the screen: today's ring, "N of M". */
+/** THE single solid-accent card on the screen: today's ring, "N of M", and the way into the review. */
 @Composable
 private fun RingCard(
     done: Int,
     total: Int,
+    onOpenReview: () -> Unit,
 ) {
     BitoCard(
         container = Hoja,
@@ -231,6 +234,15 @@ private fun RingCard(
                     stringResource(R.string.ring_caption),
                     style = MaterialTheme.typography.labelMedium,
                     color = Tarjeta.copy(alpha = 0.8f),
+                )
+                Spacer(Modifier.height(8.dp))
+                GhostPillButton(
+                    text = stringResource(R.string.today_close_day),
+                    onClick = onOpenReview,
+                    color = Tarjeta,
+                    borderColor = Tarjeta.copy(alpha = 0.6f),
+                    icon = BitoIcons.ChevronRight,
+                    modifier = Modifier.testTag("close-day"),
                 )
             }
         }

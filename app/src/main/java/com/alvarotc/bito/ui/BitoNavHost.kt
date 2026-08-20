@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -88,6 +91,7 @@ fun BitoNavHost(container: AppContainer) {
                             launchSingleTop = true
                         }
                     },
+                    onOpenReview = { nav.navigate("review") },
                 )
             }
             composable(
@@ -158,6 +162,20 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = ReviewViewModel.factory(container)),
                     onClose = { nav.popBackStack() },
                 )
+            }
+        }
+
+        // T11: the one bridge from an Intent (a notification tap) to this NavHost. Declared
+        // alongside NavHost, not as a sibling of the outer Scaffold — Scaffold subcomposes its
+        // content (this whole block) lazily during measurement, so an effect placed outside it
+        // would fire before NavHost has set the nav graph and crash navigating anywhere. A route
+        // already pending when this composes (MainActivity decoded it before setContent) fires
+        // on the very first LaunchedEffect run, same as one that arrives later via onNewIntent.
+        val pendingRoute by NavRequests.pending.collectAsStateWithLifecycle()
+        LaunchedEffect(pendingRoute) {
+            pendingRoute?.let {
+                nav.navigate(it) { launchSingleTop = true }
+                NavRequests.consume()
             }
         }
     }
