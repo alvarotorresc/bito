@@ -2,7 +2,6 @@ package com.alvarotc.bito.ui.review
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -19,6 +18,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +51,8 @@ import com.alvarotc.bito.ui.today.RelapseSheet
 /**
  * The nightly review, entry point of the `review` route (no bottom nav — this is its own flow).
  * E1 ([OpenState]) is built here: pending rows, the away-days batch seal and the "seal the day"
- * CTA. E2 ([SealedState]) is a stub T10 fills in once today is actually sealed.
+ * CTA. E2 ([SealedState]) renders once today is actually sealed — Habi on stage, the final ring,
+ * points, streaks and any new badge (see [SealedDayContent]).
  */
 @Composable
 fun ReviewScreen(
@@ -60,7 +61,7 @@ fun ReviewScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     if (state.todaySealed) {
-        SealedState(state, onClose)
+        SealedState(viewModel, state, onClose)
     } else {
         OpenState(viewModel, state, onClose)
     }
@@ -145,22 +146,32 @@ private fun OpenState(
 }
 
 /**
- * E2 stub: T10 renders the sealed/perfect-day celebration here (Habi stage, ring, points,
- * badges, "see you tomorrow"). A centered placeholder keeps `ReviewScreen`'s branch compiling
- * and testable until then.
+ * E2: today is already sealed. Renders [SealedDayContent] and owns its two effects — the
+ * celebration cue fires once per perfect-day entry (the `markCelebrated` marker keeps the global
+ * celebration sheet elsewhere in the app from repeating it), and closing marks the badge shelf
+ * seen before handing off to the NavHost's own `onClose`.
  */
 @Composable
 private fun SealedState(
+    viewModel: ReviewViewModel,
     state: ReviewUiState,
     onClose: () -> Unit,
 ) {
-    Scaffold(containerColor = Papel) { padding ->
-        Box(
-            Modifier.padding(padding).fillMaxSize().testTag("review-sealed"),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(stringResource(R.string.review_sealed_title), style = MaterialTheme.typography.headlineLarge, color = Tinta)
+    LaunchedEffect(state.todaySealed, state.perfectToday) {
+        if (state.todaySealed && state.perfectToday) {
+            viewModel.cue()
+            viewModel.markCelebrated()
         }
+    }
+    Scaffold(containerColor = Papel) { padding ->
+        SealedDayContent(
+            state = state,
+            onClose = {
+                viewModel.markBadgesSeen()
+                onClose()
+            },
+            modifier = Modifier.padding(padding),
+        )
     }
 }
 

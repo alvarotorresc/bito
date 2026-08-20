@@ -12,6 +12,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.daySealEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
@@ -31,6 +32,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -71,6 +73,7 @@ class ReviewScreenTest {
     private var storeIndex = 0
 
     private lateinit var db: BitoDatabase
+    private lateinit var settingsRepo: SettingsRepository
 
     private fun settingsStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -100,16 +103,16 @@ class ReviewScreenTest {
         val domainState = DomainStateRepository(db)
         val habits = HabitsRepository(db)
         val journal = JournalRepository(db)
-        val settings = SettingsRepository(settingsStore())
+        settingsRepo = SettingsRepository(settingsStore())
         val rewards = RewardsRepository(db)
         val reconciler = PointsReconciler(domainState, rewards)
-        val habiSounds = HabiSounds(context, settings, dispatcher = dispatcher)
+        val habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
         val vm =
             ReviewViewModel(
                 domainState,
                 habits,
                 journal,
-                settings,
+                settingsRepo,
                 reconciler,
                 rewards,
                 habiSounds,
@@ -220,5 +223,48 @@ class ReviewScreenTest {
         setContent()
 
         compose.onNodeWithTag("review-empty", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `sealed today shows the sealed state with points and streaks`() {
+        runBlocking {
+            db.daySealDao().insert(daySealEntity(logicalDay = today, sealedAtMillis = fixedNow))
+        }
+        setContent()
+
+        compose.onNodeWithTag("review-ring", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("review-points", useUnmergedTree = true).assertExists()
+        // No demandable habit today: nothing advanced a streak, so the chip stays hidden.
+        compose.onNodeWithTag("review-streaks", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a perfect sealed day shows the perfect title and marks the celebration`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today),
+            )
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
+            db.daySealDao().insert(daySealEntity(logicalDay = today, sealedAtMillis = fixedNow))
+        }
+        setContent()
+
+        compose.onNodeWithText("Perfect day!", useUnmergedTree = true).assertExists()
+        assertEquals(today, runBlocking { settingsRepo.settings.first() }.perfectDayCelebratedDay)
+    }
+
+    @Test
+    fun `closing marks badges as seen`() {
+        runBlocking {
+            db.daySealDao().insert(daySealEntity(logicalDay = today, sealedAtMillis = fixedNow))
+        }
+        var closed = false
+        setContent(onClose = { closed = true })
+
+        compose.onNodeWithTag("review-close", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertTrue(closed)
+        assertEquals(fixedNow, runBlocking { settingsRepo.settings.first() }.badgesSeenUntilMillis)
     }
 }
