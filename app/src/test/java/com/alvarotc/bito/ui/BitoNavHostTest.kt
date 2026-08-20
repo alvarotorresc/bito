@@ -189,37 +189,27 @@ class BitoNavHostTest {
     }
 
     @Test
-    fun `a pending perfect day shows the sheet on today`() {
+    fun `a pending perfect day shows the sheet on today but not on the review route`() {
         setContentSeeded { seedPerfectDayToday(this) }
 
         // CelebrationsViewModel's uiState combines off Dispatchers.Default (real, not the
         // test's) — same hazard the settings-reminder test above documents, so waitForIdle
-        // alone doesn't pump it.
+        // alone doesn't pump it. Wait for the sheet here FIRST so the state is provably pending
+        // (and the flow has already emitted) before testing suppression below — otherwise an
+        // absence assertion racing that same unpumped emission would pass just as well with a
+        // broken suppression guard, proving nothing.
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
-    }
 
-    @Test
-    fun `a pending perfect day is suppressed on the review route and reappears back on today`() {
-        // Set BEFORE setContent, same as the notification-route test above.
+        // Now that the state is known pending and already emitted, navigate to review the same
+        // way a notification tap would post-composition: if the `currentRoute != "review"` guard
+        // were broken, the sheet would still show here too.
         NavRequests.open("review")
-
-        setContentSeeded { seedPerfectDayToday(this) }
-
-        // Not a waitUntil here on purpose: this alone would pass identically whether suppression
-        // actually works or the celebrations flow simply hasn't emitted yet. The leg below —
-        // popping back to today and waiting for the sheet to appear — is what actually proves
-        // the state was pending and the review route was the reason it stayed hidden.
-        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
-
-        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists() // confirms the navigation actually landed
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
     }
 }
