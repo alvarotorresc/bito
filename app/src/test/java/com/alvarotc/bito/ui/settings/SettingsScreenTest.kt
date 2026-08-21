@@ -2,8 +2,11 @@ package com.alvarotc.bito.ui.settings
 
 import android.content.Context
 import android.net.Uri
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -11,11 +14,15 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.backup.Argon2Params
+import com.alvarotc.bito.data.backup.BackupCrypto
 import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
@@ -48,6 +55,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.ByteArrayInputStream
+
+// Argon2 at production cost (~100-300ms) would dominate this suite's runtime; cheap but still in
+// BackupCrypto's validated range (memoryKib >= 8 * parallelism) — same tier BackupViewModelTest uses.
+private val TEST_ARGON2_PARAMS = Argon2Params(memoryKib = 64, iterations = 1, parallelism = 1)
 
 /**
  * Drives the real settings screen over isolated dependencies (in-memory Room, tmp DataStore) —
@@ -519,5 +530,182 @@ class SettingsScreenTest {
         compose.onNodeWithText("The folder is no longer available — choose it again", useUnmergedTree = true)
             .performScrollTo()
             .assertIsDisplayed()
+    }
+
+    @Test
+    fun `the create sheet blocks until both passphrases match`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-passphrase-match"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Encryption", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("longpass1")
+        compose.onNodeWithTag("passphrase-repeat-field", useUnmergedTree = true).performTextInput("longpass2")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("passphrase-confirm", useUnmergedTree = true).assertIsNotEnabled()
+
+        compose.onNodeWithTag("passphrase-repeat-field", useUnmergedTree = true).performTextClearance()
+        compose.onNodeWithTag("passphrase-repeat-field", useUnmergedTree = true).performTextInput("longpass1")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("passphrase-confirm", useUnmergedTree = true).assertIsEnabled()
+    }
+
+    @Test
+    fun `short passphrases keep confirm disabled`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-passphrase-short"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Encryption", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("short1")
+        compose.onNodeWithTag("passphrase-repeat-field", useUnmergedTree = true).performTextInput("short1")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("passphrase-confirm", useUnmergedTree = true).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `an encrypted import opens the passphrase sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-encrypted-import"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupRepo = BackupRepository(db, settings, keyStore, "test")
+        val json = runBlocking { backupRepo.exportJson(0L) }
+        val encrypted =
+            BackupCrypto.encrypt(
+                json,
+                BackupCrypto.deriveKey("right-pass".toCharArray(), BackupCrypto.newSalt(), TEST_ARGON2_PARAMS),
+            )
+        val backupVm =
+            BackupViewModel(
+                backupRepo,
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        val resolver = ApplicationProvider.getApplicationContext<Context>().contentResolver
+        val uri = Uri.parse("content://bito/encrypted-import.bito")
+        shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(encrypted))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        backupVm.loadImport(resolver, uri)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("import-passphrase-field", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `a wrong passphrase shows the inline error and keeps the sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-wrong-passphrase"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupRepo = BackupRepository(db, settings, keyStore, "test")
+        val json = runBlocking { backupRepo.exportJson(0L) }
+        val encrypted =
+            BackupCrypto.encrypt(
+                json,
+                BackupCrypto.deriveKey("right-pass".toCharArray(), BackupCrypto.newSalt(), TEST_ARGON2_PARAMS),
+            )
+        val backupVm =
+            BackupViewModel(
+                backupRepo,
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        val resolver = ApplicationProvider.getApplicationContext<Context>().contentResolver
+        val uri = Uri.parse("content://bito/wrong-passphrase.bito")
+        shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(encrypted))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        backupVm.loadImport(resolver, uri)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("import-passphrase-field", useUnmergedTree = true).performTextInput("nope-pass")
+        // Not performClick(): synthesized touch gestures don't reach a button inside a
+        // ModalBottomSheet under this Robolectric harness (documented in DetailScreenTest,
+        // ReviewScreenTest, CelebrationSheetsTest) — invoking the node's own OnClick action
+        // directly is what actually proves tapping "Save" calls submitImportPassphrase.
+        compose.onNodeWithTag("import-passphrase-confirm", useUnmergedTree = true)
+            .fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Wrong passphrase", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithTag("import-passphrase-field", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `needs-key state relabels the encryption row`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-needs-key"))
+        runBlocking { settings.update { it.copy(backupEncryption = true) } }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Needs a passphrase", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 }

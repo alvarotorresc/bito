@@ -22,16 +22,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +50,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -64,6 +69,7 @@ import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Peligro
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -76,6 +82,9 @@ import android.provider.Settings as AndroidSettings
 private const val DEFAULT_REMINDER_MINUTES = 8 * 60
 private const val MIN_BACKUP_COPIES = 1
 private const val MAX_BACKUP_COPIES = 10
+
+/** tech doc 5.2: any shorter and Argon2 is defending an easily-guessed passphrase. */
+private const val MIN_PASSPHRASE_LENGTH = 8
 
 /**
  * Ajustes: day cutoff and reminders (this task) plus the manual backup export/import card
@@ -117,27 +126,40 @@ fun SettingsScreen(
     val importDone = stringResource(R.string.msg_import_done)
     val invalidFile = stringResource(R.string.msg_invalid_file)
     val ioError = stringResource(R.string.msg_io_error)
+    val encryptionOnSnack = stringResource(R.string.backup_encrypt_enabled_snack)
+    val encryptionOffSnack = stringResource(R.string.backup_encrypt_disabled_snack)
+    val missingKeySnack = stringResource(R.string.backup_missing_key_snack)
+
+    // WRONG_PASSPHRASE has no snackbar copy — ImportPassphraseSheet paints it inline instead. But
+    // by the time that sheet recomposes, this same effect has already called consumeMessage() and
+    // backupState.message is back to null, so the sheet can't just compare against state.message
+    // at render time. Latching it into this separate flag (set here, cleared by the sheet itself
+    // on its next submit/dismiss — see ImportPassphraseSheet's call site below) survives the
+    // consume without racing it.
+    var wrongPassphraseShown by remember { mutableStateOf(false) }
 
     LaunchedEffect(backupState.message) {
         // Every non-null message must be consumed, whether or not it has copy — otherwise a
-        // message with no text (the 4 placeholders below) sticks in state forever, and a second
+        // message with no text (WRONG_PASSPHRASE) sticks in state forever, and a second
         // identical message right after never re-fires this effect (same key, no transition
         // through null in between).
         val message = backupState.message ?: return@LaunchedEffect
+        if (message == BackupMessage.WRONG_PASSPHRASE) {
+            wrongPassphraseShown = true
+        }
         val text =
             when (message) {
                 BackupMessage.EXPORT_DONE -> exportDone
                 BackupMessage.IMPORT_DONE -> importDone
                 BackupMessage.INVALID_FILE -> invalidFile
                 BackupMessage.IO_ERROR -> ioError
-                // Folder/schedule/encryption UI (passphrase sheet, encryption snackbars, its own
-                // MISSING_KEY snackbar) is task 10's — no text here yet keeps this snackbar
-                // silent for them instead of guessing at copy that isn't this task's to write.
-                BackupMessage.WRONG_PASSPHRASE,
-                BackupMessage.ENCRYPTION_ON,
-                BackupMessage.ENCRYPTION_OFF,
-                BackupMessage.MISSING_KEY,
-                -> null
+                BackupMessage.ENCRYPTION_ON -> encryptionOnSnack
+                BackupMessage.ENCRYPTION_OFF -> encryptionOffSnack
+                BackupMessage.MISSING_KEY -> missingKeySnack
+                // The import passphrase sheet shows this inline (see wrongPassphraseShown above)
+                // instead of a snackbar — a snackbar could time out and vanish before the user
+                // finishes reading it, right next to a text field asking them to try again.
+                BackupMessage.WRONG_PASSPHRASE -> null
             }
         if (text != null) {
             snackbar.showSnackbar(text)
@@ -229,12 +251,30 @@ fun SettingsScreen(
                 // SAF can't filter on a custom ".bito" extension, so accept anything and let
                 // loadImport's preview/validation reject the wrong file.
                 onImport = { importLauncher.launch(arrayOf("*/*")) },
+                onEnableEncryption = backupViewModel::enableEncryption,
+                onDisableEncryption = backupViewModel::disableEncryption,
             )
         }
     }
 
     backupState.preview?.let { preview ->
         ImportPreviewSheet(preview = preview, onConfirm = backupViewModel::confirmImport, onDismiss = backupViewModel::dismissImport)
+    }
+
+    if (backupState.askImportPassphrase) {
+        ImportPassphraseSheet(
+            busy = backupState.busy,
+            showWrongPassphrase = wrongPassphraseShown,
+            onConfirm = { passphrase ->
+                // A fresh attempt: drop any stale inline error before the new one (if any) lands.
+                wrongPassphraseShown = false
+                backupViewModel.submitImportPassphrase(passphrase)
+            },
+            onDismiss = {
+                wrongPassphraseShown = false
+                backupViewModel.dismissImportPassphrase()
+            },
+        )
     }
 }
 
@@ -444,8 +484,11 @@ private fun GeneralSectionCard(
 }
 
 /**
- * THE star of Ajustes (guía 8a): a Hoja-bordered card, not a solid-accent one. Folder/schedule/
- * status/backup-now only — the encryption row and its passphrase sheets are task 10's.
+ * THE star of Ajustes (guía 8a): a Hoja-bordered card, not a solid-accent one.
+ *
+ * The encryption row's two local sheets (create/re-create, off-confirm) live here, not hoisted to
+ * [SettingsScreen] — same split as [DaySectionCard]'s [CutoffSheet]: they're pure UI state with no
+ * VM-owned flag behind them, unlike the import passphrase sheet which mirrors [BackupUiState.askImportPassphrase].
  */
 @Composable
 private fun BackupsCard(
@@ -456,7 +499,12 @@ private fun BackupsCard(
     onBackupNow: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
+    onEnableEncryption: (CharArray) -> Unit,
+    onDisableEncryption: () -> Unit,
 ) {
+    var showCreateSheet by remember { mutableStateOf(false) }
+    var showDisableConfirm by remember { mutableStateOf(false) }
+
     BitoCard(border = Hoja, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.backups_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
@@ -481,8 +529,197 @@ private fun BackupsCard(
             BackupStatusLine(state)
             SettingsRow(BitoIcons.RefreshCw, stringResource(R.string.backup_now), onClick = onBackupNow)
         }
+        SettingsRow(
+            BitoIcons.Lock,
+            stringResource(R.string.backup_encrypt),
+            value =
+                when {
+                    state.encryptionNeedsKey -> stringResource(R.string.backup_encrypt_needs_key)
+                    state.encryptionOn -> stringResource(R.string.backup_encrypt_on)
+                    else -> stringResource(R.string.backup_encrypt_off)
+                },
+            onClick = {
+                // ON and healthy is the only case that turns it off; everything else (OFF, or ON
+                // but needing a key) opens the same create/re-create sheet.
+                if (state.encryptionOn && !state.encryptionNeedsKey) {
+                    showDisableConfirm = true
+                } else {
+                    showCreateSheet = true
+                }
+            },
+        )
         SettingsRow(BitoIcons.Download, stringResource(R.string.backup_export), onClick = onExport)
         SettingsRow(BitoIcons.Upload, stringResource(R.string.backup_import), onClick = onImport)
+    }
+
+    if (showCreateSheet) {
+        PassphraseCreateSheet(
+            busy = state.busy,
+            onConfirm = { passphrase ->
+                onEnableEncryption(passphrase)
+                showCreateSheet = false
+            },
+            onDismiss = { showCreateSheet = false },
+        )
+    }
+    if (showDisableConfirm) {
+        EncryptionOffConfirmDialog(
+            onConfirm = {
+                onDisableEncryption()
+                showDisableConfirm = false
+            },
+            onDismiss = { showDisableConfirm = false },
+        )
+    }
+}
+
+/** Non-destructive by design (tech doc 5.2): old encrypted backups stay readable with their own passphrase. */
+@Composable
+private fun EncryptionOffConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Tarjeta,
+        title = { Text(stringResource(R.string.backup_encrypt), color = Tinta) },
+        text = { Text(stringResource(R.string.backup_encrypt_off_note), color = TintaSuave) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) {
+                Text(stringResource(R.string.backup_encrypt_off), color = Tinta)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(R.string.cancel), color = TintaSuave)
+            }
+        },
+    )
+}
+
+/**
+ * Enable, or re-create after [BackupUiState.encryptionNeedsKey] (the stored key file is gone but
+ * the setting is still on) — same sheet either way, [BackupViewModel.enableEncryption] just
+ * overwrites whatever key was or wasn't there. The two locals below hold the raw passphrase only
+ * for as long as the sheet is open; every way out (confirm or cancel) blanks them before returning.
+ */
+@Composable
+private fun PassphraseCreateSheet(
+    busy: Boolean,
+    onConfirm: (CharArray) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var passphrase by remember { mutableStateOf("") }
+    var repeat by remember { mutableStateOf("") }
+    val canConfirm = !busy && passphrase.length >= MIN_PASSPHRASE_LENGTH && passphrase == repeat
+
+    fun dismissAndClear() {
+        passphrase = ""
+        repeat = ""
+        onDismiss()
+    }
+
+    // skipPartiallyExpanded (TimePickerSheet precedent): two fields, the Peligro warning and two
+    // buttons don't reliably fit in the half-expanded height, which would clip the confirm button
+    // below the viewport.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = ::dismissAndClear, sheetState = sheetState, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState())) {
+            OutlinedTextField(
+                value = passphrase,
+                onValueChange = { passphrase = it },
+                label = { Text(stringResource(R.string.backup_passphrase)) },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("passphrase-field"),
+            )
+            Spacer(Modifier.height(8.dp))
+            OutlinedTextField(
+                value = repeat,
+                onValueChange = { repeat = it },
+                label = { Text(stringResource(R.string.backup_passphrase_repeat)) },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth().testTag("passphrase-repeat-field"),
+            )
+            Spacer(Modifier.height(12.dp))
+            // The one legitimate Peligro use in this screen (tech doc 5.2): every other warning
+            // here is Brasa, but a passphrase Bito cannot recover is genuinely irreversible.
+            Text(stringResource(R.string.backup_encrypt_warning), style = MaterialTheme.typography.labelMedium, color = Peligro)
+            Spacer(Modifier.height(16.dp))
+            PillButton(
+                stringResource(R.string.save),
+                onClick = {
+                    val chars = passphrase.toCharArray()
+                    passphrase = ""
+                    repeat = ""
+                    onConfirm(chars)
+                },
+                enabled = canConfirm,
+                modifier = Modifier.fillMaxWidth().testTag("passphrase-confirm"),
+            )
+            Spacer(Modifier.height(8.dp))
+            GhostPillButton(stringResource(R.string.cancel), onClick = ::dismissAndClear, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/**
+ * [showWrongPassphrase] is [SettingsScreen]'s latched flag, not a live read of
+ * `BackupUiState.message` — see the comment at that flag's declaration for why a direct read
+ * would race [BackupViewModel.consumeMessage].
+ */
+@Composable
+private fun ImportPassphraseSheet(
+    busy: Boolean,
+    showWrongPassphrase: Boolean,
+    onConfirm: (CharArray) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var passphrase by remember { mutableStateOf("") }
+
+    fun dismissAndClear() {
+        passphrase = ""
+        onDismiss()
+    }
+
+    // Same skipPartiallyExpanded reasoning as PassphraseCreateSheet: the inline error line only
+    // appears after a wrong guess, and a half-expanded sheet would clip it (or the confirm button)
+    // right when the user most needs to see it.
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    ModalBottomSheet(onDismissRequest = ::dismissAndClear, sheetState = sheetState, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState())) {
+            Text(stringResource(R.string.backup_import), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = passphrase,
+                onValueChange = { passphrase = it },
+                label = { Text(stringResource(R.string.backup_passphrase)) },
+                visualTransformation = PasswordVisualTransformation(),
+                singleLine = true,
+                isError = showWrongPassphrase,
+                modifier = Modifier.fillMaxWidth().testTag("import-passphrase-field"),
+            )
+            if (showWrongPassphrase) {
+                Spacer(Modifier.height(4.dp))
+                // Brasa, not Peligro — that color is reserved for the irrecoverable-passphrase
+                // warning in PassphraseCreateSheet, and a wrong guess here is just a retry.
+                Text(stringResource(R.string.backup_passphrase_wrong), style = MaterialTheme.typography.labelMedium, color = Brasa)
+            }
+            Spacer(Modifier.height(16.dp))
+            PillButton(
+                stringResource(R.string.save),
+                onClick = {
+                    val chars = passphrase.toCharArray()
+                    passphrase = ""
+                    onConfirm(chars)
+                },
+                enabled = passphrase.isNotEmpty() && !busy,
+                modifier = Modifier.fillMaxWidth().testTag("import-passphrase-confirm"),
+            )
+            Spacer(Modifier.height(8.dp))
+            GhostPillButton(stringResource(R.string.cancel), onClick = ::dismissAndClear, modifier = Modifier.fillMaxWidth())
+        }
     }
 }
 
