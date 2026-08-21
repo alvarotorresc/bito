@@ -2,6 +2,7 @@ package com.alvarotc.bito
 
 import android.content.Context
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.repo.DomainStateRepository
@@ -26,6 +27,7 @@ class AppContainer(context: Context) {
             },
         )
     val habiSounds = HabiSounds(context, settings)
+    val keyStore = BackupKeyStore(context.filesDir)
     val backup = BackupRepository(database, settings, BuildConfig.VERSION_NAME)
     val reconciler = PointsReconciler(domainState, rewards)
 }
