@@ -1,5 +1,6 @@
 package com.alvarotc.bito.data.backup
 
+import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.File
 import java.io.IOException
@@ -37,35 +38,34 @@ class BackupKeyStore(private val dir: File) {
             return null
         }
 
-        return keyFile.inputStream().use { fileIn ->
-            val salt = ByteArray(16)
-            fileIn.read(salt)
+        return try {
+            keyFile.inputStream().use { fileIn ->
+                DataInputStream(fileIn).use { din ->
+                    val salt = ByteArray(16)
+                    din.readFully(salt)
 
-            val memoryKib = fileIn.readInt()
-            val iterations = fileIn.readInt()
-            val parallelism = fileIn.readInt()
+                    val memoryKib = din.readInt()
+                    val iterations = din.readInt()
+                    val parallelism = din.readInt()
 
-            val key = ByteArray(32)
-            fileIn.read(key)
+                    val key = ByteArray(32)
+                    din.readFully(key)
 
-            DerivedKey(
-                key = key,
-                salt = salt,
-                params = Argon2Params(memoryKib = memoryKib, iterations = iterations, parallelism = parallelism),
-            )
+                    DerivedKey(
+                        key = key,
+                        salt = salt,
+                        params = Argon2Params(memoryKib = memoryKib, iterations = iterations, parallelism = parallelism),
+                    )
+                }
+            }
+        } catch (e: IOException) {
+            // Corrupt local key file (including truncation mid-read) reads as "no key",
+            // matching the DerivedKey? contract — no crash.
+            null
         }
     }
 
     fun clear() {
         keyFile.delete()
-    }
-
-    private fun java.io.InputStream.readInt(): Int {
-        val bytes = ByteArray(4)
-        read(bytes)
-        return ((bytes[0].toInt() and 0xFF) shl 24) or
-            ((bytes[1].toInt() and 0xFF) shl 16) or
-            ((bytes[2].toInt() and 0xFF) shl 8) or
-            (bytes[3].toInt() and 0xFF)
     }
 }
