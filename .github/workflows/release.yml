@@ -40,3 +40,4 @@ jobs:
         with:
           body_path: ${{ runner.temp }}/notes.md
           files: app/build/outputs/apk/release/app-release.apk
+          fail_on_unmatched_files: true
