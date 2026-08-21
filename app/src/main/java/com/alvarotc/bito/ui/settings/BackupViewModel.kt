@@ -150,7 +150,11 @@ class BackupViewModel(
                 runCatching {
                     withContext(ioDispatcher) {
                         val bytes = backup.exportBytes(now())
-                        resolver.openOutputStream(uri)?.use { it.write(bytes) }
+                        // "wt" (truncate), not "w": several document providers don't truncate on
+                        // plain "w", so overwriting a larger old backup would leave surplus bytes
+                        // that fail the GCM tag on import — reported to the user as a wrong
+                        // passphrase instead of what it actually is.
+                        resolver.openOutputStream(uri, "wt")?.use { it.write(bytes) }
                             ?: throw IOException("Could not open output stream for $uri")
                     }
                 }
@@ -308,8 +312,11 @@ class BackupViewModel(
 
     fun disableEncryption() {
         viewModelScope.launch {
-            keyStore.clear()
+            // Flip the setting before clearing the key: otherwise a worker racing in that window
+            // would see encryption on with no key and record a MISSING_KEY error that outlives
+            // this disable.
             settings.update { it.copy(backupEncryption = false) }
+            keyStore.clear()
             backupState.update { it.copy(message = BackupMessage.ENCRYPTION_OFF) }
         }
     }
