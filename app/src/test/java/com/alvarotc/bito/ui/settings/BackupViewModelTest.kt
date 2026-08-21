@@ -455,9 +455,44 @@ class BackupViewModelTest {
             vm.dismissImportPassphrase()
             assertFalse(state().askImportPassphrase)
 
-            // A stale bytes reference shouldn't resurrect a preview after the sheet was dismissed.
-            vm.submitImportPassphrase("secret".toCharArray())
+            // A stale bytes reference shouldn't resurrect a preview after the sheet was dismissed,
+            // and the caller's passphrase must still be wiped even on this early-return no-op path.
+            val passphrase = "secret".toCharArray()
+            vm.submitImportPassphrase(passphrase)
             advanceUntilIdle()
             assertNull(state().preview)
+            assertTrue("passphrase must be blanked even on the no-pending-import path", passphrase.all { it == ' ' })
+        }
+
+    @Test
+    fun `loading a plain file after an encrypted one clears the stale bytes`() =
+        runTest {
+            db.habitDao().upsert(habitEntity(id = "h1"))
+            settingsRepo.update { it.copy(backupEncryption = true) }
+            keyStore.save(BackupCrypto.deriveKey("secret".toCharArray(), BackupCrypto.newSalt(), TEST_ARGON2_PARAMS))
+            val encryptedUri = Uri.parse("content://bito/stale-encrypted.bito")
+            shadowOf(resolver).registerInputStream(encryptedUri, ByteArrayInputStream(backup.exportBytes(fixedNow)))
+            vm.loadImport(resolver, encryptedUri)
+            advanceUntilIdle()
+            assertTrue(state().askImportPassphrase)
+
+            // Load a different, unencrypted file without dismissing the passphrase sheet first.
+            val plainUri = Uri.parse("content://bito/stale-plain.bito")
+            shadowOf(resolver).registerInputStream(plainUri, ByteArrayInputStream(backup.exportJson(fixedNow).toByteArray()))
+            vm.loadImport(resolver, plainUri)
+            advanceUntilIdle()
+
+            val afterPlainLoad = state()
+            assertFalse(afterPlainLoad.askImportPassphrase)
+            assertNotNull(afterPlainLoad.preview)
+
+            // The stale encrypted bytes must be gone: submitting the old passphrase is now a
+            // no-op that leaves the plain file's preview untouched, but still wipes its CharArray.
+            val stalePassphrase = "secret".toCharArray()
+            vm.submitImportPassphrase(stalePassphrase)
+            advanceUntilIdle()
+
+            assertEquals(afterPlainLoad.preview, state().preview)
+            assertTrue("stale passphrase must be blanked even though the call is a no-op", stalePassphrase.all { it == ' ' })
         }
 }

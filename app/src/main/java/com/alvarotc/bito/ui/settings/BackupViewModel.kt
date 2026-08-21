@@ -120,6 +120,20 @@ class BackupViewModel(
     private var pendingImportText: String? = null
     private var pendingImportBytes: ByteArray? = null
 
+    /**
+     * Resets every piece of in-flight import state together: [pendingImportText],
+     * [pendingImportBytes], and the passphrase sheet's [BackupUiState.askImportPassphrase] flag.
+     * Called from every terminal path for an import — a fresh load's plain-file branch, dismiss
+     * (either sheet), confirm, and every failure path — so a stale [pendingImportBytes] can never
+     * survive past the state it was captured for and get decrypted/applied against a preview the
+     * user never asked for.
+     */
+    private fun clearPending() {
+        pendingImportText = null
+        pendingImportBytes = null
+        backupState.update { it.copy(askImportPassphrase = false) }
+    }
+
     fun suggestedFileName(): String {
         val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HHmm").withZone(zone())
         return "bito-backup-${formatter.format(Instant.ofEpochMilli(now()))}.bito"
@@ -175,8 +189,8 @@ class BackupViewModel(
 
     private suspend fun onImportBytesRead(bytes: ByteArray) {
         if (backup.isEncrypted(bytes)) {
+            clearPending()
             pendingImportBytes = bytes
-            pendingImportText = null
             backupState.update { it.copy(busy = false, preview = null, askImportPassphrase = true) }
             return
         }
@@ -189,16 +203,19 @@ class BackupViewModel(
             }
         result
             .onSuccess { (text, preview) ->
+                // Clear before assigning: a plain file loaded after an encrypted one (sheet still
+                // up) must drop the old pendingImportBytes, or a later submitImportPassphrase
+                // call would decrypt the stale file and silently swap the preview underneath it.
+                clearPending()
                 pendingImportText = text
-                backupState.update { it.copy(busy = false, preview = preview, askImportPassphrase = false) }
+                backupState.update { it.copy(busy = false, preview = preview) }
             }.onFailure { error -> onImportLoadFailed(error) }
     }
 
     private fun onImportLoadFailed(error: Throwable) {
-        pendingImportText = null
-        pendingImportBytes = null
+        clearPending()
         val message = if (error is BackupFormatException) BackupMessage.INVALID_FILE else BackupMessage.IO_ERROR
-        backupState.update { it.copy(busy = false, preview = null, message = message, askImportPassphrase = false) }
+        backupState.update { it.copy(busy = false, preview = null, message = message) }
     }
 
     fun confirmImport() {
@@ -206,7 +223,7 @@ class BackupViewModel(
         viewModelScope.launch {
             backupState.update { it.copy(busy = true) }
             val result = runCatching { withContext(ioDispatcher) { backup.import(text) } }
-            pendingImportText = null
+            clearPending()
             backupState.update {
                 it.copy(
                     busy = false,
@@ -218,7 +235,7 @@ class BackupViewModel(
     }
 
     fun dismissImport() {
-        pendingImportText = null
+        clearPending()
         backupState.update { it.copy(preview = null) }
     }
 
@@ -300,10 +317,17 @@ class BackupViewModel(
     /**
      * Decrypts [pendingImportBytes] with [passphrase] on [cryptoDispatcher], then previews it
      * exactly like an unencrypted file. A wrong passphrase keeps the sheet open for a retry; any
-     * other failure (corrupted container) closes it like a normal failed import.
+     * other failure (corrupted container) closes it like a normal failed import. [passphrase] is
+     * wiped on every path out of this method, including the early return when there's no pending
+     * import (e.g. the sheet was already dismissed) — the caller's CharArray must never survive
+     * this call unblanked.
      */
     fun submitImportPassphrase(passphrase: CharArray) {
-        val bytes = pendingImportBytes ?: return
+        val bytes = pendingImportBytes
+        if (bytes == null) {
+            passphrase.fill(' ')
+            return
+        }
         viewModelScope.launch {
             backupState.update { it.copy(busy = true) }
             val result =
@@ -319,24 +343,23 @@ class BackupViewModel(
                 }
             result
                 .onSuccess { (text, preview) ->
-                    pendingImportBytes = null
+                    clearPending()
                     pendingImportText = text
-                    backupState.update { it.copy(busy = false, preview = preview, askImportPassphrase = false) }
+                    backupState.update { it.copy(busy = false, preview = preview) }
                 }.onFailure { error ->
                     if (error is WrongPassphraseException) {
                         backupState.update { it.copy(busy = false, message = BackupMessage.WRONG_PASSPHRASE) }
                     } else {
-                        pendingImportBytes = null
+                        clearPending()
                         val message = if (error is BackupFormatException) BackupMessage.INVALID_FILE else BackupMessage.IO_ERROR
-                        backupState.update { it.copy(busy = false, message = message, askImportPassphrase = false) }
+                        backupState.update { it.copy(busy = false, message = message) }
                     }
                 }
         }
     }
 
     fun dismissImportPassphrase() {
-        pendingImportBytes = null
-        backupState.update { it.copy(askImportPassphrase = false) }
+        clearPending()
     }
 
     fun consumeMessage() = backupState.update { it.copy(message = null) }
