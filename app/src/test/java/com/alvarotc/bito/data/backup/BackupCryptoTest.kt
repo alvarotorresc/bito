@@ -96,6 +96,16 @@ class BackupCryptoTest {
     }
 
     @Test
+    fun `truncated container throws BackupFormatException`() {
+        val container = BackupCrypto.encrypt("""{"a":1}""", derived())
+        val truncated = container.copyOfRange(0, 20) // magic + version + salt, cut before the nonce
+
+        assertFailsWith<BackupFormatException> {
+            BackupCrypto.decrypt(truncated, passphrase)
+        }
+    }
+
+    @Test
     fun `deriveKey is deterministic for same salt and params`() {
         val salt = BackupCrypto.newSalt()
 

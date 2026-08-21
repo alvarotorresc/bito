@@ -3,7 +3,7 @@ package com.alvarotc.bito.data.backup
 import org.bouncycastle.crypto.generators.Argon2BytesGenerator
 import org.bouncycastle.crypto.params.Argon2Parameters
 import java.security.SecureRandom
-import javax.crypto.AEADBadTagException
+import javax.crypto.BadPaddingException
 import javax.crypto.Cipher
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
@@ -77,6 +77,7 @@ object BackupCrypto {
         if (!isEncrypted(bytes)) throw BackupFormatException("Missing BITO1 magic")
         val version = bytes[OFFSET_VERSION].toInt()
         if (version != CONTAINER_VERSION) throw BackupFormatException("Unsupported container version $version")
+        if (bytes.size < OFFSET_CIPHERTEXT) throw BackupFormatException("Truncated container")
 
         val salt = bytes.copyOfRange(OFFSET_SALT, OFFSET_MEMORY_KIB)
         val params =
@@ -98,7 +99,11 @@ object BackupCrypto {
         val plaintext =
             try {
                 cipher.doFinal(ciphertext)
-            } catch (e: AEADBadTagException) {
+            } catch (e: BadPaddingException) {
+                // GCM has no padding: the only way doFinal throws this family is a tag mismatch —
+                // either the wrong key (wrong passphrase) or tampered ciphertext. AEADBadTagException
+                // is SunJCE's concrete subtype; catching the supertype avoids depending on which
+                // provider (SunJCE on the JVM, Conscrypt on Android) is active.
                 throw WrongPassphraseException(e)
             }
         return plaintext.toString(Charsets.UTF_8)
