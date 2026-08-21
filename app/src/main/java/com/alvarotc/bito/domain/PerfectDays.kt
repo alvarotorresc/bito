@@ -28,4 +28,26 @@ object PerfectDays {
             Compliance.complianceOf(state, it, periodKey, today) == ComplianceStatus.FULFILLED
         }
     }
+
+    /** Every perfect day from the first habit's creation up to [today]. */
+    fun perfectDaysUpTo(
+        state: DomainState,
+        today: LogicalDay,
+    ): Set<LogicalDay> {
+        val firstDay = state.habits.minOfOrNull { it.createdOnDay } ?: return emptySet()
+        if (firstDay > today) return emptySet()
+        return (firstDay..today).filterTo(mutableSetOf()) { isPerfectDay(state, it, today) }
+    }
+
+    /** Period keys (ISO weeks / calendar months) between [firstDay] and [today] whose EVERY day is in [perfectDays]. */
+    fun perfectPeriodKeys(
+        perfectDays: Set<LogicalDay>,
+        period: Period,
+        firstDay: LogicalDay,
+        today: LogicalDay,
+    ): List<Int> {
+        val firstKey = LogicalDays.periodKeyOf(firstDay, period)
+        val lastKey = LogicalDays.periodKeyOf(today, period)
+        return (firstKey..lastKey).filter { key -> LogicalDays.daysOf(key, period).all { it in perfectDays } }
+    }
 }

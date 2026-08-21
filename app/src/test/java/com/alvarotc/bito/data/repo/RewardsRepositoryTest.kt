@@ -99,6 +99,15 @@ class RewardsRepositoryTest {
         }
 
     @Test
+    fun `unlockBadges is insert-ignore and observable`() =
+        runTest {
+            rewards.unlockBadges(setOf("first-habit", "streak-7"), 5L)
+            rewards.unlockBadges(setOf("first-habit"), 99L)
+            assertEquals(setOf("first-habit", "streak-7"), rewards.unlockedBadgeIds())
+            assertEquals(5L, rewards.observeBadges().first().single { it.badgeId == "first-habit" }.unlockedAtMillis)
+        }
+
+    @Test
     fun `unequip clears the category`() =
         runTest {
             db.pointsLedgerDao().insert(pointsLedgerEntity(id = "seed", delta = 25, refId = "seed"))

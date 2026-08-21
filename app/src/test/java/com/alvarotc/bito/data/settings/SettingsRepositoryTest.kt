@@ -45,6 +45,18 @@ class SettingsRepositoryTest {
             assertFalse(settings.backupEncryption)
             assertFalse(settings.onboardingDone)
             assertEquals(true, settings.habiSoundsEnabled)
+            assertEquals(-1, settings.perfectDayCelebratedDay)
+            assertEquals(0L, settings.badgesSeenUntilMillis)
+        }
+
+    @Test
+    fun `celebration markers round-trip through the store`() =
+        runTest {
+            val repo = SettingsRepository(store("markers"))
+            repo.update { it.copy(perfectDayCelebratedDay = 20679, badgesSeenUntilMillis = 1234L) }
+            val read = repo.settings.first()
+            assertEquals(20679, read.perfectDayCelebratedDay)
+            assertEquals(1234L, read.badgesSeenUntilMillis)
         }
 
     @Test

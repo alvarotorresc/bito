@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Badge names, unlock conditions and family labels (docs/06-badges.md §2, T8) — PROVISIONAL
+        copy, definitive wording lands in the M9 economy/copy session. The catalog of 14 ids lives
+        in domain/model/Badge.kt (BadgeCatalog); this file only supplies the ui/ presentation, kept
+        pure of Android resource ids (ui/stats/BadgeStrings.kt maps id -> resource).
+        badge_name_* — the badge's own name, personality never changes it.
+        badge_how_*  — the unlock condition, plugged into badge_how_prefix ("earned by: …").
+        badge_family_* — the three family labels the Badges list groups by.
+    -->
+    <string name="badge_name_streak_7">First flame</string>
+    <string name="badge_name_streak_30">Slow burn</string>
+    <string name="badge_name_streak_100">Live ember</string>
+    <string name="badge_name_streak_365">Around the sun</string>
+    <string name="badge_name_perfect_day_1">Clean sweep</string>
+    <string name="badge_name_perfect_days_10">Perfect ten</string>
+    <string name="badge_name_perfect_days_50">Perfect fifty</string>
+    <string name="badge_name_perfect_days_100">Perfect hundred</string>
+    <string name="badge_name_perfect_week">Perfect week</string>
+    <string name="badge_name_perfect_month">Perfect month</string>
+    <string name="badge_name_first_habit">First step</string>
+    <string name="badge_name_first_week">Full week</string>
+    <string name="badge_name_resurrection">Resurrection</string>
+    <string name="badge_name_first_freezer">Below zero</string>
+
+    <string name="badge_how_streak_7">a streak of 7 in any habit</string>
+    <string name="badge_how_streak_30">a streak of 30</string>
+    <string name="badge_how_streak_100">a streak of 100</string>
+    <string name="badge_how_streak_365">a streak of 365</string>
+    <string name="badge_how_perfect_day_1">your first perfect day</string>
+    <string name="badge_how_perfect_days_10">10 perfect days</string>
+    <string name="badge_how_perfect_days_50">50 perfect days</string>
+    <string name="badge_how_perfect_days_100">100 perfect days</string>
+    <string name="badge_how_perfect_week">a week with all its days perfect</string>
+    <string name="badge_how_perfect_month">a month with all its days perfect</string>
+    <string name="badge_how_first_habit">create your first habit</string>
+    <string name="badge_how_first_week">7 days in a row showing up</string>
+    <string name="badge_how_resurrection">come back after breaking a streak of 30 or more</string>
+    <string name="badge_how_first_freezer">use your first freezer</string>
+
+    <string name="badge_family_streak">Streaks</string>
+    <string name="badge_family_constancy">Consistency</string>
+    <string name="badge_family_moment">Moments</string>
+
+    <string name="stats_badges_title">Badges</string>
+    <string name="stats_badges_count">%1$d of %2$d</string>
+    <string name="badge_of_total">of %1$d</string>
+    <string name="stats_badges_all">see all</string>
+    <string name="badges_title">Badges</string>
+    <string name="badge_unlocked_on">unlocked on %1$s</string>
+    <string name="badge_how_prefix">earned by: %1$s</string>
+    <string name="celebration_badge_title">Badge unlocked</string>
+    <string name="celebration_continue">Continue</string>
+</resources>

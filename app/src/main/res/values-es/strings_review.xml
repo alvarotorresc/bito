@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Repaso diario E1, hojas de día sellado/perfecto E2 y el ajuste de celebración (T8) — copia
+        PROVISIONAL, la definitiva llega en la sesión de economía/copy de M9. Las líneas propias de
+        Habi con voz de personalidad para estos contextos viven en strings_habi.xml (habi_review_*,
+        habi_sealed_*, habi_perfect_*), no aquí — este fichero guarda los textos de UI llanos de la
+        pantalla de repaso.
+    -->
+    <string name="review_title">Repaso del día</string>
+    <plurals name="review_remaining">
+        <item quantity="one">queda %1$d por sellar</item>
+        <!-- es CLDR's "many" only fires on huge round numbers (millions+); this list never
+             reaches that range, so this mirrors "other" — added to satisfy lint's completeness check. -->
+        <item quantity="many">quedan %1$d por sellar</item>
+        <item quantity="other">quedan %1$d por sellar</item>
+    </plurals>
+    <string name="review_done">Hecho</string>
+    <string name="review_skip">No lo hice</string>
+    <string name="review_leave">Así se queda</string>
+    <string name="review_within_limit">Dentro del límite</string>
+    <string name="review_clean">Día limpio</string>
+    <string name="review_seal_day">Sellar el día</string>
+    <string name="review_sealed_title">Día sellado</string>
+    <string name="review_perfect_title">¡Día perfecto!</string>
+    <plurals name="review_streaks_advanced">
+        <item quantity="one">%1$d racha avanza</item>
+        <item quantity="many">%1$d rachas avanzan</item>
+        <item quantity="other">%1$d rachas avanzan</item>
+    </plurals>
+    <string name="review_until_tomorrow">Hasta mañana</string>
+    <string name="review_new_badges">Logros nuevos</string>
+    <string name="today_close_day">Cerrar el día</string>
+    <string name="settings_celebration_label">Celebración de día perfecto</string>
+    <string name="settings_celebration_hint">Un aviso de Habi cuando cierras un día redondo fuera de la app. Dentro, siempre se celebra.</string>
+</resources>

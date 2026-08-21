@@ -20,11 +20,15 @@ import com.alvarotc.bito.ui.theme.Hoja
 object Notifier {
     const val REMINDER_ID = 1
     const val REVIEW_ID = 2
+    const val CELEBRATION_ID = 3
 
     /** Extra keys carried by [quickActionIntent] and read back in [QuickActionReceiver]. */
     const val EXTRA_HABIT_ID = "habitId"
     const val EXTRA_AMOUNT = "amount"
     const val EXTRA_NOTIFICATION_ID = "notificationId"
+
+    /** Extra key carried by [contentIntent] and read back in `MainActivity.handleIntent` (T11). */
+    const val EXTRA_OPEN_ROUTE = "openRoute"
 
     /** The GLOBAL reminder: one or more habits still open, up to three quick-log actions. */
     fun showReminder(
@@ -81,13 +85,32 @@ object Notifier {
         notify(context, id, builder)
     }
 
-    /** The REVIEW nudge: something is still unsealed or open, on its own channel. */
+    /** The REVIEW nudge: something is still unsealed or open, on its own channel. Tapping it
+     * deep-links straight into the review flow rather than opening Today bare (T11). */
     fun showReview(context: Context) {
         val builder =
             baseBuilder(context, NotificationChannels.REVIEW)
                 .setContentTitle(context.getString(R.string.notif_review_title))
                 .setContentText(context.getString(R.string.notif_review_body))
+                .setContentIntent(contentIntent(context, "review", 2))
         notify(context, REVIEW_ID, builder)
+    }
+
+    /**
+     * The CELEBRATIONS nudge: [PerfectDayNotifier] already decided this write is worth
+     * announcing outside the app — this just renders [body] under its own channel and id.
+     * Tapping it opens Today bare, the same default [contentIntent] every other route falls
+     * back to, where the in-app perfect-day sheet takes over from there.
+     */
+    fun showPerfectDay(
+        context: Context,
+        body: String,
+    ) {
+        val builder =
+            baseBuilder(context, NotificationChannels.CELEBRATIONS)
+                .setContentTitle(context.getString(R.string.notif_perfect_day_title))
+                .setContentText(body)
+        notify(context, CELEBRATION_ID, builder)
     }
 
     /** Clears a stale reminder notification (e.g. its habit got logged some other way). */
@@ -108,11 +131,25 @@ object Notifier {
             // should alert; every refresh after that is silent.
             .setOnlyAlertOnce(true)
 
-    private fun contentIntent(context: Context): PendingIntent {
-        val intent = Intent(context, MainActivity::class.java)
+    /**
+     * [route], when given, is carried as [EXTRA_OPEN_ROUTE] for `MainActivity.handleIntent` to
+     * hand to [com.alvarotc.bito.ui.NavRequests]. [requestCode] must differ per route — not just
+     * be a constant — because [Intent.filterEquals] ignores extras: every route would otherwise
+     * collide on the same [PendingIntent] and `FLAG_UPDATE_CURRENT` would silently overwrite the
+     * other notification's extra with whichever posted last.
+     */
+    private fun contentIntent(
+        context: Context,
+        route: String? = null,
+        requestCode: Int = 0,
+    ): PendingIntent {
+        val intent =
+            Intent(context, MainActivity::class.java).apply {
+                route?.let { putExtra(EXTRA_OPEN_ROUTE, it) }
+            }
         return PendingIntent.getActivity(
             context,
-            0,
+            requestCode,
             intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )

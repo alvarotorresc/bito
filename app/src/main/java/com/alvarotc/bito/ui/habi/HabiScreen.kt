@@ -9,12 +9,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -26,7 +24,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -64,7 +61,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             BalanceChip(state.balance, modifier = Modifier.align(Alignment.End))
-            Stage(spec = state.spec, onTap = viewModel::onAvatarTap, modifier = Modifier.fillMaxWidth())
+            HabiStage(spec = state.spec, onTap = viewModel::onAvatarTap, modifier = Modifier.fillMaxWidth())
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }
@@ -117,35 +114,6 @@ private fun TryingChip(
             color = Tinta,
             modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
         )
-    }
-}
-
-/** Sampled from the mockup, between HojaTinte (#E3EDE0) and HabiSalvia (#A9C9A1) — art-phase-tunable. */
-private val HabiStageColor = Color(0xFFDDE9D6)
-
-@Composable
-private fun Stage(
-    spec: HabiSpec,
-    onTap: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Box(
-            Modifier
-                .size(220.dp)
-                .clip(CircleShape)
-                .background(HabiStageColor)
-                .testTag("habi-stage"),
-        )
-        // A squat pill stands in for an ellipse — Compose has no ellipse shape primitive.
-        Box(
-            Modifier
-                .size(width = 92.dp, height = 22.dp)
-                .offset(y = 66.dp)
-                .clip(RoundedCornerShape(percent = 50))
-                .background(Borde.copy(alpha = 0.6f)),
-        )
-        HabiAvatar(spec = spec, modifier = Modifier.size(150.dp), onTap = onTap)
     }
 }
 

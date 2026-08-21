@@ -1,9 +1,11 @@
 package com.alvarotc.bito.ui.stats
 
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.domain.RealHabits
 import com.alvarotc.bito.domain.TODAY
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
+import com.alvarotc.bito.domain.model.BadgeCatalog
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import kotlin.test.Test
@@ -71,5 +73,28 @@ class StatsUiStateTest {
         assertEquals(onARun.id, result.bestRecord?.habitId)
         assertEquals(3, result.bestRecord?.best)
         assertEquals(4, result.totalEntries)
+    }
+
+    @Test
+    fun `badges list the whole catalog with unlock times`() {
+        val state = domainState()
+        val badges =
+            listOf(
+                BadgeEntity("streak-7", unlockedAtMillis = 1_000L),
+                BadgeEntity("first-habit", unlockedAtMillis = 2_000L),
+            )
+
+        val result = buildStatsUiState(state, Personality.NEUTRA, TODAY, badges = badges)
+
+        assertEquals(BadgeCatalog.size, result.badges.size)
+        assertEquals(2, result.badgesUnlocked)
+        assertEquals(BadgeCatalog.size, result.badgesTotal)
+        val streak7 = result.badges.first { it.def.id == "streak-7" }
+        assertEquals(1_000L, streak7.unlockedAtMillis)
+        val firstHabit = result.badges.first { it.def.id == "first-habit" }
+        assertEquals(2_000L, firstHabit.unlockedAtMillis)
+        val stillLocked = result.badges.filter { it.def.id != "streak-7" && it.def.id != "first-habit" }
+        assertEquals(BadgeCatalog.size - 2, stillLocked.size)
+        assertTrue(stillLocked.all { it.unlockedAtMillis == null })
     }
 }

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.flow.Flow
@@ -30,6 +31,8 @@ data class Settings(
     val backupEncryption: Boolean = false,
     val onboardingDone: Boolean = false,
     val habiSoundsEnabled: Boolean = true,
+    val perfectDayCelebratedDay: Int = -1,
+    val badgesSeenUntilMillis: Long = 0L,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -47,6 +50,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val backupEncryption = booleanPreferencesKey("backup_encryption")
         val onboardingDone = booleanPreferencesKey("onboarding_done")
         val habiSoundsEnabled = booleanPreferencesKey("habi_sounds_enabled")
+        val perfectDayCelebratedDay = intPreferencesKey("perfect_day_celebrated_day")
+        val badgesSeenUntilMillis = longPreferencesKey("badges_seen_until_millis")
     }
 
     val settings: Flow<Settings> = dataStore.data.map { it.toSettings() }
@@ -76,6 +81,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             backupEncryption = this[Keys.backupEncryption] ?: defaults.backupEncryption,
             onboardingDone = this[Keys.onboardingDone] ?: defaults.onboardingDone,
             habiSoundsEnabled = this[Keys.habiSoundsEnabled] ?: defaults.habiSoundsEnabled,
+            perfectDayCelebratedDay = this[Keys.perfectDayCelebratedDay] ?: defaults.perfectDayCelebratedDay,
+            badgesSeenUntilMillis = this[Keys.badgesSeenUntilMillis] ?: defaults.badgesSeenUntilMillis,
         )
     }
 
@@ -93,5 +100,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.backupEncryption] = backupEncryption
         prefs[Keys.onboardingDone] = onboardingDone
         prefs[Keys.habiSoundsEnabled] = habiSoundsEnabled
+        prefs[Keys.perfectDayCelebratedDay] = perfectDayCelebratedDay
+        prefs[Keys.badgesSeenUntilMillis] = badgesSeenUntilMillis
     }
 }

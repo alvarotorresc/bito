@@ -5,6 +5,8 @@ import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.LogicalDay
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 /**
  * Streaks (rule E1) and the anti-sergeant valves: retroactive repair, pauses,
@@ -363,5 +365,34 @@ class StreaksTest {
 
         assertEquals(7, Streaks.streaksOf(state, RealHabits.strengthTraining, TODAY).current)
         assertEquals(setOf(7), Streaks.reachedMilestones(state, RealHabits.strengthTraining, TODAY, milestones))
+    }
+
+    // -----------------------------------------------------------------------
+    // Resurrección — se rompe una racha ≥ 30 y se vuelve a cumplir después
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `a habit that breaks a 30-run and fulfills again has resurrected`() {
+        val habit = RealHabits.makeBed
+        // 30 days ending TODAY-5, a miss on TODAY-4 (unsealed positive = FAILED once the day closes), back on TODAY-3.
+        val entries = run(habit, TODAY - 5, count = 30) + entriesOn(habit, listOf(TODAY - 3))
+        assertTrue(Streaks.hasResurrected(domainState(habits = listOf(habit), entries = entries), habit, TODAY))
+    }
+
+    @Test
+    fun `no resurrection without a 30-run before the break, nor without coming back`() {
+        val habit = RealHabits.makeBed
+        val shortRun = run(habit, TODAY - 5, count = 10) + entriesOn(habit, listOf(TODAY - 3))
+        assertFalse(Streaks.hasResurrected(domainState(habits = listOf(habit), entries = shortRun), habit, TODAY))
+        val neverBack = run(habit, TODAY - 5, count = 30)
+        assertFalse(Streaks.hasResurrected(domainState(habits = listOf(habit), entries = neverBack), habit, TODAY))
+    }
+
+    @Test
+    fun `a frozen miss bridges and is not a resurrection`() {
+        val habit = RealHabits.makeBed
+        val entries = run(habit, TODAY - 5, count = 30) + entriesOn(habit, listOf(TODAY - 3))
+        val state = domainState(habits = listOf(habit), entries = entries, freezerUses = listOf(freezerOn(habit, TODAY - 4)))
+        assertFalse(Streaks.hasResurrected(state, habit, TODAY))
     }
 }

@@ -7,6 +7,7 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -14,12 +15,19 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.pointsLedgerEntity
+import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.ZoneId
 
 /**
  * The bottom bar lives above the NavHost now; these tests guard it surviving a route change.
@@ -33,6 +41,13 @@ import org.robolectric.annotation.Config
 class BitoNavHostTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @After
+    fun tearDown() {
+        // NavRequests is a process-wide singleton (T11): a route left pending here would leak
+        // into whichever test class runs next in this JVM fork.
+        NavRequests.consume()
+    }
 
     /**
      * The screen title Text, as opposed to a bottom-bar tab wearing the same label — the bar now
@@ -51,6 +66,26 @@ class BitoNavHostTest {
             }
         }
         compose.waitForIdle()
+    }
+
+    /** Like [setContent], but [seed] runs against the container's real database first. */
+    private fun setContentSeeded(seed: suspend AppContainer.() -> Unit) {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        runBlocking { container.seed() }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    private suspend fun seedPerfectDayToday(container: AppContainer) {
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        container.database.pointsLedgerDao().insert(
+            pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
+        )
     }
 
     @Test
@@ -137,5 +172,44 @@ class BitoNavHostTest {
         compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a pending review request opens the review flow and hides the bar`() {
+        // Set BEFORE setContent: BitoNavHost's LaunchedEffect must observe the already-pending
+        // route on its very first composition, the same way a notification tap's Intent extra
+        // would already be waiting when onCreate() first builds the NavHost.
+        NavRequests.open("review")
+
+        setContent()
+
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(NavRequests.pending.value)
+    }
+
+    @Test
+    fun `a pending perfect day shows the sheet on today but not on the review route`() {
+        setContentSeeded { seedPerfectDayToday(this) }
+
+        // CelebrationsViewModel's uiState combines off Dispatchers.Default (real, not the
+        // test's) — same hazard the settings-reminder test above documents, so waitForIdle
+        // alone doesn't pump it. Wait for the sheet here FIRST so the state is provably pending
+        // (and the flow has already emitted) before testing suppression below — otherwise an
+        // absence assertion racing that same unpumped emission would pass just as well with a
+        // broken suppression guard, proving nothing.
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+
+        // Now that the state is known pending and already emitted, navigate to review the same
+        // way a notification tap would post-composition: if the `currentRoute != "review"` guard
+        // were broken, the sheet would still show here too.
+        NavRequests.open("review")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists() // confirms the navigation actually landed
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
     }
 }

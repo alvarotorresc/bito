@@ -29,6 +29,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -133,5 +134,27 @@ class WidgetLoggerTest {
             assertTrue(
                 db.pointsLedgerDao().all().any { it.reason == PointsReason.HABIT_DONE && it.refId == "h1:$aug15" },
             )
+        }
+
+    @Test
+    fun `logging the last pending habit of the day returns true, and a later log on an already-fulfilled habit returns false`() =
+        runTest {
+            val aug15 = LocalDate.of(2025, 8, 15).toEpochDay().toInt()
+            val h1 = habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = aug15)
+            val h2 = habitEntity(id = "h2", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = aug15)
+            habitsRepo.create(h1)
+            habitsRepo.create(h2)
+            val logger =
+                WidgetLogger(journal, reconciler, settingsRepo, now = { millisAt(12, 0) }, zone = { testZone })
+            // h2 already done; h1 is the last habit left, so completing it makes today perfect.
+            logger.log(h2.id, 1)
+
+            val completing = logger.log(h1.id, 1)
+
+            assertTrue(completing)
+
+            val alreadyGranted = logger.log(h2.id, 1)
+
+            assertFalse(alreadyGranted)
         }
 }

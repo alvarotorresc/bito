@@ -82,10 +82,24 @@ class ReminderContentTest {
     }
 
     @Test
-    fun `a relapsed abstinence today makes no reminder noise but still triggers the review`() {
+    fun `a relapsed abstinence today makes no reminder noise and no review either`() {
         val relapsed = card("nofap", kind = CardKind.ABSTINENCE).copy(direction = Direction.ZERO, failed = true)
         assertNull(buildReminderPayload(state(relapsed)))
-        assertTrue(reviewIsPending(state(relapsed)))
+        // A relapsed ZERO card has nothing left to review: the review no longer nags about it.
+        assertFalse(reviewIsPending(state(relapsed)))
+    }
+
+    @Test
+    fun `sealing today closes the review even with positives left undone`() {
+        assertTrue(reviewIsPending(state(card("x"))))
+        assertFalse(reviewIsPending(state(card("x")).copy(todaySealed = true)))
+    }
+
+    @Test
+    fun `a clean unsealed abstinence keeps the review pending`() {
+        val clean = card("nofap", kind = CardKind.ABSTINENCE, done = true).copy(direction = Direction.ZERO)
+        assertTrue(reviewIsPending(state(clean)))
+        assertFalse(reviewIsPending(state(clean).copy(todaySealed = true)))
     }
 
     @Test

@@ -13,6 +13,14 @@ import java.time.ZoneId
 import java.util.UUID
 
 /**
+ * What a [QuickActionUseCase.log] call produced: the recalculated reminder payload (or `null`
+ * when nothing pending remains) and whether this write is the one that just made today perfect —
+ * the signal the out-of-app perfect-day notification gates on (T13's
+ * [com.alvarotc.bito.ui.celebration.CelebrationGate]).
+ */
+data class QuickActionResult(val payload: ReminderPayload?, val perfectDayReached: Boolean)
+
+/**
  * Logs a habit straight from a notification's quick-action button — no app launch, tab switch,
  * or screen render involved. Writes the entry on the correct logical day (settings cutoff +
  * zone, same math as [TodayViewModel]), reconciles points right after (idempotent append, same
@@ -28,18 +36,18 @@ class QuickActionUseCase(
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
 ) {
-    /** Logs [amount] for [habitId] and returns the recalculated reminder payload, or `null` when nothing pending remains. */
+    /** Logs [amount] for [habitId] and returns the recalculated reminder payload plus whether this write reached today's perfect day. */
     suspend fun log(
         habitId: String,
         amount: Int,
-    ): ReminderPayload? {
+    ): QuickActionResult {
         val prefs = settings.settings.first()
         val nowMillis = now()
         val today = LogicalDays.logicalDayOf(nowMillis, prefs.dayCutoffMinutes, zone())
         journal.log(EntryEntity(UUID.randomUUID().toString(), habitId, today, amount, nowMillis))
-        reconciler.reconcile(today, nowMillis)
+        val result = reconciler.reconcile(today, nowMillis)
         val entities = habits.observeHabits().first()
         val state = buildTodayUiState(domainState.snapshot(), entities.associate { it.id to it.sortOrder }, today)
-        return buildReminderPayload(state)
+        return QuickActionResult(buildReminderPayload(state), result.reachedPerfectDay(today))
     }
 }

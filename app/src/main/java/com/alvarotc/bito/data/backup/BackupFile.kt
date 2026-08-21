@@ -134,6 +134,8 @@ data class BackupSettings(
     val backupEncryption: Boolean,
     val onboardingDone: Boolean,
     val habiSoundsEnabled: Boolean = true,
+    val perfectDayCelebratedDay: Int = -1,
+    val badgesSeenUntilMillis: Long = 0L,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

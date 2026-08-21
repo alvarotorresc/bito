@@ -31,9 +31,14 @@ class StatsViewModel(
     defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     val uiState: StateFlow<StatsUiState> =
-        combine(domainState.observe(), settings.settings, rewards.observeOwnedItems()) { state, prefs, owned ->
+        combine(
+            domainState.observe(),
+            settings.settings,
+            rewards.observeOwnedItems(),
+            rewards.observeBadges(),
+        ) { state, prefs, owned, badges ->
             val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-            buildStatsUiState(state, prefs.personality, today, owned)
+            buildStatsUiState(state, prefs.personality, today, owned, badges)
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUiState())
 

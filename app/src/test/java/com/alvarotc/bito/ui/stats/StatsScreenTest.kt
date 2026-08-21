@@ -9,12 +9,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
@@ -94,14 +96,28 @@ class StatsScreenTest {
     private fun setContent(
         onOpenRecords: () -> Unit = {},
         onOpenNumbers: () -> Unit = {},
+        onOpenBadges: () -> Unit = {},
     ) {
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore())
         val rewards = RewardsRepository(db)
-        val vm = StatsViewModel(domainState, settings, rewards, now = { fixedNow }, zone = { utc })
+        val vm =
+            StatsViewModel(
+                domainState,
+                settings,
+                rewards,
+                now = { fixedNow },
+                zone = { utc },
+                defaultDispatcher = dispatcher,
+            )
         compose.setContent {
             BitoTheme {
-                StatsScreen(viewModel = vm, onOpenRecords = onOpenRecords, onOpenNumbers = onOpenNumbers)
+                StatsScreen(
+                    viewModel = vm,
+                    onOpenRecords = onOpenRecords,
+                    onOpenNumbers = onOpenNumbers,
+                    onOpenBadges = onOpenBadges,
+                )
             }
         }
         compose.waitForIdle()
@@ -167,5 +183,36 @@ class StatsScreenTest {
             compose.onNodeWithTag("streak-water", useUnmergedTree = true).getUnclippedBoundsInRoot().left
 
         assertTrue(meditateLeft < waterLeft)
+    }
+
+    @Test
+    fun `the achievements card opens the badges list`() {
+        var opened = false
+        setContent(onOpenBadges = { opened = true })
+
+        compose.onNodeWithTag("achievements", useUnmergedTree = true).performScrollTo().performClick()
+
+        assertTrue(opened)
+    }
+
+    @Test
+    fun `unlocked badges render before locked ones`() {
+        // Seeded late in catalog order (positions 13-14 of 14): only a real unlocked-first
+        // reorder puts them ahead of "streak-7" (position 1) — a naive catalog-order render
+        // would leave them several rows below it, which this comparison must catch.
+        runBlocking {
+            db.badgeDao().insert(BadgeEntity("resurrection", unlockedAtMillis = 1_000L))
+            db.badgeDao().insert(BadgeEntity("first-freezer", unlockedAtMillis = 2_000L))
+        }
+        setContent()
+
+        // A single scroll (to the later node) so both bounds below are read from the same
+        // scroll offset — two separate performScrollTo() calls would leave each top relative
+        // to a different frame, making the comparison meaningless.
+        compose.onNodeWithTag("badge-streak-7", useUnmergedTree = true).performScrollTo()
+        val unlockedTop = compose.onNodeWithTag("badge-resurrection", useUnmergedTree = true).getUnclippedBoundsInRoot().top
+        val lockedTop = compose.onNodeWithTag("badge-streak-7", useUnmergedTree = true).getUnclippedBoundsInRoot().top
+
+        assertTrue(unlockedTop <= lockedTop)
     }
 }

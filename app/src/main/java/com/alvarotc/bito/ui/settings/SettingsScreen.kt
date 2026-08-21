@@ -152,6 +152,8 @@ fun SettingsScreen(
                     reviewMinutes = current.reviewTimeMinutes,
                     exactAlarmsBlocked = exactAlarmsBlocked,
                     notifDenied = notifDenied,
+                    celebrationEnabled = current.perfectDayCelebration,
+                    onSetCelebration = settingsViewModel::setPerfectDayCelebration,
                     onAddReminder = { minutes ->
                         val isFirstReminder = current.globalReminderMinutes.isEmpty()
                         settingsViewModel.addReminder(minutes)
@@ -248,6 +250,8 @@ private fun RemindersSectionCard(
     reviewMinutes: Int,
     exactAlarmsBlocked: Boolean,
     notifDenied: Boolean,
+    celebrationEnabled: Boolean,
+    onSetCelebration: (Boolean) -> Unit,
     onAddReminder: (Int) -> Unit,
     onEditReminder: (old: Int, new: Int) -> Unit,
     onRemoveReminder: (Int) -> Unit,
@@ -273,6 +277,22 @@ private fun RemindersSectionCard(
         SettingsRow(label = stringResource(R.string.reminder_add), onClick = { showAddSheet = true })
         SettingsRow(label = stringResource(R.string.review_label), value = formatClock(reviewMinutes), onClick = { showReviewSheet = true })
         Text(stringResource(R.string.review_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        Spacer(Modifier.height(4.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.settings_celebration_label), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+                Text(
+                    stringResource(R.string.settings_celebration_hint),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                )
+            }
+            Switch(
+                checked = celebrationEnabled,
+                onCheckedChange = onSetCelebration,
+                modifier = Modifier.testTag("celebration-switch"),
+            )
+        }
         if (exactAlarmsBlocked) {
             SettingsRow(
                 label = stringResource(R.string.reminder_exact_notice),

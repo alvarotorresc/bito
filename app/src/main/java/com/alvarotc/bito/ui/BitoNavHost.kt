@@ -4,7 +4,10 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,16 +15,23 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
+import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
+import com.alvarotc.bito.ui.celebration.PerfectDaySheet
 import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.review.ReviewScreen
+import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
+import com.alvarotc.bito.ui.stats.BadgesScreen
+import com.alvarotc.bito.ui.stats.BadgesViewModel
 import com.alvarotc.bito.ui.stats.NumbersScreen
 import com.alvarotc.bito.ui.stats.NumbersViewModel
 import com.alvarotc.bito.ui.stats.RecordsScreen
@@ -86,6 +96,7 @@ fun BitoNavHost(container: AppContainer) {
                             launchSingleTop = true
                         }
                     },
+                    onOpenReview = { nav.navigate("review") },
                 )
             }
             composable(
@@ -135,6 +146,7 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = StatsViewModel.factory(container)),
                     onOpenRecords = { nav.navigate("records") },
                     onOpenNumbers = { nav.navigate("numbers") },
+                    onOpenBadges = { nav.navigate("badges") },
                 )
             }
             composable("records") {
@@ -148,6 +160,54 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = NumbersViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
                 )
+            }
+            // Secondary screen, not in the bottom-bar route set above and not deep-link
+            // allowlisted (NavRequests) — reached only from Stats' Logros section.
+            composable("badges") {
+                BadgesScreen(
+                    viewModel = viewModel(factory = BadgesViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
+                )
+            }
+            // No bottom nav: the review is its own flow, not a bar destination (see the
+            // bottomBar route set above, which deliberately omits "review").
+            composable("review") {
+                ReviewScreen(
+                    viewModel = viewModel(factory = ReviewViewModel.factory(container)),
+                    onClose = { nav.popBackStack() },
+                )
+            }
+        }
+
+        // T11: the one bridge from an Intent (a notification tap) to this NavHost. Declared
+        // alongside NavHost, not as a sibling of the outer Scaffold — Scaffold subcomposes its
+        // content (this whole block) lazily during measurement, so an effect placed outside it
+        // would fire before NavHost has set the nav graph and crash navigating anywhere. A route
+        // already pending when this composes (MainActivity decoded it before setContent) fires
+        // on the very first LaunchedEffect run, same as one that arrives later via onNewIntent.
+        val pendingRoute by NavRequests.pending.collectAsStateWithLifecycle()
+        LaunchedEffect(pendingRoute) {
+            pendingRoute?.let {
+                nav.navigate(it) { launchSingleTop = true }
+                NavRequests.consume()
+            }
+        }
+
+        // T12: the two global celebration sheets, overlaid above the NavHost everywhere except
+        // the `review` route — E2's SealedDayContent already owns that beat there (its own
+        // LaunchedEffect fires the cue and marks it celebrated). The perfect day always wins
+        // first: dismissing it re-evaluates this `when`, and the badge sheet (if any) follows.
+        val celebrations: CelebrationsViewModel = viewModel(factory = CelebrationsViewModel.factory(container))
+        val cState by celebrations.uiState.collectAsStateWithLifecycle()
+        if (currentRoute != "review") {
+            when {
+                cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
+                cState.newBadges.isNotEmpty() -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
+            }
+        }
+        LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute) {
+            if (currentRoute != "review" && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
+                celebrations.cue()
             }
         }
     }

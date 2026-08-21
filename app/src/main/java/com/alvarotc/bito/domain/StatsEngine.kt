@@ -64,9 +64,7 @@ object StatsEngine {
         state: DomainState,
         today: LogicalDay,
     ): PerfectDaysSummary {
-        val firstDay = state.habits.minOfOrNull { it.createdOnDay } ?: return PerfectDaysSummary(0, 0, 0)
-        if (firstDay > today) return PerfectDaysSummary(0, 0, 0)
-        val perfectDays = (firstDay..today).filter { PerfectDays.isPerfectDay(state, it, today) }
+        val perfectDays = PerfectDays.perfectDaysUpTo(state, today)
         val thisMonthKey = LogicalDays.periodKeyOf(today, Period.MONTH)
         val thisMonth = perfectDays.count { LogicalDays.periodKeyOf(it, Period.MONTH) == thisMonthKey }
         val thisYearValue = LogicalDays.yearOf(today)
@@ -155,6 +153,17 @@ object StatsEngine {
             daysSinceFirstHabit = firstHabitDay?.let { today - it },
         )
     }
+
+    /** Habits requirable today whose period containing today is FULFILLED and whose current streak is ≥ 1. */
+    fun streaksAdvancedToday(
+        state: DomainState,
+        today: LogicalDay,
+    ): Int =
+        state.habits.count { habit ->
+            Compliance.isRequirableOn(state, habit, today) &&
+                Compliance.complianceOf(state, habit, LogicalDays.periodKeyOf(today, habit.period), today) == ComplianceStatus.FULFILLED &&
+                Streaks.streaksOf(state, habit, today).current >= 1
+        }
 
     /** The most recent day with any entry or seal — feeds [MoodEngine.moodOf]. Null when history is empty. */
     fun lastActivityDay(state: DomainState): LogicalDay? =

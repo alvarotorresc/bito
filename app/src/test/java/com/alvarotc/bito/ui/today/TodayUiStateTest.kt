@@ -438,4 +438,14 @@ class TodayUiStateTest {
 
         assertEquals("Alvaro", result.userName)
     }
+
+    @Test
+    fun `24 - todaySealed mirrors the day seal`() {
+        val habit = habit("h")
+
+        assertFalse(buildTodayUiState(stateOf(listOf(habit)), emptyMap(), TODAY).todaySealed)
+        assertTrue(
+            buildTodayUiState(stateOf(listOf(habit), seals = listOf(DaySeal(TODAY, 0L))), emptyMap(), TODAY).todaySealed,
+        )
+    }
 }

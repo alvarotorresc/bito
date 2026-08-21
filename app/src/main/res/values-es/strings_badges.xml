@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--
+        Nombres de logros, condición de desbloqueo y etiquetas de familia (docs/06-badges.md §2,
+        T8) — copia PROVISIONAL, la definitiva llega en la sesión de economía/copy de M9. El
+        catálogo de 14 ids vive en domain/model/Badge.kt (BadgeCatalog); este fichero solo aporta
+        la presentación en ui/, que se mantiene libre de ids de recursos Android
+        (ui/stats/BadgeStrings.kt mapea id -> recurso).
+        badge_name_* — el nombre propio del badge, la personalidad nunca lo cambia.
+        badge_how_*  — la condición de desbloqueo, se enchufa en badge_how_prefix ("se gana con: …").
+        badge_family_* — las tres etiquetas de familia por las que agrupa la lista de Logros.
+    -->
+    <string name="badge_name_streak_7">Primera llama</string>
+    <string name="badge_name_streak_30">Fuego lento</string>
+    <string name="badge_name_streak_100">Brasa viva</string>
+    <string name="badge_name_streak_365">Vuelta al sol</string>
+    <string name="badge_name_perfect_day_1">Día redondo</string>
+    <string name="badge_name_perfect_days_10">Diez redondos</string>
+    <string name="badge_name_perfect_days_50">Cincuenta redondos</string>
+    <string name="badge_name_perfect_days_100">Cien redondos</string>
+    <string name="badge_name_perfect_week">Semana redonda</string>
+    <string name="badge_name_perfect_month">Mes redondo</string>
+    <string name="badge_name_first_habit">Primer paso</string>
+    <string name="badge_name_first_week">Semana entera</string>
+    <string name="badge_name_resurrection">Resurrección</string>
+    <string name="badge_name_first_freezer">Bajo cero</string>
+
+    <string name="badge_how_streak_7">racha de 7 en cualquier hábito</string>
+    <string name="badge_how_streak_30">racha de 30</string>
+    <string name="badge_how_streak_100">racha de 100</string>
+    <string name="badge_how_streak_365">racha de 365</string>
+    <string name="badge_how_perfect_day_1">tu primer día perfecto</string>
+    <string name="badge_how_perfect_days_10">10 días perfectos</string>
+    <string name="badge_how_perfect_days_50">50 días perfectos</string>
+    <string name="badge_how_perfect_days_100">100 días perfectos</string>
+    <string name="badge_how_perfect_week">una semana con todos sus días perfectos</string>
+    <string name="badge_how_perfect_month">un mes con todos sus días perfectos</string>
+    <string name="badge_how_first_habit">crear tu primer hábito</string>
+    <string name="badge_how_first_week">7 días seguidos apareciendo</string>
+    <string name="badge_how_resurrection">volver a cumplir tras romper una racha de 30 o más</string>
+    <string name="badge_how_first_freezer">usar tu primer congelador</string>
+
+    <string name="badge_family_streak">Rachas</string>
+    <string name="badge_family_constancy">Constancia</string>
+    <string name="badge_family_moment">Momentos</string>
+
+    <string name="stats_badges_title">Logros</string>
+    <string name="stats_badges_count">%1$d de %2$d</string>
+    <string name="badge_of_total">de %1$d</string>
+    <string name="stats_badges_all">ver todos</string>
+    <string name="badges_title">Logros</string>
+    <string name="badge_unlocked_on">desbloqueado el %1$s</string>
+    <string name="badge_how_prefix">se gana con: %1$s</string>
+    <string name="celebration_badge_title">Logro desbloqueado</string>
+    <string name="celebration_continue">Seguir</string>
+</resources>

@@ -12,6 +12,10 @@ interface BadgeDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(badge: BadgeEntity)
 
+    /** Batch unlock: each badge unlocks once; later unlocks of the same id are ignored. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertAll(badges: List<BadgeEntity>)
+
     @Query("SELECT * FROM badges")
     fun observeAll(): Flow<List<BadgeEntity>>
 

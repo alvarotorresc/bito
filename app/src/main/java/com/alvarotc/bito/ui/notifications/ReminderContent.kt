@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.notifications
 
+import com.alvarotc.bito.ui.review.reviewRowsOf
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.TodayUiState
 
@@ -42,5 +43,6 @@ fun buildReminderPayload(state: TodayUiState): ReminderPayload? {
     return ReminderPayload(pendingNames = pending.map { it.name }, targets = targets)
 }
 
-/** Whether today's review is still owed: something open today, or a past day left unsealed. */
-fun reviewIsPending(state: TodayUiState): Boolean = state.cards.any { !it.doneToday } || state.pendingSealDays.isNotEmpty()
+/** Review owed: a past day unsealed, or today unsealed with something to act on. Sealing today closes the review for the day. */
+fun reviewIsPending(state: TodayUiState): Boolean =
+    state.pendingSealDays.isNotEmpty() || (!state.todaySealed && reviewRowsOf(state.cards, state.todaySealed).isNotEmpty())
