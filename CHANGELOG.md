@@ -2,6 +2,26 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [0.9.0] - 2026-08-22
+
+### Added
+
+- Bito por fin te pregunta tu nombre: un onboarding con la historia de Habi — bienvenida con elección de idioma, la historia en tres escenas (saltables), tu nombre con reacción de Habi en vivo, la elección de personalidad escuchando su voz, y tu primer hábito con la sugerencia del widget. En instalaciones ya rodadas sale una vez tras actualizar, sin tocar tus datos: aprovecha para ponerte nombre.
+- Las tres personalidades estrenan sus textos definitivos en español e inglés, en todos los rincones donde Habi habla: saludos, comentarios, repaso, logros, congeladores, notificaciones y el formulario de crear hábito.
+- Elegir idioma de verdad: selector en Ajustes (del sistema, español o inglés) que se aplica al momento y sobrevive reinicios en cualquier Android.
+- Tu nombre, editable en Ajustes cuando quieras.
+- Micro-animaciones por todas partes: el anillo de Hoy crece hasta su progreso, el punto que registras hace pop, las tarjetas se reacomodan suaves y las pantallas se deslizan al navegar. Las celebraciones siguen siendo las únicas con fanfarria, como debe ser.
+
+### Changed
+
+- El detalle de un hábito sin registros te invita a estrenar el primer día en vez de mostrar solo ceros.
+- «Ajustes» ya no se parte en dos líneas en la barra inferior.
+- El anillo de Hoy se anuncia como barra de progreso para lectores de pantalla.
+
+### Fixed
+
+- Rendimiento: cada registro recalculaba dos veces el historial completo de días perfectos; ahora una sola.
+
 ## [0.8.0] - 2026-08-21
 
 ### Added
