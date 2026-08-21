@@ -106,7 +106,15 @@ fun SettingsScreen(
                 BackupMessage.IMPORT_DONE -> importDone
                 BackupMessage.INVALID_FILE -> invalidFile
                 BackupMessage.IO_ERROR -> ioError
-                null -> null
+                // Folder/schedule/encryption UI (passphrase sheet, encryption snackbars, its own
+                // MISSING_KEY snackbar) is task 9/10's — no text here yet keeps this snackbar
+                // silent for them instead of guessing at copy that isn't this task's to write.
+                BackupMessage.WRONG_PASSPHRASE,
+                BackupMessage.ENCRYPTION_ON,
+                BackupMessage.ENCRYPTION_OFF,
+                BackupMessage.MISSING_KEY,
+                null,
+                -> null
             }
         if (text != null) {
             snackbar.showSnackbar(text)
