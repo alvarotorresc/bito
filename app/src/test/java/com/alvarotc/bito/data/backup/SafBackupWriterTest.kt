@@ -75,4 +75,31 @@ class SafBackupWriterTest {
             victims,
         )
     }
+
+    @Test
+    fun `deletes the previous file with the same final name`() {
+        val names = listOf("bito-backup-2026-08-21-1200.bito", "bito-backup-2026-08-20-1000.bito")
+
+        val stale = staleWriteTargets(names, fileName = "bito-backup-2026-08-21-1200.bito")
+
+        assertEquals(listOf("bito-backup-2026-08-21-1200.bito"), stale)
+    }
+
+    @Test
+    fun `deletes an orphaned tmp from any earlier run`() {
+        val names = listOf("bito-backup-2026-08-20-1000.bito.tmp")
+
+        val stale = staleWriteTargets(names, fileName = "bito-backup-2026-08-21-1200.bito")
+
+        assertEquals(listOf("bito-backup-2026-08-20-1000.bito.tmp"), stale)
+    }
+
+    @Test
+    fun `leaves another app's tmp untouched`() {
+        val names = listOf("notas.txt.tmp", "vacaciones.jpg")
+
+        val stale = staleWriteTargets(names, fileName = "bito-backup-2026-08-21-1200.bito")
+
+        assertEquals(emptyList(), stale)
+    }
 }

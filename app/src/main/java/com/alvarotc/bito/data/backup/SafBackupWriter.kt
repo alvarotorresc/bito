@@ -36,11 +36,12 @@ class SafBackupWriter(private val context: Context) : BackupSink {
                 ?: throw IOException("Cannot open backup folder for $treeUri")
 
         val tmpName = "$fileName.tmp"
-        // An orphaned .tmp from a run that died mid-write, or a previous file with the same
-        // final name (the worker re-ran in the same minute), must go before we start fresh.
-        root.listFiles().forEach { existing ->
-            if (existing.name == tmpName || existing.name == fileName) existing.delete()
-        }
+        // An orphaned .tmp from ANY earlier run (its own name carries a different date/time
+        // than today's), or a previous file with today's exact final name (the worker re-ran
+        // in the same minute), must go before we start fresh.
+        val files = root.listFiles()
+        val stale = staleWriteTargets(files.mapNotNull { it.name }, fileName).toSet()
+        files.forEach { existing -> if (existing.name in stale) existing.delete() }
 
         val tmpDoc =
             root.createFile("application/octet-stream", tmpName)
@@ -60,6 +61,11 @@ class SafBackupWriter(private val context: Context) : BackupSink {
         } catch (e: IOException) {
             tmpDoc.delete() // best-effort: never leave the half-written tmp behind
             throw e
+        } catch (e: SecurityException) {
+            // The persisted tree grant can be revoked (or the volume can vanish) between
+            // fromTreeUri() succeeding and the actual write — the canonical SAF failure.
+            tmpDoc.delete()
+            throw IOException("Failed to write $fileName", e)
         }
     }
 
@@ -79,6 +85,21 @@ class SafBackupWriter(private val context: Context) : BackupSink {
         }
     }
 }
+
+/**
+ * Pure pre-write cleanup policy, JVM-testable: which existing names to delete before writing
+ * [fileName] — any orphaned `.tmp` left by an earlier run's bito backup, plus a previous file
+ * that already carries this exact final name. Never touches a name from something else sharing
+ * the folder (a `.tmp` whose stripped name isn't a bito backup survives).
+ */
+internal fun staleWriteTargets(
+    names: List<String>,
+    fileName: String,
+): List<String> =
+    names.filter { name ->
+        name == fileName ||
+            (name.endsWith(".tmp") && BACKUP_NAME_PATTERN.matches(name.removeSuffix(".tmp")))
+    }
 
 /** Pure rotation policy, JVM-testable: which existing names to delete, keeping the newest [keep]. */
 internal fun rotationVictims(
