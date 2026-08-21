@@ -29,9 +29,11 @@ private class ThemeBitoCheckActivity : AppCompatActivity() {
 
 /**
  * Regression guard for the M9 "language applied" task: MainActivity became an AppCompatActivity
- * so AppCompatDelegate can persist/restore the per-app locale, which only works if the manifest
- * theme is an AppCompat descendant — a plain `android:Theme.*` parent compiles fine and crashes
- * on first launch. See `themes.xml`'s comment on `Theme.Bito` for the full mechanism.
+ * so AppCompatDelegate can apply the per-app locale before the first frame (and, together with the
+ * manifest's `AppLocalesMetadataHolderService`/`autoStoreLocales` opt-in -- see
+ * [com.alvarotc.bito.ui.settings.AppLocale]'s KDoc -- restore it on API<33), which only works if
+ * the manifest theme is an AppCompat descendant — a plain `android:Theme.*` parent compiles fine
+ * and crashes on first launch. See `themes.xml`'s comment on `Theme.Bito` for the full mechanism.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])

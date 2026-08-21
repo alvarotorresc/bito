@@ -23,6 +23,21 @@
         android:localeConfig="@xml/locales_config"
         android:theme="@style/Theme.Bito">
 
+        <!-- AppCompatDelegate.setApplicationLocales persists nothing below API 33 unless the app
+             opts into AppCompat's own on-disk storage — this service is never started, it exists
+             only for its meta-data, which AppCompat's own ActivityLifecycleCallbacks reads at
+             startup on API<33 to auto-restore the locale it last applied. See AppLocale.kt's KDoc
+             for the full reconciliation story with Settings.languageTag (the DataStore field this
+             cache mirrors). -->
+        <service
+            android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
+            android:enabled="false"
+            android:exported="false">
+            <meta-data
+                android:name="autoStoreLocales"
+                android:value="true" />
+        </service>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"

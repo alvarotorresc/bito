@@ -13,12 +13,14 @@ import com.alvarotc.bito.ui.theme.BitoTheme
 
 // AppCompatActivity, not ComponentActivity: per-app language needs somewhere to persist the
 // chosen locale that survives process death and applies before the first frame, and this class
-// swap is what buys that for free. AppCompatDelegate keeps its own locale storage and restores it
-// automatically here on API<33 (an AppCompatActivity is all that takes); on 33+ the framework
-// itself restores the per-app locale from localeConfig before this activity is even created. So
-// onCreate below never reads Settings.languageTag from DataStore — AppLocale.apply (called from
-// SettingsViewModel.setLanguage) is the only place that touches AppCompatDelegate, and only when
-// the user changes the setting, not on every launch.
+// swap is what buys that for free. AppCompatDelegate keeps its own locale cache and restores it
+// automatically here on API<33 -- but ONLY because the manifest opts into that cache via the
+// AppLocalesMetadataHolderService/autoStoreLocales declaration (see AppLocale.kt's KDoc for why
+// that's needed: being an AppCompatActivity alone persists nothing). On 33+ the framework itself
+// restores the per-app locale from localeConfig before this activity is even created. So onCreate
+// below never reads Settings.languageTag from DataStore — AppLocale.apply (called from
+// SettingsViewModel.setLanguage and OnboardingViewModel.setLanguage) is the only place that
+// touches AppCompatDelegate, and only when the user changes the setting, not on every launch.
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
