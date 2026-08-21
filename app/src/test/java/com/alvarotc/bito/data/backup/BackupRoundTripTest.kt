@@ -38,6 +38,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -45,7 +46,11 @@ import kotlin.test.assertFailsWith
 class BackupRoundTripTest {
     private lateinit var db: BitoDatabase
     private lateinit var settingsRepo: SettingsRepository
+    private lateinit var keyStore: BackupKeyStore
     private lateinit var backup: BackupRepository
+
+    // Small Argon2 cost so tests stay fast — mirrors BackupCryptoTest's fastParams.
+    private val fastParams = Argon2Params(memoryKib = 64, iterations = 1, parallelism = 1)
 
     private val seededSettings =
         Settings(
@@ -75,7 +80,8 @@ class BackupRoundTripTest {
                 scope = CoroutineScope(UnconfinedTestDispatcher() + Job()),
             ) { context.filesDir.resolve("t-${UUID.randomUUID()}.preferences_pb") }
         settingsRepo = SettingsRepository(store)
-        backup = BackupRepository(db, settingsRepo, "0.3.0-test")
+        keyStore = BackupKeyStore(context.filesDir.resolve("keystore-${UUID.randomUUID()}").apply { mkdirs() })
+        backup = BackupRepository(db, settingsRepo, keyStore, "0.3.0-test")
     }
 
     @After
@@ -217,5 +223,38 @@ class BackupRoundTripTest {
             // Device-local backup status should not appear in the export.
             assert(!exported.contains("lastAutoBackup"))
             assert(!exported.contains("last_auto_backup"))
+        }
+
+    @Test
+    fun `exportBytes is plain utf-8 json when encryption is off`() =
+        runTest {
+            seedEverything() // seededSettings has backupEncryption = true
+            settingsRepo.update { it.copy(backupEncryption = false) }
+
+            val json = backup.exportJson(nowMillis = 1_000L)
+            val bytes = backup.exportBytes(nowMillis = 1_000L)
+
+            assertEquals(json, bytes.toString(Charsets.UTF_8))
+        }
+
+    @Test
+    fun `exportBytes round-trips through decryptToJson when encryption is on`() =
+        runTest {
+            seedEverything() // seededSettings has backupEncryption = true
+            val passphrase = "correct horse battery".toCharArray()
+            keyStore.save(BackupCrypto.deriveKey(passphrase, BackupCrypto.newSalt(), fastParams))
+
+            val json = backup.exportJson(nowMillis = 1_000L)
+            val bytes = backup.exportBytes(nowMillis = 1_000L)
+
+            assertTrue(backup.isEncrypted(bytes))
+            assertEquals(json, backup.decryptToJson(bytes, passphrase))
+        }
+
+    @Test
+    fun `exportBytes throws MissingKeyException when encryption is on with no key`() =
+        runTest {
+            seedEverything() // seededSettings has backupEncryption = true, no key ever saved
+            assertFailsWith<MissingKeyException> { backup.exportBytes(nowMillis = 1_000L) }
         }
 }

@@ -28,6 +28,6 @@ class AppContainer(context: Context) {
         )
     val habiSounds = HabiSounds(context, settings)
     val keyStore = BackupKeyStore(context.filesDir)
-    val backup = BackupRepository(database, settings, BuildConfig.VERSION_NAME)
+    val backup = BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME)
     val reconciler = PointsReconciler(domainState, rewards)
 }

@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
@@ -74,7 +75,7 @@ class BackupViewModelTest {
                     scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
                 ) { File(tmp.root, "backup-vm.preferences_pb") },
             )
-        backup = BackupRepository(db, settingsRepo, "0.3.0-test")
+        backup = BackupRepository(db, settingsRepo, BackupKeyStore(tmp.root), "0.3.0-test")
         resolver = context.contentResolver
         vm = BackupViewModel(backup, now = { fixedNow }, zone = { utc }, ioDispatcher = dispatcher)
     }

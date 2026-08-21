@@ -16,6 +16,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
@@ -91,7 +92,7 @@ class SettingsScreenTest {
     @Test
     fun `the backups card stays reachable on short screens`() {
         val settings = SettingsRepository(settingsStore("settings-screen"))
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         compose.setContent {
             BitoTheme {
@@ -108,7 +109,7 @@ class SettingsScreenTest {
     @Test
     fun `the archived habits row is hidden when nothing is archived`() {
         val settings = SettingsRepository(settingsStore("settings-screen-no-archived"))
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         compose.setContent {
             BitoTheme {
@@ -126,7 +127,7 @@ class SettingsScreenTest {
             HabitsRepository(db).create(habitEntity(id = "gone", name = "Fumar", status = HabitStatus.ARCHIVED))
         }
         val settings = SettingsRepository(settingsStore("settings-screen-archived"))
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         var opened = false
         compose.setContent {
@@ -147,7 +148,7 @@ class SettingsScreenTest {
     @Test
     fun `the reminders card hints when no hours are configured`() {
         val settings = SettingsRepository(settingsStore("settings-screen-no-reminders"))
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         compose.setContent {
             BitoTheme {
@@ -165,7 +166,7 @@ class SettingsScreenTest {
     fun `the reminders hint disappears once an hour is configured`() {
         val settings = SettingsRepository(settingsStore("settings-screen-with-reminder"))
         runBlocking { settings.update { it.copy(globalReminderMinutes = listOf(9 * 60)) } }
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         compose.setContent {
             BitoTheme {
@@ -180,7 +181,7 @@ class SettingsScreenTest {
     @Test
     fun `the Habi section shows the sounds toggle, on by default`() {
         val settings = SettingsRepository(settingsStore("settings-screen-habi-default"))
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         compose.setContent {
             BitoTheme {
@@ -196,7 +197,7 @@ class SettingsScreenTest {
     @Test
     fun `tapping the Habi sounds toggle flips and persists the setting`() {
         val settings = SettingsRepository(settingsStore("settings-screen-habi-toggle"))
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         compose.setContent {
             BitoTheme {
@@ -215,7 +216,7 @@ class SettingsScreenTest {
     @Test
     fun `the celebration switch writes the setting`() {
         val settings = SettingsRepository(settingsStore("settings-screen-celebration-toggle"))
-        val backupVm = BackupViewModel(BackupRepository(db, settings, "test"), ioDispatcher = dispatcher)
+        val backupVm = BackupViewModel(BackupRepository(db, settings, BackupKeyStore(tmp.root), "test"), ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
         compose.setContent {
             BitoTheme {
@@ -245,7 +246,7 @@ class SettingsScreenTest {
             repeat(12) { i -> db.entryDao().insert(entryEntity(id = "ip-e$i", habitId = "ip-h0", logicalDay = i)) }
         }
         val settings = SettingsRepository(settingsStore("settings-screen-import-preview-many"))
-        val backupRepo = BackupRepository(db, settings, "test")
+        val backupRepo = BackupRepository(db, settings, BackupKeyStore(tmp.root), "test")
         val exported = runBlocking { backupRepo.exportJson(0L) }
         val backupVm = BackupViewModel(backupRepo, ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
@@ -276,7 +277,7 @@ class SettingsScreenTest {
             db.entryDao().insert(entryEntity(id = "ip-e0", habitId = "ip-h0", logicalDay = 0))
         }
         val settings = SettingsRepository(settingsStore("settings-screen-import-preview-one"))
-        val backupRepo = BackupRepository(db, settings, "test")
+        val backupRepo = BackupRepository(db, settings, BackupKeyStore(tmp.root), "test")
         val exported = runBlocking { backupRepo.exportJson(0L) }
         val backupVm = BackupViewModel(backupRepo, ioDispatcher = dispatcher)
         val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
