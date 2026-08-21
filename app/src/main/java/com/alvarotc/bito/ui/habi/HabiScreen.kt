@@ -66,7 +66,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }
             SpeechBubble(
-                speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(state.spec.personality))),
+                speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
                 // The Habi screen's OWN playful, name-addressed voice — distinct from the Stats
                 // commentator's mood-only bubble (HabiVoice.bubbleRes). No avatar slot here: the
                 // big Stage above already IS Habi, so a second mini-face would be redundant.
@@ -174,7 +174,7 @@ private fun PersonalityPills(
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
-                    stringResource(personalityLabelRes(personality)),
+                    stringResource(HabiVoice.labelRes(personality)),
                     style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
                     color = if (active) Tarjeta else Tinta,
                     textAlign = TextAlign.Center,
@@ -183,10 +183,3 @@ private fun PersonalityPills(
         }
     }
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }
