@@ -116,6 +116,9 @@ object Notifier {
     /** Clears a stale reminder notification (e.g. its habit got logged some other way). */
     fun cancelReminder(context: Context) = NotificationManagerCompat.from(context).cancel(REMINDER_ID)
 
+    /** Clears a stale review nudge (e.g. the day just got sealed in-app) — mejoras-qa M7 #3. */
+    fun cancelReview(context: Context) = NotificationManagerCompat.from(context).cancel(REVIEW_ID)
+
     private fun baseBuilder(
         context: Context,
         channelId: String,
