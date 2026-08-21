@@ -44,6 +44,13 @@ android {
             isIncludeAndroidResources = true
         }
     }
+    packaging {
+        // bcprov-jdk18on ships a multi-release manifest that collides with jspecify's; both are
+        // metadata only, safe to drop one copy.
+        resources {
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
+        }
+    }
 }
 
 room {
