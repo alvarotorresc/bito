@@ -40,6 +40,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
@@ -682,6 +683,77 @@ class SettingsScreenTest {
 
         compose.onNodeWithText("Wrong passphrase", useUnmergedTree = true).assertIsDisplayed()
         compose.onNodeWithTag("import-passphrase-field", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /**
+     * Regression for the reviewer-found race: Cancel has no busy gate, so a decrypt attempt can
+     * still be in flight when the sheet is dismissed. If that attempt later resolves
+     * WRONG_PASSPHRASE after askImportPassphrase is already false, the message effect must not
+     * latch the inline-error flag — otherwise the NEXT encrypted import's sheet would mount
+     * already showing a stale "Wrong passphrase". Simulated honestly (not just asserted as a
+     * contract): cryptoDispatcher is a separate, manually-advanced StandardTestDispatcher so the
+     * test can pause submitImportPassphrase() right after busy=true — mid-Argon2 — dismiss the
+     * sheet there, and only then let the decrypt resolve.
+     */
+    @Test
+    fun `dismissing during a wrong-passphrase check does not poison the next sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-stale-wrong-passphrase"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupRepo = BackupRepository(db, settings, keyStore, "test")
+        val json = runBlocking { backupRepo.exportJson(0L) }
+        val encrypted =
+            BackupCrypto.encrypt(
+                json,
+                BackupCrypto.deriveKey("right-pass".toCharArray(), BackupCrypto.newSalt(), TEST_ARGON2_PARAMS),
+            )
+        val cryptoDispatcher = StandardTestDispatcher()
+        val backupVm =
+            BackupViewModel(
+                backupRepo,
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = cryptoDispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        val resolver = ApplicationProvider.getApplicationContext<Context>().contentResolver
+        val firstUri = Uri.parse("content://bito/stale-wrong-passphrase-1.bito")
+        shadowOf(resolver).registerInputStream(firstUri, ByteArrayInputStream(encrypted))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        backupVm.loadImport(resolver, firstUri)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("import-passphrase-field", useUnmergedTree = true).performTextInput("nope-pass")
+        // Fires submitImportPassphrase: busy=true is set synchronously, then the coroutine
+        // suspends at withContext(cryptoDispatcher) because that scheduler hasn't been advanced.
+        compose.onNodeWithTag("import-passphrase-confirm", useUnmergedTree = true)
+            .fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+        assertTrue("the decrypt attempt must still be in flight", backupVm.state.value.busy)
+
+        // Tap Cancel while that decrypt is still in flight.
+        backupVm.dismissImportPassphrase()
+        compose.waitForIdle()
+        assertFalse(backupVm.state.value.askImportPassphrase)
+
+        // Only now let the in-flight decrypt resolve WRONG_PASSPHRASE — after the sheet is gone.
+        cryptoDispatcher.scheduler.advanceUntilIdle()
+        compose.waitForIdle()
+
+        // A fresh encrypted import must not have its sheet mount with a stale inline error.
+        val secondUri = Uri.parse("content://bito/stale-wrong-passphrase-2.bito")
+        shadowOf(resolver).registerInputStream(secondUri, ByteArrayInputStream(encrypted))
+        backupVm.loadImport(resolver, secondUri)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("import-passphrase-field", useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("Wrong passphrase", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

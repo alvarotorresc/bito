@@ -144,7 +144,11 @@ fun SettingsScreen(
         // identical message right after never re-fires this effect (same key, no transition
         // through null in between).
         val message = backupState.message ?: return@LaunchedEffect
-        if (message == BackupMessage.WRONG_PASSPHRASE) {
+        // Guard on askImportPassphrase too: Cancel has no busy gate, so the sheet can be dismissed
+        // while a decrypt attempt is still in flight. If that attempt later resolves
+        // WRONG_PASSPHRASE after the sheet is already gone, this must not latch the flag — the
+        // NEXT encrypted import's sheet would otherwise mount already showing a stale error.
+        if (message == BackupMessage.WRONG_PASSPHRASE && backupState.askImportPassphrase) {
             wrongPassphraseShown = true
         }
         val text =
