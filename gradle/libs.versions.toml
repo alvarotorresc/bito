@@ -18,6 +18,7 @@ lifecycleViewmodelCompose = "2.8.7"
 glance = "1.1.1"
 # 2.5.x builds against Compose 1.8; 2.4.3 is the last line compatible with BOM 2024.12.01 (Compose 1.7).
 reorderable = "2.4.3"
+bouncycastle = "1.79"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -43,6 +44,7 @@ androidx-compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-te
 androidx-compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-glance-appwidget = { group = "androidx.glance", name = "glance-appwidget", version.ref = "glance" }
 reorderable = { group = "sh.calvin.reorderable", name = "reorderable", version.ref = "reorderable" }
+bouncycastle = { group = "org.bouncycastle", name = "bcprov-jdk18on", version.ref = "bouncycastle" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
