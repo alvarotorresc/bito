@@ -52,4 +52,6 @@
 
     <string name="archive_sheet_title">¿Archivar este hábito?</string>
     <string name="archive_sheet_body">Archivar lo conserva todo — podrás reactivarlo más tarde.</string>
+
+    <string name="detail_empty_hint">Registra tu primer día y esto cobra vida</string>
 </resources>

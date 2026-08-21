@@ -50,4 +50,6 @@
 
     <string name="archive_sheet_title">Archive this habit?</string>
     <string name="archive_sheet_body">Archiving keeps everything — you can unarchive it later.</string>
+
+    <string name="detail_empty_hint">Log your first day and this comes alive</string>
 </resources>

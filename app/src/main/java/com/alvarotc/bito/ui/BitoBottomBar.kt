@@ -104,8 +104,13 @@ private fun NavSlot(
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
         Text(
             label,
-            style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp, fontWeight = FontWeight.Medium),
+            style =
+                MaterialTheme.typography.labelMedium.copy(
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                ),
             color = tint,
+            maxLines = 1,
         )
     }
 }

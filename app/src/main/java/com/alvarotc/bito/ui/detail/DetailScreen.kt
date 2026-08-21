@@ -120,6 +120,13 @@ fun DetailScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             DetailHeader(current.name, onBack, { onEdit(current.habitId) })
+            if (!current.hasAnyEntry) {
+                Text(
+                    stringResource(R.string.detail_empty_hint),
+                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
+                    color = TintaSuave,
+                )
+            }
             // Archived: data stays visible (monument, heatmap, % pills) but every write surface
             // closes — no freezer purchase, no day-tap sheet, no relapse (already gated below).
             val archived = current.status == HabitStatus.ARCHIVED
