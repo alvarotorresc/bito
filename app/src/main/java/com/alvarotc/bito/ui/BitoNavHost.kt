@@ -1,12 +1,17 @@
 package com.alvarotc.bito.ui
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -24,6 +29,7 @@ import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.review.ReviewScreen
 import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.settings.ArchivedScreen
@@ -44,6 +50,21 @@ import com.alvarotc.bito.ui.today.TodayViewModel
 
 @Composable
 fun BitoNavHost(container: AppContainer) {
+    // The very first Settings emission decides where the app opens (today vs onboarding) — a
+    // hardcoded "today" start would flash before onboardingDone is known, so nothing but the app
+    // background renders until that first value lands. Same "state == null means still loading"
+    // gate SettingsScreen already uses for its own DataStore-backed cards.
+    val settingsState by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
+    val loadedSettings = settingsState
+    if (loadedSettings == null) {
+        Box(Modifier.fillMaxSize().background(Papel).testTag("app-loading"))
+        return
+    }
+    // Decided once, from that first resolved value: NavHost keys its graph on startDestination,
+    // so re-evaluating this on every recomposition would rebuild the whole nav graph out from
+    // under an in-flight finish()-triggered navigate("today") the moment onboardingDone flips.
+    val startDestination = remember { if (loadedSettings.onboardingDone) "today" else "onboarding" }
+
     val nav = rememberNavController()
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
 
@@ -79,12 +100,26 @@ fun BitoNavHost(container: AppContainer) {
     ) { padding ->
         NavHost(
             nav,
-            startDestination = "today",
+            startDestination = startDestination,
             // Consume the outer Scaffold's insets, not just offset for them — otherwise Today's
             // and Settings' own Scaffolds (default contentWindowInsets = systemBars) re-apply
             // the status bar gap on top of this padding under edge-to-edge.
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
+            // No bottom nav: a fresh install's first-run flow, not a bar destination — same
+            // reasoning as "review" below, and not deep-link allowlisted either. T6-T8 build the
+            // real screens against OnboardingViewModel's state/callbacks; this wires only the
+            // spine — instantiate the VM and leave once it reports done.
+            composable("onboarding") {
+                val onboardingVm: OnboardingViewModel = viewModel(factory = OnboardingViewModel.factory(container))
+                val onboardingState by onboardingVm.uiState.collectAsStateWithLifecycle()
+                LaunchedEffect(onboardingState.done) {
+                    if (onboardingState.done) {
+                        nav.navigate("today") { popUpTo("onboarding") { inclusive = true } }
+                    }
+                }
+                Box(Modifier.fillMaxSize().background(Papel).testTag("onboarding-screen"))
+            }
             composable("today") {
                 TodayScreen(
                     viewModel = viewModel(factory = TodayViewModel.factory(container)),

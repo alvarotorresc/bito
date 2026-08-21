@@ -57,28 +57,51 @@ class BitoNavHostTest {
     private fun screenTitleNode(text: String) =
         compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("bottom-bar")).not(), useUnmergedTree = true)
 
+    /** The conditional start gates on Settings' first emission (loading -> today/onboarding);
+     * wait for that placeholder to clear before any assertion, the same way the settings-reminder
+     * test below already has to wait out a DataStore-backed emission that waitForIdle() alone
+     * doesn't pump. */
+    private fun waitPastLoadingGate() {
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("app-loading", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+    }
+
+    /** Every test below except the onboarding-route ones themselves assumes a completed
+     * onboarding (landing on "today") — a fresh container otherwise defaults onboardingDone to
+     * false and the conditional start would open on "onboarding" instead. */
+    private suspend fun completeOnboarding(container: AppContainer) {
+        container.settings.update { it.copy(onboardingDone = true) }
+    }
+
     private fun setContent() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
+        runBlocking { completeOnboarding(container) }
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
             }
         }
         compose.waitForIdle()
+        waitPastLoadingGate()
     }
 
     /** Like [setContent], but [seed] runs against the container's real database first. */
     private fun setContentSeeded(seed: suspend AppContainer.() -> Unit) {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
-        runBlocking { container.seed() }
+        runBlocking {
+            completeOnboarding(container)
+            container.seed()
+        }
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
             }
         }
         compose.waitForIdle()
+        waitPastLoadingGate()
     }
 
     private suspend fun seedPerfectDayToday(container: AppContainer) {
@@ -211,5 +234,32 @@ class BitoNavHostTest {
 
         compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists() // confirms the navigation actually landed
         compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a fresh install opens on the onboarding route, not today`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        screenTitleNode("Today").assertDoesNotExist()
+    }
+
+    @Test
+    fun `onboardingDone true opens straight on today`() {
+        setContent() // seeds onboardingDone = true
+
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
     }
 }
