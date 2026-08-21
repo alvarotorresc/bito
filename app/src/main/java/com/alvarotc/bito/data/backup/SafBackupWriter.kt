@@ -21,6 +21,9 @@ interface BackupSink {
 
 private val BACKUP_NAME_PATTERN = Regex("""bito-backup-\d{4}-\d{2}-\d{2}-\d{4}\.bito""")
 
+/** Whether [name] is a bito auto-backup file — shared so [BackupViewModel]'s in-folder count uses the exact same rule [rotationVictims] rotates by, instead of a second regex drifting out of sync. */
+internal fun isBackupName(name: String): Boolean = BACKUP_NAME_PATTERN.matches(name)
+
 /**
  * All SAF I/O for auto backups. The .tmp dance is the M3 deferral closed:
  * an interrupted write must never leave a half backup with the real name.

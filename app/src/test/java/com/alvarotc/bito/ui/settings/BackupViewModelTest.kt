@@ -246,13 +246,13 @@ class BackupViewModelTest {
         }
 
     @Test
-    fun `setCopies clamps to one through ten`() =
+    fun `setCopies clamps to one through thirty`() =
         runTest {
             vm.setCopies(-3)
             assertEquals(1, state().copies)
 
             vm.setCopies(42)
-            assertEquals(10, state().copies)
+            assertEquals(30, state().copies)
 
             vm.setCopies(6)
             assertEquals(6, state().copies)
@@ -503,5 +503,61 @@ class BackupViewModelTest {
 
             assertEquals(afterPlainLoad.preview, state().preview)
             assertTrue("stale passphrase must be blanked even though the call is a no-op", stalePassphrase.all { it == ' ' })
+        }
+
+    @Test
+    fun `backupCount refreshes off the main dispatcher when the folder changes`() =
+        runTest {
+            var calls = 0
+            val countingVm =
+                BackupViewModel(
+                    backup,
+                    settingsRepo,
+                    keyStore,
+                    backupNow = {},
+                    now = { fixedNow },
+                    zone = { utc },
+                    ioDispatcher = dispatcher,
+                    cryptoDispatcher = dispatcher,
+                    deriveParams = TEST_ARGON2_PARAMS,
+                    countBackups = { uri ->
+                        calls++
+                        if (uri == "content://bito/tree/counted") 3 else null
+                    },
+                )
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { countingVm.state.collect() }
+            advanceUntilIdle()
+            assertNull("no folder yet: the count is unknown, never a fabricated number", countingVm.state.value.backupCount)
+
+            settingsRepo.update { it.copy(backupFolderUri = "content://bito/tree/counted") }
+            advanceUntilIdle()
+
+            assertEquals(3, countingVm.state.value.backupCount)
+            assertTrue("countBackups must actually have run", calls >= 1)
+        }
+
+    @Test
+    fun `backupCount is null when counting fails instead of crashing`() =
+        runTest {
+            val throwingVm =
+                BackupViewModel(
+                    backup,
+                    settingsRepo,
+                    keyStore,
+                    backupNow = {},
+                    now = { fixedNow },
+                    zone = { utc },
+                    ioDispatcher = dispatcher,
+                    cryptoDispatcher = dispatcher,
+                    deriveParams = TEST_ARGON2_PARAMS,
+                    countBackups = { throw SecurityException("permission revoked") },
+                )
+            backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { throwingVm.state.collect() }
+            advanceUntilIdle()
+
+            settingsRepo.update { it.copy(backupFolderUri = "content://bito/tree/broken") }
+            advanceUntilIdle()
+
+            assertNull(throwingVm.state.value.backupCount)
         }
 }

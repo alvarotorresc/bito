@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.settings
 import android.content.ContentResolver
 import android.content.Intent
 import android.net.Uri
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,7 @@ import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.backup.BackupWorker
 import com.alvarotc.bito.data.backup.MissingKeyException
 import com.alvarotc.bito.data.backup.WrongPassphraseException
+import com.alvarotc.bito.data.backup.isBackupName
 import com.alvarotc.bito.data.settings.AutoBackupError
 import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.data.settings.Settings
@@ -27,8 +29,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -66,6 +71,8 @@ data class BackupUiState(
     val lastAutoBackupAtMillis: Long? = null,
     val lastAutoBackupError: AutoBackupError? = null,
     val askImportPassphrase: Boolean = false,
+    /** Files in [folderName] matching the backup name pattern; null while unknown (no folder, or not counted yet) — the status chip's second line never shows a fabricated number. */
+    val backupCount: Int? = null,
 )
 
 /**
@@ -92,12 +99,37 @@ class BackupViewModel(
      * re-derives using whatever params are embedded in the container it's decrypting.
      */
     private val deriveParams: Argon2Params = Argon2Params(),
+    /**
+     * Counts the backups sitting in a SAF tree uri; null when it can't tell (no folder, revoked
+     * grant, etc.) rather than throwing. Defaults to a no-op so every existing test/call site that
+     * doesn't care about [BackupUiState.backupCount] keeps building a [BackupViewModel] unchanged.
+     */
+    private val countBackups: suspend (String) -> Int? = { null },
 ) : ViewModel() {
     // Plain constructor parameter, not `private val`: it never becomes a class member, so it
     // can't collide with the public backupNow() callback below — same name, per the brief.
     private val triggerBackupNow: () -> Unit = backupNow
 
     private val backupState = MutableStateFlow(BackupUiState())
+
+    init {
+        // Independent of `state`'s WhileSubscribed(5_000): the count must be ready by the time a
+        // subscriber shows up, not start counting only once the screen is on. distinctUntilChanged
+        // skips a re-count on every unrelated settings write; collectLatest drops a stale count
+        // still in flight if the folder or timestamp changes again before it resolves.
+        viewModelScope.launch {
+            settings.settings
+                .map { it.backupFolderUri to it.lastAutoBackupAtMillis }
+                .distinctUntilChanged()
+                .collectLatest { (folderUri, _) ->
+                    val count =
+                        folderUri?.let { uri ->
+                            withContext(ioDispatcher) { runCatching { countBackups(uri) }.getOrNull() }
+                        }
+                    backupState.update { it.copy(backupCount = count) }
+                }
+        }
+    }
 
     /**
      * Mirrors [backupState] (preview/message/busy/askImportPassphrase) plus the backup-related
@@ -271,7 +303,7 @@ class BackupViewModel(
 
     fun setFrequency(frequency: BackupFrequency) = write { it.copy(backupFrequency = frequency) }
 
-    fun setCopies(copies: Int) = write { it.copy(backupCopies = copies.coerceIn(1, 10)) }
+    fun setCopies(copies: Int) = write { it.copy(backupCopies = copies.coerceIn(1, 30)) }
 
     /** No-op when no folder is configured — T9/T10 disable this row in that case too. */
     fun backupNow() {
@@ -388,6 +420,11 @@ class BackupViewModel(
                         container.settings,
                         container.keyStore,
                         backupNow = { BackupWorker.oneShot(application) },
+                        countBackups = { uriString ->
+                            DocumentFile.fromTreeUri(application, Uri.parse(uriString))
+                                ?.listFiles()
+                                ?.count { doc -> doc.name?.let(::isBackupName) == true }
+                        },
                     )
                 }
             }
