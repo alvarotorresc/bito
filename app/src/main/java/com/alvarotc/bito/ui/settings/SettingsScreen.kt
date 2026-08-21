@@ -9,8 +9,10 @@ import android.net.Uri
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -45,13 +48,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,7 +73,6 @@ import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
-import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.TimePickerSheet
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Brasa
@@ -74,14 +83,15 @@ import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
+import java.util.Locale
 import android.provider.Settings as AndroidSettings
 
 private const val DEFAULT_REMINDER_MINUTES = 8 * 60
 private const val MIN_BACKUP_COPIES = 1
-private const val MAX_BACKUP_COPIES = 10
+private const val MAX_BACKUP_COPIES = 30
 
 /** tech doc 5.2: any shorter and Argon2 is defending an easily-guessed passphrase. */
 private const val MIN_PASSPHRASE_LENGTH = 8
@@ -508,52 +518,82 @@ private fun BackupsCard(
 ) {
     var showCreateSheet by remember { mutableStateOf(false) }
     var showDisableConfirm by remember { mutableStateOf(false) }
+    var showCopiesSheet by remember { mutableStateOf(false) }
 
     BitoCard(border = Hoja, modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.backups_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
         Text(stringResource(R.string.backups_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         Spacer(Modifier.height(12.dp))
-        SettingsRow(
-            BitoIcons.Folder,
-            stringResource(R.string.backup_folder),
-            value = state.folderName ?: stringResource(R.string.backup_folder_none),
-            onClick = onPickFolder,
-        )
+        BackupStatusSlot(state = state, onClick = onPickFolder)
         if (state.folderName != null) {
-            val frequencyOptions = listOf(stringResource(R.string.backup_frequency_daily), stringResource(R.string.backup_frequency_weekly))
-            SegmentedPills(
-                options = frequencyOptions,
-                selectedIndex = if (state.frequency == BackupFrequency.WEEKLY) 1 else 0,
-                onSelect = { onSetFrequency(if (it == 1) BackupFrequency.WEEKLY else BackupFrequency.DAILY) },
-                fillWidth = true,
-            )
-            Spacer(Modifier.height(8.dp))
-            CopiesStepperRow(copies = state.copies, onSetCopies = onSetCopies)
-            BackupStatusLine(state)
-            SettingsRow(BitoIcons.RefreshCw, stringResource(R.string.backup_now), onClick = onBackupNow)
-        }
-        SettingsRow(
-            BitoIcons.Lock,
-            stringResource(R.string.backup_encrypt),
-            value =
-                when {
-                    state.encryptionNeedsKey -> stringResource(R.string.backup_encrypt_needs_key)
-                    state.encryptionOn -> stringResource(R.string.backup_encrypt_on)
-                    else -> stringResource(R.string.backup_encrypt_off)
+            SettingsRow(
+                label = stringResource(R.string.backup_auto),
+                value =
+                    stringResource(
+                        if (state.frequency == BackupFrequency.WEEKLY) {
+                            R.string.backup_frequency_weekly
+                        } else {
+                            R.string.backup_frequency_daily
+                        },
+                    ),
+                onClick = {
+                    onSetFrequency(if (state.frequency == BackupFrequency.WEEKLY) BackupFrequency.DAILY else BackupFrequency.WEEKLY)
                 },
-            onClick = {
-                // ON and healthy is the only case that turns it off; everything else (OFF, or ON
-                // but needing a key) opens the same create/re-create sheet.
-                if (state.encryptionOn && !state.encryptionNeedsKey) {
-                    showDisableConfirm = true
-                } else {
-                    showCreateSheet = true
-                }
-            },
+            )
+            SettingsRow(
+                label = stringResource(R.string.backup_keep),
+                value = pluralStringResource(R.plurals.backup_keep_value, state.copies, state.copies),
+                onClick = { showCopiesSheet = true },
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.backup_encrypt), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+                Text(
+                    // The needs-key warning replaces the normal descriptive subtitle — a Switch
+                    // can't show that ON-but-broken state on its own (needs a passphrase before
+                    // it's trustworthy again), so the subtitle line carries it instead.
+                    if (state.encryptionNeedsKey) {
+                        stringResource(R.string.backup_encrypt_needs_key)
+                    } else {
+                        stringResource(R.string.backup_encrypt_subtitle)
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                )
+            }
+            Switch(
+                checked = state.encryptionOn,
+                onCheckedChange = {
+                    // ON and healthy is the only case that turns it off; everything else (OFF, or
+                    // ON but needing a key) opens the same create/re-create sheet — same branching
+                    // as the row this Switch replaced, just triggered by the toggle instead.
+                    if (state.encryptionOn && !state.encryptionNeedsKey) {
+                        showDisableConfirm = true
+                    } else {
+                        showCreateSheet = true
+                    }
+                },
+                modifier = Modifier.testTag("backup-encryption-switch"),
+            )
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            // Hidden (not just disabled) without a folder, same gating BackupViewModel.backupNow
+            // already no-ops on — Restore never needs a folder, so it's always here.
+            if (state.folderName != null) {
+                PillButton(stringResource(R.string.backup_now), onClick = onBackupNow, modifier = Modifier.weight(1f))
+            }
+            GhostPillButton(stringResource(R.string.backup_restore), onClick = onImport, modifier = Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(4.dp))
+        SettingsRow(
+            BitoIcons.Upload,
+            stringResource(R.string.backup_export_manual),
+            trailingChevron = true,
+            onClick = onExport,
         )
-        SettingsRow(BitoIcons.Download, stringResource(R.string.backup_export), onClick = onExport)
-        SettingsRow(BitoIcons.Upload, stringResource(R.string.backup_import), onClick = onImport)
     }
 
     if (showCreateSheet) {
@@ -575,7 +615,157 @@ private fun BackupsCard(
             onDismiss = { showDisableConfirm = false },
         )
     }
+    if (showCopiesSheet) {
+        CopiesSheet(
+            initialCopies = state.copies,
+            onConfirm = {
+                onSetCopies(it)
+                showCopiesSheet = false
+            },
+            onDismiss = { showCopiesSheet = false },
+        )
+    }
 }
+
+/**
+ * The card's top slot, always tappable to (re-)open the SAF folder picker (guía 8a): "Elegir
+ * carpeta" with no folder yet, the last-auto-backup error inline (Tinta, never Peligro — this
+ * isn't destructive), or the status chip once a folder is set and healthy.
+ */
+@Composable
+private fun BackupStatusSlot(
+    state: BackupUiState,
+    onClick: () -> Unit,
+) {
+    when {
+        state.folderName == null ->
+            SettingsRow(BitoIcons.Folder, stringResource(R.string.backup_pick_folder), trailingChevron = true, onClick = onClick)
+        state.lastAutoBackupError != null -> BackupErrorRow(error = state.lastAutoBackupError, onClick = onClick)
+        else -> BackupStatusChip(state = state, onClick = onClick)
+    }
+}
+
+@Composable
+private fun BackupErrorRow(
+    error: AutoBackupError,
+    onClick: () -> Unit,
+) {
+    val text =
+        when (error) {
+            AutoBackupError.FOLDER -> stringResource(R.string.backup_error_folder)
+            AutoBackupError.WRITE -> stringResource(R.string.backup_error_write)
+            AutoBackupError.MISSING_KEY -> stringResource(R.string.backup_error_missing_key)
+        }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(BitoIcons.Info, contentDescription = null, tint = Tinta, modifier = Modifier.size(24.dp))
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+    }
+}
+
+/**
+ * Solid Hoja circle + white check (mirrors [com.alvarotc.bito.ui.stats.StatsScreen]'s
+ * PerfectDaysCard badge), "Último backup: <relative>, HH:mm", then the copies-in-folder line — the
+ * badge and its line only render once a backup has actually happened; a bare folder with nothing
+ * backed up yet still shows the second line alone.
+ */
+@Composable
+private fun BackupStatusChip(
+    state: BackupUiState,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 56.dp)
+            .clickable(onClick = onClick),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (state.lastAutoBackupAtMillis != null) {
+            Box(Modifier.size(24.dp).clip(CircleShape).background(Hoja), contentAlignment = Alignment.Center) {
+                Icon(BitoIcons.Check, contentDescription = null, tint = Tarjeta, modifier = Modifier.size(14.dp))
+            }
+        } else {
+            Spacer(Modifier.size(24.dp))
+        }
+        Column {
+            if (state.lastAutoBackupAtMillis != null) {
+                Text(
+                    stringResource(R.string.backup_last_ok, formatBackupRelative(state.lastAutoBackupAtMillis)),
+                    style = MaterialTheme.typography.titleMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                    color = Tinta,
+                )
+            }
+            val folder = state.folderName.orEmpty()
+            val countLine =
+                state.backupCount?.let { count ->
+                    coloredCountLine(pluralStringResource(R.plurals.backup_status_count, count), count, folder)
+                } ?: coloredFolderLine(stringResource(R.string.backup_status_folder_only), folder)
+            Text(countLine, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        }
+    }
+}
+
+/**
+ * "hoy, 03:12" / "ayer, 03:12" / "14 ago, 03:12": relative day plus HH:mm. The "is this today?"
+ * comparison uses the real device clock/zone, not [BackupViewModel]'s injectable one (that clock
+ * only backs filenames and export timestamps, a different concern from rendering a live-updating
+ * relative date).
+ */
+@Composable
+private fun formatBackupRelative(millis: Long): String {
+    val zone = ZoneId.systemDefault()
+    val instant = Instant.ofEpochMilli(millis).atZone(zone)
+    val today = LocalDate.now(zone)
+    val dayLabel =
+        when (instant.toLocalDate()) {
+            today -> stringResource(R.string.backup_status_today)
+            today.minusDays(1) -> stringResource(R.string.backup_status_yesterday)
+            else -> instant.toLocalDate().format(DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
+        }
+    val time = instant.format(DateTimeFormatter.ofPattern("HH:mm"))
+    return "$dayLabel, $time"
+}
+
+/**
+ * Colors the count and folder name Tinta against the rest of the (TintaSuave) line, by splitting
+ * the RAW plural template — [pluralStringResource]'s 2-arg overload returns it unformatted, "%1$d"
+ * and "%2$s" tokens intact — on those tokens rather than hardcoding word order, so translated copy
+ * still colors correctly. Assumes the count placeholder precedes the folder one, true for both
+ * shipped locales (see `backup_status_count` in strings.xml).
+ */
+private fun coloredCountLine(
+    template: String,
+    count: Int,
+    folder: String,
+): AnnotatedString =
+    buildAnnotatedString {
+        val parts = template.split("%1\$d", "%2\$s")
+        append(parts.getOrElse(0) { "" })
+        withStyle(SpanStyle(color = Tinta)) { append(count.toString()) }
+        append(parts.getOrElse(1) { "" })
+        withStyle(SpanStyle(color = Tinta)) { append(folder) }
+        append(parts.getOrElse(2) { "" })
+    }
+
+/** Same idea as [coloredCountLine] for the "count not known yet" line, which only colors the folder. */
+private fun coloredFolderLine(
+    template: String,
+    folder: String,
+): AnnotatedString =
+    buildAnnotatedString {
+        val parts = template.split("%1\$s")
+        append(parts.getOrElse(0) { "" })
+        withStyle(SpanStyle(color = Tinta)) { append(folder) }
+        append(parts.getOrElse(1) { "" })
+    }
 
 /** Non-destructive by design (tech doc 5.2): old encrypted backups stay readable with their own passphrase. */
 @Composable
@@ -693,7 +883,7 @@ private fun ImportPassphraseSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     ModalBottomSheet(onDismissRequest = ::dismissAndClear, sheetState = sheetState, containerColor = Tarjeta) {
         Column(Modifier.padding(20.dp).verticalScroll(rememberScrollState())) {
-            Text(stringResource(R.string.backup_import), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Text(stringResource(R.string.backup_restore), style = MaterialTheme.typography.titleMedium, color = Tinta)
             Spacer(Modifier.height(16.dp))
             OutlinedTextField(
                 value = passphrase,
@@ -727,61 +917,55 @@ private fun ImportPassphraseSheet(
     }
 }
 
-/** −/value/+ pattern mirrored from [CutoffSheet]'s stepper; the honest clamp is 1..10, matching [BackupViewModel.setCopies]. */
-@Composable
-private fun CopiesStepperRow(
-    copies: Int,
-    onSetCopies: (Int) -> Unit,
-) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            stringResource(R.string.backup_copies),
-            style = MaterialTheme.typography.bodyLarge,
-            color = Tinta,
-            modifier = Modifier.weight(1f),
-        )
-        IconButton(onClick = { onSetCopies(copies - 1) }, enabled = copies > MIN_BACKUP_COPIES) {
-            Icon(BitoIcons.Minus, contentDescription = null, tint = if (copies > MIN_BACKUP_COPIES) Tinta else TintaSuave)
-        }
-        Text(copies.toString(), style = MaterialTheme.typography.bodyLarge, color = Tinta)
-        IconButton(onClick = { onSetCopies(copies + 1) }, enabled = copies < MAX_BACKUP_COPIES) {
-            Icon(BitoIcons.Plus, contentDescription = null, tint = if (copies < MAX_BACKUP_COPIES) Tinta else TintaSuave)
-        }
-    }
-}
-
 /**
- * An error (Tinta + Info icon — Peligro is destructive-only, this is informational) wins over the
- * last-success timestamp; with neither (no auto-backup has run yet), the line is simply absent.
+ * Same −/value/+ shape as [CutoffSheet]'s stepper, opened by tapping the "Conservar" row instead
+ * of showing the stepper inline — the clamp is 1..30, matching [BackupViewModel.setCopies].
  */
 @Composable
-private fun BackupStatusLine(state: BackupUiState) {
-    val text =
-        when (state.lastAutoBackupError) {
-            AutoBackupError.FOLDER -> stringResource(R.string.backup_error_folder)
-            AutoBackupError.WRITE -> stringResource(R.string.backup_error_write)
-            AutoBackupError.MISSING_KEY -> stringResource(R.string.backup_error_missing_key)
-            null -> state.lastAutoBackupAtMillis?.let { stringResource(R.string.backup_last_ok, formatBackupTimestamp(it)) }
-        } ?: return
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Icon(BitoIcons.Info, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
-        Text(text, style = MaterialTheme.typography.labelMedium, color = Tinta)
+private fun CopiesSheet(
+    initialCopies: Int,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var copies by remember { mutableIntStateOf(initialCopies) }
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.backup_keep), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Spacer(Modifier.height(16.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                IconButton(
+                    onClick = { copies = (copies - 1).coerceIn(MIN_BACKUP_COPIES, MAX_BACKUP_COPIES) },
+                    enabled = copies > MIN_BACKUP_COPIES,
+                ) {
+                    Icon(BitoIcons.Minus, contentDescription = null, tint = if (copies > MIN_BACKUP_COPIES) Tinta else TintaSuave)
+                }
+                Spacer(Modifier.width(16.dp))
+                Text(copies.toString(), style = MaterialTheme.typography.displayLarge, color = Tinta)
+                Spacer(Modifier.width(16.dp))
+                IconButton(
+                    onClick = { copies = (copies + 1).coerceIn(MIN_BACKUP_COPIES, MAX_BACKUP_COPIES) },
+                    enabled = copies < MAX_BACKUP_COPIES,
+                ) {
+                    Icon(BitoIcons.Plus, contentDescription = null, tint = if (copies < MAX_BACKUP_COPIES) Tinta else TintaSuave)
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+            PillButton(text = stringResource(R.string.save), onClick = { onConfirm(copies) }, modifier = Modifier.fillMaxWidth())
+        }
     }
-    Spacer(Modifier.height(4.dp))
 }
 
-/** No shared millis+time formatter exists yet (Dates.kt only formats [LogicalDay]/[YearMonth] calendar values). */
-private fun formatBackupTimestamp(millis: Long): String =
-    Instant.ofEpochMilli(millis)
-        .atZone(ZoneId.systemDefault())
-        .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))
-
-/** Generalized from the old BackupRow: any tappable settings line, with an optional value and icon. */
+/** Generalized from the old BackupRow: any tappable settings line, with an optional icon, value and trailing chevron. */
 @Composable
 private fun SettingsRow(
     icon: ImageVector? = null,
     label: String,
     value: String? = null,
+    trailingChevron: Boolean = false,
     onClick: () -> Unit,
 ) {
     Row(
@@ -798,6 +982,9 @@ private fun SettingsRow(
         Text(label, style = MaterialTheme.typography.bodyLarge, color = Tinta, modifier = Modifier.weight(1f))
         if (value != null) {
             Text(value, style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+        }
+        if (trailingChevron) {
+            Icon(BitoIcons.ChevronRight, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(20.dp))
         }
     }
 }

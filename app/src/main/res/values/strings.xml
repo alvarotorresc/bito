@@ -84,20 +84,31 @@
     <string name="settings_title">Settings</string>
     <string name="backups_title">Backups</string>
     <string name="backups_body">One readable file with everything: habits, history, points and settings.</string>
-    <string name="backup_folder">Backup folder</string>
-    <string name="backup_folder_none">Not set</string>
+    <string name="backup_pick_folder">Choose folder</string>
     <string name="backup_frequency_daily">Daily</string>
     <string name="backup_frequency_weekly">Weekly</string>
-    <string name="backup_copies">Number of copies</string>
+    <string name="backup_auto">Automatic backup</string>
+    <string name="backup_keep">Keep</string>
+    <plurals name="backup_keep_value">
+        <item quantity="one">last %1$d copy</item>
+        <item quantity="other">last %1$d copies</item>
+    </plurals>
     <string name="backup_now">Back up now</string>
+    <string name="backup_restore">Restore</string>
+    <string name="backup_export_manual">Export a copy…</string>
     <string name="backup_last_ok">Last backup: %1$s</string>
+    <string name="backup_status_today">today</string>
+    <string name="backup_status_yesterday">yesterday</string>
+    <string name="backup_status_folder_only">in %1$s</string>
+    <plurals name="backup_status_count">
+        <item quantity="one">%1$d copy in %2$s</item>
+        <item quantity="other">%1$d copies in %2$s</item>
+    </plurals>
     <string name="backup_error_folder">The folder is no longer available — choose it again</string>
     <string name="backup_error_write">The last backup failed, it will be retried</string>
     <string name="backup_error_missing_key">The encryption passphrase is missing</string>
-    <string name="backup_export">Export backup</string>
-    <string name="backup_import">Import backup</string>
     <string name="backup_encrypt">Encryption</string>
-    <string name="backup_encrypt_on">On</string>
+    <string name="backup_encrypt_subtitle">Protects the file with a password</string>
     <string name="backup_encrypt_off">Off</string>
     <string name="backup_encrypt_needs_key">Needs a passphrase</string>
     <string name="backup_encrypt_warning">If you forget the passphrase, the backup is unrecoverable. Bito stores it nowhere.</string>

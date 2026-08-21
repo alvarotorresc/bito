@@ -123,7 +123,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Export backup", useUnmergedTree = true)
+        compose.onNodeWithText("Export a copy…", useUnmergedTree = true)
             .performScrollTo()
             .assertIsDisplayed()
     }
@@ -426,13 +426,16 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Documents/Bito", useUnmergedTree = true)
+        // The folder name now lives inside the status chip's compound second line ("in
+        // Documents/Bito", no count known here since this VM's default countBackups is a no-op),
+        // not as a Text node of its own — substring, not exact, match.
+        compose.onNodeWithText("Documents/Bito", substring = true, useUnmergedTree = true)
             .performScrollTo()
             .assertIsDisplayed()
     }
 
     @Test
-    fun `frequency pills and copies stepper appear only with a folder`() {
+    fun `automatic backup and keep rows appear only with a folder`() {
         val settings = SettingsRepository(settingsStore("settings-screen-backup-frequency-stepper"))
         val keyStore = BackupKeyStore(tmp.root)
         val backupVm =
@@ -452,8 +455,8 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Daily", useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithText("Number of copies", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Automatic backup", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Keep", useUnmergedTree = true).assertDoesNotExist()
 
         runBlocking {
             settings.update {
@@ -462,12 +465,15 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
+        compose.onNodeWithText("Automatic backup", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         compose.onNodeWithText("Daily", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithText("Number of copies", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Keep", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        // Default copies = 5, plural "other" form.
+        compose.onNodeWithText("last 5 copies", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test
-    fun `backup now row appears only with a folder`() {
+    fun `the back up now button appears only with a folder, restore always does`() {
         val settings = SettingsRepository(settingsStore("settings-screen-backup-now-row"))
         val keyStore = BackupKeyStore(tmp.root)
         val backupVm =
@@ -488,6 +494,7 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Back up now", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Restore", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
 
         runBlocking {
             settings.update {
@@ -497,6 +504,7 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Back up now", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Restore", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -554,7 +562,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Encryption", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("backup-encryption-switch", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
         compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("longpass1")
@@ -591,7 +599,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("Encryption", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("backup-encryption-switch", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
         compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("short1")
@@ -779,5 +787,77 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Needs a passphrase", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `the status line shows the folder and count when known`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-backup-count-known"))
+        runBlocking {
+            settings.update {
+                it.copy(backupFolderUri = "content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FBito")
+            }
+        }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+                countBackups = { 4 },
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("4 copies in Documents/Bito", useUnmergedTree = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    /**
+     * "Restore" replaces the removed "Import backup" row; the system document picker itself can't
+     * be driven under Robolectric (no test in this file ever has), so this drives the same
+     * fake-file pattern every other import test uses — the picker's callback is exactly what calls
+     * [BackupViewModel.loadImport] — and checks the button that now starts that flow is present.
+     */
+    @Test
+    fun `restore button opens the import flow`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-restore-button"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupRepo = BackupRepository(db, settings, keyStore, "test")
+        val exported = runBlocking { backupRepo.exportJson(0L) }
+        val backupVm =
+            BackupViewModel(
+                backupRepo,
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        val resolver = ApplicationProvider.getApplicationContext<Context>().contentResolver
+        val uri = Uri.parse("content://bito/restore-flow.bito")
+        shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(exported.toByteArray()))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Restore", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+
+        backupVm.loadImport(resolver, uri)
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Restore this backup?", useUnmergedTree = true).assertIsDisplayed()
     }
 }
