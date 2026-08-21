@@ -194,6 +194,19 @@
     <string name="onb_name_reaction">%1$s! I like it. We\'re going to do great things.</string>
     <string name="onb_personality_title">Choose Habi\'s personality</string>
     <string name="onb_personality_hint">you can change it anytime</string>
+    <string name="onb_habit_title">Create your first habit</string>
+    <string name="onb_habit_name_hint">e.g. Drink water</string>
+    <string name="onb_habit_goal_label">goal</string>
+    <string name="onb_habit_goal_daily">time a day</string>
+    <string name="onb_habit_goal_quantity">times</string>
+    <string name="onb_habit_goal_weekly">times a week</string>
+    <!-- %1$s carries onb_habit_widget_bold, bolded in the composed sentence — same split-and-style
+         idiom SettingsScreen.kt's coloredCountLine/coloredFolderLine use, so this stays untranslated
+         markup-free and locale-safe. -->
+    <string name="onb_habit_widget_hint">Add the %1$s to your home screen — log without opening the app</string>
+    <string name="onb_habit_widget_bold">Bito widget</string>
+    <string name="onb_habit_create">Create and start</string>
+    <string name="onb_habit_start">Start</string>
 
     <string name="settings_name_row">Your name</string>
     <string name="settings_name_placeholder">Add your name</string>

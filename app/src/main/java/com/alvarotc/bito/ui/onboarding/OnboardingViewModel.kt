@@ -10,9 +10,12 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.habitform.HabitFormState
 import com.alvarotc.bito.ui.habitform.HabitPreset
+import com.alvarotc.bito.ui.habitform.QuitMode
+import com.alvarotc.bito.ui.habitform.defaultTargetFor
 import com.alvarotc.bito.ui.habitform.toNewEntity
 import com.alvarotc.bito.ui.settings.AppLocale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -91,7 +94,23 @@ class OnboardingViewModel(
 
     fun setHabitName(value: String) = state.update { it.copy(habitName = value) }
 
-    fun setHabitKind(kind: HabitPreset) = state.update { it.copy(habitKind = kind) }
+    /**
+     * Mirrors [com.alvarotc.bito.ui.habitform.HabitFormViewModel.selectPreset]'s own reset: the
+     * target resets to the new preset's [defaultTargetFor] rather than carrying over whatever the
+     * previous preset's stepper landed on. Onboarding never exposes a quit-mode or limit-metric
+     * picker of its own (7g's QUIT pill only ever builds a TOTAL/abstinence habit — see [finish]),
+     * so those two arguments are always [QuitMode.TOTAL]/[Metric.DURATION], same as the
+     * [HabitFormState] [finish] itself builds.
+     *
+     * Without this reset, a target picked up under one preset can survive into a preset it's
+     * illegal for — e.g. bumping QUANTITY's target to 15 then switching to WEEKLY_TIMES (whose own
+     * form caps at 7 days/week) would otherwise carry that 15 straight into [finish]'s
+     * [HabitFormState], producing a habit the real form can never create.
+     */
+    fun setHabitKind(kind: HabitPreset) =
+        state.update {
+            it.copy(habitKind = kind, habitTarget = defaultTargetFor(kind, QuitMode.TOTAL, Metric.DURATION))
+        }
 
     fun setHabitTarget(value: Int) = state.update { it.copy(habitTarget = value.coerceAtLeast(1)) }
 

@@ -188,6 +188,16 @@
     <string name="onb_name_reaction">¡%1$s! Me gusta. Vamos a hacer grandes cosas.</string>
     <string name="onb_personality_title">Elige la personalidad de Habi</string>
     <string name="onb_personality_hint">puedes cambiarla cuando quieras</string>
+    <string name="onb_habit_title">Crea tu primer hábito</string>
+    <string name="onb_habit_name_hint">ej. Beber agua</string>
+    <string name="onb_habit_goal_label">objetivo</string>
+    <string name="onb_habit_goal_daily">vez al día</string>
+    <string name="onb_habit_goal_quantity">veces</string>
+    <string name="onb_habit_goal_weekly">veces por semana</string>
+    <string name="onb_habit_widget_hint">Añade el %1$s a tu pantalla de inicio — registra sin abrir la app</string>
+    <string name="onb_habit_widget_bold">widget de Bito</string>
+    <string name="onb_habit_create">Crear y empezar</string>
+    <string name="onb_habit_start">Empezar</string>
 
     <string name="settings_name_row">Tu nombre</string>
     <string name="settings_name_placeholder">Añade tu nombre</string>

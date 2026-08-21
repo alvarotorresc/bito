@@ -210,7 +210,9 @@ private fun NameField(
     }
 }
 
-private fun HabitPreset.labelRes(): Int =
+/** Not private: [com.alvarotc.bito.ui.onboarding.OnboardingScreen]'s 7g preset pills reuse these
+ * exact labels rather than duplicating the mapping — same strings, same five presets. */
+internal fun HabitPreset.labelRes(): Int =
     when (this) {
         HabitPreset.DAILY_CHECK -> R.string.preset_daily
         HabitPreset.QUANTITY -> R.string.preset_quantity

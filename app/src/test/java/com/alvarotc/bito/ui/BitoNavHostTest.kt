@@ -13,14 +13,17 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -261,5 +264,50 @@ class BitoNavHostTest {
 
         screenTitleNode("Today").assertExists()
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The full first-run journey through the REAL [BitoNavHost] — the only place [done]'s own
+     * `navigate("today") { popUpTo("onboarding") { inclusive = true } }` (wired in the "onboarding"
+     * composable above) can actually be observed landing. `OnboardingScreenTest`'s own
+     * "the first habit step creates the habit and completes onboarding" proves the write path and
+     * [OnboardingUiState.done] in isolation, without a NavHost to navigate anywhere.
+     */
+    @Test
+    fun `the first habit step creates and lands on today`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+
+        val created = runBlocking { container.database.habitDao().all().single { it.name == "Beber agua" } }
+        assertEquals(Metric.CHECK, created.metric)
     }
 }

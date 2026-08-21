@@ -171,6 +171,46 @@ class OnboardingViewModelTest {
         }
 
     @Test
+    fun `setHabitKind resets the target to the new preset's own default, same as the real form's selectPreset`() =
+        runTest {
+            val vm = newViewModel()
+
+            // QUANTITY's stepper is genuinely open-ended, unlike WEEKLY_TIMES (capped at 7 in the
+            // real form's own clampTarget) -- 15 is a value only QUANTITY could ever produce.
+            vm.setHabitKind(HabitPreset.QUANTITY)
+            vm.setHabitTarget(15)
+            assertEquals(15, vm.uiState.value.habitTarget)
+
+            // Without HabitFormViewModel.selectPreset's own reset mirrored here, that stale 15
+            // would survive the switch and finish() could create a WEEKLY_TIMES habit the real
+            // form itself can never produce (its own clampTarget caps this preset at 7).
+            vm.setHabitKind(HabitPreset.WEEKLY_TIMES)
+            assertEquals(3, vm.uiState.value.habitTarget) // defaultTargetFor(WEEKLY_TIMES, ...) == 3
+
+            vm.setHabitKind(HabitPreset.QUIT)
+            assertEquals(0, vm.uiState.value.habitTarget) // defaultTargetFor(QUIT, TOTAL, ...) == 0
+        }
+
+    @Test
+    fun `a quit habit is always created as total abstinence, regardless of any earlier target`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.setHabitName("Fumar")
+            // A target picked up under an earlier preset, before switching to QUIT -- proves the
+            // pinned-0 written by finish() doesn't depend on setHabitKind's own reset landing first.
+            vm.setHabitTarget(9)
+            vm.setHabitKind(HabitPreset.QUIT)
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val created = db.habitDao().all().single { it.name == "Fumar" }
+            assertEquals(Direction.ZERO, created.direction)
+            assertEquals(0, created.target)
+        }
+
+    @Test
     fun `finish with a blank habit name creates nothing but still completes`() =
         runTest {
             seedPendingGrant()

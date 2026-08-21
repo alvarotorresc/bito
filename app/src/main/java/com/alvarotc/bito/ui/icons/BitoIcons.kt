@@ -232,4 +232,15 @@ object BitoIcons {
             "M14.1 6a7 7 0 0 0-1.1 4c1.9-.1 3.3-.6 4.3-1.4 1-1 1.6-2.3 1.7-4.6-2.7.1-4 1-4.9 2z",
         )
     }
+
+    /** A 2x2 grid of squares — stands in for the home-screen widget mockup 7g points at. */
+    val Widget by lazy {
+        lucide(
+            "layout-grid",
+            "M4 4h6v6h-6z",
+            "M14 4h6v6h-6z",
+            "M4 14h6v6h-6z",
+            "M14 14h6v6h-6z",
+        )
+    }
 }
