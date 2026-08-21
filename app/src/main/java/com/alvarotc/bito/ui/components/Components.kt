@@ -275,7 +275,10 @@ fun DayRing(
     Box(
         modifier
             .testTag("day-ring")
-            .semantics {
+            // mergeDescendants: true folds `content`'s own text (the "3 of 6" label) into this
+            // same node instead of leaving the progress role as a second, unlabeled TalkBack
+            // stop next to it — one node, one announcement: role + value + label together.
+            .semantics(mergeDescendants = true) {
                 // The fraction actually being drawn right now, not the value it may still be
                 // animating toward — ComponentsTest drives the clock and asserts against this.
                 progressBarRangeInfo = ProgressBarRangeInfo(current = sweep / 360f, range = 0f..1f)

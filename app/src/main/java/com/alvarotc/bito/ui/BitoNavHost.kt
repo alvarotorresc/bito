@@ -113,13 +113,22 @@ fun BitoNavHost(container: AppContainer) {
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
             // Quiet global motion (motion spec §8: 150-250ms, ease-out) — every route change,
             // bottom-bar tab switches included, gets a subtle fade + 1/12-width slide instead of
-            // the default hard cut. Onboarding's own internal pager motion lives inside
-            // OnboardingScreen and is untouched by this; only entering/leaving its route uses
-            // this. The juicy celebration sheets are overlays, not routes, so they never see this.
-            enterTransition = { fadeIn(tween(150)) + slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { it / 12 } },
-            exitTransition = { fadeOut(tween(150)) },
-            popEnterTransition = { fadeIn(tween(150)) + slideInHorizontally(tween(150)) { -it / 12 } },
-            popExitTransition = { fadeOut(tween(150)) },
+            // the default hard cut. Every tween below carries LinearOutSlowInEasing explicitly —
+            // tween()'s own default (FastOutSlowInEasing) is NOT ease-out, so leaving it implicit
+            // on any of the eight calls here would quietly violate the spec on that one. Onboarding's
+            // own internal pager motion lives inside OnboardingScreen and is untouched by this;
+            // only entering/leaving its route uses this. The juicy celebration sheets are
+            // overlays, not routes, so they never see this.
+            enterTransition = {
+                fadeIn(tween(150, easing = LinearOutSlowInEasing)) +
+                    slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { it / 12 }
+            },
+            exitTransition = { fadeOut(tween(150, easing = LinearOutSlowInEasing)) },
+            popEnterTransition = {
+                fadeIn(tween(150, easing = LinearOutSlowInEasing)) +
+                    slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { -it / 12 }
+            },
+            popExitTransition = { fadeOut(tween(150, easing = LinearOutSlowInEasing)) },
         ) {
             // No bottom nav: a fresh install's first-run flow, not a bar destination — same
             // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
