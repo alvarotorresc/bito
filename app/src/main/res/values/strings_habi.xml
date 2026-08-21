@@ -83,7 +83,7 @@
     <string name="habi_perfect_notif_neutra">Perfect day, %1$s. Duly noted.</string>
 
     <string name="habi_badge_sargento">%2$s. Earned, %1$s. I never doubted it.</string>
-    <string name="habi_badge_cheerleader">%2$s! I knew you had it in you, %1$s!</string>
+    <string name="habi_badge_cheerleader">%2$s! I knew you had it in you, %1$s.</string>
     <string name="habi_badge_neutra">Badge unlocked: %2$s. Well earned.</string>
 
     <string name="store_title">Store</string>
