@@ -225,6 +225,18 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `settings lets the user rename themselves`() =
+        runTest {
+            advanceUntilIdle()
+            assertEquals("", vm.state.value?.userName)
+
+            vm.setUserName("  Alvaro  ")
+            advanceUntilIdle()
+
+            assertEquals("Alvaro", vm.state.value?.userName)
+        }
+
+    @Test
     fun `archivedHabits starts empty and is empty until a habit is archived`() =
         runTest {
             val habits = HabitsRepository(db)

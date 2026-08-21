@@ -77,6 +77,9 @@ class SettingsViewModel(
         AppLocale.apply(tag)
     }
 
+    /** Trimmed, mirroring [com.alvarotc.bito.ui.onboarding.OnboardingViewModel.finish]'s own write of this field. */
+    fun setUserName(value: String) = write { it.copy(userName = value.trim()) }
+
     private fun write(transform: (Settings) -> Settings) {
         viewModelScope.launch { settings.update(transform) }
     }

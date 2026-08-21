@@ -24,6 +24,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -58,6 +60,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -254,6 +257,8 @@ fun SettingsScreen(
                 )
                 HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
                 GeneralSectionCard(
+                    userName = current.userName,
+                    onSetUserName = settingsViewModel::setUserName,
                     languageTag = current.languageTag,
                     onSetLanguage = settingsViewModel::setLanguage,
                     archivedCount = archivedHabits.size,
@@ -489,20 +494,64 @@ private fun HabiSectionCard(
 }
 
 /**
- * Language always shows (system → es → en → system, same cycling-row idiom as [BackupsCard]'s
- * frequency row); the archived-habits row underneath is the one sometimes-absent line, hidden
- * outright when there is nothing archived.
+ * The name row edits INLINE (no sheet — a single text field doesn't earn the modal ceremony every
+ * other row here uses for a multi-field/stepper flow): tapping it swaps [SettingsRow] for a field +
+ * confirm icon, right in the card. Language always shows (system → es → en → system, same
+ * cycling-row idiom as [BackupsCard]'s frequency row); the archived-habits row underneath is the
+ * one sometimes-absent line, hidden outright when there is nothing archived.
  */
 @Composable
 private fun GeneralSectionCard(
+    userName: String,
+    onSetUserName: (String) -> Unit,
     languageTag: String?,
     onSetLanguage: (String?) -> Unit,
     archivedCount: Int,
     onOpenArchived: () -> Unit,
 ) {
+    var editingName by remember { mutableStateOf(false) }
+    // Keyed on userName: if the stored value changes out from under an open editor (e.g. a backup
+    // restore lands mid-edit), the draft resets to match rather than silently overwriting it later.
+    var nameDraft by remember(userName) { mutableStateOf(userName) }
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.general_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
+        if (editingName) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                OutlinedTextField(
+                    value = nameDraft,
+                    onValueChange = { nameDraft = it },
+                    placeholder = { Text(stringResource(R.string.settings_name_placeholder)) },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                    keyboardActions =
+                        KeyboardActions(onDone = {
+                            onSetUserName(nameDraft)
+                            editingName = false
+                        }),
+                    modifier = Modifier.weight(1f).testTag("settings-name-field"),
+                )
+                IconButton(
+                    onClick = {
+                        onSetUserName(nameDraft)
+                        editingName = false
+                    },
+                    modifier = Modifier.testTag("settings-name-confirm"),
+                ) {
+                    Icon(BitoIcons.Check, contentDescription = stringResource(R.string.save), tint = Hoja)
+                }
+            }
+        } else {
+            SettingsRow(
+                label = stringResource(R.string.settings_name_row),
+                value = userName.ifBlank { stringResource(R.string.settings_name_placeholder) },
+                onClick = { editingName = true },
+            )
+        }
         SettingsRow(
             label = stringResource(R.string.language_row),
             value =

@@ -188,4 +188,7 @@
     <string name="onb_name_reaction">¡%1$s! Me gusta. Vamos a hacer grandes cosas.</string>
     <string name="onb_personality_title">Elige la personalidad de Habi</string>
     <string name="onb_personality_hint">puedes cambiarla cuando quieras</string>
+
+    <string name="settings_name_row">Tu nombre</string>
+    <string name="settings_name_placeholder">Añade tu nombre</string>
 </resources>

@@ -194,4 +194,7 @@
     <string name="onb_name_reaction">%1$s! I like it. We\'re going to do great things.</string>
     <string name="onb_personality_title">Choose Habi\'s personality</string>
     <string name="onb_personality_hint">you can change it anytime</string>
+
+    <string name="settings_name_row">Your name</string>
+    <string name="settings_name_placeholder">Add your name</string>
 </resources>

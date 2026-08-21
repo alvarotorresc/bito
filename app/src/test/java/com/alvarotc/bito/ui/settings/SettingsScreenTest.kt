@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -284,6 +285,40 @@ class SettingsScreenTest {
         compose.waitForIdle()
         compose.onNodeWithText("System", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
         assertNull(runBlocking { settings.settings.first() }.languageTag)
+    }
+
+    @Test
+    fun `settings lets the user rename themselves`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-name"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Your name", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("settings-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("settings-name-field", useUnmergedTree = true).assertTextContains("Alvaro")
+        compose.onNodeWithTag("settings-name-confirm", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertEquals("Alvaro", runBlocking { settings.settings.first() }.userName)
+        compose.onNodeWithText("Alvaro", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test
