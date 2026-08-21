@@ -2,6 +2,7 @@ package com.alvarotc.bito.data.repo
 
 import com.alvarotc.bito.domain.BadgeEngine
 import com.alvarotc.bito.domain.HabiEngine
+import com.alvarotc.bito.domain.PerfectDays
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.LogicalDay
@@ -39,14 +40,15 @@ class PointsReconciler(
         nowMillis: Long,
     ): ReconcileResult {
         val state = domainState.snapshot()
-        val missing = PointsEngine.missingEvents(PointsEngine.earnedEvents(state, today, economy), state.pointsLedger)
+        val perfectDays = PerfectDays.perfectDaysUpTo(state, today)
+        val missing = PointsEngine.missingEvents(PointsEngine.earnedEvents(state, today, economy, perfectDays), state.pointsLedger)
         if (missing.isNotEmpty()) rewards.append(missing, nowMillis)
 
         val earned = HabiEngine.earnedExclusives(state, today)
         val missingItems = HabiEngine.missingExclusives(earned, rewards.ownedItemIds())
         if (missingItems.isNotEmpty()) rewards.grantItems(missingItems, nowMillis)
 
-        val missingBadges = BadgeEngine.missingBadges(BadgeEngine.earnedBadges(state, today), rewards.unlockedBadgeIds())
+        val missingBadges = BadgeEngine.missingBadges(BadgeEngine.earnedBadges(state, today, perfectDays), rewards.unlockedBadgeIds())
         if (missingBadges.isNotEmpty()) rewards.unlockBadges(missingBadges, nowMillis)
 
         return ReconcileResult(newEvents = missing, newItems = missingItems, newBadges = missingBadges)

@@ -24,6 +24,7 @@ object BadgeEngine {
     fun earnedBadges(
         state: DomainState,
         today: LogicalDay,
+        perfectDays: Set<LogicalDay> = PerfectDays.perfectDaysUpTo(state, today),
     ): Set<String> {
         val earned = mutableSetOf<String>()
         // Rachas — any habit, in its own period unit (same source as points milestones and store exclusives).
@@ -31,7 +32,6 @@ object BadgeEngine {
             .flatMap { Streaks.reachedMilestones(state, it, today, streakBadges.keys) }
             .mapTo(earned) { streakBadges.getValue(it) }
         // Constancia — perfect days (rule E6) and full perfect weeks/months.
-        val perfectDays = PerfectDays.perfectDaysUpTo(state, today)
         perfectDayBadges.filterKeys { perfectDays.size >= it }.values.forEach { earned += it }
         val firstDay = state.habits.minOfOrNull { it.createdOnDay }
         if (firstDay != null && firstDay <= today) {
