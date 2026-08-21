@@ -26,6 +26,18 @@ object BackupCrypto {
     private const val GCM_TAG_BITS = 128
     private const val KEY_SIZE = 32
 
+    // Sane caps for Argon2 header fields read from an untrusted container. Our own headers always
+    // carry memoryKib/iterations/parallelism within these ranges (default 19456/2/1); a header
+    // outside them is corrupted or hostile, never a real Bito backup. Rejecting here — before
+    // Bouncy Castle allocates or validates internally — keeps the failure inside the two blessed
+    // exception types instead of an untyped IllegalArgumentException or an OutOfMemoryError.
+    private const val MIN_MEMORY_KIB = 1
+    private const val MAX_MEMORY_KIB = 1_048_576 // 1 GiB
+    private const val MIN_ITERATIONS = 1
+    private const val MAX_ITERATIONS = 64
+    private const val MIN_PARALLELISM = 1
+    private const val MAX_PARALLELISM = 16
+
     // Fixed offsets — see the class KDoc header layout for the full byte map.
     private const val OFFSET_MAGIC = 0
     private const val OFFSET_VERSION = 5
@@ -86,6 +98,7 @@ object BackupCrypto {
                 iterations = bytes.readIntAt(OFFSET_ITERATIONS),
                 parallelism = bytes.readIntAt(OFFSET_PARALLELISM),
             )
+        validateParams(params)
         val nonce = bytes.copyOfRange(OFFSET_NONCE, OFFSET_CIPHERTEXT)
         val ciphertext = bytes.copyOfRange(OFFSET_CIPHERTEXT, bytes.size)
 
@@ -107,6 +120,15 @@ object BackupCrypto {
                 throw WrongPassphraseException(e)
             }
         return plaintext.toString(Charsets.UTF_8)
+    }
+
+    private fun validateParams(params: Argon2Params) {
+        if (params.memoryKib !in MIN_MEMORY_KIB..MAX_MEMORY_KIB ||
+            params.iterations !in MIN_ITERATIONS..MAX_ITERATIONS ||
+            params.parallelism !in MIN_PARALLELISM..MAX_PARALLELISM
+        ) {
+            throw BackupFormatException("Argon2 params out of range: $params")
+        }
     }
 
     private fun header(

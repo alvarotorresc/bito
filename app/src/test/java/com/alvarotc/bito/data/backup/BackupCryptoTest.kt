@@ -106,6 +106,17 @@ class BackupCryptoTest {
     }
 
     @Test
+    fun `tampered argon2 params byte throws BackupFormatException`() {
+        val container = BackupCrypto.encrypt("""{"a":1}""", derived())
+        val tampered = container.copyOf()
+        tampered[22] = 0x7F.toByte() // flips memoryKib's top byte to a value far past the sane cap
+
+        assertFailsWith<BackupFormatException> {
+            BackupCrypto.decrypt(tampered, passphrase)
+        }
+    }
+
+    @Test
     fun `deriveKey is deterministic for same salt and params`() {
         val salt = BackupCrypto.newSalt()
 
