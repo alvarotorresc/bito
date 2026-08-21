@@ -171,4 +171,14 @@
     <string name="archived_empty">Todavía no hay nada archivado</string>
     <string name="unarchive_habit">Reactivar</string>
     <string name="paused_since">En pausa desde %1$s</string>
+
+    <string name="onb_welcome_tagline">hábitos que se quedan</string>
+    <string name="onb_welcome_offline">100% offline · tus datos jamás salen del móvil</string>
+    <string name="onb_welcome_no_accounts">sin cuentas, sin anuncios</string>
+    <string name="onb_start">Empezar</string>
+    <string name="onb_skip">Saltar</string>
+    <string name="onb_story1_title">Habi no siempre fue así</string>
+    <string name="onb_story2_title">Quería cambiar, pero no sabía por dónde empezar</string>
+    <string name="onb_story3_title">Hasta que encontró un sistema</string>
+    <string name="onb_story3_sub">Pequeños pasos, cada día. Le cambió la vida.</string>
 </resources>

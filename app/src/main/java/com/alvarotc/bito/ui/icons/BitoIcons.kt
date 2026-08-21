@@ -216,6 +216,13 @@ object BitoIcons {
             "M4 13h4",
         )
     }
+    val Ban by lazy {
+        lucide(
+            "ban",
+            "M22 12A10 10 0 1 0 2 12A10 10 0 1 0 22 12Z",
+            "m4.9 4.9 14.2 14.2",
+        )
+    }
     val Sprout by lazy {
         lucide(
             "sprout",

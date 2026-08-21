@@ -171,4 +171,17 @@
     <string name="archived_empty">Nothing archived yet</string>
     <string name="unarchive_habit">Reactivate</string>
     <string name="paused_since">Paused since %1$s</string>
+
+    <string name="onb_welcome_tagline">habits that stick</string>
+    <string name="onb_welcome_offline">100% offline · your data never leaves your phone</string>
+    <string name="onb_welcome_no_accounts">no accounts, no ads</string>
+    <!-- Each language names itself, in every locale — same convention as language_spanish. -->
+    <string name="onb_lang_es" translatable="false">Español</string>
+    <string name="onb_lang_en" translatable="false">English</string>
+    <string name="onb_start">Get started</string>
+    <string name="onb_skip">Skip</string>
+    <string name="onb_story1_title">Habi wasn\'t always like this</string>
+    <string name="onb_story2_title">Habi wanted to change, but didn\'t know where to start</string>
+    <string name="onb_story3_title">Until Habi found a system</string>
+    <string name="onb_story3_sub">Small steps, every day. It changed everything.</string>
 </resources>

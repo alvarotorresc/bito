@@ -29,6 +29,7 @@ import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.review.ReviewScreen
 import com.alvarotc.bito.ui.review.ReviewViewModel
@@ -107,9 +108,10 @@ fun BitoNavHost(container: AppContainer) {
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
         ) {
             // No bottom nav: a fresh install's first-run flow, not a bar destination — same
-            // reasoning as "review" below, and not deep-link allowlisted either. T6-T8 build the
-            // real screens against OnboardingViewModel's state/callbacks; this wires only the
-            // spine — instantiate the VM and leave once it reports done.
+            // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
+            // welcome + story screens (7a-7d) against OnboardingViewModel's state/callbacks; T7-T8
+            // own the rest of the flow's content. This composable's own job stays just the spine:
+            // instantiate the VM and leave once it reports done.
             composable("onboarding") {
                 val onboardingVm: OnboardingViewModel = viewModel(factory = OnboardingViewModel.factory(container))
                 val onboardingState by onboardingVm.uiState.collectAsStateWithLifecycle()
@@ -118,7 +120,9 @@ fun BitoNavHost(container: AppContainer) {
                         nav.navigate("today") { popUpTo("onboarding") { inclusive = true } }
                     }
                 }
-                Box(Modifier.fillMaxSize().background(Papel).testTag("onboarding-screen"))
+                Box(Modifier.fillMaxSize().background(Papel).testTag("onboarding-screen")) {
+                    OnboardingScreen(onboardingVm)
+                }
             }
             composable("today") {
                 TodayScreen(
