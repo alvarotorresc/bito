@@ -22,6 +22,7 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.settings.AutoBackupError
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.ui.theme.BitoTheme
@@ -385,5 +386,138 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("1 habit · 1 log entry", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the backup card shows the folder name when set`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-backup-folder-name"))
+        runBlocking {
+            settings.update {
+                it.copy(backupFolderUri = "content://com.android.externalstorage.documents/tree/primary%3ADocuments%2FBito")
+            }
+        }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Documents/Bito", useUnmergedTree = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `frequency pills and copies stepper appear only with a folder`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-backup-frequency-stepper"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Daily", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Number of copies", useUnmergedTree = true).assertDoesNotExist()
+
+        runBlocking {
+            settings.update {
+                it.copy(backupFolderUri = "content://com.android.externalstorage.documents/tree/primary%3ABito")
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Daily", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("Number of copies", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `backup now row appears only with a folder`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-backup-now-row"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Back up now", useUnmergedTree = true).assertDoesNotExist()
+
+        runBlocking {
+            settings.update {
+                it.copy(backupFolderUri = "content://com.android.externalstorage.documents/tree/primary%3ABito")
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Back up now", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `a folder error renders its explanation`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-backup-folder-error"))
+        runBlocking {
+            settings.update {
+                it.copy(
+                    backupFolderUri = "content://com.android.externalstorage.documents/tree/primary%3ABito",
+                    lastAutoBackupError = AutoBackupError.FOLDER,
+                )
+            }
+        }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("The folder is no longer available — choose it again", useUnmergedTree = true)
+            .performScrollTo()
+            .assertIsDisplayed()
     }
 }

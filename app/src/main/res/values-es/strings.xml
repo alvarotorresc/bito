@@ -79,6 +79,16 @@
     <string name="settings_title">Ajustes</string>
     <string name="backups_title">Copias de seguridad</string>
     <string name="backups_body">Un único archivo legible con todo: hábitos, historial, puntos y ajustes.</string>
+    <string name="backup_folder">Carpeta de copias</string>
+    <string name="backup_folder_none">Sin definir</string>
+    <string name="backup_frequency_daily">Diaria</string>
+    <string name="backup_frequency_weekly">Semanal</string>
+    <string name="backup_copies">Número de copias</string>
+    <string name="backup_now">Hacer copia ahora</string>
+    <string name="backup_last_ok">Última copia: %1$s</string>
+    <string name="backup_error_folder">La carpeta ya no está disponible — vuelve a elegirla</string>
+    <string name="backup_error_write">La última copia falló, se reintentará</string>
+    <string name="backup_error_missing_key">Falta la passphrase de cifrado</string>
     <string name="backup_export">Exportar copia</string>
     <string name="backup_import">Importar copia</string>
     <string name="import_preview_title">¿Restaurar esta copia?</string>

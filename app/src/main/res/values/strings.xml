@@ -84,6 +84,16 @@
     <string name="settings_title">Settings</string>
     <string name="backups_title">Backups</string>
     <string name="backups_body">One readable file with everything: habits, history, points and settings.</string>
+    <string name="backup_folder">Backup folder</string>
+    <string name="backup_folder_none">Not set</string>
+    <string name="backup_frequency_daily">Daily</string>
+    <string name="backup_frequency_weekly">Weekly</string>
+    <string name="backup_copies">Number of copies</string>
+    <string name="backup_now">Back up now</string>
+    <string name="backup_last_ok">Last backup: %1$s</string>
+    <string name="backup_error_folder">The folder is no longer available — choose it again</string>
+    <string name="backup_error_write">The last backup failed, it will be retried</string>
+    <string name="backup_error_missing_key">The encryption passphrase is missing</string>
     <string name="backup_export">Export backup</string>
     <string name="backup_import">Import backup</string>
     <string name="import_preview_title">Restore this backup?</string>

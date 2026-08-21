@@ -52,10 +52,13 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.backup.BackupPreview
+import com.alvarotc.bito.data.settings.AutoBackupError
+import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
+import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.TimePickerSheet
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Brasa
@@ -64,9 +67,15 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import android.provider.Settings as AndroidSettings
 
 private const val DEFAULT_REMINDER_MINUTES = 8 * 60
+private const val MIN_BACKUP_COPIES = 1
+private const val MAX_BACKUP_COPIES = 10
 
 /**
  * Ajustes: day cutoff and reminders (this task) plus the manual backup export/import card
@@ -93,6 +102,16 @@ fun SettingsScreen(
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
             uri?.let { backupViewModel.loadImport(context.contentResolver, it) }
         }
+    val folderLauncher =
+        rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+            uri?.let {
+                context.contentResolver.takePersistableUriPermission(
+                    it,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+                backupViewModel.setFolder(context.contentResolver, it)
+            }
+        }
 
     val exportDone = stringResource(R.string.msg_export_done)
     val importDone = stringResource(R.string.msg_import_done)
@@ -100,26 +119,30 @@ fun SettingsScreen(
     val ioError = stringResource(R.string.msg_io_error)
 
     LaunchedEffect(backupState.message) {
+        // Every non-null message must be consumed, whether or not it has copy — otherwise a
+        // message with no text (the 4 placeholders below) sticks in state forever, and a second
+        // identical message right after never re-fires this effect (same key, no transition
+        // through null in between).
+        val message = backupState.message ?: return@LaunchedEffect
         val text =
-            when (backupState.message) {
+            when (message) {
                 BackupMessage.EXPORT_DONE -> exportDone
                 BackupMessage.IMPORT_DONE -> importDone
                 BackupMessage.INVALID_FILE -> invalidFile
                 BackupMessage.IO_ERROR -> ioError
                 // Folder/schedule/encryption UI (passphrase sheet, encryption snackbars, its own
-                // MISSING_KEY snackbar) is task 9/10's — no text here yet keeps this snackbar
+                // MISSING_KEY snackbar) is task 10's — no text here yet keeps this snackbar
                 // silent for them instead of guessing at copy that isn't this task's to write.
                 BackupMessage.WRONG_PASSPHRASE,
                 BackupMessage.ENCRYPTION_ON,
                 BackupMessage.ENCRYPTION_OFF,
                 BackupMessage.MISSING_KEY,
-                null,
                 -> null
             }
         if (text != null) {
             snackbar.showSnackbar(text)
-            backupViewModel.consumeMessage()
         }
+        backupViewModel.consumeMessage()
     }
 
     // POST_NOTIFICATIONS is only asked once, the moment the first global reminder shows up — a
@@ -197,6 +220,11 @@ fun SettingsScreen(
             }
             GeneralSectionCard(archivedCount = archivedHabits.size, onOpenArchived = onOpenArchived)
             BackupsCard(
+                state = backupState,
+                onPickFolder = { folderLauncher.launch(null) },
+                onSetFrequency = backupViewModel::setFrequency,
+                onSetCopies = backupViewModel::setCopies,
+                onBackupNow = backupViewModel::backupNow,
                 onExport = { exportLauncher.launch(backupViewModel.suggestedFileName()) },
                 // SAF can't filter on a custom ".bito" extension, so accept anything and let
                 // loadImport's preview/validation reject the wrong file.
@@ -415,9 +443,17 @@ private fun GeneralSectionCard(
     }
 }
 
-/** THE star of Ajustes (guía 8a): a Hoja-bordered card, not a solid-accent one. */
+/**
+ * THE star of Ajustes (guía 8a): a Hoja-bordered card, not a solid-accent one. Folder/schedule/
+ * status/backup-now only — the encryption row and its passphrase sheets are task 10's.
+ */
 @Composable
 private fun BackupsCard(
+    state: BackupUiState,
+    onPickFolder: () -> Unit,
+    onSetFrequency: (BackupFrequency) -> Unit,
+    onSetCopies: (Int) -> Unit,
+    onBackupNow: () -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
 ) {
@@ -426,10 +462,78 @@ private fun BackupsCard(
         Spacer(Modifier.height(4.dp))
         Text(stringResource(R.string.backups_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         Spacer(Modifier.height(12.dp))
+        SettingsRow(
+            BitoIcons.Folder,
+            stringResource(R.string.backup_folder),
+            value = state.folderName ?: stringResource(R.string.backup_folder_none),
+            onClick = onPickFolder,
+        )
+        if (state.folderName != null) {
+            val frequencyOptions = listOf(stringResource(R.string.backup_frequency_daily), stringResource(R.string.backup_frequency_weekly))
+            SegmentedPills(
+                options = frequencyOptions,
+                selectedIndex = if (state.frequency == BackupFrequency.WEEKLY) 1 else 0,
+                onSelect = { onSetFrequency(if (it == 1) BackupFrequency.WEEKLY else BackupFrequency.DAILY) },
+                fillWidth = true,
+            )
+            Spacer(Modifier.height(8.dp))
+            CopiesStepperRow(copies = state.copies, onSetCopies = onSetCopies)
+            BackupStatusLine(state)
+            SettingsRow(BitoIcons.RefreshCw, stringResource(R.string.backup_now), onClick = onBackupNow)
+        }
         SettingsRow(BitoIcons.Download, stringResource(R.string.backup_export), onClick = onExport)
         SettingsRow(BitoIcons.Upload, stringResource(R.string.backup_import), onClick = onImport)
     }
 }
+
+/** −/value/+ pattern mirrored from [CutoffSheet]'s stepper; the honest clamp is 1..10, matching [BackupViewModel.setCopies]. */
+@Composable
+private fun CopiesStepperRow(
+    copies: Int,
+    onSetCopies: (Int) -> Unit,
+) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            stringResource(R.string.backup_copies),
+            style = MaterialTheme.typography.bodyLarge,
+            color = Tinta,
+            modifier = Modifier.weight(1f),
+        )
+        IconButton(onClick = { onSetCopies(copies - 1) }, enabled = copies > MIN_BACKUP_COPIES) {
+            Icon(BitoIcons.Minus, contentDescription = null, tint = if (copies > MIN_BACKUP_COPIES) Tinta else TintaSuave)
+        }
+        Text(copies.toString(), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        IconButton(onClick = { onSetCopies(copies + 1) }, enabled = copies < MAX_BACKUP_COPIES) {
+            Icon(BitoIcons.Plus, contentDescription = null, tint = if (copies < MAX_BACKUP_COPIES) Tinta else TintaSuave)
+        }
+    }
+}
+
+/**
+ * An error (Tinta + Info icon — Peligro is destructive-only, this is informational) wins over the
+ * last-success timestamp; with neither (no auto-backup has run yet), the line is simply absent.
+ */
+@Composable
+private fun BackupStatusLine(state: BackupUiState) {
+    val text =
+        when (state.lastAutoBackupError) {
+            AutoBackupError.FOLDER -> stringResource(R.string.backup_error_folder)
+            AutoBackupError.WRITE -> stringResource(R.string.backup_error_write)
+            AutoBackupError.MISSING_KEY -> stringResource(R.string.backup_error_missing_key)
+            null -> state.lastAutoBackupAtMillis?.let { stringResource(R.string.backup_last_ok, formatBackupTimestamp(it)) }
+        } ?: return
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(BitoIcons.Info, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
+        Text(text, style = MaterialTheme.typography.labelMedium, color = Tinta)
+    }
+    Spacer(Modifier.height(4.dp))
+}
+
+/** No shared millis+time formatter exists yet (Dates.kt only formats [LogicalDay]/[YearMonth] calendar values). */
+private fun formatBackupTimestamp(millis: Long): String =
+    Instant.ofEpochMilli(millis)
+        .atZone(ZoneId.systemDefault())
+        .format(DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM))
 
 /** Generalized from the old BackupRow: any tappable settings line, with an optional value and icon. */
 @Composable
