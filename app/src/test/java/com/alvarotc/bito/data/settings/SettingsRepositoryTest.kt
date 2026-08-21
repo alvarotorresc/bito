@@ -47,6 +47,8 @@ class SettingsRepositoryTest {
             assertEquals(true, settings.habiSoundsEnabled)
             assertEquals(-1, settings.perfectDayCelebratedDay)
             assertEquals(0L, settings.badgesSeenUntilMillis)
+            assertNull(settings.lastAutoBackupAtMillis)
+            assertNull(settings.lastAutoBackupError)
         }
 
     @Test
@@ -103,5 +105,34 @@ class SettingsRepositoryTest {
             val settings = repository.settings.first()
             assertNull(settings.languageTag)
             assertNull(settings.backupFolderUri)
+        }
+
+    @Test
+    fun `last auto backup fields default to null`() =
+        runTest {
+            val settings = SettingsRepository(store("auto-backup-defaults")).settings.first()
+            assertNull(settings.lastAutoBackupAtMillis)
+            assertNull(settings.lastAutoBackupError)
+        }
+
+    @Test
+    fun `last auto backup fields survive a write and read`() =
+        runTest {
+            val repository = SettingsRepository(store("auto-backup-roundtrip"))
+            repository.update { it.copy(lastAutoBackupAtMillis = 1234567L, lastAutoBackupError = AutoBackupError.WRITE) }
+            val settings = repository.settings.first()
+            assertEquals(1234567L, settings.lastAutoBackupAtMillis)
+            assertEquals(AutoBackupError.WRITE, settings.lastAutoBackupError)
+        }
+
+    @Test
+    fun `error clears when set back to null`() =
+        runTest {
+            val repository = SettingsRepository(store("auto-backup-null-clear"))
+            repository.update { it.copy(lastAutoBackupAtMillis = 1234567L, lastAutoBackupError = AutoBackupError.FOLDER) }
+            repository.update { it.copy(lastAutoBackupError = null) }
+            val settings = repository.settings.first()
+            assertEquals(1234567L, settings.lastAutoBackupAtMillis)
+            assertNull(settings.lastAutoBackupError)
         }
 }

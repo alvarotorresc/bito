@@ -207,4 +207,15 @@ class BackupRoundTripTest {
         assertEquals(450, backupHabit.timeOfDayMinutes)
         assertEquals(entity, backupHabit.toEntity())
     }
+
+    @Test
+    fun `local auto backup state does not travel in exports`() =
+        runTest {
+            seedEverything()
+            settingsRepo.update { it.copy(lastAutoBackupAtMillis = 1234567L, lastAutoBackupError = null) }
+            val exported = backup.exportJson(nowMillis = 1_000L)
+            // Device-local backup status should not appear in the export.
+            assert(!exported.contains("lastAutoBackup"))
+            assert(!exported.contains("last_auto_backup"))
+        }
 }
