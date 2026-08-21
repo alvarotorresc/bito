@@ -105,6 +105,19 @@ class BackupCryptoTest {
         }
     }
 
+    // A container with the full 46-byte header but no room left for the 16-byte GCM tag (i.e.
+    // sized 46..61) must still be reported as a truncated container, not reach doFinal and get
+    // misreported as a wrong passphrase.
+    @Test
+    fun `container with a full header but no room for the GCM tag throws BackupFormatException`() {
+        val container = BackupCrypto.encrypt("""{"a":1}""", derived())
+        val truncated = container.copyOfRange(0, 50) // past the header, short of header + 16-byte tag
+
+        assertFailsWith<BackupFormatException> {
+            BackupCrypto.decrypt(truncated, passphrase)
+        }
+    }
+
     @Test
     fun `tampered argon2 params byte throws BackupFormatException`() {
         val container = BackupCrypto.encrypt("""{"a":1}""", derived())

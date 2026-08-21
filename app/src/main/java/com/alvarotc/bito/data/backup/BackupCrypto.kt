@@ -24,6 +24,7 @@ object BackupCrypto {
     private const val SALT_SIZE = 16
     private const val NONCE_SIZE = 12
     private const val GCM_TAG_BITS = 128
+    private const val GCM_TAG_BYTES = GCM_TAG_BITS / 8
     private const val KEY_SIZE = 32
 
     // Sane caps for Argon2 header fields read from an untrusted container. Our own headers always
@@ -32,7 +33,7 @@ object BackupCrypto {
     // Bouncy Castle allocates or validates internally — keeps the failure inside the two blessed
     // exception types instead of an untyped IllegalArgumentException or an OutOfMemoryError.
     private const val MIN_MEMORY_KIB = 1
-    private const val MAX_MEMORY_KIB = 1_048_576 // 1 GiB
+    private const val MAX_MEMORY_KIB = 262_144 // 256 MiB — 13x the 19 MiB default, well short of an on-device OOM
     private const val MIN_ITERATIONS = 1
     private const val MAX_ITERATIONS = 64
     private const val MIN_PARALLELISM = 1
@@ -89,7 +90,10 @@ object BackupCrypto {
         if (!isEncrypted(bytes)) throw BackupFormatException("Missing BITO1 magic")
         val version = bytes[OFFSET_VERSION].toInt()
         if (version != CONTAINER_VERSION) throw BackupFormatException("Unsupported container version $version")
-        if (bytes.size < OFFSET_CIPHERTEXT) throw BackupFormatException("Truncated container")
+        // A container has to hold at least the GCM tag past the header — anything shorter can
+        // never produce a valid tag, so doFinal would misreport it as a wrong passphrase instead
+        // of the truncation it actually is.
+        if (bytes.size < OFFSET_CIPHERTEXT + GCM_TAG_BYTES) throw BackupFormatException("Truncated container")
 
         val salt = bytes.copyOfRange(OFFSET_SALT, OFFSET_MEMORY_KIB)
         val params =
