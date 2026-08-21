@@ -3,6 +3,7 @@ package com.alvarotc.bito.data.backup
 import android.net.Uri
 import com.alvarotc.bito.data.settings.AutoBackupError
 import com.alvarotc.bito.data.settings.SettingsRepository
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import java.io.IOException
 import java.time.Instant
@@ -42,6 +43,16 @@ class AutoBackupRunner(
             } catch (e: MissingKeyException) {
                 settings.update { it.copy(lastAutoBackupError = AutoBackupError.MISSING_KEY) }
                 return Outcome.SKIPPED
+            } catch (e: CancellationException) {
+                // Never swallow cancellation as a failure — WorkManager stopping this coroutine
+                // must propagate, not get recorded as a write error.
+                throw e
+            } catch (e: Exception) {
+                // Anything else (DataStore IOException, SQLiteException, ...) is an unknown
+                // failure, not a missing key — still worth a retry rather than leaving the
+                // last-known status stale forever.
+                settings.update { it.copy(lastAutoBackupError = AutoBackupError.WRITE) }
+                return Outcome.RETRY
             }
 
         val treeUri = Uri.parse(folderUri)
@@ -54,6 +65,15 @@ class AutoBackupRunner(
             settings.update { it.copy(lastAutoBackupError = AutoBackupError.FOLDER) }
             return Outcome.SKIPPED
         } catch (e: IOException) {
+            settings.update { it.copy(lastAutoBackupError = AutoBackupError.WRITE) }
+            return Outcome.RETRY
+        } catch (e: CancellationException) {
+            // Same as above: cancellation must propagate, not be recorded as a write error.
+            throw e
+        } catch (e: Exception) {
+            // Any other failure from the SAF call (RuntimeException, SQLiteException, ...) still
+            // means the file may or may not be on disk — treat it like a write failure so the
+            // status isn't left stale and WorkManager gets a chance to retry.
             settings.update { it.copy(lastAutoBackupError = AutoBackupError.WRITE) }
             return Outcome.RETRY
         }

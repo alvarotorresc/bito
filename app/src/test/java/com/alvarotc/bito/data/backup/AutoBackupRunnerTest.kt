@@ -144,6 +144,20 @@ class AutoBackupRunnerTest {
             assertEquals(AutoBackupError.FOLDER, settingsRepo.settings.first().lastAutoBackupError)
         }
 
+    // Any other exception (RuntimeException, SQLiteException, ...) from the sink must still be
+    // mapped to an outcome instead of escaping run() and leaving the last-known status stale.
+    @Test
+    fun `sink throwing an unexpected exception records WRITE error and asks for retry`() =
+        runTest {
+            settingsRepo.update { it.copy(backupFolderUri = FOLDER) }
+            sink.writeFailure = RuntimeException("boom")
+
+            val outcome = runner().run()
+
+            assertEquals(AutoBackupRunner.Outcome.RETRY, outcome)
+            assertEquals(AutoBackupError.WRITE, settingsRepo.settings.first().lastAutoBackupError)
+        }
+
     @Test
     fun `success writes then rotates with the configured copies`() =
         runTest {
