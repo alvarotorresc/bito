@@ -2,6 +2,24 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [0.8.0] - 2026-08-21
+
+### Added
+
+- Backup automático: eliges una carpeta (vale una que sincronices con tu nube) y Bito guarda solo una copia diaria o semanal, conserva las últimas que le digas y borra las más antiguas. La escritura es atómica: un corte a medias jamás deja una copia rota. Nada sale del móvil salvo que tú sincronices la carpeta.
+- Cifrado opcional de backups con contraseña (Argon2id + AES-256-GCM). La contraseña no se guarda en ningún sitio y sin ella la copia es irrecuperable — la app lo avisa bien claro antes de activarlo. Para restaurar en otro móvil solo hace falta la contraseña.
+- La sección de Backups de Ajustes, rediseñada: el estado del último backup con cuántas copias hay en la carpeta, hacer backup ahora, restaurar y exportar, todo en un sitio.
+- Las versiones taggeadas publican solas una release firmada con su APK en GitHub.
+
+### Changed
+
+- Sellar el día retira la notificación del repaso de la bandeja, la selles desde donde la selles.
+
+### Fixed
+
+- Restaurar un backup de versiones viejas ya no celebra de golpe todos los logros históricos al abrir la app.
+- Exportar a mano encima de un archivo más grande dejaba restos en algunos gestores de archivos y corrompía la copia; ahora se trunca siempre.
+
 ## [0.7.0] - 2026-08-20
 
 ### Added
