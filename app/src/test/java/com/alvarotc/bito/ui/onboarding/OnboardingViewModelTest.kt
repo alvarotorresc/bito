@@ -125,6 +125,27 @@ class OnboardingViewModelTest {
         }
 
     @Test
+    fun `finish with a blank name does not overwrite whatever userName was already stored`() =
+        runTest {
+            // Belt-and-braces case: the screen's button and pager gates should keep finish() from
+            // ever being reached with a blank name, but this proves the VM doesn't trust that --
+            // a pre-existing stored name (e.g. from a prior run, or set through Ajustes) survives
+            // untouched rather than being clobbered back to "".
+            settingsRepo.update { it.copy(userName = "Previous") }
+            val vm = newViewModel()
+            vm.setName("   ")
+            vm.setPersonality(Personality.CHEERLEADER)
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val stored = settingsRepo.settings.first()
+            assertEquals("Previous", stored.userName)
+            assertEquals(Personality.CHEERLEADER, stored.personality)
+            assertTrue(stored.onboardingDone)
+        }
+
+    @Test
     fun `finish creates the first habit through the same write path`() =
         runTest {
             seedPendingGrant()

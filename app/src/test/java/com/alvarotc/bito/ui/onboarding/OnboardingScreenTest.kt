@@ -10,6 +10,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -215,6 +217,24 @@ class OnboardingScreenTest {
         compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         assertEquals(OnboardingStep.PERSONALITY, vm.uiState.value.step)
+    }
+
+    @Test
+    fun `a swipe cannot bypass the name gate with a blank name`() {
+        val vm = newViewModel("onboarding-screen-name-swipe-gate")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        vm.skipStory() // -> NAME, name still blank
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-pager", useUnmergedTree = true).performTouchInput { swipeLeft() }
+        compose.waitForIdle()
+
+        assertEquals(OnboardingStep.NAME, vm.uiState.value.step)
     }
 
     @Test

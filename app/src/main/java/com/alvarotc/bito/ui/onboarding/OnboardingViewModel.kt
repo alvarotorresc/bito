@@ -108,6 +108,13 @@ class OnboardingViewModel(
      * name still completes onboarding; it just creates nothing (controller ruling: nothing was
      * written, so there is nothing to reconcile).
      *
+     * Belt-and-braces for the NAME step's blank-name gate (the screen disables "Seguir" and the
+     * pager's swipe on a blank field, but this is the last line of defense against anything that
+     * still reaches `finish()` with [OnboardingUiState.name] blank): a blank trimmed name never
+     * overwrites [com.alvarotc.bito.data.settings.Settings.userName] — whatever was already stored
+     * (default `""`, same "campeón"/"champ" fallback everywhere else) is left as-is. Onboarding
+     * still completes either way.
+     *
      * Guards on `busy` OR `done`, and never clears `busy` on the happy path — same reasoning as
      * [com.alvarotc.bito.ui.habitform.HabitFormViewModel.save]'s own guard comment: a second call
      * landing during the nav-away transition must not create a second habit with a fresh UUID.
@@ -118,8 +125,13 @@ class OnboardingViewModel(
         state.update { it.copy(busy = true) }
         viewModelScope.launch {
             val today = LogicalDays.logicalDayOf(now(), settings.settings.first().dayCutoffMinutes, zone())
-            settings.update {
-                it.copy(userName = current.name.trim(), personality = current.personality, onboardingDone = true)
+            val trimmedName = current.name.trim()
+            settings.update { stored ->
+                stored.copy(
+                    userName = if (trimmedName.isNotEmpty()) trimmedName else stored.userName,
+                    personality = current.personality,
+                    onboardingDone = true,
+                )
             }
 
             val habitName = current.habitName.trim()

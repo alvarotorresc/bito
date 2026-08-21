@@ -251,7 +251,7 @@ private fun StoryPagerScaffold(
                 }
             }
         }
-        Box(Modifier.weight(1f).fillMaxWidth()) {
+        Box(Modifier.weight(1f).fillMaxWidth().testTag("onb-pager")) {
             key(pageIndex) {
                 val pagerState = rememberPagerState(initialPage = pageIndex) { PAGER_STEPS.size }
                 LaunchedEffect(pagerState) {
@@ -262,7 +262,16 @@ private fun StoryPagerScaffold(
                         }
                     }
                 }
-                HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                HorizontalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize(),
+                    // Belt-and-braces for the NAME step's blank-name gate: the "Seguir" button
+                    // below is disabled on a blank name, but a swipe bypasses buttons entirely —
+                    // without this, dragging past NAME with an empty field still advances the
+                    // step, and finish() would persist userName = "" (every voiced string falls
+                    // back to "campeón" forever, exactly what 7e exists to prevent).
+                    userScrollEnabled = step != OnboardingStep.NAME || state.name.trim().isNotEmpty(),
+                ) { page ->
                     StoryPageContent(PAGER_STEPS[page], state, onSetName, onSetPersonality)
                 }
             }
