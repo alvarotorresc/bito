@@ -1,5 +1,10 @@
 package com.alvarotc.bito.ui
 
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -106,6 +111,15 @@ fun BitoNavHost(container: AppContainer) {
             // and Settings' own Scaffolds (default contentWindowInsets = systemBars) re-apply
             // the status bar gap on top of this padding under edge-to-edge.
             modifier = Modifier.padding(padding).consumeWindowInsets(padding),
+            // Quiet global motion (motion spec §8: 150-250ms, ease-out) — every route change,
+            // bottom-bar tab switches included, gets a subtle fade + 1/12-width slide instead of
+            // the default hard cut. Onboarding's own internal pager motion lives inside
+            // OnboardingScreen and is untouched by this; only entering/leaving its route uses
+            // this. The juicy celebration sheets are overlays, not routes, so they never see this.
+            enterTransition = { fadeIn(tween(150)) + slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { it / 12 } },
+            exitTransition = { fadeOut(tween(150)) },
+            popEnterTransition = { fadeIn(tween(150)) + slideInHorizontally(tween(150)) { -it / 12 } },
+            popExitTransition = { fadeOut(tween(150)) },
         ) {
             // No bottom nav: a fresh install's first-run flow, not a bar destination — same
             // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
