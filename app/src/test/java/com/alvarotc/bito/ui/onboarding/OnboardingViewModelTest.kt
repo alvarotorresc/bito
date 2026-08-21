@@ -297,6 +297,35 @@ class OnboardingViewModelTest {
         }
 
     @Test
+    fun `the flow seeds from persisted settings`() =
+        runTest {
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO, userName = "Rocky", languageTag = "en") }
+
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            assertEquals(Personality.SARGENTO, vm.uiState.value.personality)
+            assertEquals("Rocky", vm.uiState.value.name)
+            assertEquals("en", vm.uiState.value.languageTag)
+        }
+
+    @Test
+    fun `finishing without touching personality keeps the stored one`() =
+        runTest {
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO) }
+            val vm = newViewModel()
+            // Lets the seed above land in state BEFORE finish() reads it -- in the real app this is
+            // guaranteed by the several screens/taps between VM creation and reaching finish();
+            // here it's this explicit advance.
+            advanceUntilIdle()
+
+            vm.finish()
+            advanceUntilIdle()
+
+            assertEquals(Personality.SARGENTO, settingsRepo.settings.first().personality)
+        }
+
+    @Test
     fun `a second call to finish while busy does not create a duplicate habit`() =
         runTest {
             val vm = newViewModel()

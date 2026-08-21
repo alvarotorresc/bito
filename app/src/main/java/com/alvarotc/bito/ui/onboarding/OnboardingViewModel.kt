@@ -57,6 +57,11 @@ data class OnboardingUiState(
  * [com.alvarotc.bito.ui.habitform.HabitFormViewModel.save] uses: a [HabitFormState] built here,
  * mapped through the shared [toNewEntity] extension, then [HabitsRepository.create] followed by
  * [PointsReconciler.reconcile] — same as that VM's create branch.
+ *
+ * [state] doesn't start purely from [OnboardingUiState]'s own hardcoded defaults: the `init` block
+ * below seeds personality/name/language from whatever [settings] already has stored, so a user who
+ * reaches this flow with pre-existing settings (a reinstall over restored data, say) doesn't have
+ * them silently reset by [finish]'s unconditional personality write.
  */
 class OnboardingViewModel(
     private val settings: SettingsRepository,
@@ -70,8 +75,39 @@ class OnboardingViewModel(
 
     private val steps = OnboardingStep.entries
 
+    // Guards the one-shot seed below (init block) against clobbering an edit the user already made
+    // while that seed's coroutine was still in flight -- it isn't synchronous, so a setter called
+    // before it resolves must win over whatever was stored. Set synchronously, before either the
+    // matching state.update or the seed's own read can land, by each setter below.
+    private var nameTouched = false
+    private var personalityTouched = false
+    private var languageTouched = false
+
+    init {
+        // Pre-M9, [state] always started from this class' own hardcoded defaults (NEUTRA, no
+        // name, no language), and finish() below wrote personality unconditionally -- every
+        // pre-M9 install that still goes through onboarding today (a fresh reinstall over restored
+        // data, for instance) had its already-stored personality/name/language silently reset the
+        // moment it did. Seeded ONCE here, not a continuous collect (onboarding runs once,
+        // uninstall-to-uninstall, so there's nothing to keep in sync afterwards), and only into
+        // whichever of the three fields the touched flags above say the user hasn't already set --
+        // deliberately not calling [AppLocale.apply] for languageTag: this only mirrors what
+        // AppCompat already resolved before this VM existed, it doesn't change it.
+        viewModelScope.launch {
+            val stored = settings.settings.first()
+            state.update {
+                it.copy(
+                    personality = if (personalityTouched) it.personality else stored.personality,
+                    languageTag = if (languageTouched) it.languageTag else stored.languageTag,
+                    name = if (nameTouched) it.name else stored.userName,
+                )
+            }
+        }
+    }
+
     /** Persists + applies live, mirroring [com.alvarotc.bito.ui.settings.SettingsViewModel.setLanguage]. */
     fun setLanguage(tag: String?) {
+        languageTouched = true
         state.update { it.copy(languageTag = tag) }
         viewModelScope.launch { settings.update { it.copy(languageTag = tag) } }
         AppLocale.apply(tag)
@@ -90,7 +126,10 @@ class OnboardingViewModel(
     /** From any story beat, jumps straight to the name step — skips whatever story is left. */
     fun skipStory() = state.update { it.copy(step = OnboardingStep.NAME) }
 
-    fun setName(value: String) = state.update { it.copy(name = value) }
+    fun setName(value: String) {
+        nameTouched = true
+        state.update { it.copy(name = value) }
+    }
 
     fun setHabitName(value: String) = state.update { it.copy(habitName = value) }
 
@@ -116,6 +155,7 @@ class OnboardingViewModel(
 
     /** Persists immediately, not just on [finish] — the celebration bubble (7f) speaks with the chosen voice right away. */
     fun setPersonality(personality: Personality) {
+        personalityTouched = true
         state.update { it.copy(personality = personality) }
         viewModelScope.launch { settings.update { it.copy(personality = personality) } }
     }
