@@ -20,11 +20,26 @@ android {
         versionName = "0.7.0"
     }
 
+    signingConfigs {
+        create("release") {
+            val path = System.getenv("BITO_KEYSTORE_PATH")
+            if (path != null) {
+                storeFile = file(path)
+                storePassword = System.getenv("BITO_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("BITO_KEY_ALIAS")
+                keyPassword = System.getenv("BITO_KEY_PASSWORD")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (System.getenv("BITO_KEYSTORE_PATH") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
