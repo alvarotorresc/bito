@@ -87,6 +87,7 @@ import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import java.util.Locale
 
 /** The 6 steps that live inside the dotted pager chrome — WELCOME renders full-screen, outside it. */
@@ -332,7 +333,14 @@ private fun StoryPagerScaffold(
                                 // finish() would persist userName = "" (every voiced string falls
                                 // back to "campeón" forever, exactly what 7e exists to prevent).
                                 if (step == OnboardingStep.NAME && latestState.value.name.trim().isEmpty()) {
-                                    pagerState.animateScrollToPage(pageIndex)
+                                    // Child coroutine, not a direct suspending call here: a fast
+                                    // second drag preempts this via HorizontalPager's own
+                                    // MutatorMutex, and if that CancellationException propagated
+                                    // out of this collect{} it would kill the whole LaunchedEffect
+                                    // -- soft-locking onboarding (pager free-scrolls, VM never
+                                    // hears settledPage again). launch{} isolates that
+                                    // cancellation to just the snap-back.
+                                    launch { pagerState.animateScrollToPage(pageIndex) }
                                 } else {
                                     onNext()
                                 }
