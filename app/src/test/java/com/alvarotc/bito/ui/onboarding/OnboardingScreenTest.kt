@@ -1,6 +1,10 @@
 package com.alvarotc.bito.ui.onboarding
 
 import android.content.Context
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
@@ -12,9 +16,12 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeRight
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleRegistry
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.R
@@ -98,6 +105,25 @@ class OnboardingScreenTest {
     fun tearDown() {
         Dispatchers.resetMain()
         db.close()
+    }
+
+    /**
+     * Minimal [OnBackPressedDispatcherOwner] the test drives directly: `createComposeRule()` has
+     * no `Espresso.pressBack()` and no exposed `.activity`, so the only way to trigger
+     * [androidx.activity.compose.BackHandler]'s callback deterministically is to hand the
+     * composition our OWN dispatcher instance and invoke it ourselves from outside the
+     * composition. Same recipe as `ReviewScreenTest`'s own copy — [lifecycle] only exists to
+     * satisfy the interface, [BackHandler] actually reads `LocalLifecycleOwner`, which the compose
+     * test host already provides and resumes.
+     */
+    private class FakeBackDispatcherOwner : OnBackPressedDispatcherOwner {
+        private val lifecycleRegistry = LifecycleRegistry(this)
+        override val lifecycle: Lifecycle = lifecycleRegistry
+        override val onBackPressedDispatcher = OnBackPressedDispatcher()
+
+        init {
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        }
     }
 
     /** WELCOME -> ... -> FIRST_HABIT, the same jump every 7g test below needs — a name is required
@@ -247,10 +273,58 @@ class OnboardingScreenTest {
         vm.skipStory() // -> NAME, name still blank
         compose.waitForIdle()
 
+        // The pager itself now genuinely scrolls forward under this gesture (unlike the old
+        // userScrollEnabled=false gate) and settles one page past NAME before snapping back --
+        // waitForIdle() has to pump that animateScrollToPage snap-back, not just a plain
+        // recomposition, which is why this assertion is on the VM's step rather than requiring
+        // zero visible motion.
         compose.onNodeWithTag("onb-pager", useUnmergedTree = true).performTouchInput { swipeLeft() }
         compose.waitForIdle()
 
         assertEquals(OnboardingStep.NAME, vm.uiState.value.step)
+    }
+
+    @Test
+    fun `a blank name still allows swiping back to the story`() {
+        val vm = newViewModel("onboarding-screen-name-swipe-back")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        vm.skipStory() // -> NAME, name still blank
+        compose.waitForIdle()
+
+        // Only the FORWARD direction is gated on a non-blank name -- backward has nothing to do
+        // with that gate and must keep working even while the field is empty.
+        compose.onNodeWithTag("onb-pager", useUnmergedTree = true).performTouchInput { swipeRight() }
+        compose.waitForIdle()
+
+        assertEquals(OnboardingStep.STORY_3, vm.uiState.value.step)
+    }
+
+    @Test
+    fun `system back steps back one beat during the flow instead of exiting`() {
+        val vm = newViewModel("onboarding-screen-back-handler")
+        val backOwner = FakeBackDispatcherOwner()
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides backOwner) {
+                    OnboardingScreen(vm)
+                }
+            }
+        }
+        compose.waitForIdle()
+        vm.next() // WELCOME -> STORY_1
+        compose.waitForIdle()
+
+        compose.runOnIdle {
+            backOwner.onBackPressedDispatcher.onBackPressed()
+        }
+        compose.waitForIdle()
+
+        assertEquals(OnboardingStep.WELCOME, vm.uiState.value.step)
     }
 
     @Test

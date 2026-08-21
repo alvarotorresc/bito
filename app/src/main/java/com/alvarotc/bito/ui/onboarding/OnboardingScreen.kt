@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.onboarding
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -44,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
@@ -109,6 +111,13 @@ private val STORY_STEPS = setOf(OnboardingStep.STORY_1, OnboardingStep.STORY_2, 
 @Composable
 fun OnboardingScreen(viewModel: OnboardingViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // System back steps back one beat instead of exiting the app mid-flow -- but only past
+    // WELCOME: there, the default behavior (exit) is exactly right, and OnboardingStep's own
+    // enum order makes `> WELCOME` the correct floor check (WELCOME is ordinal 0). Disabling the
+    // handler there, rather than wiring it unconditionally and relying on OnboardingViewModel.back
+    // being a no-op at the first step, is what lets the system gesture actually fall through to
+    // that default instead of being swallowed by a handler that intercepted it and did nothing.
+    BackHandler(enabled = state.step > OnboardingStep.WELCOME, onBack = viewModel::back)
     if (state.step == OnboardingStep.WELCOME) {
         WelcomeScene(
             languageTag = state.languageTag,
@@ -265,6 +274,14 @@ private fun LanguageChip(
  * button/skip-triggered advance re-keys the whole pager (see the block comment above), which has
  * no drag to ride, so the fade is the only cue on that path and a harmless replay on the swipe
  * path (the content was already in place when the drag settled).
+ *
+ * The NAME step's blank-name gate only ever blocks the FORWARD direction, never backward: the
+ * pager's own `userScrollEnabled` stays `true` unconditionally (a per-direction scroll flag
+ * doesn't exist on [HorizontalPager]), and the settle collector below is what actually enforces
+ * it — a forward settle off a blank NAME calls `pagerState.animateScrollToPage` back to the
+ * current page instead of `onNext()`, so the page genuinely does move under the user's finger and
+ * then snaps back, rather than never moving at all. A backward settle off NAME always passes
+ * through to `onBack()` regardless of the name field, same as any other page.
  */
 @Composable
 private fun StoryPagerScaffold(
@@ -293,10 +310,33 @@ private fun StoryPagerScaffold(
         Box(Modifier.weight(1f).fillMaxWidth().testTag("onb-pager")) {
             key(pageIndex) {
                 val pagerState = rememberPagerState(initialPage = pageIndex) { PAGER_STEPS.size }
+                // Read inside the settle collector below via .value, not `state` directly: that
+                // coroutine is launched once per `pagerState` (i.e. once per pageIndex) and never
+                // restarts on every keystroke, so a plain closure over `state` would keep whatever
+                // name was live the moment the coroutine started -- rememberUpdatedState is what
+                // keeps this reading the CURRENT name as the user types.
+                val latestState = rememberUpdatedState(state)
                 LaunchedEffect(pagerState) {
                     snapshotFlow { pagerState.settledPage }.drop(1).collect { settled ->
                         when {
-                            settled > pageIndex -> onNext()
+                            settled > pageIndex -> {
+                                // Belt-and-braces for the NAME step's blank-name gate: the
+                                // "Seguir" button below is disabled on a blank name, but a swipe
+                                // bypasses buttons entirely. Blocking the whole pager's scroll to
+                                // prevent that (the old approach) also blocked swiping BACKWARD
+                                // out of NAME, which has nothing to do with the gate -- scroll
+                                // stays enabled unconditionally now, and only a FORWARD settle off
+                                // a still-blank name gets rejected, by snapping back to this same
+                                // page instead of calling onNext(). Without this, dragging past
+                                // NAME with an empty field would still advance the step, and
+                                // finish() would persist userName = "" (every voiced string falls
+                                // back to "campeón" forever, exactly what 7e exists to prevent).
+                                if (step == OnboardingStep.NAME && latestState.value.name.trim().isEmpty()) {
+                                    pagerState.animateScrollToPage(pageIndex)
+                                } else {
+                                    onNext()
+                                }
+                            }
                             settled < pageIndex -> onBack()
                         }
                     }
@@ -304,12 +344,6 @@ private fun StoryPagerScaffold(
                 HorizontalPager(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
-                    // Belt-and-braces for the NAME step's blank-name gate: the "Seguir" button
-                    // below is disabled on a blank name, but a swipe bypasses buttons entirely —
-                    // without this, dragging past NAME with an empty field still advances the
-                    // step, and finish() would persist userName = "" (every voiced string falls
-                    // back to "campeón" forever, exactly what 7e exists to prevent).
-                    userScrollEnabled = step != OnboardingStep.NAME || state.name.trim().isNotEmpty(),
                 ) { page ->
                     var entered by remember { mutableStateOf(false) }
                     val fade by
@@ -635,7 +669,12 @@ private fun PagerDots(
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
         repeat(total) { i ->
             val active = i == activeIndex
-            val width by animateDpAsState(targetValue = if (active) 22.dp else 8.dp, animationSpec = tween(150), label = "onb-dot-width")
+            val width by
+                animateDpAsState(
+                    targetValue = if (active) 22.dp else 8.dp,
+                    animationSpec = tween(150, easing = LinearOutSlowInEasing),
+                    label = "onb-dot-width",
+                )
             Box(
                 Modifier
                     .size(width = width, height = 8.dp)

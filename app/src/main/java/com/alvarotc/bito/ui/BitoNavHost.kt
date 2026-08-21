@@ -257,18 +257,27 @@ fun BitoNavHost(container: AppContainer) {
 
         // T12: the two global celebration sheets, overlaid above the NavHost everywhere except
         // the `review` route — E2's SealedDayContent already owns that beat there (its own
-        // LaunchedEffect fires the cue and marks it celebrated). The perfect day always wins
-        // first: dismissing it re-evaluates this `when`, and the badge sheet (if any) follows.
+        // LaunchedEffect fires the cue and marks it celebrated) — and the `onboarding` route,
+        // where a sheet popping up over the first-run flow would be jarring and the celebration
+        // hasn't been "seen" by a real user yet. Suppressed on BOTH the sheet and the cue below:
+        // cueing is idempotent per pending sheet ([CelebrationsViewModel.cue]'s own
+        // `lastCuedSignature` latch), so cueing it once here while hidden would mean it never
+        // cues again once the sheet actually shows on Today — the sound would fire silently
+        // behind onboarding and the sheet would then render mute. Suppressing both instead keeps
+        // the celebration genuinely pending: it shows AND cues the first time it's actually seen,
+        // right after onboarding hands off to "today". The perfect day always wins first:
+        // dismissing it re-evaluates this `when`, and the badge sheet (if any) follows.
         val celebrations: CelebrationsViewModel = viewModel(factory = CelebrationsViewModel.factory(container))
         val cState by celebrations.uiState.collectAsStateWithLifecycle()
-        if (currentRoute != "review") {
+        val celebrationsSuppressed = currentRoute == "review" || currentRoute == "onboarding"
+        if (!celebrationsSuppressed) {
             when {
                 cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
                 cState.newBadges.isNotEmpty() -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
             }
         }
         LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute) {
-            if (currentRoute != "review" && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
+            if (!celebrationsSuppressed && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
                 celebrations.cue()
             }
         }

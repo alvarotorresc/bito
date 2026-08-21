@@ -239,6 +239,58 @@ class BitoNavHostTest {
         compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
     }
 
+    /**
+     * The onboarding half of the `currentRoute != "review"` guard's sibling check (see
+     * [com.alvarotc.bito.ui.BitoNavHost]'s own comment on that `if`). Deliberately NOT a bare
+     * absence assertion during onboarding — [CelebrationsUiState] combines off a real dispatcher
+     * (same hazard "a pending perfect day shows the sheet on today but not on the review route"
+     * documents above), so an absence check alone would pass just as well with a broken guard,
+     * proving nothing. Walking the real flow to completion and then WAITING for the sheet to
+     * appear is what forces that emission and proves the celebration stayed genuinely pending
+     * rather than being lost — the exact behavior the M9 finding asked for: "celebrations stay
+     * pending and fire after landing on Today".
+     */
+    @Test
+    fun `a pending perfect day stays hidden behind onboarding and shows once today loads`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { seedPerfectDayToday(container) }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick() // blank habit name still finishes
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+    }
+
     @Test
     fun `a fresh install opens on the onboarding route, not today`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
