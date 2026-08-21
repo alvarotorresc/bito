@@ -46,6 +46,9 @@
     <string name="form_title_new">New habit</string>
     <string name="form_title_edit">Edit habit</string>
     <string name="habi_form_prompt">What habit are we building? Name it and pick its shape — everything else can wait.</string>
+    <string name="habi_form_prompt_sargento">New habit. Name and shape — the rest can wait.</string>
+    <string name="habi_form_prompt_cheerleader">A new habit! Name it, shape it, and let\'s go.</string>
+    <string name="habi_form_prompt_neutra">What habit are we building? Name it and pick its shape — everything else can wait.</string>
     <string name="habi_speaker" translatable="false">HABI · %1$s</string>
     <string name="personality_neutra">NEUTRAL</string>
     <string name="personality_sargento">SERGEANT</string>

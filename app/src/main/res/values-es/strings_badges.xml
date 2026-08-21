@@ -2,10 +2,9 @@
 <resources>
     <!--
         Nombres de logros, condición de desbloqueo y etiquetas de familia (docs/06-badges.md §2,
-        T8) — copia PROVISIONAL, la definitiva llega en la sesión de economía/copy de M9. El
-        catálogo de 14 ids vive en domain/model/Badge.kt (BadgeCatalog); este fichero solo aporta
-        la presentación en ui/, que se mantiene libre de ids de recursos Android
-        (ui/stats/BadgeStrings.kt mapea id -> recurso).
+        T8) — M9 draft copy — pending architect validation (docs/07). El catálogo de 14 ids vive en
+        domain/model/Badge.kt (BadgeCatalog); este fichero solo aporta la presentación en ui/, que
+        se mantiene libre de ids de recursos Android (ui/stats/BadgeStrings.kt mapea id -> recurso).
         badge_name_* — el nombre propio del badge, la personalidad nunca lo cambia.
         badge_how_*  — la condición de desbloqueo, se enchufa en badge_how_prefix ("se gana con: …").
         badge_family_* — las tres etiquetas de familia por las que agrupa la lista de Logros.

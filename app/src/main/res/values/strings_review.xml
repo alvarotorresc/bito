@@ -2,9 +2,9 @@
 <resources>
     <!--
         The E1 daily review, E2 sealed/perfect-day sheets and the celebration setting (T8) —
-        PROVISIONAL copy, definitive wording lands in the M9 economy/copy session. Habi's own
-        voiced lines for these contexts live in strings_habi.xml (habi_review_*, habi_sealed_*,
-        habi_perfect_*), not here — this file holds the review screen's plain UI strings.
+        M9 draft copy — pending architect validation (docs/07). Habi's own voiced lines for these
+        contexts live in strings_habi.xml (habi_review_*, habi_sealed_*, habi_perfect_*), not
+        here — this file holds the review screen's plain UI strings.
     -->
     <string name="review_title">Day review</string>
     <plurals name="review_remaining">
@@ -21,8 +21,8 @@
     <string name="review_perfect_title">Perfect day!</string>
     <string name="review_points_today" translatable="false">+%1$d pts</string>
     <plurals name="review_streaks_advanced">
-        <item quantity="one">%1$d streak moved on</item>
-        <item quantity="other">%1$d streaks moved on</item>
+        <item quantity="one">%1$d streak advanced</item>
+        <item quantity="other">%1$d streaks advanced</item>
     </plurals>
     <string name="review_until_tomorrow">See you tomorrow</string>
     <string name="review_new_badges">New badges</string>
