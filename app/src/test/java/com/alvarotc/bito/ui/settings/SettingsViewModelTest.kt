@@ -198,6 +198,33 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `setLanguage persists the tag`() =
+        runTest {
+            advanceUntilIdle()
+            assertNull(vm.state.value?.languageTag)
+
+            vm.setLanguage("es")
+            advanceUntilIdle()
+
+            assertEquals("es", vm.state.value?.languageTag)
+        }
+
+    @Test
+    fun `setLanguage null clears back to system`() =
+        runTest {
+            advanceUntilIdle()
+
+            vm.setLanguage("en")
+            advanceUntilIdle()
+            assertEquals("en", vm.state.value?.languageTag)
+
+            vm.setLanguage(null)
+            advanceUntilIdle()
+
+            assertNull(vm.state.value?.languageTag)
+        }
+
+    @Test
     fun `archivedHabits starts empty and is empty until a habit is archived`() =
         runTest {
             val habits = HabitsRepository(db)

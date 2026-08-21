@@ -253,8 +253,13 @@ fun SettingsScreen(
                     },
                 )
                 HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
+                GeneralSectionCard(
+                    languageTag = current.languageTag,
+                    onSetLanguage = settingsViewModel::setLanguage,
+                    archivedCount = archivedHabits.size,
+                    onOpenArchived = onOpenArchived,
+                )
             }
-            GeneralSectionCard(archivedCount = archivedHabits.size, onOpenArchived = onOpenArchived)
             BackupsCard(
                 state = backupState,
                 onPickFolder = { folderLauncher.launch(null) },
@@ -483,17 +488,47 @@ private fun HabiSectionCard(
     }
 }
 
-/** Hidden outright when there is nothing archived — a group with a single, sometimes-absent row. */
+/**
+ * Language always shows (system → es → en → system, same cycling-row idiom as [BackupsCard]'s
+ * frequency row); the archived-habits row underneath is the one sometimes-absent line, hidden
+ * outright when there is nothing archived.
+ */
 @Composable
 private fun GeneralSectionCard(
+    languageTag: String?,
+    onSetLanguage: (String?) -> Unit,
     archivedCount: Int,
     onOpenArchived: () -> Unit,
 ) {
-    if (archivedCount == 0) return
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.general_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
-        SettingsRow(label = pluralStringResource(R.plurals.archived_habits_row, archivedCount, archivedCount), onClick = onOpenArchived)
+        SettingsRow(
+            label = stringResource(R.string.language_row),
+            value =
+                stringResource(
+                    when (languageTag) {
+                        "es" -> R.string.language_spanish
+                        "en" -> R.string.language_english
+                        else -> R.string.language_system
+                    },
+                ),
+            onClick = {
+                // A backup restore can carry a tag outside {es, en} (locales_config only declares
+                // those two) — any unrecognized tag falls into the same `else` as null, so tapping
+                // it resets to "follow the system" rather than getting stuck on an unknown value.
+                onSetLanguage(
+                    when (languageTag) {
+                        null -> "es"
+                        "es" -> "en"
+                        else -> null
+                    },
+                )
+            },
+        )
+        if (archivedCount > 0) {
+            SettingsRow(label = pluralStringResource(R.plurals.archived_habits_row, archivedCount, archivedCount), onClick = onOpenArchived)
+        }
     }
 }
 

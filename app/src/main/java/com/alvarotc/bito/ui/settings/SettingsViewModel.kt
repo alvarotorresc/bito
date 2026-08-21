@@ -71,6 +71,12 @@ class SettingsViewModel(
 
     fun setPerfectDayCelebration(enabled: Boolean) = write { it.copy(perfectDayCelebration = enabled) }
 
+    /** null → follow the system. DataStore stays the source of truth (and what travels in backups); AppLocale only applies it. */
+    fun setLanguage(tag: String?) {
+        write { it.copy(languageTag = tag) }
+        AppLocale.apply(tag)
+    }
+
     private fun write(transform: (Settings) -> Settings) {
         viewModelScope.launch { settings.update(transform) }
     }
