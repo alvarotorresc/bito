@@ -89,7 +89,7 @@
         <item quantity="many">últimas %1$d copias</item>
         <item quantity="other">últimas %1$d copias</item>
     </plurals>
-    <string name="backup_now">Hacer copia ahora</string>
+    <string name="backup_now">Hacer backup ahora</string>
     <string name="backup_restore">Restaurar</string>
     <string name="backup_export_manual">Exportar copia…</string>
     <string name="backup_last_ok">Último backup: %1$s</string>

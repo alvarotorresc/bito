@@ -543,7 +543,7 @@ private fun BackupsCard(
             )
             SettingsRow(
                 label = stringResource(R.string.backup_keep),
-                value = pluralStringResource(R.plurals.backup_keep_value, state.copies, state.copies),
+                annotatedValue = coloredKeepValue(pluralStringResource(R.plurals.backup_keep_value, state.copies), state.copies),
                 onClick = { showCopiesSheet = true },
             )
         }
@@ -767,6 +767,22 @@ private fun coloredFolderLine(
         append(parts.getOrElse(1) { "" })
     }
 
+/**
+ * Same idea as [coloredFolderLine], for a template with a single "%1$d" count placeholder instead
+ * of a "%2$s" folder one — the "Conservar" row's "last N copies" value, colored the same way the
+ * status chip's count already is.
+ */
+private fun coloredKeepValue(
+    template: String,
+    count: Int,
+): AnnotatedString =
+    buildAnnotatedString {
+        val parts = template.split("%1\$d")
+        append(parts.getOrElse(0) { "" })
+        withStyle(SpanStyle(color = Tinta)) { append(count.toString()) }
+        append(parts.getOrElse(1) { "" })
+    }
+
 /** Non-destructive by design (tech doc 5.2): old encrypted backups stay readable with their own passphrase. */
 @Composable
 private fun EncryptionOffConfirmDialog(
@@ -959,12 +975,18 @@ private fun CopiesSheet(
     }
 }
 
-/** Generalized from the old BackupRow: any tappable settings line, with an optional icon, value and trailing chevron. */
+/**
+ * Generalized from the old BackupRow: any tappable settings line, with an optional icon, value and
+ * trailing chevron. [annotatedValue] renders instead of [value] when present — the "Conservar" row
+ * uses it to color just the copies count, matching the mockup (plain [value] stays TintaSuave
+ * throughout, which is all every other row needs).
+ */
 @Composable
 private fun SettingsRow(
     icon: ImageVector? = null,
     label: String,
     value: String? = null,
+    annotatedValue: AnnotatedString? = null,
     trailingChevron: Boolean = false,
     onClick: () -> Unit,
 ) {
@@ -980,7 +1002,9 @@ private fun SettingsRow(
             Icon(icon, contentDescription = null, tint = Hoja, modifier = Modifier.size(24.dp))
         }
         Text(label, style = MaterialTheme.typography.bodyLarge, color = Tinta, modifier = Modifier.weight(1f))
-        if (value != null) {
+        if (annotatedValue != null) {
+            Text(annotatedValue, style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+        } else if (value != null) {
             Text(value, style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
         }
         if (trailingChevron) {
