@@ -1,22 +1,28 @@
 package com.alvarotc.bito.ui.onboarding
 
 import android.content.Context
+import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.R
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -163,8 +169,7 @@ class OnboardingScreenTest {
         compose.waitForIdle()
 
         assertEquals(OnboardingStep.NAME, vm.uiState.value.step)
-        // T7 owns the real 7e content — until then the step renders as a bare placeholder.
-        compose.onNodeWithText("NAME", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("I've been through this. Now it's your turn.", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -186,5 +191,79 @@ class OnboardingScreenTest {
         vm.skipStory() // STORY_1 -> NAME
         compose.waitForIdle()
         compose.onNodeWithText("Skip", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the name step gates continue until a name is typed`() {
+        val vm = newViewModel("onboarding-screen-name-gate")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        vm.skipStory() // -> NAME
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).assertIsNotEnabled()
+
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).assertIsEnabled()
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        assertEquals(OnboardingStep.PERSONALITY, vm.uiState.value.step)
+    }
+
+    @Test
+    fun `typing a name makes habi react`() {
+        val vm = newViewModel("onboarding-screen-name-reaction")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        vm.skipStory() // -> NAME
+        compose.waitForIdle()
+
+        compose.onNodeWithText("I like it. We're going to do great things.", substring = true, useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val reaction = context.getString(R.string.onb_name_reaction, "Alvaro")
+        compose.onNodeWithText(reaction, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `picking a personality changes the live bubble voice`() {
+        val vm = newViewModel("onboarding-screen-personality-voice")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        vm.setName("Alvaro")
+        vm.skipStory() // -> NAME
+        compose.waitForIdle()
+        vm.next() // NAME -> PERSONALITY
+        compose.waitForIdle()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val neutraGreeting = context.getString(R.string.habi_greeting_neutra_normal, "Alvaro")
+        compose.onNodeWithText(neutraGreeting, useUnmergedTree = true).assertExists()
+
+        compose.onNodeWithTag("onb-personality-card-sargento", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        val sargentoGreeting = context.getString(R.string.habi_greeting_sargento_normal, "Alvaro")
+        compose.onNodeWithText(neutraGreeting, useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText(sargentoGreeting, useUnmergedTree = true).assertExists()
+        assertEquals(Personality.SARGENTO, vm.uiState.value.personality)
     }
 }

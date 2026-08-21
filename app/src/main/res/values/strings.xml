@@ -184,4 +184,14 @@
     <string name="onb_story2_title">Habi wanted to change, but didn\'t know where to start</string>
     <string name="onb_story3_title">Until Habi found a system</string>
     <string name="onb_story3_sub">Small steps, every day. It changed everything.</string>
+    <string name="onb_continue">Continue</string>
+    <string name="onb_name_title">I\'ve been through this. Now it\'s your turn.</string>
+    <string name="onb_name_question">What\'s your name?</string>
+    <string name="onb_name_hint">Your name</string>
+    <!-- The speaker label on 7e's bubble — no personality is chosen yet, so it's plain "HABI",
+         not the "HABI · <personality>" shape habi_speaker composes elsewhere. -->
+    <string name="onb_name_speaker" translatable="false">HABI</string>
+    <string name="onb_name_reaction">%1$s! I like it. We\'re going to do great things.</string>
+    <string name="onb_personality_title">Choose Habi\'s personality</string>
+    <string name="onb_personality_hint">you can change it anytime</string>
 </resources>

@@ -15,14 +15,19 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,9 +36,12 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,9 +50,12 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.PillButton
+import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
@@ -86,10 +97,12 @@ fun OnboardingScreen(viewModel: OnboardingViewModel) {
         )
     } else {
         StoryPagerScaffold(
-            step = state.step,
+            state = state,
             onNext = viewModel::next,
             onBack = viewModel::back,
             onSkip = viewModel::skipStory,
+            onSetName = viewModel::setName,
+            onSetPersonality = viewModel::setPersonality,
         )
     }
 }
@@ -211,14 +224,23 @@ private fun LanguageChip(
  * explicit in the code rather than leaning on the coincidence: the collector body is then only ever
  * reasoning about a LATER, genuine change to `settledPage` — i.e. an actual swipe — not about
  * whether the first one happens to be harmless.
+ *
+ * The persistent "Seguir" pill (mockups 7e/7f) lives HERE, below [PagerDots], not inside either
+ * step's own content — both mockups pin it to the very bottom of the screen, under the dots, so it
+ * has to sit outside the swipeable pager cell. NAME gates it on a non-blank trimmed name;
+ * PERSONALITY has nothing to gate (a personality is always selected, defaulting to NEUTRA) so it's
+ * always enabled. FIRST_HABIT keeps no button here — T8 owns that step's own "Crear y empezar".
  */
 @Composable
 private fun StoryPagerScaffold(
-    step: OnboardingStep,
+    state: OnboardingUiState,
     onNext: () -> Unit,
     onBack: () -> Unit,
     onSkip: () -> Unit,
+    onSetName: (String) -> Unit,
+    onSetPersonality: (Personality) -> Unit,
 ) {
+    val step = state.step
     val pageIndex = PAGER_STEPS.indexOf(step).coerceAtLeast(0)
 
     Column(Modifier.fillMaxSize().background(Papel)) {
@@ -241,7 +263,7 @@ private fun StoryPagerScaffold(
                     }
                 }
                 HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
-                    StoryPageContent(PAGER_STEPS[page])
+                    StoryPageContent(PAGER_STEPS[page], state, onSetName, onSetPersonality)
                 }
             }
         }
@@ -250,11 +272,32 @@ private fun StoryPagerScaffold(
             activeIndex = pageIndex,
             modifier = Modifier.align(Alignment.CenterHorizontally).padding(vertical = 20.dp),
         )
+        when (step) {
+            OnboardingStep.NAME ->
+                PillButton(
+                    text = stringResource(R.string.onb_continue),
+                    onClick = onNext,
+                    enabled = state.name.trim().isNotEmpty(),
+                    modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp).testTag("onb-continue"),
+                )
+            OnboardingStep.PERSONALITY ->
+                PillButton(
+                    text = stringResource(R.string.onb_continue),
+                    onClick = onNext,
+                    modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp).testTag("onb-continue"),
+                )
+            else -> {}
+        }
     }
 }
 
 @Composable
-private fun StoryPageContent(step: OnboardingStep) {
+private fun StoryPageContent(
+    step: OnboardingStep,
+    state: OnboardingUiState,
+    onSetName: (String) -> Unit,
+    onSetPersonality: (Personality) -> Unit,
+) {
     when (step) {
         in STORY_STEPS ->
             Column(
@@ -280,12 +323,196 @@ private fun StoryPageContent(step: OnboardingStep) {
                     )
                 }
             }
-        // T7 (NAME/PERSONALITY) and T8 (FIRST_HABIT) own the real content of these steps — a bare
-        // placeholder keeps the pager chrome (dots, skip gating) honest until then.
+        OnboardingStep.NAME -> NameStepContent(name = state.name, onNameChange = onSetName)
+        OnboardingStep.PERSONALITY ->
+            PersonalityStepContent(
+                name = state.name,
+                personality = state.personality,
+                onSelect = onSetPersonality,
+            )
+        // T8 owns FIRST_HABIT's real content — a bare placeholder keeps the pager chrome (dots,
+        // skip gating) honest until then.
         else ->
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(step.name, style = MaterialTheme.typography.titleMedium, color = Tinta)
             }
+    }
+}
+
+/** 138dp/98dp keeps the same ~1.4 tint-circle-to-avatar ratio [WelcomeScene]'s own hero uses. */
+private val HABI_HERO_CIRCLE_SIZE = 138.dp
+private val HABI_HERO_AVATAR_SIZE = 98.dp
+private val HABI_MINI_AVATAR_SIZE = 40.dp
+
+/** The tinted-circle Habi hero shared by the NAME and PERSONALITY steps — same shape as [WelcomeScene]'s, just smaller and mood/personality-aware. */
+@Composable
+private fun HabiHeroCircle(
+    personality: Personality,
+    modifier: Modifier = Modifier,
+) {
+    Box(modifier.size(HABI_HERO_CIRCLE_SIZE).clip(CircleShape).background(HojaTinte), contentAlignment = Alignment.Center) {
+        HabiAvatar(
+            spec = HabiSpec(Mood.NORMAL, personality, EquippedSet()),
+            modifier = Modifier.size(HABI_HERO_AVATAR_SIZE),
+            // A genuinely fresh onboarding Habi has no data behind it yet — MoodEngine's own
+            // fallback for "no decided periods" is NORMAL (see [com.alvarotc.bito.domain.MoodEngine]),
+            // never RADIANT/WILTED/DRAMATIC, all of which claim real history that doesn't exist yet.
+            animated = false,
+        )
+    }
+}
+
+/** Transparent M3 [TextField] colors so the wrapping [BitoCard] reads as the field's only surface — same idiom as [com.alvarotc.bito.ui.habitform.HabitFormScreen]'s `NameField`. */
+@Composable
+private fun onboardingFieldColors() =
+    TextFieldDefaults.colors(
+        focusedContainerColor = Color.Transparent,
+        unfocusedContainerColor = Color.Transparent,
+        disabledContainerColor = Color.Transparent,
+        focusedIndicatorColor = Color.Transparent,
+        unfocusedIndicatorColor = Color.Transparent,
+        disabledIndicatorColor = Color.Transparent,
+        cursorColor = Hoja,
+    )
+
+/**
+ * 7e: Habi hero, headline, name field, and — only once the trimmed name is non-empty — Habi's
+ * reaction bubble, voiced NEUTRA ([R.string.onb_name_reaction]; no personality is picked yet).
+ */
+@Composable
+private fun NameStepContent(
+    name: String,
+    onNameChange: (String) -> Unit,
+) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(8.dp))
+        HabiHeroCircle(personality = Personality.NEUTRA)
+        Spacer(Modifier.height(20.dp))
+        Text(
+            stringResource(R.string.onb_name_title),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+            color = Tinta,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(28.dp))
+        Text(
+            stringResource(R.string.onb_name_question),
+            style = MaterialTheme.typography.labelMedium,
+            color = TintaSuave,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+        BitoCard(modifier = Modifier.fillMaxWidth()) {
+            TextField(
+                value = name,
+                onValueChange = onNameChange,
+                modifier = Modifier.fillMaxWidth().testTag("onb-name-field"),
+                placeholder = { Text(stringResource(R.string.onb_name_hint), color = TintaSuave) },
+                textStyle = MaterialTheme.typography.titleMedium.copy(color = Tinta, fontWeight = FontWeight.Bold),
+                colors = onboardingFieldColors(),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Words),
+            )
+        }
+        val trimmedName = name.trim()
+        if (trimmedName.isNotEmpty()) {
+            Spacer(Modifier.height(16.dp))
+            SpeechBubble(
+                speaker = stringResource(R.string.onb_name_speaker),
+                text = stringResource(R.string.onb_name_reaction, trimmedName),
+                modifier = Modifier.fillMaxWidth().testTag("onb-name-reaction"),
+            )
+        }
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+/**
+ * 7f: headline, big Habi wearing the SELECTED personality's face, a live bubble speaking that
+ * personality's own voice ([HabiVoice.greetingRes] at [Mood.NORMAL] — a fresh Habi has no data
+ * behind it yet, same reasoning as [HabiHeroCircle]) with the user's name interpolated, then the
+ * three personality cards (mini-Habi + label each), selectable, hoja-bordered when active.
+ */
+@Composable
+private fun PersonalityStepContent(
+    name: String,
+    personality: Personality,
+    onSelect: (Personality) -> Unit,
+) {
+    Column(
+        Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.onb_personality_title),
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold, fontSize = 20.sp),
+            color = Tinta,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(16.dp))
+        HabiHeroCircle(personality = personality)
+        Spacer(Modifier.height(16.dp))
+        val fallbackName = stringResource(R.string.habi_name_fallback)
+        SpeechBubble(
+            speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
+            text = stringResource(HabiVoice.greetingRes(Mood.NORMAL, personality), name.trim().ifEmpty { fallbackName }),
+            modifier = Modifier.fillMaxWidth().testTag("onb-personality-bubble"),
+        )
+        Spacer(Modifier.height(20.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            Personality.entries.forEach { option ->
+                PersonalityCard(
+                    personality = option,
+                    selected = option == personality,
+                    onClick = { onSelect(option) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        Spacer(Modifier.height(16.dp))
+        Text(
+            stringResource(R.string.onb_personality_hint),
+            style = MaterialTheme.typography.labelMedium,
+            color = TintaSuave,
+            textAlign = TextAlign.Center,
+        )
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+@Composable
+private fun PersonalityCard(
+    personality: Personality,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .clip(RoundedCornerShape(20.dp))
+            .background(Tarjeta)
+            .border(1.dp, if (selected) Hoja else Borde, RoundedCornerShape(20.dp))
+            .selectable(selected = selected, onClick = onClick)
+            .testTag("onb-personality-card-${personality.name.lowercase(Locale.ROOT)}")
+            .padding(vertical = 16.dp, horizontal = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        HabiAvatar(
+            spec = HabiSpec(Mood.NORMAL, personality, EquippedSet()),
+            modifier = Modifier.size(HABI_MINI_AVATAR_SIZE),
+            animated = false,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(HabiVoice.labelRes(personality)),
+            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold, fontSize = 13.sp),
+            color = Tinta,
+            textAlign = TextAlign.Center,
+        )
     }
 }
 

@@ -181,4 +181,11 @@
     <string name="onb_story2_title">Quería cambiar, pero no sabía por dónde empezar</string>
     <string name="onb_story3_title">Hasta que encontró un sistema</string>
     <string name="onb_story3_sub">Pequeños pasos, cada día. Le cambió la vida.</string>
+    <string name="onb_continue">Seguir</string>
+    <string name="onb_name_title">Yo ya pasé por esto. Ahora te toca a ti.</string>
+    <string name="onb_name_question">¿Cómo te llamas?</string>
+    <string name="onb_name_hint">Tu nombre</string>
+    <string name="onb_name_reaction">¡%1$s! Me gusta. Vamos a hacer grandes cosas.</string>
+    <string name="onb_personality_title">Elige la personalidad de Habi</string>
+    <string name="onb_personality_hint">puedes cambiarla cuando quieras</string>
 </resources>
