@@ -476,6 +476,12 @@ class BackupViewModelTest {
             advanceUntilIdle()
             assertTrue(state().askImportPassphrase)
 
+            // Diverge the two fixtures: the encrypted one above was built with 1 habit, so a
+            // stale decrypt of it would surface a 1-habit preview distinguishable from the
+            // 2-habit plain preview built below — otherwise both previews would coincidentally
+            // match and this test couldn't tell a stale decrypt from a correct one.
+            db.habitDao().upsert(habitEntity(id = "h2"))
+
             // Load a different, unencrypted file without dismissing the passphrase sheet first.
             val plainUri = Uri.parse("content://bito/stale-plain.bito")
             shadowOf(resolver).registerInputStream(plainUri, ByteArrayInputStream(backup.exportJson(fixedNow).toByteArray()))
@@ -485,6 +491,9 @@ class BackupViewModelTest {
             val afterPlainLoad = state()
             assertFalse(afterPlainLoad.askImportPassphrase)
             assertNotNull(afterPlainLoad.preview)
+            // States the divergence the h2 seed above exists for: a stale decrypt of the
+            // encrypted fixture would show 1 habit, not 2.
+            assertEquals(2, afterPlainLoad.preview!!.habits)
 
             // The stale encrypted bytes must be gone: submitting the old passphrase is now a
             // no-op that leaves the plain file's preview untouched, but still wipes its CharArray.

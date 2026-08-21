@@ -129,6 +129,37 @@ class BackupCryptoTest {
         }
     }
 
+    // The container is a long-lived, cross-device on-disk contract — only the magic's offset was
+    // pinned before this test, so a consistent shift of every other field would still pass every
+    // round-trip test. This asserts the literal byte layout instead of just round-tripping it.
+    @Test
+    fun `container layout matches the fixed byte offsets`() {
+        val salt = ByteArray(16) { it.toByte() }
+        val derived = BackupCrypto.deriveKey(passphrase, salt, fastParams)
+        val json = """{"schemaVersion":3,"habits":[]}"""
+
+        val container = BackupCrypto.encrypt(json, derived)
+
+        assertEquals("BITO1", container.copyOfRange(0, 5).toString(Charsets.US_ASCII))
+        assertEquals(1, container[5].toInt())
+        assertContentEquals(salt, container.copyOfRange(6, 22))
+        assertContentEquals(intBytes(fastParams.memoryKib), container.copyOfRange(22, 26))
+        assertContentEquals(intBytes(fastParams.iterations), container.copyOfRange(26, 30))
+        assertContentEquals(intBytes(fastParams.parallelism), container.copyOfRange(30, 34))
+        // [34..45] is the 12-byte random nonce — not asserted here — so the ciphertext (plaintext
+        // + 16-byte GCM tag) starts at 46.
+        val plaintextSize = json.toByteArray(Charsets.UTF_8).size
+        assertEquals(46 + plaintextSize + 16, container.size)
+    }
+
+    private fun intBytes(value: Int): ByteArray =
+        byteArrayOf(
+            (value ushr 24).toByte(),
+            (value ushr 16).toByte(),
+            (value ushr 8).toByte(),
+            value.toByte(),
+        )
+
     @Test
     fun `deriveKey is deterministic for same salt and params`() {
         val salt = BackupCrypto.newSalt()
