@@ -75,6 +75,7 @@ dependencies {
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.reorderable)
     implementation(libs.bouncycastle)
+    implementation(libs.androidx.documentfile)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.robolectric)
