@@ -121,13 +121,20 @@ private fun CheckBody(
                 StreakChip(card.streak)
             }
             Spacer(Modifier.weight(1f))
+            val doneLabel =
+                if (card.doneToday) {
+                    stringResource(R.string.unmark_done_action, card.name)
+                } else {
+                    stringResource(R.string.mark_done_action, card.name)
+                }
             Box(
                 Modifier
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(if (card.doneToday) Hoja else HojaTinte)
                     .testTag("primary-${card.id}")
-                    .clickable(onClick = onPrimary),
+                    .clickable(onClick = onPrimary)
+                    .semantics { contentDescription = doneLabel },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -207,13 +214,20 @@ private fun CounterBody(
                 }
             }
             Spacer(Modifier.width(12.dp))
+            val addLabel = stringResource(R.string.add_step_action, card.step, card.name)
+            val exactLabel = stringResource(R.string.exact_value_action)
             Box(
                 Modifier
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(HojaTinte)
                     .testTag("primary-${card.id}")
-                    .combinedClickable(onClick = onPrimary, onLongClick = onExact),
+                    // onLongClickLabel: the exact-value sheet is also reachable behind this long
+                    // press, but a plain unlabeled ACTION_LONG_CLICK reads as nothing useful in
+                    // TalkBack's actions menu — this names the entry without duplicating it via a
+                    // second custom action.
+                    .combinedClickable(onClick = onPrimary, onLongClick = onExact, onLongClickLabel = exactLabel)
+                    .semantics { contentDescription = addLabel },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(BitoIcons.Plus, contentDescription = null, tint = Hoja)
@@ -250,11 +264,21 @@ private fun DurationBody(
         Spacer(Modifier.height(8.dp))
         // Padding sits after combinedClickable so it grows the tap/long-press target without
         // inflating the bar's own visual height (RoundedBar stays 10dp, drawn by GUIA).
+        // No standalone contentDescription here on purpose: this bar duplicates the card's own
+        // "Open X" action (HabitCard's own semantics, line 68 above) — onClickLabel names the
+        // click action without giving this node a second, redundant identity next to the card's.
+        // onLongClickLabel names the exact-value sheet hiding behind the long press the same way
+        // CounterBody's primary does.
         Box(
             Modifier
                 .fillMaxWidth()
                 .testTag("bar-${card.id}")
-                .combinedClickable(onClick = onOpen, onLongClick = onExact)
+                .combinedClickable(
+                    onClick = onOpen,
+                    onClickLabel = stringResource(R.string.open_habit_hint, card.name),
+                    onLongClick = onExact,
+                    onLongClickLabel = stringResource(R.string.exact_value_action),
+                )
                 .padding(vertical = 12.dp),
         ) {
             RoundedBar(

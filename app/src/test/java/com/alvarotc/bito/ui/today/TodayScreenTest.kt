@@ -1,7 +1,11 @@
 package com.alvarotc.bito.ui.today
 
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -195,6 +199,27 @@ class TodayScreenTest {
     }
 
     @Test
+    fun `the CHECK primary announces a mark-done action, then an undo action once logged`() {
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Mark Cama as done")
+
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Marked Cama as done, tap to undo")
+    }
+
+    @Test
+    fun `the COUNTER primary announces the step it adds, and offers a labeled long-press into the exact-value sheet`() {
+        compose.onNodeWithTag("primary-agua", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Add 1 to Agua")
+
+        val node = compose.onNodeWithTag("primary-agua", useUnmergedTree = true).fetchSemanticsNode()
+        assertEquals("Type the exact total", node.config[SemanticsActions.OnLongClick].label)
+    }
+
+    @Test
     fun `tapping the duration bar opens the habit detail instead of swallowing the tap`() {
         runBlocking {
             HabitsRepository(db).create(
@@ -217,6 +242,28 @@ class TodayScreenTest {
         assertEquals("lectura", openedId)
         val entries = runBlocking { db.entryDao().all().filter { it.habitId == "lectura" } }
         assertTrue(entries.isEmpty())
+    }
+
+    @Test
+    fun `the duration bar advertises open-habit and exact-value action labels instead of a bare button`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "lectura",
+                    name = "Lectura",
+                    metric = Metric.DURATION,
+                    target = 30,
+                    unit = "min",
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        val node = compose.onNodeWithTag("bar-lectura", useUnmergedTree = true).fetchSemanticsNode()
+        assertEquals("Open Lectura", node.config[SemanticsActions.OnClick].label)
+        assertEquals("Type the exact total", node.config[SemanticsActions.OnLongClick].label)
     }
 
     @Test
@@ -282,6 +329,11 @@ class TodayScreenTest {
 
         compose.onNodeWithTag("card-yoga", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Paused", useUnmergedTree = true).assertExists()
+        // A row reached by jumping straight to it (list navigation) only ever speaks its own
+        // merged node, past the section header above — stateDescription is what still says
+        // "Paused" from that row alone.
+        compose.onNodeWithTag("paused-yoga", useUnmergedTree = true)
+            .assert(hasStateDescription("Paused"))
         compose.onNodeWithTag("paused-yoga", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 

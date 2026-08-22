@@ -11,6 +11,9 @@
     <string name="week_progress">%1$d of %2$d this week</string>
     <string name="month_progress">%1$d of %2$d this month</string>
     <string name="limit_caption">max %1$s</string>
+    <!-- CHECK habit card's primary circle: TalkBack-only, toggle-aware (HabitCards.kt's CheckBody) -->
+    <string name="mark_done_action">Mark %1$s as done</string>
+    <string name="unmark_done_action">Marked %1$s as done, tap to undo</string>
     <string name="clean_today">clean today</string>
     <string name="relapse_today">relapse logged</string>
     <string name="relapse_action">I slipped</string>
@@ -19,6 +22,8 @@
     <string name="relapse_confirm_yes">Log relapse</string>
     <string name="cancel">Cancel</string>
     <string name="add_amount" translatable="false">+%1$d</string>
+    <!-- COUNTER habit card's primary circle: TalkBack-only action label (HabitCards.kt's CounterBody) -->
+    <string name="add_step_action">Add %1$d to %2$s</string>
     <string name="add_target">+goal</string>
     <string name="exact_value_title">Set today\'s total</string>
     <string name="exact_value_hint">Today\'s total</string>

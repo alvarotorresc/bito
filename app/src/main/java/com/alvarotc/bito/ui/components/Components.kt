@@ -9,7 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -54,6 +54,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -203,7 +204,17 @@ fun DotProgress(
     total: Int,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(
+        // Copies DayRing's own [D] pattern below: mergeDescendants = true is a no-op here (no
+        // dot carries its own semantics to fold in) but keeps this component consistent with
+        // the file's canonical progress-visualization shape, and the range info itself is real
+        // — every call site already shows the same numbers as adjacent Text, so this is
+        // robustness, not a fix for a value that is otherwise lost.
+        modifier.semantics(mergeDescendants = true) {
+            progressBarRangeInfo = ProgressBarRangeInfo(current = if (total == 0) 0f else filled.toFloat() / total, range = 0f..1f)
+        },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         repeat(total) { i ->
             key(i) {
                 AnimatedDot(filled = i < filled)
@@ -247,7 +258,15 @@ fun RoundedBar(
     modifier: Modifier = Modifier,
     color: Color = Hoja,
 ) {
-    Box(modifier.height(10.dp).clip(CircleShape).background(HojaTinte)) {
+    Box(
+        modifier
+            .height(10.dp)
+            .clip(CircleShape)
+            .background(HojaTinte)
+            .semantics(mergeDescendants = true) {
+                progressBarRangeInfo = ProgressBarRangeInfo(current = progress.coerceIn(0f, 1f), range = 0f..1f)
+            },
+    ) {
         Box(
             Modifier
                 .fillMaxHeight()
@@ -343,7 +362,11 @@ fun SegmentedPills(
                     .shadow(elevation = if (selected) 2.dp else 0.dp, shape = CircleShape, clip = false)
                     .clip(CircleShape)
                     .background(if (selected) Tarjeta else Color.Transparent)
-                    .clickable(enabled = enabled) { onSelect(i) }
+                    // selectable (not plain clickable), same canon as OnboardingScreen's
+                    // LanguageChip/PersonalityCard — announces which option is active instead of
+                    // every pill reading as a bare "<label>, Button". role = Tab: these are
+                    // segmented window/mode switches, not a single-choice radio group.
+                    .selectable(selected = selected, enabled = enabled, onClick = { onSelect(i) }, role = Role.Tab)
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {

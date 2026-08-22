@@ -3,6 +3,8 @@ package com.alvarotc.bito.ui
 import android.app.Application
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -167,6 +169,28 @@ class BitoNavHostTest {
         compose.waitForIdle()
 
         screenTitleNode("Today").assertExists()
+    }
+
+    @Test
+    fun `the current tab announces itself as selected, and switching updates which one does`() {
+        setContent()
+
+        compose
+            .onNode(hasContentDescription("Today") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsSelected()
+        compose
+            .onNode(hasContentDescription("Stats") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsNotSelected()
+
+        compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose
+            .onNode(hasContentDescription("Stats") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsSelected()
+        compose
+            .onNode(hasContentDescription("Today") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsNotSelected()
     }
 
     @Test

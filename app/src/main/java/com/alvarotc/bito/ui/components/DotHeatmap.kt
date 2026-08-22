@@ -21,10 +21,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.DayDot
 import com.alvarotc.bito.domain.HeatmapDay
 import com.alvarotc.bito.domain.model.LogicalDay
@@ -72,13 +76,21 @@ fun DotHeatmap(
     if (days.isEmpty()) return
     val leadingBlanks = (LocalDate.ofEpochDay(days.first().day.toLong()).dayOfWeek.value - 1).coerceIn(0, COLUMNS - 1)
     val cells: List<HeatmapDay?> = List(leadingBlanks) { null } + days
+    // [D]-rule: ONE aggregated description on the grid container, never per cell — this is what a
+    // screen-reader user hears landing on the whole grid ("how did this month go"), separate from
+    // each cell's own per-day description below (needed there for the tap target itself, not as a
+    // second data-viz summary).
+    val monthDescription = monthSummaryDescription(days)
     // 4dp: only the row-to-row gap, no effect on any single cell's own measured width/height —
     // the ≥46dp touch floor is entirely a function of the Row's 3dp inter-cell gap below, which
     // stays untouched (see that Row's own comment). Tightened from 6dp for the 2a mockup's denser
     // grid — cells still can't shrink below the touch floor, so ~22dp (dot-to-cell padding) is the
     // real floor on the visual gap regardless of this value; this is just the closest the two rows
     // of dots can be pulled without touching the cells themselves.
-    Column(modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Column(
+        modifier.semantics { contentDescription = monthDescription },
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         WeekdayHeaderRow()
         cells.chunked(COLUMNS).forEach { week ->
             // 3dp (not 4dp): part of the touch-floor fix — see HeatmapSection's comment in
@@ -117,16 +129,63 @@ private fun HeatmapCell(
 ) {
     // OFF marks a day outside the habit's life or in the future — never a valid tap target.
     val tappable = day != null && day.dot != DayDot.OFF
+    // Goes beyond the letter of the [D] aggregate rule above: each cell is also the only way to
+    // open the retroactive day-edit sheet, so — same as any other unlabeled clickable — it needs
+    // its own identity, not just a color a screen-reader user can't see. OFF cells (day != null
+    // but dot == OFF) stay undescribed, matching their non-tappable, decorative treatment.
+    val cellDescription = day?.let { dayCellDescription(it) }
     Box(
         modifier
             .aspectRatio(1f)
             .heightIn(min = 44.dp)
             .testTag(if (day != null) "heatmap-day-${day.day}" else "heatmap-blank")
-            .then(if (tappable) Modifier.clickable { onDayTap(day!!.day) } else Modifier),
+            .then(if (tappable) Modifier.clickable { onDayTap(day!!.day) } else Modifier)
+            .then(if (cellDescription != null) Modifier.semantics { contentDescription = cellDescription } else Modifier),
         contentAlignment = Alignment.Center,
     ) {
         if (day != null) DayDotGlyph(day)
     }
+}
+
+/** "<month> <day>, <state>" for one cell — null for OFF (outside the habit's life, or future). */
+@Composable
+private fun dayCellDescription(day: HeatmapDay): String? {
+    val stateLabel = dayStateLabel(day.dot) ?: return null
+    val dateLabel = formatDayWithPattern(day.day, stringResource(R.string.heatmap_day_pattern))
+    return stringResource(R.string.heatmap_day_cd, dateLabel, stateLabel)
+}
+
+/** The spoken state word for one [DayDot] — null for OFF, which carries no judgeable state. */
+@Composable
+private fun dayStateLabel(dot: DayDot): String? =
+    when (dot) {
+        DayDot.FULFILLED, DayDot.ACTIVITY -> stringResource(R.string.day_done)
+        DayDot.FAILED, DayDot.EMPTY -> stringResource(R.string.day_not_done)
+        DayDot.FROZEN -> stringResource(R.string.heatmap_day_frozen)
+        // Reuses the section-header string (TodayScreen's "Paused" list title) rather than
+        // minting a near-duplicate — same word, same meaning, one fewer string to keep in sync.
+        DayDot.PAUSED -> stringResource(R.string.paused_section_title)
+        DayDot.PENDING -> stringResource(R.string.heatmap_day_pending)
+        DayDot.OFF -> null
+    }
+
+/**
+ * One aggregated description for the whole visible month (the [D]-rule container summary, never
+ * per cell): "<month>: N done, N failed, N frozen, N paused of N days". OFF (outside the habit's
+ * life / future) and PENDING (today, not yet judged) days are excluded from every count and from
+ * the total — a screen-reader user wants "how did this month go so far", not the raw calendar
+ * cell count.
+ */
+@Composable
+private fun monthSummaryDescription(days: List<HeatmapDay>): String {
+    val monthLabel = formatDayWithPattern(days.first().day, stringResource(R.string.heatmap_month_pattern))
+    val counts = days.groupingBy { it.dot }.eachCount()
+    val done = (counts[DayDot.FULFILLED] ?: 0) + (counts[DayDot.ACTIVITY] ?: 0)
+    val failed = (counts[DayDot.FAILED] ?: 0) + (counts[DayDot.EMPTY] ?: 0)
+    val frozen = counts[DayDot.FROZEN] ?: 0
+    val paused = counts[DayDot.PAUSED] ?: 0
+    val total = done + failed + frozen + paused
+    return stringResource(R.string.heatmap_month_summary, monthLabel, done, failed, frozen, paused, total)
 }
 
 @Composable

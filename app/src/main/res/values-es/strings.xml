@@ -8,6 +8,8 @@
     <string name="week_progress">%1$d de %2$d esta semana</string>
     <string name="month_progress">%1$d de %2$d este mes</string>
     <string name="limit_caption">máx %1$s</string>
+    <string name="mark_done_action">Marcar %1$s como hecho</string>
+    <string name="unmark_done_action">%1$s marcado como hecho, toca para deshacer</string>
     <string name="clean_today">limpio hoy</string>
     <string name="relapse_today">recaída registrada</string>
     <string name="relapse_action">He recaído</string>
@@ -15,6 +17,7 @@
     <string name="relapse_confirm_body">La racha vuelve a empezar. Sin dramas — mañana cuenta de nuevo.</string>
     <string name="relapse_confirm_yes">Registrar recaída</string>
     <string name="cancel">Cancelar</string>
+    <string name="add_step_action">Añadir %1$d a %2$s</string>
     <string name="add_target">+objetivo</string>
     <string name="exact_value_title">Ajustar el total de hoy</string>
     <string name="exact_value_hint">Total de hoy</string>

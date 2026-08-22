@@ -37,6 +37,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -241,11 +243,18 @@ private fun PausedHabitRow(
     paused: PausedHabitUi,
     onOpen: () -> Unit,
 ) {
+    // The section header above spells out "Paused" once for the whole list — a user who jumps
+    // straight to a row via list navigation, past the header, would otherwise hear only the
+    // habit name. stateDescription (not a second contentDescription) keeps the spoken habit name
+    // itself intact while adding the state as a qualifier, same shape TalkBack already uses for
+    // Switch/Checkbox state. Reuses the section header's own string (no new key).
+    val pausedState = stringResource(R.string.paused_section_title)
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(onClick = onOpen)
+            .semantics { stateDescription = pausedState }
             .testTag("paused-${paused.id}"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

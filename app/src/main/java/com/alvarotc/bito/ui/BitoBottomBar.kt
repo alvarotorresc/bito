@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -22,6 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -80,11 +82,15 @@ fun BitoBottomBar(
 
 /**
  * One bottom-bar destination: icon 20dp + label 12sp stacked, active = a HojaTinte pill wrapping
- * both, inactive = plain TintaSuave icon+label with no container. The selected slot stays
- * non-interactive (no [Modifier.clickable]) exactly as before this restyle — only the visual
- * changed. [contentDescription] and the click action both land on this single container node (not
- * on the inner [Icon], whose own description is left null) so they keep resolving as one node,
- * same as the plain-glyph bar tests already depend on.
+ * both, inactive = plain TintaSuave icon+label with no container. [Modifier.selectable] (not plain
+ * `clickable`) is attached unconditionally, including on the already-selected slot — every
+ * [BitoBottomBar] callback (`onToday`/`onStats`/`onHabi`/`onSettings`) is idempotent when the
+ * target route is already current (`onToday` is a no-op `popBackStack`; the other three pass
+ * `launchSingleTop = true`), so re-firing `onClick` on the active tab pushes nothing new. This is
+ * what lets TalkBack announce the real "Tab, selected" state instead of the label alone.
+ * [contentDescription] and the click action both land on this single container node (not on the
+ * inner [Icon], whose own description is left null) so they keep resolving as one node, same as
+ * the plain-glyph bar tests already depend on.
  */
 @Composable
 private fun NavSlot(
@@ -96,9 +102,9 @@ private fun NavSlot(
     val tint = if (selected) Tinta else TintaSuave
     val base =
         Modifier
+            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
             .semantics { contentDescription = label }
             .then(if (selected) Modifier.clip(CircleShape).background(HojaTinte) else Modifier)
-            .then(if (!selected) Modifier.clickable(onClick = onClick) else Modifier)
             .padding(horizontal = 16.dp, vertical = 8.dp)
     Column(base, horizontalAlignment = Alignment.CenterHorizontally) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
