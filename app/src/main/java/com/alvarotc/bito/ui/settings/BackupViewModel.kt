@@ -26,6 +26,7 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -132,18 +133,32 @@ class BackupViewModel(
     }
 
     /**
+     * `keyStore.load()` only needs re-checking when [Settings.backupEncryption] itself flips —
+     * every other settings field (folder, frequency, copies, the auto-backup stamps) is
+     * unrelated, so gate the file read behind [distinctUntilChanged] on that one field instead of
+     * re-reading it on every settings emission.
+     */
+    private val encryptionNeedsKey: Flow<Boolean> =
+        settings.settings
+            .map { it.backupEncryption }
+            .distinctUntilChanged()
+            .map { encryptionOn -> encryptionOn && keyStore.load() == null }
+
+    /**
      * Mirrors [backupState] (preview/message/busy/askImportPassphrase) plus the backup-related
-     * [SettingsRepository] fields. `keyStore.load()` runs again on every settings emission — a
-     * single small file read, cheap enough not to warrant its own dispatcher hop.
+     * [SettingsRepository] fields. [encryptionNeedsKey] is collected independently of
+     * `settings.settings` here, so a settings emission unrelated to [Settings.backupEncryption]
+     * is briefly paired with the previous [encryptionNeedsKey] value rather than a freshly
+     * recomputed one — harmless, since that value hasn't changed either.
      */
     val state: StateFlow<BackupUiState> =
-        combine(backupState, settings.settings) { base, prefs ->
+        combine(backupState, settings.settings, encryptionNeedsKey) { base, prefs, needsKey ->
             base.copy(
                 folderName = prefs.backupFolderUri?.let(::folderNameOf),
                 frequency = prefs.backupFrequency,
                 copies = prefs.backupCopies,
                 encryptionOn = prefs.backupEncryption,
-                encryptionNeedsKey = prefs.backupEncryption && keyStore.load() == null,
+                encryptionNeedsKey = needsKey,
                 lastAutoBackupAtMillis = prefs.lastAutoBackupAtMillis,
                 lastAutoBackupError = prefs.lastAutoBackupError,
             )

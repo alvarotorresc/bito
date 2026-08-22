@@ -2,6 +2,7 @@ package com.alvarotc.bito.data.backup
 
 import androidx.room.withTransaction
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import kotlinx.coroutines.flow.first
 import java.time.Instant
@@ -19,8 +20,22 @@ class BackupRepository(
     private val keyStore: BackupKeyStore,
     private val appVersion: String,
 ) {
-    suspend fun exportJson(nowMillis: Long): String {
+    suspend fun exportJson(nowMillis: Long): String = exportJson(nowMillis, settings.settings.first())
+
+    /** Same payload as [exportJson], encrypted with the stored key when settings ask for it. */
+    suspend fun exportBytes(nowMillis: Long): ByteArray {
         val prefs = settings.settings.first()
+        val json = exportJson(nowMillis, prefs)
+        if (!prefs.backupEncryption) return json.toByteArray(Charsets.UTF_8)
+        val derived = keyStore.load() ?: throw MissingKeyException()
+        return BackupCrypto.encrypt(json, derived)
+    }
+
+    /** [exportJson]'s actual work, taking the already-read [prefs] so a caller that also needs a settings field (e.g. [exportBytes]'s encryption check) doesn't read the flow twice. */
+    private suspend fun exportJson(
+        nowMillis: Long,
+        prefs: Settings,
+    ): String {
         val file =
             db.withTransaction {
                 BackupFile(
@@ -48,15 +63,6 @@ class BackupRepository(
                 )
             }
         return BackupCodec.encode(file)
-    }
-
-    /** Same payload as [exportJson], encrypted with the stored key when settings ask for it. */
-    suspend fun exportBytes(nowMillis: Long): ByteArray {
-        val json = exportJson(nowMillis)
-        val prefs = settings.settings.first()
-        if (!prefs.backupEncryption) return json.toByteArray(Charsets.UTF_8)
-        val derived = keyStore.load() ?: throw MissingKeyException()
-        return BackupCrypto.encrypt(json, derived)
     }
 
     fun isEncrypted(bytes: ByteArray): Boolean = BackupCrypto.isEncrypted(bytes)
