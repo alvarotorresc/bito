@@ -164,6 +164,79 @@ class BackupViewModelTest {
             assertNull(state().preview)
         }
 
+    /**
+     * Closes the restore-side gap [AppLocale.kt]'s KDoc used to declare pending: a successful
+     * import must re-apply the restored `languageTag`, not just persist it. Asserted through the
+     * injected `applyLocale` seam, not `AppCompatDelegate.getApplicationLocales()` — a throwaway
+     * probe against this same Robolectric config proved that getter always reports `[]` regardless
+     * of what was just set (no Activity/LocaleManager wiring backs it under Robolectric here), so
+     * asserting against it would be dishonest: it would pass even if the production code never
+     * called [AppLocale.apply] at all.
+     */
+    @Test
+    fun `confirmImport re-applies the restored language through the injected seam`() =
+        runTest {
+            settingsRepo.update { it.copy(languageTag = "es") } // pre-restore state: different tag
+            db.habitDao().upsert(habitEntity(id = "h1"))
+            settingsRepo.update { it.copy(languageTag = "en") } // the tag the backup will carry
+            val exported = backup.exportJson(fixedNow)
+            settingsRepo.update { it.copy(languageTag = "es") } // back to "before the restore"
+
+            var appliedTag: String? = "untouched"
+            val seamedVm =
+                BackupViewModel(
+                    backup,
+                    settingsRepo,
+                    keyStore,
+                    backupNow = {},
+                    now = { fixedNow },
+                    zone = { utc },
+                    ioDispatcher = dispatcher,
+                    cryptoDispatcher = dispatcher,
+                    deriveParams = TEST_ARGON2_PARAMS,
+                    applyLocale = { appliedTag = it },
+                )
+            val uri = Uri.parse("content://bito/import-locale.bito")
+            shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(exported.toByteArray()))
+
+            seamedVm.loadImport(resolver, uri)
+            advanceUntilIdle()
+            seamedVm.confirmImport()
+            advanceUntilIdle()
+
+            assertEquals("en", settingsRepo.settings.first().languageTag)
+            assertEquals("en", appliedTag)
+        }
+
+    @Test
+    fun `confirmImport never applies a locale when the import fails`() =
+        runTest {
+            var applyCalls = 0
+            val seamedVm =
+                BackupViewModel(
+                    backup,
+                    settingsRepo,
+                    keyStore,
+                    backupNow = {},
+                    now = { fixedNow },
+                    zone = { utc },
+                    ioDispatcher = dispatcher,
+                    cryptoDispatcher = dispatcher,
+                    deriveParams = TEST_ARGON2_PARAMS,
+                    applyLocale = { applyCalls++ },
+                )
+            val uri = Uri.parse("content://bito/import-locale-garbage.bito")
+            shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream("not a backup".toByteArray()))
+
+            seamedVm.loadImport(resolver, uri)
+            advanceUntilIdle()
+            seamedVm.consumeMessage()
+            seamedVm.confirmImport() // no-op: onImportLoadFailed already cleared pendingImportText
+            advanceUntilIdle()
+
+            assertEquals(0, applyCalls)
+        }
+
     @Test
     fun `loadImport with garbage bytes reports INVALID_FILE and confirmImport is a no-op`() =
         runTest {

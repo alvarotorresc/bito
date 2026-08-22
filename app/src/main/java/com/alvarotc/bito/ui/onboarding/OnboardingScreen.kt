@@ -79,6 +79,7 @@ import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.habitform.HabitPreset
 import com.alvarotc.bito.ui.habitform.labelRes
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.settings.AppLocale
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
@@ -172,13 +173,12 @@ private fun WelcomeScene(
         InfoPill(icon = BitoIcons.Ban, text = stringResource(R.string.onb_welcome_no_accounts))
         Spacer(Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // languageTag null means "follow the system" (OnboardingUiState's own contract) — the
-            // chip that matches the CURRENTLY RESOLVED locale reads as selected, same idea as
-            // GeneralSectionCard's language row, just without a third "System" option to land on.
-            // A system language outside {es, en} (locales_config only declares those two) falls
-            // back to "en" — the base resource language — rather than leaving BOTH chips
-            // unselected, which `resolved == "es"`/`resolved == "en"` alone would do.
-            val resolved = (languageTag ?: Locale.getDefault().language).takeIf { it == "es" } ?: "en"
+            // languageTag null means "follow the system" (OnboardingUiState's own contract), and an
+            // out-of-set tag (a backup restored from a locale locales_config doesn't declare, say)
+            // is treated the exact same way GeneralSectionCard's language row already treats it —
+            // AppLocale.resolveDisplayLanguage falls through to the resolved system locale for
+            // either case, rather than lighting a chip that doesn't match what's actually active.
+            val resolved = AppLocale.resolveDisplayLanguage(languageTag)
             LanguageChip(
                 text = stringResource(R.string.onb_lang_es),
                 selected = resolved == "es",

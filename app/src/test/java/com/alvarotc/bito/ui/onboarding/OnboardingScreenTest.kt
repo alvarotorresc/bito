@@ -82,8 +82,19 @@ class OnboardingScreenTest {
             scope = CoroutineScope(dispatcher + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
 
-    private fun newViewModel(name: String): OnboardingViewModel {
+    /**
+     * [seedSettings] runs (via [runBlocking]) BEFORE the VM is constructed, so its `init` block's
+     * one-shot `settings.settings.first()` read (see [OnboardingViewModel]'s own KDoc) already sees
+     * whatever it wrote — needed by tests that plant a `languageTag` pre-existing settings would
+     * carry (a reinstall over restored data), rather than one the VM's own [OnboardingViewModel.setLanguage]
+     * would set live.
+     */
+    private fun newViewModel(
+        name: String,
+        seedSettings: suspend SettingsRepository.() -> Unit = {},
+    ): OnboardingViewModel {
         val settings = SettingsRepository(settingsStore(name))
+        runBlocking { settings.seedSettings() }
         val habits = HabitsRepository(db)
         val reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db))
         return OnboardingViewModel(settings, habits, reconciler)
@@ -179,6 +190,36 @@ class OnboardingScreenTest {
             // carries it.
             compose.onNodeWithText("English").assertIsSelected()
             compose.onNodeWithText("Español").assertIsNotSelected()
+        } finally {
+            Locale.setDefault(previousLocale)
+        }
+    }
+
+    /**
+     * `languageTag = "fr"` is outside `locales_config`'s {es, en} — the same bucket Ajustes'
+     * language row already treats as "system" (its `when` falls to the `else` branch for exactly
+     * this tag). Before this fix, WelcomeScene took the raw out-of-set tag at face value instead of
+     * falling through to the resolved system locale like Settings does, so a `languageTag` restored
+     * from a backup (or carried over from a device whose language `locales_config` doesn't declare)
+     * always lit the EN chip regardless of what the device actually resolves to — a lie this test
+     * closes. Es is the system default here specifically so this doesn't collapse into the
+     * pre-existing "system default outside es/en falls back to en" case above.
+     */
+    @Test
+    fun `an out-of-set stored tag highlights the resolved locale chip`() {
+        val previousLocale = Locale.getDefault()
+        Locale.setDefault(Locale("es"))
+        try {
+            val vm = newViewModel("onboarding-screen-out-of-set-tag") { update { it.copy(languageTag = "fr") } }
+            compose.setContent {
+                BitoTheme {
+                    OnboardingScreen(vm)
+                }
+            }
+            compose.waitForIdle()
+
+            compose.onNodeWithText("Español").assertIsSelected()
+            compose.onNodeWithText("English").assertIsNotSelected()
         } finally {
             Locale.setDefault(previousLocale)
         }

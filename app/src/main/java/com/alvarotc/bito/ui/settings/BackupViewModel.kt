@@ -106,6 +106,17 @@ class BackupViewModel(
      * doesn't care about [BackupUiState.backupCount] keeps building a [BackupViewModel] unchanged.
      */
     private val countBackups: suspend (String) -> Int? = { null },
+    /**
+     * Closes the restore-side gap [AppLocale]'s KDoc declares: [confirmImport] calls this with the
+     * freshly-restored [Settings.languageTag] so `AppCompatDelegate` stops resolving whatever it
+     * last cached and picks up what the backup actually carried, the same beat
+     * [SettingsViewModel.setLanguage]/[com.alvarotc.bito.ui.onboarding.OnboardingViewModel.setLanguage]
+     * already do for a manual language change. Injectable, not called directly, because
+     * `AppCompatDelegate.getApplicationLocales()` doesn't round-trip under this suite's Robolectric
+     * config (verified empirically: it reports `[]` regardless of what was just set) — a test
+     * asserting against it would be dishonest, so tests assert against this seam instead.
+     */
+    private val applyLocale: (String?) -> Unit = AppLocale::apply,
 ) : ViewModel() {
     // Plain constructor parameter, not `private val`: it never becomes a class member, so it
     // can't collide with the public backupNow() callback below — same name, per the brief.
@@ -286,6 +297,10 @@ class BackupViewModel(
         viewModelScope.launch {
             backupState.update { it.copy(busy = true) }
             val result = runCatching { withContext(ioDispatcher) { backup.import(text) } }
+            // Only on success, and only after backup.import's own settings.update has landed:
+            // applying a failed import's (nonexistent) tag would be meaningless, and reading
+            // languageTag before the import commits would re-apply whatever was already active.
+            if (result.isSuccess) applyLocale(settings.settings.first().languageTag)
             clearPending()
             backupState.update {
                 it.copy(
