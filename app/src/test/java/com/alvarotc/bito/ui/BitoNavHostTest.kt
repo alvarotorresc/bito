@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui
 
 import android.app.Application
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -14,13 +15,19 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -112,6 +119,22 @@ class BitoNavHostTest {
         container.database.pointsLedgerDao().insert(
             pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
         )
+    }
+
+    /**
+     * A bare [ViewModelStoreOwner] the test provides in place of the compose-test host's own
+     * (`createComposeRule()` has no exposed `.activity` to read the real one back off of, same
+     * limitation [FakeBackDispatcherOwner] documents in
+     * [com.alvarotc.bito.ui.review.ReviewScreenTest]). `BitoNavHost`'s [CelebrationsViewModel]
+     * is created with `viewModel(factory = ...)` reading `LocalViewModelStoreOwner.current` — a
+     * SECOND [ViewModelProvider] built against the SAME store and the SAME default key returns
+     * that exact cached instance, letting the test read [CelebrationsViewModel.lastCued] straight
+     * off the real VM the composition is driving. Every NavHost `composable { }` block re-provides
+     * its own owner (the [androidx.navigation.NavBackStackEntry]), so route-scoped VMs elsewhere
+     * in the tree are unaffected by this override.
+     */
+    private class FakeViewModelStoreOwner : ViewModelStoreOwner {
+        override val viewModelStore = ViewModelStore()
     }
 
     @Test
@@ -289,6 +312,64 @@ class BitoNavHostTest {
             compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * The M9 finding's own guard ("celebrations stay pending and fire after landing on Today")
+     * only ever had its VISIBLE half asserted (the test above): the sheet itself. Its silent half
+     * — [CelebrationsViewModel]'s own habi cue — was never checked, so a regression that fired the
+     * cue WHILE suppressed (behind onboarding) would have shipped mute. [CelebrationsViewModel.cue]
+     * latches idempotently per signature ([CelebrationsViewModel.lastCued] is a `String?`, not a
+     * counter), so "fires exactly once" is provable only as "still null at every suppressed
+     * checkpoint below, then the one expected signature once Today loads" — the once-only property
+     * itself is [CelebrationsViewModel.lastCuedSignature]'s own job and is already covered by
+     * `CelebrationsViewModelTest`'s idempotency tests.
+     */
+    @Test
+    fun `the celebration cue stays untouched while suppressed and fires once Today loads`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { seedPerfectDayToday(container) }
+        val vmOwner = FakeViewModelStoreOwner()
+
+        fun celebrations() = ViewModelProvider(vmOwner, CelebrationsViewModel.factory(container))[CelebrationsViewModel::class.java]
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides vmOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertNull(celebrations().lastCued) // suppressed behind onboarding: never cued yet
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        assertNull(celebrations().lastCued) // still on onboarding: still suppressed
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick() // blank habit name still finishes
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+
+        compose.waitUntil(timeoutMillis = 5_000) { celebrations().lastCued != null }
+        val cutoff = runBlocking { container.settings.settings.first().dayCutoffMinutes }
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), cutoff, ZoneId.systemDefault())
+        assertEquals("$today:perfect-day", celebrations().lastCued)
     }
 
     @Test

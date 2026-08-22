@@ -257,4 +257,53 @@ class BackupRoundTripTest {
             seedEverything() // seededSettings has backupEncryption = true, no key ever saved
             assertFailsWith<MissingKeyException> { backup.exportBytes(nowMillis = 1_000L) }
         }
+
+    // BackupCodecTest proves the v1/v2 -> v3 marker migration at the codec level (decode alone).
+    // These two prove the M8 story end to end through the real repository: BackupRepository.import
+    // must actually WRITE the codec's migrated markers into the persisted SettingsRepository, not
+    // just decode them and drop them on the floor. seedEverything()'s day seals (DAY_ZERO,
+    // DAY_ZERO + 1) and its pre-existing seededSettings markers (perfectDayCelebratedDay = 20679,
+    // badgesSeenUntilMillis = 4321L) are both far from the migrated values asserted below, so a
+    // repository that silently persisted the FILE's own stale/stripped fields instead of the
+    // decoded migration result would fail these assertions, not pass them by coincidence.
+    @Test
+    fun `importing a v1 backup persists the sealed migration markers into Settings`() =
+        runTest {
+            seedEverything()
+            val exported = backup.exportJson(nowMillis = 5_000L)
+            val v1Json =
+                exported
+                    .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
+                    .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
+                    .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
+                    .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
+
+            backup.import(v1Json)
+
+            val persisted = settingsRepo.settings.first()
+            assertEquals(5_000L, persisted.badgesSeenUntilMillis) // sealed to the export moment
+            assertEquals(DAY_ZERO + 1, persisted.perfectDayCelebratedDay) // sealed to the last day seal
+            assertTrue(persisted.habiSoundsEnabled) // v1 default: sounds always on
+        }
+
+    @Test
+    fun `importing a v2 backup persists the sealed markers while keeping v2's own sounds field`() =
+        runTest {
+            seedEverything() // seededSettings has habiSoundsEnabled = false
+            val exported = backup.exportJson(nowMillis = 6_000L)
+            val v2Json =
+                exported
+                    .replace("\"schemaVersion\": 3", "\"schemaVersion\": 2")
+                    .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
+                    .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
+
+            backup.import(v2Json)
+
+            val persisted = settingsRepo.settings.first()
+            assertEquals(6_000L, persisted.badgesSeenUntilMillis)
+            assertEquals(DAY_ZERO + 1, persisted.perfectDayCelebratedDay)
+            // v2 already carries its own sounds field (unlike v1) — it must survive untouched,
+            // not get swept into the "always on" v1 default.
+            assertEquals(false, persisted.habiSoundsEnabled)
+        }
 }

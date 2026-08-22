@@ -82,6 +82,39 @@ class CelebrationSheetsTest {
     }
 
     @Test
+    fun `the perfect day speech bubble interpolates the user's name`() {
+        // NEUTRA's own habi_perfect_neutra also interpolates %1$s, so state()'s fixed personality
+        // already exercises this — the parked gap was that no test ever looked past the title.
+        compose.setContent {
+            BitoTheme {
+                PerfectDaySheet(state(userName = "Álvaro"), onDismiss = {})
+            }
+        }
+        compose.waitForIdle()
+
+        // habi_perfect_neutra: "Perfect day, %1$s. Everything required, done."
+        compose.onNodeWithText("Perfect day, Álvaro. Everything required, done.", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the badge sheet speech bubble interpolates the user's name and the first badge`() {
+        // habi_badge_neutra ("Badge unlocked: %2$s. Well earned.") never interpolates %1$s at
+        // all, so it can't prove the name substitution actually worked — SARGENTO's
+        // "%2$s. Earned, %1$s. I never doubted it." uses both placeholders.
+        val sargentoState =
+            state(newBadges = BadgeCatalog.all.filter { it.id == "streak-7" }, userName = "Álvaro")
+                .copy(personality = Personality.SARGENTO)
+        compose.setContent {
+            BitoTheme {
+                BadgeUnlockSheet(sargentoState, onDismiss = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("First flame. Earned, Álvaro. I never doubted it.", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun `continue invokes dismiss`() {
         var dismissed = false
         compose.setContent {
