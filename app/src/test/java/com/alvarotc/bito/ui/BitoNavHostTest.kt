@@ -400,16 +400,18 @@ class BitoNavHostTest {
     }
 
     /**
-     * M9.5 T6: [NavRequests] must not navigate OVER onboarding — same philosophy as
+     * M9.5 T6 (fix round 1): [NavRequests] must not navigate OVER onboarding — same philosophy as
      * [com.alvarotc.bito.ui.BitoNavHost]'s celebration guard (a mid-flow user shouldn't get
-     * sandwiched into e.g. "review"). Deliberately NOT a bare absence assertion followed by
-     * nothing else: [NavRequests.pending]
-     * gets consumed into `heldRoute` the instant `BitoNavHost`'s own effect sees
-     * `currentRoute == "onboarding"`, so "review isn't shown yet" alone would pass exactly as
-     * well whether the request was properly latched or just silently dropped on the floor. Only
-     * watching it actually fire once onboarding hands off to "today" proves it survived — the
-     * same reasoning "a pending perfect day stays hidden behind onboarding and shows once today
-     * loads" already uses for the celebration sheet.
+     * sandwiched into e.g. "review"), and now genuinely the same MECHANISM: `BitoNavHost` simply
+     * does not call [NavRequests.consume] while `onboarding` is the current route, so
+     * [NavRequests.pending] itself — a process-wide, rotation-surviving `MutableStateFlow` — stays
+     * the one source of truth for "review is still waiting," same as [NavRequests] is asserted
+     * elsewhere. Deliberately NOT a bare absence assertion followed by nothing else: proving the
+     * route STAYS pending here is necessary but not sufficient (a build that dropped the request
+     * entirely would look identical at this checkpoint too) — only watching it actually fire once
+     * onboarding hands off to "today," and get consumed there, proves it survived intact. Same
+     * reasoning "a pending perfect day stays hidden behind onboarding and shows once today loads"
+     * already uses for the celebration sheet.
      */
     @Test
     fun `a pending review request stays held behind onboarding and opens once onboarding hands off`() {
@@ -431,7 +433,9 @@ class BitoNavHostTest {
         // Held, not navigated: onboarding is still the one showing and review never opened over it.
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertDoesNotExist()
-        assertNull(NavRequests.pending.value) // consumed into heldRoute, not left dangling for a retry
+        // Genuinely still pending (not consumed into any ephemeral state): this is what makes the
+        // hold rotation-safe -- NavRequests.pending is the one and only source of truth throughout.
+        assertEquals("review", NavRequests.pending.value)
 
         compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
         compose.waitForIdle()
@@ -452,6 +456,7 @@ class BitoNavHostTest {
         }
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
+        assertNull(NavRequests.pending.value) // fired through the normal branch and consumed there
     }
 
     /**
