@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -275,7 +276,14 @@ private fun Monument(state: DetailUiState) {
             }
         }
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            // mergeDescendants: true folds the number, the unit line and the record chip — three
+            // to four separate TalkBack stops today — into one: "78, days, Record: 40". No
+            // interactive children live inside this card (the relapse/freezer pills sit below it
+            // in MonumentActionsRow, a sibling composable), so nothing gets swallowed.
+            Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             // The flame sits to the number's right, raised toward its top rather than centered on
             // its full height — Alignment.Top (not CenterVertically) is what reads as "elevada"
             // next to a number many times the flame's own height.

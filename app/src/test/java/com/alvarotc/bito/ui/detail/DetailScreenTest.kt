@@ -152,6 +152,22 @@ class DetailScreenTest {
     }
 
     @Test
+    fun `the monument card merges its unit line and record chip into one TalkBack stop`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        // Before the fix these were two separate semantics nodes (Text + RecordChip's own Row) —
+        // same node id now proves mergeDescendants folded them into one TalkBack stop.
+        val unitNode = compose.onNodeWithText("days").fetchSemanticsNode()
+        val recordNode = compose.onNodeWithText("Record:", substring = true).fetchSemanticsNode()
+        assertEquals(unitNode.id, recordNode.id)
+    }
+
+    @Test
     fun `the next-month chevron is truly disabled, not just tinted, once the displayed month reaches today's`() {
         runBlocking {
             HabitsRepository(db).create(
