@@ -15,6 +15,7 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.habitform.HabitFormState
 import com.alvarotc.bito.ui.habitform.HabitPreset
 import com.alvarotc.bito.ui.habitform.QuitMode
+import com.alvarotc.bito.ui.habitform.clampTarget
 import com.alvarotc.bito.ui.habitform.defaultTargetFor
 import com.alvarotc.bito.ui.habitform.toNewEntity
 import com.alvarotc.bito.ui.settings.AppLocale
@@ -151,7 +152,15 @@ class OnboardingViewModel(
             it.copy(habitKind = kind, habitTarget = defaultTargetFor(kind, QuitMode.TOTAL, Metric.DURATION))
         }
 
-    fun setHabitTarget(value: Int) = state.update { it.copy(habitTarget = value.coerceAtLeast(1)) }
+    fun setHabitTarget(value: Int) =
+        state.update { s ->
+            // Reuse the form's clampTarget logic with a temporary HabitFormState using
+            // onboarding's invariants (quitMode always TOTAL per setHabitKind's own KDoc);
+            // floor 1, ceiling 7 when WEEKLY_TIMES, ceiling unbounded for other presets
+            // except QUIT which pins to 0.
+            val clampedTarget = HabitFormState(preset = s.habitKind).clampTarget(value)
+            s.copy(habitTarget = clampedTarget)
+        }
 
     /** Persists immediately, not just on [finish] — the celebration bubble (7f) speaks with the chosen voice right away. */
     fun setPersonality(personality: Personality) {

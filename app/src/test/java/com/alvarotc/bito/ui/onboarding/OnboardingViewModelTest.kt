@@ -338,4 +338,18 @@ class OnboardingViewModelTest {
 
             assertEquals(1, db.habitDao().all().count { it.name == "Meditar" })
         }
+
+    @Test
+    fun `the weekly target never exceeds seven`() =
+        runTest {
+            val vm = newViewModel()
+            // Direct setHabitTarget call clamps to floor 1 when preset is DAILY_CHECK (default).
+            vm.setHabitTarget(0)
+            assertEquals(1, vm.uiState.value.habitTarget)
+
+            // After switching to WEEKLY_TIMES, setHabitTarget clamps to ceiling 7.
+            vm.setHabitKind(HabitPreset.WEEKLY_TIMES)
+            vm.setHabitTarget(15)
+            assertEquals(7, vm.uiState.value.habitTarget)
+        }
 }

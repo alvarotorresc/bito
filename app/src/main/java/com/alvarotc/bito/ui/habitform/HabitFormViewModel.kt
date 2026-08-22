@@ -25,10 +25,10 @@ import java.time.ZoneId
 import java.util.UUID
 
 /** A WEEKLY_TIMES target counts days, not sessions: 7 is the physical weekly maximum. */
-private const val MAX_WEEKLY_TIMES = 7
+internal const val MAX_WEEKLY_TIMES = 7
 
-/** Single source of truth for target clamping, shared by [HabitFormViewModel.adjustTarget] and [HabitFormViewModel.setTarget]. */
-private fun HabitFormState.clampTarget(raw: Int): Int =
+/** Single source of truth for target clamping, shared by [HabitFormViewModel.adjustTarget], [HabitFormViewModel.setTarget], and [com.alvarotc.bito.ui.onboarding.OnboardingViewModel.setHabitTarget]. */
+internal fun HabitFormState.clampTarget(raw: Int): Int =
     if (preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL) {
         0
     } else {

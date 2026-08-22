@@ -24,10 +24,18 @@ android {
         create("release") {
             val path = System.getenv("BITO_KEYSTORE_PATH")
             if (path != null) {
+                val storePasswordEnv = System.getenv("BITO_KEYSTORE_PASSWORD")
+                val keyAliasEnv = System.getenv("BITO_KEY_ALIAS")
+                val keyPasswordEnv = System.getenv("BITO_KEY_PASSWORD")
+
+                if (storePasswordEnv == null) error("Release signing: BITO_KEYSTORE_PATH is set but BITO_KEYSTORE_PASSWORD is missing")
+                if (keyAliasEnv == null) error("Release signing: BITO_KEYSTORE_PATH is set but BITO_KEY_ALIAS is missing")
+                if (keyPasswordEnv == null) error("Release signing: BITO_KEYSTORE_PATH is set but BITO_KEY_PASSWORD is missing")
+
                 storeFile = file(path)
-                storePassword = System.getenv("BITO_KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("BITO_KEY_ALIAS")
-                keyPassword = System.getenv("BITO_KEY_PASSWORD")
+                storePassword = storePasswordEnv
+                keyAlias = keyAliasEnv
+                keyPassword = keyPasswordEnv
             }
         }
     }

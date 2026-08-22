@@ -12,10 +12,11 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.theme.Hoja
 
 /**
- * Posts Bito's local notifications from already-decided content — [ReminderUseCase] is the only
- * caller that decides *whether* to notify; this object only ever renders what it's handed.
- * Silently skips posting when the user has disabled notifications (API 33+ reality): scheduling
- * the next alarm never depends on whether this actually reached the tray.
+ * Posts or cancels Bito's local notifications from already-decided content — [ReminderUseCase],
+ * [TrayRefresher], and [PerfectDayNotifier] are the callers that decide *whether* to notify;
+ * this object renders what it's handed and manages stale notifications. Silently skips posting
+ * when the user has disabled notifications (API 33+ reality): scheduling the next alarm never
+ * depends on whether this actually reached the tray.
  */
 object Notifier {
     const val REMINDER_ID = 1
