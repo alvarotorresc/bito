@@ -2,6 +2,8 @@ package com.alvarotc.bito.ui.today
 
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
@@ -386,5 +388,32 @@ class TodayScreenTest {
         val greeting = context.getString(R.string.habi_greeting_neutra_normal, fallbackName)
 
         compose.onNodeWithText(greeting, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the duration bar's own progress range info does not bleed into the card's merged announcement`() {
+        // RoundedBar sets its own semantics(mergeDescendants = true) { progressBarRangeInfo = ... }
+        // (Components.kt); this guards that the card's OUTER merge (mergeDescendants = true, from
+        // BitoCard's onClick) does not cascade INTO that nested merge boundary and change the
+        // card's own "Open X" announcement with an unplanned percentage — a merge boundary is a
+        // two-way wall in Compose: it neither leaks its own descendants' semantics further out,
+        // nor lets an ancestor's merge reach past it inward.
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "lectura",
+                    name = "Lectura",
+                    metric = Metric.DURATION,
+                    target = 30,
+                    unit = "min",
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        val cardConfig = compose.onNodeWithTag("card-lectura").fetchSemanticsNode().config
+        assertEquals(null, cardConfig.getOrNull(SemanticsProperties.ProgressBarRangeInfo))
     }
 }
