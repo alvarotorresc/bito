@@ -27,6 +27,18 @@ import kotlinx.coroutines.launch
  * (same module's `src/test`, which — like [com.alvarotc.bito.AppStartup]'s own `internal` test
  * seams — can see `internal` declarations from `src/main`) can drive it directly against a plain
  * [SettingsRepository]/[HabitsRepository] pair instead of a full [AppContainer].
+ *
+ * Best-effort against the FIRST frame, not a synchronous gate: [start]'s coroutine races
+ * [com.alvarotc.bito.ui.BitoNavHost]'s own settings read, so losing that race just means a
+ * restored-data user sees onboarding once — strictly better than the pre-fix behavior of always
+ * seeing it.
+ *
+ * A restore mid-session (an already-running app, not a cold start) resets `onboardingDone` via
+ * [com.alvarotc.bito.data.backup.BackupRepository.import]'s wholesale [Settings] replacement, and
+ * this reconciler — a startup-only hook — does not re-run to correct it until the next cold start;
+ * no in-session harm, since the language reconciles immediately
+ * ([com.alvarotc.bito.ui.settings.BackupViewModel.confirmImport] applies it right away) while only
+ * the onboarding flag waits for the next launch.
  */
 object OnboardingReconciler {
     internal suspend fun reconcile(

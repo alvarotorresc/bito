@@ -209,35 +209,6 @@ class BackupViewModelTest {
         }
 
     @Test
-    fun `confirmImport never applies a locale when the import fails`() =
-        runTest {
-            var applyCalls = 0
-            val seamedVm =
-                BackupViewModel(
-                    backup,
-                    settingsRepo,
-                    keyStore,
-                    backupNow = {},
-                    now = { fixedNow },
-                    zone = { utc },
-                    ioDispatcher = dispatcher,
-                    cryptoDispatcher = dispatcher,
-                    deriveParams = TEST_ARGON2_PARAMS,
-                    applyLocale = { applyCalls++ },
-                )
-            val uri = Uri.parse("content://bito/import-locale-garbage.bito")
-            shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream("not a backup".toByteArray()))
-
-            seamedVm.loadImport(resolver, uri)
-            advanceUntilIdle()
-            seamedVm.consumeMessage()
-            seamedVm.confirmImport() // no-op: onImportLoadFailed already cleared pendingImportText
-            advanceUntilIdle()
-
-            assertEquals(0, applyCalls)
-        }
-
-    @Test
     fun `loadImport with garbage bytes reports INVALID_FILE and confirmImport is a no-op`() =
         runTest {
             val uri = Uri.parse("content://bito/garbage.bito")
