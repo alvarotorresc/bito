@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.notifications
 
 import android.content.Context
 import com.alvarotc.bito.AppContainer
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
@@ -30,9 +31,12 @@ object ReminderSync {
                     // A TOCTOU exact-alarm revocation surfaces here as a SecurityException; letting it
                     // escape would cancel this collector and stop syncing reminders for the rest of the
                     // process's life, so one bad emission is swallowed instead of killing the loop.
+                    // scheduleAll isn't suspend, so it can't itself throw CancellationException, but
+                    // the guard is added for the same reasoning as BackupSync/WidgetRefresher in case
+                    // that ever changes.
                     runCatching {
                         ReminderScheduler.scheduleAll(context, slots, System.currentTimeMillis(), ZoneId.systemDefault())
-                    }
+                    }.onFailure { if (it is CancellationException) throw it }
                 }
         }
     }
