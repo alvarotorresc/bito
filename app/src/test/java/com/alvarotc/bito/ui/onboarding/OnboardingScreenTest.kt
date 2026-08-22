@@ -46,6 +46,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -343,6 +344,28 @@ class OnboardingScreenTest {
         compose.waitForIdle()
 
         assertEquals(OnboardingStep.STORY_3, vm.uiState.value.step)
+    }
+
+    /**
+     * M9 final review minor 5. [OnboardingSwipeFadeLatch] is plain Kotlin, not Compose state
+     * (see its own KDoc), specifically so this doesn't need a compose rule or any of the timing
+     * gymnastics [androidx.compose.ui.test.junit4.ComposeContentTestRule] would need to catch a
+     * 200ms alpha animation mid-flight — Compose's test semantics tree doesn't expose raw alpha
+     * at all, so asserting the actual pixel fade isn't cheaply doable here. This instead proves
+     * the DECISION the settle collector and the freshly-mounted page actually make: unmarked
+     * (first mount, a button/skip tap) always plays the fade; a swipe settle's [markSwipe] makes
+     * the very next consume skip it exactly once, then reverts to the default.
+     */
+    @Test
+    fun `a swipe settle does not replay the entrance fade`() {
+        val latch = OnboardingSwipeFadeLatch()
+
+        assertFalse("unmarked: first mount / a button-driven advance must still fade", latch.consumeSkipsFade())
+
+        latch.markSwipe()
+        assertTrue("a swipe settle's mark must make the next mount skip its fade", latch.consumeSkipsFade())
+
+        assertFalse("consuming clears the mark: the NEXT mount defaults back to fading", latch.consumeSkipsFade())
     }
 
     @Test

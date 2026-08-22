@@ -14,7 +14,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -73,6 +75,15 @@ fun BitoNavHost(container: AppContainer) {
 
     val nav = rememberNavController()
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+
+    // M9.5 T6: the route NavRequests asked for while "onboarding" was still showing (a review
+    // reminder notification tapped seconds after a fresh install, say) — latched here instead of
+    // dropped, and fired once onboarding hands off to "today" (see that composable's own
+    // LaunchedEffect below). Declared at this level, not inside the "onboarding" composable, so it
+    // survives that exact composable being torn down: `navigate("today") { popUpTo("onboarding")
+    // { inclusive = true } }` destroys the onboarding back-stack entry (and anything remembered
+    // inside it) the moment `done` flips — one line before this value is needed.
+    var heldRoute by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
         containerColor = Papel,
@@ -141,6 +152,15 @@ fun BitoNavHost(container: AppContainer) {
                 LaunchedEffect(onboardingState.done) {
                     if (onboardingState.done) {
                         nav.navigate("today") { popUpTo("onboarding") { inclusive = true } }
+                        // Fire whatever NavRequests held below while onboarding was still showing
+                        // — chained here, right after the transition it was waiting on, rather
+                        // than left for the collector below to notice `currentRoute` changed. No
+                        // suspension point sits between these two navigate() calls (both plain,
+                        // non-suspending), so `popUpTo`'s cancellation of this coroutine's own
+                        // scope — it destroys this very composable's entry — can't land until
+                        // AFTER heldRoute has already fired.
+                        heldRoute?.let { nav.navigate(it) { launchSingleTop = true } }
+                        heldRoute = null
                     }
                 }
                 Box(Modifier.fillMaxSize().background(Papel).testTag("onboarding-screen")) {
@@ -241,18 +261,33 @@ fun BitoNavHost(container: AppContainer) {
             }
         }
 
-        // T11: the one bridge from an Intent (a notification tap) to this NavHost. Declared
-        // alongside NavHost, not as a sibling of the outer Scaffold — Scaffold subcomposes its
-        // content (this whole block) lazily during measurement, so an effect placed outside it
+        // T11 (+ M9.5 T6): the one bridge from an Intent (a notification tap) to this NavHost.
+        // Declared alongside NavHost, not as a sibling of the outer Scaffold — Scaffold subcomposes
+        // its content (this whole block) lazily during measurement, so an effect placed outside it
         // would fire before NavHost has set the nav graph and crash navigating anywhere. A route
         // already pending when this composes (MainActivity decoded it before setContent) fires
         // on the very first LaunchedEffect run, same as one that arrives later via onNewIntent.
+        //
+        // While `onboarding` is the current route, a request must not navigate OVER the flow —
+        // same philosophy as the celebration guard below (a mid-flow user shouldn't get sandwiched
+        // into e.g. "review"): it's latched into `heldRoute` instead, fired once onboarding's own
+        // `done` -> navigate("today") transition runs (see the "onboarding" composable above).
+        // `currentRoute` is in the key alongside `pendingRoute`: NavHost hasn't necessarily set its
+        // first back-stack entry (`currentRoute == null`) the very first time this composes, and a
+        // request landing in that narrow window must wait for a REAL route, not fall through to
+        // "not onboarding" by default — the key makes this effect re-run once `currentRoute`
+        // resolves, rather than deciding once off a stale null. Outside onboarding this is exactly
+        // the pre-existing behavior: fire immediately.
         val pendingRoute by NavRequests.pending.collectAsStateWithLifecycle()
-        LaunchedEffect(pendingRoute) {
-            pendingRoute?.let {
-                nav.navigate(it) { launchSingleTop = true }
-                NavRequests.consume()
+        LaunchedEffect(pendingRoute, currentRoute) {
+            val route = pendingRoute ?: return@LaunchedEffect
+            if (currentRoute == null) return@LaunchedEffect
+            if (currentRoute == "onboarding") {
+                heldRoute = route
+            } else {
+                nav.navigate(route) { launchSingleTop = true }
             }
+            NavRequests.consume()
         }
 
         // T12: the two global celebration sheets, overlaid above the NavHost everywhere except

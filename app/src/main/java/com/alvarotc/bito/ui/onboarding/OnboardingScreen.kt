@@ -105,6 +105,37 @@ private val PAGER_STEPS =
 private val STORY_STEPS = setOf(OnboardingStep.STORY_1, OnboardingStep.STORY_2, OnboardingStep.STORY_3)
 
 /**
+ * M9 final review minor 5: [StoryPagerScaffold]'s `key(pageIndex)` remounts the whole pager on
+ * EVERY step change, including one reconciled from a swipe settle — so the page the user is
+ * already looking at (fully visible the instant the drag stopped) got its entrance fade replayed
+ * from alpha 0, a visible blink rather than motion. This latch is what tells the freshly-mounted
+ * page which case it's in: the settle collector calls [markSwipe] right before the onNext()/
+ * onBack() that triggers the remount; the page reads-and-clears it exactly once via
+ * [consumeSkipsFade] to seed its own `entered` flag already-true instead of animating from false.
+ * Every other path into a fresh page — first mount, a button/skip tap — never calls [markSwipe],
+ * so [consumeSkipsFade] defaults to false and the fade plays exactly as before.
+ *
+ * Plain Kotlin, not Compose state: nothing here needs to trigger recomposition on its own (the
+ * step change that led here already will), so a bare `var` is enough and — unlike a
+ * [androidx.compose.runtime.MutableState] — it's directly unit-testable with no compose rule.
+ * `internal`, not private, for exactly that: same-module tests read it straight, no wider API leak.
+ */
+internal class OnboardingSwipeFadeLatch {
+    private var swiped = false
+
+    fun markSwipe() {
+        swiped = true
+    }
+
+    /** Reads AND clears in one call — a second consume before another [markSwipe] returns false. */
+    fun consumeSkipsFade(): Boolean {
+        val result = swiped
+        swiped = false
+        return result
+    }
+}
+
+/**
  * The first-run flow's scaffold (mockups 7a-7g; this task builds 7a-7d, T7/T8 own the rest).
  * WELCOME (7a) is a standalone full-screen beat; every step after it rides the same 6-dot pager
  * chrome (the mockups' dots row), swipeable via [HorizontalPager] — see [StoryPagerScaffold] for
@@ -273,8 +304,10 @@ private fun LanguageChip(
  * Motion (GUIA :60): each page's content fades in (alpha 0->1, 200ms ease-out) on composition —
  * [HorizontalPager] itself already supplies the horizontal slide for a real drag; a
  * button/skip-triggered advance re-keys the whole pager (see the block comment above), which has
- * no drag to ride, so the fade is the only cue on that path and a harmless replay on the swipe
- * path (the content was already in place when the drag settled).
+ * no drag to ride, so the fade is the only cue on that path. A swipe settle ALSO re-keys the
+ * pager (same remount), but there the content was already visible the instant the drag stopped —
+ * replaying the fade from 0 there is a blink, not motion (M9 final review minor 5), which is what
+ * [OnboardingSwipeFadeLatch] exists to skip; see its own KDoc for the mechanism.
  *
  * The NAME step's blank-name gate only ever blocks the FORWARD direction, never backward: the
  * pager's own `userScrollEnabled` stays `true` unconditionally (a per-direction scroll flag
@@ -299,6 +332,8 @@ private fun StoryPagerScaffold(
 ) {
     val step = state.step
     val pageIndex = PAGER_STEPS.indexOf(step).coerceAtLeast(0)
+    // Survives the key(pageIndex) remount below on purpose — see OnboardingSwipeFadeLatch's KDoc.
+    val swipeFadeLatch = remember { OnboardingSwipeFadeLatch() }
 
     Column(Modifier.fillMaxSize().background(Papel)) {
         Box(Modifier.fillMaxWidth().padding(top = 12.dp, end = 12.dp), contentAlignment = Alignment.TopEnd) {
@@ -342,10 +377,18 @@ private fun StoryPagerScaffold(
                                     // cancellation to just the snap-back.
                                     launch { pagerState.animateScrollToPage(pageIndex) }
                                 } else {
+                                    // Marked BEFORE onNext(), not after: onNext() synchronously
+                                    // updates the VM's StateFlow, whose recomposition is what
+                                    // re-keys this whole block -- the freshly mounted page has to
+                                    // find the latch already marked when it first composes.
+                                    swipeFadeLatch.markSwipe()
                                     onNext()
                                 }
                             }
-                            settled < pageIndex -> onBack()
+                            settled < pageIndex -> {
+                                swipeFadeLatch.markSwipe()
+                                onBack()
+                            }
                         }
                     }
                 }
@@ -353,7 +396,12 @@ private fun StoryPagerScaffold(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
                 ) { page ->
-                    var entered by remember { mutableStateOf(false) }
+                    // Only `page == pageIndex` is the page this remount landed on -- guards the
+                    // consume so a neighbor page composed for any other reason (prefetch, mid-drag)
+                    // can never eat the mark meant for the settled page. Consuming HERE, in the
+                    // `remember` seed rather than a later effect, is what avoids a one-frame
+                    // alpha-0 render: `entered` starts true already, so `fade` below never leaves 1.
+                    var entered by remember { mutableStateOf(page == pageIndex && swipeFadeLatch.consumeSkipsFade()) }
                     val fade by
                         animateFloatAsState(
                             targetValue = if (entered) 1f else 0f,

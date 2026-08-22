@@ -400,6 +400,61 @@ class BitoNavHostTest {
     }
 
     /**
+     * M9.5 T6: [NavRequests] must not navigate OVER onboarding — same philosophy as
+     * [com.alvarotc.bito.ui.BitoNavHost]'s celebration guard (a mid-flow user shouldn't get
+     * sandwiched into e.g. "review"). Deliberately NOT a bare absence assertion followed by
+     * nothing else: [NavRequests.pending]
+     * gets consumed into `heldRoute` the instant `BitoNavHost`'s own effect sees
+     * `currentRoute == "onboarding"`, so "review isn't shown yet" alone would pass exactly as
+     * well whether the request was properly latched or just silently dropped on the floor. Only
+     * watching it actually fire once onboarding hands off to "today" proves it survived — the
+     * same reasoning "a pending perfect day stays hidden behind onboarding and shows once today
+     * loads" already uses for the celebration sheet.
+     */
+    @Test
+    fun `a pending review request stays held behind onboarding and opens once onboarding hands off`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        NavRequests.open("review")
+        compose.waitForIdle()
+
+        // Held, not navigated: onboarding is still the one showing and review never opened over it.
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(NavRequests.pending.value) // consumed into heldRoute, not left dangling for a retry
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
+    }
+
+    /**
      * The full first-run journey through the REAL [BitoNavHost] — the only place [done]'s own
      * `navigate("today") { popUpTo("onboarding") { inclusive = true } }` (wired in the "onboarding"
      * composable above) can actually be observed landing. `OnboardingScreenTest`'s own
