@@ -1,8 +1,10 @@
 package com.alvarotc.bito.ui
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -91,6 +94,12 @@ fun BitoBottomBar(
  * [contentDescription] and the click action both land on this single container node (not on the
  * inner [Icon], whose own description is left null) so they keep resolving as one node, same as
  * the plain-glyph bar tests already depend on.
+ *
+ * `indication` is explicit (not the composed `selectable` overload's default
+ * `LocalIndication.current`) to keep the pre-T7a visual byte-for-byte: the selected slot used to
+ * carry no `Modifier.clickable` at all (fully inert, no ripple), while the unselected slots used
+ * plain `Modifier.clickable(onClick = onClick)` (default ripple). `indication = null` only on the
+ * selected slot preserves both halves of that — the a11y fix is additive, not a restyle.
  */
 @Composable
 private fun NavSlot(
@@ -100,9 +109,16 @@ private fun NavSlot(
     onClick: () -> Unit,
 ) {
     val tint = if (selected) Tinta else TintaSuave
+    val interactionSource = remember { MutableInteractionSource() }
     val base =
         Modifier
-            .selectable(selected = selected, onClick = onClick, role = Role.Tab)
+            .selectable(
+                selected = selected,
+                interactionSource = interactionSource,
+                indication = if (selected) null else LocalIndication.current,
+                role = Role.Tab,
+                onClick = onClick,
+            )
             .semantics { contentDescription = label }
             .then(if (selected) Modifier.clip(CircleShape).background(HojaTinte) else Modifier)
             .padding(horizontal = 16.dp, vertical = 8.dp)

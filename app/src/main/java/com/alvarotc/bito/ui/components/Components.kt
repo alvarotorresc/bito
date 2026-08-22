@@ -263,6 +263,9 @@ fun RoundedBar(
             .height(10.dp)
             .clip(CircleShape)
             .background(HojaTinte)
+            // mergeDescendants = true is a no-op here too (see DotProgress above) — the inner fill
+            // Box below carries no semantics of its own to fold in. Kept for the same
+            // pattern-consistency-with-DayRing reason.
             .semantics(mergeDescendants = true) {
                 progressBarRangeInfo = ProgressBarRangeInfo(current = progress.coerceIn(0f, 1f), range = 0f..1f)
             },
