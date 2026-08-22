@@ -4,6 +4,7 @@ import android.app.Application
 import com.alvarotc.bito.data.backup.BackupSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
+import com.alvarotc.bito.ui.onboarding.OnboardingReconciler
 import com.alvarotc.bito.ui.widget.WidgetRefresher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,8 +46,9 @@ object AppStartup {
 
     /**
      * Test-only: how many times [start]'s body actually ran (as opposed to being no-op'd by
-     * [started]) — incremented in lockstep with the three collectors' `.start()` calls, so this is
-     * the hook a test uses to prove a second [start] call doesn't launch a second set of them.
+     * [started]) — incremented in lockstep with the four `.start()` calls inside it (three
+     * continuous collectors plus [OnboardingReconciler]'s one-shot reconciler), so this is the hook
+     * a test uses to prove a second [start] call doesn't launch a second set of them.
      */
     internal val startInvocations = AtomicInteger(0)
 
@@ -61,6 +63,7 @@ object AppStartup {
         WidgetRefresher.start(app, container, scope)
         ReminderSync.start(app, container, scope)
         BackupSync.start(app, container, scope)
+        OnboardingReconciler.start(container, scope)
     }
 
     /**
