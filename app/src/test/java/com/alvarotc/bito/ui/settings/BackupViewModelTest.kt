@@ -385,6 +385,23 @@ class BackupViewModelTest {
             assertTrue(state().encryptionNeedsKey)
         }
 
+    // The repair path: backupEncryption is ALREADY true (a valid key was lost/corrupted), so
+    // enableEncryption's settings.update writes backupEncryption=true onto a Settings that
+    // already had it true — a no-op emission a naive distinctUntilChanged-on-backupEncryption
+    // flow would filter out, leaving encryptionNeedsKey stuck at true forever despite the freshly
+    // saved key. Must react to the key-store mutation itself, not just the settings field.
+    @Test
+    fun `re-creating a key while encryption is on clears encryptionNeedsKey`() =
+        runTest {
+            settingsRepo.update { it.copy(backupEncryption = true) }
+            assertTrue(state().encryptionNeedsKey)
+
+            vm.enableEncryption("secret".toCharArray())
+            advanceUntilIdle()
+
+            assertFalse(state().encryptionNeedsKey)
+        }
+
     @Test
     fun `loading an encrypted file asks for the import passphrase`() =
         runTest {

@@ -133,15 +133,27 @@ class BackupViewModel(
     }
 
     /**
-     * `keyStore.load()` only needs re-checking when [Settings.backupEncryption] itself flips —
-     * every other settings field (folder, frequency, copies, the auto-backup stamps) is
-     * unrelated, so gate the file read behind [distinctUntilChanged] on that one field instead of
-     * re-reading it on every settings emission.
+     * Bumped once by [enableEncryption]/[disableEncryption] whenever they finish mutating the key
+     * store — including the "repair" path, where [enableEncryption] re-saves a key while
+     * [Settings.backupEncryption] is ALREADY `true` (a lost/corrupted key gets re-created without
+     * the setting itself ever flipping). [encryptionNeedsKey] needs a signal for that case:
+     * `backupEncryption`'s own value doesn't change, so a `distinctUntilChanged` on that field
+     * alone would never notice the key store changed underneath it.
+     */
+    private val keyMutations = MutableStateFlow(0)
+
+    /**
+     * `keyStore.load()` only needs re-checking when [Settings.backupEncryption] flips OR when
+     * [keyMutations] bumps (a key was just saved/cleared, possibly without the setting itself
+     * changing) — every other settings field (folder, frequency, copies, the auto-backup stamps)
+     * is unrelated, so gate the file read behind those two triggers instead of re-reading it on
+     * every settings emission.
      */
     private val encryptionNeedsKey: Flow<Boolean> =
-        settings.settings
-            .map { it.backupEncryption }
-            .distinctUntilChanged()
+        combine(
+            settings.settings.map { it.backupEncryption }.distinctUntilChanged(),
+            keyMutations,
+        ) { encryptionOn, _ -> encryptionOn }
             .map { encryptionOn -> encryptionOn && keyStore.load() == null }
 
     /**
@@ -350,6 +362,7 @@ class BackupViewModel(
                 }
             if (result.isSuccess) {
                 settings.update { it.copy(backupEncryption = true) }
+                keyMutations.update { it + 1 } // covers the repair path: setting was already true
                 backupState.update { it.copy(busy = false, message = BackupMessage.ENCRYPTION_ON) }
             } else {
                 backupState.update { it.copy(busy = false, message = BackupMessage.IO_ERROR) }
@@ -364,6 +377,7 @@ class BackupViewModel(
             // this disable.
             settings.update { it.copy(backupEncryption = false) }
             keyStore.clear()
+            keyMutations.update { it + 1 }
             backupState.update { it.copy(message = BackupMessage.ENCRYPTION_OFF) }
         }
     }
