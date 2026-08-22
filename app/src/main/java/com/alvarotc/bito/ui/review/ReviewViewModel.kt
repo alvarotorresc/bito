@@ -127,7 +127,11 @@ class ReviewViewModel(
      * Marks every badge currently shown as seen. The marker is the latest of those badges' own
      * unlock stamps, not the wall clock — same rule as
      * [com.alvarotc.bito.ui.celebration.CelebrationsViewModel.dismissBadges]. Falls back to
-     * [nowMillis] only when there is nothing shown to unlock a stamp from.
+     * [nowMillis] only when there is nothing shown to unlock a stamp from. The floor for the
+     * final write is read INSIDE [SettingsRepository.update]'s transaction, not the snapshot used
+     * to pick which badges count as newly shown — a write racing this one (e.g. the celebration
+     * sheet's own dismissBadges) that lands between the two must never get overwritten by a stale
+     * floor.
      */
     fun markBadgesSeen() =
         write { _, nowMillis ->
@@ -136,7 +140,7 @@ class ReviewViewModel(
                 rewards.observeBadges().first()
                     .filter { it.unlockedAtMillis > current }
                     .maxOfOrNull { it.unlockedAtMillis }
-            settings.update { it.copy(badgesSeenUntilMillis = maxOf(current, latestShownUnlock ?: nowMillis)) }
+            settings.update { it.copy(badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, latestShownUnlock ?: nowMillis)) }
         }
 
     // The screen's LaunchedEffect(state.todaySealed, state.perfectToday) re-runs on every

@@ -148,6 +148,28 @@ class CelebrationsViewModelTest {
             assertEquals(fixedNow - 5_000, settingsRepo.settings.first().badgesSeenUntilMillis)
         }
 
+    // Ledgered M7 race: the old dismissBadges captured `current` via settings.settings.first()
+    // OUTSIDE settings.update{}, then wrote maxOf(current, ...) using that stale snapshot as the
+    // floor. A write landing in the window between the read and this call's own commit (here, a
+    // raw settingsRepo.update racing dismissBadges — standing in for e.g. ReviewViewModel's
+    // markBadgesSeen firing from another screen) got silently stomped: the stale floor was lower
+    // than what had just been committed. Fixed, the floor comes from inside the update
+    // transaction (`it.badgesSeenUntilMillis`), so whichever write commits last always sees the
+    // other's result and the max survives regardless of scheduling order. Confirmed this
+    // regresses (asserts 1755215980000, not the expected 1755216000000) against the unfixed code.
+    @Test
+    fun `dismissBadges does not lose a higher mark committed while it is still computing`() =
+        runTest {
+            db.badgeDao().insert(BadgeEntity(badgeId = "first-habit", unlockedAtMillis = fixedNow - 20_000))
+            state()
+
+            vm.dismissBadges()
+            launch { settingsRepo.update { it.copy(badgesSeenUntilMillis = fixedNow) } }
+            advanceUntilIdle()
+
+            assertEquals(maxOf(fixedNow, fixedNow - 20_000), settingsRepo.settings.first().badgesSeenUntilMillis)
+        }
+
     // R7: CelebrationsViewModel outlives the composition (survives rotation), so BitoNavHost's
     // composition-scoped cue LaunchedEffect re-running with the same keys after recreation must
     // not double-play the sound for the same pending sheet — the idempotency lives in cue()
