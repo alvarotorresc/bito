@@ -86,19 +86,31 @@ def _silence(duration_s: float) -> List[float]:
 
 
 def build_meeh() -> List[float]:
-    """Two short triangle bleats, each sliding 330->262 Hz with a quick ADSR — a soft,
-    goat-ish "meeh-meeh" for Habi's greeting."""
-    bleat = _tone(
-        duration_s=0.15,
-        freq_start=330.0,
-        freq_end=262.0,
-        wave_fn=_triangle,
-        attack_s=0.01,
+    """A bright, kitten-like double chirp — two soft rising sine notes ("mrp-mrp?") with a
+    gentle attack and an airy release; replaces the old goat bleat, which read as harsh."""
+    chirp_a = _tone(
+        duration_s=0.13,
+        freq_start=540.0,
+        freq_end=700.0,
+        wave_fn=_sine,
+        attack_s=0.03,
         decay_s=0.03,
-        sustain_level=0.6,
+        sustain_level=0.7,
         release_s=0.05,
+        peak=0.40,
     )
-    return bleat + _silence(0.06) + bleat
+    chirp_b = _tone(
+        duration_s=0.15,
+        freq_start=620.0,
+        freq_end=880.0,
+        wave_fn=_sine,
+        attack_s=0.03,
+        decay_s=0.03,
+        sustain_level=0.7,
+        release_s=0.07,
+        peak=0.42,
+    )
+    return chirp_a + _silence(0.05) + chirp_b
 
 
 def build_cheer() -> List[float]:
