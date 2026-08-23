@@ -19,7 +19,9 @@ class LogHabitAction : ActionCallback {
         val amount = parameters[AMOUNT] ?: 1
         val container = (context.applicationContext as BitoApp).container
         val reached = WidgetLogger(container.journal, container.reconciler, container.settings).log(habitId, amount)
-        PerfectDayNotifier.maybeNotify(context, container, reached)
+        // A notifier failure (e.g. POST_NOTIFICATIONS revoked mid-flight) must never swallow the
+        // repaint below — same guard WidgetRefresher keeps around its own updateAll.
+        runCatching { PerfectDayNotifier.maybeNotify(context, container, reached) }
         TodayWidget().updateAll(context)
     }
 

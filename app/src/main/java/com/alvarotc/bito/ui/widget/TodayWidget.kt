@@ -3,6 +3,8 @@ package com.alvarotc.bito.ui.widget
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
@@ -49,8 +51,12 @@ import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 import com.alvarotc.bito.ui.today.CardKind
+import com.alvarotc.bito.ui.today.TodayUiState
 import com.alvarotc.bito.ui.today.buildTodayUiState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import java.time.ZoneId
 
 /** Offscreen render size (px) for the header's mini Habi — Glance only paints bitmaps (tech doc §6.1). */
@@ -62,27 +68,40 @@ class TodayWidget : GlanceAppWidget() {
         id: GlanceId,
     ) {
         val container = (context.applicationContext as BitoApp).container
-        val prefs = container.settings.settings.first()
-        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
-        val entities = container.habits.observeHabits().first()
-        val owned = container.rewards.observeOwnedItems().first()
-        val state =
-            buildTodayUiState(
-                container.domainState.snapshot(),
-                entities.associate { it.id to it.sortOrder },
-                today,
-                prefs.personality,
-                owned,
-            )
-        // Rendered once here, outside provideContent's composable scope, so a recomposition
-        // triggered by currentState<Preferences>() (the per-instance selection) never re-paints it.
-        val habiBitmap = renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX)
+        // QA 2026-08-23: data used to be loaded once out here and captured by provideContent, so a
+        // live Glance session recomposed with stale values (the tapped counter never moved until
+        // the session died). The content now collects a Flow of the same four sources
+        // WidgetRefresher watches — any DB/settings write repaints, updateAll or not.
+        val dataFlow =
+            combine(
+                container.settings.settings,
+                container.domainState.observe(),
+                container.habits.observeHabits(),
+                container.rewards.observeOwnedItems(),
+            ) { prefs, domain, entities, owned ->
+                val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+                val state =
+                    buildTodayUiState(
+                        domain,
+                        entities.associate { it.id to it.sortOrder },
+                        today,
+                        prefs.personality,
+                        owned,
+                    )
+                WidgetData(state, renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX))
+            }.flowOn(Dispatchers.Default)
+        // First paint stays synchronous-ish: seed with a real emission so the widget never shows
+        // an empty frame while the flow warms up.
+        val initial = dataFlow.first()
         provideContent {
+            val data by dataFlow.collectAsState(initial = initial)
             val widgetPrefs = currentState<Preferences>()
             val selected = widgetPrefs[TodayWidgetKeys.selectedIds]
-            WidgetContent(buildWidgetModel(state, selected), habiBitmap)
+            WidgetContent(buildWidgetModel(data.state, selected), data.habiBitmap)
         }
     }
+
+    private data class WidgetData(val state: TodayUiState, val habiBitmap: Bitmap)
 }
 
 class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
