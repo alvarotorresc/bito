@@ -12,6 +12,9 @@
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Feedback de registro (Ajustes › Al registrar): vibración controlada por el switch
+         de la app, no por el ajuste global de vibración al tacto. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".BitoApp"

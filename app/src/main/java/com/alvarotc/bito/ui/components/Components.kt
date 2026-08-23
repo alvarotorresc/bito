@@ -33,8 +33,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -158,6 +161,26 @@ fun GhostPillButton(
         Spacer(Modifier.width(6.dp))
     }
     Text(text, style = MaterialTheme.typography.labelMedium)
+}
+
+/**
+ * [BitoSnackbar] wrapped in a horizontal swipe-to-dismiss, notification-style (QA 2026-08-24):
+ * flicking the card either way dismisses it, which resolves the host's suspended showSnackbar
+ * with Dismissed — the caller's else-branch (consume, no undo) runs exactly as on timeout.
+ */
+@Composable
+fun DismissableBitoSnackbar(data: SnackbarData) {
+    val dismissState =
+        rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                val leaving = value != SwipeToDismissBoxValue.Settled
+                if (leaving) data.dismiss()
+                leaving
+            },
+        )
+    SwipeToDismissBox(state = dismissState, backgroundContent = {}) {
+        BitoSnackbar(data)
+    }
 }
 
 /**
