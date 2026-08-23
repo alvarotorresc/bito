@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.review
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -60,6 +61,12 @@ fun ReviewScreen(
     onClose: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    if (state.loading) {
+        // First frame while the cold combine warms up: calm paper — never a flash of an empty
+        // E1 that then swaps to E2 (QA 2026-08-24: entry read as transparent/stuck).
+        Box(Modifier.fillMaxSize().background(Papel).testTag("review-loading"))
+        return
+    }
     if (state.todaySealed) {
         SealedState(viewModel, state, onClose)
     } else {

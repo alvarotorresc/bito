@@ -46,7 +46,7 @@ class ReviewViewModel(
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Overridable so tests can swap in their TestDispatcher — buildReviewUiState off Main (perf)
     // must not race a runTest's virtual scheduler the way the real Dispatchers.Default would.
-    defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
 ) : ViewModel() {
     /** Cards the user dismissed this session ("No lo hice" / "así se queda" / "Día limpio") — transient, never persisted. */
     private val acknowledged = MutableStateFlow<Set<String>>(emptySet())
@@ -80,7 +80,9 @@ class ReviewViewModel(
 
     /** Every mutation recomputes grants right after (idempotent append). */
     private fun write(block: suspend (today: LogicalDay, nowMillis: Long) -> Unit) =
-        viewModelScope.launch {
+        viewModelScope.launch(defaultDispatcher) {
+            // Off Main: the reconcile walk after every write was two ~600ms Choreographer stalls
+            // on cold entry (QA 2026-08-24) — DB calls already hop, the engine math must too.
             val today = todayOf(settings.settings.first())
             val nowMillis = now()
             block(today, nowMillis)
