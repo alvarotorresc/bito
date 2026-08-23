@@ -364,7 +364,10 @@ private fun StreakWallCard(streak: ActiveStreak) {
     // [E]: Icon(Flame, null) + Text(length) + Text(name) — the flame glyph is where the word
     // "streak" actually lives; a plain `mergeDescendants = true` would only concatenate "3" and
     // the habit name (e.g. "3 Meditar"), silently dropping the one word a sighted reader gets for
-    // free from the icon. An explicit override says what the merge alone can't.
+    // free from the icon. `mergeDescendants = true` (still needed — the Surface has no `onClick`
+    // to trigger it for free, unlike `AchievementsSection`'s `BitoCard`) collapses the 2 children
+    // into ONE spoken stop, and the explicit `contentDescription` on that same node overrides what
+    // the collapse alone would say — same shape as `DayRing` in Components.kt.
     val streakDescription =
         stringResource(R.string.stats_streak_card_cd, streak.name, streak.length, stringResource(periodUnitRes(streak.period)))
     Surface(
@@ -372,7 +375,7 @@ private fun StreakWallCard(streak: ActiveStreak) {
             Modifier
                 .width(140.dp)
                 .testTag("streak-${streak.habitId}")
-                .semantics { contentDescription = streakDescription },
+                .semantics(mergeDescendants = true) { contentDescription = streakDescription },
         shape = RoundedCornerShape(20.dp),
         color = Tarjeta,
         border = BorderStroke(1.dp, Borde),

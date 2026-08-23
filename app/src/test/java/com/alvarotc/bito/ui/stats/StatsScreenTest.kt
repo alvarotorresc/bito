@@ -5,11 +5,13 @@ import androidx.compose.material3.Text
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -227,8 +229,10 @@ class StatsScreenTest {
     fun `the streak wall card announces the streak, not just the bare number and name`() {
         // [E]: flame Icon(null) + length Text + name Text — the word "streak" lives ONLY in the
         // icon (contentDescription = null), so a plain mergeDescendants would silently drop it,
-        // announcing e.g. "3 Meditar" instead of a real streak description. An explicit override
-        // on the card names the unit properly, same mechanism as AchievementsSection's [F] fix.
+        // announcing e.g. "3 Meditar" instead of a real streak description. `mergeDescendants =
+        // true` PLUS an explicit contentDescription override on the same node names the unit
+        // properly AND collapses the 2 children into one stop — same mechanism as DayRing
+        // (Components.kt) and AchievementsSection's [F] fix.
         runBlocking {
             HabitsRepository(db).create(
                 habitEntity(id = "meditate", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 10),
@@ -239,7 +243,13 @@ class StatsScreenTest {
         }
         setContent()
 
-        compose.onNodeWithContentDescription("Meditar, streak of 3 days", useUnmergedTree = true).assertExists()
+        // MERGED tree (no useUnmergedTree) on the tag: proves the override actually landed on
+        // the card's own node. Scoped `.onChildren()` (NOT a screen-wide `onNodeWithText` lookup
+        // — the same habit's name legitimately appears again, separately, in the week strip
+        // above) proves the 2 inner Text nodes no longer exist as their own reachable stops:
+        // a real merge boundary absorbs its descendants out of the merged tree entirely.
+        compose.onNodeWithTag("streak-meditate").assertContentDescriptionEquals("Meditar, streak of 3 days")
+        compose.onNodeWithTag("streak-meditate").onChildren().assertCountEquals(0)
     }
 
     @Test
