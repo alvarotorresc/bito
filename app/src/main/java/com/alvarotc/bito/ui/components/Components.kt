@@ -205,11 +205,12 @@ fun DotProgress(
     modifier: Modifier = Modifier,
 ) {
     Row(
-        // Copies DayRing's own [D] pattern below: mergeDescendants = true is a no-op here (no
-        // dot carries its own semantics to fold in) but keeps this component consistent with
-        // the file's canonical progress-visualization shape, and the range info itself is real
-        // — every call site already shows the same numbers as adjacent Text, so this is
-        // robustness, not a fix for a value that is otherwise lost.
+        // Copies DayRing's own [D] pattern below: mergeDescendants = true is NOT a no-op — a
+        // merging node is a two-way semantics boundary. It keeps this Row's own progress info
+        // from bleeding OUT into whatever ancestor merges further up (e.g. a card's own
+        // clickable merge), and it makes this Row itself a real, separate stop for a screen
+        // reader instead of an untouchable node whose contentDescription/range info would
+        // otherwise just get folded into that ancestor's announcement.
         modifier.semantics(mergeDescendants = true) {
             progressBarRangeInfo = ProgressBarRangeInfo(current = if (total == 0) 0f else filled.toFloat() / total, range = 0f..1f)
         },
@@ -263,9 +264,11 @@ fun RoundedBar(
             .height(10.dp)
             .clip(CircleShape)
             .background(HojaTinte)
-            // mergeDescendants = true is a no-op here too (see DotProgress above) — the inner fill
-            // Box below carries no semantics of its own to fold in. Kept for the same
-            // pattern-consistency-with-DayRing reason.
+            // mergeDescendants = true is NOT a no-op here either (see DotProgress above) — this
+            // is the exact boundary TodayScreenTest's "does not bleed into the card" test
+            // depends on: it stops this bar's own progressBarRangeInfo from folding into the
+            // enclosing card's merged announcement, and makes the bar its own screen-reader
+            // stop rather than an untouchable node.
             .semantics(mergeDescendants = true) {
                 progressBarRangeInfo = ProgressBarRangeInfo(current = progress.coerceIn(0f, 1f), range = 0f..1f)
             },
