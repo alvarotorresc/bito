@@ -157,4 +157,47 @@ class TrayRefresherTest {
             assertNotNull(notification)
             assertTrue((notification!!.flags and Notification.FLAG_ONLY_ALERT_ONCE) != 0)
         }
+
+    @Test
+    fun `a refresh with no review pending cancels the review notification`() =
+        runTest(dispatcher) {
+            // Post a stale review notification first
+            val reviewNotification =
+                NotificationCompat.Builder(context, NotificationChannels.REVIEW)
+                    .setSmallIcon(R.drawable.ic_stat_habi)
+                    .setContentTitle("stale review")
+                    .build()
+            NotificationManagerCompat.from(context).notify(Notifier.REVIEW_ID, reviewNotification)
+            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+
+            // Refresh with no pending review (empty state)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
+
+            // Review notification should be cancelled
+            assertNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+        }
+
+    @Test
+    fun `a refresh with review pending leaves the review notification alone`() =
+        runTest(dispatcher) {
+            // Post a review notification
+            val reviewNotification =
+                NotificationCompat.Builder(context, NotificationChannels.REVIEW)
+                    .setSmallIcon(R.drawable.ic_stat_habi)
+                    .setContentTitle("review")
+                    .build()
+            NotificationManagerCompat.from(context).notify(Notifier.REVIEW_ID, reviewNotification)
+            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+
+            // Create a habit that hasn't been done yet to make today unsealed with content
+            habitsRepo.create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1),
+            )
+
+            // Refresh with pending review (unsealed today with something to act on)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
+
+            // Review notification should still be there
+            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+        }
 }

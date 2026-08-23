@@ -6,6 +6,8 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import kotlinx.coroutines.flow.first
 import java.time.Instant
 
+class MissingKeyException : Exception("Encryption enabled but no stored key")
+
 /**
  * COMPLETE manual export/import (tech doc §5.4: the file holds 100% of the
  * state from the first usable build). Import validates BEFORE wiping and
@@ -14,6 +16,7 @@ import java.time.Instant
 class BackupRepository(
     private val db: BitoDatabase,
     private val settings: SettingsRepository,
+    private val keyStore: BackupKeyStore,
     private val appVersion: String,
 ) {
     suspend fun exportJson(nowMillis: Long): String {
@@ -46,6 +49,22 @@ class BackupRepository(
             }
         return BackupCodec.encode(file)
     }
+
+    /** Same payload as [exportJson], encrypted with the stored key when settings ask for it. */
+    suspend fun exportBytes(nowMillis: Long): ByteArray {
+        val json = exportJson(nowMillis)
+        val prefs = settings.settings.first()
+        if (!prefs.backupEncryption) return json.toByteArray(Charsets.UTF_8)
+        val derived = keyStore.load() ?: throw MissingKeyException()
+        return BackupCrypto.encrypt(json, derived)
+    }
+
+    fun isEncrypted(bytes: ByteArray): Boolean = BackupCrypto.isEncrypted(bytes)
+
+    fun decryptToJson(
+        bytes: ByteArray,
+        passphrase: CharArray,
+    ): String = BackupCrypto.decrypt(bytes, passphrase)
 
     fun preview(text: String): BackupPreview = BackupCodec.decode(text).toPreview()
 

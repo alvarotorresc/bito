@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.map
 
 enum class BackupFrequency { DAILY, WEEKLY }
 
+enum class AutoBackupError { FOLDER, WRITE, MISSING_KEY }
+
 /**
  * App settings (tech doc §3, "DataStore"). Defaults marked provisional are
  * pending later sessions (economy/backup/M9 texts) and safe to change.
@@ -33,6 +35,8 @@ data class Settings(
     val habiSoundsEnabled: Boolean = true,
     val perfectDayCelebratedDay: Int = -1,
     val badgesSeenUntilMillis: Long = 0L,
+    val lastAutoBackupAtMillis: Long? = null,
+    val lastAutoBackupError: AutoBackupError? = null,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -52,6 +56,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val habiSoundsEnabled = booleanPreferencesKey("habi_sounds_enabled")
         val perfectDayCelebratedDay = intPreferencesKey("perfect_day_celebrated_day")
         val badgesSeenUntilMillis = longPreferencesKey("badges_seen_until_millis")
+        val lastAutoBackupAtMillis = longPreferencesKey("last_auto_backup_at_millis")
+        val lastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
     }
 
     val settings: Flow<Settings> = dataStore.data.map { it.toSettings() }
@@ -83,6 +89,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             habiSoundsEnabled = this[Keys.habiSoundsEnabled] ?: defaults.habiSoundsEnabled,
             perfectDayCelebratedDay = this[Keys.perfectDayCelebratedDay] ?: defaults.perfectDayCelebratedDay,
             badgesSeenUntilMillis = this[Keys.badgesSeenUntilMillis] ?: defaults.badgesSeenUntilMillis,
+            lastAutoBackupAtMillis = this[Keys.lastAutoBackupAtMillis],
+            lastAutoBackupError = this[Keys.lastAutoBackupError]?.let(AutoBackupError::valueOf),
         )
     }
 
@@ -102,5 +110,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.habiSoundsEnabled] = habiSoundsEnabled
         prefs[Keys.perfectDayCelebratedDay] = perfectDayCelebratedDay
         prefs[Keys.badgesSeenUntilMillis] = badgesSeenUntilMillis
+        lastAutoBackupAtMillis?.let { prefs[Keys.lastAutoBackupAtMillis] = it } ?: prefs.remove(Keys.lastAutoBackupAtMillis)
+        lastAutoBackupError?.let { prefs[Keys.lastAutoBackupError] = it.name } ?: prefs.remove(Keys.lastAutoBackupError)
     }
 }

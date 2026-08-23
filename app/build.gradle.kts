@@ -16,8 +16,20 @@ android {
         applicationId = "com.alvarotc.bito"
         minSdk = 26
         targetSdk = 35
-        versionCode = 7
-        versionName = "0.7.0"
+        versionCode = 8
+        versionName = "0.8.0"
+    }
+
+    signingConfigs {
+        create("release") {
+            val path = System.getenv("BITO_KEYSTORE_PATH")
+            if (path != null) {
+                storeFile = file(path)
+                storePassword = System.getenv("BITO_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("BITO_KEY_ALIAS")
+                keyPassword = System.getenv("BITO_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -25,6 +37,9 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (System.getenv("BITO_KEYSTORE_PATH") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
 
@@ -42,6 +57,13 @@ android {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
+        }
+    }
+    packaging {
+        // bcprov-jdk18on ships a multi-release manifest that collides with jspecify's; both are
+        // metadata only, safe to drop one copy.
+        resources {
+            excludes += "META-INF/versions/9/OSGI-INF/MANIFEST.MF"
         }
     }
 }
@@ -67,11 +89,15 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.glance.appwidget)
     implementation(libs.reorderable)
+    implementation(libs.bouncycastle)
+    implementation(libs.androidx.documentfile)
+    implementation(libs.androidx.work.runtime)
     testImplementation(libs.junit)
     testImplementation(libs.kotlin.test.junit)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.androidx.work.testing)
     testImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 }

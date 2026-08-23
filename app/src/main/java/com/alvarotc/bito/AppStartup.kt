@@ -1,6 +1,7 @@
 package com.alvarotc.bito
 
 import android.app.Application
+import com.alvarotc.bito.data.backup.BackupSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
 import com.alvarotc.bito.ui.widget.WidgetRefresher
@@ -19,5 +20,6 @@ object AppStartup {
         NotificationChannels.ensure(app)
         WidgetRefresher.start(app, container, scope)
         ReminderSync.start(app, container, scope)
+        BackupSync.start(app, container, scope)
     }
 }
