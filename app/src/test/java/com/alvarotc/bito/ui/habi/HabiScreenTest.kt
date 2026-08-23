@@ -38,9 +38,9 @@ class HabiScreenTest {
             }
         }
 
-        compose.onNodeWithText("NEUTRAL").assertIsSelected()
-        compose.onNodeWithText("SERGEANT").assertIsNotSelected()
-        compose.onNodeWithText("CHEERLEADER").assertIsNotSelected()
+        compose.onNodeWithText("Neutra").assertIsSelected()
+        compose.onNodeWithText("Sargento").assertIsNotSelected()
+        compose.onNodeWithText("Cheerleader").assertIsNotSelected()
     }
 
     @Test
@@ -52,7 +52,7 @@ class HabiScreenTest {
             }
         }
 
-        compose.onNodeWithText("SERGEANT").performClick()
+        compose.onNodeWithText("Sargento").performClick()
 
         assertEquals(Personality.SARGENTO, selected)
     }

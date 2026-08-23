@@ -210,7 +210,7 @@ internal fun PersonalityPills(
                         role = Role.Tab,
                         onClick = { onSelect(personality) },
                     )
-                    .padding(vertical = 12.dp),
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -218,6 +218,7 @@ internal fun PersonalityPills(
                     style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
                     color = if (active) Tarjeta else Tinta,
                     textAlign = TextAlign.Center,
+                    maxLines = 1,
                 )
             }
         }

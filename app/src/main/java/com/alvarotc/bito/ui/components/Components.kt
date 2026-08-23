@@ -74,6 +74,7 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import java.util.Locale
 
 @Composable
 fun BitoCard(
@@ -400,19 +401,22 @@ fun SpeechBubble(
     modifier: Modifier = Modifier,
     avatar: (@Composable () -> Unit)? = null,
 ) {
+    // The kicker line renders uppercased ("HABI · SARGENTO", mockup canon) while the personality
+    // strings themselves stay in title case for pills and cards (QA 2026-08-23).
+    val kicker = speaker.uppercase(Locale.getDefault())
     BitoCard(modifier) {
         if (avatar != null) {
             Row(verticalAlignment = Alignment.Top) {
                 avatar()
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(speaker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+                    Text(kicker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
                     Spacer(Modifier.height(4.dp))
                     Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
                 }
             }
         } else {
-            Text(speaker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            Text(kicker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             Spacer(Modifier.height(4.dp))
             Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
         }

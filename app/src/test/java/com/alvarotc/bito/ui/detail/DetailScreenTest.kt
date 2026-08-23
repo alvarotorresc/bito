@@ -231,8 +231,9 @@ class DetailScreenTest {
 
         compose.onNodeWithText("Freezers").assertExists()
         // T13: the sheet's body is now HabiVoice's personality-voiced text behind a speaker
-        // label — Settings.personality defaults to NEUTRA, so "HABI · NEUTRAL" (values/strings.xml).
-        compose.onNodeWithText("HABI · NEUTRAL").assertExists()
+        // label — Settings.personality defaults to NEUTRA; SpeechBubble uppercases the
+        // title-case "Neutra" (values/strings.xml) into the "HABI · NEUTRA" kicker.
+        compose.onNodeWithText("HABI · NEUTRA").assertExists()
         compose.onNodeWithText("Got it").assertExists()
     }
 

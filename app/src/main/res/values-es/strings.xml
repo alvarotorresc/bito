@@ -47,9 +47,9 @@
     <string name="habi_form_prompt_sargento">Nuevo hábito. Nombre y forma; el resto puede esperar.</string>
     <string name="habi_form_prompt_cheerleader">¡Un hábito nuevo! Ponle nombre, dale forma, y a por él.</string>
     <string name="habi_form_prompt_neutra">¿Qué hábito construimos? Ponle nombre y elige su forma — lo demás puede esperar.</string>
-    <string name="personality_neutra">NEUTRA</string>
-    <string name="personality_sargento">SARGENTO</string>
-    <string name="personality_cheerleader">CHEERLEADER</string>
+    <string name="personality_neutra">Neutra</string>
+    <string name="personality_sargento">Sargento</string>
+    <string name="personality_cheerleader">Cheerleader</string>
     <string name="name_hint">Nombre del hábito</string>
     <string name="preset_daily">Diario</string>
     <string name="preset_quantity">Cantidad</string>
