@@ -2,7 +2,9 @@ package com.alvarotc.bito.ui.habi
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseInOut
+import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -25,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -37,12 +40,12 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-private const val BOB_HALF_RANGE_DP = 2f
-private const val BOB_PERIOD_MS = 2400
 private const val BLINK_HALF_DURATION_MS = 90
 private const val BLINK_MIN_DELAY_MS = 3000L
 private const val BLINK_MAX_DELAY_MS = 5000L
@@ -56,14 +59,23 @@ private const val EXPRESSIVE_TAP_SCALE_X = 1.10f
 private const val EXPRESSIVE_TAP_SCALE_Y = 0.90f
 private const val TAP_BLINK_HALF_DURATION_MS = 100
 
-// QA 2026-08-23: the press-gated squash never completes on a quick tap (pressed flips back before
-// the spring moves), which read as "only the eyes move". The tap now also fires a fire-and-forget
-// squash-and-hop pulse (AnimatedDot's snapTo+animateTo pattern) that always plays out in full.
-private const val TAP_BOUNCE_SCALE = 0.12f
-private const val TAP_HOP_DP = 6f
+// QA 2026-08-23 bis («mascota, no robot»): everything anchors at the FEET (bottom-center
+// transform origin) so squash, stretch and landings read as weight; breathing is visible and
+// mood-paced; idle micro-gestures fire every few seconds; a tap plays one of three full
+// choreographies (hop / happy wiggle / double bounce) with anticipation and overshoot.
+private const val BREATH_SCALE = 0.022f
+private const val BREATH_LIFT_DP = 1.2f
+private const val BREATH_PERIOD_RADIANT_MS = 2000
+private const val BREATH_PERIOD_NORMAL_MS = 2700
+private const val BREATH_PERIOD_LOW_MS = 3500
+private const val IDLE_GESTURE_MIN_DELAY_MS = 5000L
+private const val IDLE_GESTURE_MAX_DELAY_MS = 11000L
+private const val SQUASH_SCALE_X = 0.10f
+private const val SQUASH_SCALE_Y = 0.14f
+private const val TAP_HOP_DP = 10f
 
 /**
- * The living Habi bean: idle bob, periodic blink, and (when [onTap] is given) a squash-and-stretch
+ * The living Habi bean: breathing idle (mood-paced), periodic blink, idle micro-gestures, and (when [onTap] is given) a squash-and-stretch
  * tap response. Purely presentational — [spec] already carries mood, personality and the equipped
  * set; this composable owns no state about what Habi wears or feels.
  *
@@ -87,25 +99,37 @@ fun HabiAvatar(
 ) {
     val density = LocalDensity.current
     val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
-    val bobPx: Float
+    val breathLiftPx = with(density) { BREATH_LIFT_DP.dp.toPx() }
     val blinkValue: Float
     var tapBlinkPulse: (() -> Unit)? = null
-    var tapBouncePulse: (() -> Unit)? = null
-    var bounceValue = 0f
+    var tapReactionPulse: (() -> Unit)? = null
+    var breathValue = 0f
+    // Choreography channels, all resting at 0: squash >0 flattens / <0 stretches (from the feet),
+    // hop lifts, tilt rocks on the feet. Idle gestures and tap reactions share them — the newest
+    // animateTo wins, which is exactly the interruption behavior a pet should have.
+    var squashValue = 0f
+    var hopValue = 0f
+    var tiltValue = 0f
     if (animated) {
-        val infiniteTransition = rememberInfiniteTransition(label = "habi-bob")
-        val bobPhase by
+        val breathPeriod =
+            when (spec.mood) {
+                Mood.RADIANT -> BREATH_PERIOD_RADIANT_MS
+                Mood.WILTED, Mood.DRAMATIC -> BREATH_PERIOD_LOW_MS
+                else -> BREATH_PERIOD_NORMAL_MS
+            }
+        val infiniteTransition = rememberInfiniteTransition(label = "habi-breath")
+        val breathPhase by
             infiniteTransition.animateFloat(
-                initialValue = -1f,
+                initialValue = 0f,
                 targetValue = 1f,
                 animationSpec =
                     infiniteRepeatable(
-                        animation = tween(BOB_PERIOD_MS, easing = EaseInOut),
+                        animation = tween(breathPeriod, easing = EaseInOut),
                         repeatMode = RepeatMode.Reverse,
                     ),
-                label = "habi-bob-phase",
+                label = "habi-breath-phase",
             )
-        bobPx = with(density) { (bobPhase * BOB_HALF_RANGE_DP).dp.toPx() }
+        breathValue = breathPhase
 
         val idleBlink = remember { Animatable(0f) }
         LaunchedEffect(Unit) {
@@ -116,34 +140,100 @@ fun HabiAvatar(
             }
         }
 
+        val squash = remember { Animatable(0f) }
+        val hop = remember { Animatable(0f) }
+        val tilt = remember { Animatable(0f) }
+        squashValue = squash.value
+        hopValue = hop.value
+        tiltValue = tilt.value
+
+        // Idle micro-gestures: a curious tilt or a tall stretch, every few seconds.
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(Random.nextLong(IDLE_GESTURE_MIN_DELAY_MS, IDLE_GESTURE_MAX_DELAY_MS))
+                when (Random.nextInt(2)) {
+                    0 -> {
+                        tilt.animateTo(-5f, tween(240, easing = EaseInOut))
+                        delay(320)
+                        tilt.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                    }
+                    else -> {
+                        squash.animateTo(-0.5f, tween(300, easing = EaseInOut))
+                        delay(260)
+                        squash.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                    }
+                }
+            }
+        }
+
         if (onTap != null) {
             val tapBlink = remember { Animatable(0f) }
-            val tapBounce = remember { Animatable(0f) }
             val tapScope = rememberCoroutineScope()
+            val tapJob = remember { arrayOfNulls<Job>(1) }
             tapBlinkPulse = {
                 tapScope.launch {
                     tapBlink.animateTo(1f, tween(TAP_BLINK_HALF_DURATION_MS, easing = LinearEasing))
                     tapBlink.animateTo(0f, tween(TAP_BLINK_HALF_DURATION_MS, easing = LinearEasing))
                 }
             }
-            tapBouncePulse = {
-                tapScope.launch {
-                    // 1 = max squash; the bouncy spring overshoots past 0 on the way back, so the
-                    // bean visibly rebounds instead of easing flat.
-                    tapBounce.snapTo(1f)
-                    tapBounce.animateTo(
-                        0f,
-                        spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
-                    )
-                }
+            tapReactionPulse = {
+                tapJob[0]?.cancel()
+                tapJob[0] =
+                    tapScope.launch {
+                        squash.snapTo(0f)
+                        hop.snapTo(0f)
+                        tilt.snapTo(0f)
+                        when (Random.nextInt(3)) {
+                            0 -> {
+                                // Brinco: anticipación (se agacha), salto estirado, aterrizaje
+                                // aplastado y asentarse con rebote.
+                                squash.animateTo(1f, tween(80, easing = LinearEasing))
+                                coroutineScope {
+                                    launch { squash.animateTo(-0.8f, tween(140, easing = LinearOutSlowInEasing)) }
+                                    launch { hop.animateTo(1f, tween(140, easing = LinearOutSlowInEasing)) }
+                                }
+                                coroutineScope {
+                                    launch { hop.animateTo(0f, tween(150, easing = FastOutLinearInEasing)) }
+                                    launch { squash.animateTo(0.7f, tween(150, easing = FastOutLinearInEasing)) }
+                                }
+                                squash.animateTo(
+                                    0f,
+                                    spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                                )
+                            }
+                            1 -> {
+                                // Meneo feliz: balanceo sobre los pies con un puntito de squash.
+                                squash.snapTo(0.35f)
+                                tilt.animateTo(-9f, tween(80, easing = LinearEasing))
+                                tilt.animateTo(8f, tween(90, easing = LinearEasing))
+                                tilt.animateTo(-5f, tween(80, easing = LinearEasing))
+                                coroutineScope {
+                                    launch { tilt.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
+                                    launch { squash.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy)) }
+                                }
+                            }
+                            else -> {
+                                // Doble botecito, estirándose al subir y aplastándose al caer.
+                                repeat(2) {
+                                    coroutineScope {
+                                        launch { hop.animateTo(0.45f, tween(110, easing = LinearOutSlowInEasing)) }
+                                        launch { squash.animateTo(-0.4f, tween(110, easing = LinearOutSlowInEasing)) }
+                                    }
+                                    coroutineScope {
+                                        launch { hop.animateTo(0f, tween(110, easing = FastOutLinearInEasing)) }
+                                        launch { squash.animateTo(0.5f, tween(110, easing = FastOutLinearInEasing)) }
+                                    }
+                                }
+                                squash.animateTo(0f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+                            }
+                        }
+                    }
             }
             blinkValue = maxOf(idleBlink.value, tapBlink.value)
-            bounceValue = tapBounce.value
         } else {
             blinkValue = idleBlink.value
         }
     } else {
-        bobPx = 0f
         blinkValue = 0f
     }
 
@@ -200,7 +290,7 @@ fun HabiAvatar(
                         onClick = {
                             onTap()
                             tapBlinkPulse?.invoke()
-                            tapBouncePulse?.invoke()
+                            tapReactionPulse?.invoke()
                         },
                     )
                 } else {
@@ -208,9 +298,13 @@ fun HabiAvatar(
                 }
             }
             .graphicsLayer {
-                translationY = bobPx - hopPx * bounceValue
-                this.scaleX = scaleX * (1f + TAP_BOUNCE_SCALE * bounceValue)
-                this.scaleY = scaleY * (1f - TAP_BOUNCE_SCALE * bounceValue)
+                // Anchored at the feet: a creature with weight, not a balloon scaling around
+                // its middle.
+                transformOrigin = TransformOrigin(0.5f, 1f)
+                translationY = -breathLiftPx * breathValue - hopPx * hopValue
+                rotationZ = tiltValue
+                this.scaleX = scaleX * (1f + SQUASH_SCALE_X * squashValue) * (1f - BREATH_SCALE * 0.5f * breathValue)
+                this.scaleY = scaleY * (1f - SQUASH_SCALE_Y * squashValue) * (1f + BREATH_SCALE * breathValue)
             }
 
     Canvas(canvasModifier) {

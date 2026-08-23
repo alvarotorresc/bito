@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.random.Random
 
 /** Habi's four tiny cues (docs §5.3): a greeting, a celebration, a sad slide and a purchase pop. */
 enum class HabiSound { GREETING, CELEBRATION, SAD, PURCHASE }
@@ -76,7 +77,10 @@ class HabiSounds(
         scope.launch {
             if (!shouldPlay(settings.settings.first())) return@launch
             val id = soundIds[sound] ?: return@launch
-            soundPool.play(id, VOLUME, VOLUME, 1, 0, 1f)
+            // Pitch varies a little per greeting so petting never sounds like the same sample on
+            // repeat (QA 2026-08-23 — «que suene a mascota»).
+            val rate = if (sound == HabiSound.GREETING) 0.94f + Random.nextFloat() * 0.12f else 1f
+            soundPool.play(id, VOLUME, VOLUME, 1, 0, rate)
         }
     }
 
