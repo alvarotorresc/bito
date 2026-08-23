@@ -266,6 +266,11 @@ class TodayScreenTest {
         val node = compose.onNodeWithTag("bar-lectura", useUnmergedTree = true).fetchSemanticsNode()
         assertEquals("Open Lectura", node.config[SemanticsActions.OnClick].label)
         assertEquals("Type the exact total", node.config[SemanticsActions.OnLongClick].label)
+        // M9.5 final-review Minor #7: RoundedBar inside sets its own mergeDescendants = true (a
+        // two-way boundary, per Components.kt's KDoc), so without an explicit contentDescription
+        // here this Box would merge nothing from its one child and land as an unnamed stop —
+        // "Double tap to Open Lectura" with no identity read out first.
+        compose.onNodeWithTag("bar-lectura", useUnmergedTree = true).assertContentDescriptionEquals("Open Lectura")
     }
 
     @Test

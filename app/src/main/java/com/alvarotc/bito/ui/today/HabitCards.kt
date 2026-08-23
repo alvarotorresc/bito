@@ -264,21 +264,28 @@ private fun DurationBody(
         Spacer(Modifier.height(8.dp))
         // Padding sits after combinedClickable so it grows the tap/long-press target without
         // inflating the bar's own visual height (RoundedBar stays 10dp, drawn by GUIA).
-        // No standalone contentDescription here on purpose: this bar duplicates the card's own
-        // "Open X" action (HabitCard's own semantics, line 68 above) — onClickLabel names the
-        // click action without giving this node a second, redundant identity next to the card's.
+        // contentDescription names this node explicitly: RoundedBar inside sets its own
+        // semantics(mergeDescendants = true) (see RoundedBar's KDoc in Components.kt), which
+        // makes it a two-way semantics boundary that keeps its progress info from folding
+        // upward — so this Box (itself a merging node, from combinedClickable) would otherwise
+        // merge nothing from its one child and land as an unnamed TalkBack stop. Reuses the same
+        // "Open X" copy as onClickLabel below (a mild redundancy — "Open Lectura, double tap to
+        // open Lectura" — over inventing a second string), since the standalone description still
+        // has to name what tapping this bar does, same as the card's own "Open X" action.
         // onLongClickLabel names the exact-value sheet hiding behind the long press the same way
         // CounterBody's primary does.
+        val openLabel = stringResource(R.string.open_habit_hint, card.name)
         Box(
             Modifier
                 .fillMaxWidth()
                 .testTag("bar-${card.id}")
                 .combinedClickable(
                     onClick = onOpen,
-                    onClickLabel = stringResource(R.string.open_habit_hint, card.name),
+                    onClickLabel = openLabel,
                     onLongClick = onExact,
                     onLongClickLabel = stringResource(R.string.exact_value_action),
                 )
+                .semantics { contentDescription = openLabel }
                 .padding(vertical = 12.dp),
         ) {
             RoundedBar(
