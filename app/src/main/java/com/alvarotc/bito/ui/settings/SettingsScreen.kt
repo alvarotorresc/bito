@@ -58,8 +58,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -586,7 +584,7 @@ private fun GeneralSectionCard(
                         else -> R.string.language_system
                     },
                 ),
-            stateDescription = stringResource(R.string.language_cycle_hint),
+            onClickLabel = stringResource(R.string.language_cycle_hint),
             onClick = {
                 // A backup restore can carry a tag outside {es, en} (locales_config only declares
                 // those two) — any unrecognized tag falls into the same `else` as null, so tapping
@@ -1119,17 +1117,18 @@ private fun SettingsRow(
     trailingChevron: Boolean = false,
     // [C], low priority: a 3-state cycling row (the language row is the one call site that uses
     // this) is already announced via the merged "Language, Spanish" text and Role.Button from the
-    // underlying .clickable — this only adds a hint that tapping again cycles the value, it never
-    // replaces the merged label+value announcement.
-    stateDescription: String? = null,
+    // underlying .clickable — onClickLabel only adds a hint TalkBack appends to its own "double
+    // tap to activate" cue, it never replaces the merged label+value announcement. Not
+    // stateDescription: that property announces the row's STATE, not an action hint, and TalkBack
+    // would read it as such.
+    onClickLabel: String? = null,
     onClick: () -> Unit,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .clickable(onClick = onClick)
-            .then(if (stateDescription != null) Modifier.semantics { this.stateDescription = stateDescription } else Modifier),
+            .clickable(onClickLabel = onClickLabel, onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

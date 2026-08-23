@@ -174,7 +174,7 @@
     <string name="language_spanish">Español</string>
     <string name="language_english">English</string>
     <string name="language_system">Del sistema</string>
-    <string name="language_cycle_hint">Rota entre los idiomas al tocar</string>
+    <string name="language_cycle_hint">Cambiar idioma</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Hábito archivado (%1$d)</item>
         <item quantity="many">Hábitos archivados (%1$d)</item>

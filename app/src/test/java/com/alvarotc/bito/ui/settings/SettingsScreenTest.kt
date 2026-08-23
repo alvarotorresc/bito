@@ -3,7 +3,6 @@ package com.alvarotc.bito.ui.settings
 import android.content.Context
 import android.net.Uri
 import androidx.compose.ui.semantics.SemanticsActions
-import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
@@ -734,11 +733,13 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         // MERGED tree (no useUnmergedTree): the language row already merges label+value text via
-        // its own `.clickable` (compliant [E] pattern per the inventory), and the stateDescription
-        // lands on that same node — direct config read, same idiom this file's own relapse-sheet
-        // test uses for an action it can't reach via a plain assertion helper.
+        // its own `.clickable` (compliant [E] pattern per the inventory), and onClickLabel lands
+        // on that same node's OnClick action — direct config read, same idiom this file's own
+        // relapse-sheet test uses for an action it can't reach via a plain assertion helper. Not
+        // stateDescription: that property announces the row's STATE to TalkBack, not an action
+        // hint, so the hint travels on the click action's own label instead.
         val node = compose.onNodeWithText("Language").performScrollTo().fetchSemanticsNode()
-        assertEquals("Cycles through languages", node.config[SemanticsProperties.StateDescription])
+        assertEquals("Cycle language", node.config[SemanticsActions.OnClick].label)
     }
 
     @Test
