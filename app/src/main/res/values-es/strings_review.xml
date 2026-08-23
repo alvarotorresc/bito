@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Repaso diario E1, hojas de día sellado/perfecto E2 y el ajuste de celebración (T8) — copia
-        PROVISIONAL, la definitiva llega en la sesión de economía/copy de M9. Las líneas propias de
-        Habi con voz de personalidad para estos contextos viven en strings_habi.xml (habi_review_*,
+        Repaso diario E1, hojas de día sellado/perfecto E2 y el ajuste de celebración (T8) —
+        M9 draft copy — pending architect validation (docs/07). Las líneas propias de Habi con voz
+        de personalidad para estos contextos viven en strings_habi.xml (habi_review_*,
         habi_sealed_*, habi_perfect_*), no aquí — este fichero guarda los textos de UI llanos de la
         pantalla de repaso.
     -->

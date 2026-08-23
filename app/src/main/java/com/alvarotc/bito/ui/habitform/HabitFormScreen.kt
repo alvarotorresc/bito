@@ -59,7 +59,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
-import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.NumberInputSheet
@@ -67,6 +66,7 @@ import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.components.TimePickerSheet
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
@@ -103,8 +103,8 @@ fun HabitFormScreen(
         ) {
             FormHeader(state.isEditing, onBack)
             SpeechBubble(
-                stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
-                stringResource(R.string.habi_form_prompt),
+                stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
+                stringResource(HabiVoice.formPromptRes(personality)),
             )
             NameField(state.name, viewModel::setName)
             PresetPills(state.preset, state.isEditing, viewModel::selectPreset)
@@ -210,7 +210,9 @@ private fun NameField(
     }
 }
 
-private fun HabitPreset.labelRes(): Int =
+/** Not private: [com.alvarotc.bito.ui.onboarding.OnboardingScreen]'s 7g preset pills reuse these
+ * exact labels rather than duplicating the mapping — same strings, same five presets. */
+internal fun HabitPreset.labelRes(): Int =
     when (this) {
         HabitPreset.DAILY_CHECK -> R.string.preset_daily
         HabitPreset.QUANTITY -> R.string.preset_quantity
@@ -625,10 +627,3 @@ private fun DeleteConfirmSheet(
         }
     }
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }

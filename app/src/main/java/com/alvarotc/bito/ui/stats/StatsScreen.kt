@@ -119,19 +119,12 @@ private fun CommentatorBubble(
     equipped: EquippedSet,
 ) {
     SpeechBubble(
-        speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
+        speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
         text = stringResource(HabiVoice.bubbleRes(mood, personality)),
         modifier = Modifier.fillMaxWidth(),
         avatar = { HabiAvatar(HabiSpec(mood, personality, equipped), Modifier.size(40.dp), animated = false) },
     )
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }
 
 /**
  * THE single solid-accent card on the screen: perfect days THIS YEAR (rule 1 of the 3a mockup) —

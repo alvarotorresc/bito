@@ -344,4 +344,29 @@ class DetailScreenTest {
         compose.onNodeWithTag("resume", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("pause", useUnmergedTree = true).assertDoesNotExist()
     }
+
+    @Test
+    fun `a habit with no entries shows the empty hint`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        compose.onNodeWithText("Log your first day and this comes alive").assertExists()
+    }
+
+    @Test
+    fun `the hint disappears after the first entry`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today - 3, value = 1))
+        }
+        setContent("h1")
+
+        compose.onNodeWithText("Log your first day and this comes alive").assertDoesNotExist()
+    }
 }

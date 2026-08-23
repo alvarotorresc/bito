@@ -206,7 +206,7 @@ fun FreezerInfoSheet(
         Column(Modifier.padding(20.dp).testTag("freezer-info-sheet"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.freezer_info_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
             SpeechBubble(
-                speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
+                speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
                 text =
                     stringResource(
                         HabiVoice.freezerInfoRes(personality),
@@ -225,13 +225,6 @@ fun FreezerInfoSheet(
         }
     }
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }
 
 /** Pausing suspends registration and streak judgment until resumed; the note is optional context. */
 @Composable

@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -45,7 +46,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -149,7 +152,10 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("General", useUnmergedTree = true).assertDoesNotExist()
+        // The General card itself now always shows (it hosts the language row below), so the
+        // absence check moves to the archived row specifically — "Archived habit"/"Archived
+        // habits" both start with this substring.
+        compose.onNodeWithText("Archived habit", substring = true, useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -183,6 +189,136 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         assertTrue(opened)
+    }
+
+    @Test
+    fun `the language row shows the current choice`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language"))
+        runBlocking { settings.update { it.copy(languageTag = "en") } }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("English", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * "English" alone doesn't discriminate the es-branch of the row's `when` — es and en share no
+     * string with system's default, but [language_english] happens to read "English" in both
+     * locales this suite's default (EN) qualifiers ever render, so this pins the es-branch on its
+     * own string instead. [language_spanish] is the endonym "Español" in every locale (platform
+     * convention for language pickers: each language names itself), not a per-locale translation.
+     */
+    @Test
+    fun `the language row shows Español when the tag is es`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language-es"))
+        runBlocking { settings.update { it.copy(languageTag = "es") } }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Español", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `tapping the language row cycles system to es to en to system, persisting each step`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language-cycle"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("System", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+
+        compose.onNodeWithText("System", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Español", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        assertEquals("es", runBlocking { settings.settings.first() }.languageTag)
+
+        compose.onNodeWithText("Español", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("English", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        assertEquals("en", runBlocking { settings.settings.first() }.languageTag)
+
+        compose.onNodeWithText("English", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("System", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        assertNull(runBlocking { settings.settings.first() }.languageTag)
+    }
+
+    @Test
+    fun `settings lets the user rename themselves`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-name"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Your name", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("settings-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("settings-name-field", useUnmergedTree = true).assertTextContains("Alvaro")
+        compose.onNodeWithTag("settings-name-confirm", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertEquals("Alvaro", runBlocking { settings.settings.first() }.userName)
+        compose.onNodeWithText("Alvaro", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test

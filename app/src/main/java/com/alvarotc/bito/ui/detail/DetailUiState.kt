@@ -54,6 +54,9 @@ data class DetailUiState(
     val personality: Personality = Personality.NEUTRA,
     val userName: String = "",
     val loading: Boolean = false,
+    // Whether this habit has any entry at all (across all time, not just the displayed month).
+    // Used to show/hide the empty-state hint.
+    val hasAnyEntry: Boolean = false,
 )
 
 /**
@@ -83,6 +86,7 @@ fun buildDetailUiState(
             .filter { it.habitId == habitId && it.logicalDay in monthStart..monthEnd }
             .groupBy { it.logicalDay }
             .mapValues { (_, dayEntries) -> Compliance.progressOf(habit, dayEntries) }
+    val hasAnyEntry = state.entries.any { it.habitId == habitId }
     return DetailUiState(
         habitId = habit.id,
         name = habit.name,
@@ -102,6 +106,7 @@ fun buildDetailUiState(
         personality = personality,
         userName = userName,
         loading = false,
+        hasAnyEntry = hasAnyEntry,
     )
 }
 

@@ -5,8 +5,8 @@
     <string name="habi_name_fallback">champ</string>
 
     <!--
-        Habi's personality-voiced texts (T13/T8, HabiVoice) — PROVISIONAL copy, definitive wording
-        lands in the M9 economy/copy session. Ten contexts:
+        Habi's personality-voiced texts (T13/T8, HabiVoice) — M9 draft copy — pending architect
+        validation (docs/07). Ten contexts:
         habi_bubble_* — Stats commentator, mood-only (no name).
         habi_home_*   — Habi screen's own bubble, playful home-context, %1$s = user name.
         habi_greeting_* — Today's Habi corner, short, %1$s = user name (consumed by T14).
@@ -19,72 +19,72 @@
         habi_perfect_notif_* — the perfect-day notification body, %1$s = user name.
         habi_badge_* — the badge-unlocked sheet, %1$s = user name, %2$s = badge name.
     -->
-    <string name="habi_bubble_sargento_radiant">A flawless week. That\'s how it\'s done, recruit.</string>
-    <string name="habi_bubble_sargento_normal">Acceptable. But I\'ve seen better weeks.</string>
-    <string name="habi_bubble_sargento_wilted">This is a disaster. Get up and do your habits.</string>
+    <string name="habi_bubble_sargento_radiant">A flawless week. Not one slip. That\'s the standard.</string>
+    <string name="habi_bubble_sargento_normal">Acceptable. We both know you\'ve got more.</string>
+    <string name="habi_bubble_sargento_wilted">Rough week. Don\'t argue with it. Fix it.</string>
     <string name="habi_bubble_sargento_dramatic">Three days without showing up? Don\'t you dare give up now.</string>
-    <string name="habi_bubble_cheerleader_radiant">A SPECTACULAAAR week! You\'re unstoppable!</string>
-    <string name="habi_bubble_cheerleader_normal">Good week! Let\'s keep stacking wins!</string>
-    <string name="habi_bubble_cheerleader_wilted">It\'s been a tough week… but tomorrow we bounce back together!</string>
-    <string name="habi_bubble_cheerleader_dramatic">Three days without you?! I missed you! Let\'s get back at it!</string>
-    <string name="habi_bubble_neutra_radiant">A very solid week: over 80 percent completed.</string>
-    <string name="habi_bubble_neutra_normal">An average week. Keep it up.</string>
-    <string name="habi_bubble_neutra_wilted">A weak week: under half done. One habit today is enough to restart.</string>
+    <string name="habi_bubble_cheerleader_radiant">What a week! Honestly, frame this one.</string>
+    <string name="habi_bubble_cheerleader_normal">Good week. And the next one? Even better!</string>
+    <string name="habi_bubble_cheerleader_wilted">A tough week — I won\'t sugarcoat it. Tomorrow we start a new one, you and me.</string>
+    <string name="habi_bubble_cheerleader_dramatic">Three days without you! I missed you. Come back — it\'s not the same around here.</string>
+    <string name="habi_bubble_neutra_radiant">A very solid week: over 80 percent done.</string>
+    <string name="habi_bubble_neutra_normal">A steady week. Keep going.</string>
+    <string name="habi_bubble_neutra_wilted">A slow week: under half done. One habit today is enough to restart.</string>
     <string name="habi_bubble_neutra_dramatic">Three days with no entries. Whenever you\'re ready, I\'m here.</string>
 
-    <string name="habi_home_sargento_radiant">Recruit %1$s, reporting in top shape. Attention!</string>
-    <string name="habi_home_sargento_normal">Did you bring me something, %1$s?</string>
-    <string name="habi_home_sargento_wilted">%1$s, this isn\'t a camp for slackers. Get back out there.</string>
-    <string name="habi_home_sargento_dramatic">Where have you been, %1$s? No one abandons their post here.</string>
-    <string name="habi_home_cheerleader_radiant">%1$s! Look at you! We\'re ON FIRE!</string>
-    <string name="habi_home_cheerleader_normal">Hi, %1$s! So happy to see you here!</string>
+    <string name="habi_home_sargento_radiant">Peak form, %1$s. Inspection: passed.</string>
+    <string name="habi_home_sargento_normal">What have you got for me today, %1$s?</string>
+    <string name="habi_home_sargento_wilted">See this face, %1$s? Habits fix it. Cuddles don\'t.</string>
+    <string name="habi_home_sargento_dramatic">Where were you, %1$s? Doesn\'t matter. You\'re here now — get to work.</string>
+    <string name="habi_home_cheerleader_radiant">Look at us, %1$s — glowing! And that\'s all your doing.</string>
+    <string name="habi_home_cheerleader_normal">Hi, %1$s! I was hoping you\'d drop by.</string>
     <string name="habi_home_cheerleader_wilted">%1$s… it\'s been rough, but we\'re in this together, okay?</string>
-    <string name="habi_home_cheerleader_dramatic">Where were you, %1$s?! I was waiting for you so eagerly!</string>
+    <string name="habi_home_cheerleader_dramatic">%1$s, it\'s been ages! I saved your spot. Come here.</string>
     <string name="habi_home_neutra_radiant">Good pace this week, %1$s.</string>
     <string name="habi_home_neutra_normal">Hi, %1$s. All in order.</string>
-    <string name="habi_home_neutra_wilted">%1$s, it\'s time to pick a habit back up.</string>
-    <string name="habi_home_neutra_dramatic">Haven\'t seen you in days, %1$s.</string>
+    <string name="habi_home_neutra_wilted">%1$s, time to pick things back up. One habit will do.</string>
+    <string name="habi_home_neutra_dramatic">It\'s been a few days, %1$s. Good to see you.</string>
 
-    <string name="habi_greeting_sargento_radiant">Stand firm, %1$s. Keep it up.</string>
-    <string name="habi_greeting_sargento_normal">Move out, %1$s.</string>
+    <string name="habi_greeting_sargento_radiant">Sharp, %1$s. Stay sharp.</string>
+    <string name="habi_greeting_sargento_normal">Let\'s move, %1$s.</string>
     <string name="habi_greeting_sargento_wilted">%1$s, those habits won\'t do themselves.</string>
     <string name="habi_greeting_sargento_dramatic">%1$s, break\'s over.</string>
     <string name="habi_greeting_cheerleader_radiant">You\'re on fire, %1$s!</string>
-    <string name="habi_greeting_cheerleader_normal">Hi, %1$s! Let\'s get today!</string>
-    <string name="habi_greeting_cheerleader_wilted">Cheer up, %1$s! Today\'s a good day.</string>
+    <string name="habi_greeting_cheerleader_normal">Hey, %1$s! Today\'s ours.</string>
+    <string name="habi_greeting_cheerleader_wilted">Chin up, %1$s. Comeback starts today.</string>
     <string name="habi_greeting_cheerleader_dramatic">Missed you, %1$s!</string>
     <string name="habi_greeting_neutra_radiant">Good momentum, %1$s.</string>
     <string name="habi_greeting_neutra_normal">Hi, %1$s.</string>
     <string name="habi_greeting_neutra_wilted">%1$s, today\'s a good day to restart.</string>
     <string name="habi_greeting_neutra_dramatic">%1$s, welcome back.</string>
 
-    <string name="freezer_info_sargento">A freezer saves ONE habit\'s streak for ONE day. They cost a small fortune and are used from the habit\'s detail. Don\'t waste them, %1$s.</string>
-    <string name="freezer_info_cheerleader">A freezer saves your streak if you slip ONE day on ONE habit! Activate it from the habit\'s detail. Always keep one handy, %1$s!</string>
-    <string name="freezer_info_neutra">A freezer protects a failed day: your streak skips it instead of breaking. It\'s activated from the habit\'s detail. 1 freezer = 1 habit × 1 day, %1$s.</string>
+    <string name="freezer_info_sargento">One freezer, one habit, one day — that\'s the deal. They don\'t come cheap, and they\'re used from the habit\'s detail. Spend them well, %1$s.</string>
+    <string name="freezer_info_cheerleader">A freezer saves your streak if you miss ONE day on ONE habit! You use it from the habit\'s detail. If I were you, I\'d always keep one around, %1$s.</string>
+    <string name="freezer_info_neutra">A freezer protects a failed day: the streak skips it instead of breaking. You activate it from the habit\'s detail. 1 freezer = 1 habit × 1 day, %1$s.</string>
 
     <string name="habi_review_sargento">Let\'s close the day, %1$s. No excuses.</string>
-    <string name="habi_review_cheerleader">Time to close the day, %1$s! Whatever\'s left, let\'s knock it out now!</string>
+    <string name="habi_review_cheerleader">Time to close the day, %1$s! Whatever\'s left, we finish it now.</string>
     <string name="habi_review_neutra">Day review, %1$s. Just what\'s left.</string>
 
-    <string name="habi_review_clear_sargento">Nothing pending. No complaints today, %1$s.</string>
+    <string name="habi_review_clear_sargento">All clear. No complaints from me today, %1$s.</string>
     <string name="habi_review_clear_cheerleader">%1$s, you\'ve got it all done! Seal it and rest up.</string>
     <string name="habi_review_clear_neutra">Nothing pending, %1$s. You can seal the day.</string>
 
-    <string name="habi_sealed_sargento">Day closed, %1$s. More tomorrow.</string>
-    <string name="habi_sealed_cheerleader">Day closed, %1$s! Tomorrow we keep going!</string>
+    <string name="habi_sealed_sargento">Day closed, %1$s. Tomorrow, more.</string>
+    <string name="habi_sealed_cheerleader">That\'s a wrap, %1$s! Tomorrow we go again.</string>
     <string name="habi_sealed_neutra">Day sealed, %1$s. See you tomorrow.</string>
 
     <string name="habi_perfect_sargento">Perfect day, %1$s. That\'s how it\'s done. Don\'t get comfortable.</string>
-    <string name="habi_perfect_cheerleader">PERFECT DAY, %1$s! I can barely contain myself!</string>
+    <string name="habi_perfect_cheerleader">A perfect day, %1$s! Every single thing, done. I could burst.</string>
     <string name="habi_perfect_neutra">Perfect day, %1$s. Everything required, done.</string>
 
     <string name="habi_perfect_notif_sargento">Perfect day, %1$s. Flawless. Same again tomorrow.</string>
-    <string name="habi_perfect_notif_cheerleader">%1$s, perfect day! You\'re unstoppable!</string>
-    <string name="habi_perfect_notif_neutra">Perfect day, %1$s.</string>
+    <string name="habi_perfect_notif_cheerleader">Perfect day, %1$s! You didn\'t miss a thing.</string>
+    <string name="habi_perfect_notif_neutra">Perfect day, %1$s. Duly noted.</string>
 
-    <string name="habi_badge_sargento">%2$s, %1$s. Don\'t get used to it.</string>
-    <string name="habi_badge_cheerleader">%2$s! I knew you could do it, %1$s!</string>
-    <string name="habi_badge_neutra">Achievement unlocked: %2$s.</string>
+    <string name="habi_badge_sargento">%2$s. Earned, %1$s. I never doubted it.</string>
+    <string name="habi_badge_cheerleader">%2$s! I knew you had it in you, %1$s.</string>
+    <string name="habi_badge_neutra">Badge unlocked: %2$s. Well earned.</string>
 
     <string name="store_title">Store</string>
     <string name="store_axis_colors">Colors</string>

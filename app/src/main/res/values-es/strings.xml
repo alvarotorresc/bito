@@ -41,7 +41,9 @@
 
     <string name="form_title_new">Nuevo hábito</string>
     <string name="form_title_edit">Editar hábito</string>
-    <string name="habi_form_prompt">¿Qué hábito construimos? Ponle nombre y elige su forma — lo demás puede esperar.</string>
+    <string name="habi_form_prompt_sargento">Nuevo hábito. Nombre y forma; el resto puede esperar.</string>
+    <string name="habi_form_prompt_cheerleader">¡Un hábito nuevo! Ponle nombre, dale forma, y a por él.</string>
+    <string name="habi_form_prompt_neutra">¿Qué hábito construimos? Ponle nombre y elige su forma — lo demás puede esperar.</string>
     <string name="personality_neutra">NEUTRA</string>
     <string name="personality_sargento">SARGENTO</string>
     <string name="personality_cheerleader">CHEERLEADER</string>
@@ -155,6 +157,10 @@
     <string name="settings_habi_sounds_hint">Saluditos y celebraciones. Nunca en notificaciones.</string>
 
     <string name="general_section_title">General</string>
+    <string name="language_row">Idioma</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+    <string name="language_system">Del sistema</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Hábito archivado (%1$d)</item>
         <item quantity="many">Hábitos archivados (%1$d)</item>
@@ -165,4 +171,34 @@
     <string name="archived_empty">Todavía no hay nada archivado</string>
     <string name="unarchive_habit">Reactivar</string>
     <string name="paused_since">En pausa desde %1$s</string>
+
+    <string name="onb_welcome_tagline">hábitos que se quedan</string>
+    <string name="onb_welcome_offline">100% offline · tus datos jamás salen del móvil</string>
+    <string name="onb_welcome_no_accounts">sin cuentas, sin anuncios</string>
+    <string name="onb_start">Empezar</string>
+    <string name="onb_skip">Saltar</string>
+    <string name="onb_story1_title">Habi no siempre fue así</string>
+    <string name="onb_story2_title">Quería cambiar, pero no sabía por dónde empezar</string>
+    <string name="onb_story3_title">Hasta que encontró un sistema</string>
+    <string name="onb_story3_sub">Pequeños pasos, cada día. Le cambió la vida.</string>
+    <string name="onb_continue">Seguir</string>
+    <string name="onb_name_title">Yo ya pasé por esto. Ahora te toca a ti.</string>
+    <string name="onb_name_question">¿Cómo te llamas?</string>
+    <string name="onb_name_hint">Tu nombre</string>
+    <string name="onb_name_reaction">¡%1$s! Me gusta. Vamos a hacer grandes cosas.</string>
+    <string name="onb_personality_title">Elige la personalidad de Habi</string>
+    <string name="onb_personality_hint">puedes cambiarla cuando quieras</string>
+    <string name="onb_habit_title">Crea tu primer hábito</string>
+    <string name="onb_habit_name_hint">ej. Beber agua</string>
+    <string name="onb_habit_goal_label">objetivo</string>
+    <string name="onb_habit_goal_daily">vez al día</string>
+    <string name="onb_habit_goal_quantity">veces</string>
+    <string name="onb_habit_goal_weekly">veces por semana</string>
+    <string name="onb_habit_widget_hint">Añade el %1$s a tu pantalla de inicio — registra sin abrir la app</string>
+    <string name="onb_habit_widget_bold">widget de Bito</string>
+    <string name="onb_habit_create">Crear y empezar</string>
+    <string name="onb_habit_start">Empezar</string>
+
+    <string name="settings_name_row">Tu nombre</string>
+    <string name="settings_name_placeholder">Añade tu nombre</string>
 </resources>

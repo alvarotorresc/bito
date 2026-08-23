@@ -45,7 +45,9 @@
 
     <string name="form_title_new">New habit</string>
     <string name="form_title_edit">Edit habit</string>
-    <string name="habi_form_prompt">What habit are we building? Name it and pick its shape — everything else can wait.</string>
+    <string name="habi_form_prompt_sargento">New habit. Name and shape — the rest can wait.</string>
+    <string name="habi_form_prompt_cheerleader">A new habit! Name it, shape it, and let\'s go.</string>
+    <string name="habi_form_prompt_neutra">What habit are we building? Name it and pick its shape — everything else can wait.</string>
     <string name="habi_speaker" translatable="false">HABI · %1$s</string>
     <string name="personality_neutra">NEUTRAL</string>
     <string name="personality_sargento">SERGEANT</string>
@@ -156,6 +158,10 @@
     <string name="settings_habi_sounds_hint">Little greetings and celebrations. Never in notifications.</string>
 
     <string name="general_section_title">General</string>
+    <string name="language_row">Language</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">English</string>
+    <string name="language_system">System</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Archived habit (%1$d)</item>
         <item quantity="other">Archived habits (%1$d)</item>
@@ -165,4 +171,43 @@
     <string name="archived_empty">Nothing archived yet</string>
     <string name="unarchive_habit">Reactivate</string>
     <string name="paused_since">Paused since %1$s</string>
+
+    <string name="onb_welcome_tagline">habits that stick</string>
+    <string name="onb_welcome_offline">100% offline · your data never leaves your phone</string>
+    <string name="onb_welcome_no_accounts">no accounts, no ads</string>
+    <!-- Each language names itself, in every locale — same convention as language_spanish. -->
+    <string name="onb_lang_es" translatable="false">Español</string>
+    <string name="onb_lang_en" translatable="false">English</string>
+    <string name="onb_start">Get started</string>
+    <string name="onb_skip">Skip</string>
+    <string name="onb_story1_title">Habi wasn\'t always like this</string>
+    <string name="onb_story2_title">Habi wanted to change, but didn\'t know where to start</string>
+    <string name="onb_story3_title">Until Habi found a system</string>
+    <string name="onb_story3_sub">Small steps, every day. It changed everything.</string>
+    <string name="onb_continue">Continue</string>
+    <string name="onb_name_title">I\'ve been through this. Now it\'s your turn.</string>
+    <string name="onb_name_question">What\'s your name?</string>
+    <string name="onb_name_hint">Your name</string>
+    <!-- The speaker label on 7e's bubble — no personality is chosen yet, so it's plain "HABI",
+         not the "HABI · <personality>" shape habi_speaker composes elsewhere. -->
+    <string name="onb_name_speaker" translatable="false">HABI</string>
+    <string name="onb_name_reaction">%1$s! I like it. We\'re going to do great things.</string>
+    <string name="onb_personality_title">Choose Habi\'s personality</string>
+    <string name="onb_personality_hint">you can change it anytime</string>
+    <string name="onb_habit_title">Create your first habit</string>
+    <string name="onb_habit_name_hint">e.g. Drink water</string>
+    <string name="onb_habit_goal_label">goal</string>
+    <string name="onb_habit_goal_daily">time a day</string>
+    <string name="onb_habit_goal_quantity">times</string>
+    <string name="onb_habit_goal_weekly">times a week</string>
+    <!-- %1$s carries onb_habit_widget_bold, bolded in the composed sentence — same split-and-style
+         idiom SettingsScreen.kt's coloredCountLine/coloredFolderLine use, so this stays untranslated
+         markup-free and locale-safe. -->
+    <string name="onb_habit_widget_hint">Add the %1$s to your home screen — log without opening the app</string>
+    <string name="onb_habit_widget_bold">Bito widget</string>
+    <string name="onb_habit_create">Create and start</string>
+    <string name="onb_habit_start">Start</string>
+
+    <string name="settings_name_row">Your name</string>
+    <string name="settings_name_placeholder">Add your name</string>
 </resources>

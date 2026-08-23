@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.Bito" parent="android:Theme.Material.Light.NoActionBar">
+    <!-- AppCompat-derived (not android:Theme.*): MainActivity is now AppCompatActivity, and its
+         Delegate.onPostCreate() unconditionally calls ensureSubDecor(), which throws
+         IllegalStateException unless the theme resolves the AppCompat-private windowActionBar
+         attribute — only a Theme.AppCompat.* ancestor sets it. Nothing here inflates a classic
+         AppCompat XML view, so the swap is otherwise inert; the four items below still apply. -->
+    <style name="Theme.Bito" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="android:windowBackground">@color/papel</item>
         <item name="android:statusBarColor">@color/papel</item>
         <item name="android:windowLightStatusBar">true</item>

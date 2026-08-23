@@ -2,6 +2,9 @@
 
 package com.alvarotc.bito.ui.today
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -62,7 +65,11 @@ fun HabitCard(
         modifier =
             modifier
                 .testTag("card-${card.id}")
-                .semantics { contentDescription = openLabel },
+                .semantics { contentDescription = openLabel }
+                // Completion/expansion state changes (strike-through, dots flipping, chips
+                // showing/hiding) resize the card's content — this keeps that resize a soft
+                // ease-out instead of the layout snapping to its new height.
+                .animateContentSize(tween(200, easing = LinearOutSlowInEasing)),
         onClick = onOpen,
     ) {
         when (card.kind) {

@@ -13,14 +13,17 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
@@ -57,28 +60,51 @@ class BitoNavHostTest {
     private fun screenTitleNode(text: String) =
         compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("bottom-bar")).not(), useUnmergedTree = true)
 
+    /** The conditional start gates on Settings' first emission (loading -> today/onboarding);
+     * wait for that placeholder to clear before any assertion, the same way the settings-reminder
+     * test below already has to wait out a DataStore-backed emission that waitForIdle() alone
+     * doesn't pump. */
+    private fun waitPastLoadingGate() {
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("app-loading", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+    }
+
+    /** Every test below except the onboarding-route ones themselves assumes a completed
+     * onboarding (landing on "today") — a fresh container otherwise defaults onboardingDone to
+     * false and the conditional start would open on "onboarding" instead. */
+    private suspend fun completeOnboarding(container: AppContainer) {
+        container.settings.update { it.copy(onboardingDone = true) }
+    }
+
     private fun setContent() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
+        runBlocking { completeOnboarding(container) }
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
             }
         }
         compose.waitForIdle()
+        waitPastLoadingGate()
     }
 
     /** Like [setContent], but [seed] runs against the container's real database first. */
     private fun setContentSeeded(seed: suspend AppContainer.() -> Unit) {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
-        runBlocking { container.seed() }
+        runBlocking {
+            completeOnboarding(container)
+            container.seed()
+        }
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
             }
         }
         compose.waitForIdle()
+        waitPastLoadingGate()
     }
 
     private suspend fun seedPerfectDayToday(container: AppContainer) {
@@ -211,5 +237,129 @@ class BitoNavHostTest {
 
         compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists() // confirms the navigation actually landed
         compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The onboarding half of the `currentRoute != "review"` guard's sibling check (see
+     * [com.alvarotc.bito.ui.BitoNavHost]'s own comment on that `if`). Deliberately NOT a bare
+     * absence assertion during onboarding — [CelebrationsUiState] combines off a real dispatcher
+     * (same hazard "a pending perfect day shows the sheet on today but not on the review route"
+     * documents above), so an absence check alone would pass just as well with a broken guard,
+     * proving nothing. Walking the real flow to completion and then WAITING for the sheet to
+     * appear is what forces that emission and proves the celebration stayed genuinely pending
+     * rather than being lost — the exact behavior the M9 finding asked for: "celebrations stay
+     * pending and fire after landing on Today".
+     */
+    @Test
+    fun `a pending perfect day stays hidden behind onboarding and shows once today loads`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { seedPerfectDayToday(container) }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick() // blank habit name still finishes
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a fresh install opens on the onboarding route, not today`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        screenTitleNode("Today").assertDoesNotExist()
+    }
+
+    @Test
+    fun `onboardingDone true opens straight on today`() {
+        setContent() // seeds onboardingDone = true
+
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The full first-run journey through the REAL [BitoNavHost] — the only place [done]'s own
+     * `navigate("today") { popUpTo("onboarding") { inclusive = true } }` (wired in the "onboarding"
+     * composable above) can actually be observed landing. `OnboardingScreenTest`'s own
+     * "the first habit step creates the habit and completes onboarding" proves the write path and
+     * [OnboardingUiState.done] in isolation, without a NavHost to navigate anywhere.
+     */
+    @Test
+    fun `the first habit step creates and lands on today`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+
+        val created = runBlocking { container.database.habitDao().all().single { it.name == "Beber agua" } }
+        assertEquals(Metric.CHECK, created.metric)
     }
 }

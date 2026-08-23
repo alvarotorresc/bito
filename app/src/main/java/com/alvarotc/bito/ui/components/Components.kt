@@ -1,5 +1,11 @@
 package com.alvarotc.bito.ui.components
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -30,6 +36,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,7 +51,11 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -189,9 +205,39 @@ fun DotProgress(
 ) {
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         repeat(total) { i ->
-            Box(Modifier.size(12.dp).clip(CircleShape).background(if (i < filled) Hoja else HojaTinte))
+            key(i) {
+                AnimatedDot(filled = i < filled)
+            }
         }
     }
+}
+
+/**
+ * One dot of [DotProgress]. [key]ing the caller's loop by index gives every dot its own
+ * remembered slot, so only the dot whose filled state actually flips pops — its neighbors' scale
+ * [Animatable]s never see a change and stay put.
+ */
+@Composable
+private fun AnimatedDot(filled: Boolean) {
+    val scale = remember { Animatable(1f) }
+    var wasFilled by remember { mutableStateOf(filled) }
+    LaunchedEffect(filled) {
+        if (filled != wasFilled) {
+            wasFilled = filled
+            scale.snapTo(0.6f)
+            scale.animateTo(1f, spring(dampingRatio = Spring.DampingRatioMediumBouncy))
+        }
+    }
+    Box(
+        Modifier
+            .size(12.dp)
+            .graphicsLayer {
+                scaleX = scale.value
+                scaleY = scale.value
+            }
+            .clip(CircleShape)
+            .background(if (filled) Hoja else HojaTinte),
+    )
 }
 
 /** Rounded bar for durations and big quantities. */
@@ -220,8 +266,25 @@ fun DayRing(
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
-    val sweep = if (total == 0) 0f else 360f * done / total
-    Box(modifier, contentAlignment = Alignment.Center) {
+    val targetSweep = if (total == 0) 0f else 360f * done / total
+    // animateFloatAsState seeds its Animatable at the FIRST targetValue it ever sees, so the very
+    // first frame already lands exactly on targetSweep with no draw-in animation — only a LATER
+    // recomposition with a different done/total re-targets it and animates the sweep between the
+    // old and new fractions.
+    val sweep by animateFloatAsState(targetValue = targetSweep, animationSpec = tween(250, easing = LinearOutSlowInEasing))
+    Box(
+        modifier
+            .testTag("day-ring")
+            // mergeDescendants: true folds `content`'s own text (the "3 of 6" label) into this
+            // same node instead of leaving the progress role as a second, unlabeled TalkBack
+            // stop next to it — one node, one announcement: role + value + label together.
+            .semantics(mergeDescendants = true) {
+                // The fraction actually being drawn right now, not the value it may still be
+                // animating toward — ComponentsTest drives the clock and asserts against this.
+                progressBarRangeInfo = ProgressBarRangeInfo(current = sweep / 360f, range = 0f..1f)
+            },
+        contentAlignment = Alignment.Center,
+    ) {
         Canvas(Modifier.matchParentSize()) {
             val stroke = Stroke(width = 10.dp.toPx(), cap = StrokeCap.Round)
             val inset = 5.dp.toPx()

@@ -37,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.BadgeDef
-import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.DayRing
 import com.alvarotc.bito.ui.components.PillButton
@@ -101,7 +100,7 @@ fun SealedDayContent(
 
         val fallbackName = stringResource(R.string.habi_name_fallback)
         SpeechBubble(
-            speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(state.spec.personality))),
+            speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
             text =
                 stringResource(
                     if (state.perfectToday) {
@@ -245,10 +244,3 @@ private fun NewBadgeChip(
         )
     }
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }
