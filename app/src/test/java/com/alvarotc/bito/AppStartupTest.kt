@@ -6,14 +6,12 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.alvarotc.bito.data.backup.BackupWorker
-import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
@@ -141,27 +139,6 @@ class AppStartupTest {
         // Still DAILY: the cancelled collector never saw the WEEKLY write, so it never reached
         // WorkManager with it.
         assertEquals(TimeUnit.DAYS.toMillis(1), workInfos().single().periodicityInfo?.repeatIntervalMillis)
-    }
-
-    /**
-     * Proves the WIRING, not just [com.alvarotc.bito.ui.onboarding.OnboardingReconciler.reconcile]
-     * in isolation ([com.alvarotc.bito.ui.onboarding.OnboardingReconcilerTest] already covers that
-     * deterministically): a habit seeded before [AppStartup.start] runs must actually reach
-     * `onboardingDone = true` through the real [AppStartup.start] call, on the real (test-injected)
-     * scope — not a fake standing in for it. `eventually` polls (same idiom `an injected scope
-     * cancels the collectors` already uses for BackupSync's own async WorkManager write) because
-     * [com.alvarotc.bito.ui.onboarding.OnboardingReconciler.start] fires into [scope] as a
-     * fire-and-forget coroutine with no completion signal exposed to the caller.
-     */
-    @Test
-    fun `start seeds onboardingDone when the database already has habits`() {
-        val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
-        runBlocking { container.database.habitDao().upsert(habitEntity(id = "restored-habit")) }
-
-        AppStartup.start(app, container, testScope())
-
-        eventually { runBlocking { container.settings.settings.first() }.onboardingDone }
     }
 
     private fun eventually(

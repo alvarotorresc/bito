@@ -23,6 +23,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
@@ -418,6 +419,30 @@ class BitoNavHostTest {
     @Test
     fun `onboardingDone true opens straight on today`() {
         setContent() // seeds onboardingDone = true
+
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * M9.5 final-review Important #2: [com.alvarotc.bito.ui.onboarding.OnboardingReconciler.reconcile]
+     * now runs INSIDE this gate, before `startDestination` is decided (see [BitoNavHost]'s own
+     * comment on that `produceState` block) — so a v1/v2 restore's habits-but-`onboardingDone =
+     * false` state resolves deterministically to "today," never a race the reconciler could lose
+     * against `remember`.
+     */
+    @Test
+    fun `a restorer with habits and onboarding not done lands on today, not onboarding`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { container.database.habitDao().upsert(habitEntity(id = "restored-habit")) }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
 
         screenTitleNode("Today").assertExists()
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()

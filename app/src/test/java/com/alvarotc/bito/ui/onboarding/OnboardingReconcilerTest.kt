@@ -34,13 +34,15 @@ import org.robolectric.annotation.Config
 import java.io.File
 
 /**
- * [OnboardingReconciler] is [com.alvarotc.bito.AppStartup]'s final-review-flagged one-shot: a
- * v1/v2 backup restored onto a fresh install writes habits into Room but
+ * [OnboardingReconciler] is [com.alvarotc.bito.ui.BitoNavHost]'s final-review-flagged reconcile
+ * hook: a v1/v2 backup restored onto a fresh install writes habits into Room but
  * [com.alvarotc.bito.data.backup.BackupRepository.import] replaces `Settings` wholesale with
  * whatever the backup carries — and every pre-M9.5 backup never had `onboardingDone` at all, so the
  * restored value is always the DataStore default, `false`. This exercises [OnboardingReconciler.reconcile]
- * directly (the suspend core [com.alvarotc.bito.AppStartup.start] launches into its own scope), same
- * recipe [OnboardingViewModelTest] uses for its own Room + DataStore pair.
+ * directly against a plain `SettingsRepository`/`HabitsRepository` pair (the suspend function
+ * [com.alvarotc.bito.ui.BitoNavHost] itself awaits, inline, before deciding its start destination —
+ * see [com.alvarotc.bito.ui.BitoNavHostTest]'s own restorer test for that wiring), same recipe
+ * [OnboardingViewModelTest] uses for its own Room + DataStore pair.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
