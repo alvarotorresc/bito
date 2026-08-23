@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -158,7 +159,9 @@ class BackupViewModel(
      * [keyMutations] bumps (a key was just saved/cleared, possibly without the setting itself
      * changing) — every other settings field (folder, frequency, copies, the auto-backup stamps)
      * is unrelated, so gate the file read behind those two triggers instead of re-reading it on
-     * every settings emission.
+     * every settings emission. [flowOn] moves that file read (and the `combine` feeding it) off
+     * the collector's dispatcher — [state] below collects on [viewModelScope], i.e. Main — onto
+     * [ioDispatcher], same as [countBackups] above already does via `withContext`.
      */
     private val encryptionNeedsKey: Flow<Boolean> =
         combine(
@@ -166,6 +169,7 @@ class BackupViewModel(
             keyMutations,
         ) { encryptionOn, _ -> encryptionOn }
             .map { encryptionOn -> encryptionOn && keyStore.load() == null }
+            .flowOn(ioDispatcher)
 
     /**
      * Mirrors [backupState] (preview/message/busy/askImportPassphrase) plus the backup-related
