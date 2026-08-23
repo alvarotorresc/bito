@@ -155,10 +155,15 @@ class HabitFormScreenTest {
         compose.onNodeWithTag("target-plus").assertIsEnabled()
         compose.onNodeWithTag("target-minus").assertIsEnabled()
 
-        // Shape fields lock, same as the preset pills: the period pill and the binary switch.
+        // Shape fields lock, same as the preset pills: the period pill and the binary mode row.
         compose.onNodeWithText("day").assertIsNotEnabled()
         compose.onNodeWithText("More options").performScrollTo().performClick()
         compose.waitForIdle()
+        // isToggleable() now matches BinaryModeRow's own Row (its `.toggleable`), not the Switch
+        // inside it: with `onCheckedChange = null` (the [E] a11y fix), the Switch itself no longer
+        // contributes any toggleable semantics of its own — verified there's exactly one match
+        // (onNode, not onAllNodes, would throw on more than one) and that it's tagged
+        // "binary-mode-row".
         compose.onNode(isToggleable()).assertIsNotEnabled()
 
         compose.onNodeWithTag("target-plus").performScrollTo().performClick()
