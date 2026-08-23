@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -363,5 +364,26 @@ class HabitFormScreenTest {
 
         compose.onNodeWithTag("binary-mode-row").performScrollTo().assertIsOff()
         compose.onNodeWithTag("binary-mode-row").onChildren().assertCountEquals(0)
+    }
+
+    /**
+     * Mirrors the Settings switch rows' own click-to-toggle test: proves the row's `toggleable`
+     * (not just its merged semantics) actually drives [HabitFormViewModel]'s state, now that the
+     * click moved off the `Switch` itself.
+     */
+    @Test
+    fun `tapping the binary mode row flips and persists the setting`() {
+        val vm = launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("binary-mode-row").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("binary-mode-row").assertIsOn()
+        assertTrue(vm.state.value.binaryMode)
     }
 }

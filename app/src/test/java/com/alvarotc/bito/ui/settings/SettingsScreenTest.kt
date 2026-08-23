@@ -463,8 +463,10 @@ class SettingsScreenTest {
      * TalkBack read them as 2 disconnected stops (the label, then a bare "Switch, On"). MERGED
      * tree (no useUnmergedTree) on the row's own tag: proves the row is now a single reachable
      * stop that carries the toggled state, same evidence shape as ComponentsTest's DayRing check.
-     * The Switch's own tag/click keeps working unchanged (proven by the sibling toggle test
-     * above), since its `onCheckedChange` wiring was never moved onto the row.
+     * `onCheckedChange` DID move off the Switch onto the row's `toggleable` (the [E] fix) — the
+     * Switch itself now carries no click/state of its own, which is why the sibling toggle test
+     * above (`the celebration switch writes the setting`) was retargeted from `celebration-switch`
+     * to `celebration-row` in this same diff: it proves the ROW's click works, not the Switch's.
      */
     @Test
     fun `the celebration row merges its label and switch into one talkback stop`() {
