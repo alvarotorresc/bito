@@ -96,6 +96,12 @@ fun BitoNavHost(container: AppContainer) {
     val startDestination = remember { if (loadedSettings.onboardingDone) "today" else "onboarding" }
 
     val nav = rememberNavController()
+    // Stats and Habi retain their ViewModels across tab visits (scoped to this composable's own
+    // store owner — the Activity — instead of each NavBackStackEntry): re-entering shows the
+    // retained state instantly instead of a multi-second cold combine behind the loading gate
+    // (QA 2026-08-23). Today already survives via popBackStack; Detail stays per-entry by design.
+    val statsViewModel: StatsViewModel = viewModel(factory = StatsViewModel.factory(container))
+    val habiViewModel: HabiViewModel = viewModel(factory = HabiViewModel.factory(container))
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
 
     Scaffold(
@@ -225,11 +231,11 @@ fun BitoNavHost(container: AppContainer) {
                 )
             }
             composable("habi") {
-                HabiScreen(viewModel = viewModel(factory = HabiViewModel.factory(container)))
+                HabiScreen(viewModel = habiViewModel)
             }
             composable("stats") {
                 StatsScreen(
-                    viewModel = viewModel(factory = StatsViewModel.factory(container)),
+                    viewModel = statsViewModel,
                     onOpenRecords = { nav.navigate("records") },
                     onOpenNumbers = { nav.navigate("numbers") },
                     onOpenBadges = { nav.navigate("badges") },
