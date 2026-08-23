@@ -7,6 +7,14 @@
     <string name="stats_week_title">Tu semana</string>
     <string name="stats_week_delta">+%1$d%% vs semana pasada</string>
     <string name="stats_week_empty">Sin hábitos activos esta semana</string>
+    <!-- Descripción TalkBack del grupo de puntos de WeekRowLine: "%1$s" = día corto (p.ej. "lun."),
+         "%2$s" = day_done/day_not_done/etc, unidas por fila en "lun. hecho, mar. hecho, …". -->
+    <string name="stats_week_day_state">%1$s %2$s</string>
+
+    <!-- Descripción TalkBack de StreakWallCard: "%1$s" = nombre del hábito, "%2$d %3$s" = duración
+         + unidad (unit_days/weeks/months) — nombra lo que el icono de llama representa ("racha"),
+         que un merge simple del número + nombre por sí solo perdería en silencio. -->
+    <string name="stats_streak_card_cd">%1$s, racha de %2$d %3$s</string>
 
     <string name="stats_streaks_title">Rachas activas</string>
     <string name="stats_streaks_empty">Aún no hay rachas que presumir</string>

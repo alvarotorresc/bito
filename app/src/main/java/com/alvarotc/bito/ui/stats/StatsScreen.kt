@@ -35,6 +35,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -235,6 +237,10 @@ private fun WeekColumnHeader() {
 
 @Composable
 private fun WeekRowLine(row: WeekRow) {
+    // [D]: the done/target tally (below) already speaks the raw total, but not WHICH weekdays
+    // were done — one aggregated description on the dot cluster, never per dot, same [D]-rule
+    // DotHeatmap follows for its own per-cell glyphs.
+    val daysDescription = weekRowDaysDescription(row.dots)
     Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             row.name,
@@ -244,7 +250,13 @@ private fun WeekRowLine(row: WeekRow) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Row(Modifier.width(WeekDotsWidth), horizontalArrangement = Arrangement.spacedBy(WeekDotGap)) {
+        Row(
+            Modifier
+                .width(WeekDotsWidth)
+                .semantics { contentDescription = daysDescription }
+                .testTag("week-dots-${row.habitId}"),
+            horizontalArrangement = Arrangement.spacedBy(WeekDotGap),
+        ) {
             row.dots.forEach { dot -> WeekDayDot(dot) }
         }
         Spacer(Modifier.width(WeekTallyGap))
@@ -286,6 +298,42 @@ private fun WeekDayDot(dot: DayDot) {
     }
 }
 
+/**
+ * "Mon done, Tue done, Wed missed, …" for one [WeekRowLine]'s dot cluster — the [D]-rule
+ * aggregated description, built from the same day-state words [com.alvarotc.bito.ui.components.DotHeatmap]
+ * reuses (`day_done`/`day_not_done`/`heatmap_day_frozen`/`paused_section_title`/`heatmap_day_pending`)
+ * so TalkBack says the same word for the same state everywhere in the app. `row.dots` is Monday-
+ * first (matches [WeekColumnHeader]'s `DayOfWeek.of(1..7)`); OFF carries no judgeable state and is
+ * skipped, same as the heatmap's own per-cell convention.
+ *
+ * `internal` (not `private`): lets a test build this directly off a hand-picked [DayDot] list —
+ * same reasoning as [com.alvarotc.bito.ui.habi.PersonalityPills] — instead of reconstructing one
+ * through the full [StatsViewModel]/Room pipeline just to pin down 7 specific day states.
+ */
+@Composable
+internal fun weekRowDaysDescription(dots: List<DayDot>): String {
+    val locale = Locale.getDefault()
+    return dots.mapIndexedNotNull { index, dot ->
+        val stateLabel = weekDayStateLabel(dot) ?: return@mapIndexedNotNull null
+        val dayName = DayOfWeek.of(index + 1).getDisplayName(TextStyle.SHORT, locale)
+        stringResource(R.string.stats_week_day_state, dayName, stateLabel)
+    }.joinToString(", ")
+}
+
+/** The spoken state word for one [DayDot] in the week strip — null for OFF (no judgeable state). */
+@Composable
+private fun weekDayStateLabel(dot: DayDot): String? =
+    when (dot) {
+        DayDot.FULFILLED, DayDot.ACTIVITY -> stringResource(R.string.day_done)
+        DayDot.FAILED, DayDot.EMPTY -> stringResource(R.string.day_not_done)
+        DayDot.FROZEN -> stringResource(R.string.heatmap_day_frozen)
+        // Reuses TodayScreen's "Paused" section-header string, same as DotHeatmap's own per-cell
+        // mapping — one word, one meaning, no near-duplicate string to keep in sync.
+        DayDot.PAUSED -> stringResource(R.string.paused_section_title)
+        DayDot.PENDING -> stringResource(R.string.heatmap_day_pending)
+        DayDot.OFF -> null
+    }
+
 /** Bare section title (no card) above a [LazyRow] wall of mini streak cards — rule 3 of the 3a mockup. */
 @Composable
 private fun StreaksSection(streaks: List<ActiveStreak>) {
@@ -313,8 +361,18 @@ private fun StreaksSection(streaks: List<ActiveStreak>) {
  */
 @Composable
 private fun StreakWallCard(streak: ActiveStreak) {
+    // [E]: Icon(Flame, null) + Text(length) + Text(name) — the flame glyph is where the word
+    // "streak" actually lives; a plain `mergeDescendants = true` would only concatenate "3" and
+    // the habit name (e.g. "3 Meditar"), silently dropping the one word a sighted reader gets for
+    // free from the icon. An explicit override says what the merge alone can't.
+    val streakDescription =
+        stringResource(R.string.stats_streak_card_cd, streak.name, streak.length, stringResource(periodUnitRes(streak.period)))
     Surface(
-        modifier = Modifier.width(140.dp).testTag("streak-${streak.habitId}"),
+        modifier =
+            Modifier
+                .width(140.dp)
+                .testTag("streak-${streak.habitId}")
+                .semantics { contentDescription = streakDescription },
         shape = RoundedCornerShape(20.dp),
         color = Tarjeta,
         border = BorderStroke(1.dp, Borde),
@@ -446,7 +504,20 @@ private fun AchievementsSection(
     state: StatsUiState,
     onOpenBadges: () -> Unit,
 ) {
-    BitoCard(onClick = onOpenBadges, modifier = Modifier.fillMaxWidth().testTag("achievements")) {
+    // [F]: BitoCard(onClick) auto-merges its whole subtree, so without this override tapping into
+    // the card would concatenate the header text with EVERY BadgeChip's name in the FlowRow below
+    // into one very long spoken string. An explicit contentDescription here takes over what
+    // TalkBack announces (same data as the header Text just below), same pattern HabitCard uses
+    // to keep "whole card opens X" rows short.
+    val achievementsDescription = stringResource(R.string.achievements_card_cd, state.badgesUnlocked, state.badgesTotal)
+    BitoCard(
+        onClick = onOpenBadges,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag("achievements")
+                .semantics { contentDescription = achievementsDescription },
+    ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 stringResource(R.string.stats_badges_title),

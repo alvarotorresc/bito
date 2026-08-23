@@ -7,9 +7,16 @@
     <string name="stats_week_title">Your week</string>
     <string name="stats_week_delta">+%1$d%% vs last week</string>
     <string name="stats_week_empty">No active habits this week</string>
+    <!-- WeekRowLine's dot-cluster TalkBack description: "%1$s" = short weekday name (e.g. "Mon"),
+         "%2$s" = day_done/day_not_done/etc, joined per row into "Mon done, Tue done, …". -->
+    <string name="stats_week_day_state">%1$s %2$s</string>
 
     <string name="stats_streaks_title">Active streaks</string>
     <string name="stats_streaks_empty">No streaks to show off yet</string>
+    <!-- StreakWallCard's TalkBack description: "%1$s" = habit name, "%2$d %3$s" = length + unit
+         (unit_days/weeks/months) — names the flame icon's own meaning ("streak"), which a plain
+         merge of the number + name Text nodes alone would silently drop. -->
+    <string name="stats_streak_card_cd">%1$s, streak of %2$d %3$s</string>
 
     <string name="stats_teaser_records">Records</string>
     <string name="stats_teaser_numbers">Your numbers</string>

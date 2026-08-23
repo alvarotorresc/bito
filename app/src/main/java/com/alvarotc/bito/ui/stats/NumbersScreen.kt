@@ -20,7 +20,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -141,7 +143,12 @@ private fun NumberTileCard(
     tile: NumberTile,
     modifier: Modifier = Modifier,
 ) {
-    BitoCard(modifier = modifier.fillMaxWidth()) {
+    BitoCard(
+        // [E]: Icon(null) + Text(value) + Text(label), no explicit inner Column of its own to
+        // attach mergeDescendants to (unlike BestRecordHero/BadgesHero) — BitoCard's own Surface
+        // modifier is the merge boundary here.
+        modifier = modifier.fillMaxWidth().semantics(mergeDescendants = true) {}.testTag("number-tile-${tile.labelRes}"),
+    ) {
         Icon(tile.icon, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(16.dp))
         Spacer(Modifier.height(8.dp))
         Text(

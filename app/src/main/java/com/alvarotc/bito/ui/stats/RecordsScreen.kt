@@ -22,7 +22,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -89,7 +91,12 @@ private fun RecordsHeader(onBack: () -> Unit) {
 @Composable
 private fun BestRecordHero(best: RecordRow) {
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            // [E]: Icon(Trophy, null) + up to 4 plain Text stops (best count, unit, habit name,
+            // caption), no onClick to auto-merge them.
+            modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Icon(BitoIcons.Trophy, contentDescription = null, tint = Brasa, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.Bottom) {
@@ -125,7 +132,12 @@ private fun RecordsList(records: List<RecordRow>) {
 
 @Composable
 private fun RecordLine(row: RecordRow) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        // [E]: name + current-streak caption [+ "archived"] + a non-clickable brasa chip (icon
+        // null + "record N") — all static, no onClick to auto-merge them.
+        Modifier.testTag("record-${row.habitId}").semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(modifier = Modifier.weight(1f)) {
             Text(row.name, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp), color = Tinta)
             Row(verticalAlignment = Alignment.CenterVertically) {
