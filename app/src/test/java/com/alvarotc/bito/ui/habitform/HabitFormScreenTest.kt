@@ -2,11 +2,17 @@ package com.alvarotc.bito.ui.habitform
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -294,5 +300,63 @@ class HabitFormScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("None").assertExists()
+    }
+
+    /**
+     * [C]: the checkmark on the active preset is an `Icon(contentDescription = null)`, invisible
+     * to TalkBack — before this fix every pill just read "<label>, Button" with no selection
+     * state. No `useUnmergedTree` needed: `selected`/`Role.Tab` land directly on the same node
+     * this file's other lookups already tag (`preset-<NAME>`), not on a new merging ancestor.
+     */
+    @Test
+    fun `preset pills announce which one is selected`() {
+        launchScreen(habitId = null)
+
+        // DAILY_CHECK is the form's own default preset (no pill tap needed to reach it).
+        compose.onNodeWithTag("preset-DAILY_CHECK").assertIsSelected()
+        compose.onNodeWithTag("preset-QUANTITY").assertIsNotSelected()
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("preset-QUANTITY").assertIsSelected()
+        compose.onNodeWithTag("preset-DAILY_CHECK").assertIsNotSelected()
+    }
+
+    /**
+     * [A]: the ±1 chips wrapped a bare `Icon(contentDescription = null)`, and the ±10 chips a
+     * plain "−10"/"+10" `Text` — ambiguous out of context. DURATION is the one preset that shows
+     * all four chips together (`isMinuteTarget`), so one test covers all four descriptions.
+     */
+    @Test
+    fun `the target stepper chips carry real action descriptions`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-minus10").assertContentDescriptionEquals("Decrease target by 10")
+        compose.onNodeWithTag("target-minus").assertContentDescriptionEquals("Decrease target by 1")
+        compose.onNodeWithTag("target-plus").assertContentDescriptionEquals("Increase target by 1")
+        compose.onNodeWithTag("target-plus10").assertContentDescriptionEquals("Increase target by 10")
+    }
+
+    /**
+     * [E]: the "Just done / not done" Switch used to sit next to — not merged with — its label+
+     * hint text, 2 disconnected TalkBack stops. `toggleable` on the row (not a plain
+     * `mergeDescendants`, verified insufficient empirically on SettingsScreen's identical rows)
+     * moves the action there and folds both Column texts and the Switch's own state into one stop.
+     */
+    @Test
+    fun `the binary mode row merges its label and switch into one talkback stop`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("binary-mode-row").performScrollTo().assertIsOff()
+        compose.onNodeWithTag("binary-mode-row").onChildren().assertCountEquals(0)
     }
 }

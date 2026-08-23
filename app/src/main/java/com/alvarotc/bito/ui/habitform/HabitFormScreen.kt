@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -52,6 +53,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
@@ -233,12 +239,24 @@ private fun PresetPills(
             HabitPreset.entries.forEach { preset ->
                 val isSelected = preset == selected
                 Surface(
+                    // [C]: no Role/selected semantics — every pill reads as "<label>, Button" with
+                    // no sign which one is active. `Surface(onClick = ...)` stays as-is rather than
+                    // becoming a bare `Modifier.selectable` (its interactive overload applies
+                    // `minimumInteractiveComponentSize()`, which the plain one doesn't — swapping
+                    // would risk shrinking this pill inside its FlowRow). Same additive shape as
+                    // onboarding's `HabitPresetPill` fix for this exact mirrored component.
                     onClick = { onSelect(preset) },
                     enabled = !locked,
                     shape = CircleShape,
                     color = if (isSelected) HojaTinte else Tarjeta,
                     border = BorderStroke(1.dp, Borde),
-                    modifier = Modifier.testTag("preset-${preset.name}"),
+                    modifier =
+                        Modifier
+                            .testTag("preset-${preset.name}")
+                            .semantics {
+                                this.selected = isSelected
+                                role = Role.Tab
+                            },
                 ) {
                     Text(
                         stringResource(preset.labelRes()),
@@ -365,7 +383,11 @@ private fun TargetStepper(
         horizontalArrangement = Arrangement.spacedBy(if (isMinuteTarget) 4.dp else 12.dp),
     ) {
         if (isMinuteTarget) {
-            StepChip(onClick = { onAdjustTarget(-10) }, modifier = Modifier.testTag("target-minus10")) {
+            StepChip(
+                onClick = { onAdjustTarget(-10) },
+                contentDescription = stringResource(R.string.target_minus10_cd),
+                modifier = Modifier.testTag("target-minus10"),
+            ) {
                 Text(
                     "−10",
                     style = MaterialTheme.typography.labelMedium,
@@ -374,7 +396,11 @@ private fun TargetStepper(
                 )
             }
         }
-        StepChip(onClick = { onAdjustTarget(-1) }, modifier = Modifier.testTag("target-minus")) {
+        StepChip(
+            onClick = { onAdjustTarget(-1) },
+            contentDescription = stringResource(R.string.target_minus1_cd),
+            modifier = Modifier.testTag("target-minus"),
+        ) {
             Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
         }
         Row(
@@ -387,11 +413,19 @@ private fun TargetStepper(
                 Text(unitLabel, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             }
         }
-        StepChip(onClick = { onAdjustTarget(1) }, modifier = Modifier.testTag("target-plus")) {
+        StepChip(
+            onClick = { onAdjustTarget(1) },
+            contentDescription = stringResource(R.string.target_plus1_cd),
+            modifier = Modifier.testTag("target-plus"),
+        ) {
             Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
         }
         if (isMinuteTarget) {
-            StepChip(onClick = { onAdjustTarget(10) }, modifier = Modifier.testTag("target-plus10")) {
+            StepChip(
+                onClick = { onAdjustTarget(10) },
+                contentDescription = stringResource(R.string.target_plus10_cd),
+                modifier = Modifier.testTag("target-plus10"),
+            ) {
                 Text(
                     "+10",
                     style = MaterialTheme.typography.labelMedium,
@@ -418,10 +452,16 @@ private fun TargetStepper(
 /**
  * The single visual language for all four [TargetStepper] step controls (±1, ±10) — see the
  * row-overflow comment above its call site for why this isn't a Material3 IconButton.
+ *
+ * [A]: [contentDescription] is an explicit override on the chip's own node, not left to the
+ * merged-in child — the ±1 chips' `Icon(contentDescription = null)` would otherwise carry no
+ * label, and the ±10 chips' plain `Text("−10"/"+10")` reads ambiguous out of context ("minus one
+ * zero"). One real action string per chip fixes both the same way.
  */
 @Composable
 private fun StepChip(
     onClick: () -> Unit,
+    contentDescription: String,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -432,7 +472,8 @@ private fun StepChip(
             .clip(CircleShape)
             .background(Tarjeta)
             .border(1.dp, Borde, CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -564,13 +605,30 @@ private fun ReminderRow(
     }
 }
 
+/**
+ * [E]: the [Switch] carries no text of its own, sitting in a plain, non-clickable [Row] next to —
+ * not merged with — its label+hint [Column]. TalkBack used to announce the label on one swipe and
+ * a bare "Switch, On" on the next, with the two never connected. A plain `mergeDescendants = true`
+ * on the row is NOT enough (verified empirically in SettingsScreen's identical rows): [Switch] is
+ * itself an independently screenreader-focusable node, so it stays a separate reachable stop under
+ * a merely-merging ancestor — same reason the app's own convention never nests an `IconButton`
+ * inside an already-clickable row. `toggleable` on the row instead MOVES the toggle action there
+ * (`Switch(onCheckedChange = null)` makes the switch purely visual) — the standard Android
+ * Settings-list a11y idiom, same fix as [ReminderRow]'s sibling-not-nested comment is the mirror
+ * image of (there, two actions stay apart; here, one action and its label merge into one).
+ */
 @Composable
 private fun BinaryModeRow(
     binaryMode: Boolean,
     enabled: Boolean,
     onToggle: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier
+            .testTag("binary-mode-row")
+            .toggleable(value = binaryMode, enabled = enabled, onValueChange = { onToggle() }, role = Role.Switch),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.binary_mode), style = MaterialTheme.typography.bodyLarge, color = Tinta)
             Text(
@@ -579,7 +637,7 @@ private fun BinaryModeRow(
                 color = TintaSuave,
             )
         }
-        Switch(checked = binaryMode, onCheckedChange = { onToggle() }, enabled = enabled)
+        Switch(checked = binaryMode, onCheckedChange = null, enabled = enabled)
     }
 }
 
@@ -596,11 +654,11 @@ private fun StepRow(
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = { onAdjustStep(-1) }) {
-            Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta)
+            Icon(BitoIcons.Minus, contentDescription = stringResource(R.string.step_minus_cd), tint = Tinta)
         }
         Text("$step", style = MaterialTheme.typography.titleMedium, color = Tinta)
         IconButton(onClick = { onAdjustStep(1) }) {
-            Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta)
+            Icon(BitoIcons.Plus, contentDescription = stringResource(R.string.step_plus_cd), tint = Tinta)
         }
     }
 }

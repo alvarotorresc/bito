@@ -72,11 +72,20 @@
     <string name="period_week">week</string>
     <string name="period_month">month</string>
     <string name="target_input_title">Set the target</string>
+    <!-- TargetStepper's 4 step chips (HabitFormScreen.kt): the ±1 chips wrap a bare Minus/Plus
+         icon, the ±10 ones a plain "−10"/"+10" Text — neither says what it acts on out of context. -->
+    <string name="target_minus1_cd">Decrease target by 1</string>
+    <string name="target_plus1_cd">Increase target by 1</string>
+    <string name="target_minus10_cd">Decrease target by 10</string>
+    <string name="target_plus10_cd">Increase target by 10</string>
     <string name="unit_hint">Unit (glasses, pages…)</string>
     <string name="more_options">More options</string>
     <string name="binary_mode">Just done / not done</string>
     <string name="binary_mode_hint">The goal is a written reference; logging is one tap</string>
     <string name="step_label">Tap adds</string>
+    <!-- StepRow's own ±1 IconButtons (the "tap adds" advanced stepper), same bare-icon gap. -->
+    <string name="step_minus_cd">Decrease step</string>
+    <string name="step_plus_cd">Increase step</string>
     <string name="form_reminder_label">Reminder</string>
     <string name="form_reminder_none">None</string>
     <string name="form_reminder_clear">Remove reminder</string>
@@ -100,6 +109,9 @@
         <item quantity="one">last %1$d copy</item>
         <item quantity="other">last %1$d copies</item>
     </plurals>
+    <!-- CopiesSheet's ±1 stepper (SettingsScreen.kt): the Minus/Plus icons carry no label of their own. -->
+    <string name="backup_copies_minus_cd">Decrease kept copies</string>
+    <string name="backup_copies_plus_cd">Increase kept copies</string>
     <string name="backup_now">Back up now</string>
     <string name="backup_restore">Restore</string>
     <string name="backup_export_manual">Export a copy…</string>
@@ -148,6 +160,9 @@
     <string name="day_section_body">Log something in the small hours before that time and it counts for the previous day.</string>
     <string name="cutoff_label">Your day ends at</string>
     <string name="cutoff_note">Applies from now on; sealed days stay as they are</string>
+    <!-- CutoffSheet's ±30min stepper: same bare-icon gap as backup_copies_minus_cd/plus_cd above. -->
+    <string name="cutoff_minus_cd">Earlier cutoff</string>
+    <string name="cutoff_plus_cd">Later cutoff</string>
     <string name="reminders_section_title">Reminders</string>
     <string name="reminders_section_body">Phone nudges so you don\'t forget to log your habits.</string>
     <string name="reminder_none_hint">No reminders set — add a time so Bito can nudge you.</string>
@@ -167,6 +182,10 @@
     <string name="language_spanish">Español</string>
     <string name="language_english">English</string>
     <string name="language_system">System</string>
+    <!-- GeneralSectionCard's language row cycles system -> es -> en -> system on tap; the value is
+         already announced via the merged "Language, Spanish" text, so this is a low-priority extra
+         hint about the tap behavior itself, via stateDescription, not a replacement for it. -->
+    <string name="language_cycle_hint">Cycles through languages</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Archived habit (%1$d)</item>
         <item quantity="other">Archived habits (%1$d)</item>

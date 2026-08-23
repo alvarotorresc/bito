@@ -65,11 +65,17 @@
     <string name="period_week">semana</string>
     <string name="period_month">mes</string>
     <string name="target_input_title">Pon el objetivo</string>
+    <string name="target_minus1_cd">Reducir el objetivo en 1</string>
+    <string name="target_plus1_cd">Aumentar el objetivo en 1</string>
+    <string name="target_minus10_cd">Reducir el objetivo en 10</string>
+    <string name="target_plus10_cd">Aumentar el objetivo en 10</string>
     <string name="unit_hint">Unidad (vasos, páginas…)</string>
     <string name="more_options">Más opciones</string>
     <string name="binary_mode">Solo cumplido</string>
     <string name="binary_mode_hint">El objetivo es una referencia escrita; registrar es un tap</string>
     <string name="step_label">Cada tap suma</string>
+    <string name="step_minus_cd">Reducir el incremento</string>
+    <string name="step_plus_cd">Aumentar el incremento</string>
     <string name="form_reminder_label">Recordatorio</string>
     <string name="form_reminder_none">Sin recordatorio</string>
     <string name="form_reminder_clear">Quitar recordatorio</string>
@@ -94,6 +100,8 @@
         <item quantity="many">últimas %1$d copias</item>
         <item quantity="other">últimas %1$d copias</item>
     </plurals>
+    <string name="backup_copies_minus_cd">Reducir copias guardadas</string>
+    <string name="backup_copies_plus_cd">Aumentar copias guardadas</string>
     <string name="backup_now">Hacer backup ahora</string>
     <string name="backup_restore">Restaurar</string>
     <string name="backup_export_manual">Exportar copia…</string>
@@ -145,6 +153,8 @@
     <string name="day_section_body">Si registras algo de madrugada antes de esa hora, cuenta para el día anterior.</string>
     <string name="cutoff_label">Fin de tu día</string>
     <string name="cutoff_note">Aplica desde ahora; los días sellados no se tocan</string>
+    <string name="cutoff_minus_cd">Corte más temprano</string>
+    <string name="cutoff_plus_cd">Corte más tarde</string>
     <string name="reminders_section_title">Recordatorios</string>
     <string name="reminders_section_body">Avisos en el móvil para que no se te olvide registrar tus hábitos.</string>
     <string name="reminder_none_hint">Sin avisos configurados — añade una hora para que Bito te avise.</string>
@@ -164,6 +174,7 @@
     <string name="language_spanish">Español</string>
     <string name="language_english">English</string>
     <string name="language_system">Del sistema</string>
+    <string name="language_cycle_hint">Rota entre los idiomas al tocar</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Hábito archivado (%1$d)</item>
         <item quantity="many">Hábitos archivados (%1$d)</item>

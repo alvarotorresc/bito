@@ -3,7 +3,9 @@ package com.alvarotc.bito.ui.settings
 import android.content.Context
 import android.net.Uri
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -11,6 +13,8 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChildren
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -394,7 +398,7 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Habi sounds", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithTag("habi-sounds-row", useUnmergedTree = true).assertIsOn()
     }
 
     @Test
@@ -418,10 +422,10 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("habi-sounds-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).assertIsOff()
+        compose.onNodeWithTag("habi-sounds-row", useUnmergedTree = true).assertIsOff()
         assertFalse(runBlocking { settings.settings.first() }.habiSoundsEnabled)
     }
 
@@ -446,12 +450,45 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).assertIsOn()
-        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("celebration-row", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithTag("celebration-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).assertIsOff()
+        compose.onNodeWithTag("celebration-row", useUnmergedTree = true).assertIsOff()
         assertFalse(runBlocking { settings.settings.first() }.perfectDayCelebration)
+    }
+
+    /**
+     * [E]: the celebration Switch used to sit next to — not merged with — its label+hint text, so
+     * TalkBack read them as 2 disconnected stops (the label, then a bare "Switch, On"). MERGED
+     * tree (no useUnmergedTree) on the row's own tag: proves the row is now a single reachable
+     * stop that carries the toggled state, same evidence shape as ComponentsTest's DayRing check.
+     * The Switch's own tag/click keeps working unchanged (proven by the sibling toggle test
+     * above), since its `onCheckedChange` wiring was never moved onto the row.
+     */
+    @Test
+    fun `the celebration row merges its label and switch into one talkback stop`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-celebration-merge"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("celebration-row").performScrollTo().assertIsOn()
+        compose.onNodeWithTag("celebration-row").onChildren().assertCountEquals(0)
     }
 
     /**
@@ -608,6 +645,100 @@ class SettingsScreenTest {
         compose.onNodeWithText("last 5 copies", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 
+    /** [A]: `CopiesSheet`'s ±1 Minus/Plus `Icon`s used to carry `contentDescription = null`. */
+    @Test
+    fun `the copies stepper icons carry real action descriptions`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-copies-stepper-cd"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        runBlocking {
+            settings.update { it.copy(backupFolderUri = "content://com.android.externalstorage.documents/tree/primary%3ABito") }
+        }
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Keep", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Decrease kept copies", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Increase kept copies", useUnmergedTree = true).assertExists()
+    }
+
+    /** [A]: `CutoffSheet`'s ±30min Minus/Plus `Icon`s used to carry `contentDescription = null`. */
+    @Test
+    fun `the cutoff stepper icons carry real action descriptions`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-cutoff-stepper-cd"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Your day ends at", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Earlier cutoff", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Later cutoff", useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * [C], low priority: the language row cycles system -> es -> en -> system on tap, a control
+     * shape a plain merged "Language, Spanish" text doesn't hint at on its own.
+     */
+    @Test
+    fun `the language row hints that tapping cycles the value`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language-state-hint"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        // MERGED tree (no useUnmergedTree): the language row already merges label+value text via
+        // its own `.clickable` (compliant [E] pattern per the inventory), and the stateDescription
+        // lands on that same node — direct config read, same idiom this file's own relapse-sheet
+        // test uses for an action it can't reach via a plain assertion helper.
+        val node = compose.onNodeWithText("Language").performScrollTo().fetchSemanticsNode()
+        assertEquals("Cycles through languages", node.config[SemanticsProperties.StateDescription])
+    }
+
     @Test
     fun `the back up now button appears only with a folder, restore always does`() {
         val settings = SettingsRepository(settingsStore("settings-screen-backup-now-row"))
@@ -698,7 +829,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("backup-encryption-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("backup-encryption-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
         compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("longpass1")
@@ -735,7 +866,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("backup-encryption-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("backup-encryption-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
         compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("short1")

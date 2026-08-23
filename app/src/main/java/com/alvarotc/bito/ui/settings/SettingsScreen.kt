@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -56,6 +57,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -378,7 +382,21 @@ private fun RemindersSectionCard(
         SettingsRow(label = stringResource(R.string.review_label), value = formatClock(reviewMinutes), onClick = { showReviewSheet = true })
         Text(stringResource(R.string.review_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // [E]: the Switch carries no text of its own, sitting next to — not merged with — its
+        // label+hint Column, so TalkBack read the label on one swipe and a bare "Switch, On" on
+        // the next, never connected. A plain `mergeDescendants = true` on the row is NOT enough
+        // here (verified empirically): Switch is itself an independently screenreader-focusable
+        // node (it sets its own merge boundary internally), so it stays a separate reachable stop
+        // under a merely-merging ancestor — same reason the app's own convention never nests an
+        // IconButton inside an already-clickable row. `toggleable` on the row instead MOVES the
+        // toggle action there (`Switch(onCheckedChange = null)` makes the switch purely visual,
+        // no longer independently actionable) — the standard Android Settings-list a11y idiom.
+        Row(
+            Modifier
+                .testTag("celebration-row")
+                .toggleable(value = celebrationEnabled, onValueChange = onSetCelebration, role = Role.Switch),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.settings_celebration_label), style = MaterialTheme.typography.bodyLarge, color = Tinta)
                 Text(
@@ -389,7 +407,7 @@ private fun RemindersSectionCard(
             }
             Switch(
                 checked = celebrationEnabled,
-                onCheckedChange = onSetCelebration,
+                onCheckedChange = null,
                 modifier = Modifier.testTag("celebration-switch"),
             )
         }
@@ -475,7 +493,13 @@ private fun HabiSectionCard(
     BitoCard(modifier = Modifier.fillMaxWidth()) {
         Text(stringResource(R.string.settings_habi_section), style = MaterialTheme.typography.titleMedium, color = Tinta)
         Spacer(Modifier.height(4.dp))
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // [E]: same fix and same reasoning as the celebration Switch row above.
+        Row(
+            Modifier
+                .testTag("habi-sounds-row")
+                .toggleable(value = soundsEnabled, onValueChange = onSetHabiSounds, role = Role.Switch),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.settings_habi_sounds), style = MaterialTheme.typography.bodyLarge, color = Tinta)
                 Text(
@@ -486,7 +510,7 @@ private fun HabiSectionCard(
             }
             Switch(
                 checked = soundsEnabled,
-                onCheckedChange = onSetHabiSounds,
+                onCheckedChange = null,
                 modifier = Modifier.testTag("habi-sounds-switch"),
             )
         }
@@ -562,6 +586,7 @@ private fun GeneralSectionCard(
                         else -> R.string.language_system
                     },
                 ),
+            stateDescription = stringResource(R.string.language_cycle_hint),
             onClick = {
                 // A backup restore can carry a tag outside {es, en} (locales_config only declares
                 // those two) — any unrecognized tag falls into the same `else` as null, so tapping
@@ -631,7 +656,28 @@ private fun BackupsCard(
                 onClick = { showCopiesSheet = true },
             )
         }
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        // [E]: same fix and same reasoning as the celebration/habi-sounds Switch rows above —
+        // the toggle handler (unchanged branching) moves onto the row's `toggleable`.
+        Row(
+            Modifier
+                .testTag("backup-encryption-row")
+                .toggleable(
+                    value = state.encryptionOn,
+                    role = Role.Switch,
+                    onValueChange = {
+                        // ON and healthy is the only case that turns it off; everything else (OFF,
+                        // or ON but needing a key) opens the same create/re-create sheet — same
+                        // branching as the row this Switch replaced, just triggered by the toggle
+                        // instead.
+                        if (state.encryptionOn && !state.encryptionNeedsKey) {
+                            showDisableConfirm = true
+                        } else {
+                            showCreateSheet = true
+                        }
+                    },
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Column(Modifier.weight(1f)) {
                 Text(stringResource(R.string.backup_encrypt), style = MaterialTheme.typography.bodyLarge, color = Tinta)
                 Text(
@@ -649,16 +695,7 @@ private fun BackupsCard(
             }
             Switch(
                 checked = state.encryptionOn,
-                onCheckedChange = {
-                    // ON and healthy is the only case that turns it off; everything else (OFF, or
-                    // ON but needing a key) opens the same create/re-create sheet — same branching
-                    // as the row this Switch replaced, just triggered by the toggle instead.
-                    if (state.encryptionOn && !state.encryptionNeedsKey) {
-                        showDisableConfirm = true
-                    } else {
-                        showCreateSheet = true
-                    }
-                },
+                onCheckedChange = null,
                 modifier = Modifier.testTag("backup-encryption-switch"),
             )
         }
@@ -1041,7 +1078,11 @@ private fun CopiesSheet(
                     onClick = { copies = (copies - 1).coerceIn(MIN_BACKUP_COPIES, MAX_BACKUP_COPIES) },
                     enabled = copies > MIN_BACKUP_COPIES,
                 ) {
-                    Icon(BitoIcons.Minus, contentDescription = null, tint = if (copies > MIN_BACKUP_COPIES) Tinta else TintaSuave)
+                    Icon(
+                        BitoIcons.Minus,
+                        contentDescription = stringResource(R.string.backup_copies_minus_cd),
+                        tint = if (copies > MIN_BACKUP_COPIES) Tinta else TintaSuave,
+                    )
                 }
                 Spacer(Modifier.width(16.dp))
                 Text(copies.toString(), style = MaterialTheme.typography.displayLarge, color = Tinta)
@@ -1050,7 +1091,11 @@ private fun CopiesSheet(
                     onClick = { copies = (copies + 1).coerceIn(MIN_BACKUP_COPIES, MAX_BACKUP_COPIES) },
                     enabled = copies < MAX_BACKUP_COPIES,
                 ) {
-                    Icon(BitoIcons.Plus, contentDescription = null, tint = if (copies < MAX_BACKUP_COPIES) Tinta else TintaSuave)
+                    Icon(
+                        BitoIcons.Plus,
+                        contentDescription = stringResource(R.string.backup_copies_plus_cd),
+                        tint = if (copies < MAX_BACKUP_COPIES) Tinta else TintaSuave,
+                    )
                 }
             }
             Spacer(Modifier.height(16.dp))
@@ -1072,13 +1117,19 @@ private fun SettingsRow(
     value: String? = null,
     annotatedValue: AnnotatedString? = null,
     trailingChevron: Boolean = false,
+    // [C], low priority: a 3-state cycling row (the language row is the one call site that uses
+    // this) is already announced via the merged "Language, Spanish" text and Role.Button from the
+    // underlying .clickable — this only adds a hint that tapping again cycles the value, it never
+    // replaces the merged label+value announcement.
+    stateDescription: String? = null,
     onClick: () -> Unit,
 ) {
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .then(if (stateDescription != null) Modifier.semantics { this.stateDescription = stateDescription } else Modifier),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1118,13 +1169,13 @@ private fun CutoffSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = { minutes = (minutes - CUTOFF_STEP_MINUTES).coerceIn(0, MAX_CUTOFF_MINUTES) }) {
-                    Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta)
+                    Icon(BitoIcons.Minus, contentDescription = stringResource(R.string.cutoff_minus_cd), tint = Tinta)
                 }
                 Spacer(Modifier.width(16.dp))
                 Text(formatClock(minutes), style = MaterialTheme.typography.displayLarge, color = Tinta)
                 Spacer(Modifier.width(16.dp))
                 IconButton(onClick = { minutes = (minutes + CUTOFF_STEP_MINUTES).coerceIn(0, MAX_CUTOFF_MINUTES) }) {
-                    Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta)
+                    Icon(BitoIcons.Plus, contentDescription = stringResource(R.string.cutoff_plus_cd), tint = Tinta)
                 }
             }
             Spacer(Modifier.height(8.dp))
