@@ -212,6 +212,14 @@
     <string name="onb_habit_widget_bold">Bito widget</string>
     <string name="onb_habit_create">Create and start</string>
     <string name="onb_habit_start">Start</string>
+    <!-- GoalStepChip (7g's ±1 goal stepper): a bare Minus/Plus icon inside a plain clickable Box,
+         no label of its own. -->
+    <string name="onb_goal_minus_cd">Decrease goal</string>
+    <string name="onb_goal_plus_cd">Increase goal</string>
+    <!-- PagerDots: an aggregate description on the whole dots row (never per-dot), so the pager's
+         position is actually announced somewhere in the flow — the dots themselves carry no text
+         of their own for TalkBack to read. -->
+    <string name="onb_pager_step_cd">Step %1$d of %2$d</string>
 
     <string name="settings_name_row">Your name</string>
     <string name="settings_name_placeholder">Add your name</string>

@@ -57,6 +57,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -715,14 +720,28 @@ private fun storyTitleRes(step: OnboardingStep) =
         else -> error("not a story step: $step")
     }
 
-/** Motion (GUIA :60): the active dot's pill width animates in, 150ms, rather than snapping. */
+/**
+ * Motion (GUIA :60): the active dot's pill width animates in, 150ms, rather than snapping.
+ *
+ * [D]/pager state: the dots themselves carry no text of their own, and nothing else in the flow
+ * (the story headline, the "Seguir"/"Saltar" buttons) announces WHICH step this is — only that a
+ * step exists. One aggregate description on the whole row (never per-dot, same [D] rule as
+ * [com.alvarotc.bito.ui.components.DayRing]/`RoundedBar`) fixes that without a single visual change.
+ */
 @Composable
 private fun PagerDots(
     total: Int,
     activeIndex: Int,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    val stepDescription = stringResource(R.string.onb_pager_step_cd, activeIndex + 1, total)
+    Row(
+        modifier
+            .testTag("onb-pager-dots")
+            .semantics(mergeDescendants = true) { contentDescription = stepDescription },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         repeat(total) { i ->
             val active = i == activeIndex
             val width by
@@ -801,11 +820,26 @@ private fun HabitPresetPill(
     onClick: () -> Unit,
 ) {
     Surface(
+        // [C]: the check-mark Icon(null) that marks the active pill is invisible to TalkBack, so
+        // every pill reads as "<label>, Button" with no selection state. `Surface(onClick = ...)`
+        // is kept as-is (not swapped for a bare `Modifier.selectable`) because its interactive
+        // overload applies `minimumInteractiveComponentSize()` internally — the plain overload
+        // doesn't, which would shrink this pill's touch target and shift the FlowRow it sits in.
+        // Stacking `selected`/`role` on the modifier it already accepts, same shape as
+        // `HabitCards.kt`'s `HabitCard` stacking `.semantics { contentDescription = ... }` onto a
+        // `BitoCard(onClick = ...)`, adds only the missing accessibility properties onto the same
+        // node Surface's own `clickable` already merges its children into — zero visual change.
         onClick = onClick,
         shape = CircleShape,
         color = Tarjeta,
         border = BorderStroke(1.dp, if (selected) Hoja else Borde),
-        modifier = Modifier.testTag("onb-habit-preset-${preset.name}"),
+        modifier =
+            Modifier
+                .testTag("onb-habit-preset-${preset.name}")
+                .semantics {
+                    this.selected = selected
+                    role = Role.Tab
+                },
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -879,13 +913,21 @@ private fun GoalRow(
                             else -> stringResource(R.string.onb_habit_goal_quantity)
                         }
                     val max = if (kind == HabitPreset.WEEKLY_TIMES) ONB_WEEKLY_TIMES_MAX else Int.MAX_VALUE
-                    GoalStepChip(icon = BitoIcons.Minus, testTag = "onb-goal-minus") {
+                    GoalStepChip(
+                        icon = BitoIcons.Minus,
+                        contentDescription = stringResource(R.string.onb_goal_minus_cd),
+                        testTag = "onb-goal-minus",
+                    ) {
                         onAdjust((target - 1).coerceIn(1, max))
                     }
                     Spacer(Modifier.width(10.dp))
                     GoalValue(value = "$target", unit = unit)
                     Spacer(Modifier.width(10.dp))
-                    GoalStepChip(icon = BitoIcons.Plus, testTag = "onb-goal-plus") {
+                    GoalStepChip(
+                        icon = BitoIcons.Plus,
+                        contentDescription = stringResource(R.string.onb_goal_plus_cd),
+                        testTag = "onb-goal-plus",
+                    ) {
                         onAdjust((target + 1).coerceIn(1, max))
                     }
                 }
@@ -912,6 +954,7 @@ private fun GoalValue(
 @Composable
 private fun GoalStepChip(
     icon: ImageVector,
+    contentDescription: String,
     testTag: String,
     onClick: () -> Unit,
 ) {
@@ -925,7 +968,10 @@ private fun GoalStepChip(
             .testTag(testTag),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = Tinta, modifier = Modifier.size(14.dp))
+        // [A]: was contentDescription = null — a bare "Button" with no decrease/increase wording.
+        // `.clickable` above already merges this Icon's own description onto the Box, same
+        // auto-merge FormHeader's IconButton relies on elsewhere in the app.
+        Icon(icon, contentDescription = contentDescription, tint = Tinta, modifier = Modifier.size(14.dp))
     }
 }
 

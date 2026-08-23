@@ -201,6 +201,9 @@
     <string name="onb_habit_widget_bold">widget de Bito</string>
     <string name="onb_habit_create">Crear y empezar</string>
     <string name="onb_habit_start">Empezar</string>
+    <string name="onb_goal_minus_cd">Reducir objetivo</string>
+    <string name="onb_goal_plus_cd">Aumentar objetivo</string>
+    <string name="onb_pager_step_cd">Paso %1$d de %2$d</string>
 
     <string name="settings_name_row">Tu nombre</string>
     <string name="settings_name_placeholder">Añade tu nombre</string>

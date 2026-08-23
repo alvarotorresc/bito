@@ -5,6 +5,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
@@ -542,5 +543,80 @@ class OnboardingScreenTest {
         assertEquals(HabitPreset.QUIT, vm.uiState.value.habitKind)
         compose.onNodeWithText("1", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.quit_total), useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * [C]: the check-mark on the active preset is an `Icon(contentDescription = null)`, invisible
+     * to TalkBack — every pill used to read "<label>, Button" with no selection state, same gap
+     * `HabitFormScreen`'s own `PresetPills` had.
+     */
+    @Test
+    fun `the habit preset pills announce which one is selected`() {
+        val vm = newViewModel("onboarding-screen-preset-selected")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        goToFirstHabit(vm)
+
+        // DAILY_CHECK is the form's own default preset (no pill tap needed to reach it).
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.DAILY_CHECK.name}", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).assertIsNotSelected()
+
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.DAILY_CHECK.name}", useUnmergedTree = true).assertIsNotSelected()
+    }
+
+    /** [A]: `GoalStepChip`'s Minus/Plus `Icon`s used to carry `contentDescription = null`. */
+    @Test
+    fun `the goal stepper chips carry real action descriptions`() {
+        val vm = newViewModel("onboarding-screen-goal-stepper-cd")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        goToFirstHabit(vm)
+
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        // MERGED tree (no useUnmergedTree) on purpose: the description lives on the Icon child,
+        // merged up onto GoalStepChip's own tagged Box via its `.clickable`'s auto-merge — the
+        // same reason this file's `LanguageChip`/`selectable()` assertions stay off the unmerged
+        // tree (see the locale-fallback test's own comment on that).
+        compose.onNodeWithTag("onb-goal-minus").assertContentDescriptionEquals("Decrease goal")
+        compose.onNodeWithTag("onb-goal-plus").assertContentDescriptionEquals("Increase goal")
+    }
+
+    /**
+     * [D]/pager state: `PagerDots` used to carry no text at all, so nothing in the flow announced
+     * WHICH step was showing (only the "Seguir"/"Saltar" buttons and the story headline, neither
+     * naming a position). One aggregate description on the whole row, updating as the pager moves.
+     */
+    @Test
+    fun `the pager dots announce which step is showing`() {
+        val vm = newViewModel("onboarding-screen-pager-dots")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        vm.next() // WELCOME -> STORY_1 (pageIndex 0 of 6)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-pager-dots", useUnmergedTree = true).assertContentDescriptionEquals("Step 1 of 6")
+
+        vm.skipStory() // -> NAME (pageIndex 3 of 6)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-pager-dots", useUnmergedTree = true).assertContentDescriptionEquals("Step 4 of 6")
     }
 }
