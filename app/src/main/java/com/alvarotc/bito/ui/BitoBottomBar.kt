@@ -159,7 +159,7 @@ private fun NavSlot(
             .semantics { contentDescription = label }
             .then(if (selected) Modifier.clip(CircleShape).background(HojaTinte) else Modifier)
             .fillMaxWidth()
-            .padding(horizontal = 4.dp, vertical = 8.dp)
+            .padding(horizontal = 2.dp, vertical = 8.dp)
     Column(
         base,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -171,6 +171,9 @@ private fun NavSlot(
                 MaterialTheme.typography.labelMedium.copy(
                     fontSize = 11.sp,
                     fontWeight = FontWeight.Medium,
+                    // labelMedium tracks at 0.5sp — ~6dp across "Estadísticas", exactly what made
+                    // it ellipsize inside an equal-width slot on a 411dp device (QA 2026-08-23).
+                    letterSpacing = 0.sp,
                 ),
             color = tint,
             maxLines = 1,
