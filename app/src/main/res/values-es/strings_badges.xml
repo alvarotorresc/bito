@@ -49,7 +49,7 @@
     <!-- Tarjeta AchievementsSection de StatsScreen [F]: sustituye el auto-merge de la tarjeta
          clicable, que si no concatenaría esta cabecera con el nombre de cada BadgeChip de la
          cuadrícula. "%1$d"/"%2$d" = mismos datos de desbloqueados/total que stats_badges_count. -->
-    <string name="achievements_card_cd">Logros, %1$d de %2$d, abrir</string>
+    <string name="achievements_card_cd">Logros, %1$d de %2$d</string>
     <string name="stats_badges_all">ver todos</string>
     <string name="badges_title">Logros</string>
     <string name="badge_unlocked_on">desbloqueado el %1$s</string>

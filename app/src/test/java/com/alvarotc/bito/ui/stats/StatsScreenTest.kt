@@ -301,6 +301,6 @@ class StatsScreenTest {
         setContent()
 
         compose.onNodeWithTag("achievements", useUnmergedTree = true).performScrollTo()
-        compose.onNodeWithContentDescription("Achievements, 1 of ${BadgeCatalog.all.size}, open").assertExists()
+        compose.onNodeWithContentDescription("Achievements, 1 of ${BadgeCatalog.all.size}").assertExists()
     }
 }
