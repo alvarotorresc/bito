@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Direction
@@ -63,13 +65,27 @@ fun ReviewRowCard(
 /** Name plus the racha chip, shared by every row variant below. */
 @Composable
 private fun RowNameHeader(
+    id: String,
     name: String,
     streak: Int,
     minStreakToShow: Int,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    val showStreak = streak >= minStreakToShow
+    // [E]: name Text + StreakChip (Icon(Flame, null) + count Text) merge into one TalkBack stop.
+    // A plain mergeDescendants alone would only concatenate the name and the bare count (e.g.
+    // "Meditar 5"), silently dropping the word "streak" the flame icon carries for a sighted
+    // reader — same reasoning as StatsScreen's StreakWallCard fix (52304e0). The override only
+    // applies once the chip is actually shown; otherwise the row is just the name, which already
+    // reads fine on its own.
+    val description = if (showStreak) stringResource(R.string.review_row_streak_cd, name, streak) else name
+    Row(
+        Modifier
+            .testTag("review-row-name-$id")
+            .semantics(mergeDescendants = true) { contentDescription = description },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(name, style = MaterialTheme.typography.bodyLarge, color = Tinta)
-        if (streak >= minStreakToShow) {
+        if (showStreak) {
             Spacer(Modifier.width(8.dp))
             StreakChip(streak)
         }
@@ -84,7 +100,7 @@ private fun CheckRow(
     onAck: () -> Unit,
 ) {
     Column {
-        RowNameHeader(card.name, card.streak, minStreakToShow = 2)
+        RowNameHeader(card.id, card.name, card.streak, minStreakToShow = 2)
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             PillButton(
@@ -112,7 +128,7 @@ private fun LoggingRow(
     val minLabel = stringResource(R.string.unit_min)
     val unitSuffix = card.unit?.let { " $it" } ?: ""
     Column {
-        RowNameHeader(card.name, card.streak, minStreakToShow = 2)
+        RowNameHeader(card.id, card.name, card.streak, minStreakToShow = 2)
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text("${card.progress}", style = MaterialTheme.typography.displayLarge, color = Hoja)
@@ -181,7 +197,7 @@ private fun LimitRow(
     val minLabel = stringResource(R.string.unit_min)
     val unitSuffix = card.unit?.let { " $it" } ?: ""
     Column {
-        RowNameHeader(card.name, card.streak, minStreakToShow = 2)
+        RowNameHeader(card.id, card.name, card.streak, minStreakToShow = 2)
         Spacer(Modifier.height(10.dp))
         Row(verticalAlignment = Alignment.Bottom) {
             Text("${card.progress}", style = MaterialTheme.typography.displayLarge, color = Hoja)
@@ -216,7 +232,7 @@ private fun AbstinenceRow(
     onRelapse: () -> Unit,
 ) {
     Column {
-        RowNameHeader(card.name, card.streak, minStreakToShow = 1)
+        RowNameHeader(card.id, card.name, card.streak, minStreakToShow = 1)
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             PillButton(

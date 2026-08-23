@@ -7,7 +7,10 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -378,5 +381,27 @@ class ReviewScreenTest {
 
         assertTrue(closed)
         assertTrue(runBlocking { settingsRepo.settings.first() }.badgesSeenUntilMillis > 0)
+    }
+
+    @Test
+    fun `a row's name and streak merge into one talkback stop`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 10),
+            )
+            // today itself stays undone (PENDING bridges, per Streaks.kt's own KDoc) so the row
+            // still renders in review — the streak walks back through the 3 prior done days.
+            for (day in (today - 3)..(today - 1)) {
+                db.entryDao().insert(entryEntity(id = "e-med-$day", habitId = "h1", logicalDay = day, value = 1))
+            }
+        }
+        setContent()
+
+        // [E]: name Text + StreakChip (Icon(Flame, null) + count Text) used to be 2 separate
+        // TalkBack stops. MERGED tree (no useUnmergedTree) on purpose: proves the override landed
+        // on the row's own node, not a child underneath it — same evidence shape as StatsScreen's
+        // "the streak wall card announces the streak" test.
+        compose.onNodeWithTag("review-row-name-h1").assertContentDescriptionEquals("Meditar, streak 3")
+        compose.onNodeWithTag("review-row-name-h1").onChildren().assertCountEquals(0)
     }
 }
