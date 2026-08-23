@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -22,6 +23,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -57,11 +59,23 @@ import com.alvarotc.bito.ui.theme.TintaSuave
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
+    // Opening a store preview (a grid tap) scrolls back to the stage, so the dressed bean, the
+    // "probando" chip and the purchase sheet are all visible at once — mockup 4b (QA 2026-08-23).
+    LaunchedEffect(state.previewItemId) {
+        if (state.previewItemId != null) scrollState.animateScrollTo(0)
+    }
     Scaffold(containerColor = Papel) { padding ->
+        if (state.loading) {
+            // First frame after the nav-scoped VM is recreated: calm paper, never a zeroed
+            // balance/store flash (QA 2026-08-23).
+            Box(Modifier.padding(padding).fillMaxSize().testTag("habi-loading"))
+            return@Scaffold
+        }
         Column(
             Modifier
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(20.dp)
                 .testTag("habi-screen"),
             verticalArrangement = Arrangement.spacedBy(12.dp),

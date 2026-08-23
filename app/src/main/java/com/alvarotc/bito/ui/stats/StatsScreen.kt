@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -97,6 +98,12 @@ fun StatsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     Scaffold(containerColor = Papel) { padding ->
+        if (state.loading) {
+            // First frame after the nav-scoped VM is recreated: calm paper, never zeroed heroes
+            // and empty streak walls (QA 2026-08-23).
+            Box(Modifier.padding(padding).fillMaxSize().testTag("stats-loading"))
+            return@Scaffold
+        }
         Column(
             Modifier
                 .padding(padding)
