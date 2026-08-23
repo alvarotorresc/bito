@@ -1,10 +1,12 @@
 package com.alvarotc.bito.ui
 
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.alvarotc.bito.ui.theme.BitoTheme
 import org.junit.Assert.assertEquals
@@ -76,5 +78,12 @@ class BitoBottomBarTest {
             .performClick()
 
         assertEquals(1, settingsTaps)
+    }
+
+    @Test
+    fun `all four labels render complete`() {
+        compose.setContent { BitoTheme { BitoBottomBar("today", {}, {}, {}, {}, {}) } }
+        compose.onNodeWithText("Settings").assertIsDisplayed() // default locale EN: el slot que antes se recortaba
+        compose.onNodeWithText("Stats").assertIsDisplayed()
     }
 }

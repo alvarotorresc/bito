@@ -30,6 +30,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvarotc.bito.R
@@ -58,14 +59,31 @@ fun BitoBottomBar(
         Modifier.fillMaxWidth().padding(20.dp).testTag("bottom-bar"),
         contentAlignment = Alignment.Center,
     ) {
-        Surface(shape = CircleShape, color = Tarjeta, border = BorderStroke(1.dp, Borde)) {
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = CircleShape,
+            color = Tarjeta,
+            border = BorderStroke(1.dp, Borde),
+        ) {
             Row(
-                Modifier.padding(horizontal = 8.dp, vertical = 8.dp),
+                Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                NavSlot(BitoIcons.Home, stringResource(R.string.nav_today), currentRoute == "today", onToday)
-                NavSlot(BitoIcons.ChartColumn, stringResource(R.string.nav_stats), currentRoute == "stats", onStats)
+                NavSlot(
+                    BitoIcons.Home,
+                    stringResource(R.string.nav_today),
+                    currentRoute == "today",
+                    onToday,
+                    modifier = Modifier.weight(1f),
+                )
+                NavSlot(
+                    BitoIcons.ChartColumn,
+                    stringResource(R.string.nav_stats),
+                    currentRoute == "stats",
+                    onStats,
+                    modifier = Modifier.weight(1f),
+                )
                 Box(
                     Modifier
                         .size(56.dp)
@@ -76,8 +94,20 @@ fun BitoBottomBar(
                 ) {
                     Icon(BitoIcons.Plus, contentDescription = stringResource(R.string.nav_new_habit), tint = Tarjeta)
                 }
-                NavSlot(BitoIcons.Habi, stringResource(R.string.nav_habi), currentRoute == "habi", onHabi)
-                NavSlot(BitoIcons.Settings, stringResource(R.string.nav_settings), currentRoute == "settings", onSettings)
+                NavSlot(
+                    BitoIcons.Habi,
+                    stringResource(R.string.nav_habi),
+                    currentRoute == "habi",
+                    onHabi,
+                    modifier = Modifier.weight(1f),
+                )
+                NavSlot(
+                    BitoIcons.Settings,
+                    stringResource(R.string.nav_settings),
+                    currentRoute == "settings",
+                    onSettings,
+                    modifier = Modifier.weight(1f),
+                )
             }
         }
     }
@@ -85,7 +115,10 @@ fun BitoBottomBar(
 
 /**
  * One bottom-bar destination: icon 20dp + label 12sp stacked, active = a HojaTinte pill wrapping
- * both, inactive = plain TintaSuave icon+label with no container. [Modifier.selectable] (not plain
+ * both, inactive = plain TintaSuave icon+label with no container. Width comes from the caller's
+ * [Modifier.weight] (all four slots share the row equally, so the "+" stays centered regardless of
+ * label length or locale); the slot's own `horizontal = 4.dp` padding is just breathing room around
+ * that weighted width, not the source of it. [Modifier.selectable] (not plain
  * `clickable`) is attached unconditionally, including on the already-selected slot, so TalkBack
  * can announce the real "Tab, selected" state instead of the label alone — but [onClick] itself is
  * guarded to a no-op while [selected] is true. It is NOT true that every [BitoBottomBar] callback
@@ -110,11 +143,12 @@ private fun NavSlot(
     label: String,
     selected: Boolean,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val tint = if (selected) Tinta else TintaSuave
     val interactionSource = remember { MutableInteractionSource() }
     val base =
-        Modifier
+        modifier
             .selectable(
                 selected = selected,
                 interactionSource = interactionSource,
@@ -124,8 +158,12 @@ private fun NavSlot(
             )
             .semantics { contentDescription = label }
             .then(if (selected) Modifier.clip(CircleShape).background(HojaTinte) else Modifier)
-            .padding(horizontal = 16.dp, vertical = 8.dp)
-    Column(base, horizontalAlignment = Alignment.CenterHorizontally) {
+            .fillMaxWidth()
+            .padding(horizontal = 4.dp, vertical = 8.dp)
+    Column(
+        base,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(20.dp))
         Text(
             label,
@@ -136,6 +174,8 @@ private fun NavSlot(
                 ),
             color = tint,
             maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
