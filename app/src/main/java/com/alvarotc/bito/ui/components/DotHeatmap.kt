@@ -38,6 +38,8 @@ import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
+import com.alvarotc.bito.ui.theme.Peligro
+import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.TintaSuave
 import java.time.DayOfWeek
@@ -199,10 +201,18 @@ private fun monthSummaryDescription(days: List<HeatmapDay>): String {
 
 @Composable
 private fun DayDotGlyph(day: HeatmapDay) {
+    val dayNumber = LocalDate.ofEpochDay(day.day.toLong()).dayOfMonth.toString()
     // OFF renders as a hollow ring regardless of isToday (a day can't actually be both) — same
-    // DOT_SIZE as every judged day, so the grid always reads as a complete calendar.
+    // DOT_SIZE as every judged day, so the grid always reads as a complete calendar. Every cell
+    // except FROZEN carries its day-of-month number (QA 2026-08-23); FROZEN keeps the snowflake —
+    // in a 26dp dot the state mark wins over the digits.
     if (day.dot == DayDot.OFF) {
-        Box(Modifier.size(DOT_SIZE).clip(CircleShape).border(OFF_RING_WIDTH, Borde, CircleShape))
+        Box(
+            Modifier.size(DOT_SIZE).clip(CircleShape).border(OFF_RING_WIDTH, Borde, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            DayNumber(dayNumber, TintaSuave)
+        }
         return
     }
     val base = Modifier.size(DOT_SIZE).clip(CircleShape)
@@ -211,28 +221,59 @@ private fun DayDotGlyph(day: HeatmapDay) {
         Box(base.background(fill).border(TODAY_RING_WIDTH, Brasa, CircleShape), contentAlignment = Alignment.Center) {
             if (showSnowflake) {
                 Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(FROZEN_ICON_SIZE))
+            } else {
+                DayNumber(dayNumber, numberColorFor(day.dot))
             }
         }
         return
     }
     when (day.dot) {
-        DayDot.PENDING -> Box(base.border(PENDING_RING_WIDTH, TintaSuave, CircleShape))
+        DayDot.PENDING ->
+            Box(base.border(PENDING_RING_WIDTH, TintaSuave, CircleShape), contentAlignment = Alignment.Center) {
+                DayNumber(dayNumber, TintaSuave)
+            }
         DayDot.FROZEN ->
             Box(base.background(HojaTinte), contentAlignment = Alignment.Center) {
                 Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(FROZEN_ICON_SIZE))
             }
-        DayDot.FULFILLED, DayDot.ACTIVITY -> Box(base.background(Hoja))
-        DayDot.FAILED, DayDot.EMPTY -> Box(base.background(Borde))
-        DayDot.PAUSED -> Box(base.background(TintaSuave))
+        DayDot.FULFILLED, DayDot.ACTIVITY ->
+            Box(base.background(Hoja), contentAlignment = Alignment.Center) { DayNumber(dayNumber, Tarjeta) }
+        DayDot.FAILED, DayDot.EMPTY ->
+            Box(base.background(PeligroTinte), contentAlignment = Alignment.Center) { DayNumber(dayNumber, Peligro) }
+        DayDot.PAUSED ->
+            Box(base.background(TintaSuave), contentAlignment = Alignment.Center) { DayNumber(dayNumber, Tarjeta) }
         DayDot.OFF -> Unit // handled above
     }
 }
+
+/** The day-of-month digits inside one heatmap dot — color picked per state by the caller. */
+@Composable
+private fun DayNumber(
+    text: String,
+    color: Color,
+) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall.copy(fontSize = 9.sp, fontWeight = FontWeight.Medium),
+        color = color,
+        maxLines = 1,
+    )
+}
+
+/** Number color over each judged fill — mirrors [DayDotGlyph]'s branches for today's ringed dot. */
+private fun numberColorFor(dot: DayDot): Color =
+    when (dot) {
+        DayDot.FULFILLED, DayDot.ACTIVITY, DayDot.PAUSED -> Tarjeta
+        DayDot.FAILED, DayDot.EMPTY -> Peligro
+        DayDot.PENDING -> TintaSuave
+        DayDot.FROZEN, DayDot.OFF -> TintaSuave // unreachable: FROZEN shows the snowflake, OFF returned earlier
+    }
 
 /** Today's fill per its state; PENDING (nothing logged yet) reads as an empty card slot. */
 private fun todayFillFor(dot: DayDot): Pair<Color, Boolean> =
     when (dot) {
         DayDot.FULFILLED, DayDot.ACTIVITY -> Hoja to false
-        DayDot.FAILED, DayDot.EMPTY -> Borde to false
+        DayDot.FAILED, DayDot.EMPTY -> PeligroTinte to false
         DayDot.FROZEN -> HojaTinte to true
         DayDot.PAUSED -> TintaSuave to false
         DayDot.PENDING -> Tarjeta to false

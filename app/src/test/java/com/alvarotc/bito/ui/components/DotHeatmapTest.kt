@@ -8,6 +8,7 @@ import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.alvarotc.bito.domain.DayDot
 import com.alvarotc.bito.domain.HeatmapDay
@@ -56,6 +57,23 @@ class DotHeatmapTest {
         // PENDING (today, not yet judged) and OFF (outside the habit's life) are not counted.
         compose.onNodeWithContentDescription("August 2025: 1 done, 1 failed, 1 frozen, 1 paused of 4 days")
             .assertExists()
+    }
+
+    @Test
+    fun `judged cells show the day-of-month number but frozen keeps its snowflake`() {
+        val days =
+            listOf(
+                HeatmapDay(augFirst, DayDot.FULFILLED, false),
+                HeatmapDay(augFirst + 1, DayDot.FROZEN, false),
+            )
+        compose.setContent {
+            BitoTheme {
+                DotHeatmap(days = days, onDayTap = {})
+            }
+        }
+
+        compose.onNodeWithText("1", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("2", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

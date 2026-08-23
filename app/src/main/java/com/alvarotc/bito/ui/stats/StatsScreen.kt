@@ -65,6 +65,8 @@ import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Peligro
+import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -278,7 +280,7 @@ private fun WeekRowLine(row: WeekRow) {
 /**
  * Small, tap-free twin of [com.alvarotc.bito.ui.components.DotHeatmap]'s per-day glyph mapping —
  * DotProgress-canon 16dp solid dots, same fill/ring per state as the fixed heatmap (FULFILLED/
- * ACTIVITY solid Hoja, FAILED/EMPTY solid Borde, PAUSED solid TintaSuave, PENDING a 2dp
+ * ACTIVITY solid Hoja, FAILED/EMPTY a PeligroTinte fill with a Peligro X — QA 2026-08-23, PAUSED solid TintaSuave, PENDING a 2dp
  * TintaSuave ring, OFF a 2dp Borde ring for future/unreached days). Grid always reads complete
  * and aligned with header.
  */
@@ -287,7 +289,10 @@ private fun WeekDayDot(dot: DayDot) {
     val size = WeekDotSize
     when (dot) {
         DayDot.FULFILLED, DayDot.ACTIVITY -> Box(Modifier.size(size).clip(CircleShape).background(Hoja))
-        DayDot.FAILED, DayDot.EMPTY -> Box(Modifier.size(size).clip(CircleShape).background(Borde))
+        DayDot.FAILED, DayDot.EMPTY ->
+            Box(Modifier.size(size).clip(CircleShape).background(PeligroTinte), contentAlignment = Alignment.Center) {
+                Icon(BitoIcons.X, contentDescription = null, tint = Peligro, modifier = Modifier.size(10.dp))
+            }
         DayDot.FROZEN ->
             Box(Modifier.size(size).clip(CircleShape).background(HojaTinte), contentAlignment = Alignment.Center) {
                 Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(10.dp))
