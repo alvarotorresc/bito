@@ -97,4 +97,11 @@ class StatsUiStateTest {
         assertEquals(BadgeCatalog.size - 2, stillLocked.size)
         assertTrue(stillLocked.all { it.unlockedAtMillis == null })
     }
+
+    @Test
+    fun `the default state starts loading`() {
+        // The screens' first-frame gates (QA 2026-08-23) rely on this default: if it ever flips,
+        // both gates die silently while every other test keeps passing.
+        assertTrue(StatsUiState().loading)
+    }
 }
