@@ -229,7 +229,12 @@ class BitoNavHostTest {
         compose.mainClock.advanceTimeByFrame()
         compose.mainClock.advanceTimeByFrame()
 
-        compose.onNodeWithTag("habi-screen", useUnmergedTree = true).assertExists()
+        // QA 2026-08-23: HabiScreen gates its first frame on `loading` (calm paper, tag
+        // "habi-loading") until the VM's combine emits — under this frame-pumped clock the
+        // emission can land after our two frames, so arrival at the route is either tag.
+        compose
+            .onNode(hasTestTag("habi-loading") or hasTestTag("habi-screen"), useUnmergedTree = true)
+            .assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
     }
 
