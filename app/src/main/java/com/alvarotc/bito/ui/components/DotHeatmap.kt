@@ -88,7 +88,16 @@ fun DotHeatmap(
     // real floor on the visual gap regardless of this value; this is just the closest the two rows
     // of dots can be pulled without touching the cells themselves.
     Column(
-        modifier.semantics { contentDescription = monthDescription },
+        // mergeDescendants = true: this Column has children (WeekdayHeaderRow's Text nodes, the
+        // day cells below) and is neither a leaf nor otherwise a merge boundary, so a plain
+        // `.semantics { contentDescription = ... }` here would not make it a real, separately
+        // focusable stop for a screen reader — its own contentDescription would just be at the
+        // mercy of whatever ancestor merge boundary happens to sit above it. mergeDescendants =
+        // true makes this Column its own boundary: the explicit contentDescription overrides the
+        // merged header text (Compose prefers an explicit contentDescription over merged Text),
+        // while each HeatmapCell below stays its own separate stop (clickable cells are already
+        // their own merge boundaries, so this outer merge does not reach past them).
+        modifier.semantics(mergeDescendants = true) { contentDescription = monthDescription },
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         WeekdayHeaderRow()
