@@ -35,7 +35,6 @@ import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
-import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Peligro
 import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
@@ -249,12 +248,13 @@ fun PauseSheet(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
+                containerColor = Tinta,
             )
         }
     }
 }
 
-/** Archiving keeps all history — it is not destructive, so it confirms in `hoja`, not `peligro`. */
+/** Archiving keeps all history — not destructive, so no `peligro`; it confirms in `tinta`, deliberate rather than the routine positive `hoja` (QA 2026-08-23). Pausing confirms the same way. */
 @Composable
 fun ArchiveSheet(
     onConfirm: () -> Unit,
@@ -271,7 +271,7 @@ fun ArchiveSheet(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
-                containerColor = Hoja,
+                containerColor = Tinta,
             )
             GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
