@@ -176,6 +176,8 @@
     <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Habi sounds</string>
     <string name="settings_habi_sounds_hint">Little greetings and celebrations. Never in notifications.</string>
+    <string name="settings_intro_row">Intro</string>
+    <string name="settings_intro_value">watch again</string>
     <string name="settings_log_section">On logging</string>
     <string name="settings_log_sound">Sound</string>
     <string name="settings_log_sound_hint">A tiny tick when you log a habit</string>
@@ -215,6 +217,7 @@
     <string name="onb_story3_title">Until Habi found a system</string>
     <string name="onb_story3_sub">Small steps, every day. It changed everything.</string>
     <string name="onb_continue">Continue</string>
+    <string name="onb_replay_close">Back</string>
     <string name="onb_name_title">I\'ve been through this. Now it\'s your turn.</string>
     <string name="onb_name_question">What\'s your name?</string>
     <string name="onb_name_hint">Your name</string>

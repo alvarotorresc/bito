@@ -111,6 +111,7 @@ fun SettingsScreen(
     settingsViewModel: SettingsViewModel,
     onBack: () -> Unit,
     onOpenArchived: () -> Unit,
+    onOpenIntro: () -> Unit = {},
 ) {
     val backupState by backupViewModel.state.collectAsStateWithLifecycle()
     val settings by settingsViewModel.state.collectAsStateWithLifecycle()
@@ -271,6 +272,7 @@ fun SettingsScreen(
                     onSetLanguage = settingsViewModel::setLanguage,
                     archivedCount = archivedHabits.size,
                     onOpenArchived = onOpenArchived,
+                    onOpenIntro = onOpenIntro,
                 )
             }
             BackupsCard(
@@ -587,6 +589,7 @@ private fun GeneralSectionCard(
     onSetLanguage: (String?) -> Unit,
     archivedCount: Int,
     onOpenArchived: () -> Unit,
+    onOpenIntro: () -> Unit,
 ) {
     var editingName by remember { mutableStateOf(false) }
     // Keyed on userName: if the stored value changes out from under an open editor (e.g. a backup
@@ -631,6 +634,11 @@ private fun GeneralSectionCard(
                 onClick = { editingName = true },
             )
         }
+        SettingsRow(
+            label = stringResource(R.string.settings_intro_row),
+            value = stringResource(R.string.settings_intro_value),
+            onClick = onOpenIntro,
+        )
         SettingsRow(
             label = stringResource(R.string.language_row),
             value =

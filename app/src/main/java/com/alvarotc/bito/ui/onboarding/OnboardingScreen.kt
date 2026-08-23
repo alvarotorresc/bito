@@ -147,7 +147,12 @@ internal class OnboardingSwipeFadeLatch {
  * how a swipe settle reconciles back into [OnboardingViewModel]'s own step.
  */
 @Composable
-fun OnboardingScreen(viewModel: OnboardingViewModel) {
+fun OnboardingScreen(
+    viewModel: OnboardingViewModel,
+    // Non-null = replay mode from Ajustes (QA 2026-08-24): the same seven steps, but the final
+    // CTA closes instead of creating a habit — nothing persists, onboardingDone stays true.
+    replayOnClose: (() -> Unit)? = null,
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // System back steps back one beat instead of exiting the app mid-flow -- but only past
     // WELCOME: there, the default behavior (exit) is exactly right, and OnboardingStep's own
@@ -173,7 +178,8 @@ fun OnboardingScreen(viewModel: OnboardingViewModel) {
             onSetHabitName = viewModel::setHabitName,
             onSetHabitKind = viewModel::setHabitKind,
             onSetHabitTarget = viewModel::setHabitTarget,
-            onFinish = viewModel::finish,
+            onFinish = replayOnClose ?: viewModel::finish,
+            replay = replayOnClose != null,
         )
     }
 }
@@ -334,6 +340,7 @@ private fun StoryPagerScaffold(
     onSetHabitKind: (HabitPreset) -> Unit,
     onSetHabitTarget: (Int) -> Unit,
     onFinish: () -> Unit,
+    replay: Boolean = false,
 ) {
     val step = state.step
     val pageIndex = PAGER_STEPS.indexOf(step).coerceAtLeast(0)
@@ -451,7 +458,11 @@ private fun StoryPagerScaffold(
                 PillButton(
                     text =
                         stringResource(
-                            if (state.habitName.trim().isNotEmpty()) R.string.onb_habit_create else R.string.onb_habit_start,
+                            when {
+                                replay -> R.string.onb_replay_close
+                                state.habitName.trim().isNotEmpty() -> R.string.onb_habit_create
+                                else -> R.string.onb_habit_start
+                            },
                         ),
                     onClick = onFinish,
                     modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp).testTag("onb-create-start"),

@@ -168,6 +168,8 @@
     <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Sonidos de Habi</string>
     <string name="settings_habi_sounds_hint">Saluditos y celebraciones. Nunca en notificaciones.</string>
+    <string name="settings_intro_row">Introducción</string>
+    <string name="settings_intro_value">ver de nuevo</string>
     <string name="settings_log_section">Al registrar</string>
     <string name="settings_log_sound">Sonido</string>
     <string name="settings_log_sound_hint">Un toquecito al registrar un hábito</string>
@@ -201,6 +203,7 @@
     <string name="onb_story3_title">Hasta que encontró un sistema</string>
     <string name="onb_story3_sub">Pequeños pasos, cada día. Le cambió la vida.</string>
     <string name="onb_continue">Seguir</string>
+    <string name="onb_replay_close">Volver</string>
     <string name="onb_name_title">Yo ya pasé por esto. Ahora te toca a ti.</string>
     <string name="onb_name_question">¿Cómo te llamas?</string>
     <string name="onb_name_hint">Tu nombre</string>

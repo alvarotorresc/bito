@@ -221,6 +221,14 @@ fun BitoNavHost(container: AppContainer) {
                     settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
                     onOpenArchived = { nav.navigate("archived") },
+                    onOpenIntro = { nav.navigate("onboarding_replay") },
+                )
+            }
+            // Replay de la introducción desde Ajustes: mismos 7 pasos, nada se persiste.
+            composable("onboarding_replay") {
+                OnboardingScreen(
+                    viewModel = viewModel(factory = OnboardingViewModel.factory(container)),
+                    replayOnClose = { nav.popBackStack() },
                 )
             }
             composable("archived") {
@@ -326,7 +334,8 @@ fun BitoNavHost(container: AppContainer) {
         // fire.
         val celebrations: CelebrationsViewModel = viewModel(factory = CelebrationsViewModel.factory(container))
         val cState by celebrations.uiState.collectAsStateWithLifecycle()
-        val celebrationsSuppressed = currentRoute == "review" || currentRoute == "onboarding" || pendingRoute != null
+        val celebrationsSuppressed =
+            currentRoute == "review" || currentRoute == "onboarding" || currentRoute == "onboarding_replay" || pendingRoute != null
         if (!celebrationsSuppressed) {
             when {
                 cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
