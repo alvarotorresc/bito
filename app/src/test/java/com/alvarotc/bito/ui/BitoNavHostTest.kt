@@ -35,6 +35,7 @@ import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -506,6 +507,75 @@ class BitoNavHostTest {
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
         assertNull(NavRequests.pending.value) // fired through the normal branch and consumed there
+    }
+
+    /**
+     * M9.5 final-review Minor #6: extends the test above with a pending perfect-day celebration.
+     * `nav.navigate("review")` (the held request firing) runs in the SAME recomposition that flips
+     * `currentRoute` from "onboarding" to "today" — without `pendingRoute != null` folded into
+     * [BitoNavHost]'s own `celebrationsSuppressed`, the celebration would get that one transient
+     * "today" frame to itself, cue there (idempotently latched — see
+     * [com.alvarotc.bito.ui.celebration.CelebrationsViewModel.cue]), then get suppressed again on
+     * "review" and never cue a second time once genuinely shown after review closes — cued once,
+     * silently, behind the transition; sheet later renders mute.
+     */
+    @Test
+    fun `a celebration behind a held review request does not cue during the transient today frame`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { seedPerfectDayToday(container) }
+        val vmOwner = FakeViewModelStoreOwner()
+
+        fun celebrations() = ViewModelProvider(vmOwner, CelebrationsViewModel.factory(container))[CelebrationsViewModel::class.java]
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides vmOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        NavRequests.open("review")
+        compose.waitForIdle()
+        assertNull(celebrations().lastCued) // suppressed behind onboarding: never cued yet
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        // The held request fired straight through to review: the celebration never got a "today"
+        // frame to itself, so it must still be un-cued and its sheet must not exist behind review.
+        assertNull(celebrations().lastCued)
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        // Leaving review (unsealed, via the header's back chevron) is the celebration's first
+        // genuine chance to be seen.
+        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+        assertTrue(celebrations().lastCued != null)
     }
 
     /**
