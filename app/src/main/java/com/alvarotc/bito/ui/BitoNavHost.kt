@@ -64,10 +64,11 @@ fun BitoNavHost(container: AppContainer) {
     // restore, see OnboardingReconciler's own KDoc) is committed to DataStore before the settings
     // gate below ever subscribes and reads it. That makes the startDestination decision further
     // down deterministic: no more race against a subscriber that could arrive before the
-    // reconciling write commits. `reconciled` only ever flips false -> true, once, so this only
-    // gates the very first composition — same "early return, continue further down on a later
-    // pass" shape the settings gate right below it already uses.
-    var reconciled by remember { mutableStateOf(false) }
+    // reconciling write commits. `reconciled` only ever flips false -> true, once per [container] —
+    // keyed on it (not bare `remember {}`) so a container swap re-closes this gate instead of
+    // leaving it open while `LaunchedEffect` below restarts and races the settings subscription
+    // further down against the new container's own reconcile, the exact race this fix removes.
+    var reconciled by remember(container) { mutableStateOf(false) }
     LaunchedEffect(container) {
         OnboardingReconciler.reconcile(container.settings, container.habits)
         reconciled = true
