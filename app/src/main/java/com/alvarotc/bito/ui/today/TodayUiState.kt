@@ -77,6 +77,7 @@ data class TodayUiState(
     val todaySealed: Boolean = false,
     val spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
     val userName: String = "",
+    val logHapticEnabled: Boolean = true,
     val loading: Boolean = true,
 )
 
@@ -93,6 +94,7 @@ fun buildTodayUiState(
     personality: Personality = Personality.NEUTRA,
     owned: List<CustomizationItemEntity> = emptyList(),
     userName: String = "",
+    logHapticEnabled: Boolean = true,
 ): TodayUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -125,6 +127,7 @@ fun buildTodayUiState(
         todaySealed = Sealing.isSealed(state, today),
         spec = HabiSpec(mood, personality, equippedSetOf(equippedIds)),
         userName = userName,
+        logHapticEnabled = logHapticEnabled,
         loading = false,
     )
 }

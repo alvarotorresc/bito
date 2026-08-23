@@ -69,6 +69,10 @@ class SettingsViewModel(
 
     fun setHabiSounds(enabled: Boolean) = write { it.copy(habiSoundsEnabled = enabled) }
 
+    fun setLogSound(enabled: Boolean) = write { it.copy(logSoundEnabled = enabled) }
+
+    fun setLogHaptic(enabled: Boolean) = write { it.copy(logHapticEnabled = enabled) }
+
     fun setPerfectDayCelebration(enabled: Boolean) = write { it.copy(perfectDayCelebration = enabled) }
 
     /** null → follow the system. DataStore stays the source of truth (and what travels in backups); AppLocale only applies it. */

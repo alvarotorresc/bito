@@ -258,6 +258,12 @@ fun SettingsScreen(
                     },
                 )
                 HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
+                LogFeedbackSectionCard(
+                    soundEnabled = current.logSoundEnabled,
+                    onSetSound = settingsViewModel::setLogSound,
+                    hapticEnabled = current.logHapticEnabled,
+                    onSetHaptic = settingsViewModel::setLogHaptic,
+                )
                 GeneralSectionCard(
                     userName = current.userName,
                     onSetUserName = settingsViewModel::setUserName,
@@ -512,6 +518,57 @@ private fun HabiSectionCard(
                 modifier = Modifier.testTag("habi-sounds-switch"),
             )
         }
+    }
+}
+
+/** Registro feedback (QA 2026-08-23): a tiny tick and/or a soft buzz on every habit log, each with its own switch — full-row toggleable, same one-stop TalkBack pattern as the Habi sounds row. */
+@Composable
+private fun LogFeedbackSectionCard(
+    soundEnabled: Boolean,
+    onSetSound: (Boolean) -> Unit,
+    hapticEnabled: Boolean,
+    onSetHaptic: (Boolean) -> Unit,
+) {
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        Text(stringResource(R.string.settings_log_section), style = MaterialTheme.typography.titleMedium, color = Tinta)
+        Spacer(Modifier.height(4.dp))
+        LogFeedbackRow(
+            title = R.string.settings_log_sound,
+            hint = R.string.settings_log_sound_hint,
+            tag = "log-sound",
+            checked = soundEnabled,
+            onChange = onSetSound,
+        )
+        Spacer(Modifier.height(4.dp))
+        LogFeedbackRow(
+            title = R.string.settings_log_haptic,
+            hint = R.string.settings_log_haptic_hint,
+            tag = "log-haptic",
+            checked = hapticEnabled,
+            onChange = onSetHaptic,
+        )
+    }
+}
+
+@Composable
+private fun LogFeedbackRow(
+    title: Int,
+    hint: Int,
+    tag: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier
+            .testTag("$tag-row")
+            .toggleable(value = checked, onValueChange = onChange, role = Role.Switch),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(title), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+            Text(stringResource(hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        }
+        Switch(checked = checked, onCheckedChange = null, modifier = Modifier.testTag("$tag-switch"))
     }
 }
 

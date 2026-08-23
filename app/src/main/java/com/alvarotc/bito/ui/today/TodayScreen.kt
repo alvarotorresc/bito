@@ -1,5 +1,7 @@
 package com.alvarotc.bito.ui.today
 
+import android.os.Build
+import android.view.HapticFeedbackConstants
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -35,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -100,6 +103,16 @@ fun TodayScreen(
             }
         }
     val haptics = LocalHapticFeedback.current
+    val view = LocalView.current
+    // Registro feedback (QA 2026-08-23): a soft system CONFIRM buzz on every log tap, gated by
+    // its own Ajustes switch. The tick sound half lives in the ViewModel (HabiSound.LOG).
+    val logHaptic = {
+        if (state.logHapticEnabled) {
+            val constant =
+                if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.VIRTUAL_KEY
+            view.performHapticFeedback(constant)
+        }
+    }
 
     Scaffold(
         containerColor = Papel,
@@ -123,8 +136,14 @@ fun TodayScreen(
                 ReorderableItem(reorderState, key = card.id) {
                     HabitCard(
                         card = card,
-                        onPrimary = { viewModel.tapPrimary(card) },
-                        onAdd = { viewModel.addAmount(card, it) },
+                        onPrimary = {
+                            viewModel.tapPrimary(card)
+                            logHaptic()
+                        },
+                        onAdd = {
+                            viewModel.addAmount(card, it)
+                            logHaptic()
+                        },
                         onExact = { exactFor = card },
                         onOpen = { onOpenHabit(card.id) },
                         modifier =

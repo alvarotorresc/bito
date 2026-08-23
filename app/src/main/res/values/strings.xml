@@ -176,6 +176,11 @@
     <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Habi sounds</string>
     <string name="settings_habi_sounds_hint">Little greetings and celebrations. Never in notifications.</string>
+    <string name="settings_log_section">On logging</string>
+    <string name="settings_log_sound">Sound</string>
+    <string name="settings_log_sound_hint">A tiny tick when you log a habit</string>
+    <string name="settings_log_haptic">Vibration</string>
+    <string name="settings_log_haptic_hint">A soft buzz when you log</string>
 
     <string name="general_section_title">General</string>
     <string name="language_row">Language</string>
