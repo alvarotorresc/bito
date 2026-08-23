@@ -113,6 +113,11 @@ class HabiViewModel(
         habiSounds.play(HabiSound.GREETING)
     }
 
+    /** Three quick pets in a row: the happier double-meow (same recording, different shape). */
+    fun onPetStreak() {
+        habiSounds.play(HabiSound.HAPPY)
+    }
+
     /**
      * Buys the previewed item. On success the preview clears — [RewardsRepository.purchase]
      * already equips it atomically, so there is nothing left to reconcile. This is

@@ -27,7 +27,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -40,6 +42,7 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.BitoTheme
+import com.alvarotc.bito.ui.theme.Mofletes
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -96,6 +99,7 @@ fun HabiAvatar(
     modifier: Modifier = Modifier,
     animated: Boolean = true,
     onTap: (() -> Unit)? = null,
+    delighted: Boolean = false,
 ) {
     val density = LocalDensity.current
     val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
@@ -110,6 +114,7 @@ fun HabiAvatar(
     var squashValue = 0f
     var hopValue = 0f
     var tiltValue = 0f
+    var heartsPhaseValue = 0f
     if (animated) {
         val breathPeriod =
             when (spec.mood) {
@@ -130,6 +135,18 @@ fun HabiAvatar(
                 label = "habi-breath-phase",
             )
         breathValue = breathPhase
+
+        if (delighted) {
+            val heartsTransition = rememberInfiniteTransition(label = "habi-hearts")
+            val heartsPhase by
+                heartsTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = 1f,
+                    animationSpec = infiniteRepeatable(tween(1100, easing = LinearEasing), RepeatMode.Restart),
+                    label = "habi-hearts-phase",
+                )
+            heartsPhaseValue = heartsPhase
+        }
 
         val idleBlink = remember { Animatable(0f) }
         LaunchedEffect(Unit) {
@@ -308,7 +325,8 @@ fun HabiAvatar(
             }
 
     Canvas(canvasModifier) {
-        drawHabi(spec, blink = blinkValue)
+        drawHabi(spec, blink = blinkValue, delighted = delighted)
+        if (delighted) drawHearts(heartsPhaseValue)
     }
 }
 
@@ -393,5 +411,27 @@ private fun HabiAvatarAccessoriesPreview() {
                 }
             }
         }
+    }
+}
+
+/**
+ * Three little blush-pink hearts floating up from the face while the pet-streak delight lasts —
+ * staggered lanes, fading as they rise (QA 2026-08-24, «que saque corazones»).
+ */
+private fun DrawScope.drawHearts(phase: Float) {
+    val lanes = listOf(-0.30f to 0f, 0.06f to 0.33f, 0.32f to 0.66f)
+    lanes.forEach { (xFactor, offset) ->
+        val p = (phase + offset) % 1f
+        val alpha = ((1f - p) * 0.9f).coerceIn(0f, 1f)
+        val cx = size.width * (0.5f + xFactor)
+        val cy = size.height * (0.42f - 0.36f * p)
+        val half = size.width * (0.055f + 0.02f * p)
+        val heart =
+            Path().apply {
+                moveTo(cx, cy + half)
+                cubicTo(cx - 1.6f * half, cy, cx - 0.9f * half, cy - 1.2f * half, cx, cy - 0.4f * half)
+                cubicTo(cx + 0.9f * half, cy - 1.2f * half, cx + 1.6f * half, cy, cx, cy + half)
+            }
+        drawPath(heart, color = Mofletes, alpha = alpha)
     }
 }

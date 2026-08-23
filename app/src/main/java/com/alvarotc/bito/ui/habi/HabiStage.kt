@@ -38,6 +38,7 @@ fun HabiStage(
     onTap: (() -> Unit)? = null,
     stageSize: Dp = 220.dp,
     avatarSize: Dp = 150.dp,
+    delighted: Boolean = false,
 ) {
     Box(modifier, contentAlignment = Alignment.Center) {
         Box(
@@ -55,6 +56,6 @@ fun HabiStage(
                 .clip(RoundedCornerShape(percent = 50))
                 .background(Borde.copy(alpha = 0.6f)),
         )
-        HabiAvatar(spec = spec, modifier = Modifier.size(avatarSize), onTap = onTap)
+        HabiAvatar(spec = spec, modifier = Modifier.size(avatarSize), onTap = onTap, delighted = delighted)
     }
 }

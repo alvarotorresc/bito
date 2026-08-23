@@ -24,6 +24,7 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.FaceParams
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.delightedParamsOf
 import com.alvarotc.bito.domain.model.faceParamsOf
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
@@ -231,8 +232,9 @@ private class HabiViewport(size: Size) {
 fun DrawScope.drawHabi(
     spec: HabiSpec,
     blink: Float = 0f,
+    delighted: Boolean = false,
 ) {
-    val face = faceParamsOf(spec.mood, spec.personality)
+    val face = if (delighted) delightedParamsOf(spec.personality) else faceParamsOf(spec.mood, spec.personality)
     val vp = HabiViewport(size)
     val eyeColor = HabiPalette.eyeColor(spec.equipped.eyeColor)
 

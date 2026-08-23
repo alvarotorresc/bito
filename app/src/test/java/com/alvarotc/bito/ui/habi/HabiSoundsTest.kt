@@ -154,6 +154,8 @@ class HabiSoundsTest {
                 "habi_cheer" to R.raw.habi_cheer,
                 "habi_sad" to R.raw.habi_sad,
                 "habi_pop" to R.raw.habi_pop,
+                "log_tick" to R.raw.log_tick,
+                "habi_happy" to R.raw.habi_happy,
             )
         ids.forEach { (name, id) ->
             val bytes = context.resources.openRawResource(id).use { it.readBytes() }

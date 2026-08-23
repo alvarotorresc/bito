@@ -51,6 +51,7 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import kotlinx.coroutines.delay
 
 /**
  * Habi's home: mood stage, points balance, the personality selector, and the store. No screen
@@ -62,6 +63,18 @@ import com.alvarotc.bito.ui.theme.TintaSuave
 fun HabiScreen(viewModel: HabiViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     var showPointsSheet by remember { mutableStateOf(false) }
+    // Pet streak (QA 2026-08-24): three quick pets within 1.5s send Habi into a 2.6s delight —
+    // huge smile, floating hearts, happier meow. Purely visual/audible; nothing persists.
+    val petTimes = remember { ArrayDeque<Long>() }
+    var delightPulse by remember { mutableStateOf(0) }
+    var delighted by remember { mutableStateOf(false) }
+    LaunchedEffect(delightPulse) {
+        if (delightPulse > 0) {
+            delighted = true
+            delay(2600)
+            delighted = false
+        }
+    }
     val scrollState = rememberScrollState()
     // Opening a store preview (a grid tap) scrolls back to the stage, so the dressed bean, the
     // "probando" chip and the purchase sheet are all visible at once — mockup 4b (QA 2026-08-23).
@@ -84,7 +97,23 @@ fun HabiScreen(viewModel: HabiViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             BalanceChip(state.balance, onClick = { showPointsSheet = true }, modifier = Modifier.align(Alignment.End))
-            HabiStage(spec = state.spec, onTap = viewModel::onAvatarTap, modifier = Modifier.fillMaxWidth())
+            HabiStage(
+                spec = state.spec,
+                delighted = delighted,
+                onTap = {
+                    val now = System.currentTimeMillis()
+                    petTimes.addLast(now)
+                    while (petTimes.isNotEmpty() && now - petTimes.first() > 1500) petTimes.removeFirst()
+                    if (petTimes.size >= 3 && !delighted) {
+                        petTimes.clear()
+                        delightPulse++
+                        viewModel.onPetStreak()
+                    } else {
+                        viewModel.onAvatarTap()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }

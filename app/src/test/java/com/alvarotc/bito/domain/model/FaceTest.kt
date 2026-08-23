@@ -1,6 +1,7 @@
 package com.alvarotc.bito.domain.model
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -45,5 +46,15 @@ class FaceTest {
         assertTrue(faceParamsOf(Mood.DRAMATIC, Personality.SARGENTO).mouthCurve < 0f)
         assertTrue(faceParamsOf(Mood.DRAMATIC, Personality.CHEERLEADER).mouthOpen > 0.5f)
         assertTrue(faceParamsOf(Mood.DRAMATIC, Personality.NEUTRA).mouthCurve < 0f)
+    }
+
+    @Test
+    fun `delighted face smiles hugely for every personality`() {
+        Personality.entries.forEach { personality ->
+            val face = delightedParamsOf(personality)
+            assertTrue(face.mouthCurve > 0.9f)
+            assertTrue(face.mouthOpen > 0.5f)
+            assertFalse(face.smirk)
+        }
     }
 }
