@@ -14,8 +14,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -26,7 +27,6 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
-import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
 import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
 import com.alvarotc.bito.ui.celebration.PerfectDaySheet
@@ -59,24 +59,31 @@ import com.alvarotc.bito.ui.today.TodayViewModel
 
 @Composable
 fun BitoNavHost(container: AppContainer) {
+    // OnboardingReconciler.reconcile runs to completion FIRST, gating the rest of this composable
+    // behind it — a v1/v2 restore's seeded `onboardingDone = true` (a habits-but-no-onboardingDone
+    // restore, see OnboardingReconciler's own KDoc) is committed to DataStore before the settings
+    // gate below ever subscribes and reads it. That makes the startDestination decision further
+    // down deterministic: no more race against a subscriber that could arrive before the
+    // reconciling write commits. `reconciled` only ever flips false -> true, once, so this only
+    // gates the very first composition — same "early return, continue further down on a later
+    // pass" shape the settings gate right below it already uses.
+    var reconciled by remember { mutableStateOf(false) }
+    LaunchedEffect(container) {
+        OnboardingReconciler.reconcile(container.settings, container.habits)
+        reconciled = true
+    }
+    if (!reconciled) {
+        Box(Modifier.fillMaxSize().background(Papel).testTag("app-loading"))
+        return
+    }
+
     // The very first Settings emission decides where the app opens (today vs onboarding) — a
     // hardcoded "today" start would flash before onboardingDone is known, so nothing but the app
     // background renders until that first value lands. Same "state == null means still loading"
-    // gate SettingsScreen already uses for its own DataStore-backed cards.
-    //
-    // OnboardingReconciler.reconcile runs to completion FIRST, before this block starts
-    // collecting container.settings.settings — so a v1/v2 restore's seeded `onboardingDone = true`
-    // (a habits-but-no-onboardingDone restore, see OnboardingReconciler's own KDoc) is already
-    // committed to DataStore by the time the first value here is read. That makes the
-    // startDestination decision below deterministic: no more race against a subscriber that could
-    // arrive before the reconciling write commits. For the overwhelmingly common case (onboarding
-    // already done, or a genuinely fresh install with no habits) this costs nothing beyond the
-    // read the gate already awaited — reconcile short-circuits on that same settings read.
-    val settingsState by
-        produceState<Settings?>(initialValue = null, container) {
-            OnboardingReconciler.reconcile(container.settings, container.habits)
-            container.settings.settings.collect { value = it }
-        }
+    // gate SettingsScreen already uses for its own DataStore-backed cards. Reading it only starts
+    // once reconciled above, so this is the reconciled value for the "onboardingDone" case above,
+    // not a fresh race against it.
+    val settingsState by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
     val loadedSettings = settingsState
     if (loadedSettings == null) {
         Box(Modifier.fillMaxSize().background(Papel).testTag("app-loading"))
