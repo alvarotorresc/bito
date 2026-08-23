@@ -38,6 +38,13 @@ class HabiVoiceTest {
     }
 
     @Test
+    fun `onboardingPreviewRes resolves a distinct resource per personality`() {
+        val ids = Personality.entries.map { HabiVoice.onboardingPreviewRes(it) }
+
+        assertEquals(Personality.entries.size, ids.toSet().size)
+    }
+
+    @Test
     fun `reviewRes resolves a distinct resource per personality`() {
         assertAllDistinctPersonalityOnly(HabiVoice::reviewRes)
     }

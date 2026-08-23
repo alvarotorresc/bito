@@ -430,13 +430,13 @@ class OnboardingScreenTest {
         compose.waitForIdle()
 
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val neutraGreeting = context.getString(R.string.habi_greeting_neutra_normal, "Alvaro")
+        val neutraGreeting = context.getString(R.string.onb_personality_preview_neutra, "Alvaro")
         compose.onNodeWithText(neutraGreeting, useUnmergedTree = true).assertExists()
 
         compose.onNodeWithTag("onb-personality-card-sargento", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        val sargentoGreeting = context.getString(R.string.habi_greeting_sargento_normal, "Alvaro")
+        val sargentoGreeting = context.getString(R.string.onb_personality_preview_sargento, "Alvaro")
         compose.onNodeWithText(neutraGreeting, useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(sargentoGreeting, useUnmergedTree = true).assertExists()
         assertEquals(Personality.SARGENTO, vm.uiState.value.personality)

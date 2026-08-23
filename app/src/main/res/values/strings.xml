@@ -60,8 +60,8 @@
     <string name="name_hint">Habit name</string>
     <string name="preset_daily">Daily</string>
     <string name="preset_quantity">Amount</string>
-    <string name="preset_duration">Time</string>
-    <string name="preset_weekly">Per week</string>
+    <string name="preset_duration">Duration</string>
+    <string name="preset_weekly">X per week</string>
     <string name="preset_quit">Quit</string>
     <string name="preset_locked_hint">Type can\'t change — archive and create a new one</string>
     <string name="quit_total">Cold turkey</string>
@@ -219,6 +219,9 @@
     <string name="onb_name_reaction">%1$s! I like it. We\'re going to do great things.</string>
     <string name="onb_personality_title">Choose Habi\'s personality</string>
     <string name="onb_personality_hint">you can change it anytime</string>
+    <string name="onb_personality_preview_sargento">I\'ll demand a lot from you, %1$s — because you\'ve got it in you.</string>
+    <string name="onb_personality_preview_cheerleader">Together we can take on anything, %1$s!</string>
+    <string name="onb_personality_preview_neutra">Just what\'s needed, %1$s: your habits, clear, every day.</string>
     <string name="onb_habit_title">Create your first habit</string>
     <string name="onb_habit_name_hint">e.g. Drink water</string>
     <string name="onb_habit_goal_label">goal</string>

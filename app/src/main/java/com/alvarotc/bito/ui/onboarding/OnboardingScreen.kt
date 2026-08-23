@@ -655,7 +655,7 @@ private fun PersonalityStepContent(
         val fallbackName = stringResource(R.string.habi_name_fallback)
         SpeechBubble(
             speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
-            text = stringResource(HabiVoice.greetingRes(Mood.NORMAL, personality), name.trim().ifEmpty { fallbackName }),
+            text = stringResource(HabiVoice.onboardingPreviewRes(personality), name.trim().ifEmpty { fallbackName }),
             modifier = Modifier.fillMaxWidth().testTag("onb-personality-bubble"),
         )
         Spacer(Modifier.height(20.dp))

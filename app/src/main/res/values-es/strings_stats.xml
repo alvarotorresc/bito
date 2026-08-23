@@ -25,7 +25,7 @@
     <string name="stats_teaser_numbers_caption">Tus números · registros totales</string>
 
     <string name="records_empty">Aún no hay récords</string>
-    <string name="records_archived_label">Archivado</string>
+    <string name="records_archived_label">archivado</string>
     <string name="records_best_caption">tu mejor racha de siempre</string>
     <string name="records_current_streak">ahora: %1$d %2$s</string>
     <string name="records_no_current_streak">sin racha ahora</string>

@@ -24,7 +24,7 @@
     <string name="stats_teaser_numbers_caption">Your numbers · total entries</string>
 
     <string name="records_empty">No records yet</string>
-    <string name="records_archived_label">Archived</string>
+    <string name="records_archived_label">archived</string>
     <string name="records_best_caption">your all-time best streak</string>
     <string name="records_current_streak">now: %1$d %2$s</string>
     <string name="records_no_current_streak">no streak right now</string>

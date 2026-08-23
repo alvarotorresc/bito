@@ -53,8 +53,8 @@
     <string name="name_hint">Nombre del hábito</string>
     <string name="preset_daily">Diario</string>
     <string name="preset_quantity">Cantidad</string>
-    <string name="preset_duration">Tiempo</string>
-    <string name="preset_weekly">Por semana</string>
+    <string name="preset_duration">Duración</string>
+    <string name="preset_weekly">X por semana</string>
     <string name="preset_quit">Dejar de hacer</string>
     <string name="preset_locked_hint">El tipo no se cambia — archiva y crea uno nuevo</string>
     <string name="quit_total">Del todo</string>
@@ -202,6 +202,9 @@
     <string name="onb_name_reaction">¡%1$s! Me gusta. Vamos a hacer grandes cosas.</string>
     <string name="onb_personality_title">Elige la personalidad de Habi</string>
     <string name="onb_personality_hint">puedes cambiarla cuando quieras</string>
+    <string name="onb_personality_preview_sargento">Exigiré mucho de ti, %1$s. Porque puedes darlo.</string>
+    <string name="onb_personality_preview_cheerleader">¡Juntos vamos a poder con todo, %1$s!</string>
+    <string name="onb_personality_preview_neutra">Lo justo y necesario, %1$s: tus hábitos, claros, cada día.</string>
     <string name="onb_habit_title">Crea tu primer hábito</string>
     <string name="onb_habit_name_hint">ej. Beber agua</string>
     <string name="onb_habit_goal_label">objetivo</string>

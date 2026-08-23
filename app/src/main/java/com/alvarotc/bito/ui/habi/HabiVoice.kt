@@ -185,6 +185,15 @@ object HabiVoice {
             Personality.NEUTRA -> R.string.personality_neutra
         }
 
+    /** 7f's per-personality preview line — the first thing each voice says to the user (docs/07 §4.4). */
+    @StringRes
+    fun onboardingPreviewRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.onb_personality_preview_sargento
+            Personality.CHEERLEADER -> R.string.onb_personality_preview_cheerleader
+            Personality.NEUTRA -> R.string.onb_personality_preview_neutra
+        }
+
     @StringRes
     fun formPromptRes(personality: Personality): Int =
         when (personality) {
