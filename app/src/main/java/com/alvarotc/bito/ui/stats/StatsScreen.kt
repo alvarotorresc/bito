@@ -287,7 +287,7 @@ private fun WeekRowLine(row: WeekRow) {
 /**
  * Small, tap-free twin of [com.alvarotc.bito.ui.components.DotHeatmap]'s per-day glyph mapping —
  * DotProgress-canon 16dp solid dots, same fill/ring per state as the fixed heatmap (FULFILLED/
- * ACTIVITY solid Hoja, FAILED/EMPTY a PeligroTinte fill with a Peligro X — QA 2026-08-23, PAUSED solid TintaSuave, PENDING a 2dp
+ * ACTIVITY solid Hoja, FAILED a PeligroTinte fill with a Peligro X, EMPTY solid Borde — QA 2026-08-23, PAUSED solid TintaSuave, PENDING a 2dp
  * TintaSuave ring, OFF a 2dp Borde ring for future/unreached days). Grid always reads complete
  * and aligned with header.
  */
@@ -296,10 +296,13 @@ private fun WeekDayDot(dot: DayDot) {
     val size = WeekDotSize
     when (dot) {
         DayDot.FULFILLED, DayDot.ACTIVITY -> Box(Modifier.size(size).clip(CircleShape).background(Hoja))
-        DayDot.FAILED, DayDot.EMPTY ->
+        DayDot.FAILED ->
             Box(Modifier.size(size).clip(CircleShape).background(PeligroTinte), contentAlignment = Alignment.Center) {
                 Icon(BitoIcons.X, contentDescription = null, tint = Peligro, modifier = Modifier.size(10.dp))
             }
+        // EMPTY = a no-entry day of a non-daily habit (rest days included) — neutral, never red:
+        // a fulfilled "3× per week" must not wear failure marks on its off days (QA 2026-08-23).
+        DayDot.EMPTY -> Box(Modifier.size(size).clip(CircleShape).background(Borde))
         DayDot.FROZEN ->
             Box(Modifier.size(size).clip(CircleShape).background(HojaTinte), contentAlignment = Alignment.Center) {
                 Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(10.dp))

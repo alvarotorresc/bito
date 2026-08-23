@@ -238,8 +238,11 @@ private fun DayDotGlyph(day: HeatmapDay) {
             }
         DayDot.FULFILLED, DayDot.ACTIVITY ->
             Box(base.background(Hoja), contentAlignment = Alignment.Center) { DayNumber(dayNumber, Tarjeta) }
-        DayDot.FAILED, DayDot.EMPTY ->
+        DayDot.FAILED ->
             Box(base.background(PeligroTinte), contentAlignment = Alignment.Center) { DayNumber(dayNumber, Peligro) }
+        // EMPTY (non-daily, no entries that day) stays neutral — rest days are not failures.
+        DayDot.EMPTY ->
+            Box(base.background(Borde), contentAlignment = Alignment.Center) { DayNumber(dayNumber, TintaSuave) }
         DayDot.PAUSED ->
             Box(base.background(TintaSuave), contentAlignment = Alignment.Center) { DayNumber(dayNumber, Tarjeta) }
         DayDot.OFF -> Unit // handled above
@@ -264,7 +267,8 @@ private fun DayNumber(
 private fun numberColorFor(dot: DayDot): Color =
     when (dot) {
         DayDot.FULFILLED, DayDot.ACTIVITY, DayDot.PAUSED -> Tarjeta
-        DayDot.FAILED, DayDot.EMPTY -> Peligro
+        DayDot.FAILED -> Peligro
+        DayDot.EMPTY -> TintaSuave
         DayDot.PENDING -> TintaSuave
         DayDot.FROZEN, DayDot.OFF -> TintaSuave // unreachable: FROZEN shows the snowflake, OFF returned earlier
     }
@@ -273,7 +277,8 @@ private fun numberColorFor(dot: DayDot): Color =
 private fun todayFillFor(dot: DayDot): Pair<Color, Boolean> =
     when (dot) {
         DayDot.FULFILLED, DayDot.ACTIVITY -> Hoja to false
-        DayDot.FAILED, DayDot.EMPTY -> PeligroTinte to false
+        DayDot.FAILED -> PeligroTinte to false
+        DayDot.EMPTY -> Borde to false
         DayDot.FROZEN -> HojaTinte to true
         DayDot.PAUSED -> TintaSuave to false
         DayDot.PENDING -> Tarjeta to false
