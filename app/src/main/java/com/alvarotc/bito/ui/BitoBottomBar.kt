@@ -86,14 +86,17 @@ fun BitoBottomBar(
 /**
  * One bottom-bar destination: icon 20dp + label 12sp stacked, active = a HojaTinte pill wrapping
  * both, inactive = plain TintaSuave icon+label with no container. [Modifier.selectable] (not plain
- * `clickable`) is attached unconditionally, including on the already-selected slot — every
- * [BitoBottomBar] callback (`onToday`/`onStats`/`onHabi`/`onSettings`) is idempotent when the
- * target route is already current (`onToday` is a no-op `popBackStack`; the other three pass
- * `launchSingleTop = true`), so re-firing `onClick` on the active tab pushes nothing new. This is
- * what lets TalkBack announce the real "Tab, selected" state instead of the label alone.
- * [contentDescription] and the click action both land on this single container node (not on the
- * inner [Icon], whose own description is left null) so they keep resolving as one node, same as
- * the plain-glyph bar tests already depend on.
+ * `clickable`) is attached unconditionally, including on the already-selected slot, so TalkBack
+ * can announce the real "Tab, selected" state instead of the label alone — but [onClick] itself is
+ * guarded to a no-op while [selected] is true. It is NOT true that every [BitoBottomBar] callback
+ * (`onStats`/`onHabi`/`onSettings`) is idempotent when the target route is already current:
+ * `navigate(route) { popUpTo("today"); launchSingleTop = true }` runs `popBackStackInternal`
+ * BEFORE `launchSingleTopInternal` (navigation-runtime 2.8.5), so the current entry is popped
+ * before `launchSingleTop` gets a chance to reuse it, and a fresh entry — new ViewModel, `remember`
+ * state lost, transition replays — gets pushed anyway. Guarding here, once, keeps that navigation
+ * detail out of every caller. [contentDescription] and the click action both land on this single
+ * container node (not on the inner [Icon], whose own description is left null) so they keep
+ * resolving as one node, same as the plain-glyph bar tests already depend on.
  *
  * `indication` is explicit (not the composed `selectable` overload's default
  * `LocalIndication.current`) to keep the pre-T7a visual byte-for-byte: the selected slot used to
@@ -117,7 +120,7 @@ private fun NavSlot(
                 interactionSource = interactionSource,
                 indication = if (selected) null else LocalIndication.current,
                 role = Role.Tab,
-                onClick = onClick,
+                onClick = { if (!selected) onClick() },
             )
             .semantics { contentDescription = label }
             .then(if (selected) Modifier.clip(CircleShape).background(HojaTinte) else Modifier)
