@@ -56,6 +56,12 @@ private const val EXPRESSIVE_TAP_SCALE_X = 1.10f
 private const val EXPRESSIVE_TAP_SCALE_Y = 0.90f
 private const val TAP_BLINK_HALF_DURATION_MS = 100
 
+// QA 2026-08-23: the press-gated squash never completes on a quick tap (pressed flips back before
+// the spring moves), which read as "only the eyes move". The tap now also fires a fire-and-forget
+// squash-and-hop pulse (AnimatedDot's snapTo+animateTo pattern) that always plays out in full.
+private const val TAP_BOUNCE_SCALE = 0.12f
+private const val TAP_HOP_DP = 6f
+
 /**
  * The living Habi bean: idle bob, periodic blink, and (when [onTap] is given) a squash-and-stretch
  * tap response. Purely presentational — [spec] already carries mood, personality and the equipped
@@ -80,9 +86,12 @@ fun HabiAvatar(
     onTap: (() -> Unit)? = null,
 ) {
     val density = LocalDensity.current
+    val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
     val bobPx: Float
     val blinkValue: Float
     var tapBlinkPulse: (() -> Unit)? = null
+    var tapBouncePulse: (() -> Unit)? = null
+    var bounceValue = 0f
     if (animated) {
         val infiniteTransition = rememberInfiniteTransition(label = "habi-bob")
         val bobPhase by
@@ -109,6 +118,7 @@ fun HabiAvatar(
 
         if (onTap != null) {
             val tapBlink = remember { Animatable(0f) }
+            val tapBounce = remember { Animatable(0f) }
             val tapScope = rememberCoroutineScope()
             tapBlinkPulse = {
                 tapScope.launch {
@@ -116,7 +126,19 @@ fun HabiAvatar(
                     tapBlink.animateTo(0f, tween(TAP_BLINK_HALF_DURATION_MS, easing = LinearEasing))
                 }
             }
+            tapBouncePulse = {
+                tapScope.launch {
+                    // 1 = max squash; the bouncy spring overshoots past 0 on the way back, so the
+                    // bean visibly rebounds instead of easing flat.
+                    tapBounce.snapTo(1f)
+                    tapBounce.animateTo(
+                        0f,
+                        spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMediumLow),
+                    )
+                }
+            }
             blinkValue = maxOf(idleBlink.value, tapBlink.value)
+            bounceValue = tapBounce.value
         } else {
             blinkValue = idleBlink.value
         }
@@ -178,6 +200,7 @@ fun HabiAvatar(
                         onClick = {
                             onTap()
                             tapBlinkPulse?.invoke()
+                            tapBouncePulse?.invoke()
                         },
                     )
                 } else {
@@ -185,9 +208,9 @@ fun HabiAvatar(
                 }
             }
             .graphicsLayer {
-                translationY = bobPx
-                this.scaleX = scaleX
-                this.scaleY = scaleY
+                translationY = bobPx - hopPx * bounceValue
+                this.scaleX = scaleX * (1f + TAP_BOUNCE_SCALE * bounceValue)
+                this.scaleY = scaleY * (1f - TAP_BOUNCE_SCALE * bounceValue)
             }
 
     Canvas(canvasModifier) {
