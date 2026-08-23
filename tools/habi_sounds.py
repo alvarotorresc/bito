@@ -86,7 +86,9 @@ def _silence(duration_s: float) -> List[float]:
 
 
 def build_meeh() -> List[float]:
-    """A bright, kitten-like double chirp — two soft rising sine notes ("mrp-mrp?") with a
+    """SYNTH FALLBACK ONLY — the shipped habi_meeh.wav is a curated stock cat-meow recording
+    (picked by ear, converted via ffmpeg to mono/22050/s16) and main() deliberately does NOT
+    regenerate it any more. A bright, kitten-like double chirp — two soft rising sine notes ("mrp-mrp?") with a
     gentle attack and an airy release; replaces the old goat bleat, which read as harsh."""
     chirp_a = _tone(
         duration_s=0.13,
@@ -160,6 +162,22 @@ def build_pop() -> List[float]:
     )
 
 
+def build_tick() -> List[float]:
+    """A tiny, droplet-like blip for logging a habit — quiet, short, deliberately neutral so it
+    never competes with Habi's own voice. Gated by its own Ajustes toggle, not the Habi one."""
+    return _tone(
+        duration_s=0.05,
+        freq_start=880.0,
+        freq_end=990.0,
+        wave_fn=_sine,
+        attack_s=0.002,
+        decay_s=0.012,
+        sustain_level=0.35,
+        release_s=0.025,
+        peak=0.3,
+    )
+
+
 def _write_wav(path: str, samples: List[float]) -> None:
     frames = b"".join(struct.pack("<h", max(-32768, min(32767, int(s * 32767)))) for s in samples)
     with wave.open(path, "wb") as f:
@@ -176,10 +194,10 @@ def main() -> None:
     out_dir = sys.argv[1]
     os.makedirs(out_dir, exist_ok=True)
     sounds = {
-        "habi_meeh.wav": build_meeh(),
         "habi_cheer.wav": build_cheer(),
         "habi_sad.wav": build_sad(),
         "habi_pop.wav": build_pop(),
+        "log_tick.wav": build_tick(),
     }
     for name, samples in sounds.items():
         path = os.path.join(out_dir, name)
