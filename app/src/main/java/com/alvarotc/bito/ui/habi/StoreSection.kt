@@ -1,9 +1,11 @@
 package com.alvarotc.bito.ui.habi
 
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -33,6 +36,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -180,11 +185,21 @@ private fun AxisPillRow(
     ) {
         axes.forEach { axis ->
             val active = axis == selected
+            // [C]: same bug/fix as HabiScreen's PersonalityPills — the active pill used to skip
+            // `.clickable` entirely (no sign to TalkBack a 3rd option even existed), and
+            // `indication = null` on it keeps the old visual byte-for-byte (it never had a ripple).
+            val interactionSource = remember { MutableInteractionSource() }
             Box(
                 Modifier
                     .clip(CircleShape)
                     .then(if (active) Modifier.background(Tarjeta).border(1.dp, Borde, CircleShape) else Modifier)
-                    .then(if (!active) Modifier.clickable { onSelect(axis) } else Modifier)
+                    .selectable(
+                        selected = active,
+                        interactionSource = interactionSource,
+                        indication = if (active) null else LocalIndication.current,
+                        role = Role.Tab,
+                        onClick = { onSelect(axis) },
+                    )
                     .padding(horizontal = 14.dp, vertical = 8.dp)
                     .testTag("store-axis-${axis.name}"),
             ) {
@@ -214,6 +229,12 @@ private fun StoreItemCard(
             .background(Tarjeta)
             .border(if (equipped) 1.5.dp else 1.dp, if (equipped) Hoja else Borde, shape)
             .then(if (isTappable(entry)) Modifier.clickable(onClick = onTap) else Modifier)
+            // [E]: when tappable, `.clickable` above already auto-merges name + footer into one
+            // stop (the reference pattern). When it's NOT (Locked, or an always-resolved axis),
+            // there was no merging ancestor at all, so name and status footer read as 2 separate
+            // stops. Unconditional here — harmless alongside `.clickable`, which implies the same
+            // merge already — fixes the untappable case: the item as one name+price/status unit.
+            .semantics(mergeDescendants = true) {}
             .alpha(if (locked) 0.5f else 1f)
             .padding(10.dp)
             .testTag("store-item-${entry.item.id}"),

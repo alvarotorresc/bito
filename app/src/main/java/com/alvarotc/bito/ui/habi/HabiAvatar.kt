@@ -155,7 +155,17 @@ fun HabiAvatar(
             label = "habi-scale-y",
         )
 
-    val contentDescription = stringResource(R.string.habi_avatar_cd)
+    // [D]/[E]: was a single static "Habi" regardless of mood/personality/equipped — now folds in
+    // the mood, the one enrichment that's cheap AND honest (see HabiVoice.moodLabelRes' kdoc for
+    // why personality-flavored copy stays out of scope here). Still ONE aggregated description on
+    // the Canvas container, never per drawn path — drawHabi()'s ~30 private drawX helpers below
+    // correctly carry zero semantics of their own.
+    val contentDescription =
+        stringResource(
+            R.string.habi_avatar_cd_mood,
+            stringResource(R.string.habi_avatar_cd),
+            stringResource(HabiVoice.moodLabelRes(spec.mood)),
+        )
 
     val canvasModifier =
         modifier

@@ -1,9 +1,10 @@
 package com.alvarotc.bito.ui.habi
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -21,11 +23,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -129,7 +135,9 @@ private fun BalanceChip(
         border = BorderStroke(1.dp, Borde),
     ) {
         Row(
-            Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            // [E]: Icon(null) + 2 plain Text stops (balance number, "pts" unit) — merge so a
+            // TalkBack pass over the chip reads "<balance> points" as one stop, not two.
+            Modifier.padding(horizontal = 14.dp, vertical = 8.dp).semantics(mergeDescendants = true) {},
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -153,9 +161,14 @@ private fun BalanceChip(
  * the mockup's active pill is a solid-Tinta, dark pill with Tarjeta text — the opposite of that
  * component's light "raised chip on a Papel trough" canon — so bending it here would fight its API
  * more than it would save.
+ *
+ * `internal` (not `private`): lets its `selectable`/`Role.Tab` semantics be tested directly
+ * without standing up a whole [HabiScreen] (real [HabiViewModel], Room, the avatar's infinite
+ * bob/blink transitions) — same reasoning [StoreSectionTest] gives for testing [StoreSection]
+ * standalone.
  */
 @Composable
-private fun PersonalityPills(
+internal fun PersonalityPills(
     selected: Personality,
     onSelect: (Personality) -> Unit,
     modifier: Modifier = Modifier,
@@ -163,13 +176,26 @@ private fun PersonalityPills(
     Row(modifier.testTag("personality-pills"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Personality.entries.forEach { personality ->
             val active = personality == selected
+            // [C]: the active pill used to skip `.clickable` entirely (the `!active` gate below),
+            // so it wasn't even a focusable node — a TalkBack user saw only the 2 non-selected
+            // options with no sign a 3rd, active one existed. `selectable` (always attached, per
+            // OnboardingScreen's PersonalityCard) fixes that; `indication = null` on the active
+            // pill only keeps the old visual byte-for-byte — it never had a ripple to begin with
+            // (a703aef's BitoBottomBar fix is the same pattern for the same reason).
+            val interactionSource = remember { MutableInteractionSource() }
             Box(
                 Modifier
                     .weight(1f)
                     .clip(CircleShape)
                     .background(if (active) Tinta else Tarjeta)
                     .then(if (active) Modifier else Modifier.border(1.dp, Borde, CircleShape))
-                    .then(if (!active) Modifier.clickable { onSelect(personality) } else Modifier)
+                    .selectable(
+                        selected = active,
+                        interactionSource = interactionSource,
+                        indication = if (active) null else LocalIndication.current,
+                        role = Role.Tab,
+                        onClick = { onSelect(personality) },
+                    )
                     .padding(vertical = 12.dp),
                 contentAlignment = Alignment.Center,
             ) {

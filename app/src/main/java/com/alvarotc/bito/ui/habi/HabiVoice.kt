@@ -192,4 +192,20 @@ object HabiVoice {
             Personality.CHEERLEADER -> R.string.habi_form_prompt_cheerleader
             Personality.NEUTRA -> R.string.habi_form_prompt_neutra
         }
+
+    /**
+     * The short, honest mood adjective [HabiAvatar] folds into its `contentDescription`
+     * ("Habi, feeling great") — deliberately mood-only, never personality-flavored: inventing
+     * humorous per-personality copy here is a copy call for the architect (docs/07), not something
+     * this a11y pass should freelance. `mood_label_*`, unlike every other `HabiVoice` mapping
+     * above, carries no `%1$s` name placeholder — a screen reader announces it standalone.
+     */
+    @StringRes
+    fun moodLabelRes(mood: Mood): Int =
+        when (mood) {
+            Mood.RADIANT -> R.string.mood_label_radiant
+            Mood.NORMAL -> R.string.mood_label_normal
+            Mood.WILTED -> R.string.mood_label_wilted
+            Mood.DRAMATIC -> R.string.mood_label_dramatic
+        }
 }

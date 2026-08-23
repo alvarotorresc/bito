@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="habi_avatar_cd">Habi</string>
+    <!-- HabiAvatar's real TalkBack description: "%1$s" = habi_avatar_cd, "%2$s" = mood_label_*
+         below — deliberately mood-only, no personality copy (see HabiVoice.moodLabelRes kdoc).
+         mood_label_* wording is T7b draft copy, same as habi_bubble_*/habi_home_*/etc. below —
+         pending architect validation (docs/07). -->
+    <string name="habi_avatar_cd_mood">%1$s, %2$s</string>
+    <string name="mood_label_radiant">feeling great</string>
+    <string name="mood_label_normal">doing okay</string>
+    <string name="mood_label_wilted">feeling low</string>
+    <string name="mood_label_dramatic">having a hard time</string>
     <string name="habi_balance_points">points</string>
     <string name="habi_name_fallback">champ</string>
 

@@ -1,6 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="habi_avatar_cd">Habi</string>
+    <!-- Descripción real de HabiAvatar para TalkBack: "%1$s" = habi_avatar_cd, "%2$s" = mood_label_*
+         de abajo — solo por ánimo a propósito, sin copy de personalidad (ver kdoc de moodLabelRes).
+         mood_label_* es texto borrador de T7b, igual que habi_bubble_*/habi_home_*/etc. de abajo —
+         pendiente de validación del arquitecto (docs/07). -->
+    <string name="habi_avatar_cd_mood">%1$s, %2$s</string>
+    <string name="mood_label_radiant">de maravilla</string>
+    <string name="mood_label_normal">bien</string>
+    <string name="mood_label_wilted">con el ánimo bajo</string>
+    <string name="mood_label_dramatic">pasándolo mal</string>
     <string name="habi_balance_points">puntos</string>
     <string name="habi_name_fallback">campeón</string>
 

@@ -60,7 +60,9 @@ class CelebrationSheetsTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
-        compose.onNodeWithContentDescription("Habi", useUnmergedTree = true).assertExists()
+        // "Habi, doing okay": T7b's HabiAvatar a11y fix folds Mood.NORMAL's mood_label_normal
+        // string into the description — was a static "Habi" regardless of mood.
+        compose.onNodeWithContentDescription("Habi, doing okay", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Perfect day!", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("+40 pts", useUnmergedTree = true).assertExists()
     }
