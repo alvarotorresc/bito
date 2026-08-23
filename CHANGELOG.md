@@ -2,6 +2,27 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [0.9.5] - 2026-08-23
+
+### Added
+
+- Accesibilidad con TalkBack en toda la app (la deuda pendiente desde la v0.3.0): las acciones rápidas de Hoy dicen qué hacen («Marcar Meditar como hecho», «Sumar 1 a Agua»), y escribir un valor exacto ya no vive solo detrás de una pulsación larga: aparece como acción etiquetada. La barra inferior anuncia qué pestaña está activa. El calendario de puntos del Detalle y de Stats se lee como un resumen del mes y cada día dice su estado. Los anillos y barras de progreso son barras de progreso de verdad. Las tarjetas (récords, números, logros, filas del repaso, ítems de la tienda de Habi) se leen como una sola unidad. Las píldoras de selección (períodos, presets, personalidad, ejes de la tienda, chips del onboarding) anuncian «seleccionado». Los pasos del onboarding se anuncian («Paso 2 de 6»). Habi se presenta con su ánimo. Las filas con interruptor de Ajustes y del formulario se activan tocando en cualquier punto de la fila y se anuncian con su estado. Los iconos de los steppers dicen «Más»/«Menos». Español e inglés.
+
+### Changed
+
+- Un restaurador con historial ya no repite el onboarding: si restauras un backup con hábitos en una instalación limpia, la app arranca en Hoy (tu nombre viaja en el backup desde la v0.1.0).
+- Restaurar un backup aplica también su idioma al momento, y el chip de idioma de la bienvenida refleja el idioma real igual que Ajustes.
+- Un aviso tocado durante el onboarding ya no te saca del flujo: espera y se abre al llegar a Hoy.
+- Pasar de página con el dedo en el onboarding ya no repite el fundido de entrada (solo parpadeaba).
+- El objetivo semanal se limita a 7 en el modelo, no solo en la pantalla.
+- Si configuras la firma por variables de entorno y falta alguna, el build lo dice con nombre y apellido.
+
+### Fixed
+
+- Una carrera al marcar los logros como vistos podía perder la marca si dos pantallas la escribían a la vez.
+- La copia de seguridad: el estado «necesita contraseña» reacciona también cuando se repara la clave local; menos idas y venidas al proveedor de archivos; un temporal que no se puede borrar tras un fallo ya no se silencia.
+- Los tests: un arranque idempotente con scope inyectable mata el fallo intermitente de la suite completa que arrastrábamos desde la v0.8.0, y cubre el cableado real del arranque.
+
 ## [0.9.0] - 2026-08-22
 
 ### Added
