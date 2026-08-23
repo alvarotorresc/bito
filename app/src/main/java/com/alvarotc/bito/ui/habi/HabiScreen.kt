@@ -25,7 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,6 +61,7 @@ import com.alvarotc.bito.ui.theme.TintaSuave
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showPointsSheet by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     // Opening a store preview (a grid tap) scrolls back to the stage, so the dressed bean, the
     // "probando" chip and the purchase sheet are all visible at once — mockup 4b (QA 2026-08-23).
@@ -80,7 +83,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 .testTag("habi-screen"),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            BalanceChip(state.balance, modifier = Modifier.align(Alignment.End))
+            BalanceChip(state.balance, onClick = { showPointsSheet = true }, modifier = Modifier.align(Alignment.End))
             HabiStage(spec = state.spec, onTap = viewModel::onAvatarTap, modifier = Modifier.fillMaxWidth())
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
@@ -114,6 +117,9 @@ fun HabiScreen(viewModel: HabiViewModel) {
             )
         }
     }
+    if (showPointsSheet) {
+        PointsInfoSheet(economy = state.economy, onDismiss = { showPointsSheet = false })
+    }
 }
 
 /** "probando: <ítem>" (mockup 4b), under the stage while Habi is trying something on. */
@@ -137,12 +143,19 @@ private fun TryingChip(
     }
 }
 
+/**
+ * The points chip; tapping it opens [PointsInfoSheet] (QA 2026-08-23 — the app finally explains
+ * how points are earned somewhere). `internal` for the same direct-test reason as
+ * [PersonalityPills]. Surface's onClick overload carries the Button role for TalkBack.
+ */
 @Composable
-private fun BalanceChip(
+internal fun BalanceChip(
     balance: Int,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
+        onClick = onClick,
         modifier = modifier.testTag("balance-chip"),
         shape = CircleShape,
         color = Tarjeta,

@@ -112,6 +112,14 @@
     <string name="store_your_balance">your balance: %1$d pts</string>
     <string name="store_missing_pts">%1$d pts short</string>
     <string name="store_freezer_buy">buy · %1$d pts</string>
+    <string name="points_info_title">Points</string>
+    <string name="points_info_habit_done">habit done</string>
+    <string name="points_info_perfect_day">perfect day</string>
+    <string name="points_info_perfect_week">perfect week</string>
+    <string name="points_info_perfect_month">perfect month</string>
+    <string name="points_info_streak_row">%1$d-day streak</string>
+    <string name="points_info_plus">+%1$d</string>
+    <string name="points_info_freezer_note">a freezer costs %1$d pts</string>
 
     <string name="item_body_salvia">Sage</string>
     <string name="item_body_vainilla">Vanilla</string>

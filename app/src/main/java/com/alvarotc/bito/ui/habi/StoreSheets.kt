@@ -21,11 +21,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.CatalogItem
+import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.icons.BitoIcons
@@ -173,6 +175,58 @@ fun FreezerSheet(
             onBuy = onBuy,
             onDismiss = onDismiss,
             modifier = Modifier.fillMaxWidth().testTag("buy-freezer"),
+        )
+    }
+}
+
+/**
+ * "How points are earned" — the balance chip's sheet (QA 2026-08-23). Every number renders from
+ * [EconomyConfig]; nothing is baked into strings, the same rule the freezer price follows
+ * (strings_habi.xml's own header note).
+ */
+@Composable
+fun PointsInfoSheet(
+    economy: EconomyConfig,
+    onDismiss: () -> Unit,
+) {
+    BitoSheet(onDismiss, testTag = "points-info-sheet", verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            stringResource(R.string.points_info_title),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
+            color = Tinta,
+        )
+        Spacer(Modifier.height(4.dp))
+        PointsRow(stringResource(R.string.points_info_habit_done), economy.habitDonePoints)
+        PointsRow(stringResource(R.string.points_info_perfect_day), economy.perfectDayPoints)
+        PointsRow(stringResource(R.string.points_info_perfect_week), economy.perfectWeekPoints)
+        PointsRow(stringResource(R.string.points_info_perfect_month), economy.perfectMonthPoints)
+        economy.streakMilestonePoints.toSortedMap().forEach { (days, points) ->
+            PointsRow(stringResource(R.string.points_info_streak_row, days), points)
+        }
+        Spacer(Modifier.height(6.dp))
+        Text(
+            stringResource(R.string.points_info_freezer_note, economy.freezerPrice),
+            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
+            color = TintaSuave,
+        )
+    }
+}
+
+/** One earn rule: caption-style label left, bold "+N" in hoja right — merged into one TalkBack stop. */
+@Composable
+private fun PointsRow(
+    label: String,
+    points: Int,
+) {
+    Row(
+        Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodyLarge, color = Tinta, modifier = Modifier.weight(1f))
+        Text(
+            stringResource(R.string.points_info_plus, points),
+            style = MaterialTheme.typography.titleMedium.copy(fontSize = 17.sp, fontWeight = FontWeight.Bold),
+            color = Hoja,
         )
     }
 }

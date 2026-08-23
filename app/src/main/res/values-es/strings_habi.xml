@@ -112,6 +112,14 @@
     <string name="store_your_balance">tu saldo: %1$d pts</string>
     <string name="store_missing_pts">te faltan %1$d pts</string>
     <string name="store_freezer_buy">comprar · %1$d pts</string>
+    <string name="points_info_title">Puntos</string>
+    <string name="points_info_habit_done">hábito cumplido</string>
+    <string name="points_info_perfect_day">día perfecto</string>
+    <string name="points_info_perfect_week">semana perfecta</string>
+    <string name="points_info_perfect_month">mes perfecto</string>
+    <string name="points_info_streak_row">racha de %1$d días</string>
+    <string name="points_info_plus">+%1$d</string>
+    <string name="points_info_freezer_note">un congelador cuesta %1$d pts</string>
 
     <string name="item_body_salvia">Salvia</string>
     <string name="item_body_vainilla">Vainilla</string>
