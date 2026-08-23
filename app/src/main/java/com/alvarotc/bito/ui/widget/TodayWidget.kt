@@ -72,6 +72,9 @@ class TodayWidget : GlanceAppWidget() {
         // live Glance session recomposed with stale values (the tapped counter never moved until
         // the session died). The content now collects a Flow of the same four sources
         // WidgetRefresher watches — any DB/settings write repaints, updateAll or not.
+        // `today` recomputes only on emissions; the midnight rollover self-heals because idle
+        // Glance sessions expire, so WidgetMidnightReceiver's updateAll restarts provideGlance
+        // (fresh first()) — any write in between heals it sooner.
         val dataFlow =
             combine(
                 container.settings.settings,

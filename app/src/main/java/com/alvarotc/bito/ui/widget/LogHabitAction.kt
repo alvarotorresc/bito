@@ -7,6 +7,7 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.updateAll
 import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.ui.notifications.PerfectDayNotifier
+import kotlinx.coroutines.CancellationException
 
 /** Runs a widget tap: logs the habit and refreshes every instance with the new state. */
 class LogHabitAction : ActionCallback {
@@ -20,8 +21,10 @@ class LogHabitAction : ActionCallback {
         val container = (context.applicationContext as BitoApp).container
         val reached = WidgetLogger(container.journal, container.reconciler, container.settings).log(habitId, amount)
         // A notifier failure (e.g. POST_NOTIFICATIONS revoked mid-flight) must never swallow the
-        // repaint below — same guard WidgetRefresher keeps around its own updateAll.
+        // repaint below — same guard WidgetRefresher keeps around its own updateAll, including
+        // the rethrow: cancellation is not "a failure" and must keep propagating.
         runCatching { PerfectDayNotifier.maybeNotify(context, container, reached) }
+            .onFailure { if (it is CancellationException) throw it }
         TodayWidget().updateAll(context)
     }
 
