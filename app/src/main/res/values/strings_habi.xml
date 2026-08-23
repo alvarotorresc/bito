@@ -67,9 +67,9 @@
     <string name="habi_greeting_neutra_wilted">%1$s, today\'s a good day to restart.</string>
     <string name="habi_greeting_neutra_dramatic">%1$s, welcome back.</string>
 
-    <string name="freezer_info_sargento">One freezer, one habit, one day — that\'s the deal. They don\'t come cheap, and they\'re used from the habit\'s detail. Spend them well, %1$s.</string>
-    <string name="freezer_info_cheerleader">A freezer saves your streak if you miss ONE day on ONE habit! You use it from the habit\'s detail. If I were you, I\'d always keep one around, %1$s.</string>
-    <string name="freezer_info_neutra">A freezer protects a failed day: the streak skips it instead of breaking. You activate it from the habit\'s detail. 1 freezer = 1 habit × 1 day, %1$s.</string>
+    <string name="freezer_info_sargento">One freezer, one habit, one day. See a red day on the calendar? Tap it and use it. They\'re bought in the store. Don\'t waste them, %1$s.</string>
+    <string name="freezer_info_cheerleader">A freezer saves your streak if you miss ONE day on ONE habit! Tap the red day on the calendar, hit \"Use a freezer\" and done. They\'re waiting in the store. If I were you, I\'d always keep one around, %1$s.</string>
+    <string name="freezer_info_neutra">A freezer protects a failed day: the streak skips it instead of breaking. To use one, tap a red day on the calendar and pick \"Use a freezer\". They\'re bought in Habi\'s store, %1$s.</string>
 
     <string name="habi_review_sargento">Let\'s close the day, %1$s. No excuses.</string>
     <string name="habi_review_cheerleader">Time to close the day, %1$s! Whatever\'s left, we finish it now.</string>

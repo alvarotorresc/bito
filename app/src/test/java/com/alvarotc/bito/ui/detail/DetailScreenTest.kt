@@ -237,7 +237,7 @@ class DetailScreenTest {
     }
 
     @Test
-    fun `the freezer pill opens the habi store instead of a purchase sheet`() {
+    fun `the freezer pill without inventory opens the habi store`() {
         runBlocking {
             HabitsRepository(db).create(
                 habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
@@ -245,13 +245,34 @@ class DetailScreenTest {
         }
         setContent("h1")
 
-        // T12: the Detail screen no longer buys freezers itself — tapping the pill navigates
-        // away to the store instead of opening a purchase sheet in place.
+        // QA 2026-08-23: with nothing to use, the pill keeps navigating away to the store —
+        // buying stays the store's job (docs/05 §1) and no purchase sheet opens in place.
         compose.onNodeWithTag("freezer-chip", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
         assertEquals(true, habiOpened)
         compose.onNodeWithTag("freezer-sheet", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the freezer pill with inventory opens the usage guidance instead of the store`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "buy1", delta = 0, reason = PointsReason.BUY_FREEZER, refId = null, logicalDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        compose.onNodeWithTag("freezer-chip", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        // QA 2026-08-23: owning freezers means the tap answers "how do I use one" (the info
+        // sheet pointing at the red day) instead of navigating away to buy more.
+        compose.onNodeWithText("Freezers").assertExists()
+        assertEquals(false, habiOpened)
     }
 
     @Test

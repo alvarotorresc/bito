@@ -67,9 +67,9 @@
     <string name="habi_greeting_neutra_wilted">%1$s, hoy es un buen día para retomar.</string>
     <string name="habi_greeting_neutra_dramatic">%1$s, qué bien verte de vuelta.</string>
 
-    <string name="freezer_info_sargento">Un congelador salva la racha de UN hábito durante UN día. Cuestan una fortuna y se activan desde el detalle del hábito. No los malgastes, %1$s.</string>
-    <string name="freezer_info_cheerleader">¡Un congelador te salva la racha si fallas UN día en UN hábito! Se activa desde el detalle del hábito. Yo que tú tendría siempre uno a mano, %1$s.</string>
-    <string name="freezer_info_neutra">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Se activa desde el detalle del hábito. 1 congelador = 1 hábito × 1 día, %1$s.</string>
+    <string name="freezer_info_sargento">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes, %1$s.</string>
+    <string name="freezer_info_cheerleader">¡Un congelador te salva la racha si fallas UN día en UN hábito! Toca el día en rojo del calendario, dale a «Usar congelador» y listo. Los tienes en la tienda. Yo que tú tendría siempre uno a mano, %1$s.</string>
+    <string name="freezer_info_neutra">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día en rojo en el calendario y elige «Usar congelador». Se compran en la tienda de Habi, %1$s.</string>
 
     <string name="habi_review_sargento">Cerremos el día, %1$s. Sin excusas.</string>
     <string name="habi_review_cheerleader">¡Hora de cerrar el día, %1$s! Lo que falte, lo hacemos ya.</string>

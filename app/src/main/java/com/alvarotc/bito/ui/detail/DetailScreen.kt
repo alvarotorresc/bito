@@ -137,7 +137,9 @@ fun DetailScreen(
                 showFreezerPill = current.period == Period.DAY && !archived,
                 freezersOwned = current.freezersOwned,
                 onRelapseClick = { relapseSheetOpen = true },
-                onFreezerClick = onOpenHabi,
+                // QA 2026-08-23: owning freezers turns the pill into usage guidance (the info sheet
+                // pointing at the red day); with none to use it keeps navigating to the store to buy.
+                onFreezerClick = { if (current.freezersOwned > 0) showFreezerInfoSheet = true else onOpenHabi() },
                 onFreezerInfoClick = { showFreezerInfoSheet = true },
             )
             HeatmapSection(
