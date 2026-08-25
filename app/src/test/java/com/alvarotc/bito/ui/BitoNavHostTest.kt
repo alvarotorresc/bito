@@ -149,16 +149,17 @@ class BitoNavHostTest {
         compose.onNodeWithContentDescription("Settings", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        // The reminders card only renders once SettingsViewModel's DataStore-backed flow has
-        // emitted (real dispatcher, not the test's) — waitForIdle alone doesn't pump that.
-        val reminderCopy = "Phone nudges so you don't forget to log your habits."
+        // The notifications card only renders once SettingsViewModel's DataStore-backed flow has
+        // emitted (real dispatcher, not the test's) — waitForIdle alone doesn't pump that. With a
+        // fresh store no hours exist, so the reminders row hints its empty state.
+        val reminderCopy = "No reminders set"
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithText(reminderCopy, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText(reminderCopy, substring = true, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
         screenTitleNode("Settings").assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText(reminderCopy, useUnmergedTree = true).assertExists()
+        compose.onNodeWithText(reminderCopy, substring = true, useUnmergedTree = true).assertExists()
     }
 
     @Test
