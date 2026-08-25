@@ -43,8 +43,8 @@ class HabiDrawingTest {
     /** Mirrors the body-fill normalized center from the drawing spec (cx=0.5, cy=0.55). */
     private fun bodyCenterPixel(sizePx: Int) = px(0.5f, sizePx) to px(0.55f, sizePx)
 
-    /** Mirrors the left-eye normalized center from the drawing spec (y=0.45, x=0.5-0.145). */
-    private fun leftEyePixel(sizePx: Int) = px(0.5f - 0.145f, sizePx) to px(0.45f, sizePx)
+    /** Mirrors the left-eye normalized center from the drawing spec (y=0.50, x=0.5-0.14 — art pass 2026-08-25). */
+    private fun leftEyePixel(sizePx: Int) = px(0.5f - 0.14f, sizePx) to px(0.5f, sizePx)
 
     /**
      * Mirrors the first sparkle's offset from the drawing spec, relative to the left eye.
@@ -62,9 +62,9 @@ class HabiDrawingTest {
         sizePx: Int,
         eyeScale: Float,
     ): Pair<Int, Int> {
-        val eyeCenterX = (0.5f - 0.145f) * sizePx
-        val eyeCenterY = 0.45f * sizePx
-        val eyeRx = 0.052f * eyeScale * sizePx
+        val eyeCenterX = (0.5f - 0.14f) * sizePx
+        val eyeCenterY = 0.5f * sizePx
+        val eyeRx = 0.048f * eyeScale * sizePx
         val eyeRy = eyeRx * 1.0f
         val x = eyeCenterX + eyeRx * 0.55f
         val y = eyeCenterY - eyeRy * 0.75f
