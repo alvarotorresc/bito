@@ -1,6 +1,8 @@
 package com.alvarotc.bito.ui.settings
 
+import android.app.Application
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -1129,5 +1131,118 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Restore this backup?", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the support row opens the donate sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-donate-sheet"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Support the project", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        // The sheet is a ModalBottomSheet — its own layout root, fully visible on open (same
+        // reasoning as the import preview tests above).
+        compose.onNodeWithText("no ads and no strings attached", substring = true, useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the license row opens the license sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-license-sheet"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Free license", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("GPL-3.0", substring = true, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("View the license", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the source code row fires a browser intent at the repo`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-source-intent"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Source code", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        val intent = shadowOf(ApplicationProvider.getApplicationContext<Application>()).nextStartedActivity
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals("https://github.com/alvarotorresc/bito", intent.data.toString())
+    }
+
+    @Test
+    fun `tapping the reminders row opens the management sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-reminders-sheet"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Reminders", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Add reminder", useUnmergedTree = true).assertIsDisplayed()
     }
 }

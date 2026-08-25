@@ -156,9 +156,8 @@
     <string name="msg_invalid_file">That is not a valid Bito backup</string>
     <string name="msg_io_error">Something went wrong — nothing was changed</string>
 
-    <string name="day_section_title">Your day</string>
-    <string name="day_section_body">Log something in the small hours before that time and it counts for the previous day.</string>
     <string name="cutoff_label">Your day ends at</string>
+    <string name="cutoff_row_hint">for night owls: what you do before that time still counts as today</string>
     <string name="cutoff_note">Applies from now on; sealed days stay as they are</string>
     <!-- CutoffSheet's ±30min stepper: same bare-icon gap as backup_copies_minus_cd/plus_cd above. -->
     <string name="cutoff_minus_cd">Earlier cutoff</string>
@@ -172,6 +171,8 @@
     <string name="review_hint">An evening nudge to look back on the day and close it.</string>
     <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
     <string name="notif_permission_hint">Allow notifications to hear reminders</string>
+    <string name="settings_notifications_section">Notifications</string>
+    <string name="sheet_done">Done</string>
 
     <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Habi sounds</string>
@@ -202,6 +203,19 @@
     <string name="archived_since">Since %1$s</string>
     <string name="archived_empty">Nothing archived yet</string>
     <string name="unarchive_habit">Reactivate</string>
+
+    <string name="about_section_title">About</string>
+    <string name="about_version">v%1$s</string>
+    <string name="about_source_row">Source code</string>
+    <string name="about_support_row">Support the project</string>
+    <string name="about_support_value">donate</string>
+    <string name="about_license_row">Free license</string>
+    <string name="about_feedback_row">Something not right?</string>
+    <string name="about_feedback_hint">a one-minute form, no account needed</string>
+    <string name="donate_sheet_body">Bito is free, with no ads and no strings attached. Donations will open further down the road — for now, using it and telling me what to improve is plenty of support.</string>
+    <string name="donate_sheet_ok">Got it</string>
+    <string name="license_sheet_body">Bito is free software under the GPL-3.0 license: you can use it, study it, change it and share it — and any derived version must stay free too.</string>
+    <string name="license_sheet_view">View the license</string>
     <string name="paused_since">Paused since %1$s</string>
 
     <string name="onb_welcome_tagline">habits that stick</string>

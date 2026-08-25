@@ -4,6 +4,7 @@ package com.alvarotc.bito.ui.settings
 
 import android.Manifest
 import android.app.AlarmManager
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -30,6 +31,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -52,6 +54,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -70,6 +73,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.alvarotc.bito.BuildConfig
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.backup.BackupPreview
 import com.alvarotc.bito.data.settings.AutoBackupError
@@ -80,8 +84,10 @@ import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.TimePickerSheet
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
+import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Peligro
 import com.alvarotc.bito.ui.theme.Tarjeta
@@ -100,6 +106,12 @@ private const val MAX_BACKUP_COPIES = 30
 
 /** tech doc 5.2: any shorter and Argon2 is defending an easily-guessed passphrase. */
 private const val MIN_PASSPHRASE_LENGTH = 8
+
+private const val SOURCE_URL = "https://github.com/alvarotorresc/bito"
+private const val LICENSE_URL = "$SOURCE_URL/blob/main/LICENSE"
+
+/** The public report form (answerable without an account); the row opens it in the browser. */
+private const val FEEDBACK_URL = "https://tally.so/r/dWe65r"
 
 /**
  * Ajustes: day cutoff and reminders (this task) plus the manual backup export/import card
@@ -215,79 +227,93 @@ fun SettingsScreen(
                 .padding(padding)
                 .verticalScroll(rememberScrollState())
                 .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             SettingsHeader(onBack)
             settings?.let { current ->
-                DaySectionCard(cutoffMinutes = current.dayCutoffMinutes, onSetCutoff = settingsViewModel::setCutoff)
-                RemindersSectionCard(
-                    reminderMinutes = current.globalReminderMinutes,
-                    reviewMinutes = current.reviewTimeMinutes,
-                    exactAlarmsBlocked = exactAlarmsBlocked,
-                    notifDenied = notifDenied,
-                    celebrationEnabled = current.perfectDayCelebration,
-                    onSetCelebration = settingsViewModel::setPerfectDayCelebration,
-                    onAddReminder = { minutes ->
-                        val isFirstReminder = current.globalReminderMinutes.isEmpty()
-                        settingsViewModel.addReminder(minutes)
-                        if (isFirstReminder && Build.VERSION.SDK_INT >= 33) {
-                            notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                    },
-                    onEditReminder = { old, new ->
-                        settingsViewModel.removeReminder(old)
-                        settingsViewModel.addReminder(new)
-                    },
-                    onRemoveReminder = settingsViewModel::removeReminder,
-                    onSetReviewTime = settingsViewModel::setReviewTime,
-                    onOpenExactAlarmSettings = {
-                        // The row is only shown when exactAlarmsBlocked is true (itself SDK 31+
-                        // gated), but the guard is repeated here so the constant reference itself
-                        // is provably safe, not just reachability-safe.
-                        if (Build.VERSION.SDK_INT >= 31) {
-                            // Some OEM/Go builds don't ship this settings screen at all
-                            // (ActivityNotFoundException); nothing more useful to do than no-op.
-                            runCatching {
-                                context.startActivity(
-                                    Intent(
-                                        AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
-                                        Uri.parse("package:${context.packageName}"),
-                                    ),
-                                )
+                SettingsSection(stringResource(R.string.general_section_title)) {
+                    GeneralSectionCard(
+                        userName = current.userName,
+                        onSetUserName = settingsViewModel::setUserName,
+                        languageTag = current.languageTag,
+                        onSetLanguage = settingsViewModel::setLanguage,
+                        cutoffMinutes = current.dayCutoffMinutes,
+                        onSetCutoff = settingsViewModel::setCutoff,
+                        archivedCount = archivedHabits.size,
+                        onOpenArchived = onOpenArchived,
+                        onOpenIntro = onOpenIntro,
+                    )
+                }
+                SettingsSection(stringResource(R.string.settings_notifications_section)) {
+                    NotificationsSectionCard(
+                        reminderMinutes = current.globalReminderMinutes,
+                        reviewMinutes = current.reviewTimeMinutes,
+                        exactAlarmsBlocked = exactAlarmsBlocked,
+                        notifDenied = notifDenied,
+                        celebrationEnabled = current.perfectDayCelebration,
+                        onSetCelebration = settingsViewModel::setPerfectDayCelebration,
+                        onAddReminder = { minutes ->
+                            val isFirstReminder = current.globalReminderMinutes.isEmpty()
+                            settingsViewModel.addReminder(minutes)
+                            if (isFirstReminder && Build.VERSION.SDK_INT >= 33) {
+                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
-                        }
-                    },
-                )
-                HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
-                LogFeedbackSectionCard(
-                    soundEnabled = current.logSoundEnabled,
-                    onSetSound = settingsViewModel::setLogSound,
-                    hapticEnabled = current.logHapticEnabled,
-                    onSetHaptic = settingsViewModel::setLogHaptic,
-                )
-                GeneralSectionCard(
-                    userName = current.userName,
-                    onSetUserName = settingsViewModel::setUserName,
-                    languageTag = current.languageTag,
-                    onSetLanguage = settingsViewModel::setLanguage,
-                    archivedCount = archivedHabits.size,
-                    onOpenArchived = onOpenArchived,
-                    onOpenIntro = onOpenIntro,
+                        },
+                        onEditReminder = { old, new ->
+                            settingsViewModel.removeReminder(old)
+                            settingsViewModel.addReminder(new)
+                        },
+                        onRemoveReminder = settingsViewModel::removeReminder,
+                        onSetReviewTime = settingsViewModel::setReviewTime,
+                        onOpenExactAlarmSettings = {
+                            // The row is only shown when exactAlarmsBlocked is true (itself SDK 31+
+                            // gated), but the guard is repeated here so the constant reference itself
+                            // is provably safe, not just reachability-safe.
+                            if (Build.VERSION.SDK_INT >= 31) {
+                                // Some OEM/Go builds don't ship this settings screen at all
+                                // (ActivityNotFoundException); nothing more useful to do than no-op.
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(
+                                            AndroidSettings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,
+                                            Uri.parse("package:${context.packageName}"),
+                                        ),
+                                    )
+                                }
+                            }
+                        },
+                    )
+                }
+                SettingsSection(stringResource(R.string.settings_habi_section)) {
+                    HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
+                }
+                SettingsSection(stringResource(R.string.settings_log_section)) {
+                    LogFeedbackSectionCard(
+                        soundEnabled = current.logSoundEnabled,
+                        onSetSound = settingsViewModel::setLogSound,
+                        hapticEnabled = current.logHapticEnabled,
+                        onSetHaptic = settingsViewModel::setLogHaptic,
+                    )
+                }
+            }
+            SettingsSection(stringResource(R.string.backups_title)) {
+                BackupsCard(
+                    state = backupState,
+                    onPickFolder = { folderLauncher.launch(null) },
+                    onSetFrequency = backupViewModel::setFrequency,
+                    onSetCopies = backupViewModel::setCopies,
+                    onBackupNow = backupViewModel::backupNow,
+                    onExport = { exportLauncher.launch(backupViewModel.suggestedFileName()) },
+                    // SAF can't filter on a custom ".bito" extension, so accept anything and let
+                    // loadImport's preview/validation reject the wrong file.
+                    onImport = { importLauncher.launch(arrayOf("*/*")) },
+                    onEnableEncryption = backupViewModel::enableEncryption,
+                    onDisableEncryption = backupViewModel::disableEncryption,
                 )
             }
-            BackupsCard(
-                state = backupState,
-                onPickFolder = { folderLauncher.launch(null) },
-                onSetFrequency = backupViewModel::setFrequency,
-                onSetCopies = backupViewModel::setCopies,
-                onBackupNow = backupViewModel::backupNow,
-                onExport = { exportLauncher.launch(backupViewModel.suggestedFileName()) },
-                // SAF can't filter on a custom ".bito" extension, so accept anything and let
-                // loadImport's preview/validation reject the wrong file.
-                onImport = { importLauncher.launch(arrayOf("*/*")) },
-                onEnableEncryption = backupViewModel::enableEncryption,
-                onDisableEncryption = backupViewModel::disableEncryption,
-            )
+            SettingsSection(stringResource(R.string.about_section_title)) {
+                AboutCard()
+            }
         }
     }
 
@@ -322,40 +348,34 @@ private fun SettingsHeader(onBack: () -> Unit) {
     }
 }
 
-/** E7: the cutoff only shifts logging going forward — already-sealed days are never touched. */
+/**
+ * Mockup 8a's section anatomy: a small muted label sitting just above its card, instead of a
+ * title row inside it — the cards themselves start directly with their rows.
+ */
 @Composable
-private fun DaySectionCard(
-    cutoffMinutes: Int,
-    onSetCutoff: (Int) -> Unit,
+private fun SettingsSection(
+    title: String,
+    content: @Composable () -> Unit,
 ) {
-    var showSheet by remember { mutableStateOf(false) }
-    BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.day_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-        Spacer(Modifier.height(4.dp))
-        Text(stringResource(R.string.day_section_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-        Spacer(Modifier.height(4.dp))
-        SettingsRow(label = stringResource(R.string.cutoff_label), value = formatClock(cutoffMinutes), onClick = { showSheet = true })
-    }
-    if (showSheet) {
-        CutoffSheet(
-            initialMinutes = cutoffMinutes,
-            onConfirm = {
-                onSetCutoff(it)
-                showSheet = false
-            },
-            onDismiss = { showSheet = false },
-        )
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Text(title, style = MaterialTheme.typography.labelMedium, color = TintaSuave, modifier = Modifier.padding(start = 8.dp))
+        content()
     }
 }
 
+/** The thin rule between rows of one card (mockup 8a) — Borde on Tarjeta, barely-there on purpose. */
+@Composable
+private fun SettingsDivider() {
+    HorizontalDivider(thickness = 1.dp, color = Borde)
+}
+
 /**
- * Reminders card: one row per configured global hour (tap edits, X removes), an add row, the
- * daily-review hour, and — only when relevant — the exact-alarm and notification-permission
- * notices. `ReminderSync` (a different lane) observes the repository and reprograms alarms; this
- * screen only ever writes through [SettingsViewModel].
+ * Reminders collapsed to one row (mockup 8a): the configured hours read as a single bold value and
+ * management moves to [RemindersSheet]. `ReminderSync` (a different lane) observes the repository
+ * and reprograms alarms; this screen only ever writes through [SettingsViewModel].
  */
 @Composable
-private fun RemindersSectionCard(
+private fun NotificationsSectionCard(
     reminderMinutes: List<Int>,
     reviewMinutes: Int,
     exactAlarmsBlocked: Boolean,
@@ -368,57 +388,45 @@ private fun RemindersSectionCard(
     onSetReviewTime: (Int) -> Unit,
     onOpenExactAlarmSettings: () -> Unit,
 ) {
-    var editingReminder by remember { mutableStateOf<Int?>(null) }
-    var showAddSheet by remember { mutableStateOf(false) }
+    var showRemindersSheet by remember { mutableStateOf(false) }
     var showReviewSheet by remember { mutableStateOf(false) }
 
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.reminders_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-        Spacer(Modifier.height(4.dp))
-        Text(stringResource(R.string.reminders_section_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-        Spacer(Modifier.height(4.dp))
-        reminderMinutes.forEach { minutes ->
-            ReminderHourRow(minutes = minutes, onEdit = { editingReminder = minutes }, onRemove = { onRemoveReminder(minutes) })
-        }
-        if (reminderMinutes.isEmpty()) {
-            Text(stringResource(R.string.reminder_none_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            Spacer(Modifier.height(4.dp))
-        }
-        SettingsRow(label = stringResource(R.string.reminder_add), onClick = { showAddSheet = true })
-        SettingsRow(label = stringResource(R.string.review_label), value = formatClock(reviewMinutes), onClick = { showReviewSheet = true })
-        Text(stringResource(R.string.review_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-        Spacer(Modifier.height(4.dp))
-        // [E]: the Switch carries no text of its own, sitting next to — not merged with — its
-        // label+hint Column, so TalkBack read the label on one swipe and a bare "Switch, On" on
-        // the next, never connected. A plain `mergeDescendants = true` on the row is NOT enough
-        // here (verified empirically): Switch is itself an independently screenreader-focusable
-        // node (it sets its own merge boundary internally), so it stays a separate reachable stop
-        // under a merely-merging ancestor — same reason the app's own convention never nests an
-        // IconButton inside an already-clickable row. `toggleable` on the row instead MOVES the
-        // toggle action there (`Switch(onCheckedChange = null)` makes the switch purely visual,
-        // no longer independently actionable) — the standard Android Settings-list a11y idiom.
-        Row(
-            Modifier
-                .testTag("celebration-row")
-                .toggleable(value = celebrationEnabled, onValueChange = onSetCelebration, role = Role.Switch),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_celebration_label), style = MaterialTheme.typography.bodyLarge, color = Tinta)
-                Text(
-                    stringResource(R.string.settings_celebration_hint),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TintaSuave,
-                )
-            }
-            Switch(
-                checked = celebrationEnabled,
-                onCheckedChange = null,
-                modifier = Modifier.testTag("celebration-switch"),
-            )
-        }
+        SettingsRow(
+            icon = BitoIcons.Bell,
+            label = stringResource(R.string.reminders_section_title),
+            hint =
+                if (reminderMinutes.isEmpty()) {
+                    stringResource(R.string.reminder_none_hint)
+                } else {
+                    stringResource(R.string.reminders_section_body)
+                },
+            value = reminderMinutes.takeIf { it.isNotEmpty() }?.joinToString(", ") { formatClock(it) },
+            valueEmphasis = true,
+            onClick = { showRemindersSheet = true },
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = BitoIcons.Clock,
+            label = stringResource(R.string.review_label),
+            hint = stringResource(R.string.review_hint),
+            value = formatClock(reviewMinutes),
+            valueEmphasis = true,
+            onClick = { showReviewSheet = true },
+        )
+        SettingsDivider()
+        ToggleSettingsRow(
+            icon = BitoIcons.Sparkle,
+            label = stringResource(R.string.settings_celebration_label),
+            hint = stringResource(R.string.settings_celebration_hint),
+            tag = "celebration",
+            checked = celebrationEnabled,
+            onChange = onSetCelebration,
+        )
         if (exactAlarmsBlocked) {
+            SettingsDivider()
             SettingsRow(
+                icon = BitoIcons.Info,
                 label = stringResource(R.string.reminder_exact_notice),
                 onClick = onOpenExactAlarmSettings,
             )
@@ -428,6 +436,61 @@ private fun RemindersSectionCard(
         }
     }
 
+    if (showRemindersSheet) {
+        RemindersSheet(
+            reminderMinutes = reminderMinutes,
+            onAddReminder = onAddReminder,
+            onEditReminder = onEditReminder,
+            onRemoveReminder = onRemoveReminder,
+            onDismiss = { showRemindersSheet = false },
+        )
+    }
+    if (showReviewSheet) {
+        TimePickerSheet(
+            title = stringResource(R.string.review_label),
+            initialMinutes = reviewMinutes,
+            onConfirm = {
+                onSetReviewTime(it)
+                showReviewSheet = false
+            },
+            onDismiss = { showReviewSheet = false },
+        )
+    }
+}
+
+/**
+ * Hour management, lifted out of the card so it stays one line per setting (mockup 8a): each hour
+ * edits on tap / removes on X, plus an add row. The add/edit [TimePickerSheet] stacks over this
+ * sheet — same modal shell, one level deeper.
+ */
+@Composable
+private fun RemindersSheet(
+    reminderMinutes: List<Int>,
+    onAddReminder: (Int) -> Unit,
+    onEditReminder: (old: Int, new: Int) -> Unit,
+    onRemoveReminder: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var editingReminder by remember { mutableStateOf<Int?>(null) }
+    var showAddSheet by remember { mutableStateOf(false) }
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.reminders_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Spacer(Modifier.height(4.dp))
+            Text(stringResource(R.string.reminders_section_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            Spacer(Modifier.height(4.dp))
+            reminderMinutes.forEach { minutes ->
+                ReminderHourRow(minutes = minutes, onEdit = { editingReminder = minutes }, onRemove = { onRemoveReminder(minutes) })
+            }
+            if (reminderMinutes.isEmpty()) {
+                Text(stringResource(R.string.reminder_none_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+                Spacer(Modifier.height(4.dp))
+            }
+            SettingsRow(icon = BitoIcons.Plus, label = stringResource(R.string.reminder_add), onClick = { showAddSheet = true })
+            Spacer(Modifier.height(12.dp))
+            PillButton(text = stringResource(R.string.sheet_done), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+        }
+    }
     editingReminder?.let { old ->
         TimePickerSheet(
             title = stringResource(R.string.reminders_section_title),
@@ -448,17 +511,6 @@ private fun RemindersSectionCard(
                 showAddSheet = false
             },
             onDismiss = { showAddSheet = false },
-        )
-    }
-    if (showReviewSheet) {
-        TimePickerSheet(
-            title = stringResource(R.string.review_label),
-            initialMinutes = reviewMinutes,
-            onConfirm = {
-                onSetReviewTime(it)
-                showReviewSheet = false
-            },
-            onDismiss = { showReviewSheet = false },
         )
     }
 }
@@ -490,40 +542,25 @@ private fun ReminderHourRow(
     }
 }
 
-/** One row, [Switch] pattern EXACT to habitform's `BinaryModeRow`: label + hint on the left, the toggle on the right. */
+/** One [ToggleSettingsRow], title lifted out to the section label (mockup 8a). */
 @Composable
 private fun HabiSectionCard(
     soundsEnabled: Boolean,
     onSetHabiSounds: (Boolean) -> Unit,
 ) {
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.settings_habi_section), style = MaterialTheme.typography.titleMedium, color = Tinta)
-        Spacer(Modifier.height(4.dp))
-        // [E]: same fix and same reasoning as the celebration Switch row above.
-        Row(
-            Modifier
-                .testTag("habi-sounds-row")
-                .toggleable(value = soundsEnabled, onValueChange = onSetHabiSounds, role = Role.Switch),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.settings_habi_sounds), style = MaterialTheme.typography.bodyLarge, color = Tinta)
-                Text(
-                    stringResource(R.string.settings_habi_sounds_hint),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TintaSuave,
-                )
-            }
-            Switch(
-                checked = soundsEnabled,
-                onCheckedChange = null,
-                modifier = Modifier.testTag("habi-sounds-switch"),
-            )
-        }
+        ToggleSettingsRow(
+            icon = BitoIcons.Volume,
+            label = stringResource(R.string.settings_habi_sounds),
+            hint = stringResource(R.string.settings_habi_sounds_hint),
+            tag = "habi-sounds",
+            checked = soundsEnabled,
+            onChange = onSetHabiSounds,
+        )
     }
 }
 
-/** Registro feedback (QA 2026-08-23): a tiny tick and/or a soft buzz on every habit log, each with its own switch — full-row toggleable, same one-stop TalkBack pattern as the Habi sounds row. */
+/** Registro feedback (QA 2026-08-23): a tiny tick and/or a soft buzz on every habit log, each with its own switch. */
 @Composable
 private fun LogFeedbackSectionCard(
     soundEnabled: Boolean,
@@ -532,19 +569,19 @@ private fun LogFeedbackSectionCard(
     onSetHaptic: (Boolean) -> Unit,
 ) {
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.settings_log_section), style = MaterialTheme.typography.titleMedium, color = Tinta)
-        Spacer(Modifier.height(4.dp))
-        LogFeedbackRow(
-            title = R.string.settings_log_sound,
-            hint = R.string.settings_log_sound_hint,
+        ToggleSettingsRow(
+            icon = BitoIcons.Music,
+            label = stringResource(R.string.settings_log_sound),
+            hint = stringResource(R.string.settings_log_sound_hint),
             tag = "log-sound",
             checked = soundEnabled,
             onChange = onSetSound,
         )
-        Spacer(Modifier.height(4.dp))
-        LogFeedbackRow(
-            title = R.string.settings_log_haptic,
-            hint = R.string.settings_log_haptic_hint,
+        SettingsDivider()
+        ToggleSettingsRow(
+            icon = BitoIcons.Vibrate,
+            label = stringResource(R.string.settings_log_haptic),
+            hint = stringResource(R.string.settings_log_haptic_hint),
             tag = "log-haptic",
             checked = hapticEnabled,
             onChange = onSetHaptic,
@@ -552,34 +589,13 @@ private fun LogFeedbackSectionCard(
     }
 }
 
-@Composable
-private fun LogFeedbackRow(
-    title: Int,
-    hint: Int,
-    tag: String,
-    checked: Boolean,
-    onChange: (Boolean) -> Unit,
-) {
-    Row(
-        Modifier
-            .testTag("$tag-row")
-            .toggleable(value = checked, onValueChange = onChange, role = Role.Switch),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(stringResource(title), style = MaterialTheme.typography.bodyLarge, color = Tinta)
-            Text(stringResource(hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-        }
-        Switch(checked = checked, onCheckedChange = null, modifier = Modifier.testTag("$tag-switch"))
-    }
-}
-
 /**
  * The name row edits INLINE (no sheet — a single text field doesn't earn the modal ceremony every
  * other row here uses for a multi-field/stepper flow): tapping it swaps [SettingsRow] for a field +
  * confirm icon, right in the card. Language always shows (system → es → en → system, same
- * cycling-row idiom as [BackupsCard]'s frequency row); the archived-habits row underneath is the
- * one sometimes-absent line, hidden outright when there is nothing archived.
+ * cycling-row idiom as [BackupsCard]'s frequency row); the day cutoff row opens [CutoffSheet] (the
+ * old DaySectionCard absorbed here, mockup 8a); the archived-habits row at the bottom is the one
+ * sometimes-absent line, hidden outright when there is nothing archived.
  */
 @Composable
 private fun GeneralSectionCard(
@@ -587,6 +603,8 @@ private fun GeneralSectionCard(
     onSetUserName: (String) -> Unit,
     languageTag: String?,
     onSetLanguage: (String?) -> Unit,
+    cutoffMinutes: Int,
+    onSetCutoff: (Int) -> Unit,
     archivedCount: Int,
     onOpenArchived: () -> Unit,
     onOpenIntro: () -> Unit,
@@ -595,9 +613,8 @@ private fun GeneralSectionCard(
     // Keyed on userName: if the stored value changes out from under an open editor (e.g. a backup
     // restore lands mid-edit), the draft resets to match rather than silently overwriting it later.
     var nameDraft by remember(userName) { mutableStateOf(userName) }
+    var showCutoffSheet by remember { mutableStateOf(false) }
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.general_section_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-        Spacer(Modifier.height(4.dp))
         if (editingName) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -629,17 +646,15 @@ private fun GeneralSectionCard(
             }
         } else {
             SettingsRow(
+                icon = BitoIcons.User,
                 label = stringResource(R.string.settings_name_row),
                 value = userName.ifBlank { stringResource(R.string.settings_name_placeholder) },
                 onClick = { editingName = true },
             )
         }
+        SettingsDivider()
         SettingsRow(
-            label = stringResource(R.string.settings_intro_row),
-            value = stringResource(R.string.settings_intro_value),
-            onClick = onOpenIntro,
-        )
-        SettingsRow(
+            icon = BitoIcons.Globe,
             label = stringResource(R.string.language_row),
             value =
                 stringResource(
@@ -663,9 +678,41 @@ private fun GeneralSectionCard(
                 )
             },
         )
+        SettingsDivider()
+        SettingsRow(
+            icon = BitoIcons.Moon,
+            label = stringResource(R.string.cutoff_label),
+            hint = stringResource(R.string.cutoff_row_hint),
+            value = formatClock(cutoffMinutes),
+            valueEmphasis = true,
+            onClick = { showCutoffSheet = true },
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = BitoIcons.BookOpen,
+            label = stringResource(R.string.settings_intro_row),
+            value = stringResource(R.string.settings_intro_value),
+            onClick = onOpenIntro,
+        )
         if (archivedCount > 0) {
-            SettingsRow(label = pluralStringResource(R.plurals.archived_habits_row, archivedCount, archivedCount), onClick = onOpenArchived)
+            SettingsDivider()
+            SettingsRow(
+                icon = BitoIcons.Archive,
+                label = pluralStringResource(R.plurals.archived_habits_row, archivedCount, archivedCount),
+                trailingChevron = true,
+                onClick = onOpenArchived,
+            )
         }
+    }
+    if (showCutoffSheet) {
+        CutoffSheet(
+            initialMinutes = cutoffMinutes,
+            onConfirm = {
+                onSetCutoff(it)
+                showCutoffSheet = false
+            },
+            onDismiss = { showCutoffSheet = false },
+        )
     }
 }
 
@@ -673,7 +720,7 @@ private fun GeneralSectionCard(
  * THE star of Ajustes (guía 8a): a Hoja-bordered card, not a solid-accent one.
  *
  * The encryption row's two local sheets (create/re-create, off-confirm) live here, not hoisted to
- * [SettingsScreen] — same split as [DaySectionCard]'s [CutoffSheet]: they're pure UI state with no
+ * [SettingsScreen] — same split as [GeneralSectionCard]'s [CutoffSheet]: they're pure UI state with no
  * VM-owned flag behind them, unlike the import passphrase sheet which mirrors [BackupUiState.askImportPassphrase].
  */
 @Composable
@@ -693,11 +740,10 @@ private fun BackupsCard(
     var showCopiesSheet by remember { mutableStateOf(false) }
 
     BitoCard(border = Hoja, modifier = Modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.backups_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-        Spacer(Modifier.height(4.dp))
         Text(stringResource(R.string.backups_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         Spacer(Modifier.height(12.dp))
         BackupStatusSlot(state = state, onClick = onPickFolder)
+        SettingsDivider()
         if (state.folderName != null) {
             SettingsRow(
                 label = stringResource(R.string.backup_auto),
@@ -713,68 +759,55 @@ private fun BackupsCard(
                     onSetFrequency(if (state.frequency == BackupFrequency.WEEKLY) BackupFrequency.DAILY else BackupFrequency.WEEKLY)
                 },
             )
+            SettingsDivider()
             SettingsRow(
                 label = stringResource(R.string.backup_keep),
                 annotatedValue = coloredKeepValue(pluralStringResource(R.plurals.backup_keep_value, state.copies), state.copies),
                 onClick = { showCopiesSheet = true },
             )
+            SettingsDivider()
         }
-        // [E]: same fix and same reasoning as the celebration/habi-sounds Switch rows above —
-        // the toggle handler (unchanged branching) moves onto the row's `toggleable`.
-        Row(
-            Modifier
-                .testTag("backup-encryption-row")
-                .toggleable(
-                    value = state.encryptionOn,
-                    role = Role.Switch,
-                    onValueChange = {
-                        // ON and healthy is the only case that turns it off; everything else (OFF,
-                        // or ON but needing a key) opens the same create/re-create sheet — same
-                        // branching as the row this Switch replaced, just triggered by the toggle
-                        // instead.
-                        if (state.encryptionOn && !state.encryptionNeedsKey) {
-                            showDisableConfirm = true
-                        } else {
-                            showCreateSheet = true
-                        }
-                    },
-                ),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.backup_encrypt), style = MaterialTheme.typography.bodyLarge, color = Tinta)
-                Text(
-                    // The needs-key warning replaces the normal descriptive subtitle — a Switch
-                    // can't show that ON-but-broken state on its own (needs a passphrase before
-                    // it's trustworthy again), so the subtitle line carries it instead.
-                    if (state.encryptionNeedsKey) {
-                        stringResource(R.string.backup_encrypt_needs_key)
-                    } else {
-                        stringResource(R.string.backup_encrypt_subtitle)
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    color = TintaSuave,
-                )
-            }
-            Switch(
-                checked = state.encryptionOn,
-                onCheckedChange = null,
-                modifier = Modifier.testTag("backup-encryption-switch"),
-            )
-        }
+        ToggleSettingsRow(
+            icon = BitoIcons.Lock,
+            label = stringResource(R.string.backup_encrypt),
+            // The needs-key warning replaces the normal descriptive subtitle — a Switch
+            // can't show that ON-but-broken state on its own (needs a passphrase before
+            // it's trustworthy again), so the hint line carries it instead.
+            hint =
+                if (state.encryptionNeedsKey) {
+                    stringResource(R.string.backup_encrypt_needs_key)
+                } else {
+                    stringResource(R.string.backup_encrypt_subtitle)
+                },
+            tag = "backup-encryption",
+            checked = state.encryptionOn,
+            onChange = {
+                // ON and healthy is the only case that turns it off; everything else (OFF,
+                // or ON but needing a key) opens the same create/re-create sheet.
+                if (state.encryptionOn && !state.encryptionNeedsKey) {
+                    showDisableConfirm = true
+                } else {
+                    showCreateSheet = true
+                }
+            },
+        )
+        SettingsDivider()
         Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // Hidden (not just disabled) without a folder, same gating BackupViewModel.backupNow
-            // already no-ops on — Restore never needs a folder, so it's always here.
-            if (state.folderName != null) {
-                PillButton(stringResource(R.string.backup_now), onClick = onBackupNow, modifier = Modifier.weight(1f))
-            }
-            GhostPillButton(stringResource(R.string.backup_restore), onClick = onImport, modifier = Modifier.weight(1f))
+        // Stacked, not side by side: at fontScale 1.15 the ES "Hacer backup ahora" wraps to 3
+        // lines in a half-width pill and deforms it (seen on the Pixel).
+        // Hidden (not just disabled) without a folder, same gating BackupViewModel.backupNow
+        // already no-ops on — Restore never needs a folder, so it's always here.
+        if (state.folderName != null) {
+            PillButton(stringResource(R.string.backup_now), onClick = onBackupNow, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
         }
-        Spacer(Modifier.height(4.dp))
+        GhostPillButton(stringResource(R.string.backup_restore), onClick = onImport, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(12.dp))
+        SettingsDivider()
         SettingsRow(
             BitoIcons.Upload,
             stringResource(R.string.backup_export_manual),
+            iconTint = Hoja,
             trailingChevron = true,
             onClick = onExport,
         )
@@ -966,6 +999,124 @@ private fun coloredKeepValue(
         withStyle(SpanStyle(color = Tinta)) { append(count.toString()) }
         append(parts.getOrElse(1) { "" })
     }
+
+/**
+ * Mockup 8a's closing card: app identity (the one non-tappable line), source, support, license and
+ * feedback rows. Source/feedback leave the app for the browser; support and license stay in-app as
+ * sheets — there is nothing to link to yet for donations, and the license summary reads better as
+ * two sentences than as a cold jump to the GPL text (which [LicenseSheet] still offers).
+ */
+@Composable
+private fun AboutCard() {
+    val context = LocalContext.current
+    var showDonateSheet by remember { mutableStateOf(false) }
+    var showLicenseSheet by remember { mutableStateOf(false) }
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Box(Modifier.size(32.dp).clip(CircleShape).background(HojaTinte), contentAlignment = Alignment.Center) {
+                Icon(BitoIcons.Habi, contentDescription = null, tint = Hoja, modifier = Modifier.size(20.dp))
+            }
+            Text(
+                stringResource(R.string.app_name),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = Tinta,
+                modifier = Modifier.weight(1f),
+            )
+            Text(
+                stringResource(R.string.about_version, BuildConfig.VERSION_NAME),
+                style = MaterialTheme.typography.bodyLarge,
+                color = TintaSuave,
+            )
+        }
+        SettingsDivider()
+        SettingsRow(
+            icon = BitoIcons.Code,
+            label = stringResource(R.string.about_source_row),
+            trailingChevron = true,
+            onClick = { openUrl(context, SOURCE_URL) },
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = BitoIcons.Heart,
+            iconTint = Brasa,
+            label = stringResource(R.string.about_support_row),
+            annotatedValue =
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = Hoja, fontWeight = FontWeight.SemiBold)) {
+                        append(stringResource(R.string.about_support_value))
+                    }
+                },
+            onClick = { showDonateSheet = true },
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = BitoIcons.FileText,
+            label = stringResource(R.string.about_license_row),
+            onClick = { showLicenseSheet = true },
+        )
+        SettingsDivider()
+        SettingsRow(
+            icon = BitoIcons.MessageCircle,
+            label = stringResource(R.string.about_feedback_row),
+            hint = stringResource(R.string.about_feedback_hint),
+            trailingChevron = true,
+            onClick = { openUrl(context, FEEDBACK_URL) },
+        )
+    }
+    if (showDonateSheet) {
+        DonateSheet(onDismiss = { showDonateSheet = false })
+    }
+    if (showLicenseSheet) {
+        LicenseSheet(onOpenLicense = { openUrl(context, LICENSE_URL) }, onDismiss = { showLicenseSheet = false })
+    }
+}
+
+/** runCatching: a device with no browser at all raises ActivityNotFoundException — no-op beats a crash. */
+private fun openUrl(
+    context: Context,
+    url: String,
+) {
+    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+}
+
+/** No donation rails yet — the sheet says so honestly instead of dangling a dead link. */
+@Composable
+private fun DonateSheet(onDismiss: () -> Unit) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.about_support_row), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.donate_sheet_body), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+            Spacer(Modifier.height(16.dp))
+            PillButton(stringResource(R.string.donate_sheet_ok), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
+
+/** Plain-words GPL-3.0 summary; the ghost button jumps to the real license text in the repo. */
+@Composable
+private fun LicenseSheet(
+    onOpenLicense: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp)) {
+            Text(stringResource(R.string.about_license_row), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.license_sheet_body), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+            Spacer(Modifier.height(16.dp))
+            GhostPillButton(stringResource(R.string.license_sheet_view), onClick = onOpenLicense, modifier = Modifier.fillMaxWidth())
+            Spacer(Modifier.height(8.dp))
+            PillButton(stringResource(R.string.donate_sheet_ok), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+        }
+    }
+}
 
 /** Non-destructive by design (tech doc 5.2): old encrypted backups stay readable with their own passphrase. */
 @Composable
@@ -1168,18 +1319,23 @@ private fun CopiesSheet(
 }
 
 /**
- * Generalized from the old BackupRow: any tappable settings line, with an optional icon, value and
- * trailing chevron. [annotatedValue] renders instead of [value] when present — the "Conservar" row
- * uses it to color just the copies count, matching the mockup (plain [value] stays TintaSuave
- * throughout, which is all every other row needs).
+ * Generalized from the old BackupRow: any tappable settings line, with an optional icon, hint,
+ * value and trailing chevron (mockup 8a anatomy: SemiBold Tinta label, small muted hint under it,
+ * value on the right). [annotatedValue] renders instead of [value] when present — the "Conservar"
+ * row uses it to color just the copies count, and the "donar" value in [AboutCard] rides on it too.
+ * [valueEmphasis] is the mockup's "big datum" treatment (hours, counts): SemiBold Tinta instead of
+ * the plain TintaSuave every textual value keeps.
  */
 @Composable
 private fun SettingsRow(
     icon: ImageVector? = null,
     label: String,
+    hint: String? = null,
     value: String? = null,
     annotatedValue: AnnotatedString? = null,
     trailingChevron: Boolean = false,
+    iconTint: Color = Tinta,
+    valueEmphasis: Boolean = false,
     // [C], low priority: a 3-state cycling row (the language row is the one call site that uses
     // this) is already announced via the merged "Language, Spanish" text and Role.Button from the
     // underlying .clickable — onClickLabel only adds a hint TalkBack appends to its own "double
@@ -1198,17 +1354,70 @@ private fun SettingsRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         if (icon != null) {
-            Icon(icon, contentDescription = null, tint = Hoja, modifier = Modifier.size(24.dp))
+            Icon(icon, contentDescription = null, tint = iconTint, modifier = Modifier.size(24.dp))
         }
-        Text(label, style = MaterialTheme.typography.bodyLarge, color = Tinta, modifier = Modifier.weight(1f))
+        val labelStyle = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+        if (hint != null) {
+            Column(Modifier.weight(1f)) {
+                Text(label, style = labelStyle, color = Tinta)
+                Text(hint, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            }
+        } else {
+            Text(label, style = labelStyle, color = Tinta, modifier = Modifier.weight(1f))
+        }
         if (annotatedValue != null) {
             Text(annotatedValue, style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
         } else if (value != null) {
-            Text(value, style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+            if (valueEmphasis) {
+                Text(value, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
+            } else {
+                Text(value, style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+            }
         }
         if (trailingChevron) {
             Icon(BitoIcons.ChevronRight, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(20.dp))
         }
+    }
+}
+
+/**
+ * [E]: the [Switch] carries no text of its own, sitting in a plain, non-clickable [Row] next to —
+ * not merged with — its label+hint [Column]. TalkBack used to announce the label on one swipe and
+ * a bare "Switch, On" on the next, with the two never connected. A plain `mergeDescendants = true`
+ * on the row is NOT enough (verified empirically on these very rows): [Switch] is itself an
+ * independently screenreader-focusable node, so it stays a separate reachable stop under a
+ * merely-merging ancestor. `toggleable` on the row instead MOVES the toggle action there
+ * (`Switch(onCheckedChange = null)` makes the switch purely visual) — the standard Android
+ * Settings-list a11y idiom. Every switch row on this screen shares this shape, tagged
+ * "$tag-row"/"$tag-switch" so each keeps its established testTags.
+ */
+@Composable
+private fun ToggleSettingsRow(
+    icon: ImageVector? = null,
+    label: String,
+    hint: String? = null,
+    tag: String,
+    checked: Boolean,
+    onChange: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier
+            .testTag("$tag-row")
+            .toggleable(value = checked, onValueChange = onChange, role = Role.Switch)
+            .heightIn(min = 56.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = Tinta, modifier = Modifier.size(24.dp))
+        }
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
+            if (hint != null) {
+                Text(hint, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            }
+        }
+        Switch(checked = checked, onCheckedChange = null, modifier = Modifier.testTag("$tag-switch"))
     }
 }
 
