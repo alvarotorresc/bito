@@ -5,6 +5,7 @@ import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
@@ -14,11 +15,13 @@ import androidx.glance.GlanceModifier
 import androidx.glance.Image
 import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
+import androidx.glance.LocalSize
 import androidx.glance.action.actionParametersOf
 import androidx.glance.action.actionStartActivity
 import androidx.glance.action.clickable
 import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
+import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.lazy.LazyColumn
@@ -55,6 +58,7 @@ import com.alvarotc.bito.ui.today.TodayUiState
 import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import java.time.ZoneId
@@ -63,6 +67,8 @@ import java.time.ZoneId
 private const val HABI_BITMAP_SIZE_PX = 96
 
 class TodayWidget : GlanceAppWidget() {
+    override val sizeMode = SizeMode.Responsive(setOf(STRIP, NARROW, FULL))
+
     override suspend fun provideGlance(
         context: Context,
         id: GlanceId,
@@ -92,7 +98,7 @@ class TodayWidget : GlanceAppWidget() {
                         owned,
                     )
                 WidgetData(state, renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX))
-            }.flowOn(Dispatchers.Default)
+            }.conflate().flowOn(Dispatchers.Default)
         // First paint stays synchronous-ish: seed with a real emission so the widget never shows
         // an empty frame while the flow warms up.
         val initial = dataFlow.first()
@@ -105,6 +111,17 @@ class TodayWidget : GlanceAppWidget() {
     }
 
     private data class WidgetData(val state: TodayUiState, val habiBitmap: Bitmap)
+
+    companion object {
+        /** 2x1-ish: no room for rows — a header strip (Habi + n/n) that opens the app. */
+        val STRIP = DpSize(110.dp, 48.dp)
+
+        /** 2x2-ish: the list fits but the title doesn't — compact header and rows. */
+        val NARROW = DpSize(110.dp, 110.dp)
+
+        /** 3x2 and up: the original full layout. */
+        val FULL = DpSize(180.dp, 110.dp)
+    }
 }
 
 class TodayWidgetReceiver : GlanceAppWidgetReceiver() {
@@ -121,6 +138,14 @@ private fun WidgetContent(
     habiBitmap: Bitmap,
 ) {
     val context = LocalContext.current
+    // SizeMode.Responsive hands LocalSize exactly one of the declared buckets, so
+    // comparing against them picks the layout the host actually has room for.
+    val size = LocalSize.current
+    if (size.height < TodayWidget.NARROW.height) {
+        StripContent(model, habiBitmap)
+        return
+    }
+    val full = size.width >= TodayWidget.FULL.width
     Column(
         modifier =
             GlanceModifier
@@ -135,13 +160,18 @@ private fun WidgetContent(
             Image(
                 provider = ImageProvider(habiBitmap),
                 contentDescription = null,
-                modifier = GlanceModifier.size(36.dp),
+                modifier = GlanceModifier.size(if (full) 36.dp else 28.dp),
             )
-            Text(
-                text = context.getString(R.string.widget_title),
-                modifier = GlanceModifier.defaultWeight().padding(start = 8.dp),
-                style = TextStyle(color = ColorProvider(Tinta), fontSize = 16.sp, fontWeight = FontWeight.Medium),
-            )
+            if (full) {
+                Text(
+                    text = context.getString(R.string.widget_title),
+                    modifier = GlanceModifier.defaultWeight().padding(start = 8.dp),
+                    style = TextStyle(color = ColorProvider(Tinta), fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                )
+            } else {
+                // The title is the first thing to go when 2 cells wide: Habi + count carry it.
+                Box(modifier = GlanceModifier.defaultWeight()) {}
+            }
             Text(
                 text = context.getString(R.string.widget_progress, model.done, model.total),
                 style = TextStyle(color = ColorProvider(TintaSuave), fontSize = 12.sp),
@@ -164,7 +194,7 @@ private fun WidgetContent(
                     // (Glance maps one composable to one RemoteViews padding call, unlike
                     // Compose's nesting), so the inter-card gap needs its own wrapper.
                     Box(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        WidgetRow(item)
+                        WidgetRow(item, compact = !full)
                     }
                 }
             }
@@ -172,8 +202,49 @@ private fun WidgetContent(
     }
 }
 
+/** The smallest bucket: just the mini Habi and today's count, the whole strip opens the app. */
 @Composable
-private fun WidgetRow(item: WidgetItem) {
+private fun StripContent(
+    model: WidgetModel,
+    habiBitmap: Bitmap,
+) {
+    val context = LocalContext.current
+    val description = context.getString(R.string.widget_open_action, context.getString(R.string.widget_title))
+    Row(
+        modifier =
+            GlanceModifier
+                .fillMaxSize()
+                .background(ColorProvider(Papel))
+                .clickable(actionStartActivity<MainActivity>())
+                .semantics { contentDescription = description }
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Image(
+            provider = ImageProvider(habiBitmap),
+            contentDescription = null,
+            modifier = GlanceModifier.size(28.dp),
+        )
+        Box(modifier = GlanceModifier.defaultWeight()) {}
+        if (model.items.isEmpty()) {
+            Text(
+                text = context.getString(R.string.widget_all_done),
+                style = TextStyle(color = ColorProvider(Hoja), fontSize = 13.sp, fontWeight = FontWeight.Medium),
+            )
+        } else {
+            Text(
+                text = context.getString(R.string.widget_progress, model.done, model.total),
+                style = TextStyle(color = ColorProvider(Tinta), fontSize = 14.sp, fontWeight = FontWeight.Medium),
+            )
+        }
+    }
+}
+
+@Composable
+private fun WidgetRow(
+    item: WidgetItem,
+    compact: Boolean,
+) {
     val context = LocalContext.current
     val action =
         if (item.tapLogs) {
@@ -200,33 +271,40 @@ private fun WidgetRow(item: WidgetItem) {
                 .cornerRadius(16.dp)
                 .clickable(action)
                 .semantics { contentDescription = description }
-                .padding(12.dp),
+                .padding(if (compact) 8.dp else 12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = GlanceModifier.defaultWeight()) {
             Text(
                 text = item.name,
-                style = TextStyle(color = ColorProvider(Tinta), fontSize = 14.sp),
+                maxLines = 1,
+                style = TextStyle(color = ColorProvider(Tinta), fontSize = if (compact) 13.sp else 14.sp),
             )
             if (item.kind == CardKind.COUNTER) {
                 Text(
                     text = context.getString(R.string.widget_progress, item.progress, item.target),
-                    style = TextStyle(color = ColorProvider(TintaSuave), fontSize = 12.sp),
+                    style = TextStyle(color = ColorProvider(TintaSuave), fontSize = if (compact) 11.sp else 12.sp),
                 )
             }
         }
         if (item.tapLogs) {
+            val bubble = if (compact) 24.dp else 28.dp
             Box(
                 modifier =
                     GlanceModifier
-                        .size(28.dp)
-                        .cornerRadius(14.dp)
+                        .size(bubble)
+                        .cornerRadius(if (compact) 12.dp else 14.dp)
                         .background(ColorProvider(Hoja)),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = "+",
-                    style = TextStyle(color = ColorProvider(Tarjeta), fontSize = 16.sp, fontWeight = FontWeight.Medium),
+                    style =
+                        TextStyle(
+                            color = ColorProvider(Tarjeta),
+                            fontSize = if (compact) 14.sp else 16.sp,
+                            fontWeight = FontWeight.Medium,
+                        ),
                 )
             }
         }

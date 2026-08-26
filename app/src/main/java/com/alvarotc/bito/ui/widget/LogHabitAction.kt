@@ -26,6 +26,7 @@ class LogHabitAction : ActionCallback {
         runCatching { PerfectDayNotifier.maybeNotify(context, container, reached) }
             .onFailure { if (it is CancellationException) throw it }
         TodayWidget().updateAll(context)
+        SingleHabitWidget().updateAll(context)
     }
 
     companion object {

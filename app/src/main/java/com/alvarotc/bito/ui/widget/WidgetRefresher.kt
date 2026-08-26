@@ -47,6 +47,7 @@ object WidgetRefresher {
                     // its own scope being cancelled.
                     runCatching {
                         TodayWidget().updateAll(context)
+                        SingleHabitWidget().updateAll(context)
                         WidgetDayAlarm.schedule(context, prefs.dayCutoffMinutes)
                         TrayRefresher.refresh(context, container)
                     }.onFailure { if (it is CancellationException) throw it }
