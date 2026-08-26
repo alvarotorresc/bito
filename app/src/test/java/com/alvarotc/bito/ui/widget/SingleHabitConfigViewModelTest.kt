@@ -76,8 +76,10 @@ class SingleHabitConfigViewModelTest {
             assertEquals(listOf("agua"), offered.map { it.id })
         }
 
+    // Saving that null is legal (SingleHabitConfigContentTest covers it) — it stores no habit id
+    // and the widget renders its tappable "choose a habit" fallback.
     @Test
-    fun `nothing is chosen until the user picks, so Save stays gated`() =
+    fun `nothing is chosen until the user picks`() =
         runTest {
             assertNull(vm.selected.value)
         }

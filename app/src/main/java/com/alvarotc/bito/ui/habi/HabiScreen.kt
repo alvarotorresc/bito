@@ -101,15 +101,19 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 spec = state.spec,
                 delighted = delighted,
                 onTap = {
-                    val now = System.currentTimeMillis()
-                    petTimes.addLast(now)
-                    while (petTimes.isNotEmpty() && now - petTimes.first() > 1500) petTimes.removeFirst()
-                    if (petTimes.size >= 3 && !delighted) {
-                        petTimes.clear()
-                        delightPulse++
-                        viewModel.onPetStreak()
-                    } else {
-                        viewModel.onAvatarTap()
+                    // Taps are ignored for the whole delight: the else branch below would
+                    // otherwise fire a GREETING meow on top of the HAPPY one still playing.
+                    if (!delighted) {
+                        val now = System.currentTimeMillis()
+                        petTimes.addLast(now)
+                        while (petTimes.isNotEmpty() && now - petTimes.first() > 1500) petTimes.removeFirst()
+                        if (petTimes.size >= 3) {
+                            petTimes.clear()
+                            delightPulse++
+                            viewModel.onPetStreak()
+                        } else {
+                            viewModel.onAvatarTap()
+                        }
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

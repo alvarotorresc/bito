@@ -67,6 +67,11 @@ class BackupRoundTripTest {
             backupEncryption = true,
             onboardingDone = true,
             habiSoundsEnabled = false,
+            // Both "Al registrar" switches OFF on purpose: they default to true, so a seed left at
+            // the default would let the round-trip assertion pass even if they never travelled in
+            // the file at all (which is exactly the bug this pins).
+            logSoundEnabled = false,
+            logHapticEnabled = false,
             perfectDayCelebratedDay = 20679,
             badgesSeenUntilMillis = 4321L,
         )
@@ -277,6 +282,8 @@ class BackupRoundTripTest {
                     .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
                     .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
                     .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
+                    .replace(Regex(",?\\s*\"logSoundEnabled\":\\s*(true|false)"), "")
+                    .replace(Regex(",?\\s*\"logHapticEnabled\":\\s*(true|false)"), "")
 
             backup.import(v1Json)
 
@@ -284,6 +291,11 @@ class BackupRoundTripTest {
             assertEquals(5_000L, persisted.badgesSeenUntilMillis) // sealed to the export moment
             assertEquals(DAY_ZERO + 1, persisted.perfectDayCelebratedDay) // sealed to the last day seal
             assertTrue(persisted.habiSoundsEnabled) // v1 default: sounds always on
+            // The "Al registrar" switches postdate every stored backup: absent means the switches
+            // did not exist yet, i.e. on. seededSettings has both OFF, so a decoder that carried
+            // the file's own (stripped) values over would land on false here, not true.
+            assertTrue(persisted.logSoundEnabled)
+            assertTrue(persisted.logHapticEnabled)
         }
 
     @Test
@@ -296,6 +308,8 @@ class BackupRoundTripTest {
                     .replace("\"schemaVersion\": 3", "\"schemaVersion\": 2")
                     .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
                     .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
+                    .replace(Regex(",?\\s*\"logSoundEnabled\":\\s*(true|false)"), "")
+                    .replace(Regex(",?\\s*\"logHapticEnabled\":\\s*(true|false)"), "")
 
             backup.import(v2Json)
 
@@ -305,5 +319,8 @@ class BackupRoundTripTest {
             // v2 already carries its own sounds field (unlike v1) — it must survive untouched,
             // not get swept into the "always on" v1 default.
             assertEquals(false, persisted.habiSoundsEnabled)
+            // v2 predates the "Al registrar" switches just as v1 does: absent, so both come back on.
+            assertTrue(persisted.logSoundEnabled)
+            assertTrue(persisted.logHapticEnabled)
         }
 }

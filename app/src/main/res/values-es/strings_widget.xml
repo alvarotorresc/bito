@@ -11,7 +11,8 @@
     <string name="widget_single_description">Un hábito, a un tap</string>
     <string name="widget_single_done">Hecho hoy</string>
     <string name="widget_single_paused">%1$s está en pausa</string>
-    <string name="widget_single_missing">Elige otro hábito</string>
+    <string name="widget_single_missing">Toca para elegir un hábito</string>
     <string name="widget_single_config_title">Elige un hábito</string>
     <string name="widget_single_config_body">Este widget sigue un solo hábito</string>
+    <string name="widget_single_config_empty">Aún no tienes hábitos activos. Guarda igualmente y el widget te espera en la pantalla de inicio: tócalo para elegir uno cuando lo tengas.</string>
 </resources>

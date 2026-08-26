@@ -15,8 +15,10 @@ import kotlinx.serialization.Serializable
 /**
  * The backup wire format (tech doc §5.1) — versioned independently of Room.
  * DTOs are deliberately separate from entities: storage may be refactored,
- * this file may not. Any schema change bumps SCHEMA_VERSION with a migration
- * in BackupCodec.decode.
+ * this file may not. A change that older files cannot express correctly on
+ * their own bumps SCHEMA_VERSION and gets a migration in BackupCodec.decode;
+ * a new field whose default already means the right thing for files written
+ * before it existed needs neither.
  */
 @Serializable
 data class BackupFile(
@@ -119,6 +121,15 @@ data class BackupCustomizationItem(
     val equipped: Boolean,
 )
 
+/**
+ * Every [com.alvarotc.bito.data.settings.Settings] field a restore must bring back — import
+ * builds a FRESH Settings from this DTO (`toSettings()`), so anything missing here silently
+ * reverts to its default on every restore. The only deliberate absentees are
+ * `lastAutoBackupAtMillis` / `lastAutoBackupError`: device-local status about THIS install's
+ * auto-backup, meaningless on the phone the file is restored to (pinned by BackupRoundTripTest's
+ * "local auto backup state does not travel in exports"). Adding a field here needs no schema bump
+ * as long as it carries a default that is right for files written before it existed.
+ */
 @Serializable
 data class BackupSettings(
     val userName: String,
@@ -136,6 +147,8 @@ data class BackupSettings(
     val habiSoundsEnabled: Boolean = true,
     val perfectDayCelebratedDay: Int = -1,
     val badgesSeenUntilMillis: Long = 0L,
+    val logSoundEnabled: Boolean = true,
+    val logHapticEnabled: Boolean = true,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

@@ -6,6 +6,7 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -25,7 +26,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.glance.appwidget.GlanceAppWidgetManager
 import androidx.glance.appwidget.state.getAppWidgetState
@@ -51,7 +54,15 @@ import kotlinx.coroutines.launch
  * Pick the ONE active habit a [SingleHabitWidget] instance follows. Mirrors
  * [TodayWidgetConfigActivity]'s flow (mandatory configure + reconfigure entry
  * point, `android:widgetFeatures="reconfigurable"` in `single_habit_widget_info.xml`)
- * but with a radio choice instead of a checklist — saving is gated on having one.
+ * but with a radio choice instead of a checklist.
+ *
+ * Saving is deliberately NOT gated on having picked something. Configuration here is mandatory,
+ * so Android drops the widget unless this activity returns [RESULT_OK] — and the list only offers
+ * ACTIVE habits, so someone who places the widget before creating their first habit (or with
+ * everything paused/archived) would face a dead button and then watch the widget vanish with no
+ * explanation. Saving with nothing chosen instead removes the stored id, which
+ * [buildSingleHabitModel] renders as [SingleHabitModel.Missing]: a tappable "choose a habit"
+ * that reopens this very screen. The widget stays on the home screen and heals itself.
  */
 class SingleHabitConfigActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -74,7 +85,7 @@ class SingleHabitConfigActivity : ComponentActivity() {
 
         // Only on first creation, same reasoning as TodayWidgetConfigActivity: the ViewModel
         // survives rotation, and runCatching guards the glanceId lookup's untested failure path
-        // (the VM's null default then simply keeps Save disabled).
+        // (the VM's null default then just leaves the reconfigure screen with nothing preselected).
         if (savedInstanceState == null) {
             lifecycleScope.launch {
                 runCatching {
@@ -90,11 +101,17 @@ class SingleHabitConfigActivity : ComponentActivity() {
                     viewModel = viewModel,
                     onSave = {
                         lifecycleScope.launch {
-                            val habitId = viewModel.selected.value ?: return@launch
+                            val habitId = viewModel.selected.value
                             val manager = GlanceAppWidgetManager(this@SingleHabitConfigActivity)
                             val glanceId = manager.getGlanceIdBy(appWidgetId)
                             updateAppWidgetState(this@SingleHabitConfigActivity, PreferencesGlanceStateDefinition, glanceId) { prefs ->
-                                prefs.toMutablePreferences().apply { this[SingleHabitWidgetKeys.habitId] = habitId }
+                                // Remove rather than store a blank: the model keys the "choose a
+                                // habit" fallback on a null id (same shape as the sibling widget's
+                                // empty selection).
+                                val key = SingleHabitWidgetKeys.habitId
+                                prefs.toMutablePreferences().apply {
+                                    if (habitId == null) remove(key) else this[key] = habitId
+                                }
                             }
                             SingleHabitWidget().update(this@SingleHabitConfigActivity, glanceId)
                             setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
@@ -115,6 +132,22 @@ private fun SingleHabitConfigScreen(
     val habits by viewModel.habits.collectAsStateWithLifecycle()
     val selected by viewModel.selected.collectAsStateWithLifecycle()
 
+    SingleHabitConfigContent(
+        habits = habits,
+        selected = selected,
+        onSelect = viewModel::select,
+        onSave = onSave,
+    )
+}
+
+/** The screen itself, stateless so a test can drive the empty list the ViewModel can produce. */
+@Composable
+internal fun SingleHabitConfigContent(
+    habits: List<HabitEntity>,
+    selected: String?,
+    onSelect: (String) -> Unit,
+    onSave: () -> Unit,
+) {
     Scaffold(containerColor = Papel) { padding ->
         Column(
             Modifier
@@ -126,27 +159,49 @@ private fun SingleHabitConfigScreen(
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.widget_single_config_body), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             Spacer(Modifier.height(16.dp))
-            LazyColumn(
-                Modifier
-                    .weight(1f)
-                    .selectableGroup(),
-            ) {
-                items(habits, key = { it.id }) { habit ->
-                    HabitRadioRow(
-                        habit = habit,
-                        selected = selected == habit.id,
-                        onSelect = { viewModel.select(habit.id) },
-                    )
-                    Spacer(Modifier.height(8.dp))
+            if (habits.isEmpty()) {
+                EmptyHabits(Modifier.weight(1f))
+            } else {
+                LazyColumn(
+                    Modifier
+                        .weight(1f)
+                        .selectableGroup(),
+                ) {
+                    items(habits, key = { it.id }) { habit ->
+                        HabitRadioRow(
+                            habit = habit,
+                            selected = selected == habit.id,
+                            onSelect = { onSelect(habit.id) },
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                 }
             }
             PillButton(
                 text = stringResource(R.string.widget_config_save),
                 onClick = onSave,
-                enabled = selected != null,
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+    }
+}
+
+/**
+ * Nothing to choose from — no habit yet, or every one of them paused/archived. Text only, no
+ * "open the app" shortcut on purpose: leaving this activity before Save cancels the placement and
+ * the widget is discarded, so a shortcut out of here would undo the very thing this screen is
+ * protecting. It points at Save instead, which keeps the widget and lets it ask again later.
+ */
+@Composable
+private fun EmptyHabits(modifier: Modifier = Modifier) {
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Text(
+            stringResource(R.string.widget_single_config_empty),
+            style = MaterialTheme.typography.bodyMedium,
+            color = TintaSuave,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.testTag("single-habit-config-empty"),
+        )
     }
 }
 

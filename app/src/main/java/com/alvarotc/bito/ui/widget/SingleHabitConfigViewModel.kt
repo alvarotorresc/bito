@@ -18,8 +18,9 @@ import kotlinx.coroutines.flow.stateIn
 /**
  * Backs the single-habit widget's configure activity: the ACTIVE habits on
  * offer and which ONE of them is chosen. Unlike [WidgetConfigViewModel]'s
- * checklist, an empty choice is not a valid save — the activity keeps its
- * save button disabled until [selected] is non-null.
+ * checklist the choice is single-valued — and like it, a null [selected] is
+ * still a valid save (see [SingleHabitConfigActivity]: a widget nobody can
+ * configure yet must survive placement rather than be discarded).
  */
 class SingleHabitConfigViewModel(habits: HabitsRepository) : ViewModel() {
     val habits: StateFlow<List<HabitEntity>> =
