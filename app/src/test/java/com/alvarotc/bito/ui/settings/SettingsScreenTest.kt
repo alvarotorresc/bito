@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.settings
 
 import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -64,6 +65,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.ByteArrayInputStream
+import android.provider.Settings as AndroidSettings
 
 // Argon2 at production cost (~100-300ms) would dominate this suite's runtime; cheap but still in
 // BackupCrypto's validated range (memoryKib >= 8 * parallelism) — same tier BackupViewModelTest uses.
@@ -1244,5 +1246,106 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Add reminder", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /**
+     * The notice used to hang off a flag only the permission launcher's own callback could ever
+     * set, so it never appeared: a user whose notifications were off — refused the first-run
+     * prompt, turned them off in system settings, or restored a backup onto a device that never
+     * asked — saw a Reminders card claiming everything was fine while Notifier silently dropped
+     * every one of them. It is seeded from the real system state now, exactly like its
+     * exact-alarm sibling.
+     */
+    @Test
+    fun `the notifications notice shows when notifications are switched off`() {
+        shadowOf(ApplicationProvider.getApplicationContext<Application>().getSystemService(NotificationManager::class.java))
+            .setNotificationsEnabled(false)
+        val settings = SettingsRepository(settingsStore("settings-screen-notif-off"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Allow notifications to hear reminders", useUnmergedTree = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `the notifications notice stays hidden while notifications work`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-notif-on"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Allow notifications to hear reminders", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The destination matters as much as the row: ACTION_APP_NOTIFICATION_SETTINGS takes the
+     * package as an EXTRA, not as the `package:` Uri its exact-alarm neighbour uses — passing the
+     * Uri form lands the user on a generic screen instead of this app's notifications, which is
+     * the one place left to grant them once Android has stopped showing the permission dialog.
+     */
+    @Test
+    fun `the notifications notice opens this app's notification settings`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(context.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
+        val settings = SettingsRepository(settingsStore("settings-screen-notif-intent"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        // Clicked through the real row, so the intent is fired from the same Activity context
+        // production uses — same shape as the source-code row's own test above.
+        compose.onNodeWithText("Allow notifications to hear reminders", useUnmergedTree = true)
+            .performScrollTo()
+            .performClick()
+        compose.waitForIdle()
+
+        val intent = shadowOf(context).nextStartedActivity
+        assertEquals(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS, intent.action)
+        assertEquals(context.packageName, intent.getStringExtra(AndroidSettings.EXTRA_APP_PACKAGE))
     }
 }

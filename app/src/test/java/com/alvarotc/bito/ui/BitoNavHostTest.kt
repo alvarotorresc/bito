@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui
 
 import android.app.Application
+import android.app.NotificationManager
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotSelected
@@ -34,12 +35,14 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.ZoneId
 
@@ -429,6 +432,56 @@ class BitoNavHostTest {
 
         screenTitleNode("Today").assertExists()
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The blocker this route-level prompt exists to close: reminder hours are seeded at first
+     * launch, alarms fire on time, and on API 33+ every one of them was dropped in silence by
+     * Notifier's `areNotificationsEnabled()` guard, because nothing in the app ever requested
+     * POST_NOTIFICATIONS. Asked here, on arrival, so that ONE ask covers finishing onboarding,
+     * restoring a backup (which skips onboarding) and updating an install created before the
+     * prompt existed — this test's `onboardingDone = true` container is exactly that last case.
+     */
+    @Test
+    fun `landing on a real route asks for the notification permission once`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
+        val container = AppContainer(app)
+        runBlocking { completeOnboarding(container) }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+
+        // The claim is the install's single unprompted ask being spent — read non-destructively,
+        // so this asserts the composable took it rather than taking it itself.
+        compose.waitUntil(timeoutMillis = 5_000) {
+            runBlocking { container.settings.notificationPromptClaimed.first() }
+        }
+    }
+
+    @Test
+    fun `the onboarding flow is never interrupted by the notification prompt`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
+        val container = AppContainer(app) // onboardingDone defaults to false: opens on onboarding
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.waitForIdle()
+
+        // A system dialog over the story beats would be asking for access before the app has shown
+        // what it's for; the ask waits — unspent — for the user to actually land in the app.
+        assertFalse(runBlocking { container.settings.notificationPromptClaimed.first() })
     }
 
     /**

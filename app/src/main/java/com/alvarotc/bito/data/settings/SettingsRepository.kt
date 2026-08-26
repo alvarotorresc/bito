@@ -76,6 +76,14 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
          * outside [Settings], the marker survives every [update] and every restore untouched.
          */
         val defaultRemindersSeeded = booleanPreferencesKey("default_reminders_seeded")
+
+        /**
+         * One-shot marker for [claimNotificationPrompt], outside [Settings] for the same reason
+         * as [defaultRemindersSeeded] — and here the "survives a restore" half matters twice
+         * over: restoring a backup must not carry a *different* install's "already asked" over
+         * to this device, where the permission has never been requested at all.
+         */
+        val notificationPromptClaimed = booleanPreferencesKey("notification_prompt_claimed")
     }
 
     val settings: Flow<Settings> = dataStore.data.map { it.toSettings() }
@@ -102,6 +110,40 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
                 prefs[Keys.globalReminderMinutes] = DEFAULT_GLOBAL_REMINDER_MINUTES.joinToString(",")
             }
         }
+    }
+
+    /**
+     * Whether [claimNotificationPrompt] has already been spent, without spending it — the claim
+     * itself is destructive, so this is the only way to ask "has the app asked yet?" (tests
+     * asserting the prompt fired, and anything that later wants to reason about it, read here).
+     */
+    internal val notificationPromptClaimed: Flow<Boolean> =
+        dataStore.data.map { it[Keys.notificationPromptClaimed] == true }
+
+    /**
+     * Claims the single POST_NOTIFICATIONS prompt an install gets: returns true exactly once,
+     * false on every later call. Android itself stops showing the system dialog after two
+     * refusals, so the app only ever asks unprompted once — after that the notice in Ajustes
+     * (which links to the app's notification settings) is the recovery path, not another dialog.
+     *
+     * Claimed in the same atomic edit that reads the marker, so two callers racing on different
+     * routes can't both come back true. The `claimed` flag is written from inside the edit
+     * block rather than derived from the returned [Preferences] — which can't tell "this call
+     * set it" from "it was already set" — and DataStore applies this transform through its
+     * single writer, so it lands once per call; a failed write throws out of [dataStore.edit]
+     * instead of returning a claim the store never took.
+     */
+    suspend fun claimNotificationPrompt(): Boolean {
+        var claimed = false
+        dataStore.edit { prefs ->
+            if (prefs[Keys.notificationPromptClaimed] == true) {
+                claimed = false
+                return@edit
+            }
+            prefs[Keys.notificationPromptClaimed] = true
+            claimed = true
+        }
+        return claimed
     }
 
     private fun Preferences.toSettings(): Settings {

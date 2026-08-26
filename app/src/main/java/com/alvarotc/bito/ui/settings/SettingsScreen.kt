@@ -70,6 +70,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -199,12 +200,17 @@ fun SettingsScreen(
         backupViewModel.consumeMessage()
     }
 
-    // POST_NOTIFICATIONS is only asked once, the moment the first global reminder shows up — a
-    // permission prompt with no reminder to justify it yet reads as the app fishing for access.
-    var notifDenied by remember { mutableStateOf(false) }
+    // Notifications being off is a real, readable state, not something only a permission dialog's
+    // callback can teach us: seeded from the system here and re-checked on every ON_RESUME, so the
+    // notice below is honest for a user who never saw a dialog at all (turned notifications off in
+    // system settings, restored a backup, refused the first-run prompt in a previous session, or
+    // is on API 26-32 where the permission doesn't exist but the switch still does).
+    var notificationsBlocked by remember { mutableStateOf(!areNotificationsEnabled(context)) }
     val notificationLauncher =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-            notifDenied = !granted
+            // Android answers an already-twice-refused request instantly with `false` and no
+            // dialog; either way this leaves the notice showing as the recovery path.
+            notificationsBlocked = !granted
         }
 
     val alarmManager = remember { context.getSystemService(AlarmManager::class.java) }
@@ -214,6 +220,7 @@ fun SettingsScreen(
     var exactAlarmsBlocked by remember { mutableStateOf(isExactAlarmsBlocked(alarmManager)) }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
         exactAlarmsBlocked = isExactAlarmsBlocked(alarmManager)
+        notificationsBlocked = !areNotificationsEnabled(context)
     }
 
     Scaffold(
@@ -249,13 +256,18 @@ fun SettingsScreen(
                         reminderMinutes = current.globalReminderMinutes,
                         reviewMinutes = current.reviewTimeMinutes,
                         exactAlarmsBlocked = exactAlarmsBlocked,
-                        notifDenied = notifDenied,
+                        notificationsBlocked = notificationsBlocked,
                         celebrationEnabled = current.perfectDayCelebration,
                         onSetCelebration = settingsViewModel::setPerfectDayCelebration,
                         onAddReminder = { minutes ->
-                            val isFirstReminder = current.globalReminderMinutes.isEmpty()
                             settingsViewModel.addReminder(minutes)
-                            if (isFirstReminder && Build.VERSION.SDK_INT >= 33) {
+                            // Asked because the permission is MISSING, never because this happens
+                            // to be the first hour: hours are seeded at first launch, so "first
+                            // reminder" is a condition that never comes true again after install
+                            // and would leave the new hour firing into a void. Same shape as
+                            // HabitFormScreen's own guard. Android caps the nagging itself — a
+                            // twice-refused request returns instantly without a dialog.
+                            if (Build.VERSION.SDK_INT >= 33 && !areNotificationsEnabled(context)) {
                                 notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
                         },
@@ -282,6 +294,7 @@ fun SettingsScreen(
                                 }
                             }
                         },
+                        onOpenNotificationSettings = { openAppNotificationSettings(context) },
                     )
                 }
                 SettingsSection(stringResource(R.string.settings_habi_section)) {
@@ -379,7 +392,7 @@ private fun NotificationsSectionCard(
     reminderMinutes: List<Int>,
     reviewMinutes: Int,
     exactAlarmsBlocked: Boolean,
-    notifDenied: Boolean,
+    notificationsBlocked: Boolean,
     celebrationEnabled: Boolean,
     onSetCelebration: (Boolean) -> Unit,
     onAddReminder: (Int) -> Unit,
@@ -387,6 +400,7 @@ private fun NotificationsSectionCard(
     onRemoveReminder: (Int) -> Unit,
     onSetReviewTime: (Int) -> Unit,
     onOpenExactAlarmSettings: () -> Unit,
+    onOpenNotificationSettings: () -> Unit,
 ) {
     var showRemindersSheet by remember { mutableStateOf(false) }
     var showReviewSheet by remember { mutableStateOf(false) }
@@ -423,6 +437,18 @@ private fun NotificationsSectionCard(
             checked = celebrationEnabled,
             onChange = onSetCelebration,
         )
+        // Notifications off outranks the exact-alarm notice: with this one true, nothing in this
+        // whole card can reach the user at all — an exactly-on-time reminder that is never shown
+        // is still never shown. Tapping it opens the app's notification settings, the only place
+        // left to grant them once Android has stopped showing the permission dialog.
+        if (notificationsBlocked) {
+            SettingsDivider()
+            SettingsRow(
+                icon = BitoIcons.Info,
+                label = stringResource(R.string.notif_permission_hint),
+                onClick = onOpenNotificationSettings,
+            )
+        }
         if (exactAlarmsBlocked) {
             SettingsDivider()
             SettingsRow(
@@ -430,9 +456,6 @@ private fun NotificationsSectionCard(
                 label = stringResource(R.string.reminder_exact_notice),
                 onClick = onOpenExactAlarmSettings,
             )
-        }
-        if (notifDenied) {
-            Text(stringResource(R.string.notif_permission_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         }
     }
 
@@ -1468,6 +1491,33 @@ private fun formatClock(minutes: Int): String {
 
 private fun isExactAlarmsBlocked(alarmManager: AlarmManager?): Boolean =
     Build.VERSION.SDK_INT >= 31 && alarmManager?.canScheduleExactAlarms() == false
+
+/**
+ * Deliberately NOT gated on SDK 33: this reads the master notification switch, which exists all
+ * the way back to the app's minSdk. Someone on API 26-32 who turns notifications off has no
+ * permission dialog to re-grant them with, so the notice this drives is their only route back.
+ */
+private fun areNotificationsEnabled(context: Context): Boolean = NotificationManagerCompat.from(context).areNotificationsEnabled()
+
+/**
+ * The recovery path for notifications the user turned off — or, on API 33+, refused twice, which
+ * Android treats identically from here on: the permission dialog never appears again, so the app's
+ * own notification screen is the only place left to grant them.
+ *
+ * Unlike its exact-alarm sibling above, this action carries the package as an EXTRA rather than as
+ * a `package:` Uri — passing the Uri form lands the user on a blank or generic screen instead of
+ * this app's notifications. [runCatching] for the same reason as that sibling: OEM and Go builds
+ * that don't ship the screen throw ActivityNotFoundException, and there is nothing better to do
+ * than no-op.
+ */
+private fun openAppNotificationSettings(context: Context) {
+    runCatching {
+        context.startActivity(
+            Intent(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS)
+                .putExtra(AndroidSettings.EXTRA_APP_PACKAGE, context.packageName),
+        )
+    }
+}
 
 /** Restore confirmation (tech doc §5.4): the warning is Brasa — emotional heat, never interaction. */
 @Composable

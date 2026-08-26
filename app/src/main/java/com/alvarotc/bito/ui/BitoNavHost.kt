@@ -36,6 +36,7 @@ import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.notifications.NotificationPermissionPrompt
 import com.alvarotc.bito.ui.onboarding.OnboardingReconciler
 import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
@@ -224,10 +225,13 @@ fun BitoNavHost(container: AppContainer) {
                     onOpenIntro = { nav.navigate("onboarding_replay") },
                 )
             }
-            // Replay de la introducción desde Ajustes: mismos 7 pasos, nada se persiste.
+            // Replay de la introducción desde Ajustes: mismos 7 pasos, nada se persiste — and
+            // `persist = false` is what actually makes that true. The flow's language and
+            // personality steps write to settings the moment they're tapped, not at the end, so
+            // the closing callback alone never stopped a replay from editing real data.
             composable("onboarding_replay") {
                 OnboardingScreen(
-                    viewModel = viewModel(factory = OnboardingViewModel.factory(container)),
+                    viewModel = viewModel(factory = OnboardingViewModel.factory(container, persist = false)),
                     replayOnClose = { nav.popBackStack() },
                 )
             }
@@ -308,6 +312,12 @@ fun BitoNavHost(container: AppContainer) {
             nav.navigate(route) { launchSingleTop = true }
             NavRequests.consume()
         }
+
+        // POST_NOTIFICATIONS, asked once per install the first time a real route is on screen —
+        // hosted here, above the graph, so the single ask covers finishing onboarding, restoring
+        // a backup (which never enters onboarding) and updating an older install alike. Renders
+        // nothing; see its own KDoc for why this is the moment.
+        NotificationPermissionPrompt(container.settings, currentRoute)
 
         // T12: the two global celebration sheets, overlaid above the NavHost everywhere except
         // the `review` route — E2's SealedDayContent already owns that beat there (its own

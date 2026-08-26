@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -188,5 +189,33 @@ class SettingsRepositoryTest {
             val restored = repository.settings.first()
             assertEquals(emptyList<Int>(), restored.globalReminderMinutes)
             assertEquals("Álvaro", restored.userName)
+        }
+
+    @Test
+    fun `the notification prompt is claimable exactly once per install`() =
+        runTest {
+            val repository = SettingsRepository(store("notif-claim"))
+
+            // The one unprompted ask this install gets — after it, the notice in Ajustes is the
+            // recovery path, not another dialog. This is what keeps a refusal from being nagged at
+            // on every route change for the rest of the install's life.
+            assertTrue(repository.claimNotificationPrompt())
+            assertFalse(repository.claimNotificationPrompt())
+            assertFalse(repository.claimNotificationPrompt())
+        }
+
+    @Test
+    fun `a restore never carries another install's claim onto this device`() =
+        runTest {
+            val repository = SettingsRepository(store("notif-claim-restore"))
+
+            // BackupRepository.import replaces Settings wholesale — the marker lives outside
+            // Settings, so a restore can neither resurrect the claim nor spend it: this device has
+            // never shown the dialog, and it still gets its one ask.
+            repository.update { Settings(userName = "Álvaro") }
+            assertTrue(repository.claimNotificationPrompt())
+
+            repository.update { Settings(userName = "Álvaro") }
+            assertFalse(repository.claimNotificationPrompt())
         }
 }
