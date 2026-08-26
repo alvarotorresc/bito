@@ -11,6 +11,7 @@ import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onChildren
@@ -308,6 +309,16 @@ class HabitFormScreenTest {
         compose.onNodeWithText("None").assertExists()
     }
 
+    /** The fixed PRESET_ROWS grid replaced iterating `HabitPreset.entries` directly, so a preset
+     * added to the enum but forgotten in the rows would silently vanish from the form — this
+     * pins every entry to a rendered pill. */
+    @Test
+    fun `every preset renders exactly one pill`() {
+        launchScreen(habitId = null)
+
+        HabitPreset.entries.forEach { compose.onNodeWithTag("preset-${it.name}").assertExists() }
+    }
+
     /**
      * [C]: the checkmark on the active preset is an `Icon(contentDescription = null)`, invisible
      * to TalkBack — before this fix every pill just read "<label>, Button" with no selection
@@ -385,5 +396,15 @@ class HabitFormScreenTest {
 
         compose.onNodeWithTag("binary-mode-row").assertIsOn()
         assertTrue(vm.state.value.binaryMode)
+    }
+
+    /** The form's bubble fills the same mini-Habi avatar slot Stats' commentator and the freezer
+     * info sheet use — HabiAvatar's aggregated description ("Habi, <mood>") is the one node that
+     * proves the face actually rendered next to the text. */
+    @Test
+    fun `the habi bubble shows the avatar next to its text`() {
+        launchScreen(habitId = null)
+
+        compose.onNode(hasContentDescription("Habi", substring = true)).assertIsDisplayed()
     }
 }

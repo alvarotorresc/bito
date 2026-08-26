@@ -182,6 +182,15 @@ object BitoIcons {
         )
     }
     val CircleCheck by lazy { lucide("circle-check", "M21.801 10A10 10 0 1 1 17 3.335", "m9 11 3 3L22 4") }
+    val Calendar by lazy {
+        lucide(
+            "calendar",
+            "M8 2v4",
+            "M16 2v4",
+            "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+            "M3 10h18",
+        )
+    }
     val CalendarCheck by lazy {
         lucide(
             "calendar-check",
@@ -214,6 +223,14 @@ object BitoIcons {
             "M20 20v-2.38c0-2.12 1.03-3.12 1-5.62-.03-2.72-1.49-6-4.5-6C14.63 6 14 7.8 14 9.5c0 3.11 2 5.66 2 8.68V20a2 2 0 1 0 4 0Z",
             "M16 17h4",
             "M4 13h4",
+        )
+    }
+    val Ellipsis by lazy {
+        lucide(
+            "ellipsis",
+            "M13 12a1 1 0 1 0 -2 0a1 1 0 1 0 2 0",
+            "M20 12a1 1 0 1 0 -2 0a1 1 0 1 0 2 0",
+            "M6 12a1 1 0 1 0 -2 0a1 1 0 1 0 2 0",
         )
     }
     val Ban by lazy {

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.alvarotc.bito.ui.habitform
 
@@ -15,8 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -59,11 +58,14 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostPillButton
@@ -72,6 +74,8 @@ import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.components.TimePickerSheet
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
@@ -111,6 +115,17 @@ fun HabitFormScreen(
             SpeechBubble(
                 stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
                 stringResource(HabiVoice.formPromptRes(personality)),
+                modifier = Modifier.fillMaxWidth(),
+                // The same mini-Habi slot the Stats commentator and FreezerInfoSheet fill: 40dp,
+                // resting frame. This ViewModel is about the habit being built, not Habi's state,
+                // so the face is the neutral resting one — FreezerInfoSheet's exact spec.
+                avatar = {
+                    HabiAvatar(
+                        HabiSpec(Mood.NORMAL, personality, EquippedSet()),
+                        Modifier.size(40.dp),
+                        animated = false,
+                    )
+                },
             )
             NameField(state.name, viewModel::setName)
             PresetPills(state.preset, state.isEditing, viewModel::selectPreset)
@@ -227,6 +242,27 @@ internal fun HabitPreset.labelRes(): Int =
         HabitPreset.QUIT -> R.string.preset_quit
     }
 
+/** The line glyph each type pill leads with — canon pills.html + mockup 7g (check, dots, clock,
+ * calendar, ban). Internal next to [labelRes] for the same reason: one preset→glyph mapping,
+ * ready for onboarding's mirrored pills to reuse. */
+internal fun HabitPreset.iconVector(): ImageVector =
+    when (this) {
+        HabitPreset.DAILY_CHECK -> BitoIcons.Check
+        HabitPreset.QUANTITY -> BitoIcons.Ellipsis
+        HabitPreset.DURATION -> BitoIcons.Clock
+        HabitPreset.WEEKLY_TIMES -> BitoIcons.Calendar
+        HabitPreset.QUIT -> BitoIcons.Ban
+    }
+
+/** Mockup 7g's reading order frozen into two full-width rows: the three short labels up top, the
+ * two long ones below. Each row splits its width equally, so both edges stay flush (the old
+ * FlowRow wrapped ragged) and every label keeps room at fontScale 1.15 in both languages. */
+private val PRESET_ROWS =
+    listOf(
+        listOf(HabitPreset.DAILY_CHECK, HabitPreset.QUANTITY, HabitPreset.DURATION),
+        listOf(HabitPreset.WEEKLY_TIMES, HabitPreset.QUIT),
+    )
+
 /** Rule E2: the metric a preset resolves to can't change once a habit exists — presets lock on edit. */
 @Composable
 private fun PresetPills(
@@ -234,42 +270,74 @@ private fun PresetPills(
     locked: Boolean,
     onSelect: (HabitPreset) -> Unit,
 ) {
-    Column {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            HabitPreset.entries.forEach { preset ->
-                val isSelected = preset == selected
-                Surface(
-                    // [C]: no Role/selected semantics — every pill reads as "<label>, Button" with
-                    // no sign which one is active. `Surface(onClick = ...)` stays as-is rather than
-                    // becoming a bare `Modifier.selectable` (its interactive overload applies
-                    // `minimumInteractiveComponentSize()`, which the plain one doesn't — swapping
-                    // would risk shrinking this pill inside its FlowRow). Same additive shape as
-                    // onboarding's `HabitPresetPill` fix for this exact mirrored component.
-                    onClick = { onSelect(preset) },
-                    enabled = !locked,
-                    shape = CircleShape,
-                    color = if (isSelected) HojaTinte else Tarjeta,
-                    border = BorderStroke(1.dp, Borde),
-                    modifier =
-                        Modifier
-                            .testTag("preset-${preset.name}")
-                            .semantics {
-                                this.selected = isSelected
-                                role = Role.Tab
-                            },
-                ) {
-                    Text(
-                        stringResource(preset.labelRes()),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (isSelected) Tinta else TintaSuave,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PRESET_ROWS.forEach { rowPresets ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowPresets.forEach { preset ->
+                    PresetPill(
+                        preset = preset,
+                        isSelected = preset == selected,
+                        locked = locked,
+                        onSelect = onSelect,
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
         }
         if (locked) {
-            Spacer(Modifier.height(6.dp))
             Text(stringResource(R.string.preset_locked_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        }
+    }
+}
+
+/** One type pill: leading glyph + label, centered in whatever width its row cell grants. Selection
+ * only recolors (HojaTinte fill, Tinta content — GUIA's active-icon rule), never resizes, so
+ * picking a type can't reflow the block. */
+@Composable
+private fun PresetPill(
+    preset: HabitPreset,
+    isSelected: Boolean,
+    locked: Boolean,
+    onSelect: (HabitPreset) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        // [C]: no Role/selected semantics — every pill reads as "<label>, Button" with no sign
+        // which one is active. `Surface(onClick = ...)` stays as-is rather than becoming a bare
+        // `Modifier.selectable` (its interactive overload applies
+        // `minimumInteractiveComponentSize()`, which the plain one doesn't — swapping would risk
+        // shrinking this pill's touch target). Same additive shape as onboarding's
+        // `HabitPresetPill` fix for this exact mirrored component.
+        onClick = { onSelect(preset) },
+        enabled = !locked,
+        shape = CircleShape,
+        color = if (isSelected) HojaTinte else Tarjeta,
+        border = BorderStroke(1.dp, Borde),
+        modifier =
+            modifier
+                .testTag("preset-${preset.name}")
+                .semantics {
+                    this.selected = isSelected
+                    role = Role.Tab
+                },
+    ) {
+        val tint = if (isSelected) Tinta else TintaSuave
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            // 6dp inset, not the classic 14: content centers in a weight-granted cell, so the
+            // inset is only a floor — measured tight so "Cantidad" holds one line on a 360dp
+            // screen at fontScale 1.15 (HabitFormPresetPillLayoutTest pins exactly this).
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 10.dp),
+        ) {
+            Icon(preset.iconVector(), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+            Text(
+                stringResource(preset.labelRes()),
+                style = MaterialTheme.typography.labelMedium,
+                color = tint,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
