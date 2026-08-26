@@ -135,4 +135,58 @@ class SettingsRepositoryTest {
             assertEquals(1234567L, settings.lastAutoBackupAtMillis)
             assertNull(settings.lastAutoBackupError)
         }
+
+    @Test
+    fun `seeding a store that never had hours plants 12,00 and 19,00 as ordinary hours`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-fresh"))
+
+            repository.seedDefaultReminders()
+
+            assertEquals(listOf(12 * 60, 19 * 60), repository.settings.first().globalReminderMinutes)
+        }
+
+    @Test
+    fun `seeding is one-shot — hours the user deleted never resurrect`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-no-resurrect"))
+            repository.seedDefaultReminders()
+            repository.update { it.copy(globalReminderMinutes = emptyList()) }
+
+            repository.seedDefaultReminders()
+
+            assertEquals(emptyList<Int>(), repository.settings.first().globalReminderMinutes)
+        }
+
+    @Test
+    fun `a store with hours already configured only gets the marker, never the seed`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-configured"))
+            repository.update { it.copy(globalReminderMinutes = listOf(480)) }
+
+            repository.seedDefaultReminders()
+            assertEquals(listOf(480), repository.settings.first().globalReminderMinutes)
+
+            // The marker landed on that first call: clearing the hours later never re-seeds.
+            repository.update { it.copy(globalReminderMinutes = emptyList()) }
+            repository.seedDefaultReminders()
+            assertEquals(emptyList<Int>(), repository.settings.first().globalReminderMinutes)
+        }
+
+    @Test
+    fun `a restore that writes a whole Settings is never re-seeded over`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-restore"))
+            repository.seedDefaultReminders()
+
+            // BackupRepository.import applies a restore exactly like this: a full Settings
+            // built from the backup file, replacing whatever the store had — including a
+            // backup with no reminder hours at all.
+            repository.update { Settings(userName = "Álvaro", globalReminderMinutes = emptyList()) }
+            repository.seedDefaultReminders()
+
+            val restored = repository.settings.first()
+            assertEquals(emptyList<Int>(), restored.globalReminderMinutes)
+            assertEquals("Álvaro", restored.userName)
+        }
 }

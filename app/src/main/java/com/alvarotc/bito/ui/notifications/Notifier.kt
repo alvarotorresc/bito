@@ -9,6 +9,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.Hoja
 
 /**
@@ -31,19 +32,39 @@ object Notifier {
     /** Extra key carried by [contentIntent] and read back in `MainActivity.handleIntent` (T11). */
     const val EXTRA_OPEN_ROUTE = "openRoute"
 
-    /** The GLOBAL reminder: one or more habits still open, up to three quick-log actions. */
+    /**
+     * The GLOBAL reminder: one or more habits still open, up to three quick-log actions. Speaks
+     * in [personality]'s voice with the flavor [minutesOfDay] resolves to ([ReminderVoice]) —
+     * the scheduled hour for a fired alarm, "now" for a tray refresh. The body carries the
+     * useful part (pending count, up to three names, progress so far) under a BigTextStyle so
+     * it can breathe when expanded.
+     */
     fun showReminder(
         context: Context,
         payload: ReminderPayload,
+        personality: Personality,
+        userName: String,
+        minutesOfDay: Int,
     ) {
-        val count = payload.pendingNames.size
-        val title = context.resources.getQuantityString(R.plurals.notif_reminder_title, count, count)
-        val style = NotificationCompat.InboxStyle()
-        payload.pendingNames.forEach(style::addLine)
+        val flavor = ReminderVoice.flavorOf(minutesOfDay)
+        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
+        val title = context.getString(ReminderVoice.titleRes(personality, flavor), name)
+        val pendingCount = payload.pendingNames.size
+        val names = payload.pendingNames.take(ReminderVoice.MAX_NAMED_PENDING).joinToString(", ")
+        val body =
+            context.resources.getQuantityString(
+                ReminderVoice.bodyRes(personality, flavor),
+                pendingCount,
+                pendingCount,
+                names,
+                payload.doneCount,
+                payload.totalCount,
+            )
         val builder =
             baseBuilder(context, NotificationChannels.REMINDERS)
                 .setContentTitle(title)
-                .setStyle(style)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
         payload.targets.forEach { target ->
             val label =
                 if (target.isCheck) {
@@ -86,13 +107,31 @@ object Notifier {
         notify(context, id, builder)
     }
 
-    /** The REVIEW nudge: something is still unsealed or open, on its own channel. Tapping it
-     * deep-links straight into the review flow rather than opening Today bare (T11). */
-    fun showReview(context: Context) {
+    /**
+     * The REVIEW nudge: something is still unsealed or open, on its own channel, in
+     * [personality]'s voice. [pendingCount] is how many rows today's review still has to decide;
+     * zero means the debt is only past days left unsealed, and the body says so. Tapping it
+     * deep-links straight into the review flow rather than opening Today bare (T11).
+     */
+    fun showReview(
+        context: Context,
+        personality: Personality,
+        userName: String,
+        pendingCount: Int,
+    ) {
+        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
+        val title = context.getString(ReminderVoice.reviewTitleRes(personality), name)
+        val body =
+            if (pendingCount > 0) {
+                context.resources.getQuantityString(ReminderVoice.reviewBodyRes(personality), pendingCount, pendingCount)
+            } else {
+                context.getString(ReminderVoice.reviewSealOnlyRes(personality))
+            }
         val builder =
             baseBuilder(context, NotificationChannels.REVIEW)
-                .setContentTitle(context.getString(R.string.notif_review_title))
-                .setContentText(context.getString(R.string.notif_review_body))
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setContentIntent(contentIntent(context, "review", 2))
         notify(context, REVIEW_ID, builder)
     }

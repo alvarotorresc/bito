@@ -45,7 +45,15 @@ class ReminderReceiver : BroadcastReceiver() {
         when (val outcome = useCase.evaluate(kindName, key)) {
             is ReminderUseCase.Outcome.Stale -> Unit
             is ReminderUseCase.Outcome.Remind -> {
-                Notifier.showReminder(context, outcome.payload)
+                // The slot's own configured hour picks the flavor — the alarm fires at it, so
+                // "when this was scheduled for" and "now" agree up to alarm-delivery slop.
+                Notifier.showReminder(
+                    context,
+                    outcome.payload,
+                    outcome.personality,
+                    outcome.userName,
+                    outcome.slot.minutesOfDay,
+                )
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.RemindHabit -> {
@@ -53,7 +61,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.Review -> {
-                Notifier.showReview(context)
+                Notifier.showReview(context, outcome.personality, outcome.userName, outcome.pendingCount)
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.Silent -> reschedule(context, outcome.slot)

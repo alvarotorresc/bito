@@ -4,6 +4,7 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.buildTodayUiState
@@ -27,8 +28,16 @@ class ReminderUseCase(
         /** The slot no longer exists — self-heal: no notification, no reschedule. */
         data object Stale : Outcome
 
-        /** The GLOBAL slot still has pending habits. */
-        data class Remind(val payload: ReminderPayload, val slot: Slot) : Outcome
+        /**
+         * The GLOBAL slot still has pending habits. [personality] and [userName] travel with it
+         * so the receiver renders in Habi's voice without a second settings read.
+         */
+        data class Remind(
+            val payload: ReminderPayload,
+            val slot: Slot,
+            val personality: Personality,
+            val userName: String,
+        ) : Outcome
 
         /**
          * The HABIT slot's own card is still open and unfailed. [target] is `null` for kinds
@@ -37,8 +46,17 @@ class ReminderUseCase(
          */
         data class RemindHabit(val name: String, val target: QuickTarget?, val slot: Slot) : Outcome
 
-        /** The REVIEW slot found something unsealed or still open today. */
-        data class Review(val slot: Slot) : Outcome
+        /**
+         * The REVIEW slot found something unsealed or still open today. [pendingCount] is how
+         * many rows today's review still has to decide (zero = only past days owed a seal);
+         * [personality] and [userName] voice the nudge.
+         */
+        data class Review(
+            val slot: Slot,
+            val pendingCount: Int,
+            val personality: Personality,
+            val userName: String,
+        ) : Outcome
 
         /** Nothing to say, but the slot is still live — reprogram it without notifying. */
         data class Silent(val slot: Slot) : Outcome
@@ -58,7 +76,11 @@ class ReminderUseCase(
         return when (slot.kind) {
             SlotKind.GLOBAL -> {
                 val payload = buildReminderPayload(state)
-                if (payload == null) Outcome.Silent(slot) else Outcome.Remind(payload, slot)
+                if (payload == null) {
+                    Outcome.Silent(slot)
+                } else {
+                    Outcome.Remind(payload, slot, prefs.personality, prefs.userName)
+                }
             }
             SlotKind.HABIT -> {
                 val card = state.cards.find { it.id == slot.key }
@@ -68,7 +90,12 @@ class ReminderUseCase(
                     Outcome.RemindHabit(card.name, quickTargetOf(card), slot)
                 }
             }
-            SlotKind.REVIEW -> if (reviewIsPending(state)) Outcome.Review(slot) else Outcome.Silent(slot)
+            SlotKind.REVIEW ->
+                if (reviewIsPending(state)) {
+                    Outcome.Review(slot, reviewPendingCount(state), prefs.personality, prefs.userName)
+                } else {
+                    Outcome.Silent(slot)
+                }
         }
     }
 }

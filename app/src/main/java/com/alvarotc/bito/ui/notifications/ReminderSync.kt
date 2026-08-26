@@ -23,6 +23,14 @@ object ReminderSync {
         scope: CoroutineScope,
     ) {
         scope.launch {
+            // Presence by default: a clean install has no reminder hours, so without this the
+            // GLOBAL reminder never fires until someone visits Ajustes. Seeded before the
+            // collector starts so its very first slots emission already schedules them; the
+            // seeder itself is one-shot and restore-safe (see SettingsRepository). A failed
+            // seed (DataStore IO) must not kill the sync loop below — same guard as the
+            // collect body; cancellation keeps propagating.
+            runCatching { container.settings.seedDefaultReminders() }
+                .onFailure { if (it is CancellationException) throw it }
             combine(container.settings.settings, container.habits.observeHabits()) { prefs, entities ->
                 ReminderScheduler.slotsOf(prefs, entities)
             }

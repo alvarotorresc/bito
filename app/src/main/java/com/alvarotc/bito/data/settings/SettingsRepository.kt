@@ -42,6 +42,11 @@ data class Settings(
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
+    companion object {
+        /** GLOBAL reminder hours seeded once per install on a store that never had any: 12:00 and 19:00. */
+        val DEFAULT_GLOBAL_REMINDER_MINUTES = listOf(12 * 60, 19 * 60)
+    }
+
     private object Keys {
         val userName = stringPreferencesKey("user_name")
         val dayCutoffMinutes = intPreferencesKey("day_cutoff_minutes")
@@ -62,12 +67,41 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val badgesSeenUntilMillis = longPreferencesKey("badges_seen_until_millis")
         val lastAutoBackupAtMillis = longPreferencesKey("last_auto_backup_at_millis")
         val lastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
+
+        /**
+         * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
+         * backup restore writes a whole [Settings] over the store
+         * (`BackupSettings.toSettings()` builds a fresh one), and a field would come back at
+         * its default there — re-seeding hours on top of whatever the restore brought. Living
+         * outside [Settings], the marker survives every [update] and every restore untouched.
+         */
+        val defaultRemindersSeeded = booleanPreferencesKey("default_reminders_seeded")
     }
 
     val settings: Flow<Settings> = dataStore.data.map { it.toSettings() }
 
     suspend fun update(transform: (Settings) -> Settings) {
         dataStore.edit { prefs -> transform(prefs.toSettings()).writeTo(prefs) }
+    }
+
+    /**
+     * Seeds [DEFAULT_GLOBAL_REMINDER_MINUTES] into [Settings.globalReminderMinutes], at most
+     * once per install: a clean install has no reminder hours at all, so nothing ever fires
+     * until someone visits Ajustes — this gives it a sensible midday + evening presence out of
+     * the box. The seeded hours are ordinary configured hours (editable and deletable in
+     * Ajustes), and the [Keys.defaultRemindersSeeded] marker guarantees they never resurrect:
+     * not after the user deletes them, and not after a backup restore (see the key's doc).
+     * A store that already has hours only gets the marker — the user configured, nothing to seed.
+     * Single atomic edit, so no interleaving [update] can slip between check and write.
+     */
+    suspend fun seedDefaultReminders() {
+        dataStore.edit { prefs ->
+            if (prefs[Keys.defaultRemindersSeeded] == true) return@edit
+            prefs[Keys.defaultRemindersSeeded] = true
+            if (prefs[Keys.globalReminderMinutes].isNullOrEmpty()) {
+                prefs[Keys.globalReminderMinutes] = DEFAULT_GLOBAL_REMINDER_MINUTES.joinToString(",")
+            }
+        }
     }
 
     private fun Preferences.toSettings(): Settings {
