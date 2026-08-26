@@ -46,6 +46,10 @@
     <string name="stats_badges_title">Badges</string>
     <string name="stats_badges_count">%1$d of %2$d</string>
     <string name="badge_of_total">of %1$d</string>
+    <!-- StatsScreen's AchievementsSection card [F]: overrides the clickable card's auto-merge,
+         which would otherwise concatenate this header with every BadgeChip name in the grid.
+         "%1$d"/"%2$d" = same unlocked/total data as stats_badges_count. -->
+    <string name="achievements_card_cd">Achievements, %1$d of %2$d</string>
     <string name="stats_badges_all">see all</string>
     <string name="badges_title">Badges</string>
     <string name="badge_unlocked_on">unlocked on %1$s</string>

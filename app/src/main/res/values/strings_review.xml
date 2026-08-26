@@ -24,9 +24,14 @@
         <item quantity="one">%1$d streak advanced</item>
         <item quantity="other">%1$d streaks advanced</item>
     </plurals>
+    <!-- ReviewRowCard's RowNameHeader: name + StreakChip merge into one TalkBack stop — this
+         overrides the merge so it names the flame chip's meaning instead of just concatenating the
+         name and the bare count (same mechanism as stats_streak_card_cd). -->
+    <string name="review_row_streak_cd">%1$s, streak %2$d</string>
     <string name="review_until_tomorrow">See you tomorrow</string>
     <string name="review_new_badges">New badges</string>
     <string name="today_close_day">Close the day</string>
+    <string name="today_day_sealed">Day sealed</string>
     <string name="settings_celebration_label">Perfect-day celebration</string>
     <string name="settings_celebration_hint">A nudge from Habi when you close a perfect day outside the app. Inside, it\'s always celebrated.</string>
 </resources>

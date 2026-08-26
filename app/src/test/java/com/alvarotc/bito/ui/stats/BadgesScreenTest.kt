@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.stats
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -140,5 +141,35 @@ class BadgesScreenTest {
         setContent(dayCutoffMinutes = 240)
 
         compose.onNodeWithText("1 Jan 2026", substring = true, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the hero card reads its count and caption as one unit`() {
+        // [E]: trophy Icon(null) + 3 plain Text stops (count, "of N", "Badges") had no merging
+        // ancestor before the fix — a single MERGED-tree node carrying both texts only exists
+        // once the inner Column gets `mergeDescendants = true`.
+        runBlocking {
+            db.badgeDao().insert(BadgeEntity("streak-7", unlockedAtMillis = 1_000L))
+        }
+        setContent()
+
+        compose.onNode(hasText("1") and hasText("Badges")).assertExists()
+    }
+
+    @Test
+    fun `an unlocked badge row reads its name and unlock caption as one unit`() {
+        runBlocking {
+            db.badgeDao().insert(BadgeEntity("streak-7", unlockedAtMillis = 1_000L))
+        }
+        setContent()
+
+        compose.onNode(hasText("First flame") and hasText("unlocked on", substring = true)).assertExists()
+    }
+
+    @Test
+    fun `a locked badge row reads its name and how-to-earn caption as one unit`() {
+        setContent()
+
+        compose.onNode(hasText("First flame") and hasText("earned by", substring = true)).assertExists()
     }
 }

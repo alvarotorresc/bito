@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -35,6 +36,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,6 +66,8 @@ import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Peligro
+import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -93,6 +98,12 @@ fun StatsScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     Scaffold(containerColor = Papel) { padding ->
+        if (state.loading) {
+            // First frame after the nav-scoped VM is recreated: calm paper, never zeroed heroes
+            // and empty streak walls (QA 2026-08-23).
+            Box(Modifier.padding(padding).fillMaxSize().testTag("stats-loading"))
+            return@Scaffold
+        }
         Column(
             Modifier
                 .padding(padding)
@@ -235,16 +246,26 @@ private fun WeekColumnHeader() {
 
 @Composable
 private fun WeekRowLine(row: WeekRow) {
+    // [D]: the done/target tally (below) already speaks the raw total, but not WHICH weekdays
+    // were done — one aggregated description on the dot cluster, never per dot, same [D]-rule
+    // DotHeatmap follows for its own per-cell glyphs.
+    val daysDescription = weekRowDaysDescription(row.dots)
     Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             row.name,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = Tinta,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        Row(Modifier.width(WeekDotsWidth), horizontalArrangement = Arrangement.spacedBy(WeekDotGap)) {
+        Row(
+            Modifier
+                .width(WeekDotsWidth)
+                .semantics { contentDescription = daysDescription }
+                .testTag("week-dots-${row.habitId}"),
+            horizontalArrangement = Arrangement.spacedBy(WeekDotGap),
+        ) {
             row.dots.forEach { dot -> WeekDayDot(dot) }
         }
         Spacer(Modifier.width(WeekTallyGap))
@@ -266,7 +287,7 @@ private fun WeekRowLine(row: WeekRow) {
 /**
  * Small, tap-free twin of [com.alvarotc.bito.ui.components.DotHeatmap]'s per-day glyph mapping —
  * DotProgress-canon 16dp solid dots, same fill/ring per state as the fixed heatmap (FULFILLED/
- * ACTIVITY solid Hoja, FAILED/EMPTY solid Borde, PAUSED solid TintaSuave, PENDING a 2dp
+ * ACTIVITY solid Hoja, FAILED a PeligroTinte fill with a Peligro X, EMPTY solid Borde — QA 2026-08-23, PAUSED solid TintaSuave, PENDING a 2dp
  * TintaSuave ring, OFF a 2dp Borde ring for future/unreached days). Grid always reads complete
  * and aligned with header.
  */
@@ -275,7 +296,13 @@ private fun WeekDayDot(dot: DayDot) {
     val size = WeekDotSize
     when (dot) {
         DayDot.FULFILLED, DayDot.ACTIVITY -> Box(Modifier.size(size).clip(CircleShape).background(Hoja))
-        DayDot.FAILED, DayDot.EMPTY -> Box(Modifier.size(size).clip(CircleShape).background(Borde))
+        DayDot.FAILED ->
+            Box(Modifier.size(size).clip(CircleShape).background(PeligroTinte), contentAlignment = Alignment.Center) {
+                Icon(BitoIcons.X, contentDescription = null, tint = Peligro, modifier = Modifier.size(10.dp))
+            }
+        // EMPTY = a no-entry day of a non-daily habit (rest days included) — neutral, never red:
+        // a fulfilled "3× per week" must not wear failure marks on its off days (QA 2026-08-23).
+        DayDot.EMPTY -> Box(Modifier.size(size).clip(CircleShape).background(Borde))
         DayDot.FROZEN ->
             Box(Modifier.size(size).clip(CircleShape).background(HojaTinte), contentAlignment = Alignment.Center) {
                 Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(10.dp))
@@ -285,6 +312,42 @@ private fun WeekDayDot(dot: DayDot) {
         DayDot.OFF -> Box(Modifier.size(size).clip(CircleShape).border(2.dp, Borde, CircleShape))
     }
 }
+
+/**
+ * "Mon done, Tue done, Wed missed, …" for one [WeekRowLine]'s dot cluster — the [D]-rule
+ * aggregated description, built from the same day-state words [com.alvarotc.bito.ui.components.DotHeatmap]
+ * reuses (`day_done`/`day_not_done`/`heatmap_day_frozen`/`paused_section_title`/`heatmap_day_pending`)
+ * so TalkBack says the same word for the same state everywhere in the app. `row.dots` is Monday-
+ * first (matches [WeekColumnHeader]'s `DayOfWeek.of(1..7)`); OFF carries no judgeable state and is
+ * skipped, same as the heatmap's own per-cell convention.
+ *
+ * `internal` (not `private`): lets a test build this directly off a hand-picked [DayDot] list —
+ * same reasoning as [com.alvarotc.bito.ui.habi.PersonalityPills] — instead of reconstructing one
+ * through the full [StatsViewModel]/Room pipeline just to pin down 7 specific day states.
+ */
+@Composable
+internal fun weekRowDaysDescription(dots: List<DayDot>): String {
+    val locale = Locale.getDefault()
+    return dots.mapIndexedNotNull { index, dot ->
+        val stateLabel = weekDayStateLabel(dot) ?: return@mapIndexedNotNull null
+        val dayName = DayOfWeek.of(index + 1).getDisplayName(TextStyle.SHORT, locale)
+        stringResource(R.string.stats_week_day_state, dayName, stateLabel)
+    }.joinToString(", ")
+}
+
+/** The spoken state word for one [DayDot] in the week strip — null for OFF (no judgeable state). */
+@Composable
+private fun weekDayStateLabel(dot: DayDot): String? =
+    when (dot) {
+        DayDot.FULFILLED, DayDot.ACTIVITY -> stringResource(R.string.day_done)
+        DayDot.FAILED, DayDot.EMPTY -> stringResource(R.string.day_not_done)
+        DayDot.FROZEN -> stringResource(R.string.heatmap_day_frozen)
+        // Reuses TodayScreen's "Paused" section-header string, same as DotHeatmap's own per-cell
+        // mapping — one word, one meaning, no near-duplicate string to keep in sync.
+        DayDot.PAUSED -> stringResource(R.string.paused_section_title)
+        DayDot.PENDING -> stringResource(R.string.heatmap_day_pending)
+        DayDot.OFF -> null
+    }
 
 /** Bare section title (no card) above a [LazyRow] wall of mini streak cards — rule 3 of the 3a mockup. */
 @Composable
@@ -313,8 +376,21 @@ private fun StreaksSection(streaks: List<ActiveStreak>) {
  */
 @Composable
 private fun StreakWallCard(streak: ActiveStreak) {
+    // [E]: Icon(Flame, null) + Text(length) + Text(name) — the flame glyph is where the word
+    // "streak" actually lives; a plain `mergeDescendants = true` would only concatenate "3" and
+    // the habit name (e.g. "3 Meditar"), silently dropping the one word a sighted reader gets for
+    // free from the icon. `mergeDescendants = true` (still needed — the Surface has no `onClick`
+    // to trigger it for free, unlike `AchievementsSection`'s `BitoCard`) collapses the 2 children
+    // into ONE spoken stop, and the explicit `contentDescription` on that same node overrides what
+    // the collapse alone would say — same shape as `DayRing` in Components.kt.
+    val streakDescription =
+        stringResource(R.string.stats_streak_card_cd, streak.name, streak.length, stringResource(periodUnitRes(streak.period)))
     Surface(
-        modifier = Modifier.width(140.dp).testTag("streak-${streak.habitId}"),
+        modifier =
+            Modifier
+                .width(140.dp)
+                .testTag("streak-${streak.habitId}")
+                .semantics(mergeDescendants = true) { contentDescription = streakDescription },
         shape = RoundedCornerShape(20.dp),
         color = Tarjeta,
         border = BorderStroke(1.dp, Borde),
@@ -446,7 +522,20 @@ private fun AchievementsSection(
     state: StatsUiState,
     onOpenBadges: () -> Unit,
 ) {
-    BitoCard(onClick = onOpenBadges, modifier = Modifier.fillMaxWidth().testTag("achievements")) {
+    // [F]: BitoCard(onClick) auto-merges its whole subtree, so without this override tapping into
+    // the card would concatenate the header text with EVERY BadgeChip's name in the FlowRow below
+    // into one very long spoken string. An explicit contentDescription here takes over what
+    // TalkBack announces (same data as the header Text just below), same pattern HabitCard uses
+    // to keep "whole card opens X" rows short.
+    val achievementsDescription = stringResource(R.string.achievements_card_cd, state.badgesUnlocked, state.badgesTotal)
+    BitoCard(
+        onClick = onOpenBadges,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .testTag("achievements")
+                .semantics { contentDescription = achievementsDescription },
+    ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 stringResource(R.string.stats_badges_title),

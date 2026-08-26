@@ -18,6 +18,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -99,6 +100,21 @@ class TrayRefresherTest {
             ?.getCharSequence(Notification.EXTRA_TITLE)
             ?.toString()
 
+    /** [Notification.EXTRA_TEXT] of whatever is currently posted under [Notifier.REMINDER_ID], or `null`. */
+    private fun postedText(): String? =
+        shadowOf(notificationManager)
+            .getNotification(Notifier.REMINDER_ID)
+            ?.extras
+            ?.getCharSequence(Notification.EXTRA_TEXT)
+            ?.toString()
+
+    /** The NEUTRA morning title an unnamed user gets — the default-settings voice of a 10:00 refresh. */
+    private fun morningTitleForFallbackName(): String =
+        context.getString(
+            R.string.notif_reminder_title_neutra_morning,
+            context.getString(R.string.habi_name_fallback),
+        )
+
     @Test
     fun `a pending payload only refreshes an already shown notification`() =
         runTest(dispatcher) {
@@ -111,11 +127,11 @@ class TrayRefresherTest {
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
 
             // Once the tray is already up, the same pending payload refreshes its actual content —
-            // proven by the title moving off the stand-in "stale" text to the real payload title,
+            // proven by the title moving off the stand-in "stale" text to the real voiced title,
             // not just by a notification of *some* kind still existing under the id.
             postStaleReminder()
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
-            assertEquals(context.resources.getQuantityString(R.plurals.notif_reminder_title, 1, 1), postedTitle())
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, minutesOfDay = 10 * 60)
+            assertEquals(morningTitleForFallbackName(), postedTitle())
         }
 
     @Test
@@ -126,9 +142,9 @@ class TrayRefresherTest {
             )
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
 
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true, minutesOfDay = 10 * 60)
 
-            assertEquals(context.resources.getQuantityString(R.plurals.notif_reminder_title, 1, 1), postedTitle())
+            assertEquals(morningTitleForFallbackName(), postedTitle())
         }
 
     @Test
@@ -199,5 +215,53 @@ class TrayRefresherTest {
 
             // Review notification should still be there
             assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+        }
+
+    @Test
+    fun `the tray speaks the configured personality, the user's name, and the hour's flavor`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO, userName = "Álvaro") }
+            habitsRepo.create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1),
+            )
+
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true, minutesOfDay = 21 * 60)
+
+            assertEquals(context.getString(R.string.notif_reminder_title_sargento_evening, "Álvaro"), postedTitle())
+            val expectedBody =
+                context.resources.getQuantityString(R.plurals.notif_reminder_body_sargento_evening, 1, 1, "Agua", 0, 1)
+            assertEquals(expectedBody, postedText())
+            // BigTextStyle mirrors the body so the expanded notification breathes.
+            val bigText =
+                shadowOf(notificationManager)
+                    .getNotification(Notifier.REMINDER_ID)
+                    ?.extras
+                    ?.getCharSequence(Notification.EXTRA_BIG_TEXT)
+                    ?.toString()
+            assertEquals(expectedBody, bigText)
+        }
+
+    @Test
+    fun `the body names at most three pending habits while the count keeps the truth`() =
+        runTest(dispatcher) {
+            listOf("Agua", "Leer", "Gym", "Meditar").forEachIndexed { index, name ->
+                habitsRepo.create(
+                    habitEntity(
+                        id = "h$index",
+                        name = name,
+                        metric = Metric.CHECK,
+                        direction = Direction.AT_LEAST,
+                        target = 1,
+                        sortOrder = index,
+                    ),
+                )
+            }
+
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true, minutesOfDay = 15 * 60)
+
+            assertEquals(
+                context.resources.getQuantityString(R.plurals.notif_reminder_body_neutra_afternoon, 4, 4, "Agua, Leer, Gym", 0, 4),
+                postedText(),
+            )
         }
 }

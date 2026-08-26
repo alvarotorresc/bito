@@ -182,6 +182,15 @@ object BitoIcons {
         )
     }
     val CircleCheck by lazy { lucide("circle-check", "M21.801 10A10 10 0 1 1 17 3.335", "m9 11 3 3L22 4") }
+    val Calendar by lazy {
+        lucide(
+            "calendar",
+            "M8 2v4",
+            "M16 2v4",
+            "M5 4h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z",
+            "M3 10h18",
+        )
+    }
     val CalendarCheck by lazy {
         lucide(
             "calendar-check",
@@ -216,6 +225,14 @@ object BitoIcons {
             "M4 13h4",
         )
     }
+    val Ellipsis by lazy {
+        lucide(
+            "ellipsis",
+            "M13 12a1 1 0 1 0 -2 0a1 1 0 1 0 2 0",
+            "M20 12a1 1 0 1 0 -2 0a1 1 0 1 0 2 0",
+            "M6 12a1 1 0 1 0 -2 0a1 1 0 1 0 2 0",
+        )
+    }
     val Ban by lazy {
         lucide(
             "ban",
@@ -243,4 +260,83 @@ object BitoIcons {
             "M14 14h6v6h-6z",
         )
     }
+    val User by lazy {
+        lucide(
+            "user",
+            "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2",
+            "M16 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0",
+        )
+    }
+    val Globe by lazy {
+        lucide(
+            "globe",
+            "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0",
+            "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20",
+            "M2 12h20",
+        )
+    }
+    val Moon by lazy { lucide("moon", "M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z") }
+    val Bell by lazy {
+        lucide(
+            "bell",
+            "M10.268 21a2 2 0 0 0 3.464 0",
+            "M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326",
+        )
+    }
+    val Clock by lazy {
+        lucide(
+            "clock",
+            "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0",
+            "M12 6v6l4 2",
+        )
+    }
+    val BookOpen by lazy {
+        lucide(
+            "book-open",
+            "M12 7v14",
+            "M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6" +
+                "a3 3 0 0 0-3 3 3 3 0 0 0-3-3z",
+        )
+    }
+    val Volume by lazy {
+        lucide(
+            "volume-2",
+            "M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1" +
+                "h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z",
+            "M16 9a5 5 0 0 1 0 6",
+            "M19.364 18.364a9 9 0 0 0 0-12.728",
+        )
+    }
+    val Music by lazy {
+        lucide(
+            "music",
+            "M9 18V5l12-2v13",
+            "M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0",
+            "M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0",
+        )
+    }
+    val Vibrate by lazy {
+        lucide(
+            "vibrate",
+            "m2 8 2 2-2 2 2 2-2 2",
+            "m22 8-2 2 2 2-2 2 2 2",
+            "M9 5h6a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z",
+        )
+    }
+    val Code by lazy { lucide("code", "m16 18 6-6-6-6", "m8 6-6 6 6 6") }
+    val Heart by lazy {
+        lucide(
+            "heart",
+            "M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2" +
+                "A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z",
+        )
+    }
+    val FileText by lazy {
+        lucide(
+            "file",
+            "M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z",
+            "M14 2v4a2 2 0 0 0 2 2h4",
+        )
+    }
+    val MessageCircle by lazy { lucide("message-circle", "M7.9 20A9 9 0 1 0 4 16.1L2 22Z") }
 }

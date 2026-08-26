@@ -17,6 +17,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import kotlinx.coroutines.CoroutineScope
@@ -292,6 +293,62 @@ class ReminderUseCaseTest {
 
             assertTrue(outcome is ReminderUseCase.Outcome.Silent)
             assertEquals(SlotKind.HABIT, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
+        }
+
+    @Test
+    fun `a global remind carries the voice it will speak with and the day's progress`() =
+        runTest(dispatcher) {
+            settingsRepo.update {
+                it.copy(globalReminderMinutes = listOf(480), personality = Personality.SARGENTO, userName = "Álvaro")
+            }
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "Agua",
+                    metric = Metric.CHECK,
+                    direction = Direction.AT_LEAST,
+                    target = 1,
+                    createdOnDay = today,
+                ),
+            )
+            habitsRepo.create(
+                habitEntity(
+                    id = "h2",
+                    name = "Leer",
+                    metric = Metric.CHECK,
+                    direction = Direction.AT_LEAST,
+                    target = 1,
+                    createdOnDay = today,
+                ),
+            )
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "h2", logicalDay = today, value = 1))
+
+            val outcome = useCase.evaluate("GLOBAL", "480")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Remind)
+            val remind = outcome as ReminderUseCase.Outcome.Remind
+            assertEquals(Personality.SARGENTO, remind.personality)
+            assertEquals("Álvaro", remind.userName)
+            assertEquals(1, remind.payload.doneCount)
+            assertEquals(2, remind.payload.totalCount)
+            assertEquals(listOf("Agua"), remind.payload.pendingNames)
+        }
+
+    @Test
+    fun `a review outcome carries the voice and how many rows are left to decide`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(personality = Personality.CHEERLEADER, userName = "Álvaro") }
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+            )
+
+            val outcome = useCase.evaluate("REVIEW", "")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Review)
+            val review = outcome as ReminderUseCase.Outcome.Review
+            assertEquals(1, review.pendingCount)
+            assertEquals(Personality.CHEERLEADER, review.personality)
+            assertEquals("Álvaro", review.userName)
         }
 
     @Test

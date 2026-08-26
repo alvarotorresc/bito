@@ -15,6 +15,7 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.habitform.HabitFormState
 import com.alvarotc.bito.ui.habitform.HabitPreset
 import com.alvarotc.bito.ui.habitform.QuitMode
+import com.alvarotc.bito.ui.habitform.clampTarget
 import com.alvarotc.bito.ui.habitform.defaultTargetFor
 import com.alvarotc.bito.ui.habitform.toNewEntity
 import com.alvarotc.bito.ui.settings.AppLocale
@@ -69,6 +70,15 @@ class OnboardingViewModel(
     private val reconciler: PointsReconciler,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
+    // Injected for the same reason [com.alvarotc.bito.ui.settings.BackupViewModel] injects it:
+    // AppCompatDelegate.getApplicationLocales() reports [] under Robolectric no matter what was
+    // set, so "the locale was (not) applied" is only honestly assertable through a seam.
+    private val applyLocale: (String?) -> Unit = AppLocale::apply,
+    // false = the replay from Ajustes ("Introducción · ver de nuevo"): the same seven steps, read
+    // only. Every write below hangs off this flag, because two of them fire mid-flow rather than
+    // at the end — see [setLanguage] and [setPersonality] for why that made replay a data-editing
+    // screen in disguise.
+    private val persist: Boolean = true,
 ) : ViewModel() {
     private val state = MutableStateFlow(OnboardingUiState())
     val uiState: StateFlow<OnboardingUiState> = state.asStateFlow()
@@ -105,12 +115,24 @@ class OnboardingViewModel(
         }
     }
 
-    /** Persists + applies live, mirroring [com.alvarotc.bito.ui.settings.SettingsViewModel.setLanguage]. */
+    /**
+     * Persists + applies live, mirroring [com.alvarotc.bito.ui.settings.SettingsViewModel.setLanguage]
+     * — but only when [persist]. In replay the chip still lights up (that's [OnboardingUiState]'s
+     * own copy, pure UI), while the app's language is left exactly as the user set it in Ajustes.
+     *
+     * [AppLocale.apply] is skipped alongside the store write, never independently: it is
+     * `AppCompatDelegate.setApplicationLocales`, which is NOT a temporary in-memory switch —
+     * AppCompat persists the locale below API 33 through `autoStoreLocales` (see AndroidManifest)
+     * and the platform persists it from 33 on. Dropping only the DataStore write would leave the
+     * app speaking the tapped language while [com.alvarotc.bito.data.settings.Settings] still
+     * claims the old one — a split brain strictly worse than the bug this closes.
+     */
     fun setLanguage(tag: String?) {
         languageTouched = true
         state.update { it.copy(languageTag = tag) }
+        if (!persist) return
         viewModelScope.launch { settings.update { it.copy(languageTag = tag) } }
-        AppLocale.apply(tag)
+        applyLocale(tag)
     }
 
     fun next() {
@@ -151,12 +173,27 @@ class OnboardingViewModel(
             it.copy(habitKind = kind, habitTarget = defaultTargetFor(kind, QuitMode.TOTAL, Metric.DURATION))
         }
 
-    fun setHabitTarget(value: Int) = state.update { it.copy(habitTarget = value.coerceAtLeast(1)) }
+    fun setHabitTarget(value: Int) =
+        state.update { s ->
+            // Reuse the form's clampTarget logic with a temporary HabitFormState using
+            // onboarding's invariants (quitMode always TOTAL per setHabitKind's own KDoc);
+            // floor 1, ceiling 7 when WEEKLY_TIMES, ceiling unbounded for other presets
+            // except QUIT which pins to 0.
+            val clampedTarget = HabitFormState(preset = s.habitKind).clampTarget(value)
+            s.copy(habitTarget = clampedTarget)
+        }
 
-    /** Persists immediately, not just on [finish] — the celebration bubble (7f) speaks with the chosen voice right away. */
+    /**
+     * Persists immediately, not just on [finish] — the celebration bubble (7f) speaks with the
+     * chosen voice right away. Not in replay, though: step 7f invites the user to tap each pill
+     * to hear the voices, and that invitation must not quietly re-voice their real Habi. The
+     * preview itself is unaffected either way, since it reads [OnboardingUiState.personality],
+     * not the store.
+     */
     fun setPersonality(personality: Personality) {
         personalityTouched = true
         state.update { it.copy(personality = personality) }
+        if (!persist) return
         viewModelScope.launch { settings.update { it.copy(personality = personality) } }
     }
 
@@ -179,6 +216,11 @@ class OnboardingViewModel(
      * landing during the nav-away transition must not create a second habit with a fresh UUID.
      */
     fun finish() {
+        // Replay's closing CTA is wired to its own close callback, never here (see
+        // [OnboardingScreen]'s `replayOnClose ?: viewModel::finish`) — this is the last line of
+        // defense if that wiring ever slips: a replay that reached this would re-create the first
+        // habit and rewrite name/personality on a user who only came to re-watch the intro.
+        if (!persist) return
         val current = state.value
         if (current.busy || current.done) return
         state.update { it.copy(busy = true) }
@@ -206,9 +248,20 @@ class OnboardingViewModel(
     }
 
     companion object {
-        fun factory(container: AppContainer): ViewModelProvider.Factory =
+        /** [persist] = false builds the read-only replay VM Ajustes opens; see the constructor. */
+        fun factory(
+            container: AppContainer,
+            persist: Boolean = true,
+        ): ViewModelProvider.Factory =
             viewModelFactory {
-                initializer { OnboardingViewModel(container.settings, container.habits, container.reconciler) }
+                initializer {
+                    OnboardingViewModel(
+                        container.settings,
+                        container.habits,
+                        container.reconciler,
+                        persist = persist,
+                    )
+                }
             }
     }
 }

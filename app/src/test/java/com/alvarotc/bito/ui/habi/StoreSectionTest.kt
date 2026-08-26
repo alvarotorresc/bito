@@ -5,6 +5,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
@@ -104,5 +107,27 @@ class StoreSectionTest {
 
         compose.onNodeWithTag("freezer-sheet", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("buy-freezer", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `an untappable item reads its name and status as one unit`() {
+        // body-salvia: the default BODY_COLOR, always-Equipped and BODY_COLOR isn't in
+        // UNPINNABLE_AXES, so it's untappable (isTappable) — before the [E] fix, name ("Sage")
+        // and status ("equipped") had no merging ancestor and were 2 separate semantics nodes;
+        // querying the MERGED tree (no useUnmergedTree) for a single node carrying both texts
+        // only succeeds once `Modifier.semantics(mergeDescendants = true)` is on the Column.
+        setContent(fixture())
+
+        compose.onNode(hasText("Sage") and hasText("equipped")).assertExists()
+    }
+
+    @Test
+    fun `the active axis pill is announced as selected, not just clickable`() {
+        // Before the [C] fix, the active pill skipped `.clickable` entirely — not even a
+        // focusable node, let alone one carrying `selected = true`.
+        setContent(fixture())
+
+        compose.onNodeWithTag("store-axis-BODY_COLOR", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("store-axis-PATTERN", useUnmergedTree = true).assertIsNotSelected()
     }
 }

@@ -1,4 +1,4 @@
-@file:OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@file:OptIn(ExperimentalMaterial3Api::class)
 
 package com.alvarotc.bito.ui.habitform
 
@@ -15,8 +15,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -25,6 +23,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -49,15 +48,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostPillButton
@@ -66,6 +74,8 @@ import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.components.TimePickerSheet
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
@@ -86,6 +96,7 @@ fun HabitFormScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val personality by viewModel.personality.collectAsStateWithLifecycle()
+    val equipped by viewModel.equipped.collectAsStateWithLifecycle()
     var confirmingDelete by remember { mutableStateOf(false) }
 
     // Same launcher SettingsScreen.kt uses for the first GLOBAL reminder: fire-and-forget, the
@@ -105,6 +116,18 @@ fun HabitFormScreen(
             SpeechBubble(
                 stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
                 stringResource(HabiVoice.formPromptRes(personality)),
+                modifier = Modifier.fillMaxWidth(),
+                // The same mini-Habi slot the Stats commentator and FreezerInfoSheet fill: 40dp,
+                // resting frame. This ViewModel is about the habit being built, not Habi's state,
+                // so the face stays the neutral resting one — but it wears the user's real
+                // equipped set: the Habi on every screen is THE user's Habi.
+                avatar = {
+                    HabiAvatar(
+                        HabiSpec(Mood.NORMAL, personality, equipped),
+                        Modifier.size(40.dp),
+                        animated = false,
+                    )
+                },
             )
             NameField(state.name, viewModel::setName)
             PresetPills(state.preset, state.isEditing, viewModel::selectPreset)
@@ -221,6 +244,27 @@ internal fun HabitPreset.labelRes(): Int =
         HabitPreset.QUIT -> R.string.preset_quit
     }
 
+/** The line glyph each type pill leads with — canon pills.html + mockup 7g (check, dots, clock,
+ * calendar, ban). Internal next to [labelRes] for the same reason: one preset→glyph mapping,
+ * ready for onboarding's mirrored pills to reuse. */
+internal fun HabitPreset.iconVector(): ImageVector =
+    when (this) {
+        HabitPreset.DAILY_CHECK -> BitoIcons.Check
+        HabitPreset.QUANTITY -> BitoIcons.Ellipsis
+        HabitPreset.DURATION -> BitoIcons.Clock
+        HabitPreset.WEEKLY_TIMES -> BitoIcons.Calendar
+        HabitPreset.QUIT -> BitoIcons.Ban
+    }
+
+/** Mockup 7g's reading order frozen into two full-width rows: the three short labels up top, the
+ * two long ones below. Each row splits its width equally, so both edges stay flush (the old
+ * FlowRow wrapped ragged) and every label keeps room at fontScale 1.15 in both languages. */
+private val PRESET_ROWS =
+    listOf(
+        listOf(HabitPreset.DAILY_CHECK, HabitPreset.QUANTITY, HabitPreset.DURATION),
+        listOf(HabitPreset.WEEKLY_TIMES, HabitPreset.QUIT),
+    )
+
 /** Rule E2: the metric a preset resolves to can't change once a habit exists — presets lock on edit. */
 @Composable
 private fun PresetPills(
@@ -228,30 +272,74 @@ private fun PresetPills(
     locked: Boolean,
     onSelect: (HabitPreset) -> Unit,
 ) {
-    Column {
-        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            HabitPreset.entries.forEach { preset ->
-                val isSelected = preset == selected
-                Surface(
-                    onClick = { onSelect(preset) },
-                    enabled = !locked,
-                    shape = CircleShape,
-                    color = if (isSelected) HojaTinte else Tarjeta,
-                    border = BorderStroke(1.dp, Borde),
-                    modifier = Modifier.testTag("preset-${preset.name}"),
-                ) {
-                    Text(
-                        stringResource(preset.labelRes()),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = if (isSelected) Tinta else TintaSuave,
-                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        PRESET_ROWS.forEach { rowPresets ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                rowPresets.forEach { preset ->
+                    PresetPill(
+                        preset = preset,
+                        isSelected = preset == selected,
+                        locked = locked,
+                        onSelect = onSelect,
+                        modifier = Modifier.weight(1f),
                     )
                 }
             }
         }
         if (locked) {
-            Spacer(Modifier.height(6.dp))
             Text(stringResource(R.string.preset_locked_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+        }
+    }
+}
+
+/** One type pill: leading glyph + label, centered in whatever width its row cell grants. Selection
+ * only recolors (HojaTinte fill, Tinta content — GUIA's active-icon rule), never resizes, so
+ * picking a type can't reflow the block. */
+@Composable
+private fun PresetPill(
+    preset: HabitPreset,
+    isSelected: Boolean,
+    locked: Boolean,
+    onSelect: (HabitPreset) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Surface(
+        // [C]: no Role/selected semantics — every pill reads as "<label>, Button" with no sign
+        // which one is active. `Surface(onClick = ...)` stays as-is rather than becoming a bare
+        // `Modifier.selectable` (its interactive overload applies
+        // `minimumInteractiveComponentSize()`, which the plain one doesn't — swapping would risk
+        // shrinking this pill's touch target). Same additive shape as onboarding's
+        // `HabitPresetPill` fix for this exact mirrored component.
+        onClick = { onSelect(preset) },
+        enabled = !locked,
+        shape = CircleShape,
+        color = if (isSelected) HojaTinte else Tarjeta,
+        border = BorderStroke(1.dp, Borde),
+        modifier =
+            modifier
+                .testTag("preset-${preset.name}")
+                .semantics {
+                    this.selected = isSelected
+                    role = Role.Tab
+                },
+    ) {
+        val tint = if (isSelected) Tinta else TintaSuave
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),
+            // 6dp inset, not the classic 14: content centers in a weight-granted cell, so the
+            // inset is only a floor — measured tight so "Cantidad" holds one line on a 360dp
+            // screen at fontScale 1.15 (HabitFormPresetPillLayoutTest pins exactly this).
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp, vertical = 10.dp),
+        ) {
+            Icon(preset.iconVector(), contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+            Text(
+                stringResource(preset.labelRes()),
+                style = MaterialTheme.typography.labelMedium,
+                color = tint,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
     }
 }
@@ -365,7 +453,11 @@ private fun TargetStepper(
         horizontalArrangement = Arrangement.spacedBy(if (isMinuteTarget) 4.dp else 12.dp),
     ) {
         if (isMinuteTarget) {
-            StepChip(onClick = { onAdjustTarget(-10) }, modifier = Modifier.testTag("target-minus10")) {
+            StepChip(
+                onClick = { onAdjustTarget(-10) },
+                contentDescription = stringResource(R.string.target_minus10_cd),
+                modifier = Modifier.testTag("target-minus10"),
+            ) {
                 Text(
                     "−10",
                     style = MaterialTheme.typography.labelMedium,
@@ -374,7 +466,11 @@ private fun TargetStepper(
                 )
             }
         }
-        StepChip(onClick = { onAdjustTarget(-1) }, modifier = Modifier.testTag("target-minus")) {
+        StepChip(
+            onClick = { onAdjustTarget(-1) },
+            contentDescription = stringResource(R.string.target_minus1_cd),
+            modifier = Modifier.testTag("target-minus"),
+        ) {
             Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
         }
         Row(
@@ -387,11 +483,19 @@ private fun TargetStepper(
                 Text(unitLabel, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             }
         }
-        StepChip(onClick = { onAdjustTarget(1) }, modifier = Modifier.testTag("target-plus")) {
+        StepChip(
+            onClick = { onAdjustTarget(1) },
+            contentDescription = stringResource(R.string.target_plus1_cd),
+            modifier = Modifier.testTag("target-plus"),
+        ) {
             Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta, modifier = Modifier.size(16.dp))
         }
         if (isMinuteTarget) {
-            StepChip(onClick = { onAdjustTarget(10) }, modifier = Modifier.testTag("target-plus10")) {
+            StepChip(
+                onClick = { onAdjustTarget(10) },
+                contentDescription = stringResource(R.string.target_plus10_cd),
+                modifier = Modifier.testTag("target-plus10"),
+            ) {
                 Text(
                     "+10",
                     style = MaterialTheme.typography.labelMedium,
@@ -418,10 +522,16 @@ private fun TargetStepper(
 /**
  * The single visual language for all four [TargetStepper] step controls (±1, ±10) — see the
  * row-overflow comment above its call site for why this isn't a Material3 IconButton.
+ *
+ * [A]: [contentDescription] is an explicit override on the chip's own node, not left to the
+ * merged-in child — the ±1 chips' `Icon(contentDescription = null)` would otherwise carry no
+ * label, and the ±10 chips' plain `Text("−10"/"+10")` reads ambiguous out of context ("minus one
+ * zero"). One real action string per chip fixes both the same way.
  */
 @Composable
 private fun StepChip(
     onClick: () -> Unit,
+    contentDescription: String,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
@@ -432,7 +542,8 @@ private fun StepChip(
             .clip(CircleShape)
             .background(Tarjeta)
             .border(1.dp, Borde, CircleShape)
-            .clickable(onClick = onClick),
+            .clickable(onClick = onClick)
+            .semantics { this.contentDescription = contentDescription },
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -537,14 +648,22 @@ private fun ReminderRow(
             ) {
                 Text(
                     stringResource(R.string.form_reminder_label),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = if (disabled) TintaSuave else Tinta,
                     modifier = Modifier.weight(1f),
                 )
+                // Ink-hierarchy canon: a set hour is a datum (SemiBold Tinta); "none" — or any
+                // value on the inert QUIT row — stays a muted textual value.
+                val hasTime = reminderMinutes != null && !disabled
                 Text(
                     reminderMinutes?.let(::formatReminderTime) ?: stringResource(R.string.form_reminder_none),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = TintaSuave,
+                    style =
+                        if (hasTime) {
+                            MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                        } else {
+                            MaterialTheme.typography.bodyLarge
+                        },
+                    color = if (hasTime) Tinta else TintaSuave,
                 )
             }
             if (!disabled && reminderMinutes != null) {
@@ -564,22 +683,43 @@ private fun ReminderRow(
     }
 }
 
+/**
+ * [E]: the [Switch] carries no text of its own, sitting in a plain, non-clickable [Row] next to —
+ * not merged with — its label+hint [Column]. TalkBack used to announce the label on one swipe and
+ * a bare "Switch, On" on the next, with the two never connected. A plain `mergeDescendants = true`
+ * on the row is NOT enough (verified empirically in SettingsScreen's identical rows): [Switch] is
+ * itself an independently screenreader-focusable node, so it stays a separate reachable stop under
+ * a merely-merging ancestor — same reason the app's own convention never nests an `IconButton`
+ * inside an already-clickable row. `toggleable` on the row instead MOVES the toggle action there
+ * (`Switch(onCheckedChange = null)` makes the switch purely visual) — the standard Android
+ * Settings-list a11y idiom, same fix as [ReminderRow]'s sibling-not-nested comment is the mirror
+ * image of (there, two actions stay apart; here, one action and its label merge into one).
+ */
 @Composable
 private fun BinaryModeRow(
     binaryMode: Boolean,
     enabled: Boolean,
     onToggle: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier
+            .testTag("binary-mode-row")
+            .toggleable(value = binaryMode, enabled = enabled, onValueChange = { onToggle() }, role = Role.Switch),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.binary_mode), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+            Text(
+                stringResource(R.string.binary_mode),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = Tinta,
+            )
             Text(
                 stringResource(R.string.binary_mode_hint),
                 style = MaterialTheme.typography.labelMedium,
                 color = TintaSuave,
             )
         }
-        Switch(checked = binaryMode, onCheckedChange = { onToggle() }, enabled = enabled)
+        Switch(checked = binaryMode, onCheckedChange = null, enabled = enabled)
     }
 }
 
@@ -591,16 +731,16 @@ private fun StepRow(
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             stringResource(R.string.step_label),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = Tinta,
             modifier = Modifier.weight(1f),
         )
         IconButton(onClick = { onAdjustStep(-1) }) {
-            Icon(BitoIcons.Minus, contentDescription = null, tint = Tinta)
+            Icon(BitoIcons.Minus, contentDescription = stringResource(R.string.step_minus_cd), tint = Tinta)
         }
         Text("$step", style = MaterialTheme.typography.titleMedium, color = Tinta)
         IconButton(onClick = { onAdjustStep(1) }) {
-            Icon(BitoIcons.Plus, contentDescription = null, tint = Tinta)
+            Icon(BitoIcons.Plus, contentDescription = stringResource(R.string.step_plus_cd), tint = Tinta)
         }
     }
 }

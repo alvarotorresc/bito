@@ -60,8 +60,8 @@ class DetailViewModel(
     val month: StateFlow<YearMonth> = _month.asStateFlow()
 
     val uiState: StateFlow<DetailUiState?> =
-        combine(domainState.observe(), settings.settings, _month) { state, prefs, m ->
-            buildDetailUiState(state, habitId, m, todayOf(prefs), prefs.personality, prefs.userName)
+        combine(domainState.observe(), settings.settings, rewards.observeOwnedItems(), _month) { state, prefs, owned, m ->
+            buildDetailUiState(state, habitId, m, todayOf(prefs), prefs.personality, prefs.userName, owned)
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 

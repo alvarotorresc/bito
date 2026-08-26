@@ -11,6 +11,9 @@
     <string name="week_progress">%1$d of %2$d this week</string>
     <string name="month_progress">%1$d of %2$d this month</string>
     <string name="limit_caption">max %1$s</string>
+    <!-- CHECK habit card's primary circle: TalkBack-only, toggle-aware (HabitCards.kt's CheckBody) -->
+    <string name="mark_done_action">Mark %1$s as done</string>
+    <string name="unmark_done_action">Marked %1$s as done, tap to undo</string>
     <string name="clean_today">clean today</string>
     <string name="relapse_today">relapse logged</string>
     <string name="relapse_action">I slipped</string>
@@ -19,6 +22,8 @@
     <string name="relapse_confirm_yes">Log relapse</string>
     <string name="cancel">Cancel</string>
     <string name="add_amount" translatable="false">+%1$d</string>
+    <!-- COUNTER habit card's primary circle: TalkBack-only action label (HabitCards.kt's CounterBody) -->
+    <string name="add_step_action">Add %1$d to %2$s</string>
     <string name="add_target">+goal</string>
     <string name="exact_value_title">Set today\'s total</string>
     <string name="exact_value_hint">Today\'s total</string>
@@ -49,14 +54,14 @@
     <string name="habi_form_prompt_cheerleader">A new habit! Name it, shape it, and let\'s go.</string>
     <string name="habi_form_prompt_neutra">What habit are we building? Name it and pick its shape — everything else can wait.</string>
     <string name="habi_speaker" translatable="false">HABI · %1$s</string>
-    <string name="personality_neutra">NEUTRAL</string>
-    <string name="personality_sargento">SERGEANT</string>
-    <string name="personality_cheerleader">CHEERLEADER</string>
+    <string name="personality_neutra">Neutra</string>
+    <string name="personality_sargento">Sargento</string>
+    <string name="personality_cheerleader">Cheerleader</string>
     <string name="name_hint">Habit name</string>
     <string name="preset_daily">Daily</string>
     <string name="preset_quantity">Amount</string>
-    <string name="preset_duration">Time</string>
-    <string name="preset_weekly">Per week</string>
+    <string name="preset_duration">Duration</string>
+    <string name="preset_weekly">X per week</string>
     <string name="preset_quit">Quit</string>
     <string name="preset_locked_hint">Type can\'t change — archive and create a new one</string>
     <string name="quit_total">Cold turkey</string>
@@ -67,11 +72,20 @@
     <string name="period_week">week</string>
     <string name="period_month">month</string>
     <string name="target_input_title">Set the target</string>
+    <!-- TargetStepper's 4 step chips (HabitFormScreen.kt): the ±1 chips wrap a bare Minus/Plus
+         icon, the ±10 ones a plain "−10"/"+10" Text — neither says what it acts on out of context. -->
+    <string name="target_minus1_cd">Decrease target by 1</string>
+    <string name="target_plus1_cd">Increase target by 1</string>
+    <string name="target_minus10_cd">Decrease target by 10</string>
+    <string name="target_plus10_cd">Increase target by 10</string>
     <string name="unit_hint">Unit (glasses, pages…)</string>
     <string name="more_options">More options</string>
     <string name="binary_mode">Just done / not done</string>
     <string name="binary_mode_hint">The goal is a written reference; logging is one tap</string>
     <string name="step_label">Tap adds</string>
+    <!-- StepRow's own ±1 IconButtons (the "tap adds" advanced stepper), same bare-icon gap. -->
+    <string name="step_minus_cd">Decrease step</string>
+    <string name="step_plus_cd">Increase step</string>
     <string name="form_reminder_label">Reminder</string>
     <string name="form_reminder_none">None</string>
     <string name="form_reminder_clear">Remove reminder</string>
@@ -95,6 +109,9 @@
         <item quantity="one">last %1$d copy</item>
         <item quantity="other">last %1$d copies</item>
     </plurals>
+    <!-- CopiesSheet's ±1 stepper (SettingsScreen.kt): the Minus/Plus icons carry no label of their own. -->
+    <string name="backup_copies_minus_cd">Decrease kept copies</string>
+    <string name="backup_copies_plus_cd">Increase kept copies</string>
     <string name="backup_now">Back up now</string>
     <string name="backup_restore">Restore</string>
     <string name="backup_export_manual">Export a copy…</string>
@@ -139,10 +156,12 @@
     <string name="msg_invalid_file">That is not a valid Bito backup</string>
     <string name="msg_io_error">Something went wrong — nothing was changed</string>
 
-    <string name="day_section_title">Your day</string>
-    <string name="day_section_body">Log something in the small hours before that time and it counts for the previous day.</string>
     <string name="cutoff_label">Your day ends at</string>
+    <string name="cutoff_row_hint">for night owls: what you do before that time still counts as today</string>
     <string name="cutoff_note">Applies from now on; sealed days stay as they are</string>
+    <!-- CutoffSheet's ±30min stepper: same bare-icon gap as backup_copies_minus_cd/plus_cd above. -->
+    <string name="cutoff_minus_cd">Earlier cutoff</string>
+    <string name="cutoff_plus_cd">Later cutoff</string>
     <string name="reminders_section_title">Reminders</string>
     <string name="reminders_section_body">Phone nudges so you don\'t forget to log your habits.</string>
     <string name="reminder_none_hint">No reminders set — add a time so Bito can nudge you.</string>
@@ -152,16 +171,30 @@
     <string name="review_hint">An evening nudge to look back on the day and close it.</string>
     <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
     <string name="notif_permission_hint">Allow notifications to hear reminders</string>
+    <string name="settings_notifications_section">Notifications</string>
+    <string name="sheet_done">Done</string>
 
     <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Habi sounds</string>
     <string name="settings_habi_sounds_hint">Little greetings and celebrations. Never in notifications.</string>
+    <string name="settings_intro_row">Intro</string>
+    <string name="settings_intro_value">watch again</string>
+    <string name="settings_log_section">On logging</string>
+    <string name="settings_log_sound">Sound</string>
+    <string name="settings_log_sound_hint">A tiny tick when you log a habit</string>
+    <string name="settings_log_haptic">Vibration</string>
+    <string name="settings_log_haptic_hint">A soft buzz when you log</string>
 
     <string name="general_section_title">General</string>
     <string name="language_row">Language</string>
     <string name="language_spanish">Español</string>
     <string name="language_english">English</string>
     <string name="language_system">System</string>
+    <!-- GeneralSectionCard's language row cycles system -> es -> en -> system on tap; the value is
+         already announced via the merged "Language, Spanish" text, so this is a low-priority extra
+         hint about the tap behavior itself, via onClickLabel (TalkBack appends it to "double tap
+         to..."), not a replacement for it. -->
+    <string name="language_cycle_hint">Cycle language</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Archived habit (%1$d)</item>
         <item quantity="other">Archived habits (%1$d)</item>
@@ -170,6 +203,19 @@
     <string name="archived_since">Since %1$s</string>
     <string name="archived_empty">Nothing archived yet</string>
     <string name="unarchive_habit">Reactivate</string>
+
+    <string name="about_section_title">About</string>
+    <string name="about_version">v%1$s</string>
+    <string name="about_source_row">Source code</string>
+    <string name="about_support_row">Support the project</string>
+    <string name="about_support_value">donate</string>
+    <string name="about_license_row">Free license</string>
+    <string name="about_feedback_row">Something not right?</string>
+    <string name="about_feedback_hint">a one-minute form, no account needed</string>
+    <string name="donate_sheet_body">Bito is free, with no ads and no strings attached. Donations will open further down the road — for now, using it and telling me what to improve is plenty of support.</string>
+    <string name="donate_sheet_ok">Got it</string>
+    <string name="license_sheet_body">Bito is free software under the GPL-3.0 license: you can use it, study it, change it and share it — and any derived version must stay free too.</string>
+    <string name="license_sheet_view">View the license</string>
     <string name="paused_since">Paused since %1$s</string>
 
     <string name="onb_welcome_tagline">habits that stick</string>
@@ -185,6 +231,7 @@
     <string name="onb_story3_title">Until Habi found a system</string>
     <string name="onb_story3_sub">Small steps, every day. It changed everything.</string>
     <string name="onb_continue">Continue</string>
+    <string name="onb_replay_close">Back</string>
     <string name="onb_name_title">I\'ve been through this. Now it\'s your turn.</string>
     <string name="onb_name_question">What\'s your name?</string>
     <string name="onb_name_hint">Your name</string>
@@ -194,6 +241,9 @@
     <string name="onb_name_reaction">%1$s! I like it. We\'re going to do great things.</string>
     <string name="onb_personality_title">Choose Habi\'s personality</string>
     <string name="onb_personality_hint">you can change it anytime</string>
+    <string name="onb_personality_preview_sargento">I\'ll demand a lot from you, %1$s — because you\'ve got it in you.</string>
+    <string name="onb_personality_preview_cheerleader">Together we can take on anything, %1$s!</string>
+    <string name="onb_personality_preview_neutra">Just what\'s needed, %1$s: your habits, clear, every day.</string>
     <string name="onb_habit_title">Create your first habit</string>
     <string name="onb_habit_name_hint">e.g. Drink water</string>
     <string name="onb_habit_goal_label">goal</string>
@@ -207,6 +257,14 @@
     <string name="onb_habit_widget_bold">Bito widget</string>
     <string name="onb_habit_create">Create and start</string>
     <string name="onb_habit_start">Start</string>
+    <!-- GoalStepChip (7g's ±1 goal stepper): a bare Minus/Plus icon inside a plain clickable Box,
+         no label of its own. -->
+    <string name="onb_goal_minus_cd">Decrease goal</string>
+    <string name="onb_goal_plus_cd">Increase goal</string>
+    <!-- PagerDots: an aggregate description on the whole dots row (never per-dot), so the pager's
+         position is actually announced somewhere in the flow — the dots themselves carry no text
+         of their own for TalkBack to read. -->
+    <string name="onb_pager_step_cd">Step %1$d of %2$d</string>
 
     <string name="settings_name_row">Your name</string>
     <string name="settings_name_placeholder">Add your name</string>

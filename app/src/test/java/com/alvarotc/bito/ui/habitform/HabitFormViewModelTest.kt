@@ -7,11 +7,14 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import kotlinx.coroutines.CoroutineScope
@@ -19,6 +22,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -54,6 +59,7 @@ class HabitFormViewModelTest {
 
     private lateinit var db: BitoDatabase
     private lateinit var habitsRepo: HabitsRepository
+    private lateinit var rewardsRepo: RewardsRepository
     private lateinit var settingsRepo: SettingsRepository
 
     private fun settingsStore(name: String): DataStore<Preferences> =
@@ -62,7 +68,7 @@ class HabitFormViewModelTest {
         ) { File(tmp.root, "$name.preferences_pb") }
 
     private fun newViewModel(habitId: String? = null) =
-        HabitFormViewModel(habitsRepo, settingsRepo, habitId, now = { fixedNow }, zone = { utc })
+        HabitFormViewModel(habitsRepo, settingsRepo, rewardsRepo, habitId, now = { fixedNow }, zone = { utc })
 
     @Before
     fun setUp() {
@@ -75,6 +81,7 @@ class HabitFormViewModelTest {
                 .allowMainThreadQueries()
                 .build()
         habitsRepo = HabitsRepository(db)
+        rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore("habit-form-vm"))
     }
 
@@ -388,5 +395,17 @@ class HabitFormViewModelTest {
             advanceUntilIdle()
 
             assertEquals(1, db.habitDao().all().size)
+        }
+
+    @Test
+    fun `the real equipped set reaches the form's avatar state`() =
+        runTest {
+            rewardsRepo.acquire(CustomizationItemEntity("upper-lazo", CustomizationCategory.UPPER, fixedNow, equipped = true))
+            val vm = newViewModel()
+
+            backgroundScope.launch { vm.equipped.collect() }
+            advanceUntilIdle()
+
+            assertEquals("upper-lazo", vm.equipped.value.upper)
         }
 }

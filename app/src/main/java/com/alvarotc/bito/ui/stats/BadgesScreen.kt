@@ -22,6 +22,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -83,7 +85,12 @@ private fun BadgesHero(
     total: Int,
 ) {
     BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(
+            // [E]: Icon(Trophy, null) + 3 plain Text stops (count, "of N", "Badges" caption), no
+            // onClick to auto-merge them — same shape as RecordsScreen's BestRecordHero.
+            modifier = Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Icon(BitoIcons.Trophy, contentDescription = null, tint = Brasa, modifier = Modifier.size(28.dp))
             Spacer(Modifier.height(8.dp))
             Row(verticalAlignment = Alignment.Bottom) {
@@ -134,7 +141,10 @@ private fun BadgeListRow(badge: BadgeRowUi) {
     val unlockedDay = badge.unlockedDay
     val unlocked = unlockedDay != null
     Row(
-        Modifier.fillMaxWidth().alpha(if (unlocked) 1f else 0.6f).testTag("badge-${badge.def.id}"),
+        // [E]: Icon(null) + name + caption (unlock date OR how-to-earn) [+ Icon(Lock, null)] —
+        // no onClick to auto-merge them into "<name>, unlocked on <date>" / "<name>, locked —
+        // <how to earn>" (the caption Text already carries that exact wording).
+        Modifier.fillMaxWidth().alpha(if (unlocked) 1f else 0.6f).testTag("badge-${badge.def.id}").semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
@@ -147,7 +157,7 @@ private fun BadgeListRow(badge: BadgeRowUi) {
         Column(Modifier.weight(1f)) {
             Text(
                 stringResource(BadgeStrings.badgeNameRes(badge.def.id)),
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = Tinta,
             )
             val caption =

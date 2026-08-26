@@ -1,5 +1,10 @@
 package com.alvarotc.bito.ui.today
 
+import android.content.Context
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,17 +39,21 @@ import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.ui.components.BitoCard
-import com.alvarotc.bito.ui.components.BitoSnackbar
 import com.alvarotc.bito.ui.components.DayRing
+import com.alvarotc.bito.ui.components.DismissableBitoSnackbar
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.formatDayWithPattern
@@ -79,8 +88,14 @@ fun TodayScreen(
 
     LaunchedEffect(logged) {
         if (logged != null) {
-            val result = snackbar.showSnackbar(loggedLabel, actionLabel = undoLabel, duration = SnackbarDuration.Short)
-            if (result == SnackbarResult.ActionPerformed) viewModel.undo() else viewModel.consumeLogged()
+            try {
+                val result = snackbar.showSnackbar(loggedLabel, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+                if (result == SnackbarResult.ActionPerformed) viewModel.undo()
+            } finally {
+                // Also runs on cancellation (navigating away): the undo offer dies with the visit
+                // instead of re-showing on every return to Hoy (QA 2026-08-24).
+                viewModel.consumeLogged()
+            }
         }
     }
 
@@ -98,10 +113,35 @@ fun TodayScreen(
             }
         }
     val haptics = LocalHapticFeedback.current
+    val context = LocalContext.current
+    // Registro feedback (QA 2026-08-23/24): a real Vibrator buzz on every log tap, gated ONLY by
+    // the app's own Ajustes switch — performHapticFeedback obeyed the system touch-feedback
+    // toggle, which most people keep off, so it read as "vibration doesn't work". The tick sound
+    // half lives in the ViewModel (HabiSound.LOG).
+    val vibrator =
+        remember {
+            if (Build.VERSION.SDK_INT >= 31) {
+                (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
+            } else {
+                @Suppress("DEPRECATION")
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            }
+        }
+    val logHaptic = {
+        if (state.logHapticEnabled) {
+            val effect =
+                if (Build.VERSION.SDK_INT >= 29) {
+                    VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
+                } else {
+                    VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
+                }
+            vibrator.vibrate(effect)
+        }
+    }
 
     Scaffold(
         containerColor = Papel,
-        snackbarHost = { SnackbarHost(snackbar) { BitoSnackbar(it) } },
+        snackbarHost = { SnackbarHost(snackbar) { DismissableBitoSnackbar(it) } },
     ) { padding ->
         LazyColumn(
             Modifier.padding(padding),
@@ -115,14 +155,20 @@ fun TodayScreen(
             if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty()) {
                 item { EmptyToday(onCreateHabit) }
             } else {
-                item { RingCard(state.ringDone, state.ringTotal, onOpenReview) }
+                item { RingCard(state.ringDone, state.ringTotal, state.todaySealed, onOpenReview) }
             }
             items(orderedCards, key = { it.id }) { card ->
                 ReorderableItem(reorderState, key = card.id) {
                     HabitCard(
                         card = card,
-                        onPrimary = { viewModel.tapPrimary(card) },
-                        onAdd = { viewModel.addAmount(card, it) },
+                        onPrimary = {
+                            viewModel.tapPrimary(card)
+                            logHaptic()
+                        },
+                        onAdd = {
+                            viewModel.addAmount(card, it)
+                            logHaptic()
+                        },
                         onExact = { exactFor = card },
                         onOpen = { onOpenHabit(card.id) },
                         modifier =
@@ -199,6 +245,7 @@ private fun TodayHeader(
 private fun RingCard(
     done: Int,
     total: Int,
+    sealed: Boolean,
     onOpenReview: () -> Unit,
 ) {
     BitoCard(
@@ -222,12 +269,14 @@ private fun RingCard(
                     color = Tarjeta.copy(alpha = 0.8f),
                 )
                 Spacer(Modifier.height(8.dp))
+                // Once sealed, the CTA flips to a calm "Día sellado ✓" (QA 2026-08-24) — still
+                // tappable: it opens the sealed-day screen, which is a pleasant place to revisit.
                 GhostPillButton(
-                    text = stringResource(R.string.today_close_day),
+                    text = stringResource(if (sealed) R.string.today_day_sealed else R.string.today_close_day),
                     onClick = onOpenReview,
                     color = Tarjeta,
                     borderColor = Tarjeta.copy(alpha = 0.6f),
-                    icon = BitoIcons.ChevronRight,
+                    icon = if (sealed) BitoIcons.Check else BitoIcons.ChevronRight,
                     modifier = Modifier.testTag("close-day"),
                 )
             }
@@ -241,17 +290,24 @@ private fun PausedHabitRow(
     paused: PausedHabitUi,
     onOpen: () -> Unit,
 ) {
+    // The section header above spells out "Paused" once for the whole list — a user who jumps
+    // straight to a row via list navigation, past the header, would otherwise hear only the
+    // habit name. stateDescription (not a second contentDescription) keeps the spoken habit name
+    // itself intact while adding the state as a qualifier, same shape TalkBack already uses for
+    // Switch/Checkbox state. Reuses the section header's own string (no new key).
+    val pausedState = stringResource(R.string.paused_section_title)
     Row(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 56.dp)
             .clickable(onClick = onOpen)
+            .semantics { stateDescription = pausedState }
             .testTag("paused-${paused.id}"),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(BitoIcons.Pause, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(16.dp))
-        Text(paused.name, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        Text(paused.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
     }
 }
 

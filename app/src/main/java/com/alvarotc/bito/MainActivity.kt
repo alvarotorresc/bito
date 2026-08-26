@@ -19,8 +19,9 @@ import com.alvarotc.bito.ui.theme.BitoTheme
 // that's needed: being an AppCompatActivity alone persists nothing). On 33+ the framework itself
 // restores the per-app locale from localeConfig before this activity is even created. So onCreate
 // below never reads Settings.languageTag from DataStore — AppLocale.apply (called from
-// SettingsViewModel.setLanguage and OnboardingViewModel.setLanguage) is the only place that
-// touches AppCompatDelegate, and only when the user changes the setting, not on every launch.
+// SettingsViewModel.setLanguage, OnboardingViewModel.setLanguage, and BackupViewModel.confirmImport)
+// is the only place that touches AppCompatDelegate: when the user changes the setting, or right
+// after a backup restore persists a possibly different one — never on every launch.
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

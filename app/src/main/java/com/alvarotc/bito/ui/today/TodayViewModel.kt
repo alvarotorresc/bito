@@ -16,6 +16,8 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.LogicalDay
+import com.alvarotc.bito.ui.habi.HabiSound
+import com.alvarotc.bito.ui.habi.HabiSounds
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +40,8 @@ class TodayViewModel(
     private val settings: SettingsRepository,
     private val reconciler: PointsReconciler,
     private val rewards: RewardsRepository,
+    // Nullable so pre-existing VM tests need no fake SoundPool; the factory always passes the real one.
+    private val habiSounds: HabiSounds? = null,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
@@ -58,6 +62,7 @@ class TodayViewModel(
                 prefs.personality,
                 owned,
                 prefs.userName,
+                logHapticEnabled = prefs.logHapticEnabled,
             )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
@@ -87,6 +92,7 @@ class TodayViewModel(
         val id = UUID.randomUUID().toString()
         journal.log(EntryEntity(id, habitId, today, value, nowMillis))
         loggedEntry.value = id
+        habiSounds?.play(HabiSound.LOG)
     }
 
     fun tapPrimary(card: HabitCardUi) {
@@ -146,6 +152,7 @@ class TodayViewModel(
                         container.settings,
                         container.reconciler,
                         container.rewards,
+                        habiSounds = container.habiSounds,
                     )
                 }
             }

@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.settings
 
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.os.LocaleListCompat
+import java.util.Locale
 
 /**
  * The only place that touches [AppCompatDelegate] for per-app locales — everyone else goes through
@@ -16,13 +17,13 @@ import androidx.core.os.LocaleListCompat
  * API<33 only because the manifest's `AppLocalesMetadataHolderService`/`autoStoreLocales`
  * declaration opts into it (see that entry in AndroidManifest.xml) — is a SEPARATE, on-device-only
  * applier cache: it's what actually resolves the locale before the first frame, but it isn't what
- * travels anywhere. The two reconcile at [SettingsViewModel.setLanguage] and
- * [com.alvarotc.bito.ui.onboarding.OnboardingViewModel.setLanguage], the only two call sites that
- * write DataStore's tag and call [apply] together, in the same breath. One gap remains, tracked for
- * M9.5, not fixed here: restoring a backup writes `languageTag` straight to DataStore without a
- * matching [apply] call, so the restored language sits unapplied — AppCompat keeps resolving
- * whatever it last cached — until the user opens Settings and picks a language again, which is the
- * only path that calls [apply].
+ * travels anywhere. The two reconcile at three call sites that write DataStore's tag and call
+ * [apply] together, in the same breath: [SettingsViewModel.setLanguage],
+ * [com.alvarotc.bito.ui.onboarding.OnboardingViewModel.setLanguage], and — closing the restore gap
+ * this KDoc used to track for M9.5 — [com.alvarotc.bito.ui.settings.BackupViewModel.confirmImport],
+ * which re-applies whatever `languageTag` the backup just persisted right after a successful
+ * import, instead of leaving AppCompat to keep resolving whatever it last cached until the user
+ * happens to open Settings and touch the language row again.
  */
 object AppLocale {
     /** null → follow the system. Persisting is the VM's job; this only applies. */
@@ -30,4 +31,19 @@ object AppLocale {
         AppCompatDelegate.setApplicationLocales(
             if (tag == null) LocaleListCompat.getEmptyLocaleList() else LocaleListCompat.forLanguageTags(tag),
         )
+
+    /**
+     * What a stored `languageTag` actually displays as, for UI that needs to pick ONE of "es"/"en"
+     * to highlight rather than SettingsScreen's textual third option (`R.string.language_system`).
+     * Only "es"/"en" resolve to themselves; anything else — `null` ("follow the system") or a tag
+     * `locales_config` doesn't declare (a backup restored from, or a device running, a locale
+     * outside {es, en}) — falls through to [Locale.getDefault], the same "out-of-set == system"
+     * bucket [SettingsScreen]'s language row already treats identically via its own `else` branch.
+     * Falls all the way to "en" (the base resource language) only when even THAT resolved value
+     * isn't "es"/"en" either — [com.alvarotc.bito.ui.onboarding.OnboardingScreen]'s WelcomeScene has
+     * no third chip to land an unresolvable case on, unlike Settings' text row.
+     */
+    fun resolveDisplayLanguage(tag: String?): String =
+        (tag.takeIf { it == "es" || it == "en" } ?: Locale.getDefault().language)
+            .takeIf { it == "es" } ?: "en"
 }

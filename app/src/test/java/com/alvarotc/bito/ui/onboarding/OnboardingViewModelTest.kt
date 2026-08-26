@@ -67,7 +67,25 @@ class OnboardingViewModelTest {
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
 
-    private fun newViewModel() = OnboardingViewModel(settingsRepo, habitsRepo, reconciler, now = { fixedNow }, zone = { utc })
+    private fun newViewModel(applyLocale: (String?) -> Unit = { }) =
+        OnboardingViewModel(settingsRepo, habitsRepo, reconciler, now = { fixedNow }, zone = { utc }, applyLocale = applyLocale)
+
+    /**
+     * The read-only VM behind Ajustes' "Introducción · ver de nuevo" — same steps, no writes.
+     * [applyLocale] is seamed for the reason BackupViewModelTest documents: under this Robolectric
+     * config `AppCompatDelegate.getApplicationLocales()` reports `[]` whatever was set, so only a
+     * seam can honestly tell "the locale was applied" from "it wasn't".
+     */
+    private fun replayViewModel(applyLocale: (String?) -> Unit = { }) =
+        OnboardingViewModel(
+            settingsRepo,
+            habitsRepo,
+            reconciler,
+            now = { fixedNow },
+            zone = { utc },
+            applyLocale = applyLocale,
+            persist = false,
+        )
 
     /** A second habit's fulfilled entry, logged directly (bypassing the VM), so its HABIT_DONE
      * grant is pending in the ledger. Mirrors DetailViewModelTest's own way of proving a reconcile
@@ -285,15 +303,74 @@ class OnboardingViewModelTest {
         }
 
     @Test
-    fun `setLanguage persists the tag and updates the visible state`() =
+    fun `setLanguage persists the tag, applies it, and updates the visible state`() =
         runTest {
-            val vm = newViewModel()
+            var appliedTag: String? = "untouched"
+            val vm = newViewModel(applyLocale = { appliedTag = it })
 
             vm.setLanguage("en")
             advanceUntilIdle()
 
             assertEquals("en", vm.uiState.value.languageTag)
             assertEquals("en", settingsRepo.settings.first().languageTag)
+            // The other half of the replay pair below: the store write and the applier move
+            // together in first-run mode, and neither moves in replay.
+            assertEquals("en", appliedTag)
+        }
+
+    @Test
+    fun `replay never writes the language — only the chip it lights up`() =
+        runTest {
+            settingsRepo.update { it.copy(languageTag = "es") }
+            var appliedTag: String? = "untouched"
+            val vm = replayViewModel(applyLocale = { appliedTag = it })
+            advanceUntilIdle()
+
+            vm.setLanguage("en")
+            advanceUntilIdle()
+
+            // The chip reflects the tap (pure UI state) while the app's real language is untouched.
+            assertEquals("en", vm.uiState.value.languageTag)
+            assertEquals("es", settingsRepo.settings.first().languageTag)
+            // AppLocale.apply is skipped in the same breath, deliberately: it is
+            // AppCompatDelegate.setApplicationLocales, which persists under the hood (autoStoreLocales
+            // below API 33, the platform from 33 on). Skipping only the store write would leave the
+            // app speaking "en" with Settings still saying "es" — a split brain worse than the bug.
+            assertEquals("untouched", appliedTag)
+        }
+
+    @Test
+    fun `replay never writes the personality — tapping the pills only previews`() =
+        runTest {
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO) }
+            val vm = replayViewModel()
+            advanceUntilIdle()
+
+            vm.setPersonality(Personality.CHEERLEADER)
+            advanceUntilIdle()
+
+            // Step 7f invites the user to tap each pill to hear the voices: the preview follows the
+            // tap, the real Habi keeps the voice the user chose in Ajustes.
+            assertEquals(Personality.CHEERLEADER, vm.uiState.value.personality)
+            assertEquals(Personality.SARGENTO, settingsRepo.settings.first().personality)
+        }
+
+    @Test
+    fun `replay's finish writes nothing and creates no habit`() =
+        runTest {
+            val vm = replayViewModel()
+            advanceUntilIdle()
+            vm.setName("Alvaro")
+            vm.setHabitName("Leer")
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val stored = settingsRepo.settings.first()
+            assertEquals("", stored.userName)
+            assertFalse(stored.onboardingDone)
+            assertEquals(emptyList<String>(), habitsRepo.observeHabits().first().map { it.name })
+            assertFalse(vm.uiState.value.done)
         }
 
     @Test
@@ -337,5 +414,19 @@ class OnboardingViewModelTest {
             advanceUntilIdle()
 
             assertEquals(1, db.habitDao().all().count { it.name == "Meditar" })
+        }
+
+    @Test
+    fun `the weekly target never exceeds seven`() =
+        runTest {
+            val vm = newViewModel()
+            // Direct setHabitTarget call clamps to floor 1 when preset is DAILY_CHECK (default).
+            vm.setHabitTarget(0)
+            assertEquals(1, vm.uiState.value.habitTarget)
+
+            // After switching to WEEKLY_TIMES, setHabitTarget clamps to ceiling 7.
+            vm.setHabitKind(HabitPreset.WEEKLY_TIMES)
+            vm.setHabitTarget(15)
+            assertEquals(7, vm.uiState.value.habitTarget)
         }
 }

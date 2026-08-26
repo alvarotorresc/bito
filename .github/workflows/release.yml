@@ -35,9 +35,13 @@ jobs:
       - name: Extract changelog notes
         run: awk "/^## \\[?${GITHUB_REF_NAME#v}/{flag=1;next}/^## /{flag=0}flag" CHANGELOG.md > "$RUNNER_TEMP/notes.md"
 
+      # mapping.txt viaja con el APK: sin él, un stack trace ofuscado que reporte
+      # alguien no hay forma de leerlo, y R8 lo regenera distinto en cada build.
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           body_path: ${{ runner.temp }}/notes.md
-          files: app/build/outputs/apk/release/app-release.apk
+          files: |
+            app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/mapping/release/mapping.txt
           fail_on_unmatched_files: true

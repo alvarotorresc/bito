@@ -28,9 +28,11 @@
         <item quantity="many">%1$d rachas avanzan</item>
         <item quantity="other">%1$d rachas avanzan</item>
     </plurals>
+    <string name="review_row_streak_cd">%1$s, racha %2$d</string>
     <string name="review_until_tomorrow">Hasta mañana</string>
     <string name="review_new_badges">Logros nuevos</string>
     <string name="today_close_day">Cerrar el día</string>
+    <string name="today_day_sealed">Día sellado</string>
     <string name="settings_celebration_label">Celebración de día perfecto</string>
     <string name="settings_celebration_hint">Un aviso de Habi cuando cierras un día redondo fuera de la app. Dentro, siempre se celebra.</string>
 </resources>

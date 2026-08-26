@@ -14,7 +14,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -34,6 +36,8 @@ import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.notifications.NotificationPermissionPrompt
+import com.alvarotc.bito.ui.onboarding.OnboardingReconciler
 import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.review.ReviewScreen
@@ -56,10 +60,31 @@ import com.alvarotc.bito.ui.today.TodayViewModel
 
 @Composable
 fun BitoNavHost(container: AppContainer) {
+    // OnboardingReconciler.reconcile runs to completion FIRST, gating the rest of this composable
+    // behind it — a v1/v2 restore's seeded `onboardingDone = true` (a habits-but-no-onboardingDone
+    // restore, see OnboardingReconciler's own KDoc) is committed to DataStore before the settings
+    // gate below ever subscribes and reads it. That makes the startDestination decision further
+    // down deterministic: no more race against a subscriber that could arrive before the
+    // reconciling write commits. `reconciled` only ever flips false -> true, once per [container] —
+    // keyed on it (not bare `remember {}`) so a container swap re-closes this gate instead of
+    // leaving it open while `LaunchedEffect` below restarts and races the settings subscription
+    // further down against the new container's own reconcile, the exact race this fix removes.
+    var reconciled by remember(container) { mutableStateOf(false) }
+    LaunchedEffect(container) {
+        OnboardingReconciler.reconcile(container.settings, container.habits)
+        reconciled = true
+    }
+    if (!reconciled) {
+        Box(Modifier.fillMaxSize().background(Papel).testTag("app-loading"))
+        return
+    }
+
     // The very first Settings emission decides where the app opens (today vs onboarding) — a
     // hardcoded "today" start would flash before onboardingDone is known, so nothing but the app
     // background renders until that first value lands. Same "state == null means still loading"
-    // gate SettingsScreen already uses for its own DataStore-backed cards.
+    // gate SettingsScreen already uses for its own DataStore-backed cards. Reading it only starts
+    // once reconciled above, so this is the reconciled value for the "onboardingDone" case above,
+    // not a fresh race against it.
     val settingsState by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
     val loadedSettings = settingsState
     if (loadedSettings == null) {
@@ -72,6 +97,12 @@ fun BitoNavHost(container: AppContainer) {
     val startDestination = remember { if (loadedSettings.onboardingDone) "today" else "onboarding" }
 
     val nav = rememberNavController()
+    // Stats and Habi retain their ViewModels across tab visits (scoped to this composable's own
+    // store owner — the Activity — instead of each NavBackStackEntry): re-entering shows the
+    // retained state instantly instead of a multi-second cold combine behind the loading gate
+    // (QA 2026-08-23). Today already survives via popBackStack; Detail stays per-entry by design.
+    val statsViewModel: StatsViewModel = viewModel(factory = StatsViewModel.factory(container))
+    val habiViewModel: HabiViewModel = viewModel(factory = HabiViewModel.factory(container))
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
 
     Scaffold(
@@ -191,6 +222,17 @@ fun BitoNavHost(container: AppContainer) {
                     settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
                     onOpenArchived = { nav.navigate("archived") },
+                    onOpenIntro = { nav.navigate("onboarding_replay") },
+                )
+            }
+            // Replay de la introducción desde Ajustes: mismos 7 pasos, nada se persiste — and
+            // `persist = false` is what actually makes that true. The flow's language and
+            // personality steps write to settings the moment they're tapped, not at the end, so
+            // the closing callback alone never stopped a replay from editing real data.
+            composable("onboarding_replay") {
+                OnboardingScreen(
+                    viewModel = viewModel(factory = OnboardingViewModel.factory(container, persist = false)),
+                    replayOnClose = { nav.popBackStack() },
                 )
             }
             composable("archived") {
@@ -201,11 +243,11 @@ fun BitoNavHost(container: AppContainer) {
                 )
             }
             composable("habi") {
-                HabiScreen(viewModel = viewModel(factory = HabiViewModel.factory(container)))
+                HabiScreen(viewModel = habiViewModel)
             }
             composable("stats") {
                 StatsScreen(
-                    viewModel = viewModel(factory = StatsViewModel.factory(container)),
+                    viewModel = statsViewModel,
                     onOpenRecords = { nav.navigate("records") },
                     onOpenNumbers = { nav.navigate("numbers") },
                     onOpenBadges = { nav.navigate("badges") },
@@ -241,42 +283,76 @@ fun BitoNavHost(container: AppContainer) {
             }
         }
 
-        // T11: the one bridge from an Intent (a notification tap) to this NavHost. Declared
-        // alongside NavHost, not as a sibling of the outer Scaffold — Scaffold subcomposes its
-        // content (this whole block) lazily during measurement, so an effect placed outside it
+        // T11 (+ M9.5 T6): the one bridge from an Intent (a notification tap) to this NavHost.
+        // Declared alongside NavHost, not as a sibling of the outer Scaffold — Scaffold subcomposes
+        // its content (this whole block) lazily during measurement, so an effect placed outside it
         // would fire before NavHost has set the nav graph and crash navigating anywhere. A route
         // already pending when this composes (MainActivity decoded it before setContent) fires
         // on the very first LaunchedEffect run, same as one that arrives later via onNewIntent.
+        //
+        // While `onboarding` is the current route, a request must not navigate OVER the flow —
+        // same philosophy as the celebration guard below (a mid-flow user shouldn't get sandwiched
+        // into e.g. "review"), and genuinely the same MECHANISM this time too: just don't consume.
+        // NavRequests.pending is a process-wide MutableStateFlow, the one source of truth for "a
+        // route is waiting" — it already survives an Activity recreation on its own, so the fix is
+        // to leave it alone (return@LaunchedEffect without calling NavRequests.consume()) rather
+        // than copy it into ephemeral remember-scoped state, which an earlier version of this guard
+        // did and which reset to nothing on rotation. Once onboarding's own `done` effect above
+        // navigates to "today", `currentRoute` changes, this effect re-runs (keyed on it), and the
+        // still-pending route fires through the branch below like any other request — no extra
+        // state, no ordering argument between two navigate() calls to get right. `currentRoute ==
+        // null` gets the same non-consuming treatment for the same reason: NavHost hasn't
+        // necessarily set its first back-stack entry the very first time this composes, and a
+        // request landing in that narrow window must wait for a REAL route rather than being
+        // dropped.
         val pendingRoute by NavRequests.pending.collectAsStateWithLifecycle()
-        LaunchedEffect(pendingRoute) {
-            pendingRoute?.let {
-                nav.navigate(it) { launchSingleTop = true }
-                NavRequests.consume()
-            }
+        LaunchedEffect(pendingRoute, currentRoute) {
+            val route = pendingRoute ?: return@LaunchedEffect
+            if (currentRoute == null || currentRoute == "onboarding") return@LaunchedEffect
+            nav.navigate(route) { launchSingleTop = true }
+            NavRequests.consume()
         }
+
+        // POST_NOTIFICATIONS, asked once per install the first time a real route is on screen —
+        // hosted here, above the graph, so the single ask covers finishing onboarding, restoring
+        // a backup (which never enters onboarding) and updating an older install alike. Renders
+        // nothing; see its own KDoc for why this is the moment.
+        NotificationPermissionPrompt(container.settings, currentRoute)
 
         // T12: the two global celebration sheets, overlaid above the NavHost everywhere except
         // the `review` route — E2's SealedDayContent already owns that beat there (its own
-        // LaunchedEffect fires the cue and marks it celebrated) — and the `onboarding` route,
-        // where a sheet popping up over the first-run flow would be jarring and the celebration
-        // hasn't been "seen" by a real user yet. Suppressed on BOTH the sheet and the cue below:
-        // cueing is idempotent per pending sheet ([CelebrationsViewModel.cue]'s own
-        // `lastCuedSignature` latch), so cueing it once here while hidden would mean it never
-        // cues again once the sheet actually shows on Today — the sound would fire silently
-        // behind onboarding and the sheet would then render mute. Suppressing both instead keeps
-        // the celebration genuinely pending: it shows AND cues the first time it's actually seen,
-        // right after onboarding hands off to "today". The perfect day always wins first:
-        // dismissing it re-evaluates this `when`, and the badge sheet (if any) follows.
+        // LaunchedEffect fires the cue and marks it celebrated) — the `onboarding` route, where a
+        // sheet popping up over the first-run flow would be jarring and the celebration hasn't
+        // been "seen" by a real user yet, and any frame where a NavRequest is still pending
+        // (`pendingRoute != null`): a request held behind onboarding fires its `nav.navigate`
+        // above in the SAME recomposition `currentRoute` first flips to "today", so without this
+        // a just-unlocked badge could cue and compose for that one frame before the pending route
+        // (e.g. "review") lands and suppresses it again — cued once, then rendered mute.
+        // Suppressed on BOTH the sheet and the cue below: cueing is idempotent per pending sheet
+        // ([CelebrationsViewModel.cue]'s own `lastCuedSignature` latch), so cueing it once here
+        // while hidden would mean it never cues again once the sheet actually shows on Today —
+        // the sound would fire silently behind the suppression and the sheet would then render
+        // mute. Suppressing both instead keeps the celebration genuinely pending: it shows AND
+        // cues the first time it's actually seen. The perfect day always wins first: dismissing
+        // it re-evaluates this `when`, and the badge sheet (if any) follows.
+        //
+        // `pendingRoute` is a LaunchedEffect key below, not just read inside the block: the
+        // pending-route LaunchedEffect above calls `NavRequests.consume()` without necessarily
+        // changing `currentRoute` (e.g. the pending route is already current), so a `pendingRoute
+        // != null -> null` transition that leaves `currentRoute` untouched must still re-run this
+        // effect — otherwise a cue newly un-suppressed by that transition would never actually
+        // fire.
         val celebrations: CelebrationsViewModel = viewModel(factory = CelebrationsViewModel.factory(container))
         val cState by celebrations.uiState.collectAsStateWithLifecycle()
-        val celebrationsSuppressed = currentRoute == "review" || currentRoute == "onboarding"
+        val celebrationsSuppressed =
+            currentRoute == "review" || currentRoute == "onboarding" || currentRoute == "onboarding_replay" || pendingRoute != null
         if (!celebrationsSuppressed) {
             when {
                 cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
                 cState.newBadges.isNotEmpty() -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
             }
         }
-        LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute) {
+        LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute, pendingRoute) {
             if (!celebrationsSuppressed && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
                 celebrations.cue()
             }

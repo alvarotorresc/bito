@@ -7,11 +7,14 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.equippedSetOf
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -25,10 +28,10 @@ import java.time.ZoneId
 import java.util.UUID
 
 /** A WEEKLY_TIMES target counts days, not sessions: 7 is the physical weekly maximum. */
-private const val MAX_WEEKLY_TIMES = 7
+internal const val MAX_WEEKLY_TIMES = 7
 
-/** Single source of truth for target clamping, shared by [HabitFormViewModel.adjustTarget] and [HabitFormViewModel.setTarget]. */
-private fun HabitFormState.clampTarget(raw: Int): Int =
+/** Single source of truth for target clamping, shared by [HabitFormViewModel.adjustTarget], [HabitFormViewModel.setTarget], and [com.alvarotc.bito.ui.onboarding.OnboardingViewModel.setHabitTarget]. */
+internal fun HabitFormState.clampTarget(raw: Int): Int =
     if (preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL) {
         0
     } else {
@@ -40,6 +43,7 @@ private fun HabitFormState.clampTarget(raw: Int): Int =
 class HabitFormViewModel(
     private val habits: HabitsRepository,
     private val settings: SettingsRepository,
+    rewards: RewardsRepository,
     habitId: String?,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
@@ -54,6 +58,14 @@ class HabitFormViewModel(
         settings.settings
             .map { it.personality }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Personality.NEUTRA)
+
+    // What the bubble's mini-Habi wears: the user's REAL equipped set, so the form shows THE
+    // Habi they dressed on the Habi screen rather than a naked default — same source every
+    // other screen's avatar reads (RewardsRepository), same derivation buildHabiUiState uses.
+    val equipped: StateFlow<EquippedSet> =
+        rewards.observeOwnedItems()
+            .map { owned -> equippedSetOf(owned.filter { it.equipped }.map { it.itemId }) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), EquippedSet())
 
     init {
         if (habitId != null) {
@@ -155,7 +167,7 @@ class HabitFormViewModel(
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    HabitFormViewModel(container.habits, container.settings, habitId)
+                    HabitFormViewModel(container.habits, container.settings, container.rewards, habitId)
                 }
             }
     }

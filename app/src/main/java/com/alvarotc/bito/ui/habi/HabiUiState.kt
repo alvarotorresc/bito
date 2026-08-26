@@ -30,6 +30,9 @@ data class HabiUiState(
     val balance: Int = 0,
     val freezersOwned: Int = 0,
     val freezerPrice: Int = EconomyConfig().freezerPrice,
+    // The full economy behind that price — the points sheet renders every earn value from here so
+    // copy can never disagree with PointsEngine (QA 2026-08-23). Same source as freezerPrice.
+    val economy: EconomyConfig = EconomyConfig(),
     val store: Map<CustomizationCategory, List<StoreEntry>> = emptyMap(),
     // What Habi is trying on before buying it — ephemeral UI state, never written to the DB
     // (docs/05 §4). Non-null both drives `spec.equipped` below AND opens the PurchaseSheet.
@@ -66,6 +69,7 @@ fun buildHabiUiState(
     // don't pass one (every pre-existing test) are unaffected. HabiViewModel passes its injected
     // economy.freezerPrice so the store card and buyFreezer() can never disagree on the price.
     freezerPrice: Int = EconomyConfig().freezerPrice,
+    economy: EconomyConfig = EconomyConfig(),
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -94,6 +98,7 @@ fun buildHabiUiState(
         balance = balance,
         freezersOwned = PointsEngine.freezersOwned(state),
         freezerPrice = freezerPrice,
+        economy = economy,
         store = store,
         previewItemId = previewItemId,
         userName = userName,

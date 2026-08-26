@@ -9,7 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -33,8 +33,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,6 +57,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -73,6 +77,7 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import java.util.Locale
 
 @Composable
 fun BitoCard(
@@ -159,6 +164,26 @@ fun GhostPillButton(
 }
 
 /**
+ * [BitoSnackbar] wrapped in a horizontal swipe-to-dismiss, notification-style (QA 2026-08-24):
+ * flicking the card either way dismisses it, which resolves the host's suspended showSnackbar
+ * with Dismissed — the caller's else-branch (consume, no undo) runs exactly as on timeout.
+ */
+@Composable
+fun DismissableBitoSnackbar(data: SnackbarData) {
+    val dismissState =
+        rememberSwipeToDismissBoxState(
+            confirmValueChange = { value ->
+                val leaving = value != SwipeToDismissBoxValue.Settled
+                if (leaving) data.dismiss()
+                leaving
+            },
+        )
+    SwipeToDismissBox(state = dismissState, backgroundContent = {}) {
+        BitoSnackbar(data)
+    }
+}
+
+/**
  * Bito-styled snackbar body. The M3 default reads the inverse* slots this theme deliberately
  * doesn't define, falling back to Material's near-black + purple — pass this to every
  * [androidx.compose.material3.SnackbarHost] so transient messages speak Crema like the rest.
@@ -203,7 +228,18 @@ fun DotProgress(
     total: Int,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+    Row(
+        // Copies DayRing's own [D] pattern below: mergeDescendants = true is NOT a no-op — a
+        // merging node is a two-way semantics boundary. It keeps this Row's own progress info
+        // from bleeding OUT into whatever ancestor merges further up (e.g. a card's own
+        // clickable merge), and it makes this Row itself a real, separate stop for a screen
+        // reader instead of an untouchable node whose contentDescription/range info would
+        // otherwise just get folded into that ancestor's announcement.
+        modifier.semantics(mergeDescendants = true) {
+            progressBarRangeInfo = ProgressBarRangeInfo(current = if (total == 0) 0f else filled.toFloat() / total, range = 0f..1f)
+        },
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
         repeat(total) { i ->
             key(i) {
                 AnimatedDot(filled = i < filled)
@@ -247,7 +283,20 @@ fun RoundedBar(
     modifier: Modifier = Modifier,
     color: Color = Hoja,
 ) {
-    Box(modifier.height(10.dp).clip(CircleShape).background(HojaTinte)) {
+    Box(
+        modifier
+            .height(10.dp)
+            .clip(CircleShape)
+            .background(HojaTinte)
+            // mergeDescendants = true is NOT a no-op here either (see DotProgress above) — this
+            // is the exact boundary TodayScreenTest's "does not bleed into the card" test
+            // depends on: it stops this bar's own progressBarRangeInfo from folding into the
+            // enclosing card's merged announcement, and makes the bar its own screen-reader
+            // stop rather than an untouchable node.
+            .semantics(mergeDescendants = true) {
+                progressBarRangeInfo = ProgressBarRangeInfo(current = progress.coerceIn(0f, 1f), range = 0f..1f)
+            },
+    ) {
         Box(
             Modifier
                 .fillMaxHeight()
@@ -343,7 +392,11 @@ fun SegmentedPills(
                     .shadow(elevation = if (selected) 2.dp else 0.dp, shape = CircleShape, clip = false)
                     .clip(CircleShape)
                     .background(if (selected) Tarjeta else Color.Transparent)
-                    .clickable(enabled = enabled) { onSelect(i) }
+                    // selectable (not plain clickable), same canon as OnboardingScreen's
+                    // LanguageChip/PersonalityCard — announces which option is active instead of
+                    // every pill reading as a bare "<label>, Button". role = Tab: these are
+                    // segmented window/mode switches, not a single-choice radio group.
+                    .selectable(selected = selected, enabled = enabled, onClick = { onSelect(i) }, role = Role.Tab)
                     .padding(horizontal = 14.dp, vertical = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -371,19 +424,22 @@ fun SpeechBubble(
     modifier: Modifier = Modifier,
     avatar: (@Composable () -> Unit)? = null,
 ) {
+    // The kicker line renders uppercased ("HABI · SARGENTO", mockup canon) while the personality
+    // strings themselves stay in title case for pills and cards (QA 2026-08-23).
+    val kicker = speaker.uppercase(Locale.getDefault())
     BitoCard(modifier) {
         if (avatar != null) {
             Row(verticalAlignment = Alignment.Top) {
                 avatar()
                 Spacer(Modifier.width(12.dp))
                 Column {
-                    Text(speaker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+                    Text(kicker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
                     Spacer(Modifier.height(4.dp))
                     Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
                 }
             }
         } else {
-            Text(speaker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+            Text(kicker, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
             Spacer(Modifier.height(4.dp))
             Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
         }

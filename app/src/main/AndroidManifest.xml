@@ -12,6 +12,9 @@
         android:name="android.permission.SCHEDULE_EXACT_ALARM"
         tools:ignore="ProtectedPermissions" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Feedback de registro (Ajustes › Al registrar): vibración controlada por el switch
+         de la app, no por el ajuste global de vibración al tacto. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
 
     <application
         android:name=".BitoApp"
@@ -64,6 +67,22 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/today_widget_info" />
+        </receiver>
+        <activity
+            android:name=".ui.widget.SingleHabitConfigActivity"
+            android:exported="true"
+            android:theme="@style/Theme.Bito">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE" />
+            </intent-filter>
+        </activity>
+        <receiver android:name=".ui.widget.SingleHabitWidgetReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/single_habit_widget_info" />
         </receiver>
         <receiver android:name=".ui.widget.WidgetMidnightReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.ReminderReceiver" android:exported="false" />

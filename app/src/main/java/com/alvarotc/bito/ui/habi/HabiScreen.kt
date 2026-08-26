@@ -1,17 +1,20 @@
 package com.alvarotc.bito.ui.habi
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -20,12 +23,19 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,6 +51,7 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import kotlinx.coroutines.delay
 
 /**
  * Habi's home: mood stage, points balance, the personality selector, and the store. No screen
@@ -51,17 +62,62 @@ import com.alvarotc.bito.ui.theme.TintaSuave
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var showPointsSheet by remember { mutableStateOf(false) }
+    // Pet streak (QA 2026-08-24): three quick pets within 1.5s send Habi into a 2.6s delight —
+    // huge smile, floating hearts, happier meow. Purely visual/audible; nothing persists.
+    val petTimes = remember { ArrayDeque<Long>() }
+    var delightPulse by remember { mutableStateOf(0) }
+    var delighted by remember { mutableStateOf(false) }
+    LaunchedEffect(delightPulse) {
+        if (delightPulse > 0) {
+            delighted = true
+            delay(2600)
+            delighted = false
+        }
+    }
+    val scrollState = rememberScrollState()
+    // Opening a store preview (a grid tap) scrolls back to the stage, so the dressed bean, the
+    // "probando" chip and the purchase sheet are all visible at once — mockup 4b (QA 2026-08-23).
+    LaunchedEffect(state.previewItemId) {
+        if (state.previewItemId != null) scrollState.animateScrollTo(0)
+    }
     Scaffold(containerColor = Papel) { padding ->
+        if (state.loading) {
+            // First frame after the nav-scoped VM is recreated: calm paper, never a zeroed
+            // balance/store flash (QA 2026-08-23).
+            Box(Modifier.padding(padding).fillMaxSize().testTag("habi-loading"))
+            return@Scaffold
+        }
         Column(
             Modifier
                 .padding(padding)
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(scrollState)
                 .padding(20.dp)
                 .testTag("habi-screen"),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            BalanceChip(state.balance, modifier = Modifier.align(Alignment.End))
-            HabiStage(spec = state.spec, onTap = viewModel::onAvatarTap, modifier = Modifier.fillMaxWidth())
+            BalanceChip(state.balance, onClick = { showPointsSheet = true }, modifier = Modifier.align(Alignment.End))
+            HabiStage(
+                spec = state.spec,
+                delighted = delighted,
+                onTap = {
+                    // Taps are ignored for the whole delight: the else branch below would
+                    // otherwise fire a GREETING meow on top of the HAPPY one still playing.
+                    if (!delighted) {
+                        val now = System.currentTimeMillis()
+                        petTimes.addLast(now)
+                        while (petTimes.isNotEmpty() && now - petTimes.first() > 1500) petTimes.removeFirst()
+                        if (petTimes.size >= 3) {
+                            petTimes.clear()
+                            delightPulse++
+                            viewModel.onPetStreak()
+                        } else {
+                            viewModel.onAvatarTap()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+            )
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }
@@ -94,6 +150,9 @@ fun HabiScreen(viewModel: HabiViewModel) {
             )
         }
     }
+    if (showPointsSheet) {
+        PointsInfoSheet(economy = state.economy, onDismiss = { showPointsSheet = false })
+    }
 }
 
 /** "probando: <ítem>" (mockup 4b), under the stage while Habi is trying something on. */
@@ -117,19 +176,28 @@ private fun TryingChip(
     }
 }
 
+/**
+ * The points chip; tapping it opens [PointsInfoSheet] (QA 2026-08-23 — the app finally explains
+ * how points are earned somewhere). `internal` for the same direct-test reason as
+ * [PersonalityPills]. Surface's onClick overload carries the Button role for TalkBack.
+ */
 @Composable
-private fun BalanceChip(
+internal fun BalanceChip(
     balance: Int,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Surface(
+        onClick = onClick,
         modifier = modifier.testTag("balance-chip"),
         shape = CircleShape,
         color = Tarjeta,
         border = BorderStroke(1.dp, Borde),
     ) {
         Row(
-            Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            // [E]: Icon(null) + 2 plain Text stops (balance number, "pts" unit) — merge so a
+            // TalkBack pass over the chip reads "<balance> points" as one stop, not two.
+            Modifier.padding(horizontal = 14.dp, vertical = 8.dp).semantics(mergeDescendants = true) {},
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
@@ -153,9 +221,14 @@ private fun BalanceChip(
  * the mockup's active pill is a solid-Tinta, dark pill with Tarjeta text — the opposite of that
  * component's light "raised chip on a Papel trough" canon — so bending it here would fight its API
  * more than it would save.
+ *
+ * `internal` (not `private`): lets its `selectable`/`Role.Tab` semantics be tested directly
+ * without standing up a whole [HabiScreen] (real [HabiViewModel], Room, the avatar's infinite
+ * bob/blink transitions) — same reasoning [StoreSectionTest] gives for testing [StoreSection]
+ * standalone.
  */
 @Composable
-private fun PersonalityPills(
+internal fun PersonalityPills(
     selected: Personality,
     onSelect: (Personality) -> Unit,
     modifier: Modifier = Modifier,
@@ -163,14 +236,27 @@ private fun PersonalityPills(
     Row(modifier.testTag("personality-pills"), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Personality.entries.forEach { personality ->
             val active = personality == selected
+            // [C]: the active pill used to skip `.clickable` entirely (the `!active` gate below),
+            // so it wasn't even a focusable node — a TalkBack user saw only the 2 non-selected
+            // options with no sign a 3rd, active one existed. `selectable` (always attached, per
+            // OnboardingScreen's PersonalityCard) fixes that; `indication = null` on the active
+            // pill only keeps the old visual byte-for-byte — it never had a ripple to begin with
+            // (a703aef's BitoBottomBar fix is the same pattern for the same reason).
+            val interactionSource = remember { MutableInteractionSource() }
             Box(
                 Modifier
                     .weight(1f)
                     .clip(CircleShape)
                     .background(if (active) Tinta else Tarjeta)
                     .then(if (active) Modifier else Modifier.border(1.dp, Borde, CircleShape))
-                    .then(if (!active) Modifier.clickable { onSelect(personality) } else Modifier)
-                    .padding(vertical = 12.dp),
+                    .selectable(
+                        selected = active,
+                        interactionSource = interactionSource,
+                        indication = if (active) null else LocalIndication.current,
+                        role = Role.Tab,
+                        onClick = { onSelect(personality) },
+                    )
+                    .padding(vertical = 12.dp, horizontal = 8.dp),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
@@ -178,6 +264,7 @@ private fun PersonalityPills(
                     style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp, fontWeight = FontWeight.SemiBold),
                     color = if (active) Tarjeta else Tinta,
                     textAlign = TextAlign.Center,
+                    maxLines = 1,
                 )
             }
         }

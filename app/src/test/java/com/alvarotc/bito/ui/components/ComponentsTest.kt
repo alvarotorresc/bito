@@ -1,12 +1,20 @@
 package com.alvarotc.bito.ui.components
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.ui.theme.BitoTheme
 import org.junit.Assert.assertEquals
@@ -58,5 +66,64 @@ class ComponentsTest {
         compose.waitForIdle()
 
         assertEquals(5f / 6f, currentFraction(), 0.001f)
+    }
+
+    @Test
+    fun `DotProgress exposes its fraction as progress bar range info`() {
+        compose.setContent {
+            BitoTheme {
+                DotProgress(filled = 2, total = 8, modifier = Modifier.testTag("dots"))
+            }
+        }
+
+        val fraction = compose.onNodeWithTag("dots").fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo].current
+        assertEquals(2f / 8f, fraction, 0.001f)
+    }
+
+    @Test
+    fun `RoundedBar exposes its progress as progress bar range info`() {
+        compose.setContent {
+            BitoTheme {
+                RoundedBar(progress = 0.6f, modifier = Modifier.testTag("bar").fillMaxWidth())
+            }
+        }
+
+        val fraction = compose.onNodeWithTag("bar").fetchSemanticsNode().config[SemanticsProperties.ProgressBarRangeInfo].current
+        assertEquals(0.6f, fraction, 0.001f)
+    }
+
+    @Test
+    fun `SegmentedPills announces which option is selected as a tab, not a bare button`() {
+        val selectedIndex = mutableStateOf(0)
+        compose.setContent {
+            BitoTheme {
+                SegmentedPills(
+                    options = listOf("Day", "Week", "Month"),
+                    selectedIndex = selectedIndex.value,
+                    onSelect = { selectedIndex.value = it },
+                )
+            }
+        }
+
+        val dayNode = compose.onNodeWithText("Day")
+        dayNode.assertIsSelected()
+        assertEquals(Role.Tab, dayNode.fetchSemanticsNode().config[SemanticsProperties.Role])
+        compose.onNodeWithText("Week").assertIsNotSelected()
+
+        compose.onNodeWithText("Week").performClick()
+
+        compose.onNodeWithText("Week").assertIsSelected()
+        compose.onNodeWithText("Day").assertIsNotSelected()
+    }
+
+    @Test
+    fun `a disabled SegmentedPills option stays disabled under the new selectable semantics`() {
+        compose.setContent {
+            BitoTheme {
+                SegmentedPills(options = listOf("Day", "Week"), selectedIndex = 0, onSelect = {}, enabled = false)
+            }
+        }
+
+        compose.onNodeWithText("Day").assertIsNotEnabled()
     }
 }

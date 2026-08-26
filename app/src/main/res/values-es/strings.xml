@@ -8,6 +8,8 @@
     <string name="week_progress">%1$d de %2$d esta semana</string>
     <string name="month_progress">%1$d de %2$d este mes</string>
     <string name="limit_caption">máx %1$s</string>
+    <string name="mark_done_action">Marcar %1$s como hecho</string>
+    <string name="unmark_done_action">%1$s marcado como hecho, toca para deshacer</string>
     <string name="clean_today">limpio hoy</string>
     <string name="relapse_today">recaída registrada</string>
     <string name="relapse_action">He recaído</string>
@@ -15,6 +17,7 @@
     <string name="relapse_confirm_body">La racha vuelve a empezar. Sin dramas — mañana cuenta de nuevo.</string>
     <string name="relapse_confirm_yes">Registrar recaída</string>
     <string name="cancel">Cancelar</string>
+    <string name="add_step_action">Añadir %1$d a %2$s</string>
     <string name="add_target">+objetivo</string>
     <string name="exact_value_title">Ajustar el total de hoy</string>
     <string name="exact_value_hint">Total de hoy</string>
@@ -44,14 +47,14 @@
     <string name="habi_form_prompt_sargento">Nuevo hábito. Nombre y forma; el resto puede esperar.</string>
     <string name="habi_form_prompt_cheerleader">¡Un hábito nuevo! Ponle nombre, dale forma, y a por él.</string>
     <string name="habi_form_prompt_neutra">¿Qué hábito construimos? Ponle nombre y elige su forma — lo demás puede esperar.</string>
-    <string name="personality_neutra">NEUTRA</string>
-    <string name="personality_sargento">SARGENTO</string>
-    <string name="personality_cheerleader">CHEERLEADER</string>
+    <string name="personality_neutra">Neutra</string>
+    <string name="personality_sargento">Sargento</string>
+    <string name="personality_cheerleader">Cheerleader</string>
     <string name="name_hint">Nombre del hábito</string>
     <string name="preset_daily">Diario</string>
     <string name="preset_quantity">Cantidad</string>
-    <string name="preset_duration">Tiempo</string>
-    <string name="preset_weekly">Por semana</string>
+    <string name="preset_duration">Duración</string>
+    <string name="preset_weekly">X por semana</string>
     <string name="preset_quit">Dejar de hacer</string>
     <string name="preset_locked_hint">El tipo no se cambia — archiva y crea uno nuevo</string>
     <string name="quit_total">Del todo</string>
@@ -62,11 +65,17 @@
     <string name="period_week">semana</string>
     <string name="period_month">mes</string>
     <string name="target_input_title">Pon el objetivo</string>
+    <string name="target_minus1_cd">Reducir el objetivo en 1</string>
+    <string name="target_plus1_cd">Aumentar el objetivo en 1</string>
+    <string name="target_minus10_cd">Reducir el objetivo en 10</string>
+    <string name="target_plus10_cd">Aumentar el objetivo en 10</string>
     <string name="unit_hint">Unidad (vasos, páginas…)</string>
     <string name="more_options">Más opciones</string>
     <string name="binary_mode">Solo cumplido</string>
     <string name="binary_mode_hint">El objetivo es una referencia escrita; registrar es un tap</string>
     <string name="step_label">Cada tap suma</string>
+    <string name="step_minus_cd">Reducir el incremento</string>
+    <string name="step_plus_cd">Aumentar el incremento</string>
     <string name="form_reminder_label">Recordatorio</string>
     <string name="form_reminder_none">Sin recordatorio</string>
     <string name="form_reminder_clear">Quitar recordatorio</string>
@@ -91,6 +100,8 @@
         <item quantity="many">últimas %1$d copias</item>
         <item quantity="other">últimas %1$d copias</item>
     </plurals>
+    <string name="backup_copies_minus_cd">Reducir copias guardadas</string>
+    <string name="backup_copies_plus_cd">Aumentar copias guardadas</string>
     <string name="backup_now">Hacer backup ahora</string>
     <string name="backup_restore">Restaurar</string>
     <string name="backup_export_manual">Exportar copia…</string>
@@ -138,10 +149,11 @@
     <string name="msg_invalid_file">Eso no es una copia válida de Bito</string>
     <string name="msg_io_error">Algo salió mal — no se cambió nada</string>
 
-    <string name="day_section_title">Tu día</string>
-    <string name="day_section_body">Si registras algo de madrugada antes de esa hora, cuenta para el día anterior.</string>
-    <string name="cutoff_label">Fin de tu día</string>
+    <string name="cutoff_label">El día termina a las</string>
+    <string name="cutoff_row_hint">para noctámbulos: lo que hagas antes de esa hora cuenta como hoy</string>
     <string name="cutoff_note">Aplica desde ahora; los días sellados no se tocan</string>
+    <string name="cutoff_minus_cd">Corte más temprano</string>
+    <string name="cutoff_plus_cd">Corte más tarde</string>
     <string name="reminders_section_title">Recordatorios</string>
     <string name="reminders_section_body">Avisos en el móvil para que no se te olvide registrar tus hábitos.</string>
     <string name="reminder_none_hint">Sin avisos configurados — añade una hora para que Bito te avise.</string>
@@ -151,16 +163,26 @@
     <string name="review_hint">Un aviso por la noche para repasar el día y cerrarlo.</string>
     <string name="reminder_exact_notice">Las alarmas exactas están desactivadas — los avisos pueden desviarse. Toca para permitirlas.</string>
     <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
+    <string name="settings_notifications_section">Notificaciones</string>
+    <string name="sheet_done">Listo</string>
 
     <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Sonidos de Habi</string>
     <string name="settings_habi_sounds_hint">Saluditos y celebraciones. Nunca en notificaciones.</string>
+    <string name="settings_intro_row">Introducción</string>
+    <string name="settings_intro_value">ver de nuevo</string>
+    <string name="settings_log_section">Al registrar</string>
+    <string name="settings_log_sound">Sonido</string>
+    <string name="settings_log_sound_hint">Un toquecito al registrar un hábito</string>
+    <string name="settings_log_haptic">Vibración</string>
+    <string name="settings_log_haptic_hint">Una vibración suave al registrar</string>
 
     <string name="general_section_title">General</string>
     <string name="language_row">Idioma</string>
     <string name="language_spanish">Español</string>
     <string name="language_english">English</string>
     <string name="language_system">Del sistema</string>
+    <string name="language_cycle_hint">Cambiar idioma</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Hábito archivado (%1$d)</item>
         <item quantity="many">Hábitos archivados (%1$d)</item>
@@ -170,6 +192,19 @@
     <string name="archived_since">Desde %1$s</string>
     <string name="archived_empty">Todavía no hay nada archivado</string>
     <string name="unarchive_habit">Reactivar</string>
+
+    <string name="about_section_title">Acerca de</string>
+    <string name="about_version">v%1$s</string>
+    <string name="about_source_row">Código fuente</string>
+    <string name="about_support_row">Apoya el proyecto</string>
+    <string name="about_support_value">donar</string>
+    <string name="about_license_row">Licencia libre</string>
+    <string name="about_feedback_row">¿Algo no va?</string>
+    <string name="about_feedback_hint">un formulario de un minuto, sin cuentas</string>
+    <string name="donate_sheet_body">Bito es gratuito, sin anuncios y sin letra pequeña. Más adelante aceptará donaciones; de momento, usarlo y contarme qué mejorar ya es apoyar.</string>
+    <string name="donate_sheet_ok">Entendido</string>
+    <string name="license_sheet_body">Bito es software libre bajo la licencia GPL-3.0: puedes usarlo, estudiarlo, modificarlo y compartirlo — y cualquier versión derivada seguirá siendo libre.</string>
+    <string name="license_sheet_view">Ver licencia</string>
     <string name="paused_since">En pausa desde %1$s</string>
 
     <string name="onb_welcome_tagline">hábitos que se quedan</string>
@@ -182,12 +217,16 @@
     <string name="onb_story3_title">Hasta que encontró un sistema</string>
     <string name="onb_story3_sub">Pequeños pasos, cada día. Le cambió la vida.</string>
     <string name="onb_continue">Seguir</string>
+    <string name="onb_replay_close">Volver</string>
     <string name="onb_name_title">Yo ya pasé por esto. Ahora te toca a ti.</string>
     <string name="onb_name_question">¿Cómo te llamas?</string>
     <string name="onb_name_hint">Tu nombre</string>
     <string name="onb_name_reaction">¡%1$s! Me gusta. Vamos a hacer grandes cosas.</string>
     <string name="onb_personality_title">Elige la personalidad de Habi</string>
     <string name="onb_personality_hint">puedes cambiarla cuando quieras</string>
+    <string name="onb_personality_preview_sargento">Exigiré mucho de ti, %1$s. Porque puedes darlo.</string>
+    <string name="onb_personality_preview_cheerleader">¡Juntos vamos a poder con todo, %1$s!</string>
+    <string name="onb_personality_preview_neutra">Lo justo y necesario, %1$s: tus hábitos, claros, cada día.</string>
     <string name="onb_habit_title">Crea tu primer hábito</string>
     <string name="onb_habit_name_hint">ej. Beber agua</string>
     <string name="onb_habit_goal_label">objetivo</string>
@@ -198,6 +237,9 @@
     <string name="onb_habit_widget_bold">widget de Bito</string>
     <string name="onb_habit_create">Crear y empezar</string>
     <string name="onb_habit_start">Empezar</string>
+    <string name="onb_goal_minus_cd">Reducir objetivo</string>
+    <string name="onb_goal_plus_cd">Aumentar objetivo</string>
+    <string name="onb_pager_step_cd">Paso %1$d de %2$d</string>
 
     <string name="settings_name_row">Tu nombre</string>
     <string name="settings_name_placeholder">Añade tu nombre</string>

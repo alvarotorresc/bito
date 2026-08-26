@@ -5,6 +5,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
@@ -46,6 +47,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -82,8 +84,19 @@ class OnboardingScreenTest {
             scope = CoroutineScope(dispatcher + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
 
-    private fun newViewModel(name: String): OnboardingViewModel {
+    /**
+     * [seedSettings] runs (via [runBlocking]) BEFORE the VM is constructed, so its `init` block's
+     * one-shot `settings.settings.first()` read (see [OnboardingViewModel]'s own KDoc) already sees
+     * whatever it wrote — needed by tests that plant a `languageTag` pre-existing settings would
+     * carry (a reinstall over restored data), rather than one the VM's own [OnboardingViewModel.setLanguage]
+     * would set live.
+     */
+    private fun newViewModel(
+        name: String,
+        seedSettings: suspend SettingsRepository.() -> Unit = {},
+    ): OnboardingViewModel {
         val settings = SettingsRepository(settingsStore(name))
+        runBlocking { settings.seedSettings() }
         val habits = HabitsRepository(db)
         val reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db))
         return OnboardingViewModel(settings, habits, reconciler)
@@ -179,6 +192,36 @@ class OnboardingScreenTest {
             // carries it.
             compose.onNodeWithText("English").assertIsSelected()
             compose.onNodeWithText("Español").assertIsNotSelected()
+        } finally {
+            Locale.setDefault(previousLocale)
+        }
+    }
+
+    /**
+     * `languageTag = "fr"` is outside `locales_config`'s {es, en} — the same bucket Ajustes'
+     * language row already treats as "system" (its `when` falls to the `else` branch for exactly
+     * this tag). Before this fix, WelcomeScene took the raw out-of-set tag at face value instead of
+     * falling through to the resolved system locale like Settings does, so a `languageTag` restored
+     * from a backup (or carried over from a device whose language `locales_config` doesn't declare)
+     * always lit the EN chip regardless of what the device actually resolves to — a lie this test
+     * closes. Es is the system default here specifically so this doesn't collapse into the
+     * pre-existing "system default outside es/en falls back to en" case above.
+     */
+    @Test
+    fun `an out-of-set stored tag highlights the resolved locale chip`() {
+        val previousLocale = Locale.getDefault()
+        Locale.setDefault(Locale("es"))
+        try {
+            val vm = newViewModel("onboarding-screen-out-of-set-tag") { update { it.copy(languageTag = "fr") } }
+            compose.setContent {
+                BitoTheme {
+                    OnboardingScreen(vm)
+                }
+            }
+            compose.waitForIdle()
+
+            compose.onNodeWithText("Español").assertIsSelected()
+            compose.onNodeWithText("English").assertIsNotSelected()
         } finally {
             Locale.setDefault(previousLocale)
         }
@@ -304,6 +347,28 @@ class OnboardingScreenTest {
         assertEquals(OnboardingStep.STORY_3, vm.uiState.value.step)
     }
 
+    /**
+     * M9 final review minor 5. [OnboardingSwipeFadeLatch] is plain Kotlin, not Compose state
+     * (see its own KDoc), specifically so this doesn't need a compose rule or any of the timing
+     * gymnastics [androidx.compose.ui.test.junit4.ComposeContentTestRule] would need to catch a
+     * 200ms alpha animation mid-flight — Compose's test semantics tree doesn't expose raw alpha
+     * at all, so asserting the actual pixel fade isn't cheaply doable here. This instead proves
+     * the DECISION the settle collector and the freshly-mounted page actually make: unmarked
+     * (first mount, a button/skip tap) always plays the fade; a swipe settle's [markSwipe] makes
+     * the very next consume skip it exactly once, then reverts to the default.
+     */
+    @Test
+    fun `a swipe settle does not replay the entrance fade`() {
+        val latch = OnboardingSwipeFadeLatch()
+
+        assertFalse("unmarked: first mount / a button-driven advance must still fade", latch.consumeSkipsFade())
+
+        latch.markSwipe()
+        assertTrue("a swipe settle's mark must make the next mount skip its fade", latch.consumeSkipsFade())
+
+        assertFalse("consuming clears the mark: the NEXT mount defaults back to fading", latch.consumeSkipsFade())
+    }
+
     @Test
     fun `system back steps back one beat during the flow instead of exiting`() {
         val vm = newViewModel("onboarding-screen-back-handler")
@@ -365,13 +430,13 @@ class OnboardingScreenTest {
         compose.waitForIdle()
 
         val context = ApplicationProvider.getApplicationContext<Context>()
-        val neutraGreeting = context.getString(R.string.habi_greeting_neutra_normal, "Alvaro")
+        val neutraGreeting = context.getString(R.string.onb_personality_preview_neutra, "Alvaro")
         compose.onNodeWithText(neutraGreeting, useUnmergedTree = true).assertExists()
 
         compose.onNodeWithTag("onb-personality-card-sargento", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        val sargentoGreeting = context.getString(R.string.habi_greeting_sargento_normal, "Alvaro")
+        val sargentoGreeting = context.getString(R.string.onb_personality_preview_sargento, "Alvaro")
         compose.onNodeWithText(neutraGreeting, useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(sargentoGreeting, useUnmergedTree = true).assertExists()
         assertEquals(Personality.SARGENTO, vm.uiState.value.personality)
@@ -478,5 +543,80 @@ class OnboardingScreenTest {
         assertEquals(HabitPreset.QUIT, vm.uiState.value.habitKind)
         compose.onNodeWithText("1", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText(context.getString(R.string.quit_total), useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * [C]: the check-mark on the active preset is an `Icon(contentDescription = null)`, invisible
+     * to TalkBack — every pill used to read "<label>, Button" with no selection state, same gap
+     * `HabitFormScreen`'s own `PresetPills` had.
+     */
+    @Test
+    fun `the habit preset pills announce which one is selected`() {
+        val vm = newViewModel("onboarding-screen-preset-selected")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        goToFirstHabit(vm)
+
+        // DAILY_CHECK is the form's own default preset (no pill tap needed to reach it).
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.DAILY_CHECK.name}", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).assertIsNotSelected()
+
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.DAILY_CHECK.name}", useUnmergedTree = true).assertIsNotSelected()
+    }
+
+    /** [A]: `GoalStepChip`'s Minus/Plus `Icon`s used to carry `contentDescription = null`. */
+    @Test
+    fun `the goal stepper chips carry real action descriptions`() {
+        val vm = newViewModel("onboarding-screen-goal-stepper-cd")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        goToFirstHabit(vm)
+
+        compose.onNodeWithTag("onb-habit-preset-${HabitPreset.QUANTITY.name}", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        // MERGED tree (no useUnmergedTree) on purpose: the description lives on the Icon child,
+        // merged up onto GoalStepChip's own tagged Box via its `.clickable`'s auto-merge — the
+        // same reason this file's `LanguageChip`/`selectable()` assertions stay off the unmerged
+        // tree (see the locale-fallback test's own comment on that).
+        compose.onNodeWithTag("onb-goal-minus").assertContentDescriptionEquals("Decrease goal")
+        compose.onNodeWithTag("onb-goal-plus").assertContentDescriptionEquals("Increase goal")
+    }
+
+    /**
+     * [D]/pager state: `PagerDots` used to carry no text at all, so nothing in the flow announced
+     * WHICH step was showing (only the "Seguir"/"Saltar" buttons and the story headline, neither
+     * naming a position). One aggregate description on the whole row, updating as the pager moves.
+     */
+    @Test
+    fun `the pager dots announce which step is showing`() {
+        val vm = newViewModel("onboarding-screen-pager-dots")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        vm.next() // WELCOME -> STORY_1 (pageIndex 0 of 6)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-pager-dots", useUnmergedTree = true).assertContentDescriptionEquals("Step 1 of 6")
+
+        vm.skipStory() // -> NAME (pageIndex 3 of 6)
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-pager-dots", useUnmergedTree = true).assertContentDescriptionEquals("Step 4 of 6")
     }
 }

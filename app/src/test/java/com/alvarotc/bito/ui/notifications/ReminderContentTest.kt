@@ -114,4 +114,36 @@ class ReminderContentTest {
     fun `the review fires while something is unsealed even if nothing is pending today`() {
         assertTrue(reviewIsPending(state(card("x", done = true)).copy(pendingSealDays = listOf(20678))))
     }
+
+    @Test
+    fun `the payload counts progress, and a failed card leaves both sides of the fraction`() {
+        val p = buildReminderPayload(state(card("hecha", done = true), card("abierta"), limitCard(clean = false)))!!
+        assertEquals(1, p.doneCount)
+        assertEquals(2, p.totalCount)
+        assertEquals(listOf("abierta"), p.pendingNames)
+    }
+
+    @Test
+    fun `an all-pending morning counts zero done over the full board`() {
+        val p = buildReminderPayload(state(card("a"), card("b"), card("c")))!!
+        assertEquals(0, p.doneCount)
+        assertEquals(3, p.totalCount)
+    }
+
+    @Test
+    fun `review pending count follows the review rows and drops to zero once sealed`() {
+        // An undone AT_LEAST card and a clean ZERO card are both rows to decide; a done
+        // AT_LEAST card is not.
+        val zero = card("nofap", kind = CardKind.ABSTINENCE, done = true).copy(direction = Direction.ZERO)
+        val s = state(card("x"), card("y", done = true), zero)
+        assertEquals(2, reviewPendingCount(s))
+        assertEquals(0, reviewPendingCount(s.copy(todaySealed = true)))
+    }
+
+    @Test
+    fun `a past-days-only review debt reports zero to decide today`() {
+        val s = state(card("x", done = true)).copy(todaySealed = true, pendingSealDays = listOf(20678))
+        assertTrue(reviewIsPending(s))
+        assertEquals(0, reviewPendingCount(s))
+    }
 }

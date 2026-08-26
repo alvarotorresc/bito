@@ -57,6 +57,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -79,6 +84,7 @@ import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.habitform.HabitPreset
 import com.alvarotc.bito.ui.habitform.labelRes
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.settings.AppLocale
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.HojaTinte
@@ -104,13 +110,49 @@ private val PAGER_STEPS =
 private val STORY_STEPS = setOf(OnboardingStep.STORY_1, OnboardingStep.STORY_2, OnboardingStep.STORY_3)
 
 /**
+ * M9 final review minor 5: [StoryPagerScaffold]'s `key(pageIndex)` remounts the whole pager on
+ * EVERY step change, including one reconciled from a swipe settle — so the page the user is
+ * already looking at (fully visible the instant the drag stopped) got its entrance fade replayed
+ * from alpha 0, a visible blink rather than motion. This latch is what tells the freshly-mounted
+ * page which case it's in: the settle collector calls [markSwipe] right before the onNext()/
+ * onBack() that triggers the remount; the page reads-and-clears it exactly once via
+ * [consumeSkipsFade] to seed its own `entered` flag already-true instead of animating from false.
+ * Every other path into a fresh page — first mount, a button/skip tap — never calls [markSwipe],
+ * so [consumeSkipsFade] defaults to false and the fade plays exactly as before.
+ *
+ * Plain Kotlin, not Compose state: nothing here needs to trigger recomposition on its own (the
+ * step change that led here already will), so a bare `var` is enough and — unlike a
+ * [androidx.compose.runtime.MutableState] — it's directly unit-testable with no compose rule.
+ * `internal`, not private, for exactly that: same-module tests read it straight, no wider API leak.
+ */
+internal class OnboardingSwipeFadeLatch {
+    private var swiped = false
+
+    fun markSwipe() {
+        swiped = true
+    }
+
+    /** Reads AND clears in one call — a second consume before another [markSwipe] returns false. */
+    fun consumeSkipsFade(): Boolean {
+        val result = swiped
+        swiped = false
+        return result
+    }
+}
+
+/**
  * The first-run flow's scaffold (mockups 7a-7g; this task builds 7a-7d, T7/T8 own the rest).
  * WELCOME (7a) is a standalone full-screen beat; every step after it rides the same 6-dot pager
  * chrome (the mockups' dots row), swipeable via [HorizontalPager] — see [StoryPagerScaffold] for
  * how a swipe settle reconciles back into [OnboardingViewModel]'s own step.
  */
 @Composable
-fun OnboardingScreen(viewModel: OnboardingViewModel) {
+fun OnboardingScreen(
+    viewModel: OnboardingViewModel,
+    // Non-null = replay mode from Ajustes (QA 2026-08-24): the same seven steps, but the final
+    // CTA closes instead of creating a habit — nothing persists, onboardingDone stays true.
+    replayOnClose: (() -> Unit)? = null,
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     // System back steps back one beat instead of exiting the app mid-flow -- but only past
     // WELCOME: there, the default behavior (exit) is exactly right, and OnboardingStep's own
@@ -136,7 +178,8 @@ fun OnboardingScreen(viewModel: OnboardingViewModel) {
             onSetHabitName = viewModel::setHabitName,
             onSetHabitKind = viewModel::setHabitKind,
             onSetHabitTarget = viewModel::setHabitTarget,
-            onFinish = viewModel::finish,
+            onFinish = replayOnClose ?: viewModel::finish,
+            replay = replayOnClose != null,
         )
     }
 }
@@ -172,13 +215,12 @@ private fun WelcomeScene(
         InfoPill(icon = BitoIcons.Ban, text = stringResource(R.string.onb_welcome_no_accounts))
         Spacer(Modifier.height(24.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            // languageTag null means "follow the system" (OnboardingUiState's own contract) — the
-            // chip that matches the CURRENTLY RESOLVED locale reads as selected, same idea as
-            // GeneralSectionCard's language row, just without a third "System" option to land on.
-            // A system language outside {es, en} (locales_config only declares those two) falls
-            // back to "en" — the base resource language — rather than leaving BOTH chips
-            // unselected, which `resolved == "es"`/`resolved == "en"` alone would do.
-            val resolved = (languageTag ?: Locale.getDefault().language).takeIf { it == "es" } ?: "en"
+            // languageTag null means "follow the system" (OnboardingUiState's own contract), and an
+            // out-of-set tag (a backup restored from a locale locales_config doesn't declare, say)
+            // is treated the exact same way GeneralSectionCard's language row already treats it —
+            // AppLocale.resolveDisplayLanguage falls through to the resolved system locale for
+            // either case, rather than lighting a chip that doesn't match what's actually active.
+            val resolved = AppLocale.resolveDisplayLanguage(languageTag)
             LanguageChip(
                 text = stringResource(R.string.onb_lang_es),
                 selected = resolved == "es",
@@ -273,8 +315,10 @@ private fun LanguageChip(
  * Motion (GUIA :60): each page's content fades in (alpha 0->1, 200ms ease-out) on composition —
  * [HorizontalPager] itself already supplies the horizontal slide for a real drag; a
  * button/skip-triggered advance re-keys the whole pager (see the block comment above), which has
- * no drag to ride, so the fade is the only cue on that path and a harmless replay on the swipe
- * path (the content was already in place when the drag settled).
+ * no drag to ride, so the fade is the only cue on that path. A swipe settle ALSO re-keys the
+ * pager (same remount), but there the content was already visible the instant the drag stopped —
+ * replaying the fade from 0 there is a blink, not motion (M9 final review minor 5), which is what
+ * [OnboardingSwipeFadeLatch] exists to skip; see its own KDoc for the mechanism.
  *
  * The NAME step's blank-name gate only ever blocks the FORWARD direction, never backward: the
  * pager's own `userScrollEnabled` stays `true` unconditionally (a per-direction scroll flag
@@ -296,9 +340,12 @@ private fun StoryPagerScaffold(
     onSetHabitKind: (HabitPreset) -> Unit,
     onSetHabitTarget: (Int) -> Unit,
     onFinish: () -> Unit,
+    replay: Boolean = false,
 ) {
     val step = state.step
     val pageIndex = PAGER_STEPS.indexOf(step).coerceAtLeast(0)
+    // Survives the key(pageIndex) remount below on purpose — see OnboardingSwipeFadeLatch's KDoc.
+    val swipeFadeLatch = remember { OnboardingSwipeFadeLatch() }
 
     Column(Modifier.fillMaxSize().background(Papel)) {
         Box(Modifier.fillMaxWidth().padding(top = 12.dp, end = 12.dp), contentAlignment = Alignment.TopEnd) {
@@ -342,10 +389,18 @@ private fun StoryPagerScaffold(
                                     // cancellation to just the snap-back.
                                     launch { pagerState.animateScrollToPage(pageIndex) }
                                 } else {
+                                    // Marked BEFORE onNext(), not after: onNext() synchronously
+                                    // updates the VM's StateFlow, whose recomposition is what
+                                    // re-keys this whole block -- the freshly mounted page has to
+                                    // find the latch already marked when it first composes.
+                                    swipeFadeLatch.markSwipe()
                                     onNext()
                                 }
                             }
-                            settled < pageIndex -> onBack()
+                            settled < pageIndex -> {
+                                swipeFadeLatch.markSwipe()
+                                onBack()
+                            }
                         }
                     }
                 }
@@ -353,7 +408,12 @@ private fun StoryPagerScaffold(
                     state = pagerState,
                     modifier = Modifier.fillMaxSize(),
                 ) { page ->
-                    var entered by remember { mutableStateOf(false) }
+                    // Only `page == pageIndex` is the page this remount landed on -- guards the
+                    // consume so a neighbor page composed for any other reason (prefetch, mid-drag)
+                    // can never eat the mark meant for the settled page. Consuming HERE, in the
+                    // `remember` seed rather than a later effect, is what avoids a one-frame
+                    // alpha-0 render: `entered` starts true already, so `fade` below never leaves 1.
+                    var entered by remember { mutableStateOf(page == pageIndex && swipeFadeLatch.consumeSkipsFade()) }
                     val fade by
                         animateFloatAsState(
                             targetValue = if (entered) 1f else 0f,
@@ -398,7 +458,11 @@ private fun StoryPagerScaffold(
                 PillButton(
                     text =
                         stringResource(
-                            if (state.habitName.trim().isNotEmpty()) R.string.onb_habit_create else R.string.onb_habit_start,
+                            when {
+                                replay -> R.string.onb_replay_close
+                                state.habitName.trim().isNotEmpty() -> R.string.onb_habit_create
+                                else -> R.string.onb_habit_start
+                            },
                         ),
                     onClick = onFinish,
                     modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp).testTag("onb-create-start"),
@@ -602,7 +666,7 @@ private fun PersonalityStepContent(
         val fallbackName = stringResource(R.string.habi_name_fallback)
         SpeechBubble(
             speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
-            text = stringResource(HabiVoice.greetingRes(Mood.NORMAL, personality), name.trim().ifEmpty { fallbackName }),
+            text = stringResource(HabiVoice.onboardingPreviewRes(personality), name.trim().ifEmpty { fallbackName }),
             modifier = Modifier.fillMaxWidth().testTag("onb-personality-bubble"),
         )
         Spacer(Modifier.height(20.dp))
@@ -667,14 +731,28 @@ private fun storyTitleRes(step: OnboardingStep) =
         else -> error("not a story step: $step")
     }
 
-/** Motion (GUIA :60): the active dot's pill width animates in, 150ms, rather than snapping. */
+/**
+ * Motion (GUIA :60): the active dot's pill width animates in, 150ms, rather than snapping.
+ *
+ * [D]/pager state: the dots themselves carry no text of their own, and nothing else in the flow
+ * (the story headline, the "Seguir"/"Saltar" buttons) announces WHICH step this is — only that a
+ * step exists. One aggregate description on the whole row (never per-dot, same [D] rule as
+ * [com.alvarotc.bito.ui.components.DayRing]/`RoundedBar`) fixes that without a single visual change.
+ */
 @Composable
 private fun PagerDots(
     total: Int,
     activeIndex: Int,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier, horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+    val stepDescription = stringResource(R.string.onb_pager_step_cd, activeIndex + 1, total)
+    Row(
+        modifier
+            .testTag("onb-pager-dots")
+            .semantics(mergeDescendants = true) { contentDescription = stepDescription },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         repeat(total) { i ->
             val active = i == activeIndex
             val width by
@@ -753,11 +831,26 @@ private fun HabitPresetPill(
     onClick: () -> Unit,
 ) {
     Surface(
+        // [C]: the check-mark Icon(null) that marks the active pill is invisible to TalkBack, so
+        // every pill reads as "<label>, Button" with no selection state. `Surface(onClick = ...)`
+        // is kept as-is (not swapped for a bare `Modifier.selectable`) because its interactive
+        // overload applies `minimumInteractiveComponentSize()` internally — the plain overload
+        // doesn't, which would shrink this pill's touch target and shift the FlowRow it sits in.
+        // Stacking `selected`/`role` on the modifier it already accepts, same shape as
+        // `HabitCards.kt`'s `HabitCard` stacking `.semantics { contentDescription = ... }` onto a
+        // `BitoCard(onClick = ...)`, adds only the missing accessibility properties onto the same
+        // node Surface's own `clickable` already merges its children into — zero visual change.
         onClick = onClick,
         shape = CircleShape,
         color = Tarjeta,
         border = BorderStroke(1.dp, if (selected) Hoja else Borde),
-        modifier = Modifier.testTag("onb-habit-preset-${preset.name}"),
+        modifier =
+            Modifier
+                .testTag("onb-habit-preset-${preset.name}")
+                .semantics {
+                    this.selected = selected
+                    role = Role.Tab
+                },
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -831,13 +924,21 @@ private fun GoalRow(
                             else -> stringResource(R.string.onb_habit_goal_quantity)
                         }
                     val max = if (kind == HabitPreset.WEEKLY_TIMES) ONB_WEEKLY_TIMES_MAX else Int.MAX_VALUE
-                    GoalStepChip(icon = BitoIcons.Minus, testTag = "onb-goal-minus") {
+                    GoalStepChip(
+                        icon = BitoIcons.Minus,
+                        contentDescription = stringResource(R.string.onb_goal_minus_cd),
+                        testTag = "onb-goal-minus",
+                    ) {
                         onAdjust((target - 1).coerceIn(1, max))
                     }
                     Spacer(Modifier.width(10.dp))
                     GoalValue(value = "$target", unit = unit)
                     Spacer(Modifier.width(10.dp))
-                    GoalStepChip(icon = BitoIcons.Plus, testTag = "onb-goal-plus") {
+                    GoalStepChip(
+                        icon = BitoIcons.Plus,
+                        contentDescription = stringResource(R.string.onb_goal_plus_cd),
+                        testTag = "onb-goal-plus",
+                    ) {
                         onAdjust((target + 1).coerceIn(1, max))
                     }
                 }
@@ -864,6 +965,7 @@ private fun GoalValue(
 @Composable
 private fun GoalStepChip(
     icon: ImageVector,
+    contentDescription: String,
     testTag: String,
     onClick: () -> Unit,
 ) {
@@ -877,7 +979,10 @@ private fun GoalStepChip(
             .testTag(testTag),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, contentDescription = null, tint = Tinta, modifier = Modifier.size(14.dp))
+        // [A]: was contentDescription = null — a bare "Button" with no decrease/increase wording.
+        // `.clickable` above already merges this Icon's own description onto the Box, same
+        // auto-merge FormHeader's IconButton relies on elsewhere in the app.
+        Icon(icon, contentDescription = contentDescription, tint = Tinta, modifier = Modifier.size(14.dp))
     }
 }
 
