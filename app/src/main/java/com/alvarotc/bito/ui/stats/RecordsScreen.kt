@@ -114,7 +114,11 @@ private fun BestRecordHero(best: RecordRow) {
                 )
             }
             Spacer(Modifier.height(4.dp))
-            Text(best.name, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp), color = Tinta)
+            Text(
+                best.name,
+                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp, fontWeight = FontWeight.SemiBold),
+                color = Tinta,
+            )
             Spacer(Modifier.height(4.dp))
             Text(stringResource(R.string.records_best_caption), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
         }
@@ -139,7 +143,7 @@ private fun RecordLine(row: RecordRow) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(row.name, style = MaterialTheme.typography.bodyLarge.copy(fontSize = 15.sp), color = Tinta)
+            Text(row.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
             Row(verticalAlignment = Alignment.CenterVertically) {
                 val currentLabel =
                     if (row.current == 0) {

@@ -45,6 +45,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -306,7 +307,7 @@ private fun PausedHabitRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Icon(BitoIcons.Pause, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(16.dp))
-        Text(paused.name, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        Text(paused.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
     }
 }
 

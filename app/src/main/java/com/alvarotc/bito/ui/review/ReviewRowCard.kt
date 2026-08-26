@@ -17,6 +17,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Direction
@@ -84,7 +85,7 @@ private fun RowNameHeader(
             .semantics(mergeDescendants = true) { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(name, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        Text(name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
         if (showStreak) {
             Spacer(Modifier.width(8.dp))
             StreakChip(streak)

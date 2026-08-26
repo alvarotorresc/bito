@@ -253,7 +253,7 @@ private fun WeekRowLine(row: WeekRow) {
     Row(Modifier.fillMaxWidth().heightIn(min = 40.dp), verticalAlignment = Alignment.CenterVertically) {
         Text(
             row.name,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = Tinta,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,

@@ -57,6 +57,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -647,14 +648,22 @@ private fun ReminderRow(
             ) {
                 Text(
                     stringResource(R.string.form_reminder_label),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                     color = if (disabled) TintaSuave else Tinta,
                     modifier = Modifier.weight(1f),
                 )
+                // Ink-hierarchy canon: a set hour is a datum (SemiBold Tinta); "none" — or any
+                // value on the inert QUIT row — stays a muted textual value.
+                val hasTime = reminderMinutes != null && !disabled
                 Text(
                     reminderMinutes?.let(::formatReminderTime) ?: stringResource(R.string.form_reminder_none),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = TintaSuave,
+                    style =
+                        if (hasTime) {
+                            MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold)
+                        } else {
+                            MaterialTheme.typography.bodyLarge
+                        },
+                    color = if (hasTime) Tinta else TintaSuave,
                 )
             }
             if (!disabled && reminderMinutes != null) {
@@ -699,7 +708,11 @@ private fun BinaryModeRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(stringResource(R.string.binary_mode), style = MaterialTheme.typography.bodyLarge, color = Tinta)
+            Text(
+                stringResource(R.string.binary_mode),
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = Tinta,
+            )
             Text(
                 stringResource(R.string.binary_mode_hint),
                 style = MaterialTheme.typography.labelMedium,
@@ -718,7 +731,7 @@ private fun StepRow(
     Row(verticalAlignment = Alignment.CenterVertically) {
         Text(
             stringResource(R.string.step_label),
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = Tinta,
             modifier = Modifier.weight(1f),
         )

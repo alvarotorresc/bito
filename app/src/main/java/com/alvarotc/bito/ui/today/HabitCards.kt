@@ -31,6 +31,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
@@ -90,9 +91,11 @@ private fun HabitNameRow(
     minStreakToShow: Int,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
+        // Ink-hierarchy canon (GUIA § jerarquía de tinta): a row's primary text is SemiBold Tinta;
+        // completion recedes it through color + strike, never through weight.
         Text(
             name,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = if (strikeThrough) TintaSuave else Tinta,
             textDecoration = if (strikeThrough) TextDecoration.LineThrough else null,
         )
@@ -112,7 +115,7 @@ private fun CheckBody(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 card.name,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = if (card.nameStruckThrough) TintaSuave else Tinta,
                 textDecoration = if (card.nameStruckThrough) TextDecoration.LineThrough else null,
             )
