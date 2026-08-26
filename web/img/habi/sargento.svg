@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" viewBox="0 0 1 1" role="img" aria-label="Habi, personalidad Sargento">
+  <defs>
+    <clipPath id="habi-clip-sargento">
+      <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z"></path>
+    </clipPath>
+    <linearGradient id="habi-shade-sargento" gradientUnits="userSpaceOnUse" x1="0" y1="0.78" x2="0" y2="0.97">
+      <stop offset="0" stop-color="#768D71" stop-opacity="0"></stop>
+      <stop offset="1" stop-color="#768D71" stop-opacity="0.11"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z" fill="#A9C9A1"></path>
+  <g clip-path="url(#habi-clip-sargento)">
+    <rect x="0.16" y="0.78" width="0.68" height="0.19" fill="url(#habi-shade-sargento)"></rect>
+    <ellipse cx="0.5" cy="0.16" rx="0.05" ry="0.035" fill="#FBF8F2" fill-opacity="0.8"></ellipse>
+  </g>
+  <g>
+    <g stroke="#3C352B" stroke-opacity="0.95" stroke-width="0.03" stroke-linecap="round" fill="none">
+      <line x1="0.317713832" y1="0.584609094" x2="0.402286168" y2="0.615390906"></line>
+      <line x1="0.597713832" y1="0.615390906" x2="0.682286168" y2="0.584609094"></line>
+    </g>
+    <circle cx="0.36" cy="0.5" r="0.0456" fill="#3C352B"></circle>
+    <circle cx="0.64" cy="0.5" r="0.0456" fill="#3C352B"></circle>
+    <g stroke="#3C352B" stroke-width="0.026" stroke-linecap="round" fill="none">
+      <line x1="0.302936609" y1="0.401458980" x2="0.417063391" y2="0.438541020"></line>
+      <line x1="0.582936609" y1="0.438541020" x2="0.697063391" y2="0.401458980"></line>
+    </g>
+    <path d="M 0.47 0.66 Q 0.54 0.68125 0.61 0.66" transform="rotate(6 0.54 0.66)" fill="none" stroke="#3C352B" stroke-width="0.028" stroke-linecap="round" stroke-linejoin="round"></path>
+  </g>
+</svg>
