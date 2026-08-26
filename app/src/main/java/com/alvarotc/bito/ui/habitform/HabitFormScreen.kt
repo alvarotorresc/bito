@@ -63,7 +63,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.NotificationManagerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
-import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
@@ -96,6 +95,7 @@ fun HabitFormScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val personality by viewModel.personality.collectAsStateWithLifecycle()
+    val equipped by viewModel.equipped.collectAsStateWithLifecycle()
     var confirmingDelete by remember { mutableStateOf(false) }
 
     // Same launcher SettingsScreen.kt uses for the first GLOBAL reminder: fire-and-forget, the
@@ -118,10 +118,11 @@ fun HabitFormScreen(
                 modifier = Modifier.fillMaxWidth(),
                 // The same mini-Habi slot the Stats commentator and FreezerInfoSheet fill: 40dp,
                 // resting frame. This ViewModel is about the habit being built, not Habi's state,
-                // so the face is the neutral resting one — FreezerInfoSheet's exact spec.
+                // so the face stays the neutral resting one — but it wears the user's real
+                // equipped set: the Habi on every screen is THE user's Habi.
                 avatar = {
                     HabiAvatar(
-                        HabiSpec(Mood.NORMAL, personality, EquippedSet()),
+                        HabiSpec(Mood.NORMAL, personality, equipped),
                         Modifier.size(40.dp),
                         animated = false,
                     )

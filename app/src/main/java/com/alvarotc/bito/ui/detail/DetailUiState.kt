@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.detail
 
+import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.Compliance
 import com.alvarotc.bito.domain.HabitStats
 import com.alvarotc.bito.domain.Heatmap
@@ -9,6 +10,7 @@ import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.WindowStats
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
@@ -16,6 +18,7 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.equippedSetOf
 import com.alvarotc.bito.ui.today.CardKind
 import java.time.YearMonth
 
@@ -53,6 +56,9 @@ data class DetailUiState(
     // need these two fields even though most of DetailUiState has nothing to do with Habi.
     val personality: Personality = Personality.NEUTRA,
     val userName: String = "",
+    // The user's real equipped set for the same sheet's mini-avatar: the Habi it shows must be
+    // THE user's Habi, wearing what they actually equipped, not a naked default.
+    val equipped: EquippedSet = EquippedSet(),
     val loading: Boolean = false,
     // Whether this habit has any entry at all (across all time, not just the displayed month).
     // Used to show/hide the empty-state hint.
@@ -71,6 +77,9 @@ fun buildDetailUiState(
     today: LogicalDay,
     personality: Personality = Personality.NEUTRA,
     userName: String = "",
+    // Defaults empty so existing positional callers (tests predating the equipped avatar) keep
+    // compiling unchanged — the same convention buildTodayUiState/buildStatsUiState follow.
+    owned: List<CustomizationItemEntity> = emptyList(),
 ): DetailUiState? {
     val habit = state.habits.find { it.id == habitId } ?: return null
     val streaks = Streaks.streaksOf(state, habit, today)
@@ -105,6 +114,7 @@ fun buildDetailUiState(
         today = today,
         personality = personality,
         userName = userName,
+        equipped = equippedSetOf(owned.filter { it.equipped }.map { it.itemId }),
         loading = false,
         hasAnyEntry = hasAnyEntry,
     )

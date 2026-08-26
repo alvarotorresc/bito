@@ -188,6 +188,7 @@ fun DetailScreen(
         FreezerInfoSheet(
             personality = current.personality,
             userName = current.userName,
+            equipped = current.equipped,
             onDismiss = { showFreezerInfoSheet = false },
         )
     }

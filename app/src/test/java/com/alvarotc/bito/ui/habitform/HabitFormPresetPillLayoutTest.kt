@@ -17,6 +17,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
@@ -90,7 +91,7 @@ class HabitFormPresetPillLayoutTest {
     /** [HabitFormScreenTest]'s harness with only the font scaled up — the pixel density stays on
      * the qualifiers, mirroring a user raising the system font size, not display zoom. */
     private fun launchScreenAtFontScale(fontScale: Float) {
-        val vm = HabitFormViewModel(HabitsRepository(db), SettingsRepository(settingsStore()), null)
+        val vm = HabitFormViewModel(HabitsRepository(db), SettingsRepository(settingsStore()), RewardsRepository(db), null)
         compose.setContent {
             val base = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale)) {

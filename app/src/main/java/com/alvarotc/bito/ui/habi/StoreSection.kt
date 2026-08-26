@@ -46,6 +46,7 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.StoreItemState
 import com.alvarotc.bito.domain.model.CatalogItem
 import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
@@ -90,6 +91,7 @@ fun StoreSection(
             balance = state.balance,
             personality = state.spec.personality,
             userName = state.userName,
+            equipped = state.spec.equipped,
             onBuy = onBuyFreezer,
         )
     }
@@ -323,6 +325,7 @@ private fun FreezerCard(
     balance: Int,
     personality: Personality,
     userName: String,
+    equipped: EquippedSet,
     onBuy: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -362,7 +365,7 @@ private fun FreezerCard(
         FreezerSheet(owned = owned, price = price, balance = balance, onBuy = onBuy, onDismiss = { showBuySheet = false })
     }
     if (showInfoSheet) {
-        FreezerInfoSheet(personality = personality, userName = userName, onDismiss = { showInfoSheet = false })
+        FreezerInfoSheet(personality = personality, userName = userName, equipped = equipped, onDismiss = { showInfoSheet = false })
     }
 }
 
