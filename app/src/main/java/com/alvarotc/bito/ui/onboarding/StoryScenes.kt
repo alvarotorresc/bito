@@ -54,6 +54,11 @@ private val NoteLine = Color(0xFFC6C0B1) // pencil lines on 7c's crossed-out not
 private val PotClay = Color(0xFFC98D6B) // 7d's flower pot (warmer/lighter than Brasa on purpose)
 private val LeafLite = Color(0xFF6FB183) // 7d's second sprout leaf — a lighter Hoja
 
+// 7b's slumped Habi is the one body the mockups mute: desaturated sage, not the canon HabiSalvia
+// that design/habi/habi-moods.html keeps for every mood — so it rides HabiSpec.bodyToneOverride
+// (scene-only by design) instead of a mood or a catalog color.
+private val HabiMustio = Color(0xFFA3AF9C)
+
 // Every scene sits on the same soft floor ellipse: Tinta at 6% reproduces the sampled shadow on
 // BOTH card tints (#DCD6C9 over Borde, #DAE2D6 over HojaTinte) with one paint.
 private const val FLOOR_SHADOW_ALPHA = 0.06f
@@ -113,8 +118,17 @@ private fun SofaScene(modifier: Modifier) {
                 .clip(RoundedCornerShape(16.dp))
                 .background(SofaBack),
         )
+        // The two mockup nuances WILTED alone doesn't give: the muted body and the closed-lid
+        // eyes (sagging arcs + lash marks) — both scene-only opts on the spec.
         HabiAvatar(
-            spec = HabiSpec(Mood.WILTED, Personality.NEUTRA, EquippedSet()),
+            spec =
+                HabiSpec(
+                    Mood.WILTED,
+                    Personality.NEUTRA,
+                    EquippedSet(),
+                    bodyToneOverride = HabiMustio,
+                    closedEyes = true,
+                ),
             modifier = Modifier.align(Alignment.Center).offset((-24).dp, (-23).dp).size(92.dp),
             animated = false,
         )

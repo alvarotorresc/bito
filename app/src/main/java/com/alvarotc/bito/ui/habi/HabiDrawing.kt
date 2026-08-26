@@ -36,8 +36,26 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-/** What Habi looks like right now: mood x personality resolves the face, [equipped] tints/dresses the body. */
-data class HabiSpec(val mood: Mood, val personality: Personality, val equipped: EquippedSet)
+/**
+ * What Habi looks like right now: mood x personality resolves the face, [equipped] tints/dresses
+ * the body.
+ *
+ * [bodyToneOverride] and [closedEyes] are SCENE-ONLY opts, both null/false everywhere in the app
+ * proper: the canon (design/habi/habi-moods.html) keeps the body at the same full-saturation fill
+ * in every mood ("la cara ES el mood") and renders WILTED with heavy but open lids
+ * ([WILTED_EYELID_DROOP]) — so no mood ever maps to either. A static illustration that needs the
+ * desaturated body or the closed-lid face of its mockup (onboarding 7b's slumped sofa Habi) opts
+ * in explicitly, keeping its sampled tone as a scene-local constant.
+ */
+data class HabiSpec(
+    val mood: Mood,
+    val personality: Personality,
+    val equipped: EquippedSet,
+    /** Replaces the equipped catalog body color (pattern tint and shading follow it); null = catalog color. */
+    val bodyToneOverride: Color? = null,
+    /** Draws each eye as a sagging closed arc with a faint lash mark below, instead of the open oval. */
+    val closedEyes: Boolean = false,
+)
 
 // Body — egg/bean path, center (0.5, 0.55), slightly wider at the bottom (BODY_BULGE shifts the
 // widest point below center). Numbers are art-phase-tunable against design/mockups/m6/4-habi-pantalla.png.
@@ -81,6 +99,22 @@ private const val EYELID_BIAS = 0.55f
 // WILTED keeps its eyes heavy-lidded (mockup: relaxed, nearly-closed arcs) — a resting droop on
 // the same closing axis a blink uses, so the two compose instead of fighting.
 private const val WILTED_EYELID_DROOP = 0.42f
+
+// Closed-lid variant (HabiSpec.closedEyes, onboarding 7b): each eye is a round-capped arc that
+// SAGS below its endpoints — the tips are the high points, the opposite bow of the canon mustia
+// card's upward arcs — with a fainter, narrower echo arc (the lash mark) under it. Measured on
+// design/mockups/m9-7b-onboarding-historia-1-sofa.png at body scale (avatar box ~106px): arcs
+// rest ~5px under the open eye's center line, 13px wide, sagging ~2px with a ~3.6px stroke;
+// lashes sit 7.5px further down, 9px wide, at ~28% ink over the body.
+private const val CLOSED_EYE_DROP = 0.05f
+private const val CLOSED_EYE_HALF_WIDTH = 0.06f
+private const val CLOSED_EYE_SAG = 0.018f
+private const val CLOSED_EYE_STROKE = 0.034f
+private const val LASH_DROP = 0.07f
+private const val LASH_HALF_WIDTH = 0.04f
+private const val LASH_SAG = 0.01f
+private const val LASH_STROKE = 0.024f
+private const val LASH_ALPHA = 0.28f
 
 // Sparkle radii scale WITH the eye (fractions of its rx) so a big radiant eye and a small corner
 // avatar keep the same glint proportions — they were fixed lengths before and drifted at extremes.
@@ -332,12 +366,22 @@ fun DrawScope.drawHabi(
     val face = resolved.face
     val vp = HabiViewport(size)
     val eyeColor = HabiPalette.eyeColor(spec.equipped.eyeColor)
+    // One resolved tone feeds body, pattern tint and shading, so a scene override mutes all three
+    // together — a desaturated body under a full-saturation pattern would give the sticker look
+    // right back.
+    val bodyTone = spec.bodyToneOverride ?: HabiPalette.bodyColor(spec.equipped.bodyColor)
 
-    drawBody(vp, spec.equipped.bodyColor)
-    drawPattern(vp, spec.equipped.pattern, spec.equipped.bodyColor)
-    drawBodyShading(vp, spec.equipped.bodyColor)
+    drawBody(vp, bodyTone, spec.equipped.bodyColor)
+    drawPattern(vp, spec.equipped.pattern, bodyTone)
+    drawBodyShading(vp, bodyTone)
     drawCheeks(vp, face)
-    drawEyes(vp, face, blink, resolved.eyelidDroop, gaze, eyeColor)
+    // Closed lids are a whole-eye replacement, not a closure amount: blink, droop, gaze and
+    // sparkles all describe an OPEN eye, so none of them apply over the arcs.
+    if (spec.closedEyes) {
+        drawClosedEyes(vp, eyeColor)
+    } else {
+        drawEyes(vp, face, blink, resolved.eyelidDroop, gaze, eyeColor)
+    }
     drawBrows(vp, face)
     drawMouth(vp, face, resolved.smirkProgress, resolved.mouthWobble)
     drawUpper(vp, spec.equipped.upper)
@@ -374,10 +418,11 @@ private fun bodyPath(vp: HabiViewport): Path = eggPath(vp, BODY_CX, BODY_CY, BOD
 
 private fun DrawScope.drawBody(
     vp: HabiViewport,
+    bodyTone: Color,
     bodyItemId: String,
 ) {
     val bodyPath = bodyPath(vp)
-    drawPath(bodyPath, color = HabiPalette.bodyColor(bodyItemId))
+    drawPath(bodyPath, color = bodyTone)
 
     if (bodyItemId == DORADO_BODY_ITEM) {
         clipPath(bodyPath) {
@@ -400,10 +445,10 @@ private fun DrawScope.drawBody(
  */
 private fun DrawScope.drawBodyShading(
     vp: HabiViewport,
-    bodyItemId: String,
+    bodyTone: Color,
 ) {
     val bodyPath = bodyPath(vp)
-    val shadeTone = HabiPalette.bodyColor(bodyItemId).darken(SHADE_TONE_FACTOR)
+    val shadeTone = bodyTone.darken(SHADE_TONE_FACTOR)
 
     clipPath(bodyPath) {
         drawRect(
@@ -434,11 +479,10 @@ private fun DrawScope.drawBodyShading(
 private fun DrawScope.drawPattern(
     vp: HabiViewport,
     patternId: String?,
-    bodyItemId: String,
+    bodyTone: Color,
 ) {
     if (patternId == null) return
-    val bodyColor = HabiPalette.bodyColor(bodyItemId)
-    val tint = bodyColor.darken()
+    val tint = bodyTone.darken()
 
     clipPath(bodyPath(vp)) {
         when (patternId) {
@@ -448,7 +492,7 @@ private fun DrawScope.drawPattern(
             "pattern-estrellas" -> drawPatternGlyphs(vp, ESTRELLAS_POSITIONS, tint, ::starPath)
             "pattern-flores" -> drawPatternFlores(vp, tint)
             "pattern-chispas" -> drawPatternGlyphs(vp, CHISPAS_POSITIONS, tint, ::sparklePath)
-            "pattern-llamas" -> drawPatternLlamas(vp, lerp(Brasa, bodyColor, LLAMA_TINT_BLEND))
+            "pattern-llamas" -> drawPatternLlamas(vp, lerp(Brasa, bodyTone, LLAMA_TINT_BLEND))
             else -> Unit // unknown catalog id (forward compat): no-op, never crash.
         }
     }
@@ -770,6 +814,44 @@ private fun DrawScope.drawSparkles(
     for ((offset, radius) in spots.take(count.coerceAtMost(spots.size))) {
         drawCircle(color = Tarjeta, radius = radius, center = offset)
     }
+}
+
+/**
+ * The closed-lid face (HabiSpec.closedEyes): per eye, the sagging lid arc in the eye's own ink
+ * plus the lash mark echoing it below at [LASH_ALPHA] — mirrored on the published eye anchors
+ * (EYE_DX/EYE_Y), so overlays keyed to that geometry (7c's scene brows) stay valid.
+ */
+private fun DrawScope.drawClosedEyes(
+    vp: HabiViewport,
+    eyeColor: Color,
+) {
+    for (side in SIDES) {
+        val cx = BODY_CX + side * EYE_DX
+        val lidY = EYE_Y + CLOSED_EYE_DROP
+        drawSaggingArc(vp, cx, lidY, CLOSED_EYE_HALF_WIDTH, CLOSED_EYE_SAG, CLOSED_EYE_STROKE, eyeColor)
+        drawSaggingArc(vp, cx, lidY + LASH_DROP, LASH_HALF_WIDTH, LASH_SAG, LASH_STROKE, eyeColor.copy(alpha = LASH_ALPHA))
+    }
+}
+
+/** A round-capped quadratic bowing DOWN from its endpoints; its midpoint sits halfway to the control point, so the control doubles [sag]. */
+private fun DrawScope.drawSaggingArc(
+    vp: HabiViewport,
+    cx: Float,
+    y: Float,
+    halfWidth: Float,
+    sag: Float,
+    strokeWidth: Float,
+    color: Color,
+) {
+    val start = vp.point(cx - halfWidth, y)
+    val end = vp.point(cx + halfWidth, y)
+    val control = vp.point(cx, y + sag * 2f)
+    val path =
+        Path().apply {
+            moveTo(start.x, start.y)
+            quadraticTo(control.x, control.y, end.x, end.y)
+        }
+    drawPath(path, color = color, style = Stroke(width = vp.len(strokeWidth), cap = StrokeCap.Round))
 }
 
 private fun DrawScope.drawBrows(
