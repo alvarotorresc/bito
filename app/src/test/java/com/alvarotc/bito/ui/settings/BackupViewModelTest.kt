@@ -164,6 +164,50 @@ class BackupViewModelTest {
             assertNull(state().preview)
         }
 
+    /**
+     * Closes the restore-side gap [AppLocale.kt]'s KDoc used to declare pending: a successful
+     * import must re-apply the restored `languageTag`, not just persist it. Asserted through the
+     * injected `applyLocale` seam, not `AppCompatDelegate.getApplicationLocales()` — a throwaway
+     * probe against this same Robolectric config proved that getter always reports `[]` regardless
+     * of what was just set (no Activity/LocaleManager wiring backs it under Robolectric here), so
+     * asserting against it would be dishonest: it would pass even if the production code never
+     * called [AppLocale.apply] at all.
+     */
+    @Test
+    fun `confirmImport re-applies the restored language through the injected seam`() =
+        runTest {
+            settingsRepo.update { it.copy(languageTag = "es") } // pre-restore state: different tag
+            db.habitDao().upsert(habitEntity(id = "h1"))
+            settingsRepo.update { it.copy(languageTag = "en") } // the tag the backup will carry
+            val exported = backup.exportJson(fixedNow)
+            settingsRepo.update { it.copy(languageTag = "es") } // back to "before the restore"
+
+            var appliedTag: String? = "untouched"
+            val seamedVm =
+                BackupViewModel(
+                    backup,
+                    settingsRepo,
+                    keyStore,
+                    backupNow = {},
+                    now = { fixedNow },
+                    zone = { utc },
+                    ioDispatcher = dispatcher,
+                    cryptoDispatcher = dispatcher,
+                    deriveParams = TEST_ARGON2_PARAMS,
+                    applyLocale = { appliedTag = it },
+                )
+            val uri = Uri.parse("content://bito/import-locale.bito")
+            shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(exported.toByteArray()))
+
+            seamedVm.loadImport(resolver, uri)
+            advanceUntilIdle()
+            seamedVm.confirmImport()
+            advanceUntilIdle()
+
+            assertEquals("en", settingsRepo.settings.first().languageTag)
+            assertEquals("en", appliedTag)
+        }
+
     @Test
     fun `loadImport with garbage bytes reports INVALID_FILE and confirmImport is a no-op`() =
         runTest {
@@ -383,6 +427,23 @@ class BackupViewModelTest {
             settingsRepo.update { it.copy(backupEncryption = true) }
 
             assertTrue(state().encryptionNeedsKey)
+        }
+
+    // The repair path: backupEncryption is ALREADY true (a valid key was lost/corrupted), so
+    // enableEncryption's settings.update writes backupEncryption=true onto a Settings that
+    // already had it true — a no-op emission a naive distinctUntilChanged-on-backupEncryption
+    // flow would filter out, leaving encryptionNeedsKey stuck at true forever despite the freshly
+    // saved key. Must react to the key-store mutation itself, not just the settings field.
+    @Test
+    fun `re-creating a key while encryption is on clears encryptionNeedsKey`() =
+        runTest {
+            settingsRepo.update { it.copy(backupEncryption = true) }
+            assertTrue(state().encryptionNeedsKey)
+
+            vm.enableEncryption("secret".toCharArray())
+            advanceUntilIdle()
+
+            assertFalse(state().encryptionNeedsKey)
         }
 
     @Test

@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.habi
 import android.graphics.Bitmap
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Canvas
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
@@ -14,6 +15,7 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.HabiSalvia
 import com.alvarotc.bito.ui.theme.Tarjeta
+import com.alvarotc.bito.ui.theme.Tinta
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -43,8 +45,8 @@ class HabiDrawingTest {
     /** Mirrors the body-fill normalized center from the drawing spec (cx=0.5, cy=0.55). */
     private fun bodyCenterPixel(sizePx: Int) = px(0.5f, sizePx) to px(0.55f, sizePx)
 
-    /** Mirrors the left-eye normalized center from the drawing spec (y=0.45, x=0.5-0.145). */
-    private fun leftEyePixel(sizePx: Int) = px(0.5f - 0.145f, sizePx) to px(0.45f, sizePx)
+    /** Mirrors the left-eye normalized center from the drawing spec (y=0.50, x=0.5-0.14 — art pass 2026-08-25). */
+    private fun leftEyePixel(sizePx: Int) = px(0.5f - 0.14f, sizePx) to px(0.5f, sizePx)
 
     /**
      * Mirrors the first sparkle's offset from the drawing spec, relative to the left eye.
@@ -62,9 +64,9 @@ class HabiDrawingTest {
         sizePx: Int,
         eyeScale: Float,
     ): Pair<Int, Int> {
-        val eyeCenterX = (0.5f - 0.145f) * sizePx
-        val eyeCenterY = 0.45f * sizePx
-        val eyeRx = 0.052f * eyeScale * sizePx
+        val eyeCenterX = (0.5f - 0.14f) * sizePx
+        val eyeCenterY = 0.5f * sizePx
+        val eyeRx = 0.048f * eyeScale * sizePx
         val eyeRy = eyeRx * 1.0f
         val x = eyeCenterX + eyeRx * 0.55f
         val y = eyeCenterY - eyeRy * 0.75f
@@ -155,6 +157,106 @@ class HabiDrawingTest {
 
         assertEquals(Tarjeta.toArgb(), open)
         assertEquals(HabiSalvia.toArgb(), closed)
+    }
+
+    // --- Scene opts (mockup 7b): body tone override + closed-lid eyes --------------------------
+
+    /** Onboarding 7b's muted sage, the override's one real consumer — any tone would exercise the axis. */
+    private val mutedTone = Color(0xFFA3AF9C)
+
+    /**
+     * Mirrors the closed-lid arc's mid-arc centerline from the drawing spec: x at the left eye
+     * (0.5 - 0.14), y = EYE_Y 0.5 + CLOSED_EYE_DROP 0.05 + CLOSED_EYE_SAG 0.018. `.toInt()` for
+     * the same floor-not-round reason as [leftEyeSparklePixel]: at 96px the centerline sits at
+     * y=54.5, and round() picks the row on the stroke's antialiased bottom boundary while floor
+     * lands mid-stroke.
+     */
+    private fun leftClosedLidPixel(sizePx: Int): Pair<Int, Int> {
+        val x = (0.5f - 0.14f) * sizePx
+        val y = (0.5f + 0.05f + 0.018f) * sizePx
+        return x.toInt() to y.toInt()
+    }
+
+    /** Mirrors the lash mark's mid-arc centerline: LASH_DROP 0.07 under the lid line, sagging LASH_SAG 0.01. */
+    private fun leftLashPixel(sizePx: Int): Pair<Int, Int> {
+        val x = (0.5f - 0.14f) * sizePx
+        val y = (0.5f + 0.05f + 0.07f + 0.01f) * sizePx
+        return x.toInt() to y.toInt()
+    }
+
+    @Test
+    fun `body tone override replaces the catalog body color`() {
+        val spec = HabiSpec(Mood.WILTED, Personality.NEUTRA, EquippedSet(), bodyToneOverride = mutedTone)
+        val (x, y) = bodyCenterPixel(size)
+
+        val overridden = renderHabiBitmap(spec, size).getPixel(x, y)
+        val canon = renderHabiBitmap(spec.copy(bodyToneOverride = null), size).getPixel(x, y)
+
+        assertEquals(mutedTone.toArgb(), overridden)
+        assertEquals(HabiSalvia.toArgb(), canon)
+    }
+
+    @Test
+    fun `body tone override drives the pattern tint`() {
+        val spec =
+            HabiSpec(
+                Mood.NORMAL,
+                Personality.NEUTRA,
+                EquippedSet(pattern = "pattern-motas"),
+                bodyToneOverride = mutedTone,
+            )
+        // Mirrors the pattern tint rule: the resolved body tone darkened by PATTERN_TINT_FACTOR
+        // 0.82 — if the tint still derived from the catalog color, no pixel would match this.
+        val expectedTint =
+            Color(red = mutedTone.red * 0.82f, green = mutedTone.green * 0.82f, blue = mutedTone.blue * 0.82f).toArgb()
+
+        val bitmap = renderHabiBitmap(spec, size)
+
+        assertTrue(bodyBoundingBoxPixels(size).any { (x, y) -> bitmap.getPixel(x, y) == expectedTint })
+    }
+
+    @Test
+    fun `closed eyes swap the drooped open eye for the sagging lid arc`() {
+        val open = HabiSpec(Mood.WILTED, Personality.NEUTRA, EquippedSet())
+        val closed = open.copy(closedEyes = true)
+        val (eyeX, eyeY) = leftEyePixel(size)
+        val (lidX, lidY) = leftClosedLidPixel(size)
+
+        val openBitmap = renderHabiBitmap(open, size)
+        val closedBitmap = renderHabiBitmap(closed, size)
+
+        // WILTED's resting droop still leaves ink on the eye line; the closed variant clears it...
+        assertEquals(Tinta.toArgb(), openBitmap.getPixel(eyeX, eyeY))
+        assertEquals(HabiSalvia.toArgb(), closedBitmap.getPixel(eyeX, eyeY))
+        // ...and paints the lid arc below it, where the open face keeps clean body.
+        assertEquals(Tinta.toArgb(), closedBitmap.getPixel(lidX, lidY))
+        assertEquals(HabiSalvia.toArgb(), openBitmap.getPixel(lidX, lidY))
+    }
+
+    @Test
+    fun `closed eyes carry their lash marks`() {
+        val closed = HabiSpec(Mood.WILTED, Personality.NEUTRA, EquippedSet(), closedEyes = true)
+        val (x, y) = leftLashPixel(size)
+
+        val lashPixel = renderHabiBitmap(closed, size).getPixel(x, y)
+        val barePixel = renderHabiBitmap(closed.copy(closedEyes = false), size).getPixel(x, y)
+
+        // Translucent ink: darker than the bare body there, never the full-strength eye stroke.
+        assertNotEquals(barePixel, lashPixel)
+        assertNotEquals(Tinta.toArgb(), lashPixel)
+    }
+
+    @Test
+    fun `closed eyes draw no sparkles`() {
+        // WILTED CHEERLEADER keeps one sparkle on its drooped open eye — closed lids must not
+        // carry it over. Scans the whole upper left-eye socket instead of one offset: every
+        // sparkle spot lands above/beside the eye center, well clear of the arcs at y 0.55+.
+        val spec = HabiSpec(Mood.WILTED, Personality.CHEERLEADER, EquippedSet(), closedEyes = true)
+        val socket = (28..42).flatMap { x -> (40..52).map { y -> x to y } }
+
+        val bitmap = renderHabiBitmap(spec, size)
+
+        assertTrue(socket.none { (x, y) -> bitmap.getPixel(x, y) == Tarjeta.toArgb() })
     }
 
     // --- T10: patterns and accessories ---------------------------------------------------------

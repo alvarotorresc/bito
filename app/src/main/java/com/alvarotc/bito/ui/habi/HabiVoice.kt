@@ -7,9 +7,9 @@ import com.alvarotc.bito.domain.model.Personality
 
 /**
  * Resolves which string resource Habi speaks in each of its ten voiced contexts, by
- * [Personality] and (for three of the ten) [Mood]. Every resource here is PROVISIONAL copy —
- * `res/values{,-es}/strings_habi.xml` holds the 57 mapped strings plus [R.string.habi_name_fallback];
- * the definitive wording lands in the M9 economy/copy session.
+ * [Personality] and (for three of the ten) [Mood]. `res/values{,-es}/strings_habi.xml` holds the
+ * 57 mapped strings plus [R.string.habi_name_fallback] — M9 draft copy, pending architect
+ * validation (docs/07-textos-personalidades.md).
  *
  * - [bubbleRes] — the Stats commentator's card AND the Habi screen's own bubble (T11) both used
  *   to share this mapping; T13 splits the Habi screen off into [homeRes] instead, since the
@@ -28,6 +28,10 @@ import com.alvarotc.bito.domain.model.Personality
  *   user's name.
  * - [badgeUnlockedRes] — the badge-unlocked sheet, personality-only, `%1$s` = the user's name and
  *   `%2$s` = the badge name.
+ * - [labelRes] — the speaker label ("SARGENTO"/"CHEERLEADER"/"NEUTRA") every `SpeechBubble` shows
+ *   next to "HABI · ". Single source, replacing the seven identical private copies each screen
+ *   used to keep.
+ * - [formPromptRes] — the habit-form bubble's body, `habi_form_prompt_*`, no placeholders.
  */
 object HabiVoice {
     @StringRes
@@ -171,5 +175,46 @@ object HabiVoice {
             Personality.SARGENTO -> R.string.habi_badge_sargento
             Personality.CHEERLEADER -> R.string.habi_badge_cheerleader
             Personality.NEUTRA -> R.string.habi_badge_neutra
+        }
+
+    @StringRes
+    fun labelRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.personality_sargento
+            Personality.CHEERLEADER -> R.string.personality_cheerleader
+            Personality.NEUTRA -> R.string.personality_neutra
+        }
+
+    /** 7f's per-personality preview line — the first thing each voice says to the user (docs/07 §4.4). */
+    @StringRes
+    fun onboardingPreviewRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.onb_personality_preview_sargento
+            Personality.CHEERLEADER -> R.string.onb_personality_preview_cheerleader
+            Personality.NEUTRA -> R.string.onb_personality_preview_neutra
+        }
+
+    @StringRes
+    fun formPromptRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.habi_form_prompt_sargento
+            Personality.CHEERLEADER -> R.string.habi_form_prompt_cheerleader
+            Personality.NEUTRA -> R.string.habi_form_prompt_neutra
+        }
+
+    /**
+     * The short, honest mood adjective [HabiAvatar] folds into its `contentDescription`
+     * ("Habi, feeling great") — deliberately mood-only, never personality-flavored: inventing
+     * humorous per-personality copy here is a copy call for the architect (docs/07), not something
+     * this a11y pass should freelance. `mood_label_*`, unlike every other `HabiVoice` mapping
+     * above, carries no `%1$s` name placeholder — a screen reader announces it standalone.
+     */
+    @StringRes
+    fun moodLabelRes(mood: Mood): Int =
+        when (mood) {
+            Mood.RADIANT -> R.string.mood_label_radiant
+            Mood.NORMAL -> R.string.mood_label_normal
+            Mood.WILTED -> R.string.mood_label_wilted
+            Mood.DRAMATIC -> R.string.mood_label_dramatic
         }
 }

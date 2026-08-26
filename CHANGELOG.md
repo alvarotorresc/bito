@@ -2,6 +2,83 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.0.0] - 2026-08-26
+
+La primera versión para compartir. Bito ya se instala en el móvil de cualquiera.
+
+### Added
+
+- **Acerca de** en Ajustes: la versión, el código fuente, la licencia libre explicada, y un formulario de un minuto para contar lo que falle — sin cuentas ni registros.
+- **Widget de un solo hábito**: eliges cuál al colocarlo y ves su progreso de hoy; un toque lo registra. El widget de siempre ahora también cabe pequeño.
+- **Las notificaciones hablan como Habi**: cada personalidad avisa a su manera y te dice lo que te queda del día. El tono cambia con la hora — por la mañana plantea el día, por la tarde cuenta cómo vas, por la noche te ayuda a cerrarlo. En una instalación nueva vienen dos avisos puestos de serie, editables o borrables cuando quieras.
+- **Sonido y vibración al registrar**, cada uno con su interruptor en Ajustes.
+- **Racha de cariños**: tres caricias seguidas y Habi se derrite de gusto, con corazones incluidos.
+- **La tabla de puntos**: el saldo de la tienda abre una hoja que explica cómo se gana cada punto.
+- **Volver a ver la introducción** desde Ajustes, sin tocar nada de lo tuyo.
+- **Usar un congelador** se explica desde el detalle del hábito, en la voz de tu personalidad.
+
+### Changed
+
+- **Habi está vivo**: se hunde como gelatina justo donde lo tocas, te sigue con la mirada, respira al ritmo de su ánimo y nunca reacciona dos veces igual. Su voz sale toda de un maullido de verdad, y los estampados de la tienda se curvan sobre su cuerpo en vez de quedarse pegados encima.
+- **El mismo Habi en todas las pantallas**, con lo que lleve puesto.
+- **Ajustes**, ordenado por secciones con su título, sus iconos y sus separadores; el fin del día se muda a General y los recordatorios se gestionan en su propia hoja.
+- **Esa jerarquía de texto se extiende a toda la app**: lo importante en negrita, lo secundario en un tono más suave.
+- **Crear un hábito**: cada tipo estrena icono, las opciones se ordenan en rejilla y Habi te acompaña desde su bocadillo.
+- **La introducción**, fiel al diseño hasta el último píxel en sus tres escenas de historia.
+- **Pausar y archivar** ya no van de verde: el verde queda para lo que suma.
+- **Cerrar el día** es instantáneo, y el botón pasa a «Día sellado».
+- Los días pasados sin cumplir se ven en rojo en los calendarios, y cada casilla del mes lleva su número. Los días de descanso de un hábito semanal no se marcan.
+- Stats y Habi ya no tardan en aparecer al cambiar de pestaña.
+- La barra inferior reparte sus pestañas a partes iguales, en español y en inglés.
+
+### Fixed
+
+- El widget se actualiza al toque: lo que registras dentro de la app se ve fuera al instante.
+- Deshacer se aparta con el dedo y no reaparece al volver a Hoy.
+- La vibración al registrar obedece a tu interruptor, no al ajuste general del sistema.
+- Comprar en la tienda ya no es a ciegas: al elegir un accesorio, Habi vuelve a escena para que lo veas puesto.
+
+## [0.9.5] - 2026-08-23
+
+### Added
+
+- Accesibilidad con TalkBack en toda la app (la deuda pendiente desde la v0.3.0): las acciones rápidas de Hoy dicen qué hacen («Marcar Meditar como hecho», «Sumar 1 a Agua»), y escribir un valor exacto ya no vive solo detrás de una pulsación larga: aparece como acción etiquetada. La barra inferior anuncia qué pestaña está activa. El calendario de puntos del Detalle y de Stats se lee como un resumen del mes y cada día dice su estado. Los anillos y barras de progreso son barras de progreso de verdad. Las tarjetas (récords, números, logros, filas del repaso, ítems de la tienda de Habi) se leen como una sola unidad. Las píldoras de selección (períodos, presets, personalidad, ejes de la tienda, chips del onboarding) anuncian «seleccionado». Los pasos del onboarding se anuncian («Paso 2 de 6»). Habi se presenta con su ánimo. Las filas con interruptor de Ajustes y del formulario se activan tocando en cualquier punto de la fila y se anuncian con su estado. Los iconos de los steppers dicen «Más»/«Menos». Español e inglés.
+
+### Changed
+
+- Un restaurador con historial ya no repite el onboarding: si restauras un backup con hábitos en una instalación limpia, la app arranca en Hoy (tu nombre viaja en el backup desde la v0.1.0).
+- Restaurar un backup aplica también su idioma al momento, y el chip de idioma de la bienvenida refleja el idioma real igual que Ajustes.
+- Un aviso tocado durante el onboarding ya no te saca del flujo: espera y se abre al llegar a Hoy.
+- Pasar de página con el dedo en el onboarding ya no repite el fundido de entrada (solo parpadeaba).
+- El objetivo semanal se limita a 7 en el modelo, no solo en la pantalla.
+- Si configuras la firma por variables de entorno y falta alguna, el build lo dice con nombre y apellido.
+
+### Fixed
+
+- Una carrera al marcar los logros como vistos podía perder la marca si dos pantallas la escribían a la vez.
+- La copia de seguridad: el estado «necesita contraseña» reacciona también cuando se repara la clave local; menos idas y venidas al proveedor de archivos; un temporal que no se puede borrar tras un fallo ya no se silencia.
+- Los tests: un arranque idempotente con scope inyectable mata el fallo intermitente de la suite completa que arrastrábamos desde la v0.8.0, y cubre el cableado real del arranque.
+
+## [0.9.0] - 2026-08-22
+
+### Added
+
+- Bito por fin te pregunta tu nombre: un onboarding con la historia de Habi — bienvenida con elección de idioma, la historia en tres escenas (saltables), tu nombre con reacción de Habi en vivo, la elección de personalidad escuchando su voz, y tu primer hábito con la sugerencia del widget. En instalaciones ya rodadas sale una vez tras actualizar, sin tocar tus datos: aprovecha para ponerte nombre.
+- Las tres personalidades estrenan sus textos definitivos en español e inglés, en todos los rincones donde Habi habla: saludos, comentarios, repaso, logros, congeladores, notificaciones y el formulario de crear hábito.
+- Elegir idioma de verdad: selector en Ajustes (del sistema, español o inglés) que se aplica al momento y sobrevive reinicios en cualquier Android.
+- Tu nombre, editable en Ajustes cuando quieras.
+- Micro-animaciones por todas partes: el anillo de Hoy crece hasta su progreso, el punto que registras hace pop, las tarjetas se reacomodan suaves y las pantallas se deslizan al navegar. Las celebraciones siguen siendo las únicas con fanfarria, como debe ser.
+
+### Changed
+
+- El detalle de un hábito sin registros te invita a estrenar el primer día en vez de mostrar solo ceros.
+- «Ajustes» ya no se parte en dos líneas en la barra inferior.
+- El anillo de Hoy se anuncia como barra de progreso para lectores de pantalla.
+
+### Fixed
+
+- Rendimiento: cada registro recalculaba dos veces el historial completo de días perfectos; ahora una sola.
+
 ## [0.8.0] - 2026-08-21
 
 ### Added

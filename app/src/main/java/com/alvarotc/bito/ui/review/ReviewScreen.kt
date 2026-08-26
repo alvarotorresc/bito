@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.review
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -33,7 +34,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
-import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.PillButton
@@ -61,6 +61,12 @@ fun ReviewScreen(
     onClose: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    if (state.loading) {
+        // First frame while the cold combine warms up: calm paper — never a flash of an empty
+        // E1 that then swaps to E2 (QA 2026-08-24: entry read as transparent/stuck).
+        Box(Modifier.fillMaxSize().background(Papel).testTag("review-loading"))
+        return
+    }
     if (state.todaySealed) {
         SealedState(viewModel, state, onClose)
     } else {
@@ -251,7 +257,7 @@ private fun EmptyReviewState(
         Spacer(Modifier.height(16.dp))
         val fallbackName = stringResource(R.string.habi_name_fallback)
         SpeechBubble(
-            speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(spec.personality))),
+            speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(spec.personality))),
             text = stringResource(HabiVoice.reviewClearRes(spec.personality), userName.ifBlank { fallbackName }),
             modifier = Modifier.fillMaxWidth(),
         )
@@ -266,16 +272,9 @@ private fun ReviewHabiBubble(
 ) {
     val fallbackName = stringResource(R.string.habi_name_fallback)
     SpeechBubble(
-        speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(spec.personality))),
+        speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(spec.personality))),
         text = stringResource(HabiVoice.reviewRes(spec.personality), userName.ifBlank { fallbackName }),
         modifier = Modifier.fillMaxWidth(),
         avatar = { HabiAvatar(spec, Modifier.size(40.dp), animated = false) },
     )
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }

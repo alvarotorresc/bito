@@ -19,6 +19,13 @@
     <string name="previous_month">Mes anterior</string>
     <string name="next_month">Mes siguiente</string>
 
+    <string name="heatmap_month_pattern">MMMM \'de\' yyyy</string>
+    <string name="heatmap_day_pattern">d \'de\' MMMM</string>
+    <string name="heatmap_month_summary">%1$s: %2$d cumplidos, %3$d fallidos, %4$d congelados, %5$d en pausa de %6$d días</string>
+    <string name="heatmap_day_cd">%1$s, %2$s</string>
+    <string name="heatmap_day_frozen">Congelado</string>
+    <string name="heatmap_day_pending">Pendiente</string>
+
     <string name="window_7">7 días</string>
     <string name="window_30">30 días</string>
     <string name="window_year">Año</string>
@@ -52,4 +59,6 @@
 
     <string name="archive_sheet_title">¿Archivar este hábito?</string>
     <string name="archive_sheet_body">Archivar lo conserva todo — podrás reactivarlo más tarde.</string>
+
+    <string name="detail_empty_hint">Registra tu primer día y esto cobra vida</string>
 </resources>

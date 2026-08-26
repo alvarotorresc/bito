@@ -60,16 +60,23 @@ class HabiSoundsTest {
 
     private fun audioManager(): AudioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-    // --- shouldPlay: the pure gate, habiSoundsEnabled ONLY (architect ruling 2026-08-19) -----
+    // --- shouldPlay: the pure gate — habiSoundsEnabled for Habi's voice, logSoundEnabled for
+    // the registro tick (QA 2026-08-23) ------------------------------------------------------
 
     @Test
     fun `shouldPlay is true when sounds are enabled`() {
-        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true)))
+        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true), HabiSound.GREETING))
     }
 
     @Test
     fun `shouldPlay is false when the toggle is off`() {
-        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false)))
+        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false), HabiSound.GREETING))
+    }
+
+    @Test
+    fun `the log tick follows its own toggle, not the Habi one`() {
+        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false, logSoundEnabled = true), HabiSound.LOG))
+        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true, logSoundEnabled = false), HabiSound.LOG))
     }
 
     // --- construction: preloads eagerly, not lazily on the first play() ----------------------
@@ -147,6 +154,8 @@ class HabiSoundsTest {
                 "habi_cheer" to R.raw.habi_cheer,
                 "habi_sad" to R.raw.habi_sad,
                 "habi_pop" to R.raw.habi_pop,
+                "log_tick" to R.raw.log_tick,
+                "habi_happy" to R.raw.habi_happy,
             )
         ids.forEach { (name, id) ->
             val bytes = context.resources.openRawResource(id).use { it.readBytes() }

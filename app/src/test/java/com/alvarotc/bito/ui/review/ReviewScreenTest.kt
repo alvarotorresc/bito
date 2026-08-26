@@ -7,7 +7,10 @@ import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -213,6 +216,67 @@ class ReviewScreenTest {
     }
 
     @Test
+    fun `tapping add on a counter row logs the step amount`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "h1",
+                    name = "Agua",
+                    metric = Metric.COUNT,
+                    direction = Direction.AT_LEAST,
+                    target = 8,
+                    step = 2,
+                    unit = "vasos",
+                    createdOnDay = today,
+                ),
+            )
+        }
+        setContent()
+
+        // LoggingRow (COUNTER, AT_LEAST — not CHECK/ABSTINENCE, so this is the "else" branch of
+        // ReviewRowCard's when): step is 2, not 1, so a hardcoded amount would fail this.
+        compose.onNodeWithTag("review-add-h1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        val entries = runBlocking { db.entryDao().all() }.filter { it.habitId == "h1" }
+        assertEquals(listOf(2), entries.map { it.value })
+        // 2 < target 8: still open, still asking.
+        compose.onNodeWithTag("review-row-h1", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `tapping add on a limit row logs usage and blowing the limit hides the row`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "h1",
+                    name = "Fumar",
+                    metric = Metric.COUNT,
+                    direction = Direction.AT_MOST,
+                    target = 3,
+                    step = 5,
+                    unit = "cigarros",
+                    createdOnDay = today,
+                ),
+            )
+        }
+        setContent()
+
+        compose.onNodeWithTag("review-row-h1", useUnmergedTree = true).assertExists()
+        // LimitRow (AT_MOST): its own "add" is the only affordance that logs usage against the
+        // limit — there's no relapse sheet here (that's ABSTINENCE-only, covered below). Logging
+        // past the limit is this row's equivalent of a relapse: Compliance.complianceOf's AT_MOST
+        // branch fails the moment progress exceeds target, even unsealed.
+        compose.onNodeWithTag("review-add-h1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        val entries = runBlocking { db.entryDao().all() }.filter { it.habitId == "h1" }
+        assertEquals(listOf(5), entries.map { it.value })
+        // 5 > target 3: failed cards never render as review rows (reviewRowsOf's `!card.failed`).
+        compose.onNodeWithTag("review-row-h1", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
     fun `tapping He recaido opens the relapse sheet and confirming logs it`() {
         runBlocking {
             HabitsRepository(db).create(
@@ -317,5 +381,27 @@ class ReviewScreenTest {
 
         assertTrue(closed)
         assertTrue(runBlocking { settingsRepo.settings.first() }.badgesSeenUntilMillis > 0)
+    }
+
+    @Test
+    fun `a row's name and streak merge into one talkback stop`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 10),
+            )
+            // today itself stays undone (PENDING bridges, per Streaks.kt's own KDoc) so the row
+            // still renders in review — the streak walks back through the 3 prior done days.
+            for (day in (today - 3)..(today - 1)) {
+                db.entryDao().insert(entryEntity(id = "e-med-$day", habitId = "h1", logicalDay = day, value = 1))
+            }
+        }
+        setContent()
+
+        // [E]: name Text + StreakChip (Icon(Flame, null) + count Text) used to be 2 separate
+        // TalkBack stops. MERGED tree (no useUnmergedTree) on purpose: proves the override landed
+        // on the row's own node, not a child underneath it — same evidence shape as StatsScreen's
+        // "the streak wall card announces the streak" test.
+        compose.onNodeWithTag("review-row-name-h1").assertContentDescriptionEquals("Meditar, streak 3")
+        compose.onNodeWithTag("review-row-name-h1").onChildren().assertCountEquals(0)
     }
 }

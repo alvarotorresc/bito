@@ -1,7 +1,13 @@
 package com.alvarotc.bito.ui.today
 
 import android.content.Context
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -195,6 +201,27 @@ class TodayScreenTest {
     }
 
     @Test
+    fun `the CHECK primary announces a mark-done action, then an undo action once logged`() {
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Mark Cama as done")
+
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Marked Cama as done, tap to undo")
+    }
+
+    @Test
+    fun `the COUNTER primary announces the step it adds, and offers a labeled long-press into the exact-value sheet`() {
+        compose.onNodeWithTag("primary-agua", useUnmergedTree = true)
+            .assertContentDescriptionEquals("Add 1 to Agua")
+
+        val node = compose.onNodeWithTag("primary-agua", useUnmergedTree = true).fetchSemanticsNode()
+        assertEquals("Type the exact total", node.config[SemanticsActions.OnLongClick].label)
+    }
+
+    @Test
     fun `tapping the duration bar opens the habit detail instead of swallowing the tap`() {
         runBlocking {
             HabitsRepository(db).create(
@@ -217,6 +244,33 @@ class TodayScreenTest {
         assertEquals("lectura", openedId)
         val entries = runBlocking { db.entryDao().all().filter { it.habitId == "lectura" } }
         assertTrue(entries.isEmpty())
+    }
+
+    @Test
+    fun `the duration bar advertises open-habit and exact-value action labels instead of a bare button`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "lectura",
+                    name = "Lectura",
+                    metric = Metric.DURATION,
+                    target = 30,
+                    unit = "min",
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        val node = compose.onNodeWithTag("bar-lectura", useUnmergedTree = true).fetchSemanticsNode()
+        assertEquals("Open Lectura", node.config[SemanticsActions.OnClick].label)
+        assertEquals("Type the exact total", node.config[SemanticsActions.OnLongClick].label)
+        // M9.5 final-review Minor #7: RoundedBar inside sets its own mergeDescendants = true (a
+        // two-way boundary, per Components.kt's KDoc), so without an explicit contentDescription
+        // here this Box would merge nothing from its one child and land as an unnamed stop —
+        // "Double tap to Open Lectura" with no identity read out first.
+        compose.onNodeWithTag("bar-lectura", useUnmergedTree = true).assertContentDescriptionEquals("Open Lectura")
     }
 
     @Test
@@ -282,6 +336,11 @@ class TodayScreenTest {
 
         compose.onNodeWithTag("card-yoga", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Paused", useUnmergedTree = true).assertExists()
+        // A row reached by jumping straight to it (list navigation) only ever speaks its own
+        // merged node, past the section header above — stateDescription is what still says
+        // "Paused" from that row alone.
+        compose.onNodeWithTag("paused-yoga", useUnmergedTree = true)
+            .assert(hasStateDescription("Paused"))
         compose.onNodeWithTag("paused-yoga", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
@@ -334,5 +393,32 @@ class TodayScreenTest {
         val greeting = context.getString(R.string.habi_greeting_neutra_normal, fallbackName)
 
         compose.onNodeWithText(greeting, useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the duration bar's own progress range info does not bleed into the card's merged announcement`() {
+        // RoundedBar sets its own semantics(mergeDescendants = true) { progressBarRangeInfo = ... }
+        // (Components.kt); this guards that the card's OUTER merge (mergeDescendants = true, from
+        // BitoCard's onClick) does not cascade INTO that nested merge boundary and change the
+        // card's own "Open X" announcement with an unplanned percentage — a merge boundary is a
+        // two-way wall in Compose: it neither leaks its own descendants' semantics further out,
+        // nor lets an ancestor's merge reach past it inward.
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(
+                    id = "lectura",
+                    name = "Lectura",
+                    metric = Metric.DURATION,
+                    target = 30,
+                    unit = "min",
+                    createdOnDay = today,
+                    sortOrder = 2,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        val cardConfig = compose.onNodeWithTag("card-lectura").fetchSemanticsNode().config
+        assertEquals(null, cardConfig.getOrNull(SemanticsProperties.ProgressBarRangeInfo))
     }
 }

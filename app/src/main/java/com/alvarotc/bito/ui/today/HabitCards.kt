@@ -2,6 +2,9 @@
 
 package com.alvarotc.bito.ui.today
 
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -28,6 +31,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
@@ -62,7 +66,11 @@ fun HabitCard(
         modifier =
             modifier
                 .testTag("card-${card.id}")
-                .semantics { contentDescription = openLabel },
+                .semantics { contentDescription = openLabel }
+                // Completion/expansion state changes (strike-through, dots flipping, chips
+                // showing/hiding) resize the card's content — this keeps that resize a soft
+                // ease-out instead of the layout snapping to its new height.
+                .animateContentSize(tween(200, easing = LinearOutSlowInEasing)),
         onClick = onOpen,
     ) {
         when (card.kind) {
@@ -83,9 +91,11 @@ private fun HabitNameRow(
     minStreakToShow: Int,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
+        // Ink-hierarchy canon (GUIA § jerarquía de tinta): a row's primary text is SemiBold Tinta;
+        // completion recedes it through color + strike, never through weight.
         Text(
             name,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
             color = if (strikeThrough) TintaSuave else Tinta,
             textDecoration = if (strikeThrough) TextDecoration.LineThrough else null,
         )
@@ -105,7 +115,7 @@ private fun CheckBody(
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
                 card.name,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
                 color = if (card.nameStruckThrough) TintaSuave else Tinta,
                 textDecoration = if (card.nameStruckThrough) TextDecoration.LineThrough else null,
             )
@@ -114,13 +124,20 @@ private fun CheckBody(
                 StreakChip(card.streak)
             }
             Spacer(Modifier.weight(1f))
+            val doneLabel =
+                if (card.doneToday) {
+                    stringResource(R.string.unmark_done_action, card.name)
+                } else {
+                    stringResource(R.string.mark_done_action, card.name)
+                }
             Box(
                 Modifier
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(if (card.doneToday) Hoja else HojaTinte)
                     .testTag("primary-${card.id}")
-                    .clickable(onClick = onPrimary),
+                    .clickable(onClick = onPrimary)
+                    .semantics { contentDescription = doneLabel },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -200,13 +217,20 @@ private fun CounterBody(
                 }
             }
             Spacer(Modifier.width(12.dp))
+            val addLabel = stringResource(R.string.add_step_action, card.step, card.name)
+            val exactLabel = stringResource(R.string.exact_value_action)
             Box(
                 Modifier
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(HojaTinte)
                     .testTag("primary-${card.id}")
-                    .combinedClickable(onClick = onPrimary, onLongClick = onExact),
+                    // onLongClickLabel: the exact-value sheet is also reachable behind this long
+                    // press, but a plain unlabeled ACTION_LONG_CLICK reads as nothing useful in
+                    // TalkBack's actions menu — this names the entry without duplicating it via a
+                    // second custom action.
+                    .combinedClickable(onClick = onPrimary, onLongClick = onExact, onLongClickLabel = exactLabel)
+                    .semantics { contentDescription = addLabel },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(BitoIcons.Plus, contentDescription = null, tint = Hoja)
@@ -243,11 +267,28 @@ private fun DurationBody(
         Spacer(Modifier.height(8.dp))
         // Padding sits after combinedClickable so it grows the tap/long-press target without
         // inflating the bar's own visual height (RoundedBar stays 10dp, drawn by GUIA).
+        // contentDescription names this node explicitly: RoundedBar inside sets its own
+        // semantics(mergeDescendants = true) (see RoundedBar's KDoc in Components.kt), which
+        // makes it a two-way semantics boundary that keeps its progress info from folding
+        // upward — so this Box (itself a merging node, from combinedClickable) would otherwise
+        // merge nothing from its one child and land as an unnamed TalkBack stop. Reuses the same
+        // "Open X" copy as onClickLabel below (a mild redundancy — "Open Lectura, double tap to
+        // open Lectura" — over inventing a second string), since the standalone description still
+        // has to name what tapping this bar does, same as the card's own "Open X" action.
+        // onLongClickLabel names the exact-value sheet hiding behind the long press the same way
+        // CounterBody's primary does.
+        val openLabel = stringResource(R.string.open_habit_hint, card.name)
         Box(
             Modifier
                 .fillMaxWidth()
                 .testTag("bar-${card.id}")
-                .combinedClickable(onClick = onOpen, onLongClick = onExact)
+                .combinedClickable(
+                    onClick = onOpen,
+                    onClickLabel = openLabel,
+                    onLongClick = onExact,
+                    onLongClickLabel = stringResource(R.string.exact_value_action),
+                )
+                .semantics { contentDescription = openLabel }
                 .padding(vertical = 12.dp),
         ) {
             RoundedBar(

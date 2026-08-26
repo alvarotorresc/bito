@@ -67,7 +67,10 @@ class CelebrationsViewModel(
      * marker is the latest of those badges' own unlock stamps, not the wall clock — earning one
      * days after actually unlocking it (e.g. reopening the app later) must not swallow badges
      * that unlock in between. Falls back to [now] only when there is nothing shown to unlock a
-     * stamp from.
+     * stamp from. The floor for the final write is read INSIDE [SettingsRepository.update]'s
+     * transaction, not the snapshot used to pick which badges count as newly shown — a write
+     * racing this one (e.g. [com.alvarotc.bito.ui.review.ReviewViewModel.markBadgesSeen] from the
+     * review screen) that lands between the two must never get overwritten by a stale floor.
      */
     fun dismissBadges() {
         viewModelScope.launch {
@@ -76,7 +79,7 @@ class CelebrationsViewModel(
                 rewards.observeBadges().first()
                     .filter { it.unlockedAtMillis > current }
                     .maxOfOrNull { it.unlockedAtMillis }
-            settings.update { it.copy(badgesSeenUntilMillis = maxOf(current, latestShownUnlock ?: now())) }
+            settings.update { it.copy(badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, latestShownUnlock ?: now())) }
         }
     }
 

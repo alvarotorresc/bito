@@ -34,10 +34,11 @@ object PointsEngine {
         state: DomainState,
         today: LogicalDay,
         config: EconomyConfig,
+        perfectDays: Set<LogicalDay> = PerfectDays.perfectDaysUpTo(state, today),
     ): List<PointsEvent> {
         val events =
             habitDoneEvents(state, today, config) +
-                perfectPeriodEvents(state, today, config) +
+                perfectPeriodEvents(state, today, config, perfectDays) +
                 streakMilestoneEvents(state, today, config)
         // Chronological order so appending them keeps the ledger readable as a history.
         return events.sortedWith(compareBy({ it.logicalDay }, { it.reason.ordinal }, { it.refId }))
@@ -135,11 +136,11 @@ object PointsEngine {
         state: DomainState,
         today: LogicalDay,
         config: EconomyConfig,
+        perfectDays: Set<LogicalDay>,
     ): List<PointsEvent> {
         val firstDay = state.habits.minOfOrNull { it.createdOnDay } ?: return emptyList()
         if (firstDay > today) return emptyList()
 
-        val perfectDays = PerfectDays.perfectDaysUpTo(state, today)
         val dayEvents =
             perfectDays.sorted().map { day ->
                 PointsEvent(PointsReason.PERFECT_DAY, "day:$day", day, config.perfectDayPoints)

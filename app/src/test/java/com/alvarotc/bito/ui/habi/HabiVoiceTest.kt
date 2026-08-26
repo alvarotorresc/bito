@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.habi
 
+import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import kotlin.test.Test
@@ -37,6 +38,13 @@ class HabiVoiceTest {
     }
 
     @Test
+    fun `onboardingPreviewRes resolves a distinct resource per personality`() {
+        val ids = Personality.entries.map { HabiVoice.onboardingPreviewRes(it) }
+
+        assertEquals(Personality.entries.size, ids.toSet().size)
+    }
+
+    @Test
     fun `reviewRes resolves a distinct resource per personality`() {
         assertAllDistinctPersonalityOnly(HabiVoice::reviewRes)
     }
@@ -64,6 +72,51 @@ class HabiVoiceTest {
     @Test
     fun `badgeUnlockedRes resolves a distinct resource per personality`() {
         assertAllDistinctPersonalityOnly(HabiVoice::badgeUnlockedRes)
+    }
+
+    @Test
+    fun `labelRes maps each personality to its label`() {
+        assertEquals(R.string.personality_sargento, HabiVoice.labelRes(Personality.SARGENTO))
+        assertEquals(R.string.personality_cheerleader, HabiVoice.labelRes(Personality.CHEERLEADER))
+        assertEquals(R.string.personality_neutra, HabiVoice.labelRes(Personality.NEUTRA))
+    }
+
+    @Test
+    fun `formPromptRes maps each personality to its prompt`() {
+        assertEquals(R.string.habi_form_prompt_sargento, HabiVoice.formPromptRes(Personality.SARGENTO))
+        assertEquals(R.string.habi_form_prompt_cheerleader, HabiVoice.formPromptRes(Personality.CHEERLEADER))
+        assertEquals(R.string.habi_form_prompt_neutra, HabiVoice.formPromptRes(Personality.NEUTRA))
+    }
+
+    /**
+     * Every one of the ten voiced contexts — the three mood-bearing ones per mood, plus the seven
+     * personality-only ones — must give each of the three personalities its OWN resource. This is
+     * the copy-paste guard: a context that accidentally reused another personality's id would pass
+     * unnoticed otherwise.
+     */
+    @Test
+    fun `every voiced context resolves a distinct resource per personality`() {
+        val moodRes = listOf(HabiVoice::bubbleRes, HabiVoice::homeRes, HabiVoice::greetingRes)
+        for (resolve in moodRes) {
+            for (mood in Mood.entries) {
+                val ids = Personality.entries.map { resolve(mood, it) }
+                assertEquals(Personality.entries.size, ids.toSet().size)
+            }
+        }
+
+        val personalityOnlyRes =
+            listOf(
+                HabiVoice::freezerInfoRes,
+                HabiVoice::reviewRes,
+                HabiVoice::reviewClearRes,
+                HabiVoice::sealedRes,
+                HabiVoice::perfectDayRes,
+                HabiVoice::perfectDayNotifRes,
+                HabiVoice::badgeUnlockedRes,
+            )
+        for (resolve in personalityOnlyRes) {
+            assertAllDistinctPersonalityOnly(resolve)
+        }
     }
 
     /**

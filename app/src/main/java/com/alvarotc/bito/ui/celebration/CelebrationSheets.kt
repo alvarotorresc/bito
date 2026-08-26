@@ -37,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.BadgeDef
-import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiAvatar
@@ -99,7 +98,7 @@ fun PerfectDaySheet(
 
             val fallbackName = stringResource(R.string.habi_name_fallback)
             SpeechBubble(
-                speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(state.personality))),
+                speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.personality))),
                 text = stringResource(HabiVoice.perfectDayRes(state.personality), state.userName.ifBlank { fallbackName }),
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -163,7 +162,7 @@ fun BadgeUnlockSheet(
             val fallbackName = stringResource(R.string.habi_name_fallback)
             val firstBadgeName = state.newBadges.firstOrNull()?.let { stringResource(BadgeStrings.badgeNameRes(it.id)) }.orEmpty()
             SpeechBubble(
-                speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(state.personality))),
+                speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.personality))),
                 text =
                     stringResource(
                         HabiVoice.badgeUnlockedRes(state.personality),
@@ -228,10 +227,3 @@ private fun PointsChip(
         }
     }
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }

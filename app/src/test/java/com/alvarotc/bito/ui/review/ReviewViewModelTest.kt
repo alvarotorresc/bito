@@ -256,4 +256,30 @@ class ReviewViewModelTest {
 
             assertEquals(fixedNow - 5_000, settingsRepo.settings.first().badgesSeenUntilMillis)
         }
+
+    // Mirrors CelebrationsViewModelTest's identical probe — 90c4eb1 introduced the same
+    // read-outside-update{} race in both markBadgesSeen and dismissBadges. A write landing in the
+    // window between markBadgesSeen's outer settings read and its own update commit (here, a raw
+    // settingsRepo.update racing it — standing in for CelebrationsViewModel's dismissBadges firing
+    // from the celebration sheet) must survive: the fixed floor comes from inside the update
+    // transaction, not a stale snapshot taken before either write. markBadgesSeen runs inside
+    // `write{}`, which itself does one settings read before the block even starts — the racing
+    // writer burns a matching extra hop first so its own commit lands inside that widened window
+    // instead of racing ahead of it. Confirmed this regresses (asserts 1755215980000, not the
+    // expected 1755216000000) against the unfixed code.
+    @Test
+    fun `markBadgesSeen does not lose a higher mark committed while it is still computing`() =
+        runTest {
+            db.badgeDao().insert(BadgeEntity(badgeId = "first-habit", unlockedAtMillis = fixedNow - 20_000))
+            state()
+
+            vm.markBadgesSeen()
+            launch {
+                settingsRepo.settings.first() // matches write{}'s own preamble read — see comment above
+                settingsRepo.update { it.copy(badgesSeenUntilMillis = fixedNow) }
+            }
+            advanceUntilIdle()
+
+            assertEquals(maxOf(fixedNow, fixedNow - 20_000), settingsRepo.settings.first().badgesSeenUntilMillis)
+        }
 }

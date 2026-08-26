@@ -152,6 +152,22 @@ class DetailScreenTest {
     }
 
     @Test
+    fun `the monument card merges its unit line and record chip into one TalkBack stop`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        // Before the fix these were two separate semantics nodes (Text + RecordChip's own Row) —
+        // same node id now proves mergeDescendants folded them into one TalkBack stop.
+        val unitNode = compose.onNodeWithText("days").fetchSemanticsNode()
+        val recordNode = compose.onNodeWithText("Record:", substring = true).fetchSemanticsNode()
+        assertEquals(unitNode.id, recordNode.id)
+    }
+
+    @Test
     fun `the next-month chevron is truly disabled, not just tinted, once the displayed month reaches today's`() {
         runBlocking {
             HabitsRepository(db).create(
@@ -215,13 +231,14 @@ class DetailScreenTest {
 
         compose.onNodeWithText("Freezers").assertExists()
         // T13: the sheet's body is now HabiVoice's personality-voiced text behind a speaker
-        // label — Settings.personality defaults to NEUTRA, so "HABI · NEUTRAL" (values/strings.xml).
-        compose.onNodeWithText("HABI · NEUTRAL").assertExists()
+        // label — Settings.personality defaults to NEUTRA; SpeechBubble uppercases the
+        // title-case "Neutra" (values/strings.xml) into the "HABI · NEUTRA" kicker.
+        compose.onNodeWithText("HABI · NEUTRA").assertExists()
         compose.onNodeWithText("Got it").assertExists()
     }
 
     @Test
-    fun `the freezer pill opens the habi store instead of a purchase sheet`() {
+    fun `the freezer pill without inventory opens the habi store`() {
         runBlocking {
             HabitsRepository(db).create(
                 habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
@@ -229,13 +246,34 @@ class DetailScreenTest {
         }
         setContent("h1")
 
-        // T12: the Detail screen no longer buys freezers itself — tapping the pill navigates
-        // away to the store instead of opening a purchase sheet in place.
+        // QA 2026-08-23: with nothing to use, the pill keeps navigating away to the store —
+        // buying stays the store's job (docs/05 §1) and no purchase sheet opens in place.
         compose.onNodeWithTag("freezer-chip", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
         assertEquals(true, habiOpened)
         compose.onNodeWithTag("freezer-sheet", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the freezer pill with inventory opens the usage guidance instead of the store`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+            db.pointsLedgerDao().insert(
+                pointsLedgerEntity(id = "buy1", delta = 0, reason = PointsReason.BUY_FREEZER, refId = null, logicalDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        compose.onNodeWithTag("freezer-chip", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        // QA 2026-08-23: owning freezers means the tap answers "how do I use one" (the info
+        // sheet pointing at the red day) instead of navigating away to buy more.
+        compose.onNodeWithText("Freezers").assertExists()
+        assertEquals(false, habiOpened)
     }
 
     @Test
@@ -343,5 +381,30 @@ class DetailScreenTest {
 
         compose.onNodeWithTag("resume", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("pause", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a habit with no entries shows the empty hint`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+        }
+        setContent("h1")
+
+        compose.onNodeWithText("Log your first day and this comes alive").assertExists()
+    }
+
+    @Test
+    fun `the hint disappears after the first entry`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "h1", name = "Meditar", metric = Metric.CHECK, target = 1, createdOnDay = today - 5),
+            )
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today - 3, value = 1))
+        }
+        setContent("h1")
+
+        compose.onNodeWithText("Log your first day and this comes alive").assertDoesNotExist()
     }
 }

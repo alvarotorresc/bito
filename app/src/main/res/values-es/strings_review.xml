@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Repaso diario E1, hojas de día sellado/perfecto E2 y el ajuste de celebración (T8) — copia
-        PROVISIONAL, la definitiva llega en la sesión de economía/copy de M9. Las líneas propias de
-        Habi con voz de personalidad para estos contextos viven en strings_habi.xml (habi_review_*,
+        Repaso diario E1, hojas de día sellado/perfecto E2 y el ajuste de celebración (T8) —
+        M9 draft copy — pending architect validation (docs/07). Las líneas propias de Habi con voz
+        de personalidad para estos contextos viven en strings_habi.xml (habi_review_*,
         habi_sealed_*, habi_perfect_*), no aquí — este fichero guarda los textos de UI llanos de la
         pantalla de repaso.
     -->
@@ -28,9 +28,11 @@
         <item quantity="many">%1$d rachas avanzan</item>
         <item quantity="other">%1$d rachas avanzan</item>
     </plurals>
+    <string name="review_row_streak_cd">%1$s, racha %2$d</string>
     <string name="review_until_tomorrow">Hasta mañana</string>
     <string name="review_new_badges">Logros nuevos</string>
     <string name="today_close_day">Cerrar el día</string>
+    <string name="today_day_sealed">Día sellado</string>
     <string name="settings_celebration_label">Celebración de día perfecto</string>
     <string name="settings_celebration_hint">Un aviso de Habi cuando cierras un día redondo fuera de la app. Dentro, siempre se celebra.</string>
 </resources>

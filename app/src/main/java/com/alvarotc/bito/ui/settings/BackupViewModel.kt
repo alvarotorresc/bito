@@ -26,6 +26,7 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -105,6 +107,17 @@ class BackupViewModel(
      * doesn't care about [BackupUiState.backupCount] keeps building a [BackupViewModel] unchanged.
      */
     private val countBackups: suspend (String) -> Int? = { null },
+    /**
+     * Closes the restore-side gap [AppLocale]'s KDoc declares: [confirmImport] calls this with the
+     * freshly-restored [Settings.languageTag] so `AppCompatDelegate` stops resolving whatever it
+     * last cached and picks up what the backup actually carried, the same beat
+     * [SettingsViewModel.setLanguage]/[com.alvarotc.bito.ui.onboarding.OnboardingViewModel.setLanguage]
+     * already do for a manual language change. Injectable, not called directly, because
+     * `AppCompatDelegate.getApplicationLocales()` doesn't round-trip under this suite's Robolectric
+     * config (verified empirically: it reports `[]` regardless of what was just set) — a test
+     * asserting against it would be dishonest, so tests assert against this seam instead.
+     */
+    private val applyLocale: (String?) -> Unit = AppLocale::apply,
 ) : ViewModel() {
     // Plain constructor parameter, not `private val`: it never becomes a class member, so it
     // can't collide with the public backupNow() callback below — same name, per the brief.
@@ -132,18 +145,47 @@ class BackupViewModel(
     }
 
     /**
+     * Bumped once by [enableEncryption]/[disableEncryption] whenever they finish mutating the key
+     * store — including the "repair" path, where [enableEncryption] re-saves a key while
+     * [Settings.backupEncryption] is ALREADY `true` (a lost/corrupted key gets re-created without
+     * the setting itself ever flipping). [encryptionNeedsKey] needs a signal for that case:
+     * `backupEncryption`'s own value doesn't change, so a `distinctUntilChanged` on that field
+     * alone would never notice the key store changed underneath it.
+     */
+    private val keyMutations = MutableStateFlow(0)
+
+    /**
+     * `keyStore.load()` only needs re-checking when [Settings.backupEncryption] flips OR when
+     * [keyMutations] bumps (a key was just saved/cleared, possibly without the setting itself
+     * changing) — every other settings field (folder, frequency, copies, the auto-backup stamps)
+     * is unrelated, so gate the file read behind those two triggers instead of re-reading it on
+     * every settings emission. [flowOn] moves that file read (and the `combine` feeding it) off
+     * the collector's dispatcher — [state] below collects on [viewModelScope], i.e. Main — onto
+     * [ioDispatcher], same as [countBackups] above already does via `withContext`.
+     */
+    private val encryptionNeedsKey: Flow<Boolean> =
+        combine(
+            settings.settings.map { it.backupEncryption }.distinctUntilChanged(),
+            keyMutations,
+        ) { encryptionOn, _ -> encryptionOn }
+            .map { encryptionOn -> encryptionOn && keyStore.load() == null }
+            .flowOn(ioDispatcher)
+
+    /**
      * Mirrors [backupState] (preview/message/busy/askImportPassphrase) plus the backup-related
-     * [SettingsRepository] fields. `keyStore.load()` runs again on every settings emission — a
-     * single small file read, cheap enough not to warrant its own dispatcher hop.
+     * [SettingsRepository] fields. [encryptionNeedsKey] is collected independently of
+     * `settings.settings` here, so a settings emission unrelated to [Settings.backupEncryption]
+     * is briefly paired with the previous [encryptionNeedsKey] value rather than a freshly
+     * recomputed one — harmless, since that value hasn't changed either.
      */
     val state: StateFlow<BackupUiState> =
-        combine(backupState, settings.settings) { base, prefs ->
+        combine(backupState, settings.settings, encryptionNeedsKey) { base, prefs, needsKey ->
             base.copy(
                 folderName = prefs.backupFolderUri?.let(::folderNameOf),
                 frequency = prefs.backupFrequency,
                 copies = prefs.backupCopies,
                 encryptionOn = prefs.backupEncryption,
-                encryptionNeedsKey = prefs.backupEncryption && keyStore.load() == null,
+                encryptionNeedsKey = needsKey,
                 lastAutoBackupAtMillis = prefs.lastAutoBackupAtMillis,
                 lastAutoBackupError = prefs.lastAutoBackupError,
             )
@@ -259,6 +301,10 @@ class BackupViewModel(
         viewModelScope.launch {
             backupState.update { it.copy(busy = true) }
             val result = runCatching { withContext(ioDispatcher) { backup.import(text) } }
+            // Only on success, and only after backup.import's own settings.update has landed:
+            // applying a failed import's (nonexistent) tag would be meaningless, and reading
+            // languageTag before the import commits would re-apply whatever was already active.
+            if (result.isSuccess) applyLocale(settings.settings.first().languageTag)
             clearPending()
             backupState.update {
                 it.copy(
@@ -335,6 +381,7 @@ class BackupViewModel(
                 }
             if (result.isSuccess) {
                 settings.update { it.copy(backupEncryption = true) }
+                keyMutations.update { it + 1 } // covers the repair path: setting was already true
                 backupState.update { it.copy(busy = false, message = BackupMessage.ENCRYPTION_ON) }
             } else {
                 backupState.update { it.copy(busy = false, message = BackupMessage.IO_ERROR) }
@@ -349,6 +396,7 @@ class BackupViewModel(
             // this disable.
             settings.update { it.copy(backupEncryption = false) }
             keyStore.clear()
+            keyMutations.update { it + 1 }
             backupState.update { it.copy(message = BackupMessage.ENCRYPTION_OFF) }
         }
     }

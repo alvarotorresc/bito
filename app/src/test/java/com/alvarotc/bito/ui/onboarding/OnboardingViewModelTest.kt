@@ -1,0 +1,432 @@
+package com.alvarotc.bito.ui.onboarding
+
+import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.entryEntity
+import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.repo.DomainStateRepository
+import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
+import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.habitform.HabitPreset
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+import java.io.File
+import java.time.ZoneId
+
+@OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35])
+class OnboardingViewModelTest {
+    @get:Rule
+    val tmp = TemporaryFolder()
+
+    private val dispatcher = StandardTestDispatcher()
+    private val fixedNow = 1_755_216_000_000L // 2025-08-15T00:00:00Z
+    private val utc = ZoneId.of("UTC")
+    private val today = LogicalDays.logicalDayOf(fixedNow, 0, utc)
+
+    private lateinit var db: BitoDatabase
+    private lateinit var habitsRepo: HabitsRepository
+    private lateinit var settingsRepo: SettingsRepository
+    private lateinit var reconciler: PointsReconciler
+
+    private fun settingsStore(name: String): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create(
+            scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
+        ) { File(tmp.root, "$name.preferences_pb") }
+
+    private fun newViewModel(applyLocale: (String?) -> Unit = { }) =
+        OnboardingViewModel(settingsRepo, habitsRepo, reconciler, now = { fixedNow }, zone = { utc }, applyLocale = applyLocale)
+
+    /**
+     * The read-only VM behind Ajustes' "Introducción · ver de nuevo" — same steps, no writes.
+     * [applyLocale] is seamed for the reason BackupViewModelTest documents: under this Robolectric
+     * config `AppCompatDelegate.getApplicationLocales()` reports `[]` whatever was set, so only a
+     * seam can honestly tell "the locale was applied" from "it wasn't".
+     */
+    private fun replayViewModel(applyLocale: (String?) -> Unit = { }) =
+        OnboardingViewModel(
+            settingsRepo,
+            habitsRepo,
+            reconciler,
+            now = { fixedNow },
+            zone = { utc },
+            applyLocale = applyLocale,
+            persist = false,
+        )
+
+    /** A second habit's fulfilled entry, logged directly (bypassing the VM), so its HABIT_DONE
+     * grant is pending in the ledger. Mirrors DetailViewModelTest's own way of proving a reconcile
+     * pass ran: after the call under test, this refId either does or doesn't show up in the ledger.
+     */
+    private suspend fun seedPendingGrant() {
+        habitsRepo.create(
+            habitEntity(id = "pending", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+        )
+        db.entryDao().insert(entryEntity(id = "pending-entry", habitId = "pending", logicalDay = today, value = 1))
+    }
+
+    private suspend fun pendingGrantReconciled(): Boolean = db.pointsLedgerDao().all().any { it.refId == "pending:$today" }
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(dispatcher)
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        db =
+            Room.inMemoryDatabaseBuilder(context, BitoDatabase::class.java)
+                .setQueryExecutor(dispatcher.asExecutor())
+                .setTransactionExecutor(dispatcher.asExecutor())
+                .allowMainThreadQueries()
+                .build()
+        habitsRepo = HabitsRepository(db)
+        settingsRepo = SettingsRepository(settingsStore("onboarding-vm"))
+        reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db))
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+        db.close()
+    }
+
+    @Test
+    fun `finish persists the name, personality and onboarding flag`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.setPersonality(Personality.SARGENTO)
+            advanceUntilIdle()
+            // setPersonality already persists on its own (7f speaks with the chosen voice right
+            // away) -- clobber the store back so the assertion below can only pass if finish()
+            // itself writes personality, not because setPersonality already did.
+            settingsRepo.update { it.copy(personality = Personality.NEUTRA) }
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val stored = settingsRepo.settings.first()
+            assertEquals("Alvaro", stored.userName)
+            assertEquals(Personality.SARGENTO, stored.personality)
+            assertTrue(stored.onboardingDone)
+        }
+
+    @Test
+    fun `finish with a blank name does not overwrite whatever userName was already stored`() =
+        runTest {
+            // Belt-and-braces case: the screen's button and pager gates should keep finish() from
+            // ever being reached with a blank name, but this proves the VM doesn't trust that --
+            // a pre-existing stored name (e.g. from a prior run, or set through Ajustes) survives
+            // untouched rather than being clobbered back to "".
+            settingsRepo.update { it.copy(userName = "Previous") }
+            val vm = newViewModel()
+            vm.setName("   ")
+            vm.setPersonality(Personality.CHEERLEADER)
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val stored = settingsRepo.settings.first()
+            assertEquals("Previous", stored.userName)
+            assertEquals(Personality.CHEERLEADER, stored.personality)
+            assertTrue(stored.onboardingDone)
+        }
+
+    @Test
+    fun `finish creates the first habit through the same write path`() =
+        runTest {
+            seedPendingGrant()
+            assertFalse(pendingGrantReconciled())
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.setHabitName("Meditar")
+            vm.setHabitKind(HabitPreset.DAILY_CHECK)
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val created = db.habitDao().all().single { it.name == "Meditar" }
+            assertEquals(Metric.CHECK, created.metric)
+            assertEquals(Direction.AT_LEAST, created.direction)
+            assertEquals(today, created.createdOnDay)
+            assertEquals(1, created.sortOrder) // "pending" (seeded above) already holds sortOrder 0
+            val changes = db.targetChangeDao().forHabit(created.id)
+            assertEquals(listOf(today), changes.map { it.effectiveFromDay })
+            // Proves finish() actually called reconciler.reconcile, not just habits.create: this
+            // grant belongs to an unrelated habit that finish() never touched directly.
+            assertTrue(pendingGrantReconciled())
+        }
+
+    @Test
+    fun `setHabitKind resets the target to the new preset's own default, same as the real form's selectPreset`() =
+        runTest {
+            val vm = newViewModel()
+
+            // QUANTITY's stepper is genuinely open-ended, unlike WEEKLY_TIMES (capped at 7 in the
+            // real form's own clampTarget) -- 15 is a value only QUANTITY could ever produce.
+            vm.setHabitKind(HabitPreset.QUANTITY)
+            vm.setHabitTarget(15)
+            assertEquals(15, vm.uiState.value.habitTarget)
+
+            // Without HabitFormViewModel.selectPreset's own reset mirrored here, that stale 15
+            // would survive the switch and finish() could create a WEEKLY_TIMES habit the real
+            // form itself can never produce (its own clampTarget caps this preset at 7).
+            vm.setHabitKind(HabitPreset.WEEKLY_TIMES)
+            assertEquals(3, vm.uiState.value.habitTarget) // defaultTargetFor(WEEKLY_TIMES, ...) == 3
+
+            vm.setHabitKind(HabitPreset.QUIT)
+            assertEquals(0, vm.uiState.value.habitTarget) // defaultTargetFor(QUIT, TOTAL, ...) == 0
+        }
+
+    @Test
+    fun `a quit habit is always created as total abstinence, regardless of any earlier target`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.setHabitName("Fumar")
+            // A target picked up under an earlier preset, before switching to QUIT -- proves the
+            // pinned-0 written by finish() doesn't depend on setHabitKind's own reset landing first.
+            vm.setHabitTarget(9)
+            vm.setHabitKind(HabitPreset.QUIT)
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val created = db.habitDao().all().single { it.name == "Fumar" }
+            assertEquals(Direction.ZERO, created.direction)
+            assertEquals(0, created.target)
+        }
+
+    @Test
+    fun `finish with a blank habit name creates nothing but still completes`() =
+        runTest {
+            seedPendingGrant()
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.setHabitName("   ")
+
+            vm.finish()
+            advanceUntilIdle()
+
+            assertTrue(vm.uiState.value.done)
+            assertTrue(settingsRepo.settings.first().onboardingDone)
+            assertEquals(listOf("pending"), db.habitDao().all().map { it.id })
+            // No habit write happened, so finish() must not have called reconcile either
+            // (controller ruling) -- the pending grant from an unrelated habit stays unswept.
+            assertFalse(pendingGrantReconciled())
+        }
+
+    @Test
+    fun `skipStory jumps from any story step to the name step`() =
+        runTest {
+            listOf(1, 2, 3).forEach { hopsToStory ->
+                val vm = newViewModel()
+                repeat(hopsToStory) { vm.next() }
+
+                vm.skipStory()
+
+                assertEquals(OnboardingStep.NAME, vm.uiState.value.step)
+            }
+        }
+
+    @Test
+    fun `next walks the steps in order`() =
+        runTest {
+            val vm = newViewModel()
+            val expected = OnboardingStep.entries
+
+            expected.forEach { step ->
+                assertEquals(step, vm.uiState.value.step)
+                vm.next()
+            }
+
+            // Pinned at the last step -- one extra call past the end is a no-op.
+            assertEquals(expected.last(), vm.uiState.value.step)
+        }
+
+    @Test
+    fun `back walks the steps in reverse order and stays pinned at the first`() =
+        runTest {
+            val vm = newViewModel()
+            repeat(OnboardingStep.entries.size) { vm.next() }
+            assertEquals(OnboardingStep.entries.last(), vm.uiState.value.step)
+
+            OnboardingStep.entries.reversed().forEach { step ->
+                assertEquals(step, vm.uiState.value.step)
+                vm.back()
+            }
+
+            assertEquals(OnboardingStep.entries.first(), vm.uiState.value.step)
+        }
+
+    @Test
+    fun `setPersonality persists immediately, before finish`() =
+        runTest {
+            val vm = newViewModel()
+
+            vm.setPersonality(Personality.CHEERLEADER)
+            advanceUntilIdle()
+
+            assertEquals(Personality.CHEERLEADER, settingsRepo.settings.first().personality)
+            assertFalse(vm.uiState.value.done)
+        }
+
+    @Test
+    fun `setLanguage persists the tag, applies it, and updates the visible state`() =
+        runTest {
+            var appliedTag: String? = "untouched"
+            val vm = newViewModel(applyLocale = { appliedTag = it })
+
+            vm.setLanguage("en")
+            advanceUntilIdle()
+
+            assertEquals("en", vm.uiState.value.languageTag)
+            assertEquals("en", settingsRepo.settings.first().languageTag)
+            // The other half of the replay pair below: the store write and the applier move
+            // together in first-run mode, and neither moves in replay.
+            assertEquals("en", appliedTag)
+        }
+
+    @Test
+    fun `replay never writes the language — only the chip it lights up`() =
+        runTest {
+            settingsRepo.update { it.copy(languageTag = "es") }
+            var appliedTag: String? = "untouched"
+            val vm = replayViewModel(applyLocale = { appliedTag = it })
+            advanceUntilIdle()
+
+            vm.setLanguage("en")
+            advanceUntilIdle()
+
+            // The chip reflects the tap (pure UI state) while the app's real language is untouched.
+            assertEquals("en", vm.uiState.value.languageTag)
+            assertEquals("es", settingsRepo.settings.first().languageTag)
+            // AppLocale.apply is skipped in the same breath, deliberately: it is
+            // AppCompatDelegate.setApplicationLocales, which persists under the hood (autoStoreLocales
+            // below API 33, the platform from 33 on). Skipping only the store write would leave the
+            // app speaking "en" with Settings still saying "es" — a split brain worse than the bug.
+            assertEquals("untouched", appliedTag)
+        }
+
+    @Test
+    fun `replay never writes the personality — tapping the pills only previews`() =
+        runTest {
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO) }
+            val vm = replayViewModel()
+            advanceUntilIdle()
+
+            vm.setPersonality(Personality.CHEERLEADER)
+            advanceUntilIdle()
+
+            // Step 7f invites the user to tap each pill to hear the voices: the preview follows the
+            // tap, the real Habi keeps the voice the user chose in Ajustes.
+            assertEquals(Personality.CHEERLEADER, vm.uiState.value.personality)
+            assertEquals(Personality.SARGENTO, settingsRepo.settings.first().personality)
+        }
+
+    @Test
+    fun `replay's finish writes nothing and creates no habit`() =
+        runTest {
+            val vm = replayViewModel()
+            advanceUntilIdle()
+            vm.setName("Alvaro")
+            vm.setHabitName("Leer")
+
+            vm.finish()
+            advanceUntilIdle()
+
+            val stored = settingsRepo.settings.first()
+            assertEquals("", stored.userName)
+            assertFalse(stored.onboardingDone)
+            assertEquals(emptyList<String>(), habitsRepo.observeHabits().first().map { it.name })
+            assertFalse(vm.uiState.value.done)
+        }
+
+    @Test
+    fun `the flow seeds from persisted settings`() =
+        runTest {
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO, userName = "Rocky", languageTag = "en") }
+
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            assertEquals(Personality.SARGENTO, vm.uiState.value.personality)
+            assertEquals("Rocky", vm.uiState.value.name)
+            assertEquals("en", vm.uiState.value.languageTag)
+        }
+
+    @Test
+    fun `finishing without touching personality keeps the stored one`() =
+        runTest {
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO) }
+            val vm = newViewModel()
+            // Lets the seed above land in state BEFORE finish() reads it -- in the real app this is
+            // guaranteed by the several screens/taps between VM creation and reaching finish();
+            // here it's this explicit advance.
+            advanceUntilIdle()
+
+            vm.finish()
+            advanceUntilIdle()
+
+            assertEquals(Personality.SARGENTO, settingsRepo.settings.first().personality)
+        }
+
+    @Test
+    fun `a second call to finish while busy does not create a duplicate habit`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.setHabitName("Meditar")
+
+            vm.finish()
+            vm.finish()
+            advanceUntilIdle()
+
+            assertEquals(1, db.habitDao().all().count { it.name == "Meditar" })
+        }
+
+    @Test
+    fun `the weekly target never exceeds seven`() =
+        runTest {
+            val vm = newViewModel()
+            // Direct setHabitTarget call clamps to floor 1 when preset is DAILY_CHECK (default).
+            vm.setHabitTarget(0)
+            assertEquals(1, vm.uiState.value.habitTarget)
+
+            // After switching to WEEKLY_TIMES, setHabitTarget clamps to ceiling 7.
+            vm.setHabitKind(HabitPreset.WEEKLY_TIMES)
+            vm.setHabitTarget(15)
+            assertEquals(7, vm.uiState.value.habitTarget)
+        }
+}

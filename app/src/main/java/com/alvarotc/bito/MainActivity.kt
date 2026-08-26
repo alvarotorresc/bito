@@ -2,16 +2,27 @@ package com.alvarotc.bito
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AppCompatActivity
 import com.alvarotc.bito.ui.AppVisibility
 import com.alvarotc.bito.ui.BitoNavHost
 import com.alvarotc.bito.ui.NavRequests
 import com.alvarotc.bito.ui.notifications.Notifier
 import com.alvarotc.bito.ui.theme.BitoTheme
 
-class MainActivity : ComponentActivity() {
+// AppCompatActivity, not ComponentActivity: per-app language needs somewhere to persist the
+// chosen locale that survives process death and applies before the first frame, and this class
+// swap is what buys that for free. AppCompatDelegate keeps its own locale cache and restores it
+// automatically here on API<33 -- but ONLY because the manifest opts into that cache via the
+// AppLocalesMetadataHolderService/autoStoreLocales declaration (see AppLocale.kt's KDoc for why
+// that's needed: being an AppCompatActivity alone persists nothing). On 33+ the framework itself
+// restores the per-app locale from localeConfig before this activity is even created. So onCreate
+// below never reads Settings.languageTag from DataStore — AppLocale.apply (called from
+// SettingsViewModel.setLanguage, OnboardingViewModel.setLanguage, and BackupViewModel.confirmImport)
+// is the only place that touches AppCompatDelegate: when the user changes the setting, or right
+// after a backup restore persists a possibly different one — never on every launch.
+class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

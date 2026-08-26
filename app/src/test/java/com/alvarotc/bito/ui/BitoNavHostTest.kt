@@ -1,7 +1,11 @@
 package com.alvarotc.bito.ui
 
 import android.app.Application
+import android.app.NotificationManager
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -13,19 +17,32 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.ViewModelStoreOwner
+import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.time.ZoneId
 
@@ -57,28 +74,51 @@ class BitoNavHostTest {
     private fun screenTitleNode(text: String) =
         compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("bottom-bar")).not(), useUnmergedTree = true)
 
+    /** The conditional start gates on Settings' first emission (loading -> today/onboarding);
+     * wait for that placeholder to clear before any assertion, the same way the settings-reminder
+     * test below already has to wait out a DataStore-backed emission that waitForIdle() alone
+     * doesn't pump. */
+    private fun waitPastLoadingGate() {
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("app-loading", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+    }
+
+    /** Every test below except the onboarding-route ones themselves assumes a completed
+     * onboarding (landing on "today") — a fresh container otherwise defaults onboardingDone to
+     * false and the conditional start would open on "onboarding" instead. */
+    private suspend fun completeOnboarding(container: AppContainer) {
+        container.settings.update { it.copy(onboardingDone = true) }
+    }
+
     private fun setContent() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
+        runBlocking { completeOnboarding(container) }
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
             }
         }
         compose.waitForIdle()
+        waitPastLoadingGate()
     }
 
     /** Like [setContent], but [seed] runs against the container's real database first. */
     private fun setContentSeeded(seed: suspend AppContainer.() -> Unit) {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
-        runBlocking { container.seed() }
+        runBlocking {
+            completeOnboarding(container)
+            container.seed()
+        }
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
             }
         }
         compose.waitForIdle()
+        waitPastLoadingGate()
     }
 
     private suspend fun seedPerfectDayToday(container: AppContainer) {
@@ -86,6 +126,22 @@ class BitoNavHostTest {
         container.database.pointsLedgerDao().insert(
             pointsLedgerEntity(reason = PointsReason.PERFECT_DAY, refId = "day:$today", logicalDay = today),
         )
+    }
+
+    /**
+     * A bare [ViewModelStoreOwner] the test provides in place of the compose-test host's own
+     * (`createComposeRule()` has no exposed `.activity` to read the real one back off of, same
+     * limitation [FakeBackDispatcherOwner] documents in
+     * [com.alvarotc.bito.ui.review.ReviewScreenTest]). `BitoNavHost`'s [CelebrationsViewModel]
+     * is created with `viewModel(factory = ...)` reading `LocalViewModelStoreOwner.current` — a
+     * SECOND [ViewModelProvider] built against the SAME store and the SAME default key returns
+     * that exact cached instance, letting the test read [CelebrationsViewModel.lastCued] straight
+     * off the real VM the composition is driving. Every NavHost `composable { }` block re-provides
+     * its own owner (the [androidx.navigation.NavBackStackEntry]), so route-scoped VMs elsewhere
+     * in the tree are unaffected by this override.
+     */
+    private class FakeViewModelStoreOwner : ViewModelStoreOwner {
+        override val viewModelStore = ViewModelStore()
     }
 
     @Test
@@ -96,16 +152,17 @@ class BitoNavHostTest {
         compose.onNodeWithContentDescription("Settings", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        // The reminders card only renders once SettingsViewModel's DataStore-backed flow has
-        // emitted (real dispatcher, not the test's) — waitForIdle alone doesn't pump that.
-        val reminderCopy = "Phone nudges so you don't forget to log your habits."
+        // The notifications card only renders once SettingsViewModel's DataStore-backed flow has
+        // emitted (real dispatcher, not the test's) — waitForIdle alone doesn't pump that. With a
+        // fresh store no hours exist, so the reminders row hints its empty state.
+        val reminderCopy = "No reminders set"
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithText(reminderCopy, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithText(reminderCopy, substring = true, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
         screenTitleNode("Settings").assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText(reminderCopy, useUnmergedTree = true).assertExists()
+        compose.onNodeWithText(reminderCopy, substring = true, useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -118,6 +175,28 @@ class BitoNavHostTest {
         compose.waitForIdle()
 
         screenTitleNode("Today").assertExists()
+    }
+
+    @Test
+    fun `the current tab announces itself as selected, and switching updates which one does`() {
+        setContent()
+
+        compose
+            .onNode(hasContentDescription("Today") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsSelected()
+        compose
+            .onNode(hasContentDescription("Stats") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsNotSelected()
+
+        compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose
+            .onNode(hasContentDescription("Stats") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsSelected()
+        compose
+            .onNode(hasContentDescription("Today") and hasAnyAncestor(hasTestTag("bottom-bar")), useUnmergedTree = true)
+            .assertIsNotSelected()
     }
 
     @Test
@@ -154,7 +233,12 @@ class BitoNavHostTest {
         compose.mainClock.advanceTimeByFrame()
         compose.mainClock.advanceTimeByFrame()
 
-        compose.onNodeWithTag("habi-screen", useUnmergedTree = true).assertExists()
+        // QA 2026-08-23: HabiScreen gates its first frame on `loading` (calm paper, tag
+        // "habi-loading") until the VM's combine emits — under this frame-pumped clock the
+        // emission can land after our two frames, so arrival at the route is either tag.
+        compose
+            .onNode(hasTestTag("habi-loading") or hasTestTag("habi-screen"), useUnmergedTree = true)
+            .assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
     }
 
@@ -211,5 +295,390 @@ class BitoNavHostTest {
 
         compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists() // confirms the navigation actually landed
         compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The onboarding half of the `currentRoute != "review"` guard's sibling check (see
+     * [com.alvarotc.bito.ui.BitoNavHost]'s own comment on that `if`). Deliberately NOT a bare
+     * absence assertion during onboarding — [CelebrationsUiState] combines off a real dispatcher
+     * (same hazard "a pending perfect day shows the sheet on today but not on the review route"
+     * documents above), so an absence check alone would pass just as well with a broken guard,
+     * proving nothing. Walking the real flow to completion and then WAITING for the sheet to
+     * appear is what forces that emission and proves the celebration stayed genuinely pending
+     * rather than being lost — the exact behavior the M9 finding asked for: "celebrations stay
+     * pending and fire after landing on Today".
+     */
+    @Test
+    fun `a pending perfect day stays hidden behind onboarding and shows once today loads`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { seedPerfectDayToday(container) }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick() // blank habit name still finishes
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * The M9 finding's own guard ("celebrations stay pending and fire after landing on Today")
+     * only ever had its VISIBLE half asserted (the test above): the sheet itself. Its silent half
+     * — [CelebrationsViewModel]'s own habi cue — was never checked, so a regression that fired the
+     * cue WHILE suppressed (behind onboarding) would have shipped mute. [CelebrationsViewModel.cue]
+     * latches idempotently per signature ([CelebrationsViewModel.lastCued] is a `String?`, not a
+     * counter), so "fires exactly once" is provable only as "still null at every suppressed
+     * checkpoint below, then the one expected signature once Today loads" — the once-only property
+     * itself is [CelebrationsViewModel.lastCuedSignature]'s own job and is already covered by
+     * `CelebrationsViewModelTest`'s idempotency tests.
+     */
+    @Test
+    fun `the celebration cue stays untouched while suppressed and fires once Today loads`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { seedPerfectDayToday(container) }
+        val vmOwner = FakeViewModelStoreOwner()
+
+        fun celebrations() = ViewModelProvider(vmOwner, CelebrationsViewModel.factory(container))[CelebrationsViewModel::class.java]
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides vmOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        assertNull(celebrations().lastCued) // suppressed behind onboarding: never cued yet
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        assertNull(celebrations().lastCued) // still on onboarding: still suppressed
+
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick() // blank habit name still finishes
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+
+        compose.waitUntil(timeoutMillis = 5_000) { celebrations().lastCued != null }
+        val cutoff = runBlocking { container.settings.settings.first().dayCutoffMinutes }
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), cutoff, ZoneId.systemDefault())
+        assertEquals("$today:perfect-day", celebrations().lastCued)
+    }
+
+    @Test
+    fun `a fresh install opens on the onboarding route, not today`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        screenTitleNode("Today").assertDoesNotExist()
+    }
+
+    @Test
+    fun `onboardingDone true opens straight on today`() {
+        setContent() // seeds onboardingDone = true
+
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The blocker this route-level prompt exists to close: reminder hours are seeded at first
+     * launch, alarms fire on time, and on API 33+ every one of them was dropped in silence by
+     * Notifier's `areNotificationsEnabled()` guard, because nothing in the app ever requested
+     * POST_NOTIFICATIONS. Asked here, on arrival, so that ONE ask covers finishing onboarding,
+     * restoring a backup (which skips onboarding) and updating an install created before the
+     * prompt existed — this test's `onboardingDone = true` container is exactly that last case.
+     */
+    @Test
+    fun `landing on a real route asks for the notification permission once`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
+        val container = AppContainer(app)
+        runBlocking { completeOnboarding(container) }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+
+        // The claim is the install's single unprompted ask being spent — read non-destructively,
+        // so this asserts the composable took it rather than taking it itself.
+        compose.waitUntil(timeoutMillis = 5_000) {
+            runBlocking { container.settings.notificationPromptClaimed.first() }
+        }
+    }
+
+    @Test
+    fun `the onboarding flow is never interrupted by the notification prompt`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(app.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
+        val container = AppContainer(app) // onboardingDone defaults to false: opens on onboarding
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.waitForIdle()
+
+        // A system dialog over the story beats would be asking for access before the app has shown
+        // what it's for; the ask waits — unspent — for the user to actually land in the app.
+        assertFalse(runBlocking { container.settings.notificationPromptClaimed.first() })
+    }
+
+    /**
+     * M9.5 final-review Important #2: [com.alvarotc.bito.ui.onboarding.OnboardingReconciler.reconcile]
+     * now runs INSIDE this gate, before `startDestination` is decided (see [BitoNavHost]'s own
+     * comment on that `produceState` block) — so a v1/v2 restore's habits-but-`onboardingDone =
+     * false` state resolves deterministically to "today," never a race the reconciler could lose
+     * against `remember`.
+     */
+    @Test
+    fun `a restorer with habits and onboarding not done lands on today, not onboarding`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { container.database.habitDao().upsert(habitEntity(id = "restored-habit")) }
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * M9.5 T6 (fix round 1): [NavRequests] must not navigate OVER onboarding — same philosophy as
+     * [com.alvarotc.bito.ui.BitoNavHost]'s celebration guard (a mid-flow user shouldn't get
+     * sandwiched into e.g. "review"), and now genuinely the same MECHANISM: `BitoNavHost` simply
+     * does not call [NavRequests.consume] while `onboarding` is the current route, so
+     * [NavRequests.pending] itself — a process-wide, rotation-surviving `MutableStateFlow` — stays
+     * the one source of truth for "review is still waiting," same as [NavRequests] is asserted
+     * elsewhere. Deliberately NOT a bare absence assertion followed by nothing else: proving the
+     * route STAYS pending here is necessary but not sufficient (a build that dropped the request
+     * entirely would look identical at this checkpoint too) — only watching it actually fire once
+     * onboarding hands off to "today," and get consumed there, proves it survived intact. Same
+     * reasoning "a pending perfect day stays hidden behind onboarding and shows once today loads"
+     * already uses for the celebration sheet.
+     */
+    @Test
+    fun `a pending review request stays held behind onboarding and opens once onboarding hands off`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        NavRequests.open("review")
+        compose.waitForIdle()
+
+        // Held, not navigated: onboarding is still the one showing and review never opened over it.
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertDoesNotExist()
+        // Genuinely still pending (not consumed into any ephemeral state): this is what makes the
+        // hold rotation-safe -- NavRequests.pending is the one and only source of truth throughout.
+        assertEquals("review", NavRequests.pending.value)
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
+        assertNull(NavRequests.pending.value) // fired through the normal branch and consumed there
+    }
+
+    /**
+     * M9.5 final-review Minor #6: extends the test above with a pending perfect-day celebration.
+     * `nav.navigate("review")` (the held request firing) runs in the SAME recomposition that flips
+     * `currentRoute` from "onboarding" to "today" — without `pendingRoute != null` folded into
+     * [BitoNavHost]'s own `celebrationsSuppressed`, the celebration would get that one transient
+     * "today" frame to itself, cue there (idempotently latched — see
+     * [com.alvarotc.bito.ui.celebration.CelebrationsViewModel.cue]), then get suppressed again on
+     * "review" and never cue a second time once genuinely shown after review closes — cued once,
+     * silently, behind the transition; sheet later renders mute.
+     */
+    @Test
+    fun `a celebration behind a held review request does not cue during the transient today frame`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        runBlocking { seedPerfectDayToday(container) }
+        val vmOwner = FakeViewModelStoreOwner()
+
+        fun celebrations() = ViewModelProvider(vmOwner, CelebrationsViewModel.factory(container))[CelebrationsViewModel::class.java]
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides vmOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        NavRequests.open("review")
+        compose.waitForIdle()
+        assertNull(celebrations().lastCued) // suppressed behind onboarding: never cued yet
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        // The held request fired straight through to review: the celebration never got a "today"
+        // frame to itself, so it must still be un-cued and its sheet must not exist behind review.
+        assertNull(celebrations().lastCued)
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        // Leaving review (unsealed, via the header's back chevron) is the celebration's first
+        // genuine chance to be seen.
+        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("perfect-day-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+        assertTrue(celebrations().lastCued != null)
+    }
+
+    /**
+     * The full first-run journey through the REAL [BitoNavHost] — the only place [done]'s own
+     * `navigate("today") { popUpTo("onboarding") { inclusive = true } }` (wired in the "onboarding"
+     * composable above) can actually be observed landing. `OnboardingScreenTest`'s own
+     * "the first habit step creates the habit and completes onboarding" proves the write path and
+     * [OnboardingUiState.done] in isolation, without a NavHost to navigate anywhere.
+     */
+    @Test
+    fun `the first habit step creates and lands on today`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick() // WELCOME -> STORY_1
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick() // -> NAME
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // NAME -> PERSONALITY
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick() // PERSONALITY -> FIRST_HABIT
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
+        }
+        screenTitleNode("Today").assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+
+        val created = runBlocking { container.database.habitDao().all().single { it.name == "Beber agua" } }
+        assertEquals(Metric.CHECK, created.metric)
     }
 }

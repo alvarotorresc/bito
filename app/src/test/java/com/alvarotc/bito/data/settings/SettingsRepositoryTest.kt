@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -134,5 +135,87 @@ class SettingsRepositoryTest {
             val settings = repository.settings.first()
             assertEquals(1234567L, settings.lastAutoBackupAtMillis)
             assertNull(settings.lastAutoBackupError)
+        }
+
+    @Test
+    fun `seeding a store that never had hours plants 12,00 and 19,00 as ordinary hours`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-fresh"))
+
+            repository.seedDefaultReminders()
+
+            assertEquals(listOf(12 * 60, 19 * 60), repository.settings.first().globalReminderMinutes)
+        }
+
+    @Test
+    fun `seeding is one-shot — hours the user deleted never resurrect`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-no-resurrect"))
+            repository.seedDefaultReminders()
+            repository.update { it.copy(globalReminderMinutes = emptyList()) }
+
+            repository.seedDefaultReminders()
+
+            assertEquals(emptyList<Int>(), repository.settings.first().globalReminderMinutes)
+        }
+
+    @Test
+    fun `a store with hours already configured only gets the marker, never the seed`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-configured"))
+            repository.update { it.copy(globalReminderMinutes = listOf(480)) }
+
+            repository.seedDefaultReminders()
+            assertEquals(listOf(480), repository.settings.first().globalReminderMinutes)
+
+            // The marker landed on that first call: clearing the hours later never re-seeds.
+            repository.update { it.copy(globalReminderMinutes = emptyList()) }
+            repository.seedDefaultReminders()
+            assertEquals(emptyList<Int>(), repository.settings.first().globalReminderMinutes)
+        }
+
+    @Test
+    fun `a restore that writes a whole Settings is never re-seeded over`() =
+        runTest {
+            val repository = SettingsRepository(store("seed-restore"))
+            repository.seedDefaultReminders()
+
+            // BackupRepository.import applies a restore exactly like this: a full Settings
+            // built from the backup file, replacing whatever the store had — including a
+            // backup with no reminder hours at all.
+            repository.update { Settings(userName = "Álvaro", globalReminderMinutes = emptyList()) }
+            repository.seedDefaultReminders()
+
+            val restored = repository.settings.first()
+            assertEquals(emptyList<Int>(), restored.globalReminderMinutes)
+            assertEquals("Álvaro", restored.userName)
+        }
+
+    @Test
+    fun `the notification prompt is claimable exactly once per install`() =
+        runTest {
+            val repository = SettingsRepository(store("notif-claim"))
+
+            // The one unprompted ask this install gets — after it, the notice in Ajustes is the
+            // recovery path, not another dialog. This is what keeps a refusal from being nagged at
+            // on every route change for the rest of the install's life.
+            assertTrue(repository.claimNotificationPrompt())
+            assertFalse(repository.claimNotificationPrompt())
+            assertFalse(repository.claimNotificationPrompt())
+        }
+
+    @Test
+    fun `a restore never carries another install's claim onto this device`() =
+        runTest {
+            val repository = SettingsRepository(store("notif-claim-restore"))
+
+            // BackupRepository.import replaces Settings wholesale — the marker lives outside
+            // Settings, so a restore can neither resurrect the claim nor spend it: this device has
+            // never shown the dialog, and it still gets its one ask.
+            repository.update { Settings(userName = "Álvaro") }
+            assertTrue(repository.claimNotificationPrompt())
+
+            repository.update { Settings(userName = "Álvaro") }
+            assertFalse(repository.claimNotificationPrompt())
         }
 }

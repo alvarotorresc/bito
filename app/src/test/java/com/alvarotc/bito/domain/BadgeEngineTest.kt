@@ -3,6 +3,7 @@ package com.alvarotc.bito.domain
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 class BadgeEngineTest {
@@ -117,5 +118,34 @@ class BadgeEngineTest {
     fun `missingBadges never proposes revoking`() {
         assertEquals(emptySet<String>(), BadgeEngine.missingBadges(emptySet(), setOf("first-habit")))
         assertEquals(setOf("streak-7"), BadgeEngine.missingBadges(setOf("streak-7", "first-habit"), setOf("first-habit")))
+    }
+
+    @Test
+    fun `earnedBadges with a precomputed perfect-day list matches the self-computed result`() {
+        val makeBed = RealHabits.makeBed.createdOn(JULY_FIRST)
+        val state =
+            domainState(
+                habits = listOf(makeBed),
+                entries = entriesOn(makeBed, JULY_FIRST..TODAY),
+            )
+
+        val defaultResult = earned(state)
+        val perfectDays = PerfectDays.perfectDaysUpTo(state, TODAY)
+        val withPrecomputed = BadgeEngine.earnedBadges(state, TODAY, perfectDays)
+
+        // Verify non-vacuity: the fixture has perfect-week badge
+        assertTrue("perfect-week" in earned(state))
+
+        // Verify that the precomputed list is actually used
+        assertEquals(defaultResult, withPrecomputed)
+        val withEmpty = BadgeEngine.earnedBadges(state, TODAY, emptySet())
+        assertNotEquals(
+            defaultResult,
+            withEmpty,
+            "Passing an empty perfect-day set should produce different results",
+        )
+        // perfect-week is gone, but first-habit remains
+        assertTrue("first-habit" in withEmpty)
+        assertFalse("perfect-week" in withEmpty)
     }
 }

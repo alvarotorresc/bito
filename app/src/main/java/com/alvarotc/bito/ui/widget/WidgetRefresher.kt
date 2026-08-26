@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.glance.appwidget.updateAll
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.ui.notifications.TrayRefresher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.combine
@@ -41,12 +42,15 @@ object WidgetRefresher {
                 .collect { prefs ->
                     // A bad emission here (e.g. a widget host update throwing) must not cancel this
                     // collector — that would stop widget refreshes for the rest of the process's life,
-                    // so one failure is swallowed instead of killing the loop.
+                    // so one failure is swallowed instead of killing the loop. Cancellation is not
+                    // "a failure" though — swallowing it here would leave the collector running past
+                    // its own scope being cancelled.
                     runCatching {
                         TodayWidget().updateAll(context)
+                        SingleHabitWidget().updateAll(context)
                         WidgetDayAlarm.schedule(context, prefs.dayCutoffMinutes)
                         TrayRefresher.refresh(context, container)
-                    }
+                    }.onFailure { if (it is CancellationException) throw it }
                     delay(250)
                 }
         }

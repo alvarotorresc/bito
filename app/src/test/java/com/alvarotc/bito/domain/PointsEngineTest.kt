@@ -8,6 +8,7 @@ import com.alvarotc.bito.domain.model.PointsReason
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
 /**
@@ -548,5 +549,30 @@ class PointsEngineTest {
         assertEquals(50, economy.perfectMonthPoints)
         assertEquals(mapOf(7 to 5, 30 to 20, 100 to 75, 365 to 300), economy.streakMilestonePoints)
         assertEquals(100, economy.freezerPrice)
+    }
+
+    @Test
+    fun `earnedEvents with a precomputed perfect-day list matches the self-computed result`() {
+        val makeBed = RealHabits.makeBed.createdOn(JULY_FIRST)
+        val state =
+            domainState(
+                habits = listOf(makeBed),
+                entries = entriesOn(makeBed, JULY_FIRST..TODAY),
+            )
+
+        val defaultResult = earned(state)
+        val perfectDays = PerfectDays.perfectDaysUpTo(state, TODAY)
+        val withPrecomputed = PointsEngine.earnedEvents(state, TODAY, config, perfectDays)
+
+        // Verify non-vacuity: the fixture has perfect days and perfect-week grants
+        assertTrue(earned(state).perfect("week:").isNotEmpty())
+
+        // Verify that the precomputed list is actually used
+        assertEquals(defaultResult, withPrecomputed)
+        assertNotEquals(
+            defaultResult,
+            PointsEngine.earnedEvents(state, TODAY, config, emptySet()),
+            "Passing an empty perfect-day set should produce different results",
+        )
     }
 }

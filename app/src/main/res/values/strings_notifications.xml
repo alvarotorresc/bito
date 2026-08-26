@@ -3,17 +3,94 @@
     <string name="channel_reminders">Reminders</string>
     <string name="channel_review">Daily review</string>
     <string name="channel_celebrations">Celebrations</string>
-    <plurals name="notif_reminder_title">
-        <item quantity="one">%1$d habit waiting</item>
-        <item quantity="other">%1$d habits waiting</item>
+
+    <!--
+        GLOBAL reminder, in Habi's voice (ReminderVoice) — one title + one body per personality
+        and time-of-day flavor. Registers per docs/07-textos-personalidades.md; EN is the same
+        native voice, not a translation.
+        Titles: %1$s = the user's name.
+        Bodies: plurals keyed by the pending count — %1$d = pending count, %2$s = up to three
+        pending names joined, %3$d = done today, %4$d = total today. Not every flavor uses every
+        placeholder; the render call always passes all four.
+    -->
+    <string name="notif_reminder_title_sargento_morning">Up and at it, %1$s. There\'s work today.</string>
+    <string name="notif_reminder_title_sargento_afternoon">Halfway through, %1$s. Don\'t ease up.</string>
+    <string name="notif_reminder_title_sargento_evening">Last call, %1$s.</string>
+    <string name="notif_reminder_title_cheerleader_morning">Morning, %1$s! Today looks good.</string>
+    <string name="notif_reminder_title_cheerleader_afternoon">Still going, %1$s! The afternoon is ours.</string>
+    <string name="notif_reminder_title_cheerleader_evening">One last push, %1$s!</string>
+    <string name="notif_reminder_title_neutra_morning">Good morning, %1$s. Your day, at a glance.</string>
+    <string name="notif_reminder_title_neutra_afternoon">Mid-afternoon, %1$s. Here\'s where we are.</string>
+    <string name="notif_reminder_title_neutra_evening">The day\'s winding down, %1$s.</string>
+
+    <plurals name="notif_reminder_body_sargento_morning">
+        <item quantity="one">One target today: %2$s. Go get it.</item>
+        <item quantity="other">%1$d habits ahead: %2$s. Start strong.</item>
     </plurals>
+    <plurals name="notif_reminder_body_sargento_afternoon">
+        <item quantity="one">%3$d of %4$d down. One left: %2$s. Finish it.</item>
+        <item quantity="other">%3$d of %4$d down. %1$d left: %2$s. No excuses.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_sargento_evening">
+        <item quantity="one">One left to close: %2$s. The day won\'t close itself.</item>
+        <item quantity="other">%1$d left to close: %2$s. The day won\'t close itself.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_cheerleader_morning">
+        <item quantity="one">Just one today: %2$s. What a way to start!</item>
+        <item quantity="other">We\'ve got %1$d today: %2$s. The first one sets the pace!</item>
+    </plurals>
+    <plurals name="notif_reminder_body_cheerleader_afternoon">
+        <item quantity="one">%3$d of %4$d, and only %2$s to go. We\'ve got this!</item>
+        <item quantity="other">%3$d of %4$d so far. %1$d to go: %2$s. Keep it rolling!</item>
+    </plurals>
+    <plurals name="notif_reminder_body_cheerleader_evening">
+        <item quantity="one">Only %2$s left. Then the day is done!</item>
+        <item quantity="other">%1$d left: %2$s. The day\'s final flourish!</item>
+    </plurals>
+    <plurals name="notif_reminder_body_neutra_morning">
+        <item quantity="one">Today: %2$s. Starting is enough.</item>
+        <item quantity="other">Today: %1$d habits. %2$s. One at a time.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_neutra_afternoon">
+        <item quantity="one">%3$d of %4$d done. One left: %2$s.</item>
+        <item quantity="other">%3$d of %4$d done. %1$d left: %2$s.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_neutra_evening">
+        <item quantity="one">One left to close: %2$s. There\'s still time.</item>
+        <item quantity="other">%1$d left to close: %2$s. There\'s still time.</item>
+    </plurals>
+
+    <!-- Per-habit reminder: the habit's own name is the title, no personality copy (yet). -->
     <string name="notif_reminder_single_title" translatable="false">%1$s</string>
     <string name="notif_reminder_single_body">Still open today</string>
     <string name="notif_action_done">Done</string>
     <string name="notif_action_add" translatable="false">+%1$d</string>
     <string name="notif_target_done">✓ %1$s</string>
     <string name="notif_target_add" translatable="false">+%1$d %2$s</string>
-    <string name="notif_review_title">Close your day</string>
-    <string name="notif_review_body">Something is still open — one minute and done</string>
+
+    <!--
+        REVIEW nudge, in Habi's voice. Titles: %1$s = the user's name. Bodies: plurals keyed by
+        how many rows today's review still has to decide (%1$d). The seal-only variant covers a
+        review owed with nothing to decide today — only past days left unsealed.
+    -->
+    <string name="notif_review_title_sargento">Day\'s close, %1$s.</string>
+    <string name="notif_review_title_cheerleader">Let\'s close the day, %1$s!</string>
+    <string name="notif_review_title_neutra">Day review, %1$s.</string>
+    <plurals name="notif_review_body_sargento">
+        <item quantity="one">%1$d left to settle. Close it out.</item>
+        <item quantity="other">%1$d left to settle. One minute and the day is closed. No excuses.</item>
+    </plurals>
+    <plurals name="notif_review_body_cheerleader">
+        <item quantity="one">Just %1$d left to settle. Seal it and rest up!</item>
+        <item quantity="other">%1$d left to settle. A quick review and off to rest!</item>
+    </plurals>
+    <plurals name="notif_review_body_neutra">
+        <item quantity="one">%1$d left to settle. One minute and the day is sealed.</item>
+        <item quantity="other">%1$d left to settle. One minute and the day is sealed.</item>
+    </plurals>
+    <string name="notif_review_seal_sargento">There are unsealed days on the books. Put them in order.</string>
+    <string name="notif_review_seal_cheerleader">A few days are waiting for their seal. One tap and done!</string>
+    <string name="notif_review_seal_neutra">Some earlier days are still unsealed. One tap closes them.</string>
+
     <string name="notif_perfect_day_title">Perfect day</string>
 </resources>

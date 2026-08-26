@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!--
-        Badge names, unlock conditions and family labels (docs/06-badges.md §2, T8) — PROVISIONAL
-        copy, definitive wording lands in the M9 economy/copy session. The catalog of 14 ids lives
-        in domain/model/Badge.kt (BadgeCatalog); this file only supplies the ui/ presentation, kept
+        Badge names, unlock conditions and family labels (docs/06-badges.md §2, T8) — M9 draft
+        copy — pending architect validation (docs/07). The catalog of 14 ids lives in
+        domain/model/Badge.kt (BadgeCatalog); this file only supplies the ui/ presentation, kept
         pure of Android resource ids (ui/stats/BadgeStrings.kt maps id -> resource).
         badge_name_* — the badge's own name, personality never changes it.
         badge_how_*  — the unlock condition, plugged into badge_how_prefix ("earned by: …").
@@ -46,6 +46,10 @@
     <string name="stats_badges_title">Badges</string>
     <string name="stats_badges_count">%1$d of %2$d</string>
     <string name="badge_of_total">of %1$d</string>
+    <!-- StatsScreen's AchievementsSection card [F]: overrides the clickable card's auto-merge,
+         which would otherwise concatenate this header with every BadgeChip name in the grid.
+         "%1$d"/"%2$d" = same unlocked/total data as stats_badges_count. -->
+    <string name="achievements_card_cd">Achievements, %1$d of %2$d</string>
     <string name="stats_badges_all">see all</string>
     <string name="badges_title">Badges</string>
     <string name="badge_unlocked_on">unlocked on %1$s</string>

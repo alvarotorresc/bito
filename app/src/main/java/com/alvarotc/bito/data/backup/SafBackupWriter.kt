@@ -41,10 +41,11 @@ class SafBackupWriter(private val context: Context) : BackupSink {
         val tmpName = "$fileName.tmp"
         // An orphaned .tmp from ANY earlier run (its own name carries a different date/time
         // than today's), or a previous file with today's exact final name (the worker re-ran
-        // in the same minute), must go before we start fresh.
-        val files = root.listFiles()
-        val stale = staleWriteTargets(files.mapNotNull { it.name }, fileName).toSet()
-        files.forEach { existing -> if (existing.name in stale) existing.delete() }
+        // in the same minute), must go before we start fresh. `.name` is a SAF provider
+        // round-trip, so pair each doc with its name in one pass instead of asking twice.
+        val entries = root.listFiles().mapNotNull { doc -> doc.name?.let { doc to it } }
+        val stale = staleWriteTargets(entries.map { it.second }, fileName).toSet()
+        entries.forEach { (existing, name) -> if (name in stale) existing.delete() }
 
         val tmpDoc =
             root.createFile("application/octet-stream", tmpName)
@@ -62,13 +63,11 @@ class SafBackupWriter(private val context: Context) : BackupSink {
                 throw IOException("Failed to rename $tmpName to $fileName")
             }
         } catch (e: IOException) {
-            tmpDoc.delete() // best-effort: never leave the half-written tmp behind
-            throw e
+            throw withTmpCleanupNote(e, tmpDoc, tmpName)
         } catch (e: SecurityException) {
             // The persisted tree grant can be revoked (or the volume can vanish) between
             // fromTreeUri() succeeding and the actual write — the canonical SAF failure.
-            tmpDoc.delete()
-            throw IOException("Failed to write $fileName", e)
+            throw withTmpCleanupNote(IOException("Failed to write $fileName", e), tmpDoc, tmpName)
         }
     }
 
@@ -80,12 +79,27 @@ class SafBackupWriter(private val context: Context) : BackupSink {
             DocumentFile.fromTreeUri(context, treeUri)
                 ?: throw IOException("Cannot open backup folder for $treeUri")
 
-        val files = root.listFiles()
-        val victims = rotationVictims(files.mapNotNull { it.name }, keep).toSet()
+        // Same one-pass pairing as write()'s cleanup scan above — `.name` is a SAF round-trip.
+        val entries = root.listFiles().mapNotNull { doc -> doc.name?.let { doc to it } }
+        val victims = rotationVictims(entries.map { it.second }, keep).toSet()
 
-        files.forEach { doc ->
-            if (doc.name in victims) doc.delete()
-        }
+        entries.forEach { (doc, name) -> if (name in victims) doc.delete() }
+    }
+
+    /**
+     * Best-effort cleanup of the half-written tmp file on a failed write — but "best-effort"
+     * must not mean silent: if [tmpDoc]'s own delete() also fails, that fact is folded into
+     * [original]'s message instead of vanishing, since a stray half-written tmp left behind is
+     * exactly what this whole .tmp dance exists to prevent.
+     */
+    private fun withTmpCleanupNote(
+        original: IOException,
+        tmpDoc: DocumentFile,
+        tmpName: String,
+    ): IOException {
+        val deleted = tmpDoc.delete()
+        if (deleted) return original
+        return IOException("${original.message} (also failed to delete leftover $tmpName)", original)
     }
 }
 

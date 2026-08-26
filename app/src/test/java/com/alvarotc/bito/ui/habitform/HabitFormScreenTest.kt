@@ -2,11 +2,19 @@ package com.alvarotc.bito.ui.habitform
 
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsOff
+import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -20,6 +28,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.LogMode
@@ -95,7 +104,7 @@ class HabitFormScreenTest {
     /** Builds the form VM and renders the screen. Each test calls this exactly once. */
     private fun launchScreen(habitId: String?): HabitFormViewModel {
         val settings = SettingsRepository(settingsStore("habit-form-screen"))
-        val vm = HabitFormViewModel(habits, settings, habitId, now = { fixedNow }, zone = { utc })
+        val vm = HabitFormViewModel(habits, settings, RewardsRepository(db), habitId, now = { fixedNow }, zone = { utc })
         compose.setContent {
             BitoTheme {
                 HabitFormScreen(vm, onBack = { backCalled = true })
@@ -149,10 +158,15 @@ class HabitFormScreenTest {
         compose.onNodeWithTag("target-plus").assertIsEnabled()
         compose.onNodeWithTag("target-minus").assertIsEnabled()
 
-        // Shape fields lock, same as the preset pills: the period pill and the binary switch.
+        // Shape fields lock, same as the preset pills: the period pill and the binary mode row.
         compose.onNodeWithText("day").assertIsNotEnabled()
         compose.onNodeWithText("More options").performScrollTo().performClick()
         compose.waitForIdle()
+        // isToggleable() now matches BinaryModeRow's own Row (its `.toggleable`), not the Switch
+        // inside it: with `onCheckedChange = null` (the [E] a11y fix), the Switch itself no longer
+        // contributes any toggleable semantics of its own — verified there's exactly one match
+        // (onNode, not onAllNodes, would throw on more than one) and that it's tagged
+        // "binary-mode-row".
         compose.onNode(isToggleable()).assertIsNotEnabled()
 
         compose.onNodeWithTag("target-plus").performScrollTo().performClick()
@@ -294,5 +308,104 @@ class HabitFormScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("None").assertExists()
+    }
+
+    /** The fixed PRESET_ROWS grid replaced iterating `HabitPreset.entries` directly, so a preset
+     * added to the enum but forgotten in the rows would silently vanish from the form — this
+     * pins every entry to a rendered pill. */
+    @Test
+    fun `every preset renders exactly one pill`() {
+        launchScreen(habitId = null)
+
+        HabitPreset.entries.forEach { compose.onNodeWithTag("preset-${it.name}").assertExists() }
+    }
+
+    /**
+     * [C]: the checkmark on the active preset is an `Icon(contentDescription = null)`, invisible
+     * to TalkBack — before this fix every pill just read "<label>, Button" with no selection
+     * state. No `useUnmergedTree` needed: `selected`/`Role.Tab` land directly on the same node
+     * this file's other lookups already tag (`preset-<NAME>`), not on a new merging ancestor.
+     */
+    @Test
+    fun `preset pills announce which one is selected`() {
+        launchScreen(habitId = null)
+
+        // DAILY_CHECK is the form's own default preset (no pill tap needed to reach it).
+        compose.onNodeWithTag("preset-DAILY_CHECK").assertIsSelected()
+        compose.onNodeWithTag("preset-QUANTITY").assertIsNotSelected()
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("preset-QUANTITY").assertIsSelected()
+        compose.onNodeWithTag("preset-DAILY_CHECK").assertIsNotSelected()
+    }
+
+    /**
+     * [A]: the ±1 chips wrapped a bare `Icon(contentDescription = null)`, and the ±10 chips a
+     * plain "−10"/"+10" `Text` — ambiguous out of context. DURATION is the one preset that shows
+     * all four chips together (`isMinuteTarget`), so one test covers all four descriptions.
+     */
+    @Test
+    fun `the target stepper chips carry real action descriptions`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-DURATION").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("target-minus10").assertContentDescriptionEquals("Decrease target by 10")
+        compose.onNodeWithTag("target-minus").assertContentDescriptionEquals("Decrease target by 1")
+        compose.onNodeWithTag("target-plus").assertContentDescriptionEquals("Increase target by 1")
+        compose.onNodeWithTag("target-plus10").assertContentDescriptionEquals("Increase target by 10")
+    }
+
+    /**
+     * [E]: the "Just done / not done" Switch used to sit next to — not merged with — its label+
+     * hint text, 2 disconnected TalkBack stops. `toggleable` on the row (not a plain
+     * `mergeDescendants`, verified insufficient empirically on SettingsScreen's identical rows)
+     * moves the action there and folds both Column texts and the Switch's own state into one stop.
+     */
+    @Test
+    fun `the binary mode row merges its label and switch into one talkback stop`() {
+        launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("binary-mode-row").performScrollTo().assertIsOff()
+        compose.onNodeWithTag("binary-mode-row").onChildren().assertCountEquals(0)
+    }
+
+    /**
+     * Mirrors the Settings switch rows' own click-to-toggle test: proves the row's `toggleable`
+     * (not just its merged semantics) actually drives [HabitFormViewModel]'s state, now that the
+     * click moved off the `Switch` itself.
+     */
+    @Test
+    fun `tapping the binary mode row flips and persists the setting`() {
+        val vm = launchScreen(habitId = null)
+
+        compose.onNodeWithTag("preset-QUANTITY").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("More options").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("binary-mode-row").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("binary-mode-row").assertIsOn()
+        assertTrue(vm.state.value.binaryMode)
+    }
+
+    /** The form's bubble fills the same mini-Habi avatar slot Stats' commentator and the freezer
+     * info sheet use — HabiAvatar's aggregated description ("Habi, <mood>") is the one node that
+     * proves the face actually rendered next to the text. */
+    @Test
+    fun `the habi bubble shows the avatar next to its text`() {
+        launchScreen(habitId = null)
+
+        compose.onNode(hasContentDescription("Habi", substring = true)).assertIsDisplayed()
     }
 }

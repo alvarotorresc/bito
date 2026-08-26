@@ -3,15 +3,102 @@
     <string name="channel_reminders">Recordatorios</string>
     <string name="channel_review">Repaso del día</string>
     <string name="channel_celebrations">Celebraciones</string>
-    <plurals name="notif_reminder_title">
-        <item quantity="one">%1$d hábito pendiente</item>
-        <item quantity="many">%1$d hábitos pendientes</item>
-        <item quantity="other">%1$d hábitos pendientes</item>
+
+    <!--
+        Recordatorio GLOBAL con la voz de Habi (ReminderVoice) — un título y un cuerpo por
+        personalidad y sabor horario. Registros según docs/07-textos-personalidades.md.
+        Títulos: %1$s = nombre del usuario.
+        Cuerpos: plurals por número de pendientes — %1$d = pendientes, %2$s = hasta tres nombres
+        pendientes unidos, %3$d = hechos hoy, %4$d = total de hoy. No todos los sabores usan
+        todos los placeholders; la llamada de render siempre pasa los cuatro.
+    -->
+    <string name="notif_reminder_title_sargento_morning">En pie, %1$s. Hoy hay trabajo.</string>
+    <string name="notif_reminder_title_sargento_afternoon">Media jornada, %1$s. Sin aflojar.</string>
+    <string name="notif_reminder_title_sargento_evening">Última llamada, %1$s.</string>
+    <string name="notif_reminder_title_cheerleader_morning">¡Buenos días, %1$s! Hoy pinta bien.</string>
+    <string name="notif_reminder_title_cheerleader_afternoon">¡Seguimos, %1$s! La tarde es nuestra.</string>
+    <string name="notif_reminder_title_cheerleader_evening">¡El último empujón, %1$s!</string>
+    <string name="notif_reminder_title_neutra_morning">Buenos días, %1$s. Tu día, a un vistazo.</string>
+    <string name="notif_reminder_title_neutra_afternoon">Media tarde, %1$s. Así vamos.</string>
+    <string name="notif_reminder_title_neutra_evening">Cae el día, %1$s. Esto queda.</string>
+
+    <plurals name="notif_reminder_body_sargento_morning">
+        <item quantity="one">Un solo objetivo hoy: %2$s. A por él.</item>
+        <item quantity="many">%1$d hábitos por delante: %2$s. Empieza fuerte.</item>
+        <item quantity="other">%1$d hábitos por delante: %2$s. Empieza fuerte.</item>
     </plurals>
+    <plurals name="notif_reminder_body_sargento_afternoon">
+        <item quantity="one">Llevas %3$d de %4$d. Queda uno: %2$s. Remátalo.</item>
+        <item quantity="many">Llevas %3$d de %4$d. Quedan %1$d: %2$s. Sin excusas.</item>
+        <item quantity="other">Llevas %3$d de %4$d. Quedan %1$d: %2$s. Sin excusas.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_sargento_evening">
+        <item quantity="one">Queda uno por cerrar: %2$s. El día no se acaba solo.</item>
+        <item quantity="many">Quedan %1$d por cerrar: %2$s. El día no se acaba solo.</item>
+        <item quantity="other">Quedan %1$d por cerrar: %2$s. El día no se acaba solo.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_cheerleader_morning">
+        <item quantity="one">Hoy, solo uno: %2$s. ¡A estrenar el día!</item>
+        <item quantity="many">Hoy tenemos %1$d: %2$s. ¡El primero marca el ritmo!</item>
+        <item quantity="other">Hoy tenemos %1$d: %2$s. ¡El primero marca el ritmo!</item>
+    </plurals>
+    <plurals name="notif_reminder_body_cheerleader_afternoon">
+        <item quantity="one">Vamos %3$d de %4$d y solo queda %2$s. ¡Lo tenemos!</item>
+        <item quantity="many">Vamos %3$d de %4$d. Quedan %1$d: %2$s. ¡Seguimos!</item>
+        <item quantity="other">Vamos %3$d de %4$d. Quedan %1$d: %2$s. ¡Seguimos!</item>
+    </plurals>
+    <plurals name="notif_reminder_body_cheerleader_evening">
+        <item quantity="one">Solo queda %2$s. ¡Y día cerrado!</item>
+        <item quantity="many">Quedan %1$d: %2$s. ¡El broche del día!</item>
+        <item quantity="other">Quedan %1$d: %2$s. ¡El broche del día!</item>
+    </plurals>
+    <plurals name="notif_reminder_body_neutra_morning">
+        <item quantity="one">Hoy: %2$s. Con empezar, basta.</item>
+        <item quantity="many">Hoy: %1$d hábitos. %2$s. Uno detrás de otro.</item>
+        <item quantity="other">Hoy: %1$d hábitos. %2$s. Uno detrás de otro.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_neutra_afternoon">
+        <item quantity="one">Llevas %3$d de %4$d. Queda uno: %2$s.</item>
+        <item quantity="many">Llevas %3$d de %4$d. Quedan %1$d: %2$s.</item>
+        <item quantity="other">Llevas %3$d de %4$d. Quedan %1$d: %2$s.</item>
+    </plurals>
+    <plurals name="notif_reminder_body_neutra_evening">
+        <item quantity="one">Queda uno por cerrar: %2$s. Aún hay tiempo.</item>
+        <item quantity="many">Quedan %1$d por cerrar: %2$s. Aún hay tiempo.</item>
+        <item quantity="other">Quedan %1$d por cerrar: %2$s. Aún hay tiempo.</item>
+    </plurals>
+
+    <!-- Recordatorio por hábito: su propio nombre es el título, sin copy de personalidad (aún). -->
     <string name="notif_reminder_single_body">Sigue abierto hoy</string>
     <string name="notif_action_done">Hecho</string>
     <string name="notif_target_done">✓ %1$s</string>
-    <string name="notif_review_title">Cierra tu día</string>
-    <string name="notif_review_body">Queda algo abierto — un minuto y listo</string>
+
+    <!--
+        Aviso de REPASO con la voz de Habi. Títulos: %1$s = nombre del usuario. Cuerpos: plurals
+        por filas del repaso de hoy aún por decidir (%1$d). La variante seal-only cubre un repaso
+        pendiente sin nada que decidir hoy — solo días pasados sin sellar.
+    -->
+    <string name="notif_review_title_sargento">Cierre del día, %1$s.</string>
+    <string name="notif_review_title_cheerleader">¡A cerrar el día, %1$s!</string>
+    <string name="notif_review_title_neutra">Repaso del día, %1$s.</string>
+    <plurals name="notif_review_body_sargento">
+        <item quantity="one">Queda %1$d por decidir. Ciérralo y mañana más.</item>
+        <item quantity="many">Quedan %1$d por decidir. Un minuto y el día queda cerrado. Sin excusas.</item>
+        <item quantity="other">Quedan %1$d por decidir. Un minuto y el día queda cerrado. Sin excusas.</item>
+    </plurals>
+    <plurals name="notif_review_body_cheerleader">
+        <item quantity="one">Solo queda %1$d por decidir. ¡Sella y a descansar!</item>
+        <item quantity="many">Quedan %1$d por decidir. ¡Un repaso rápido y a descansar!</item>
+        <item quantity="other">Quedan %1$d por decidir. ¡Un repaso rápido y a descansar!</item>
+    </plurals>
+    <plurals name="notif_review_body_neutra">
+        <item quantity="one">Queda %1$d por decidir. Un minuto y el día queda sellado.</item>
+        <item quantity="many">Quedan %1$d por decidir. Un minuto y el día queda sellado.</item>
+        <item quantity="other">Quedan %1$d por decidir. Un minuto y el día queda sellado.</item>
+    </plurals>
+    <string name="notif_review_seal_sargento">Tienes días sin sellar. Ponlos en orden.</string>
+    <string name="notif_review_seal_cheerleader">Hay días esperando su sello. ¡Un toque y listo!</string>
+    <string name="notif_review_seal_neutra">Hay días anteriores sin sellar. Un toque y quedan cerrados.</string>
+
     <string name="notif_perfect_day_title">Día perfecto</string>
 </resources>

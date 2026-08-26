@@ -9,6 +9,7 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.flow.first
+import java.time.LocalTime
 import java.time.ZoneId
 
 /**
@@ -34,6 +35,10 @@ object TrayRefresher {
      * [treatAsActive] preserves [QuickActionReceiver]'s original rule: an action tapped on the
      * GLOBAL tray's own notification refreshes it even if the system no longer lists it as
      * active (action buttons, unlike the content tap, don't auto-cancel).
+     *
+     * [minutesOfDay] picks the re-post's [ReminderFlavor] — wall-clock "now" by default, since a
+     * refresh happens at the moment of the write, not at a scheduled hour. Injectable so tests
+     * don't depend on when they run.
      */
     internal suspend fun refresh(
         context: Context,
@@ -41,6 +46,7 @@ object TrayRefresher {
         habits: HabitsRepository,
         domainState: DomainStateRepository,
         treatAsActive: Boolean = false,
+        minutesOfDay: Int = localMinutesOfDay(),
     ) {
         val prefs = settings.settings.first()
         val entities = habits.observeHabits().first()
@@ -51,8 +57,14 @@ object TrayRefresher {
         if (payload == null) {
             Notifier.cancelReminder(context)
         } else if (treatAsActive || trayIsActive(context)) {
-            Notifier.showReminder(context, payload)
+            Notifier.showReminder(context, payload, prefs.personality, prefs.userName, minutesOfDay)
         }
+    }
+
+    /** Wall-clock minutes since midnight, in the device zone — the flavor input for "now". */
+    private fun localMinutesOfDay(): Int {
+        val time = LocalTime.now(ZoneId.systemDefault())
+        return time.hour * 60 + time.minute
     }
 
     /** Whether the GLOBAL tray is currently showing — never conjured, only refreshed or killed. */

@@ -68,7 +68,7 @@ class HabiViewModel(
             previewItemId,
         ) { state, owned, balance, prefs, preview ->
             val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-            buildHabiUiState(state, owned, balance, prefs.personality, today, preview, prefs.userName, economy.freezerPrice)
+            buildHabiUiState(state, owned, balance, prefs.personality, today, preview, prefs.userName, economy.freezerPrice, economy)
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HabiUiState())
 
@@ -111,6 +111,11 @@ class HabiViewModel(
     /** Tapping the stage avatar (T16): Habi's greeting cue, gated on the Ajustes toggle and ringer mode. */
     fun onAvatarTap() {
         habiSounds.play(HabiSound.GREETING)
+    }
+
+    /** Three quick pets in a row: the happier double-meow (same recording, different shape). */
+    fun onPetStreak() {
+        habiSounds.play(HabiSound.HAPPY)
     }
 
     /**

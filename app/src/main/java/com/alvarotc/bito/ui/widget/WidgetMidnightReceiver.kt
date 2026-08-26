@@ -23,6 +23,7 @@ class WidgetMidnightReceiver : BroadcastReceiver() {
                 // crash the process — finish() below still has to run so the system doesn't ANR us.
                 runCatching {
                     TodayWidget().updateAll(context)
+                    SingleHabitWidget().updateAll(context)
                     val container = (context.applicationContext as BitoApp).container
                     val cutoff = container.settings.settings.first().dayCutoffMinutes
                     WidgetDayAlarm.schedule(context, cutoff)

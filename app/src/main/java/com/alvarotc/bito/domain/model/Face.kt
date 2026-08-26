@@ -61,3 +61,19 @@ fun faceParamsOf(
             }
     }
 }
+
+/**
+ * Pet-streak delight (QA 2026-08-24): a huge open smile for EVERY personality — Sargento keeps
+ * his war paint but drops the smirk and grins like he means it; NEUTRA earns a blush.
+ */
+fun delightedParamsOf(personality: Personality): FaceParams {
+    val base = faceParamsOf(Mood.NORMAL, personality)
+    return base.copy(
+        mouthCurve = 0.95f,
+        mouthOpen = 0.75f,
+        smirk = false,
+        eyeScale = base.eyeScale + 0.1f,
+        sparkles = maxOf(base.sparkles, 2),
+        cheeks = if (base.cheeks == CheekStyle.NONE) CheekStyle.BLUSH else base.cheeks,
+    )
+}

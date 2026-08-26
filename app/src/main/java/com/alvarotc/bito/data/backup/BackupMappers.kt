@@ -125,6 +125,8 @@ fun Settings.toBackup() =
         habiSoundsEnabled = habiSoundsEnabled,
         perfectDayCelebratedDay = perfectDayCelebratedDay,
         badgesSeenUntilMillis = badgesSeenUntilMillis,
+        logSoundEnabled = logSoundEnabled,
+        logHapticEnabled = logHapticEnabled,
     )
 
 fun BackupSettings.toSettings() =
@@ -144,4 +146,6 @@ fun BackupSettings.toSettings() =
         habiSoundsEnabled = habiSoundsEnabled,
         perfectDayCelebratedDay = perfectDayCelebratedDay,
         badgesSeenUntilMillis = badgesSeenUntilMillis,
+        logSoundEnabled = logSoundEnabled,
+        logHapticEnabled = logHapticEnabled,
     )

@@ -1,15 +1,22 @@
 package com.alvarotc.bito.ui.settings
 
+import android.app.Application
+import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onChildren
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -45,7 +52,9 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -56,6 +65,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.io.ByteArrayInputStream
+import android.provider.Settings as AndroidSettings
 
 // Argon2 at production cost (~100-300ms) would dominate this suite's runtime; cheap but still in
 // BackupCrypto's validated range (memoryKib >= 8 * parallelism) — same tier BackupViewModelTest uses.
@@ -149,7 +159,10 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("General", useUnmergedTree = true).assertDoesNotExist()
+        // The General card itself now always shows (it hosts the language row below), so the
+        // absence check moves to the archived row specifically — "Archived habit"/"Archived
+        // habits" both start with this substring.
+        compose.onNodeWithText("Archived habit", substring = true, useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -183,6 +196,136 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         assertTrue(opened)
+    }
+
+    @Test
+    fun `the language row shows the current choice`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language"))
+        runBlocking { settings.update { it.copy(languageTag = "en") } }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("English", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+    }
+
+    /**
+     * "English" alone doesn't discriminate the es-branch of the row's `when` — es and en share no
+     * string with system's default, but [language_english] happens to read "English" in both
+     * locales this suite's default (EN) qualifiers ever render, so this pins the es-branch on its
+     * own string instead. [language_spanish] is the endonym "Español" in every locale (platform
+     * convention for language pickers: each language names itself), not a per-locale translation.
+     */
+    @Test
+    fun `the language row shows Español when the tag is es`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language-es"))
+        runBlocking { settings.update { it.copy(languageTag = "es") } }
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Español", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+    }
+
+    @Test
+    fun `tapping the language row cycles system to es to en to system, persisting each step`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language-cycle"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("System", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+
+        compose.onNodeWithText("System", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Español", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        assertEquals("es", runBlocking { settings.settings.first() }.languageTag)
+
+        compose.onNodeWithText("Español", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("English", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        assertEquals("en", runBlocking { settings.settings.first() }.languageTag)
+
+        compose.onNodeWithText("English", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("System", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        assertNull(runBlocking { settings.settings.first() }.languageTag)
+    }
+
+    @Test
+    fun `settings lets the user rename themselves`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-name"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Your name", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("settings-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("settings-name-field", useUnmergedTree = true).assertTextContains("Alvaro")
+        compose.onNodeWithTag("settings-name-confirm", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertEquals("Alvaro", runBlocking { settings.settings.first() }.userName)
+        compose.onNodeWithText("Alvaro", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 
     @Test
@@ -258,7 +401,7 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Habi sounds", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
-        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithTag("habi-sounds-row", useUnmergedTree = true).assertIsOn()
     }
 
     @Test
@@ -282,10 +425,10 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("habi-sounds-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("habi-sounds-switch", useUnmergedTree = true).assertIsOff()
+        compose.onNodeWithTag("habi-sounds-row", useUnmergedTree = true).assertIsOff()
         assertFalse(runBlocking { settings.settings.first() }.habiSoundsEnabled)
     }
 
@@ -310,12 +453,47 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).assertIsOn()
-        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("celebration-row", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithTag("celebration-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("celebration-switch", useUnmergedTree = true).assertIsOff()
+        compose.onNodeWithTag("celebration-row", useUnmergedTree = true).assertIsOff()
         assertFalse(runBlocking { settings.settings.first() }.perfectDayCelebration)
+    }
+
+    /**
+     * [E]: the celebration Switch used to sit next to — not merged with — its label+hint text, so
+     * TalkBack read them as 2 disconnected stops (the label, then a bare "Switch, On"). MERGED
+     * tree (no useUnmergedTree) on the row's own tag: proves the row is now a single reachable
+     * stop that carries the toggled state, same evidence shape as ComponentsTest's DayRing check.
+     * `onCheckedChange` DID move off the Switch onto the row's `toggleable` (the [E] fix) — the
+     * Switch itself now carries no click/state of its own, which is why the sibling toggle test
+     * above (`the celebration switch writes the setting`) was retargeted from `celebration-switch`
+     * to `celebration-row` in this same diff: it proves the ROW's click works, not the Switch's.
+     */
+    @Test
+    fun `the celebration row merges its label and switch into one talkback stop`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-celebration-merge"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("celebration-row").performScrollTo().assertIsOn()
+        compose.onNodeWithTag("celebration-row").onChildren().assertCountEquals(0)
     }
 
     /**
@@ -472,6 +650,102 @@ class SettingsScreenTest {
         compose.onNodeWithText("last 5 copies", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
     }
 
+    /** [A]: `CopiesSheet`'s ±1 Minus/Plus `Icon`s used to carry `contentDescription = null`. */
+    @Test
+    fun `the copies stepper icons carry real action descriptions`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-copies-stepper-cd"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        runBlocking {
+            settings.update { it.copy(backupFolderUri = "content://com.android.externalstorage.documents/tree/primary%3ABito") }
+        }
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Keep", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Decrease kept copies", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Increase kept copies", useUnmergedTree = true).assertExists()
+    }
+
+    /** [A]: `CutoffSheet`'s ±30min Minus/Plus `Icon`s used to carry `contentDescription = null`. */
+    @Test
+    fun `the cutoff stepper icons carry real action descriptions`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-cutoff-stepper-cd"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Your day ends at", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Earlier cutoff", useUnmergedTree = true).assertExists()
+        compose.onNodeWithContentDescription("Later cutoff", useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * [C], low priority: the language row cycles system -> es -> en -> system on tap, a control
+     * shape a plain merged "Language, Spanish" text doesn't hint at on its own.
+     */
+    @Test
+    fun `the language row hints that tapping cycles the value`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-language-state-hint"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        // MERGED tree (no useUnmergedTree): the language row already merges label+value text via
+        // its own `.clickable` (compliant [E] pattern per the inventory), and onClickLabel lands
+        // on that same node's OnClick action — direct config read, same idiom this file's own
+        // relapse-sheet test uses for an action it can't reach via a plain assertion helper. Not
+        // stateDescription: that property announces the row's STATE to TalkBack, not an action
+        // hint, so the hint travels on the click action's own label instead.
+        val node = compose.onNodeWithText("Language").performScrollTo().fetchSemanticsNode()
+        assertEquals("Cycle language", node.config[SemanticsActions.OnClick].label)
+    }
+
     @Test
     fun `the back up now button appears only with a folder, restore always does`() {
         val settings = SettingsRepository(settingsStore("settings-screen-backup-now-row"))
@@ -562,7 +836,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("backup-encryption-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("backup-encryption-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
         compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("longpass1")
@@ -599,7 +873,7 @@ class SettingsScreenTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithTag("backup-encryption-switch", useUnmergedTree = true).performScrollTo().performClick()
+        compose.onNodeWithTag("backup-encryption-row", useUnmergedTree = true).performScrollTo().performClick()
         compose.waitForIdle()
 
         compose.onNodeWithTag("passphrase-field", useUnmergedTree = true).performTextInput("short1")
@@ -859,5 +1133,219 @@ class SettingsScreenTest {
         compose.waitForIdle()
 
         compose.onNodeWithText("Restore this backup?", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the support row opens the donate sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-donate-sheet"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Support the project", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        // The sheet is a ModalBottomSheet — its own layout root, fully visible on open (same
+        // reasoning as the import preview tests above).
+        compose.onNodeWithText("no ads and no strings attached", substring = true, useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the license row opens the license sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-license-sheet"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Free license", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("GPL-3.0", substring = true, useUnmergedTree = true).assertIsDisplayed()
+        compose.onNodeWithText("View the license", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `the source code row fires a browser intent at the repo`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-source-intent"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Source code", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        val intent = shadowOf(ApplicationProvider.getApplicationContext<Application>()).nextStartedActivity
+        assertEquals(Intent.ACTION_VIEW, intent.action)
+        assertEquals("https://github.com/alvarotorresc/bito", intent.data.toString())
+    }
+
+    @Test
+    fun `tapping the reminders row opens the management sheet`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-reminders-sheet"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Reminders", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Add reminder", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /**
+     * The notice used to hang off a flag only the permission launcher's own callback could ever
+     * set, so it never appeared: a user whose notifications were off — refused the first-run
+     * prompt, turned them off in system settings, or restored a backup onto a device that never
+     * asked — saw a Reminders card claiming everything was fine while Notifier silently dropped
+     * every one of them. It is seeded from the real system state now, exactly like its
+     * exact-alarm sibling.
+     */
+    @Test
+    fun `the notifications notice shows when notifications are switched off`() {
+        shadowOf(ApplicationProvider.getApplicationContext<Application>().getSystemService(NotificationManager::class.java))
+            .setNotificationsEnabled(false)
+        val settings = SettingsRepository(settingsStore("settings-screen-notif-off"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Allow notifications to hear reminders", useUnmergedTree = true)
+            .performScrollTo()
+            .assertIsDisplayed()
+    }
+
+    @Test
+    fun `the notifications notice stays hidden while notifications work`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-notif-on"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Allow notifications to hear reminders", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * The destination matters as much as the row: ACTION_APP_NOTIFICATION_SETTINGS takes the
+     * package as an EXTRA, not as the `package:` Uri its exact-alarm neighbour uses — passing the
+     * Uri form lands the user on a generic screen instead of this app's notifications, which is
+     * the one place left to grant them once Android has stopped showing the permission dialog.
+     */
+    @Test
+    fun `the notifications notice opens this app's notification settings`() {
+        val context = ApplicationProvider.getApplicationContext<Application>()
+        shadowOf(context.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
+        val settings = SettingsRepository(settingsStore("settings-screen-notif-intent"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        // Clicked through the real row, so the intent is fired from the same Activity context
+        // production uses — same shape as the source-code row's own test above.
+        compose.onNodeWithText("Allow notifications to hear reminders", useUnmergedTree = true)
+            .performScrollTo()
+            .performClick()
+        compose.waitForIdle()
+
+        val intent = shadowOf(context).nextStartedActivity
+        assertEquals(AndroidSettings.ACTION_APP_NOTIFICATION_SETTINGS, intent.action)
+        assertEquals(context.packageName, intent.getStringExtra(AndroidSettings.EXTRA_APP_PACKAGE))
     }
 }

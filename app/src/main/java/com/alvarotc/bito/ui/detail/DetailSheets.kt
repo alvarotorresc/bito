@@ -35,7 +35,6 @@ import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
-import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Peligro
 import com.alvarotc.bito.ui.theme.PeligroTinte
 import com.alvarotc.bito.ui.theme.Tarjeta
@@ -194,19 +193,21 @@ private fun AbstinenceDaySheet(
  * button, no write of any kind. Mockup 4d: title, then an inner card with a mini Habi face,
  * "HABI · <personality>" and the personality-voiced body ([HabiVoice.freezerInfoRes]) — the same
  * [SpeechBubble] avatar slot the Stats commentator uses. Opened both from the habit Detail screen
- * and from the Habi store's [com.alvarotc.bito.ui.habi.StoreSection] freezer card.
+ * and from the Habi store's [com.alvarotc.bito.ui.habi.StoreSection] freezer card. [equipped] is
+ * the user's real worn set, so the mini Habi here is THE user's Habi, not a naked default.
  */
 @Composable
 fun FreezerInfoSheet(
     personality: Personality,
     userName: String,
+    equipped: EquippedSet,
     onDismiss: () -> Unit,
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
         Column(Modifier.padding(20.dp).testTag("freezer-info-sheet"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(stringResource(R.string.freezer_info_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
             SpeechBubble(
-                speaker = stringResource(R.string.habi_speaker, stringResource(personalityLabelRes(personality))),
+                speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
                 text =
                     stringResource(
                         HabiVoice.freezerInfoRes(personality),
@@ -215,7 +216,7 @@ fun FreezerInfoSheet(
                 modifier = Modifier.fillMaxWidth(),
                 avatar = {
                     HabiAvatar(
-                        HabiSpec(Mood.NORMAL, personality, EquippedSet()),
+                        HabiSpec(Mood.NORMAL, personality, equipped),
                         Modifier.size(40.dp),
                         animated = false,
                     )
@@ -225,13 +226,6 @@ fun FreezerInfoSheet(
         }
     }
 }
-
-private fun personalityLabelRes(personality: Personality): Int =
-    when (personality) {
-        Personality.SARGENTO -> R.string.personality_sargento
-        Personality.CHEERLEADER -> R.string.personality_cheerleader
-        Personality.NEUTRA -> R.string.personality_neutra
-    }
 
 /** Pausing suspends registration and streak judgment until resumed; the note is optional context. */
 @Composable
@@ -256,12 +250,13 @@ fun PauseSheet(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
+                containerColor = Tinta,
             )
         }
     }
 }
 
-/** Archiving keeps all history — it is not destructive, so it confirms in `hoja`, not `peligro`. */
+/** Archiving keeps all history — not destructive, so no `peligro`; it confirms in `tinta`, deliberate rather than the routine positive `hoja` (QA 2026-08-23). Pausing confirms the same way. */
 @Composable
 fun ArchiveSheet(
     onConfirm: () -> Unit,
@@ -278,7 +273,7 @@ fun ArchiveSheet(
                     onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
-                containerColor = Hoja,
+                containerColor = Tinta,
             )
             GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }

@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
@@ -77,7 +78,7 @@ private fun ArchivedRow(
     onClick: () -> Unit,
 ) {
     BitoCard(modifier = Modifier.fillMaxWidth().testTag("archived-${habit.id}"), onClick = onClick) {
-        Text(habit.name, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        Text(habit.name, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
         habit.archivedOnDay?.let { day ->
             Spacer(Modifier.height(4.dp))
             val date = remember(day) { formatDayMedium(day) }

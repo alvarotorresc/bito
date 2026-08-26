@@ -15,6 +15,6 @@ val BrasaTinte = Color(0xFFF7E3DB)
 val HabiSalvia = Color(0xFFA9C9A1)
 val Mofletes = Color(0xFFE8B4A8)
 
-// peligro — solo acciones destructivas; ver GUIA
+// peligro — acciones destructivas y la marca de dato «día fallado» en calendarios (QA 2026-08-23); ver GUIA
 val Peligro = Color(0xFFC14B3A)
 val PeligroTinte = Color(0xFFF5DFDA)
