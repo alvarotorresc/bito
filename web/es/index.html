@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bito · Un toque. Ya está.</title>
+  <meta name="description" content="La app de hábitos que no te roba tiempo. Vive entera en tu móvil: sin cuentas, sin nube y sin una sola línea que salga a internet.">
+  <meta name="theme-color" content="#F2ECE1">
+  <link rel="icon" type="image/svg+xml" href="../img/habi/neutra.svg">
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:title" content="Bito · Un toque. Ya está.">
+  <meta property="og:description" content="La app de hábitos que no te roba tiempo. Vive entera en tu móvil: sin cuentas, sin nube y sin una sola línea que salga a internet.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../estilo.css">
+</head>
+<body>
+<div class="lienzo">
+
+  <!-- ============ CABECERA ============ -->
+  <header class="cabecera">
+    <div class="marca">
+      <svg width="34" height="34" viewBox="0 0 1 1" aria-hidden="true">
+        <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z" fill="#A9C9A1"></path>
+        <circle cx="0.36" cy="0.5" r="0.048" fill="#3C352B"></circle>
+        <circle cx="0.64" cy="0.5" r="0.048" fill="#3C352B"></circle>
+        <path d="M 0.428 0.66 Q 0.5 0.68975 0.572 0.66" fill="none" stroke="#3C352B" stroke-width="0.028" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <span>Bito</span>
+    </div>
+    <nav class="nav" aria-label="Secciones">
+      <a href="#lo-que-hace">Lo que hace</a>
+      <a href="#habi">Habi</a>
+      <a href="#copias">Copias</a>
+      <a href="#por-dentro">Por dentro</a>
+      <a class="nav-activo" href="./" aria-current="page" lang="es">ES</a>
+      <a href="../" lang="en">EN</a>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- ============ 1 · HERO ============ -->
+    <section class="hero" aria-labelledby="titular-hero">
+      <div class="hero-texto">
+        <h1 class="hero-titular" id="titular-hero">Un toque.<br>Ya está.</h1>
+        <p class="hero-descriptor">La app de hábitos que no te roba tiempo. Vive entera en tu móvil: sin cuentas, sin nube y sin una sola línea que salga a internet.</p>
+        <div class="hero-acciones">
+          <a class="boton boton--principal" href="https://github.com/alvarotorresc/bito/releases/latest">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Descargar para Android</span>
+          </a>
+          <a class="boton boton--secundario" href="https://github.com/alvarotorresc/bito">
+            <span>Ver el código</span>
+          </a>
+        </div>
+        <p class="hero-pie">Versión 1.0.0 · Android 8.0 o superior · 100% libre, GPL-3.0-or-later</p>
+      </div>
+
+      <div class="hero-habi">
+        <img src="../img/habi/neutra.svg" width="470" height="470" alt="Habi, la mascota de Bito: una criatura verde con forma de alubia, ojos redondos y una sonrisa tranquila.">
+      </div>
+    </section>
+
+    <!-- ============ 2 · EL NOMBRE ============ -->
+    <section class="nombre" aria-labelledby="titular-nombre">
+      <div class="nombre-caja">
+        <p class="antetitulo" id="titular-nombre">El nombre tiene truco</p>
+        <p class="nombre-ecuacion">
+          <b>Bito</b><span class="signo"> + </span><b class="acento">Habi</b><span class="signo"> = </span><b>hábito</b>
+        </p>
+        <p class="nombre-explicacion">La app y la criatura que vive dentro son las dos mitades de la misma palabra. Ninguna funciona sin la otra, que es justo lo que pasa con los hábitos.</p>
+      </div>
+    </section>
+
+    <!-- ============ 3 · LA PROMESA ============ -->
+    <section class="promesa" aria-labelledby="titular-promesa">
+      <h2 class="promesa-titular" id="titular-promesa">Apuntar que lo has hecho no debería ser otra tarea.</h2>
+      <p class="promesa-subtitulo">Tres maneras de registrar. Dos de ellas ni siquiera te piden abrir la app.</p>
+
+      <div class="promesa-rejilla">
+        <article class="tarjeta promesa-tarjeta">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#57A06B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+          </svg>
+          <h3>Desde la pantalla de inicio</h3>
+          <p>El widget enseña lo de hoy y se registra con un toque, sin entrar en ninguna parte. Y si solo te importa un hábito, hay un widget pequeño para él solo.</p>
+        </article>
+        <article class="tarjeta promesa-tarjeta">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#57A06B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+          </svg>
+          <h3>Desde la notificación</h3>
+          <p>El recordatorio llega con el botón puesto. Lo pulsas y queda apuntado sin desbloquear nada más.</p>
+        </article>
+        <article class="tarjeta promesa-tarjeta">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#57A06B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"></path>
+          </svg>
+          <h3>En el repaso de la noche</h3>
+          <p>Una pantalla al final del día para cerrar lo que quedó suelto. Sellas el día y se acabó.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ============ 4 · LO QUE HACE ============ -->
+    <section class="hace" id="lo-que-hace" aria-labelledby="titular-hace">
+      <h2 class="hace-titular" id="titular-hace">Lo que hace</h2>
+
+      <div class="capturas">
+        <div class="tarjeta captura">
+          <img src="../img/capturas/hoy.png" width="540" height="1212" loading="lazy" decoding="async"
+               alt="La pantalla Hoy: la fecha del día, un mensaje de Habi, el anillo de progreso «2 de 7» y los hábitos pendientes, cada uno con su registro rápido.">
+        </div>
+        <div class="tarjeta captura">
+          <img src="../img/capturas/detalle.png" width="540" height="1212" loading="lazy" decoding="async"
+               alt="Las estadísticas de un hábito: una racha de 130 días con su récord al lado, los congeladores disponibles y el calendario del mes con los días cumplidos.">
+        </div>
+        <div class="tarjeta captura">
+          <img src="../img/capturas/habi.png" width="540" height="1212" loading="lazy" decoding="async"
+               alt="La pantalla de Habi: la mascota con la cara del Sargento, su mensaje del día, el selector de personalidad, los puntos ganados y la tienda donde se gastan.">
+        </div>
+      </div>
+
+      <div class="hace-rejilla">
+        <div class="hace-item">
+          <h3>Rachas que no te castigan</h3>
+          <p>Fallar un día no borra un mes. Hay congeladores para los días imposibles y puedes apuntar hacia atrás cuando te acuerdes tarde.</p>
+        </div>
+        <div class="hace-item">
+          <h3>Cantidades, duraciones y cosas que dejar</h3>
+          <p>Ocho vasos de agua, veinte minutos de lectura o un día más sin fumar. Cada tipo se registra como pide su forma.</p>
+        </div>
+        <div class="hace-item">
+          <h3>Recordatorios con la voz que elijas</h3>
+          <p>El aviso cambia de tono según la hora del día y según a quién le hayas dado la voz. Por la mañana plantea el día; por la noche te ayuda a cerrarlo.</p>
+        </div>
+        <div class="hace-item">
+          <h3>Logros y estadísticas de verdad</h3>
+          <p>Mapas de calor, récords y logros que se ganan solos. Los números están para que veas cómo vas, no para presumir en ningún sitio.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 5 · HABI ============ -->
+    <section class="habi" id="habi" aria-labelledby="titular-habi">
+      <div class="habi-rejilla">
+        <div class="habi-cara">
+          <img class="cara-sargento" src="../img/habi/sargento.svg" width="340" height="340"
+               alt="Habi con la cara del Sargento: cejas inclinadas hacia dentro, dos trazos bajo cada ojo y una sonrisa de medio lado.">
+          <img class="cara-cheerleader" src="../img/habi/cheerleader.svg" width="340" height="340"
+               alt="Habi con la cara de la Cheerleader: ojos grandes con doble brillo, mofletes sonrosados y la boca abierta sonriendo.">
+          <img class="cara-neutra" src="../img/habi/neutra.svg" width="340" height="340"
+               alt="Habi con la cara de la Neutra: ojos redondos con un brillo y la boca en una curva suave.">
+        </div>
+
+        <div class="habi-texto">
+          <h2 class="habi-titular" id="titular-habi">Habi no es un adorno.</h2>
+          <p class="habi-cuerpo">Su cara refleja cómo llevas la semana, se hunde como gelatina justo donde lo tocas y te sigue con la mirada. Lo vistes con los puntos que te gana tu constancia, y te habla con la voz que tú elijas.</p>
+
+          <div class="voz-selector">
+            <p class="voz-antetitulo" id="voz-antetitulo">Pruébalo: elige su voz</p>
+
+            <div class="voz-pildoras" role="radiogroup" aria-labelledby="voz-antetitulo">
+              <input type="radio" name="voz" id="voz-sargento">
+              <label class="voz-pildora" for="voz-sargento">Sargento</label>
+              <input type="radio" name="voz" id="voz-cheerleader">
+              <label class="voz-pildora" for="voz-cheerleader">Cheerleader</label>
+              <input type="radio" name="voz" id="voz-neutra" checked>
+              <label class="voz-pildora" for="voz-neutra">Neutra</label>
+            </div>
+
+            <div class="tarjeta voz-panel voz-panel--sargento">
+              <p class="voz-etiqueta">La misma semana, contada por <b>el Sargento</b></p>
+              <p class="voz-frase">«Aceptable. Tú y yo sabemos que puedes más.»</p>
+              <p class="voz-descripcion">Exige porque cree en ti. Frases cortas, cero relleno, y el elogio llega seco y como quien ya contaba con ello.</p>
+            </div>
+            <div class="tarjeta voz-panel voz-panel--cheerleader">
+              <p class="voz-etiqueta">La misma semana, contada por <b>la Cheerleader</b></p>
+              <p class="voz-frase">«Buena semana. ¡Y la que viene, mejor!»</p>
+              <p class="voz-descripcion">Celebra en grande lo que es grande y se queda cerca en los días malos. Nunca te endulza una recaída.</p>
+            </div>
+            <div class="tarjeta voz-panel voz-panel--neutra">
+              <p class="voz-etiqueta">La misma semana, contada por <b>la Neutra</b></p>
+              <p class="voz-frase">«Semana dentro de lo normal. Sigue así.»</p>
+              <p class="voz-descripcion">Constata con precisión y deja siempre una puerta pequeña abierta. Cálida en voz baja, sin una sola exclamación.</p>
+            </div>
+          </div>
+
+          <p class="habi-nota">Se elige al empezar y se cambia cuando quieras. La cara también cambia: mírale los ojos, las cejas y la boca.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 6 · LAS COPIAS DE SEGURIDAD ============ -->
+    <section class="copias" id="copias" aria-labelledby="titular-copias">
+      <div class="copias-rejilla">
+        <div class="copias-texto">
+          <p class="antetitulo antetitulo--hoja">La joya de la corona</p>
+          <h2 class="copias-titular" id="titular-copias">Sin nube, la pregunta llega sola: ¿y si pierdo el móvil?</h2>
+          <p class="copias-cuerpo">Por eso las copias de seguridad no son un ajuste escondido en Bito: son parte del motor. Cada copia lleva <strong>todo</strong> —hábitos, registros, rachas, puntos, logros y lo que Habi lleva puesto— y va a la carpeta que tú elijas. La tarjeta de memoria, un pendrive, una carpeta que otra app sincronice por ti. Donde tú digas.</p>
+
+          <div class="garantias">
+            <div class="garantia">
+              <h3>En claro, es legible</h3>
+              <p>Un JSON que abres con el bloc de notas y entiendes. Tus datos no se te devuelven en un formato que solo Bito sepa leer.</p>
+            </div>
+            <div class="garantia">
+              <h3>Cifrado, no lo abre nadie</h3>
+              <p>Le pones una contraseña y el fichero se vuelve ilegible incluso para Bito. Sin esa contraseña no hay vuelta atrás, y eso es justo lo que quieres.</p>
+            </div>
+            <div class="garantia">
+              <h3>Solas, mientras duermes</h3>
+              <p>Las copias automáticas se hacen y van rotando las últimas, sin que tengas que acordarte de nada.</p>
+            </div>
+            <div class="garantia">
+              <h3>Restaurar sin sustos</h3>
+              <p>Antes de tocar nada te enseña qué va a entrar y qué va a cambiar. Decides tú, con la información delante.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="cripto">
+          <p class="antetitulo antetitulo--salvia antetitulo--cripto">Cómo se cifra</p>
+          <div class="cripto-filas">
+            <div class="cripto-fila">
+              <span class="cripto-etiqueta">De tu contraseña a la clave</span>
+              <span class="cripto-dato">Argon2id</span>
+              <span class="cripto-explicacion">19 MiB de memoria, 2 pasadas. Nivel recomendado por OWASP para móvil.</span>
+            </div>
+            <div class="cripto-linea"></div>
+            <div class="cripto-fila">
+              <span class="cripto-etiqueta">Del contenido al fichero</span>
+              <span class="cripto-dato">AES-256-GCM</span>
+              <span class="cripto-explicacion">Etiqueta de 128 bits: si alguien toca un solo byte, la copia se niega a abrirse.</span>
+            </div>
+            <div class="cripto-linea"></div>
+            <div class="cripto-fila">
+              <span class="cripto-etiqueta">A prueba de futuro</span>
+              <span class="cripto-dato">Los parámetros viajan dentro</span>
+              <span class="cripto-explicacion">Cada copia lleva escrito cómo se cifró, así que una de hace dos años se sigue restaurando.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 7 · POR DENTRO ============ -->
+    <section class="dentro" id="por-dentro" aria-labelledby="titular-dentro">
+      <p class="antetitulo antetitulo--salvia dentro-antetitulo">Para quien quiera mirar dentro</p>
+      <h2 class="dentro-titular" id="titular-dentro">Por dentro</h2>
+      <p class="dentro-entradilla">Bito no te pide que te fíes de su palabra. El código está entero ahí fuera y la promesa de privacidad se comprueba en una línea.</p>
+
+      <div class="cifras">
+        <div class="cifra">
+          <span class="cifra-dato">962</span>
+          <span class="cifra-pie">tests que pasan en cada cambio</span>
+        </div>
+        <div class="cifra">
+          <span class="cifra-dato">0</span>
+          <span class="cifra-pie">dependencias de Google Play Services</span>
+        </div>
+        <div class="cifra">
+          <span class="cifra-dato">4</span>
+          <span class="cifra-pie">permisos, y ninguno es internet</span>
+        </div>
+        <div class="cifra">
+          <span class="cifra-dato">100%</span>
+          <span class="cifra-pie">del código bajo GPL-3.0-or-later</span>
+        </div>
+      </div>
+
+      <div class="dentro-columnas">
+        <div class="dentro-columna">
+          <h3>Compruébalo tú</h3>
+          <p class="dentro-cuerpo">La app no puede mandar tus datos a ninguna parte porque no declara el permiso para hacerlo. Clona el repositorio y ejecuta esto:</p>
+          <pre class="codigo"><code>grep -o 'android:name="android.permission[^"]*"' \
+  app/src/main/AndroidManifest.xml</code></pre>
+          <p class="dentro-pie">Salen cuatro: notificaciones, alarma exacta, arranque del sistema y vibración. INTERNET no está, y sin él no hay red que valga.</p>
+        </div>
+
+        <div class="dentro-columna">
+          <h3>Cómo está hecha</h3>
+          <dl class="ficha">
+            <dt>Lenguaje</dt><dd>Kotlin 2.1</dd>
+            <dt>Interfaz</dt><dd>Jetpack Compose</dd>
+            <dt>Widgets</dt><dd>Glance 1.1</dd>
+            <dt>Datos</dt><dd>Room · 9 tablas, esquema v1</dd>
+            <dt>Mínimo</dt><dd>Android 8.0 (API 26)</dd>
+            <dt>Mascota</dt><dd>Vectorial, dibujada a mano en Canvas</dd>
+          </dl>
+          <p class="dentro-pie">Funciona igual en GrapheneOS. La lógica de rachas, puntos y ánimo vive aparte de Android y se prueba sola.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 8 · PROMESAS NEGATIVAS ============ -->
+    <section class="nunca" aria-labelledby="titular-nunca">
+      <h2 class="nunca-titular" id="titular-nunca">Lo que Bito no va a hacer nunca</h2>
+      <p class="nunca-entradilla">Una lista de features se puede cambiar cuando conviene. Esto no: es la forma de la app, y es lo que la licencia protege.</p>
+
+      <ul class="nunca-lista">
+        <li><span class="nunca-palabra">Nunca</span><span class="nunca-predicado">te pedirá una cuenta ni un correo</span></li>
+        <li><span class="nunca-palabra">Nunca</span><span class="nunca-predicado">subirá tus datos a una nube</span></li>
+        <li><span class="nunca-palabra">Nunca</span><span class="nunca-predicado">tendrá anuncios</span></li>
+        <li><span class="nunca-palabra">Nunca</span><span class="nunca-predicado">medirá lo que haces dentro</span></li>
+        <li><span class="nunca-palabra">Nunca</span><span class="nunca-predicado">dependerá de los servicios de Google</span></li>
+        <li><span class="nunca-palabra">Nunca</span><span class="nunca-predicado">cobrará por una función que ya tenías</span></li>
+        <li><span class="nunca-palabra">Nunca</span><span class="nunca-predicado">crecerá por votación: Bito se diseña para resolver un problema concreto, no para acumular funciones que alguien pidió. Se escucha el fallo, no la lista de deseos.</span></li>
+      </ul>
+    </section>
+
+    <!-- ============ 9 · HACIA DÓNDE VA ============ -->
+    <section class="futuro" aria-labelledby="titular-futuro">
+      <div class="futuro-rejilla">
+        <div class="futuro-texto">
+          <h2 class="futuro-titular" id="titular-futuro">Hacia dónde va</h2>
+          <p class="futuro-parrafo">Bito empieza por los hábitos porque es donde la fricción se nota más. Pero la idea de fondo es más ancha: un sitio tranquilo para todo lo que cuesta empezar, con Habi de por medio.</p>
+          <p class="futuro-parrafo">Un hábito que no arranca y una tarea que llevas tres semanas esquivando fallan exactamente por lo mismo. Bito ya sabe tratar el primero. El segundo viene detrás.</p>
+          <p class="futuro-advertencia">Es una dirección, no un calendario. Nada de esto lleva fecha puesta.</p>
+        </div>
+        <div class="futuro-lista">
+          <p class="antetitulo antetitulo--salvia futuro-antetitulo">Lo siguiente</p>
+          <div class="futuro-item">
+            <h3>Publicación en tiendas</h3>
+            <p>F-Droid, Google Play y las que hagan falta. Para no tener que explicarle a nadie qué es un APK.</p>
+          </div>
+          <div class="futuro-item">
+            <h3>Procrastinación y tareas</h3>
+            <p>Eso que sigue en la lista desde hace un mes y que no es un hábito. La otra mitad del problema.</p>
+          </div>
+          <div class="futuro-item">
+            <h3>Muchas sorpresas más…</h3>
+            <p>Habi tiene cuerda para rato.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ 10 · CIERRE ============ -->
+    <section class="cierre" aria-labelledby="titular-cierre">
+      <div class="cierre-caja">
+        <img src="../img/habi/neutra.svg" width="130" height="130" loading="lazy" decoding="async" alt="">
+        <h2 class="cierre-titular" id="titular-cierre">Empieza por uno.</h2>
+        <p class="cierre-cuerpo">Se instala en un minuto y no te va a pedir nada a cambio. Ni ahora ni después.</p>
+        <a class="boton boton--cierre" href="https://github.com/alvarotorresc/bito/releases/latest">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+            <polyline points="7 10 12 15 17 10"></polyline>
+            <line x1="12" y1="15" x2="12" y2="3"></line>
+          </svg>
+          <span>Descargar Bito 1.0.0</span>
+        </a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ PIE ============ -->
+  <footer class="pie">
+    <span>Bito · software libre bajo GPL-3.0-or-later</span>
+    <nav class="pie-enlaces" aria-label="Enlaces del proyecto">
+      <a href="https://github.com/alvarotorresc/bito">Código</a>
+      <a href="https://github.com/alvarotorresc/bito/blob/main/LICENSE">Licencia</a>
+      <a href="https://github.com/alvarotorresc/bito/issues/new">Contar un fallo</a>
+    </nav>
+  </footer>
+
+</div>
+</body>
+</html>
