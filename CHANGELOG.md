@@ -2,6 +2,42 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.0.0] - 2026-08-26
+
+La primera versión para compartir. Bito ya se instala en el móvil de cualquiera.
+
+### Added
+
+- **Acerca de** en Ajustes: la versión, el código fuente, la licencia libre explicada, y un formulario de un minuto para contar lo que falle — sin cuentas ni registros.
+- **Widget de un solo hábito**: eliges cuál al colocarlo y ves su progreso de hoy; un toque lo registra. El widget de siempre ahora también cabe pequeño.
+- **Las notificaciones hablan como Habi**: cada personalidad avisa a su manera y te dice lo que te queda del día. El tono cambia con la hora — por la mañana plantea el día, por la tarde cuenta cómo vas, por la noche te ayuda a cerrarlo. En una instalación nueva vienen dos avisos puestos de serie, editables o borrables cuando quieras.
+- **Sonido y vibración al registrar**, cada uno con su interruptor en Ajustes.
+- **Racha de cariños**: tres caricias seguidas y Habi se derrite de gusto, con corazones incluidos.
+- **La tabla de puntos**: el saldo de la tienda abre una hoja que explica cómo se gana cada punto.
+- **Volver a ver la introducción** desde Ajustes, sin tocar nada de lo tuyo.
+- **Usar un congelador** se explica desde el detalle del hábito, en la voz de tu personalidad.
+
+### Changed
+
+- **Habi está vivo**: se hunde como gelatina justo donde lo tocas, te sigue con la mirada, respira al ritmo de su ánimo y nunca reacciona dos veces igual. Su voz sale toda de un maullido de verdad, y los estampados de la tienda se curvan sobre su cuerpo en vez de quedarse pegados encima.
+- **El mismo Habi en todas las pantallas**, con lo que lleve puesto.
+- **Ajustes**, ordenado por secciones con su título, sus iconos y sus separadores; el fin del día se muda a General y los recordatorios se gestionan en su propia hoja.
+- **Esa jerarquía de texto se extiende a toda la app**: lo importante en negrita, lo secundario en un tono más suave.
+- **Crear un hábito**: cada tipo estrena icono, las opciones se ordenan en rejilla y Habi te acompaña desde su bocadillo.
+- **La introducción**, fiel al diseño hasta el último píxel en sus tres escenas de historia.
+- **Pausar y archivar** ya no van de verde: el verde queda para lo que suma.
+- **Cerrar el día** es instantáneo, y el botón pasa a «Día sellado».
+- Los días pasados sin cumplir se ven en rojo en los calendarios, y cada casilla del mes lleva su número. Los días de descanso de un hábito semanal no se marcan.
+- Stats y Habi ya no tardan en aparecer al cambiar de pestaña.
+- La barra inferior reparte sus pestañas a partes iguales, en español y en inglés.
+
+### Fixed
+
+- El widget se actualiza al toque: lo que registras dentro de la app se ve fuera al instante.
+- Deshacer se aparta con el dedo y no reaparece al volver a Hoy.
+- La vibración al registrar obedece a tu interruptor, no al ajuste general del sistema.
+- Comprar en la tienda ya no es a ciegas: al elegir un accesorio, Habi vuelve a escena para que lo veas puesto.
+
 ## [0.9.5] - 2026-08-23
 
 ### Added
