@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="340" height="340" viewBox="0 0 1 1" role="img" aria-label="Habi, personalidad Cheerleader">
+  <defs>
+    <clipPath id="habi-clip-cheerleader">
+      <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z"></path>
+    </clipPath>
+    <linearGradient id="habi-shade-cheerleader" gradientUnits="userSpaceOnUse" x1="0" y1="0.78" x2="0" y2="0.97">
+      <stop offset="0" stop-color="#768D71" stop-opacity="0"></stop>
+      <stop offset="1" stop-color="#768D71" stop-opacity="0.11"></stop>
+    </linearGradient>
+  </defs>
+  <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z" fill="#A9C9A1"></path>
+  <g clip-path="url(#habi-clip-cheerleader)">
+    <rect x="0.16" y="0.78" width="0.68" height="0.19" fill="url(#habi-shade-cheerleader)"></rect>
+    <ellipse cx="0.5" cy="0.16" rx="0.05" ry="0.035" fill="#FBF8F2" fill-opacity="0.8"></ellipse>
+  </g>
+  <g>
+    <circle cx="0.3" cy="0.615" r="0.05" fill="#E8B4A8" fill-opacity="0.69"></circle>
+    <circle cx="0.7" cy="0.615" r="0.05" fill="#E8B4A8" fill-opacity="0.69"></circle>
+    <circle cx="0.36" cy="0.5" r="0.0552" fill="#3C352B"></circle>
+    <circle cx="0.64" cy="0.5" r="0.0552" fill="#3C352B"></circle>
+    <circle cx="0.39036" cy="0.4586" r="0.014904" fill="#FBF8F2"></circle>
+    <circle cx="0.41244" cy="0.49172" r="0.008556" fill="#FBF8F2"></circle>
+    <circle cx="0.67036" cy="0.4586" r="0.014904" fill="#FBF8F2"></circle>
+    <circle cx="0.69244" cy="0.49172" r="0.008556" fill="#FBF8F2"></circle>
+    <path d="M 0.4122 0.66 Q 0.5 0.75 0.5878 0.66 Q 0.5 0.6402 0.4122 0.66 Z" fill="#3C352B"></path>
+  </g>
+</svg>
