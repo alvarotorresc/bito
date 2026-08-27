@@ -178,4 +178,4 @@ El nombre «Bito» y la identidad de Habi son la marca de este proyecto: los for
 
 ---
 
-Bito · software libre bajo GPL-3.0-or-later · [Código](https://github.com/alvarotorresc/bito) · [Licencia](./LICENSE) · [Contar un fallo](https://github.com/alvarotorresc/bito/issues/new)
+Bito · software libre bajo GPL-3.0-or-later · [Código](https://github.com/alvarotorresc/bito) · [Licencia](./LICENSE) · [Contar un fallo](https://tally.so/r/dWe65r)

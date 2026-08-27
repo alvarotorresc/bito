@@ -180,4 +180,4 @@ Third-party licenses:
 
 ---
 
-Bito · free software under GPL-3.0-or-later · [Code](https://github.com/alvarotorresc/bito) · [License](./LICENSE) · [Report a bug](https://github.com/alvarotorresc/bito/issues/new)
+Bito · free software under GPL-3.0-or-later · [Code](https://github.com/alvarotorresc/bito) · [License](./LICENSE) · [Report a bug](https://tally.so/r/dWe65r)
