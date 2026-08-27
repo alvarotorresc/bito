@@ -280,10 +280,88 @@ section[id] { scroll-margin-top: 24px; }
   justify-content: center;
   align-items: center;
 }
-.hero-habi img {
+.hero-habi .habi-vivo {
+  display: block;
   width: 470px;
   max-width: 100%;
   height: auto;
+}
+
+/* --------------------------------------------------------------------------
+   5 bis · Habi vivo
+   El Habi del hero respira, parpadea y sigue al puntero. La geometria del SVG
+   es intocable (esta portada valor a valor del dibujo de la app): la vida se
+   aplica SOLO como transformaciones sobre grupos envoltorio, nunca moviendo
+   coordenadas. Las constantes salen del avatar de la app, no del gusto:
+
+     BREATH_SCALE 0.022     la Y crece un 2,2 %, la X se comprime la mitad
+     BREATH_LIFT 1,2 dp     sobre un avatar de 150 dp = 0,008 del lienzo
+     periodo de reposo      2700 ms de ida + 2700 de vuelta = 5400 ms
+     origen                 los pies (50% 100%): peso, no globo
+     BLINK_CLOSE/OPEN       60 ms para cerrar, 110 ms para abrir
+     EYELID_BIAS 0,55       el eje del parpado cae en 0,5 + 0,55 x 0,048
+                            = 0,5264, o sea 52,64 % del lienzo
+     GAZE_SHIFT 0,014 x 0,010   radio maximo de la mirada, en unidades del SVG
+
+   Todo va dentro de `no-preference` a proposito: quien pide menos movimiento
+   no recibe una regla que anule otra, sino que no llega a existir ninguna
+   transformacion. Por eso habi.js escribe solo --habi-mirada-x/y y jamas
+   `style.transform`, que se saltaria esta media query.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  .habi-respira,
+  .habi-mirada,
+  .habi-parpado-a,
+  .habi-parpado-b { transform-box: view-box; }
+
+  .habi-respira {
+    transform-origin: 50% 100%;
+    animation: habi-respira 5400ms cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  }
+
+  /* Dos parpados encadenados. 7300 ms y 11900 ms no son multiplos entre si
+     (73 y 119 decimas de segundo son primos entre si), asi que la union de las
+     dos series no vuelve a repetirse hasta los 868,7 s: catorce minutos y medio
+     mirando antes de ver el mismo patron. Los intervalos que salen van de 0,1 s
+     a 7,3 s. Y como las escalas de dos grupos anidados se multiplican, cuando
+     casi coinciden sale un parpadeo doble, y cuando coinciden, uno mas hondo:
+     los mismos accidentes que la app se busca con un dado. */
+  .habi-parpado-a,
+  .habi-parpado-b { transform-origin: 50% 52.64%; }
+  .habi-parpado-a { animation: habi-parpado-a  7300ms linear 1900ms infinite; }
+  .habi-parpado-b { animation: habi-parpado-b 11900ms linear 5300ms infinite; }
+
+  /* habi.js pone las dos variables entre -1 y 1; el radio lo pone esta regla.
+     La transicion hace de muelle: la mirada llega detras del cursor, no clavada
+     a el (en la app ese retorno es GazeSpring). */
+  .habi-mirada {
+    transform: translate(calc(var(--habi-mirada-x, 0) * 0.014px),
+                         calc(var(--habi-mirada-y, 0) * 0.010px));
+    transition: transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+}
+
+@keyframes habi-respira {
+  from { transform: translateY(0) scale(1, 1); }
+  50%  { transform: translateY(-0.008px) scale(0.989, 1.022); }
+  to   { transform: translateY(0) scale(1, 1); }
+}
+
+/* El parpado baja mas rapido de lo que sube (60 ms contra 110 ms): esa asimetria
+   es lo que separa un parpadeo de un obturador. Los porcentajes son esos dos
+   tiempos sobre la duracion de cada animacion, por eso hay dos juegos. */
+@keyframes habi-parpado-a {         /* 60/7300 = 0,822 %; 170/7300 = 2,329 % */
+  0%     { transform: scaleY(1); }
+  0.822% { transform: scaleY(0.04); }
+  2.329% { transform: scaleY(1); }
+  100%   { transform: scaleY(1); }
+}
+@keyframes habi-parpado-b {         /* 60/11900 = 0,504 %; 170/11900 = 1,429 % */
+  0%     { transform: scaleY(1); }
+  0.504% { transform: scaleY(0.04); }
+  1.429% { transform: scaleY(1); }
+  100%   { transform: scaleY(1); }
 }
 
 /* --------------------------------------------------------------------------

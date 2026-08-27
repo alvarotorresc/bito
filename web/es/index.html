@@ -15,6 +15,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap">
   <link rel="stylesheet" href="../estilo.css">
+  <script src="../habi.js" defer></script>
 </head>
 <body>
 <div class="lienzo">
@@ -64,7 +65,44 @@
       </div>
 
       <div class="hero-habi">
-        <img src="../img/habi/neutra.svg" width="470" height="470" alt="Habi, la mascota de Bito: una criatura verde con forma de alubia, ojos redondos y una sonrisa tranquila.">
+        <!-- El Habi del hero va EN LINEA (copia literal de img/habi/neutra.svg, sin
+             tocar una sola coordenada) porque un SVG cargado con <img> es opaco
+             desde fuera: ni CSS ni JS pueden mover sus pupilas. Los grupos
+             .habi-respira / .habi-mirada / .habi-parpado-* no existen en el
+             fichero: son envoltorios sin atributos, invisibles al dibujo, sobre
+             los que estilo.css y habi.js cuelgan la vida. -->
+        <svg class="habi-vivo" width="470" height="470" viewBox="0 0 1 1" role="img"
+             aria-label="Habi, la mascota de Bito: una criatura verde con forma de alubia, ojos redondos y una sonrisa tranquila.">
+          <defs>
+            <clipPath id="habi-clip-neutra">
+              <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z"></path>
+            </clipPath>
+            <linearGradient id="habi-shade-neutra" gradientUnits="userSpaceOnUse" x1="0" y1="0.78" x2="0" y2="0.97">
+              <stop offset="0" stop-color="#768D71" stop-opacity="0"></stop>
+              <stop offset="1" stop-color="#768D71" stop-opacity="0.11"></stop>
+            </linearGradient>
+          </defs>
+          <g class="habi-respira">
+            <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z" fill="#A9C9A1"></path>
+            <g clip-path="url(#habi-clip-neutra)">
+              <rect x="0.16" y="0.78" width="0.68" height="0.19" fill="url(#habi-shade-neutra)"></rect>
+              <ellipse cx="0.5" cy="0.16" rx="0.05" ry="0.035" fill="#FBF8F2" fill-opacity="0.8"></ellipse>
+            </g>
+            <g>
+              <g class="habi-mirada">
+                <g class="habi-parpado-a">
+                  <g class="habi-parpado-b">
+                    <circle cx="0.36" cy="0.5" r="0.048" fill="#3C352B"></circle>
+                    <circle cx="0.64" cy="0.5" r="0.048" fill="#3C352B"></circle>
+                    <circle cx="0.3864" cy="0.464" r="0.01296" fill="#FBF8F2"></circle>
+                    <circle cx="0.6664" cy="0.464" r="0.01296" fill="#FBF8F2"></circle>
+                  </g>
+                </g>
+              </g>
+              <path d="M 0.428 0.66 Q 0.5 0.68975 0.572 0.66" fill="none" stroke="#3C352B" stroke-width="0.028" stroke-linecap="round" stroke-linejoin="round"></path>
+            </g>
+          </g>
+        </svg>
       </div>
     </section>
 
