@@ -17,7 +17,7 @@ Versión 1.0.0 · Android 8.0 o superior · 100% libre, GPL-3.0-or-later
 
 ## Descargar
 
-[**Descargar Bito 1.0.0**](https://github.com/alvarotorresc/bito/releases/download/v1.0.0/app-release.apk) — 4,9 MB, directo desde GitHub Releases.
+[**Descargar Bito 1.0.0**](https://github.com/alvarotorresc/bito/releases/download/v1.0.0/app-release.apk) — 4,7 MB, directo desde GitHub Releases.
 
 Android va a avisar de que la app viene de un origen desconocido: es lo esperable fuera de Google Play, no una señal de alarma propia de Bito. Abre el fichero descargado y, si te lo pide, permite instalar desde el navegador o el gestor de archivos solo esta vez, y pulsa **Instalar**. Sin cuenta, sin asistente de configuración, sin nada que iniciar sesión.
 
@@ -38,7 +38,7 @@ Y una vez dentro:
 - **Recordatorios con la voz que elijas** — el aviso cambia de tono según la hora del día y según a quién le hayas dado la voz. Por la mañana plantea el día; por la noche te ayuda a cerrarlo.
 - **Logros y estadísticas de verdad** — mapas de calor, récords y logros que se ganan solos. Los números están para que veas cómo vas, no para presumir en ningún sitio.
 
-## Los backups: la joya de la corona
+## Las copias de seguridad: la joya de la corona
 
 ### Sin nube, la pregunta llega sola: ¿y si pierdo el móvil?
 
@@ -65,7 +65,7 @@ El detalle de un hábito, racha de 130 días con el calendario lleno:
 
 | Récords | Logros | Repaso del día | Ajustes |
 |---|---|---|---|
-| <img src="web/img/capturas/records.png" width="180" alt="Pantalla de récords con la mejor racha de cada hábito"> | <img src="web/img/capturas/insignias.png" width="180" alt="Pantalla de logros"> | <img src="web/img/capturas/repaso.png" width="180" alt="Pantalla de repaso del día"> | <img src="web/img/capturas/ajustes.png" width="180" alt="Pantalla de ajustes"> |
+| <img src="web/img/capturas/records.png" width="180" alt="Pantalla de récords con la mejor racha de cada hábito"> | <img src="web/img/capturas/logros.png" width="180" alt="Pantalla de logros"> | <img src="web/img/capturas/repaso.png" width="180" alt="Pantalla de repaso del día"> | <img src="web/img/capturas/ajustes.png" width="180" alt="Pantalla de ajustes"> |
 
 </details>
 
@@ -141,9 +141,9 @@ Funciona igual en GrapheneOS. La lógica de rachas, puntos y ánimo vive aparte 
 | Compilación | AGP 8.7.2 · JDK 21 |
 | Release | versionName 1.0.0 · versionCode 11 |
 | Mascota | Vectorial, dibujada a mano en Canvas |
-| Tests | 962 funciones `@Test` en 107 ficheros, en cada push |
+| Tests | 962 funciones `@Test` en 107 ficheros, en cada push a main y en cada pull request |
 
-### Cómo se cifra un backup
+### Cómo se cifra una copia
 
 | | | |
 |---|---|---|

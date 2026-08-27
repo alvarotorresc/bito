@@ -17,7 +17,7 @@ Version 1.0.0 · Android 8.0 or later · 100% free, GPL-3.0-or-later
 
 ## Download
 
-[**Download Bito 1.0.0**](https://github.com/alvarotorresc/bito/releases/download/v1.0.0/app-release.apk) — 4.9 MB, straight from GitHub Releases.
+[**Download Bito 1.0.0**](https://github.com/alvarotorresc/bito/releases/download/v1.0.0/app-release.apk) — 4.7 MB, straight from GitHub Releases.
 
 Android will warn that this app comes from an unknown source — that's expected outside Google Play, not a red flag specific to Bito. Open the downloaded file, and if you're asked, allow installs from your browser or file manager just this once, then tap **Install**. No account, no setup wizard, nothing to sign in to.
 
@@ -65,9 +65,11 @@ A habit's detail, 130 days into a streak, calendar filled in:
 
 | Records | Badges | Daily review | Settings |
 |---|---|---|---|
-| <img src="web/img/capturas/records.png" width="180" alt="Records screen with each habit's best streak"> | <img src="web/img/capturas/insignias.png" width="180" alt="Badges screen"> | <img src="web/img/capturas/repaso.png" width="180" alt="Daily review screen"> | <img src="web/img/capturas/ajustes.png" width="180" alt="Settings screen"> |
+| <img src="web/img/capturas/records.png" width="180" alt="Records screen with each habit's best streak"> | <img src="web/img/capturas/logros.png" width="180" alt="Badges screen"> | <img src="web/img/capturas/repaso.png" width="180" alt="Daily review screen"> | <img src="web/img/capturas/ajustes.png" width="180" alt="Settings screen"> |
 
 </details>
+
+_Screenshots show the Spanish build; the app is fully translated._
 
 ## Habi and its three personalities
 
@@ -141,7 +143,7 @@ Works the same on GrapheneOS. Streak, point, and mood logic lives apart from And
 | Build | AGP 8.7.2 · JDK 21 |
 | Release | versionName 1.0.0 · versionCode 11 |
 | Mascot | Vector, hand-drawn in Canvas |
-| Tests | 962 `@Test` functions across 107 files, run on every push |
+| Tests | 962 `@Test` functions across 107 files, run on every push to main and every pull request |
 
 ### How backups are encrypted
 
