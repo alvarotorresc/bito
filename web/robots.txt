@@ -1,0 +1,7 @@
+# Bito lives on its own domain (bito.alvarotc.com): this file sits at the origin root, so
+# crawlers request it and obey it. The whole site is public and static: the landing in
+# English (/) and in Spanish (/es/).
+User-agent: *
+Allow: /
+
+Sitemap: https://bito.alvarotc.com/sitemap.xml
