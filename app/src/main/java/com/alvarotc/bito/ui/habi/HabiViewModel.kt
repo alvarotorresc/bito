@@ -69,8 +69,10 @@ class HabiViewModel(
             settings.settings,
             previewItemId,
         ) { state, owned, balance, prefs, preview ->
-            val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-            val local = Instant.ofEpochMilli(now()).atZone(zone()).toLocalTime()
+            val nowMillis = now()
+            val zoneNow = zone()
+            val today = LogicalDays.logicalDayOf(nowMillis, prefs.dayCutoffMinutes, zoneNow)
+            val local = Instant.ofEpochMilli(nowMillis).atZone(zoneNow).toLocalTime()
             // Reutiliza el builder de Hoy solo para la fase: duplicar aquí el conteo de exigibles
             // (Compliance.isRequirableOn + Sealing) sería una segunda verdad sobre el mismo hecho.
             val dayPhase =
