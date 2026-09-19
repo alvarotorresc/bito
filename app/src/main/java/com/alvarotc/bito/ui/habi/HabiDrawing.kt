@@ -240,24 +240,26 @@ private const val SPARKLE_OUTER_RADIUS = 0.045f
 private const val SPARKLE_INNER_RATIO = 0.35f
 
 // Fixed scatter positions (fraction of viewport), one list per glyph pattern — hand-placed inside
-// the body's bounding box (cx=0.5±0.34, cy=0.55±0.42); clipPath trims whatever falls outside the
-// egg so these don't need to hug the silhouette precisely.
+// the body's bounding box (cx=0.5±0.34, cy=0.52±0.42); clipPath trims whatever falls outside the
+// egg so these don't need to hug the silhouette precisely. The y's are -0.03 (T8's silhouette
+// shift): they're read by wrapOnBody against BODY_CY + BODY_BULGE, so a list left at the pre-T8
+// coordinates prints the pattern lower relative to the body, not just lower on screen.
 private val CORAZONES_POSITIONS =
-    listOf(0.38f to 0.30f, 0.63f to 0.28f, 0.30f to 0.50f, 0.70f to 0.50f, 0.50f to 0.40f, 0.40f to 0.70f, 0.60f to 0.72f)
+    listOf(0.38f to 0.27f, 0.63f to 0.25f, 0.30f to 0.47f, 0.70f to 0.47f, 0.50f to 0.37f, 0.40f to 0.67f, 0.60f to 0.69f)
 private val ESTRELLAS_POSITIONS =
-    listOf(0.35f to 0.24f, 0.65f to 0.26f, 0.25f to 0.46f, 0.75f to 0.46f, 0.50f to 0.36f, 0.38f to 0.66f, 0.62f to 0.68f)
+    listOf(0.35f to 0.21f, 0.65f to 0.23f, 0.25f to 0.43f, 0.75f to 0.43f, 0.50f to 0.33f, 0.38f to 0.63f, 0.62f to 0.65f)
 private val FLORES_POSITIONS =
-    listOf(0.36f to 0.28f, 0.64f to 0.30f, 0.28f to 0.52f, 0.72f to 0.52f, 0.50f to 0.44f, 0.50f to 0.72f)
+    listOf(0.36f to 0.25f, 0.64f to 0.27f, 0.28f to 0.49f, 0.72f to 0.49f, 0.50f to 0.41f, 0.50f to 0.69f)
 private val CHISPAS_POSITIONS =
     listOf(
-        0.34f to 0.26f,
-        0.66f to 0.24f,
-        0.24f to 0.48f,
-        0.76f to 0.48f,
-        0.50f to 0.34f,
-        0.38f to 0.68f,
-        0.62f to 0.70f,
-        0.50f to 0.82f,
+        0.34f to 0.23f,
+        0.66f to 0.21f,
+        0.24f to 0.45f,
+        0.76f to 0.45f,
+        0.50f to 0.31f,
+        0.38f to 0.65f,
+        0.62f to 0.67f,
+        0.50f to 0.79f,
     )
 
 private const val LLAMA_TINT_BLEND = 0.2f // 0 = pure Brasa; blends toward body color so it still reads as "this body's fire".
@@ -282,7 +284,15 @@ private const val GORRO_DOME_RX = 0.15f
 private const val GORRO_BAND_TOP_Y = 0.145f
 private const val GORRO_BAND_BOTTOM_Y = 0.185f
 private const val GORRO_BAND_RX = 0.165f
-private const val GORRO_POMPOM_Y = -0.005f
+
+// GORRO_POMPOM_Y does NOT take T8's -0.03 shift (controller ruling): with the radius, that shift
+// pushed its top edge to -0.033, past the viewport's top (y=0) and clipped by renderHabiBitmap
+// (widget/notification). The pre-T8 absolute value (0.025f) is not quite enough on its own either:
+// with GORRO_POMPOM_RADIUS its top edge still sits at -0.003 — a tiny overflow that predates this
+// milestone, but a real one at large render sizes (measured: a fully opaque pixel lost off-canvas
+// at 256px). 0.035f clears it with margin (measured: clean). Flagged for the controller: this is
+// 0.01 past the historic value, not just T8's revert.
+private const val GORRO_POMPOM_Y = 0.035f
 private const val GORRO_POMPOM_RADIUS = 0.028f
 
 // Knot is centered on the body highlight (HIGHLIGHT_CY=0.13) with radius > highlight's own rx/ry
@@ -296,7 +306,9 @@ private const val LAZO_KNOT_RADIUS = 0.06f
 
 // Brim's bottom edge (COPA_BRIM_Y + COPA_BRIM_RY) must reach past the highlight's bottom
 // (HIGHLIGHT_CY + HIGHLIGHT_RY = 0.165), and the cylinder must reach the brim's top with no gap.
-private const val COPA_CYLINDER_TOP_Y = -0.01f
+// COPA_CYLINDER_TOP_Y does NOT take T8's -0.03 shift either (same ruling as GORRO_POMPOM_Y): it
+// would put the cylinder's flat top past y=0, clipped by renderHabiBitmap.
+private const val COPA_CYLINDER_TOP_Y = 0.02f
 private const val COPA_CYLINDER_BOTTOM_Y = 0.13f
 private const val COPA_CYLINDER_RX = 0.09f
 private const val COPA_BAND_TOP_Y = 0.075f
@@ -391,6 +403,9 @@ data class HabiBodyMotion(
     val scaleY: Float = 1f,
     // liftN: fraccion del viewport, positivo = sube.
     val liftN: Float = 0f,
+    // shadowScale: techo practico ~1.11 — con SHADOW_CY 0.95 y SHADOW_RY 0.045, un valor mayor
+    // saca el borde inferior de la sombra (SHADOW_CY + SHADOW_RY * shadowScale) del viewport
+    // (>1). Quien conecte T10/T11 debe clampear a ese techo, no solo animar hacia >1.
     val shadowScale: Float = 1f,
     val shadowAlpha: Float = SHADOW_ALPHA_REST,
 ) {

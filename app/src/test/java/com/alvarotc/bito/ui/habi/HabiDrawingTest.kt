@@ -223,6 +223,25 @@ class HabiDrawingTest {
     }
 
     /**
+     * `groundPixel` (the test above) is painted BEFORE the body's `withTransform`, so it can't
+     * tell an identity transform from a bug inside `withTransform` itself. This checks two points
+     * that ARE inside the transform (body center, left eye): passing `HabiBodyMotion.Rest`
+     * explicitly must render pixel-identical to not passing `body` at all.
+     */
+    @Test
+    fun `HabiBodyMotion Rest renders identically to no body param at all`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (bx, by) = bodyCenterPixel(size)
+        val (ex, ey) = leftEyePixel(size)
+
+        val withRest = renderWithBody(spec, size, HabiBodyMotion.Rest)
+        val withoutBody = renderHabiBitmap(spec, size)
+
+        assertEquals(withoutBody.getPixel(bx, by), withRest.getPixel(bx, by))
+        assertEquals(withoutBody.getPixel(ex, ey), withRest.getPixel(ex, ey))
+    }
+
+    /**
      * El paso mas propenso a error del pase de T8: bajar la silueta 0,03 en el viewport
      * normalizado es una resta que toca decenas de constantes, y una sola olvidada produce una
      * Habi sutilmente mal puesta que ningun otro test caza (las coordenadas de los demas tests se
@@ -269,6 +288,104 @@ class HabiDrawingTest {
         val sy = (eyeCenterY - eyeRy * 0.75f).toInt()
 
         assertEquals(Tarjeta.toArgb(), renderHabiBitmap(sparkleSpec, size).getPixel(sx, sy))
+    }
+
+    // --- T8 fix round 1: the pattern position lists, and the upper slot's top clip ---------------
+
+    /**
+     * Mirrors `wrapOnBody`'s own projection for FLORES_POSITIONS' 5th entry (index 4): it sits at
+     * `x = BODY_CX` exactly, so its radial vector from the body center is purely vertical (no x
+     * displacement to predict). Its `y` is expressed as `BODY_CY - 0.11f` — BODY_CY-relative, not
+     * a raw viewport literal — because that is EXACTLY the bug this test exists to catch: the four
+     * fixed pattern-position lists (corazones/estrellas/flores/chispas) are viewport-absolute
+     * literals that T8's original pass forgot to shift by -0.03 along with BODY_CY, so the
+     * printed pattern silently sat 0.03 lower relative to the body than intended.
+     *
+     * Returns the TOP EDGE of the wrapped glyph's petal ring, not its center: the ring (petal
+     * orbit + radius, both scaled by the wrap) is ~6-7px across at this size, wider than the 0.03
+     * shift (~3px) it needs to catch, so a center probe sits inside BOTH the correct and the
+     * pre-fix wrapped position — verified empirically (temp diagnostic, deleted) by dumping a
+     * pixel window around the predicted center with the bug reintroduced: the center pixel was
+     * tinted either way. 3px above the center is inside the correct glyph but still bare body with
+     * the bug (measured), so that is the offset returned here — an empirically tuned pixel offset,
+     * not a formula, same convention as the antialiasing margins measured elsewhere in this file.
+     *
+     * `BODY_BULGE`/`BODY_RY`/`WRAP_EDGE_INSET` are private in HabiDrawing.kt, so their values are
+     * re-declared here at their published constants.
+     */
+    private fun wrappedFloresTopEdgePixel(sizePx: Int): Pair<Int, Int> {
+        val listY = BODY_CY - 0.11f
+        val bodyBulge = 0.05f
+        val bodyRy = 0.42f
+        val wrapEdgeInset = 0.94f
+        val bulgeCy = BODY_CY + bodyBulge
+        val ny = (listY - bulgeCy) / bodyRy
+        val d = kotlin.math.abs(ny)
+        val theta = d * (Math.PI / 2.0).toFloat()
+        val factor = kotlin.math.sin(theta.toDouble()).toFloat() * wrapEdgeInset / d
+        val wrappedCenterY = bulgeCy + ny * bodyRy * factor
+        return px(BODY_CX, sizePx) to ((wrappedCenterY * sizePx).toInt() - 3)
+    }
+
+    @Test
+    fun `flores keeps its glyphs pinned to the body, not a stale viewport offset`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = "pattern-flores"))
+        val bitmap = renderHabiBitmap(spec, size)
+        val (x, y) = wrappedFloresTopEdgePixel(size)
+
+        // Not a color equality check (the tint depends on the equipped body color): just that
+        // SOMETHING paints there instead of the bare body tone.
+        assertNotEquals(HabiSalvia.toArgb(), bitmap.getPixel(x, y))
+    }
+
+    /**
+     * GORRO_POMPOM_Y and COPA_CYLINDER_TOP_Y do NOT take T8's -0.03 shift (controller ruling):
+     * with it, their top edges land past y=0 and renderHabiBitmap (the widget/notification path,
+     * which does not clip like a Compose Canvas inset within a larger layout) permanently loses
+     * that part of the accessory.
+     *
+     * Reverting GORRO_POMPOM_Y to the pre-T8 literal (0.025f) alone is not enough: with
+     * GORRO_POMPOM_RADIUS 0.028f its top edge still sits at -0.003 — a tiny overflow that
+     * predates this milestone entirely (present before T8 ever touched this constant), but a real
+     * one: measured at accessorySize (256px), it produced a fully opaque (alpha 255) pompom pixel
+     * in row 0, not just antialiasing. GORRO_POMPOM_Y moved to 0.035f instead — 0.01 past the
+     * historic 0.025f, flagged here and in the fix report for the controller to confirm — clears
+     * row 0 with margin (measured: maxAlpha 0).
+     *
+     * Row 1 is sampled too, but the pass/fail line differs by accessory: COPA_CYLINDER_TOP_Y
+     * (0.02f, a rect's flat top, no radius overshoot) clears both rows cleanly. GORRO's row 1 does
+     * carry ink — but it is GORRO_DOME_TOP_Y's (0.005f) own rounded peak, confirmed by color
+     * (measured: the row-1 pixel is a blend of Brasa, the dome's fill; the row-2 pixel is exactly
+     * Brasa). GORRO_DOME_TOP_Y is NOT negative, so nothing is clipped there — it is the dome
+     * legitimately sitting close to the canvas top, unrelated to T8's shift and out of this
+     * ruling's scope ("asoma por encima de 0" applies to negative constants, not merely small
+     * positive ones). Row 1 is therefore checked for what this fix DOES own: no leftover Tarjeta
+     * (the pompom's own solid fill, distinct from the dome's Brasa/GorroLanaBand) — isolating the
+     * pompom's contribution from the dome's.
+     */
+    @Test
+    fun `the beanie and the top hat do not lose ink off the top of the canvas`() {
+        val bare = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val withGorro = bare.copy(equipped = EquippedSet(upper = "upper-gorro-lana"))
+        val withCopa = bare.copy(equipped = EquippedSet(upper = "upper-copa"))
+        val bareBitmap = renderHabiBitmap(bare, accessorySize)
+        val gorroBitmap = renderHabiBitmap(withGorro, accessorySize)
+        val copaBitmap = renderHabiBitmap(withCopa, accessorySize)
+
+        for (x in 0 until accessorySize) {
+            assertEquals(
+                "upper-gorro-lana row=0 col=$x should match the bare render",
+                bareBitmap.getPixel(x, 0),
+                gorroBitmap.getPixel(x, 0),
+            )
+            assertEquals("upper-copa row=0 col=$x should match the bare render", bareBitmap.getPixel(x, 0), copaBitmap.getPixel(x, 0))
+            assertEquals("upper-copa row=1 col=$x should match the bare render", bareBitmap.getPixel(x, 1), copaBitmap.getPixel(x, 1))
+            assertNotEquals(
+                "upper-gorro-lana row=1 col=$x should not carry the pompom's own fill color",
+                Tarjeta.toArgb(),
+                gorroBitmap.getPixel(x, 1),
+            )
+        }
     }
 
     // --- T7: the eye ritual (HabiSpec.eyesPainted) ----------------------------------------------
