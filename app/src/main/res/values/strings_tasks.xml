@@ -11,4 +11,14 @@
     <string name="task_due_this_week">this week</string>
     <string name="task_due_week_today">ends today</string>
     <string name="task_due_last_week">from last week</string>
+    <string name="create_choice_title">What are we adding?</string>
+    <string name="create_choice_habit">A habit</string>
+    <string name="create_choice_task">A task</string>
+    <string name="task_form_title">New task</string>
+    <string name="task_form_edit_title">Edit task</string>
+    <string name="task_form_name_hint">What\'s pending?</string>
+    <string name="task_form_step_hint">The first step (optional)</string>
+    <string name="task_form_due_none">No deadline</string>
+    <string name="task_form_due_week">This week</string>
+    <string name="task_form_due_date">Date</string>
 </resources>

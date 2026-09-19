@@ -3,7 +3,9 @@ package com.alvarotc.bito.ui
 import android.app.Application
 import android.app.NotificationManager
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
@@ -73,6 +75,19 @@ class BitoNavHostTest {
      */
     private fun screenTitleNode(text: String) =
         compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("bottom-bar")).not(), useUnmergedTree = true)
+
+    /**
+     * [performClick] reports success against a button inside a [androidx.compose.material3.ModalBottomSheet]
+     * under this Robolectric harness but never actually runs its callback — the same finding
+     * [com.alvarotc.bito.ui.detail.DetailScreenTest] already documents on its own sheet clicks.
+     * Invoking the node's own OnClick semantics action directly is what actually proves the tap
+     * wires through, for the create-choice and task-form sheets below (T14).
+     */
+    private fun tapText(text: String) {
+        // Merged tree (no useUnmergedTree): the OnClick action lives on the Button ancestor that
+        // merges its Text child's semantics, not on the raw Text node itself.
+        compose.onNodeWithText(text).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+    }
 
     /** The conditional start gates on Settings' first emission (loading -> today/onboarding);
      * wait for that placeholder to clear before any assertion, the same way the settings-reminder
@@ -242,11 +257,20 @@ class BitoNavHostTest {
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
     }
 
+    /**
+     * T14: the "+" now asks first (create-choice-sheet) instead of navigating straight to the
+     * habit form, so reaching it goes through "A habit" first — the sheet is an overlay, not a
+     * route change, so the bar itself doesn't react until that tap lands on "habit".
+     */
     @Test
     fun `the bottom bar hides on the habit form but survives on stats`() {
         setContent()
 
         compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        tapText("A habit")
         compose.waitForIdle()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
 
@@ -256,6 +280,63 @@ class BitoNavHostTest {
         compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `tapping create opens the choice sheet with a habit and a task`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("A habit", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("A task", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `choosing a habit from the choice sheet reaches the usual habit form`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        tapText("A habit")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertDoesNotExist()
+        // The habit form's own back chevron — reusing "the bottom bar hides on the habit form"
+        // above's own proof that this is genuinely the same route, not a new one.
+        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * Beyond the brief's own two: the model test covers [com.alvarotc.bito.ui.tasks.resolvedDueDay]
+     * but nothing else ever composes [com.alvarotc.bito.ui.tasks.TaskFormSheet] itself — this is
+     * that one compile-and-render safety net, deliberately stopping short of driving the
+     * DatePickerDialog (task-14-brief's own call: that dialog has no logic worth a Robolectric
+     * test).
+     */
+    @Test
+    fun `choosing a task from the choice sheet opens the task form with saving disabled on a blank title`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        tapText("A task")
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-form-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-form-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("task-form-save", useUnmergedTree = true).assertIsNotEnabled()
     }
 
     @Test

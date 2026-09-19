@@ -27,6 +27,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
 import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
 import com.alvarotc.bito.ui.celebration.PerfectDaySheet
@@ -54,9 +55,15 @@ import com.alvarotc.bito.ui.stats.RecordsScreen
 import com.alvarotc.bito.ui.stats.RecordsViewModel
 import com.alvarotc.bito.ui.stats.StatsScreen
 import com.alvarotc.bito.ui.stats.StatsViewModel
+import com.alvarotc.bito.ui.tasks.CreateChoiceSheet
+import com.alvarotc.bito.ui.tasks.TaskFormSheet
+import com.alvarotc.bito.ui.tasks.TaskFormState
+import com.alvarotc.bito.ui.tasks.TasksViewModel
+import com.alvarotc.bito.ui.tasks.resolvedDueDay
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
+import java.time.ZoneId
 
 @Composable
 fun BitoNavHost(container: AppContainer) {
@@ -103,7 +110,19 @@ fun BitoNavHost(container: AppContainer) {
     // (QA 2026-08-23). Today already survives via popBackStack; Detail stays per-entry by design.
     val statsViewModel: StatsViewModel = viewModel(factory = StatsViewModel.factory(container))
     val habiViewModel: HabiViewModel = viewModel(factory = HabiViewModel.factory(container))
+    // Backs both the create and the edit path for TaskFormSheet, hosted globally below like the
+    // choice sheet — Task 15's own list screen reuses this exact instance's factory.
+    val tasksViewModel: TasksViewModel = viewModel(factory = TasksViewModel.factory(container))
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
+
+    // The "+" button's own state: it asks first (CreateChoiceSheet), then either navigates to the
+    // habit form (unchanged) or opens the task form as a global sheet, same as the celebration
+    // sheets below — a route change would lose the bottom bar and isn't warranted for a form this
+    // short. `onCreateHabit` on Today's own empty state deliberately skips this ask (see its call
+    // site below): a user who already tapped an empty-habits prompt doesn't need to be asked what
+    // they meant.
+    var showCreateChoice by remember { mutableStateOf(false) }
+    var showTaskForm by remember { mutableStateOf<TaskFormState?>(null) }
 
     Scaffold(
         containerColor = Papel,
@@ -118,7 +137,7 @@ fun BitoNavHost(container: AppContainer) {
                             launchSingleTop = true
                         }
                     },
-                    onCreate = { nav.navigate("habit") },
+                    onCreate = { showCreateChoice = true },
                     onHabi = {
                         nav.navigate("habi") {
                             popUpTo("today")
@@ -356,6 +375,47 @@ fun BitoNavHost(container: AppContainer) {
             if (!celebrationsSuppressed && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
                 celebrations.cue()
             }
+        }
+
+        // T14: the "+" button's own two sheets, global like the celebrations above.
+        if (showCreateChoice) {
+            CreateChoiceSheet(
+                onHabit = {
+                    showCreateChoice = false
+                    nav.navigate("habit")
+                },
+                onTask = {
+                    showCreateChoice = false
+                    showTaskForm = TaskFormState()
+                },
+                onDismiss = { showCreateChoice = false },
+            )
+        }
+
+        showTaskForm?.let { formState ->
+            // Computed fresh per sheet open, from the settings snapshot this composable already
+            // gates on above (`loadedSettings`, provably non-null here) — not from TasksViewModel's
+            // own `uiState.today`, whose `combine` can still be mid-flight (default `today = 0`)
+            // the instant this sheet opens.
+            val today =
+                remember {
+                    LogicalDays.logicalDayOf(System.currentTimeMillis(), loadedSettings.dayCutoffMinutes, ZoneId.systemDefault())
+                }
+            TaskFormSheet(
+                initial = formState,
+                today = today,
+                onSave = { saved ->
+                    val resolvedDay = saved.resolvedDueDay(today)
+                    val editingId = saved.editingId
+                    if (editingId != null) {
+                        tasksViewModel.edit(editingId, saved.title, saved.firstStep, saved.dueKind, resolvedDay)
+                    } else {
+                        tasksViewModel.create(saved.title, saved.firstStep, saved.dueKind, resolvedDay)
+                    }
+                    showTaskForm = null
+                },
+                onDismiss = { showTaskForm = null },
+            )
         }
     }
 }
