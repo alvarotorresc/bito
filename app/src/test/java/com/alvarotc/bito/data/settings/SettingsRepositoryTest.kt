@@ -3,6 +3,7 @@ package com.alvarotc.bito.data.settings
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import com.alvarotc.bito.domain.EyeTransition
 import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -230,5 +231,36 @@ class SettingsRepositoryTest {
 
             repository.update { Settings(userName = "Álvaro") }
             assertFalse(repository.claimNotificationPrompt())
+        }
+
+    @Test
+    fun `healEyeLevel raises the stored level and reports the transition`() =
+        runTest {
+            val repo = SettingsRepository(store("heal-up"))
+
+            val transition = repo.healEyeLevel(2)
+
+            assertEquals(EyeTransition(0, 2), transition)
+            assertEquals(2, repo.settings.first().habiEyesPainted)
+        }
+
+    @Test
+    fun `healEyeLevel never lowers the stored level, and reports nothing`() =
+        runTest {
+            val repo = SettingsRepository(store("heal-down"))
+            repo.update { it.copy(habiEyesPainted = 2) }
+
+            assertNull(repo.healEyeLevel(1))
+            assertEquals(2, repo.settings.first().habiEyesPainted)
+        }
+
+    @Test
+    fun `healEyeLevel reports nothing when the derived level is the stored one`() =
+        runTest {
+            val repo = SettingsRepository(store("heal-same"))
+            repo.update { it.copy(habiEyesPainted = 1) }
+
+            assertNull(repo.healEyeLevel(1))
+            assertEquals(1, repo.settings.first().habiEyesPainted)
         }
 }

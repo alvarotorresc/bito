@@ -7,6 +7,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.alvarotc.bito.domain.EyeRitual
+import com.alvarotc.bito.domain.EyeTransition
 import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -189,6 +191,30 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             claimed = true
         }
         return claimed
+    }
+
+    /**
+     * Sana [Settings.habiEyesPainted] hasta [derived] y devuelve la transición SOLO si subió.
+     * Monótono por [EyeRitual.heal] (nunca baja) e idempotente (un segundo pase devuelve null).
+     *
+     * Leer, comparar y escribir dentro de UN solo `edit`, igual que [claimNotificationPrompt]: un
+     * read-modify-write repartido en dos operaciones deja que dos reconciles simultáneos lean el
+     * mismo nivel guardado y se lleven los dos la misma transición — el rito del ojo se pintaría
+     * dos veces. La transición se compone dentro del bloque, con el `stored` que ESE `edit` leyó.
+     */
+    suspend fun healEyeLevel(derived: Int): EyeTransition? {
+        var transition: EyeTransition? = null
+        dataStore.edit { prefs ->
+            val stored = prefs[Keys.habiEyesPainted] ?: Settings().habiEyesPainted
+            val healed = EyeRitual.heal(stored, derived)
+            if (healed == stored) {
+                transition = null
+                return@edit
+            }
+            prefs[Keys.habiEyesPainted] = healed
+            transition = EyeTransition(stored, healed)
+        }
+        return transition
     }
 
     private fun Preferences.toSettings(): Settings {

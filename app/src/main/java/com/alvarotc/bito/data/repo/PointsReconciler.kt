@@ -12,7 +12,6 @@ import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsReason
-import kotlinx.coroutines.flow.first
 
 /**
  * What a [PointsReconciler.reconcile] pass granted: nothing here was owned
@@ -68,7 +67,9 @@ class PointsReconciler(
 
     /**
      * Sana `Settings.habiEyesPainted` desde el historial y devuelve la transición cuando la hay.
-     * Monótono (nunca baja) e idempotente (un segundo pase devuelve null).
+     * El leer-comparar-escribir es de [SettingsRepository.healEyeLevel], que lo resuelve en un
+     * solo `edit`: aquí solo se deriva el nivel que la historia justifica y se decide si el rito
+     * se cuenta o se calla.
      *
      * El marcador de restore se reclama INCONDICIONALMENTE, antes del corte "sin cambio": un
      * restore sin hábitos deja stored=0 y derived=0 (no hay salto que sanar en ese pase), pero el
@@ -83,10 +84,7 @@ class PointsReconciler(
     ): EyeTransition? {
         val settings = settings ?: return null
         val silent = settings.claimSilentEyeHeal()
-        val stored = settings.settings.first().habiEyesPainted
-        val healed = EyeRitual.heal(stored, EyeRitual.derivedLevel(state, today))
-        if (healed == stored) return null
-        settings.update { it.copy(habiEyesPainted = healed) }
-        return if (silent) null else EyeTransition(stored, healed)
+        val transition = settings.healEyeLevel(EyeRitual.derivedLevel(state, today))
+        return if (silent) null else transition
     }
 }
