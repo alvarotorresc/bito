@@ -8,14 +8,19 @@ import com.alvarotc.bito.data.db.HabitEntity
 import com.alvarotc.bito.data.db.PauseIntervalEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.db.TargetChangeEntity
+import com.alvarotc.bito.data.db.TaskEntity
+import com.alvarotc.bito.data.db.TaskEventEntity
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 
 const val DAY_ZERO = 20_000
 
@@ -92,3 +97,24 @@ fun customizationItemEntity(
     acquiredAtMillis: Long = 1_000L,
     equipped: Boolean = false,
 ) = CustomizationItemEntity(itemId, category, acquiredAtMillis, equipped)
+
+fun taskEntity(
+    id: String = "t1",
+    title: String = "Llamar al banco",
+    firstStep: String? = null,
+    dueKind: DueKind = DueKind.NONE,
+    dueDay: Int? = null,
+    status: TaskStatus = TaskStatus.OPEN,
+    createdAtMillis: Long = 1_000L,
+    createdOnDay: Int = DAY_ZERO,
+    doneAtMillis: Long? = null,
+    doneOnDay: Int? = null,
+) = TaskEntity(id, title, firstStep, dueKind, dueDay, status, createdAtMillis, createdOnDay, doneAtMillis, doneOnDay)
+
+fun taskEventEntity(
+    id: String = "e1",
+    taskId: String = "t1",
+    kind: TaskEventKind = TaskEventKind.BROUGHT,
+    logicalDay: Int = DAY_ZERO,
+    createdAtMillis: Long = 1_000L,
+) = TaskEventEntity(id, taskId, kind, logicalDay, createdAtMillis)

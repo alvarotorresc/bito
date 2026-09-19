@@ -7,6 +7,8 @@ import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.PauseInterval
 import com.alvarotc.bito.domain.model.PointsLedgerEntry
 import com.alvarotc.bito.domain.model.TargetChange
+import com.alvarotc.bito.domain.model.Task
+import com.alvarotc.bito.domain.model.TaskEvent
 
 fun HabitEntity.toDomain(): Habit =
     Habit(
@@ -35,3 +37,21 @@ fun DaySealEntity.toDomain(): DaySeal = DaySeal(logicalDay, sealedAtMillis)
 fun FreezerUseEntity.toDomain(): FreezerUse = FreezerUse(id, habitId, protectedDay, usedAtMillis)
 
 fun PointsLedgerEntity.toDomain(): PointsLedgerEntry = PointsLedgerEntry(id, delta, reason, refId, logicalDay, createdAtMillis)
+
+// doneAtMillis se queda en la entidad a proposito: el dominio solo necesita el dia. Mismo
+// criterio que HabitEntity.createdAtMillis, que tampoco sube. Argumentos nombrados, porque la
+// entidad lleva createdAtMillis antes de createdOnDay y el tipo del dominio al reves.
+fun TaskEntity.toDomain(): Task =
+    Task(
+        id = id,
+        title = title,
+        firstStep = firstStep,
+        dueKind = dueKind,
+        dueDay = dueDay,
+        status = status,
+        createdOnDay = createdOnDay,
+        createdAtMillis = createdAtMillis,
+        doneOnDay = doneOnDay,
+    )
+
+fun TaskEventEntity.toDomain(): TaskEvent = TaskEvent(id, taskId, kind, logicalDay)

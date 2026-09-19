@@ -29,7 +29,7 @@ class DatabaseSchemaTest {
     }
 
     @Test
-    fun `creates the nine bito tables`() {
+    fun `creates the eleven bito tables`() {
         val tables =
             db.openHelper.readableDatabase
                 .query("SELECT name FROM sqlite_master WHERE type = 'table'")
@@ -40,12 +40,13 @@ class DatabaseSchemaTest {
             listOf(
                 "habits", "target_changes", "pause_intervals", "entries", "day_seals",
                 "freezer_uses", "points_ledger", "badges", "customization_items",
+                "tasks", "task_events",
             )
         assertTrue("missing: ${expected - tables.toSet()}", tables.containsAll(expected))
     }
 
     @Test
-    fun `schema is version 1`() {
-        assertEquals(1, db.openHelper.readableDatabase.version)
+    fun `schema is version 2`() {
+        assertEquals(2, db.openHelper.readableDatabase.version)
     }
 }
