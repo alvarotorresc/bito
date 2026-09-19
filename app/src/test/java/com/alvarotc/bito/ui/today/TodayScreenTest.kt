@@ -7,11 +7,14 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.assertWidthIsEqualTo
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -45,6 +48,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -80,6 +84,7 @@ class TodayScreenTest {
     private val today = LogicalDays.logicalDayOf(fixedNow, 0, utc)
 
     private lateinit var db: BitoDatabase
+    private lateinit var vm: TodayViewModel
     private var openedId: String? = null
     private var reviewOpened = false
 
@@ -117,7 +122,7 @@ class TodayScreenTest {
             )
         }
 
-        val vm =
+        vm =
             TodayViewModel(
                 domainState,
                 habits,
@@ -424,5 +429,25 @@ class TodayScreenTest {
 
         val cardConfig = compose.onNodeWithTag("card-lectura").fetchSemanticsNode().config
         assertEquals(null, cardConfig.getOrNull(SemanticsProperties.ProgressBarRangeInfo))
+    }
+
+    @Test
+    fun `the header avatar is alive and the size the architect asked for`() {
+        compose.onNodeWithTag("today-habi", useUnmergedTree = true)
+            .assertWidthIsEqualTo(72.dp)
+            .assertHeightIsEqualTo(72.dp)
+    }
+
+    @Test
+    fun `logging consumes its cue so it never replays`() {
+        compose.onNodeWithTag("primary-cama", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertNull(vm.habiCue.value)
+    }
+
+    @Test
+    fun `the greeting survives next to the bigger avatar`() {
+        compose.onNodeWithTag("today-greeting", useUnmergedTree = true).assertExists()
     }
 }

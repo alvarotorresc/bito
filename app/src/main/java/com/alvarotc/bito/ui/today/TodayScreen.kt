@@ -58,8 +58,10 @@ import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.formatDayWithPattern
 import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiMotion
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.habi.rememberHabiMotion
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -96,6 +98,42 @@ fun TodayScreen(
                 // instead of re-showing on every return to Hoy (QA 2026-08-24).
                 viewModel.consumeLogged()
             }
+        }
+    }
+
+    val cue by viewModel.habiCue.collectAsStateWithLifecycle()
+    val ritual by viewModel.eyeRitual.collectAsStateWithLifecycle()
+    val habiMotion =
+        rememberHabiMotion(
+            pose = state.spec.pose,
+            mood = state.spec.mood,
+            personality = state.spec.personality,
+            onSound = viewModel::playHabiSound,
+        )
+
+    // Slot único (patrón `lastLogged`), no una cola: si una segunda escritura llega mientras la
+    // primera reacción todavía está en curso, la clave cambia, este efecto se cancela y su
+    // `finally` deja `cue` a null — lo que además cancela el efecto YA relanzado para la nueva
+    // clave (recompone con `cue == null` antes de volver a ver el nuevo valor). Las dos
+    // reacciones seguidas quedan truncadas, no solo la primera. Aceptado (ruling del controlador):
+    // construir una cola no es parte de esta tarea.
+    LaunchedEffect(cue?.id) {
+        val envelope = cue ?: return@LaunchedEffect
+        try {
+            habiMotion.play(envelope.cue, state.spec.personality)
+        } finally {
+            // Corre también al cancelar (navegar fuera): la reacción muere con la visita en vez de
+            // reproducirse al volver — mismo razonamiento que el snackbar de deshacer.
+            viewModel.consumeHabiCue()
+        }
+    }
+
+    LaunchedEffect(ritual) {
+        if (ritual == null) return@LaunchedEffect
+        try {
+            habiMotion.playEyeRitual()
+        } finally {
+            viewModel.consumeEyeRitual()
         }
     }
 
@@ -149,7 +187,7 @@ fun TodayScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi) }
+            item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi, habiMotion) }
             // Empty is only true poverty when there is nothing at all — a habit merely paused
             // still has a home in the section below, so it must not trip "create your first habit".
             if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty()) {
@@ -216,6 +254,7 @@ private fun TodayHeader(
     spec: HabiSpec,
     userName: String,
     onOpenHabi: () -> Unit,
+    habiMotion: HabiMotion,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -228,15 +267,19 @@ private fun TodayHeader(
                 stringResource(HabiVoice.greetingRes(spec.mood, spec.personality), userName.ifBlank { fallbackName }),
                 style = MaterialTheme.typography.labelMedium,
                 color = TintaSuave,
-                maxLines = 1,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.testTag("today-greeting"),
             )
         }
-        // Static in the corner (T9's `animated` gate off): an infinite bob/blink here would
-        // never let a plain waitForIdle() settle in TodayScreenTest — same reasoning that keeps
-        // StatsScreen's embedded commentator avatar frozen. The tap squash-and-stretch is
-        // untouched by this gate, so it still answers onOpenHabi.
-        HabiAvatar(spec, Modifier.size(56.dp), animated = false, onTap = onOpenHabi)
+        // viva: es la Habi del usuario, no un icono en la esquina. Los canales se leen dentro del
+        // `onDraw`, así que animarla no recompone Hoy.
+        HabiAvatar(
+            spec,
+            Modifier.size(72.dp).testTag("today-habi"),
+            onTap = onOpenHabi,
+            motion = habiMotion,
+        )
     }
 }
 
