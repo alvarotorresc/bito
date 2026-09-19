@@ -19,16 +19,24 @@ import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.data.targetChangeEntity
+import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.data.taskEventEntity
 import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import org.junit.After
 import org.junit.Before
 import org.junit.runner.RunWith
@@ -51,6 +59,7 @@ class BackupRoundTripTest {
 
     // Small Argon2 cost so tests stay fast — mirrors BackupCryptoTest's fastParams.
     private val fastParams = Argon2Params(memoryKib = 64, iterations = 1, parallelism = 1)
+    private val prettyJson = Json { prettyPrint = true }
 
     private val seededSettings =
         Settings(
@@ -323,4 +332,70 @@ class BackupRoundTripTest {
             assertTrue(persisted.logSoundEnabled)
             assertTrue(persisted.logHapticEnabled)
         }
+
+    @Test
+    fun `tasks and their events survive a full round trip`() =
+        runTest {
+            db.taskDao().upsert(
+                taskEntity(
+                    id = "t1",
+                    title = "Llamar al banco",
+                    firstStep = "Buscar el numero",
+                    dueKind = DueKind.DATE,
+                    dueDay = DAY_ZERO + 3,
+                    status = TaskStatus.DONE,
+                    doneAtMillis = 7_000L,
+                    doneOnDay = DAY_ZERO + 1,
+                ),
+            )
+            db.taskDao().upsert(taskEntity(id = "t2", title = "Papeleo", dueKind = DueKind.NONE, dueDay = null))
+            db.taskEventDao().insert(taskEventEntity(id = "e1", taskId = "t2", kind = TaskEventKind.POSTPONED))
+
+            val json = backup.exportJson(nowMillis = 9_000L)
+            db.taskEventDao().deleteAll()
+            db.taskDao().deleteAll()
+            backup.import(json)
+
+            assertEquals(2, db.taskDao().all().size)
+            assertEquals("Llamar al banco", db.taskDao().byId("t1")!!.title)
+            assertEquals(DAY_ZERO + 1, db.taskDao().byId("t1")!!.doneOnDay)
+            assertEquals(listOf("e1"), db.taskEventDao().all().map { it.id })
+        }
+
+    @Test
+    fun `re-exporting the same state is byte-identical`() =
+        runTest {
+            db.taskDao().upsert(taskEntity(id = "b"))
+            db.taskDao().upsert(taskEntity(id = "a"))
+            db.taskEventDao().insert(taskEventEntity(id = "e2", taskId = "a"))
+            db.taskEventDao().insert(taskEventEntity(id = "e1", taskId = "b"))
+
+            assertEquals(backup.exportJson(nowMillis = 9_000L), backup.exportJson(nowMillis = 9_000L))
+        }
+
+    @Test
+    fun `a v3 file written before tasks existed still imports, with empty lists`() =
+        runTest {
+            // Un fichero de la 1.0.0: mismo schemaVersion 3, sin las dos claves nuevas.
+            db.taskDao().upsert(taskEntity(id = "t1"))
+            val legacy = backup.exportJson(nowMillis = 9_000L).let(::stripTaskKeys)
+
+            backup.import(legacy)
+
+            assertTrue(db.taskDao().all().isEmpty())
+            assertTrue(db.taskEventDao().all().isEmpty())
+        }
+
+    /**
+     * Simula un fichero escrito antes de que `tasks`/`taskEvents` existieran: quita esas dos
+     * claves del objeto raiz operando sobre el arbol de kotlinx.serialization.json, nunca con
+     * manipulacion de texto (a diferencia de los `.replace` de version que ya usan los tests de
+     * v1/v2 mas arriba, que solo tachan campos SUELTOS de `settings`, no una clave de lista entera
+     * del objeto raiz).
+     */
+    private fun stripTaskKeys(json: String): String {
+        val root = Json.parseToJsonElement(json).jsonObject
+        val stripped = JsonObject(root.filterKeys { it != "tasks" && it != "taskEvents" })
+        return prettyJson.encodeToString(JsonObject.serializer(), stripped)
+    }
 }
