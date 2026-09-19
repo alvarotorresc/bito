@@ -7,10 +7,9 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
-import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.logicalClockAt
 import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.flow.first
-import java.time.LocalTime
 import java.time.ZoneId
 
 /**
@@ -39,7 +38,10 @@ object TrayRefresher {
      *
      * [minutesOfDay] picks the re-post's [ReminderFlavor] — wall-clock "now" by default, since a
      * refresh happens at the moment of the write, not at a scheduled hour. Injectable so tests
-     * don't depend on when they run.
+     * don't depend on when they run. `null` (the default) derives it from the SAME
+     * [logicalClockAt] read that resolves [today][com.alvarotc.bito.domain.LogicalClock.today] —
+     * a second, separate wall-clock read here could straddle midnight against that one, the
+     * exact drift [logicalClockAt] exists to rule out.
      */
     internal suspend fun refresh(
         context: Context,
@@ -48,21 +50,22 @@ object TrayRefresher {
         domainState: DomainStateRepository,
         rewards: RewardsRepository,
         treatAsActive: Boolean = false,
-        minutesOfDay: Int = localMinutesOfDay(),
+        minutesOfDay: Int? = null,
     ) {
         val prefs = settings.settings.first()
         val entities = habits.observeHabits().first()
         val owned = rewards.observeOwnedItems().first()
-        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+        val clock = logicalClockAt(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+        val flavorMinutesOfDay = minutesOfDay ?: clock.minutesOfDay
         val state =
             buildTodayUiState(
                 domainState.snapshot(),
                 entities.associate { it.id to it.sortOrder },
-                today,
+                clock.today,
                 prefs.personality,
                 owned,
                 prefs.userName,
-                minutesOfDay = minutesOfDay,
+                minutesOfDay = flavorMinutesOfDay,
                 reviewTimeMinutes = prefs.reviewTimeMinutes,
                 eyesPainted = prefs.habiEyesPainted,
             )
@@ -71,14 +74,8 @@ object TrayRefresher {
         if (payload == null) {
             Notifier.cancelReminder(context)
         } else if (treatAsActive || trayIsActive(context)) {
-            Notifier.showReminder(context, payload, prefs.personality, prefs.userName, minutesOfDay, state.spec)
+            Notifier.showReminder(context, payload, prefs.personality, prefs.userName, flavorMinutesOfDay, state.spec)
         }
-    }
-
-    /** Wall-clock minutes since midnight, in the device zone — the flavor input for "now". */
-    private fun localMinutesOfDay(): Int {
-        val time = LocalTime.now(ZoneId.systemDefault())
-        return time.hour * 60 + time.minute
     }
 
     /** Whether the GLOBAL tray is currently showing — never conjured, only refreshed or killed. */

@@ -195,6 +195,20 @@ class TrayRefresherTest {
             assertTrue((notification!!.flags and Notification.FLAG_ONLY_ALERT_ONCE) != 0)
         }
 
+    /** The cheap end-to-end check: Habi's face actually reaches the posted GLOBAL reminder. */
+    @Test
+    fun `a refreshed reminder carries Habi's face as its large icon`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1),
+            )
+
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, rewardsRepo, treatAsActive = true)
+
+            val notification = shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID)
+            assertNotNull(notification?.getLargeIcon())
+        }
+
     @Test
     fun `a refresh with no review pending cancels the review notification`() =
         runTest(dispatcher) {

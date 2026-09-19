@@ -11,6 +11,7 @@ import com.alvarotc.bito.ui.AppVisibility
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -85,5 +86,18 @@ class PerfectDayNotifierTest {
         val notifications = shadowOf(notificationManager).allNotifications
         assertEquals(1, notifications.size)
         assertEquals(NotificationChannels.CELEBRATIONS, notifications.single().channelId)
+    }
+
+    /** The cheap end-to-end check: Habi's face actually reaches the posted celebration. */
+    @Test
+    fun `maybeNotify carries Habi's face as its large icon`() {
+        NotificationChannels.ensure(context)
+        val container = AppContainer(context)
+        runBlocking { container.settings.update { it.copy(perfectDayCelebration = true) } }
+        AppVisibility.visible = false
+
+        runBlocking { PerfectDayNotifier.maybeNotify(context, container, reachedNow = true) }
+
+        assertNotNull(shadowOf(notificationManager).allNotifications.single().getLargeIcon())
     }
 }
