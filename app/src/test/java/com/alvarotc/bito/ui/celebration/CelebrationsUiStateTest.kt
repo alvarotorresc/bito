@@ -65,4 +65,12 @@ class CelebrationsUiStateTest {
         assertEquals(Personality.CHEERLEADER, result.personality)
         assertEquals("body-vainilla", result.spec.equipped.bodyColor)
     }
+
+    @Test
+    fun `the celebration avatar carries the eye level`() {
+        val result =
+            buildCelebrationsUiState(domainState(), Settings(habiEyesPainted = 1), emptyList(), emptyList(), TODAY)
+
+        assertEquals(1, result.spec.eyesPainted)
+    }
 }

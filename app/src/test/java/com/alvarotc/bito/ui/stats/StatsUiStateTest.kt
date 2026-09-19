@@ -99,6 +99,15 @@ class StatsUiStateTest {
     }
 
     @Test
+    fun `the commentator reads, and carries the eye level`() {
+        val state = domainState()
+
+        val result = buildStatsUiState(state, Personality.NEUTRA, TODAY, eyesPainted = 1)
+
+        assertEquals(1, result.eyesPainted)
+    }
+
+    @Test
     fun `the default state starts loading`() {
         // The screens' first-frame gates (QA 2026-08-23) rely on this default: if it ever flips,
         // both gates die silently while every other test keeps passing.

@@ -37,10 +37,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.BadgeDef
+import com.alvarotc.bito.domain.model.HabiCue
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.habi.rememberHabiMotion
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.stats.BadgeStrings
 import com.alvarotc.bito.ui.theme.Borde
@@ -86,9 +88,11 @@ fun PerfectDaySheet(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Static, not bobbing/blinking (T9 note): the sheet already has its own entrance
-            // animation, and an infinite transition here would never let a test settle.
-            HabiAvatar(state.spec, Modifier.size(120.dp), animated = false)
+            // The day-perfect choreography (biblia §9): the only celebration surface with a full
+            // gesture, and the only one with confetti (already in this sheet).
+            val motion = rememberHabiMotion(state.spec.pose, state.spec.mood, state.spec.personality)
+            LaunchedEffect(Unit) { motion.play(HabiCue.PERFECT_DAY, state.spec.personality) }
+            HabiAvatar(state.spec, Modifier.size(120.dp), motion = motion)
 
             Text(
                 stringResource(R.string.review_perfect_title),

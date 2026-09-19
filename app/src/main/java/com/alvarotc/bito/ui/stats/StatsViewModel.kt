@@ -38,7 +38,7 @@ class StatsViewModel(
             rewards.observeBadges(),
         ) { state, prefs, owned, badges ->
             val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-            buildStatsUiState(state, prefs.personality, today, owned, badges)
+            buildStatsUiState(state, prefs.personality, today, owned, badges, prefs.habiEyesPainted)
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUiState())
 

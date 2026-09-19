@@ -292,6 +292,13 @@ class StatsScreenTest {
     }
 
     @Test
+    fun `the commentator avatar is the reading pose`() {
+        setContent()
+
+        compose.onNodeWithTag("stats-commentator-habi", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun `the achievements card announces the count, not every badge name`() {
         // [F]: without the override, tapping into this auto-merging clickable card would
         // concatenate the header text with every BadgeChip's name in the grid.

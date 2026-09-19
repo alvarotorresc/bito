@@ -40,6 +40,9 @@ data class StatsUiState(
     val badges: List<BadgeUi> = emptyList(),
     val badgesUnlocked: Int = 0,
     val badgesTotal: Int = BadgeCatalog.size,
+    // 0/1/2 — el ritual del ojo (EyeRitual), directo desde Settings.habiEyesPainted. 2 por
+    // defecto: cualquier caller que no lo pase (todo test previo a T15) dibuja la Habi de siempre.
+    val eyesPainted: Int = 2,
 )
 
 /**
@@ -55,6 +58,7 @@ fun buildStatsUiState(
     today: LogicalDay,
     owned: List<CustomizationItemEntity> = emptyList(),
     badges: List<BadgeEntity> = emptyList(),
+    eyesPainted: Int = 2,
 ): StatsUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val equippedIds = owned.filter { it.equipped }.map { it.itemId }
@@ -73,5 +77,6 @@ fun buildStatsUiState(
         badges = badgeUis,
         badgesUnlocked = badgeUis.count { it.unlockedAtMillis != null },
         badgesTotal = BadgeCatalog.size,
+        eyesPainted = eyesPainted,
     )
 }

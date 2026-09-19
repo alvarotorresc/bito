@@ -52,6 +52,7 @@ import com.alvarotc.bito.domain.PerfectDaysSummary
 import com.alvarotc.bito.domain.WeekRow
 import com.alvarotc.bito.domain.WeekSummary
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
@@ -112,7 +113,7 @@ fun StatsScreen(
             verticalArrangement = Arrangement.spacedBy(20.dp),
         ) {
             Text(stringResource(R.string.nav_stats), style = MaterialTheme.typography.headlineLarge, color = Tinta)
-            CommentatorBubble(state.mood, state.personality, state.equipped)
+            CommentatorBubble(state.mood, state.personality, state.equipped, state.eyesPainted)
             PerfectDaysCard(state.perfectDays)
             WeekCard(state.week)
             StreaksSection(state.activeStreaks)
@@ -128,12 +129,21 @@ private fun CommentatorBubble(
     mood: Mood,
     personality: Personality,
     equipped: EquippedSet,
+    eyesPainted: Int,
 ) {
     SpeechBubble(
         speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
         text = stringResource(HabiVoice.bubbleRes(mood, personality)),
         modifier = Modifier.fillMaxWidth(),
-        avatar = { HabiAvatar(HabiSpec(mood, personality, equipped), Modifier.size(40.dp), animated = false) },
+        // Pose de "leyendo": inclinada sobre los datos, no de frente (catálogo, biblia §6).
+        // Quieta a propósito — la quietud aquí es arte, no un apaño de test.
+        avatar = {
+            HabiAvatar(
+                HabiSpec(mood, personality, equipped, eyesPainted = eyesPainted, pose = HabiPose.SEATED),
+                Modifier.size(40.dp).testTag("stats-commentator-habi"),
+                animated = false,
+            )
+        },
     )
 }
 

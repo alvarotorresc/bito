@@ -57,6 +57,7 @@ fun buildCelebrationsUiState(
                 mood = MoodEngine.moodOf(state, today, StatsEngine.lastActivityDay(state)),
                 personality = prefs.personality,
                 equipped = equippedSetOf(equippedIds),
+                eyesPainted = prefs.habiEyesPainted,
             ),
         personality = prefs.personality,
         userName = prefs.userName,
