@@ -10,6 +10,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.ui.habi.HabiSounds
@@ -21,6 +22,7 @@ class AppContainer(context: Context) {
     val journal = JournalRepository(database)
     val rewards = RewardsRepository(database)
     val domainState = DomainStateRepository(database)
+    val tasks = TasksRepository(database)
     val settings =
         SettingsRepository(
             PreferenceDataStoreFactory.create {
