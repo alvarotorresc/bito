@@ -177,6 +177,7 @@ class FocusScreenTest {
         compose.onNodeWithText("10 min", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("25 min", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("focus-start", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -198,6 +199,7 @@ class FocusScreenTest {
         // The entrance line, spoken once for a session actually started FROM this tap — default
         // spec is NEUTRA with a blank userName (habi_name_fallback = "champ").
         compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("focus-start", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

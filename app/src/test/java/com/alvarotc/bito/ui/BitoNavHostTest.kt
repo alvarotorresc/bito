@@ -2,6 +2,10 @@ package com.alvarotc.bito.ui
 
 import android.app.Application
 import android.app.NotificationManager
+import android.os.SystemClock
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
@@ -20,6 +24,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -160,6 +166,26 @@ class BitoNavHostTest {
      */
     private class FakeViewModelStoreOwner : ViewModelStoreOwner {
         override val viewModelStore = ViewModelStore()
+    }
+
+    /**
+     * Same limitation [com.alvarotc.bito.ui.review.ReviewScreenTest]'s own copy documents:
+     * `createComposeRule()` has no exposed `.activity` to read a working
+     * [OnBackPressedDispatcherOwner] back off of, so the only deterministic way to drive a system
+     * back press under this harness is to provide the composition OUR OWN dispatcher instance and
+     * invoke it ourselves from outside. Compose Navigation's own `NavHost` registers its back
+     * handling against whatever [LocalOnBackPressedDispatcherOwner] it finds, so wrapping the
+     * whole [BitoNavHost] in this owner (rather than a single screen, as `ReviewScreenTest` does)
+     * lets a test drive the NAV GRAPH's own back stack, not just one screen's `BackHandler`.
+     */
+    private class FakeBackDispatcherOwner : OnBackPressedDispatcherOwner {
+        private val lifecycleRegistry = LifecycleRegistry(this)
+        override val lifecycle: Lifecycle = lifecycleRegistry
+        override val onBackPressedDispatcher = OnBackPressedDispatcher()
+
+        init {
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        }
     }
 
     @Test
@@ -824,5 +850,113 @@ class BitoNavHostTest {
         compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /** T19 (M10 review round 1, minor #2): the same wiring proven from Today above, but through
+     * [com.alvarotc.bito.ui.tasks.TasksScreen]'s own "Empezar" — its `onStartFocus` reaching the
+     * same route with the row's own id, not just [com.alvarotc.bito.ui.tasks.TasksScreen]'s own
+     * callback in isolation ([com.alvarotc.bito.ui.tasks.TasksScreenTest]'s own coverage). */
+    @Test
+    fun `starting a task from the tasks list opens the focus screen`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-start-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-start-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * M10 review round 1 (Important #1): without `popUpTo`, "seguir con la otra" pushed a SECOND
+     * "focus" entry on top of the conflict one instead of replacing it — system back from the
+     * live session then landed back on the conflict screen (`busyWith` still non-null), reopening
+     * the very same sheet with no way out while the other session stayed alive. Walks the exact
+     * reported path: tasks list -> `focus?taskId=t2` (conflict, t1's session already live) ->
+     * "seguir con la otra" -> `focus` (bare, now watching t1) -> ATRAS -> must land back on the
+     * tasks list, never on the conflict sheet again.
+     */
+    @Test
+    fun `keeping the other session during a conflict does not trap back navigation`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Tarea uno", createdOnDay = today))
+            container.tasks.create(taskEntity(id = "t2", title = "Tarea dos", createdOnDay = today))
+            val now = System.currentTimeMillis()
+            val elapsed = SystemClock.elapsedRealtime()
+            container.focus.start(
+                FocusSession(
+                    taskId = "t1",
+                    startedAtMillis = now,
+                    endsAtMillis = now + 10 * 60_000L,
+                    endsAtElapsed = elapsed + 10 * 60_000L,
+                    bootMillis = FocusClock.bootSignatureOf(now, elapsed),
+                ),
+            )
+        }
+        NavRequests.open("tasks")
+        val backOwner = FakeBackDispatcherOwner()
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides backOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-start-t2", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-start-t2", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertExists()
+
+        // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
+        // touch gestures under this Robolectric harness — invoking the node's own OnClick
+        // semantics action directly is what actually proves the tap wires through.
+        compose.onNodeWithTag("focus-busy-keep")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists() // now watching t1's live session
+        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+
+        // Not trapped on the conflict: back from the live session lands on the tasks list, and
+        // the busy sheet — which a stacked (not replaced) conflict entry would have reopened —
+        // never comes back.
+        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("task-start-t2", useUnmergedTree = true).assertExists()
     }
 }

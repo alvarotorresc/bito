@@ -167,15 +167,14 @@ fun FocusScreen(
 
     val busyWith = state.busyWith
     if (busyWith != null) {
-        // No dismiss without deciding: this is a two-way fork, not a cancellable prompt. A scrim
-        // tap or the system back button resolves to the non-destructive branch — the same outcome
-        // as tapping "seguir con la otra" — rather than leaving the sheet stuck open on the next
-        // recomposition (busyWith stays true until the user actually picks one of the two exits).
+        // A scrim tap or the system back button is a THIRD way out, not a rename of "seguir con
+        // la otra": this screen's own requestedTaskId never changes, so keepOther() here would
+        // leave busyWith non-null and the sheet would just reopen on the very next recomposition
+        // — no way out while the other session stays alive (M10 review round 1). Dismissing backs
+        // all the way out of the screen instead, writing nothing — the same as any other "changed
+        // my mind before deciding" gesture.
         ModalBottomSheet(
-            onDismissRequest = {
-                viewModel.keepOther()
-                onKeepOther()
-            },
+            onDismissRequest = onClose,
             containerColor = Tarjeta,
         ) {
             Column(Modifier.padding(20.dp).testTag("focus-busy-sheet")) {

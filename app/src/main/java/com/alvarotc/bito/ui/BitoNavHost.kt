@@ -340,8 +340,17 @@ fun BitoNavHost(container: AppContainer) {
                     // keepOther() no escribe nada — el conflicto se resuelve solo a favor de la
                     // sesion viva, que este estado no lleva id (solo su titulo en busyWith). Volver
                     // a la ruta desnuda es el mismo camino que ya usa la notificacion permanente
-                    // para resolver contra la sesion viva, sin anadir un id a FocusUiState.
-                    onKeepOther = { nav.navigate("focus") },
+                    // para resolver contra la sesion viva, sin anadir un id a FocusUiState. popUpTo
+                    // inclusive reemplaza esta entrada en vez de apilar una segunda "focus": sin
+                    // esto, ATRAS desde la sesion viva volvia a la pantalla del conflicto (con
+                    // busyWith todavia no nulo), que reabria la misma hoja y dejaba al usuario sin
+                    // salida mientras la otra sesion siguiera en marcha.
+                    onKeepOther = {
+                        nav.navigate("focus") {
+                            popUpTo("focus?taskId={taskId}") { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
                 )
             }
         }
