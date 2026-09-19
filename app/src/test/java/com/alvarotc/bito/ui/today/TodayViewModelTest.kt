@@ -317,14 +317,41 @@ class TodayViewModelTest {
             val first = vm.habiCue.value
             assertEquals(HabiCue.LOGGED, first?.cue)
 
-            vm.consumeHabiCue()
+            vm.consumeHabiCue(first!!.id)
             assertNull(vm.habiCue.value)
 
             vm.tapPrimary(state().cards.single { it.id == "h1" })
             advanceUntilIdle()
             val second = vm.habiCue.value
             assertEquals(HabiCue.LOGGED, second?.cue)
-            assertNotEquals(first!!.id, second!!.id)
+            assertNotEquals(first.id, second!!.id)
+        }
+
+    @Test
+    fun `consuming a stale cue id leaves a newer cue in place`() =
+        runTest {
+            // La guarda del ruling: un `consumeHabiCue` que llega para un id que ya no es el que
+            // hay en el slot no hace nada — solo el id vigente lo limpia. Esto es lo que evita que
+            // el `finally` de una reaccion interrumpida se lleve por delante la reaccion nueva que
+            // ya esta en curso.
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.COUNT, direction = Direction.AT_LEAST, target = 10, step = 1, createdOnDay = today),
+            )
+
+            vm.tapPrimary(state().cards.single { it.id == "h1" })
+            advanceUntilIdle()
+            val first = vm.habiCue.value!!
+
+            vm.tapPrimary(state().cards.single { it.id == "h1" })
+            advanceUntilIdle()
+            val second = vm.habiCue.value!!
+            assertNotEquals(first.id, second.id)
+
+            vm.consumeHabiCue(first.id)
+            assertEquals(second, vm.habiCue.value)
+
+            vm.consumeHabiCue(second.id)
+            assertNull(vm.habiCue.value)
         }
 
     @Test
@@ -349,7 +376,7 @@ class TodayViewModelTest {
             advanceUntilIdle()
             assertEquals(HabiCue.ALL_DONE, vm.habiCue.value?.cue)
 
-            vm.consumeHabiCue()
+            vm.consumeHabiCue(vm.habiCue.value!!.id)
             // Una escritura real mas que NO cambia el anillo (mismo valor ya registrado) no
             // vuelve a disparar ALL_DONE. reorder() no sirve para esto: no pasa por write().
             vm.setExactToday(state().cards.single { it.id == "h1" }, 1)

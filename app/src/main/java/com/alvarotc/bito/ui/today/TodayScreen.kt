@@ -112,11 +112,12 @@ fun TodayScreen(
         )
 
     // Slot único (patrón `lastLogged`), no una cola: si una segunda escritura llega mientras la
-    // primera reacción todavía está en curso, la clave cambia, este efecto se cancela y su
-    // `finally` deja `cue` a null — lo que además cancela el efecto YA relanzado para la nueva
-    // clave (recompone con `cue == null` antes de volver a ver el nuevo valor). Las dos
-    // reacciones seguidas quedan truncadas, no solo la primera. Aceptado (ruling del controlador):
-    // construir una cola no es parte de esta tarea.
+    // primera reacción todavía está en curso, la clave cambia y este efecto se cancela antes de
+    // llegar a su propio `finally`. Consumir por id (el capturado en `envelope`, no releyendo
+    // `cue` en ese momento) es lo que evita que ese `finally` borre el envelope nuevo que ya está
+    // en el slot: si el id no coincide con el que sigue ahí, no hace nada. Sigue siendo lossy bajo
+    // solape — la reacción vieja se corta a medias — pero la nueva ya no se pierde con ella.
+    // Aceptado (ruling del controlador): construir una cola no es parte de esta tarea.
     LaunchedEffect(cue?.id) {
         val envelope = cue ?: return@LaunchedEffect
         try {
@@ -124,16 +125,16 @@ fun TodayScreen(
         } finally {
             // Corre también al cancelar (navegar fuera): la reacción muere con la visita en vez de
             // reproducirse al volver — mismo razonamiento que el snackbar de deshacer.
-            viewModel.consumeHabiCue()
+            viewModel.consumeHabiCue(envelope.id)
         }
     }
 
     LaunchedEffect(ritual) {
-        if (ritual == null) return@LaunchedEffect
+        val transition = ritual ?: return@LaunchedEffect
         try {
             habiMotion.playEyeRitual()
         } finally {
-            viewModel.consumeEyeRitual()
+            viewModel.consumeEyeRitual(transition)
         }
     }
 

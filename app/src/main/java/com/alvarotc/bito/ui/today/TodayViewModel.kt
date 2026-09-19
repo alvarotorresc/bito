@@ -34,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.util.UUID
@@ -126,12 +127,21 @@ class TodayViewModel(
         cue.value = HabiCueEnvelope(next, nextCueId++)
     }
 
-    fun consumeHabiCue() {
-        cue.value = null
+    /**
+     * Consume solo si el slot todavía sostiene el envelope que se lanzó (por [id]): si mientras
+     * tanto ya llegó uno nuevo, este consume es un no-op y el nuevo queda intacto. Sin esta guarda
+     * un cue interrumpido por otro más reciente borraba el slot al terminar de deshacerse, y eso
+     * de rebote cancelaba también el efecto ya relanzado para el nuevo id (misma clave `null` que
+     * su condición de salida). Sigue siendo un slot único, no una cola: bajo solape la reacción
+     * vieja se corta, pero la nueva ya no se pierde con ella.
+     */
+    fun consumeHabiCue(id: Long) {
+        cue.update { if (it?.id == id) null else it }
     }
 
-    fun consumeEyeRitual() {
-        ritual.value = null
+    /** Misma guarda que [consumeHabiCue], por identidad de valor en vez de id: no hay uno propio. */
+    fun consumeEyeRitual(transition: EyeTransition) {
+        ritual.update { if (it == transition) null else it }
     }
 
     /** El sonido lo dispara la coreografía (HabiMotion), no el VM: este es el único conducto. */
