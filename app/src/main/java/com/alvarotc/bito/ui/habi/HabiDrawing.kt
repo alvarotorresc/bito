@@ -429,7 +429,8 @@ data class HabiBodyMotion(
 /**
  * El reposo del cuerpo para cada pose del día: una POSE, no una animación (biblia §5, «tres
  * estados, deliberadamente tres, para no disparar el arte»). [HabiMotion] interpola entre dos de
- * estos con PoseSpring; el widget y la notificación se quedan en el valor plano.
+ * estos con PoseSpring; el widget y la notificación se quedan en el valor plano, que
+ * [renderHabiBitmap] les aplica a partir de `spec.pose`.
  */
 internal fun poseBodyMotion(pose: HabiPose): HabiBodyMotion {
     val raw =
@@ -548,6 +549,11 @@ fun DrawScope.drawHabi(
 /**
  * Offscreen render for consumers that need a plain bitmap (the widget, T15). Transparent background.
  *
+ * Aplica [poseBodyMotion] de `spec.pose` por su cuenta: sus consumidores son estaticos y no
+ * tienen un [HabiMotion] que interpole el transform del cuerpo, asi que sin esto una Habi
+ * dormida o en espera se pintaria de pie salvo por el bulto de la silueta y los parpados.
+ * `poseBodyMotion(STANDING)` es la identidad, asi que el caso comun no cambia.
+ *
  * Real Android handles the internal `Bitmap.createBitmap(DisplayMetrics, ...)` overload Compose's
  * `ImageBitmap(w, h)` calls just fine. Robolectric does not, under its default LEGACY graphics mode:
  * that overload isn't shadowed there and falls through to a real native call that fails. Any
@@ -566,7 +572,7 @@ fun renderHabiBitmap(
         Canvas(imageBitmap),
         Size(sizePx.toFloat(), sizePx.toFloat()),
     ) {
-        drawHabi(spec, grain = grain)
+        drawHabi(spec, body = poseBodyMotion(spec.pose), grain = grain)
     }
     return imageBitmap.asAndroidBitmap()
 }
@@ -574,7 +580,7 @@ fun renderHabiBitmap(
 /** La silueta del cuerpo, con la base más lastrada en las poses asentadas. */
 private fun bodyPath(
     vp: HabiViewport,
-    pose: HabiPose = HabiPose.STANDING,
+    pose: HabiPose,
 ): Path {
     val bulge = BODY_BULGE + if (pose == HabiPose.SEATED || pose == HabiPose.SLEEPING) SEATED_EXTRA_BULGE else 0f
     return eggPath(vp, BODY_CX, BODY_CY, BODY_RX, BODY_RY, bulge)

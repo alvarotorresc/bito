@@ -876,6 +876,39 @@ class HabiDrawingTest {
         assertEquals(HabiPose.entries.size, seen.size)
     }
 
+    /**
+     * El widget y la notificacion pintan la POSE, no solo el bulto de la silueta y los parpados:
+     * `renderHabiBitmap` aplica `poseBodyMotion(spec.pose)` por su cuenta, porque sus consumidores
+     * son estaticos y no tienen un [HabiMotion] que se la pase. Pixel a pixel contra el render
+     * equivalente con `body` explicito, y distinto del de STANDING para que la igualdad no sea
+     * trivial.
+     */
+    @Test
+    fun `the offscreen bitmap paints the pose, not the resting body`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(), pose = HabiPose.WAITING)
+
+        val rendered = renderHabiBitmap(spec, size)
+        val explicit = renderWithBody(spec, size, poseBodyMotion(HabiPose.WAITING))
+        val standing = renderHabiBitmap(spec.copy(pose = HabiPose.STANDING), size)
+
+        assertEquals("el bitmap de la pose no coincide con el render con body explicito", 0, differingPixels(explicit, rendered))
+        assertNotEquals("la pose de espera pinta igual que STANDING", 0, differingPixels(standing, rendered))
+    }
+
+    /** Numero de pixeles en los que dos bitmaps del mismo tamaño difieren. */
+    private fun differingPixels(
+        a: Bitmap,
+        b: Bitmap,
+    ): Int {
+        var diff = 0
+        for (y in 0 until a.height) {
+            for (x in 0 until a.width) {
+                if (a.getPixel(x, y) != b.getPixel(x, y)) diff++
+            }
+        }
+        return diff
+    }
+
     @Test
     fun `sleeping widens the shadow and standing does not`() {
         val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
@@ -931,9 +964,10 @@ class HabiDrawingTest {
 
     /**
      * Biblia §5/§6, «se duerme»: SLEEPING activa la misma variante de parpados cerrados que
-     * `closedEyes` (onboarding 7b), sin duplicar el arte. `renderHabiBitmap` deja `body` en su
-     * default (`Rest`): esto aisla el cambio de parpados del transform del cuerpo — EYE_Y/EYE_DX
-     * no dependen de la pose, asi que ambos renders colocan el arco en el mismo pixel.
+     * `closedEyes` (onboarding 7b), sin duplicar el arte. Los dos renders pasan `Rest` a mano:
+     * esto aisla el cambio de parpados del transform del cuerpo — EYE_Y/EYE_DX no dependen de la
+     * pose, asi que con el mismo `body` ambos colocan el arco en el mismo pixel. (`renderHabiBitmap`
+     * ya no sirve aqui: deriva el `body` de la pose, y el de SLEEPING movería el arco.)
      */
     @Test
     fun `sleeping closes the eyes like the closed-lid variant`() {
@@ -944,8 +978,8 @@ class HabiDrawingTest {
         val (lidX, lidY) = leftClosedLidPixel(size)
         val (lashX, lashY) = leftLashPixel(size)
 
-        val sleepingBitmap = renderHabiBitmap(sleeping, size)
-        val closedBitmap = renderHabiBitmap(closed, size)
+        val sleepingBitmap = renderWithBody(sleeping, size, HabiBodyMotion.Rest)
+        val closedBitmap = renderWithBody(closed, size, HabiBodyMotion.Rest)
 
         // Ni el iris pintado ni el ovalo abierto asoman en el centro del ojo.
         assertNotEquals(Tinta.toArgb(), sleepingBitmap.getPixel(eyeX, eyeY))
@@ -954,13 +988,19 @@ class HabiDrawingTest {
         assertEquals(closedBitmap.getPixel(lashX, lashY), sleepingBitmap.getPixel(lashX, lashY))
     }
 
+    /**
+     * Cerrar los parpados es cosa de UNA pose, y del transform del cuerpo no depende: por eso los
+     * cinco renders pasan `Rest` a mano en vez de ir por `renderHabiBitmap`, que desde la pose
+     * deriva un `body` propio (el de TIPPED, 78 grados, sacaria el ojo del pixel de reposo y el
+     * test dejaria de hablar de parpados).
+     */
     @Test
     fun `every pose except sleeping keeps the eyes open`() {
         val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
         val (x, y) = leftEyePixel(size)
 
         for (pose in HabiPose.entries.filterNot { it == HabiPose.SLEEPING }) {
-            val bitmap = renderHabiBitmap(spec.copy(pose = pose), size)
+            val bitmap = renderWithBody(spec.copy(pose = pose), size, HabiBodyMotion.Rest)
             assertEquals("$pose deberia tener el ojo abierto", Tinta.toArgb(), bitmap.getPixel(x, y))
         }
     }

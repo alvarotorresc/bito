@@ -9,8 +9,9 @@ import java.util.Objects
 
 /**
  * La cara de Habi como icono grande de una notificación (catálogo, biblia §6): el MISMO
- * `renderHabiBitmap` que pinta el widget, así que sombra y textura vienen incluidas — el transform
- * vive dentro de `drawHabi`, no en un `graphicsLayer` que un canvas por software no tendría.
+ * `renderHabiBitmap` que pinta el widget, así que sombra, textura y la pose del día vienen
+ * incluidas — el transform del cuerpo vive dentro de `drawHabi`, no en un `graphicsLayer` que un
+ * canvas por software no tendría, y `renderHabiBitmap` lo deriva de `spec.pose`.
  *
  * 128x128 px: la guía pide ~64 dp, el sistema reescala, y 128 sobra para una geometría vectorial
  * sin detalle fino. En ARGB_8888 son 64 KB.
