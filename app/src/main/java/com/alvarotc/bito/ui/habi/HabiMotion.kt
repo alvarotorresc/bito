@@ -287,6 +287,8 @@ class HabiMotion internal constructor(
      * Dispara la coreografia del cue y su sonido, cancelando la anterior. **Suspende hasta que el
      * gesto ha asentado**, como [settleInto]: quien secuencia «gesto y luego texto» lo necesita, y
      * quien no quiera esperar lo lanza en su propio scope.
+     *
+     * Un cue mueve los CANALES y nada mas: la pose es de la pantalla y solo entra por [settleInto].
      */
     suspend fun play(
         cue: HabiCue,
@@ -308,7 +310,14 @@ class HabiMotion internal constructor(
         startGesture { runPoke(touch, personality) }
     }
 
-    /** La pose del dia cambia con [PoseSpring]: lento, sin rebote, casi un suspiro. */
+    /**
+     * La pose del dia cambia con [PoseSpring]: lento, sin rebote, casi un suspiro.
+     *
+     * **Esta es la UNICA via por la que la pose se mueve.** La manda siempre la pantalla, que la
+     * deriva de la fase del dia; ninguna coreografia la toca por su cuenta. Dos fuentes de la pose
+     * se desincronizan sola una vez: crear un habito nuevo despues de «todos hechos» devuelve la
+     * fase a despierta mientras el gesto se habria quedado en la de espera.
+     */
     suspend fun settleInto(pose: HabiPose) {
         if (poseSeeded && pose == this.pose) return
         this.pose = pose
@@ -456,7 +465,11 @@ class HabiMotion internal constructor(
         }
     }
 
-    /** Todo hecho (~520 ms): estiron, bote y termina ASENTADA — el dia ya no pide nada. */
+    /**
+     * Todo hecho (~520 ms): estiron y bote, la reaccion grande. **No asienta la pose**: que el dia
+     * ya no pida nada lo dice el spec, no este gesto. Cuando la pantalla re-derive su fase el
+     * [settleInto] de turno traera la pose de espera.
+     */
     private suspend fun playAllDone(personality: Personality) {
         val gain = amplitudeGain(personality)
         coroutineScope {
@@ -465,7 +478,6 @@ class HabiMotion internal constructor(
         }
         // El unico golpecito del catalogo: el de ESTE aterrizaje.
         hopOnce(ALL_DONE_HOP * gain, landingSound = SOUND_BUMP)
-        settleInto(HabiPose.WAITING)
     }
 
     /**

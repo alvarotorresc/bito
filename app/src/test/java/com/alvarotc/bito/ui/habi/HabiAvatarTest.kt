@@ -44,6 +44,11 @@ class HabiAvatarTest {
     @get:Rule
     val compose = createComposeRule()
 
+    private companion object {
+        const val TOLERANCE = 0.001f
+        const val WAIT_MS = 10_000L
+    }
+
     private fun setContent(mood: Mood) {
         compose.setContent {
             BitoTheme {
@@ -141,6 +146,52 @@ class HabiAvatarTest {
         compose.waitUntil { played.isNotEmpty() }
 
         assertEquals(listOf(HabiSound.LOG), played)
+    }
+
+    /**
+     * La pose tiene UNA sola fuente: la pantalla, que la deriva de la fase del dia. Un cue mueve
+     * los canales del gesto y nada mas — si la reaccion grande asentara la pose por su cuenta, las
+     * dos fuentes se desincronizarian a la primera (crear un habito nuevo tras «todos hechos»
+     * devuelve la fase a despierta mientras el gesto se habria quedado en la de espera).
+     */
+    @Test
+    fun `a cue never moves the pose, only settleInto does`() {
+        var motion: HabiMotion? = null
+        var scope: CoroutineScope? = null
+        compose.setContent {
+            BitoTheme {
+                scope = rememberCoroutineScope()
+                motion = rememberHabiMotion(HabiPose.STANDING, Mood.NORMAL, Personality.NEUTRA)
+                HabiAvatar(
+                    HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
+                    Modifier.size(72.dp),
+                    motion = motion,
+                )
+            }
+        }
+        compose.waitForIdle()
+
+        var played = false
+        scope!!.launch {
+            motion!!.play(HabiCue.ALL_DONE, Personality.NEUTRA)
+            played = true
+        }
+        compose.waitUntil(timeoutMillis = WAIT_MS) { played }
+
+        val standing = poseBodyMotion(HabiPose.STANDING)
+        assertEquals(standing.scaleX, motion!!.body().scaleX, TOLERANCE)
+        assertEquals(standing.scaleY, motion!!.body().scaleY, TOLERANCE)
+
+        var settled = false
+        scope!!.launch {
+            motion!!.settleInto(HabiPose.WAITING)
+            settled = true
+        }
+        compose.waitUntil(timeoutMillis = WAIT_MS) { settled }
+
+        val waiting = poseBodyMotion(HabiPose.WAITING)
+        assertEquals(waiting.scaleX, motion!!.body().scaleX, TOLERANCE)
+        assertEquals(waiting.scaleY, motion!!.body().scaleY, TOLERANCE)
     }
 
     @Test
