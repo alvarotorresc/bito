@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicLong
 
 // Justo por encima de los ~320 ms del asentimiento de HabiMotion.playLogged (el gesto CORTO,
 // no el bostezo de playSealed de ~900 ms), para que dos filas seguidas del mismo lote no se
@@ -64,8 +65,11 @@ class ReviewViewModel(
     val habiCue: StateFlow<HabiCueEnvelope?> = cue.asStateFlow()
 
     // Id monótono: dos SEALED seguidos (un lote) son dos reacciones, no una repetida que el
-    // LaunchedEffect de la pantalla se comería por tener la misma clave.
-    private var nextCueId = 0L
+    // LaunchedEffect de la pantalla se comería por tener la misma clave. Atómico porque [emit] se
+    // llama desde DOS corrutinas de [defaultDispatcher] a la vez (la escritura y el asentimiento
+    // del lote, que va por su propio `launch`): un `id++` de campo suelto puede repetir valor ahí,
+    // y un id repetido es exactamente la reacción que la pantalla se come.
+    private val nextCueId = AtomicLong(0L)
 
     val uiState: StateFlow<ReviewUiState> =
         combine(
@@ -111,7 +115,7 @@ class ReviewViewModel(
         }
 
     private fun emit(next: HabiCue) {
-        cue.value = HabiCueEnvelope(next, nextCueId++)
+        cue.value = HabiCueEnvelope(next, nextCueId.getAndIncrement())
     }
 
     /** Misma guarda que [com.alvarotc.bito.ui.today.TodayViewModel.consumeHabiCue], por [id]. */
