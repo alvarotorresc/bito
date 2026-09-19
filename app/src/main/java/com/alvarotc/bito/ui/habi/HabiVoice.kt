@@ -9,8 +9,8 @@ import com.alvarotc.bito.domain.model.Personality
 /**
  * Resolves which string resource Habi speaks in each of its twelve voiced contexts, by
  * [Personality] and (for three of the twelve) [Mood]. `res/values{,-es}/strings_habi.xml` holds
- * the 69 mapped strings plus [R.string.habi_name_fallback] — M9 draft copy, pending architect
- * validation (docs/07-textos-personalidades.md).
+ * the 69 mapped strings plus [R.string.habi_name_fallback] — final copy, validated against
+ * `docs/07-textos-personalidades.md`.
  *
  * - [bubbleRes] — the Stats commentator's card AND the Habi screen's own bubble (T11) both used
  *   to share this mapping; T13 splits the Habi screen off into [homeRes] instead, since the

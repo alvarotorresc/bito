@@ -36,8 +36,9 @@ object TrayRefresher {
      * GLOBAL tray's own notification refreshes it even if the system no longer lists it as
      * active (action buttons, unlike the content tap, don't auto-cancel).
      *
-     * [minutesOfDay] picks the re-post's [ReminderFlavor] — wall-clock "now" by default, since a
-     * refresh happens at the moment of the write, not at a scheduled hour. Injectable so tests
+     * [minutesOfDay] picks the re-post's [ReminderFlavor] AND, through `buildTodayUiState`, the
+     * day phase behind Habi's pose in the icon — wall-clock "now" by default, since a refresh
+     * happens at the moment of the write, not at a scheduled hour. Injectable so tests
      * don't depend on when they run. `null` (the default) derives it from the SAME
      * [logicalClockAt] read that resolves [today][com.alvarotc.bito.domain.LogicalClock.today] —
      * a second, separate wall-clock read here could straddle midnight against that one, the

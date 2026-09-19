@@ -900,7 +900,7 @@ private fun sparklePath(
 private fun Color.darken(factor: Float = PATTERN_TINT_FACTOR): Color =
     copy(red = red * factor, green = green * factor, blue = blue * factor)
 
-/** Variante aclarada de un tono — multiplica RGB hacia el blanco, alfa intacta. Espejo de `darken`. */
+/** Lightened variant of a body tone — multiply RGB toward white, alpha untouched. Mirror of `darken`. */
 internal fun Color.lighten(factor: Float): Color =
     copy(
         red = (red * factor).coerceAtMost(1f),

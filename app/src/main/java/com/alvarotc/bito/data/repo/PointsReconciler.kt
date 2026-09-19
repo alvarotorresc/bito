@@ -16,12 +16,21 @@ import com.alvarotc.bito.domain.model.PointsReason
 /**
  * What a [PointsReconciler.reconcile] pass granted: nothing here was owned
  * before the call, so callers can react to it (e.g. celebrate a badge) without
- * re-deriving state themselves.
+ * re-deriving state themselves. [eyeRitual] is the odd one out — it is not a
+ * grant but the eye ritual's level change, and it reports only once per jump.
  */
 data class ReconcileResult(
     val newEvents: List<PointsEvent> = emptyList(),
     val newItems: Set<String> = emptySet(),
     val newBadges: Set<String> = emptySet(),
+    /**
+     * The eye ritual's jump, when this pass healed one (biblia §4). In this version only
+     * `TodayViewModel` and `OnboardingViewModel` consume it: they are the two screens that stage
+     * the rite. Every other caller of [PointsReconciler.reconcile] — detail, review, widget,
+     * quick action, the Habi screen — heals the level all the same and simply drops the
+     * transition, so the eye shows up already painted, with no ceremony. That is deliberate: the
+     * rite belongs where the user is looking at Habi, not to a tray tap.
+     */
     val eyeRitual: EyeTransition? = null,
 ) {
     /** Whether this pass just granted the perfect-day points event for [day]. */
