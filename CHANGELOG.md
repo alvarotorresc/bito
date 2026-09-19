@@ -2,6 +2,27 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.1.0] - 2026-09-19
+
+Habi deja de ser una mascota en la esquina y pasa a ser el alma de la app.
+
+### Added
+
+- **El ritual del ojo**: tu Habi nace con los ojos en blanco. El primero se pinta al crear tu primer hábito; el segundo, la primera vez que encadenas siete. No se despintan nunca — perder una racha no te quita nada.
+- **Habi tiene su propio día**: despierta por la mañana, se sienta a esperar el cierre cuando ya no queda nada (o llega tu hora de repaso) y se duerme cuando sellas. Con dos líneas suyas al día, ni una más.
+- **Reacciona con el cuerpo**: asiente cuando registras, se estira cuando terminas el día, se vuelca y se endereza sola cuando fallas, y bosteza al dormirse. Cada personalidad lo hace a su manera.
+- **Su cara en las notificaciones**, con el ánimo de la semana y lo que lleve puesto.
+- **Sombra en el suelo**, también en el widget: ahora pesa y tiene sitio.
+
+### Changed
+
+- **Se mueve desde la base, no desde el centro**: gira, se balancea y se asienta apoyada en el suelo. Se acabó el subir y bajar.
+- **Textura de objeto pintado**: mate, con grano, como cerámica pintada a mano. Igual en la pantalla, en el widget y en la notificación.
+- **Voz nueva entera**: seis sonidos cortos hechos de cero, uno por momento. Los anteriores salen, el maullido incluido.
+- **Textos nuevos donde Habi habla de sí misma**: el ojo que se pinta, su día y el hito de los siete días, en las tres personalidades y en los dos idiomas.
+- **Habi en Hoy es más grande y está viva**, junto al saludo de siempre.
+- **La hoja de cerrar el día es más corta**: ella ya se está durmiendo mientras la lees.
+
 ## [1.0.0] - 2026-08-26
 
 La primera versión para compartir. Bito ya se instala en el móvil de cualquiera.
