@@ -371,7 +371,8 @@ class FocusViewModelTest {
     fun `a session whose task was deleted leaves without noise`() =
         runFocusTest {
             tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
-            val vm = newViewModel("t1")
+            val presence = FakeFocusPresence()
+            val vm = newViewModel("t1", presence)
             activate(vm)
             vm.start()
             settle()
@@ -381,6 +382,9 @@ class FocusViewModelTest {
             settle()
 
             assertTrue(vm.uiState.value.gone)
+            assertNull(focusStore.session.first())
+            assertEquals(1, presence.clearCalls)
+            assertTrue(db.taskEventDao().all().isEmpty()) // ni DONE ni ATTEMPT: la tarea ya no esta
         }
 
     @Test
