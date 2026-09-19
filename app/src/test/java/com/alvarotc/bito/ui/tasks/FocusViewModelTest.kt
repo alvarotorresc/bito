@@ -343,6 +343,32 @@ class FocusViewModelTest {
         }
 
     @Test
+    fun `requesting another task while the previous one already expired shows no conflict and steals it silently`() =
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", title = "Tarea uno", createdOnDay = today))
+            tasksRepo.create(taskEntity(id = "t2", title = "Tarea dos", createdOnDay = today))
+            val vm1 = newViewModel("t1")
+            activate(vm1)
+            vm1.select(5)
+            vm1.start()
+            settle()
+
+            currentNow += 6 * 60_000L // la sesion de t1 ya vencio
+
+            val vm2 = newViewModel("t2")
+            activate(vm2)
+            assertNull(vm2.uiState.value.busyWith)
+            assertFalse(vm2.uiState.value.running)
+
+            vm2.start()
+            settle()
+
+            val session = focusStore.session.first()!!
+            assertEquals("t2", session.taskId)
+            assertTrue(db.taskEventDao().all().none { it.taskId == "t1" })
+        }
+
+    @Test
     fun `keeping the other one touches nothing`() =
         runFocusTest {
             tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))

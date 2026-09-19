@@ -207,6 +207,9 @@ class FocusViewModel(
 
         if (requestedTaskId != null && requestedTaskId != session.taskId) {
             val requestedTask = snapshot.state.tasks.find { it.id == requestedTaskId } ?: return gone()
+            // El conflicto solo es tal si la sesion ajena sigue VIVA: una vencida no bloquea nada,
+            // asi que no hay hoja que ofrecer — la pantalla se ve como si esa sesion no existiera.
+            val otherAlive = FocusClock.remainingMillis(session, nowMillis, elapsed()) > 0
             return FocusUiState(
                 taskId = requestedTask.id,
                 title = requestedTask.title,
@@ -214,7 +217,7 @@ class FocusViewModel(
                 spec = spec,
                 userName = userName,
                 selectedMinutes = extra.selectedMinutes,
-                busyWith = runningTask.title,
+                busyWith = if (otherAlive) runningTask.title else null,
                 loading = false,
             )
         }
@@ -236,12 +239,21 @@ class FocusViewModel(
         selection.value = minutes
     }
 
-    /** Nunca pisa en silencio la sesion viva de OTRA tarea: eso es el conflicto, no un arranque. */
+    /**
+     * Nunca pisa en silencio la sesion VIVA de otra tarea: eso es el conflicto, no un arranque.
+     * Una sesion ajena ya vencida no bloquea — se pisa aqui mismo con [beginSession], sin escribir
+     * ATTEMPT: nadie sabe si esa sesion se gano o se abandono, el mismo "no se inventa lo que paso"
+     * de BootReceiver.
+     */
     fun start() =
         viewModelScope.launch {
             val taskId = requestedTaskId ?: return@launch
-            val liveTaskId = focus.session.first()?.taskId
-            if (liveTaskId != null && liveTaskId != taskId) return@launch
+            val liveSession = focus.session.first()
+            val blockedByLiveOther =
+                liveSession != null &&
+                    liveSession.taskId != taskId &&
+                    FocusClock.remainingMillis(liveSession, now(), elapsed()) > 0
+            if (blockedByLiveOther) return@launch
             beginSession(taskId, selection.value)
         }
 
