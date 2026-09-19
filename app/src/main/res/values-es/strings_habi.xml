@@ -95,6 +95,12 @@
     <string name="habi_badge_cheerleader">¡%2$s! Sabía que lo conseguirías, %1$s.</string>
     <string name="habi_badge_neutra">Logro desbloqueado: %2$s. Bien hecho.</string>
 
+    <!-- habi_task_done_* — T13, texto del snackbar de deshacer de la fila de tarea en Hoy. El
+         sargento no lleva %1$s a propósito (ver kdoc de HabiVoice.taskDoneRes); las otras dos sí. -->
+    <string name="habi_task_done_sargento">Hecha. La siguiente.</string>
+    <string name="habi_task_done_cheerleader">¡Fuera! Qué gusto, %1$s.</string>
+    <string name="habi_task_done_neutra">Hecha, %1$s.</string>
+
     <string name="store_title">Tienda</string>
     <string name="store_axis_colors">Colores</string>
     <string name="store_axis_patterns">Patrones</string>

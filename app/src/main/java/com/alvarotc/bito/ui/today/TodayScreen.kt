@@ -5,8 +5,10 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,11 +41,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -61,8 +66,11 @@ import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.tasks.taskDueLabel
+import com.alvarotc.bito.ui.tasks.taskDueOverdue
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Peligro
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
@@ -77,14 +85,23 @@ fun TodayScreen(
     onOpenHabit: (String) -> Unit,
     onOpenHabi: () -> Unit,
     onOpenReview: () -> Unit = {},
+    // Default {} on purpose: the "tasks" route is T15's and "focus" is T19's. BitoNavHost wires
+    // them in then — until it does, the screen compiles and these buttons just go nowhere, the
+    // normal mid-branch state of a sequential milestone.
+    onOpenTasks: () -> Unit = {},
+    onStartFocus: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
+    val taskDone by viewModel.lastTaskDone.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     var exactFor by remember { mutableStateOf<HabitCardUi?>(null) }
     var sealDismissed by rememberSaveable { mutableStateOf(false) }
     val loggedLabel = stringResource(R.string.logged_snackbar)
     val undoLabel = stringResource(R.string.undo)
+    val fallbackName = stringResource(R.string.habi_name_fallback)
+    val taskDoneLabel =
+        stringResource(HabiVoice.taskDoneRes(state.spec.personality), state.userName.ifBlank { fallbackName })
 
     LaunchedEffect(logged) {
         if (logged != null) {
@@ -95,6 +112,18 @@ fun TodayScreen(
                 // Also runs on cancellation (navigating away): the undo offer dies with the visit
                 // instead of re-showing on every return to Hoy (QA 2026-08-24).
                 viewModel.consumeLogged()
+            }
+        }
+    }
+
+    LaunchedEffect(taskDone) {
+        if (taskDone != null) {
+            try {
+                val result = snackbar.showSnackbar(taskDoneLabel, actionLabel = undoLabel, duration = SnackbarDuration.Short)
+                if (result == SnackbarResult.ActionPerformed) viewModel.undoTaskDone()
+            } finally {
+                // Same reasoning as the habit-log snackbar above: the undo offer dies with the visit.
+                viewModel.consumeTaskDone()
             }
         }
     }
@@ -151,8 +180,9 @@ fun TodayScreen(
         ) {
             item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi) }
             // Empty is only true poverty when there is nothing at all — a habit merely paused
-            // still has a home in the section below, so it must not trip "create your first habit".
-            if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty()) {
+            // still has a home in the section below, and an open task still gives the day
+            // something to do, so neither must trip "create your first habit".
+            if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty() && state.tasks.isEmpty()) {
                 item { EmptyToday(onCreateHabit) }
             } else {
                 item { RingCard(state.ringDone, state.ringTotal, state.todaySealed, onOpenReview) }
@@ -181,6 +211,29 @@ fun TodayScreen(
                                     onDragStarted = { haptics.performHapticFeedback(HapticFeedbackType.LongPress) },
                                     onDragStopped = { viewModel.reorder(orderedCards.map { it.id }) },
                                 ),
+                    )
+                }
+            }
+            if (state.tasks.isNotEmpty()) {
+                item {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            stringResource(R.string.tasks_section_title),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = TintaSuave,
+                            modifier = Modifier.weight(1f),
+                        )
+                        GhostPillButton(text = stringResource(R.string.tasks_see_all), onClick = onOpenTasks)
+                    }
+                }
+                // Row by row, outside orderedCards: the habits' drag reorder never touches these.
+                items(state.tasks, key = { "task-${it.id}" }) { task ->
+                    TodayTaskRow(
+                        task = task,
+                        today = state.today,
+                        onDone = { viewModel.markTaskDone(task.id) },
+                        onStart = { onStartFocus(task.id) },
+                        onNotToday = { viewModel.postponeTask(task.id) },
                     )
                 }
             }
@@ -319,5 +372,64 @@ private fun EmptyToday(onCreate: () -> Unit) {
         Text(stringResource(R.string.empty_today_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
         Spacer(Modifier.height(16.dp))
         PillButton(stringResource(R.string.create_habit), onClick = onCreate)
+    }
+}
+
+/**
+ * One task's row in Today: a circle to mark it done, its title and first step, the due legend
+ * ([taskDueLabel]/[taskDueOverdue] from [com.alvarotc.bito.ui.tasks], shared with the full list),
+ * and two ways forward — start it now, or say not today. In the mold of [PausedHabitRow]/
+ * [CheckBody]'s primary circle: 56dp, the repo's touch-target floor, not the 32dp a bare icon
+ * would suggest.
+ */
+@Composable
+private fun TodayTaskRow(
+    task: TaskRowUi,
+    today: LogicalDay,
+    onDone: () -> Unit,
+    onStart: () -> Unit,
+    onNotToday: () -> Unit,
+) {
+    val doneLabel = stringResource(R.string.task_done)
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Box(
+                Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .border(1.dp, Hoja, CircleShape)
+                    .testTag("task-done-${task.id}")
+                    .clickable(onClick = onDone)
+                    .semantics { contentDescription = doneLabel },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(BitoIcons.Check, contentDescription = null, tint = Hoja)
+            }
+            Spacer(Modifier.width(12.dp))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    task.title,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = Tinta,
+                )
+                if (task.firstStep != null) {
+                    Text(task.firstStep, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
+                }
+                val dueLabel = taskDueLabel(task.dueKind, task.dueDay, today)
+                if (dueLabel != null) {
+                    val overdue = taskDueOverdue(task.dueKind, task.dueDay, today)
+                    Text(dueLabel, style = MaterialTheme.typography.labelMedium, color = if (overdue) Peligro else TintaSuave)
+                }
+            }
+        }
+        Spacer(Modifier.height(10.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            GhostPillButton(text = stringResource(R.string.task_start), onClick = onStart)
+            GhostPillButton(
+                text = stringResource(R.string.task_not_today),
+                onClick = onNotToday,
+                modifier = Modifier.testTag("task-not-today-${task.id}"),
+            )
+        }
     }
 }

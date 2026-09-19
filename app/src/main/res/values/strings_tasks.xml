@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasks_section_title">Tasks</string>
+    <string name="tasks_see_all">See all</string>
+    <string name="task_start">Start</string>
+    <string name="task_not_today">Not today</string>
+    <string name="task_done">Done</string>
+    <string name="task_due_today">today</string>
+    <string name="task_due_in">in %1$d days</string>
+    <string name="task_overdue">%1$d days overdue</string>
+    <string name="task_due_this_week">this week</string>
+    <string name="task_due_week_today">ends today</string>
+    <string name="task_due_last_week">from last week</string>
+</resources>

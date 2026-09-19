@@ -95,6 +95,12 @@
     <string name="habi_badge_cheerleader">%2$s! I knew you had it in you, %1$s.</string>
     <string name="habi_badge_neutra">Badge unlocked: %2$s. Well earned.</string>
 
+    <!-- habi_task_done_* — T13, the Today task row's undo-snackbar text. sargento deliberately
+         carries no %1$s (see HabiVoice.taskDoneRes kdoc); the other two do. -->
+    <string name="habi_task_done_sargento">Done. Next.</string>
+    <string name="habi_task_done_cheerleader">Gone! That feels good, %1$s.</string>
+    <string name="habi_task_done_neutra">Done, %1$s.</string>
+
     <string name="store_title">Store</string>
     <string name="store_axis_colors">Colors</string>
     <string name="store_axis_patterns">Patterns</string>
