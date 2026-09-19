@@ -154,11 +154,16 @@ class HabiSoundsTest {
      * Reads each `res/raw` OGG back through [Context.getResources] — available on the classpath
      * under Robolectric the same way it is on device — and checks the `OggS` magic
      * `tools/habi_cues.py` produces (via `ffmpeg -c:a libvorbis`) plus the per-clip and
-     * whole-family size budget from spec §10.2 (≤12 KB each, ≤70 KB the six together). This
-     * replaces the old WAV-header check: the family is OGG Vorbis now, not 16-bit PCM.
+     * whole-family size budget from spec §10.2 (≤12 KB each, ≤70 KB the six together) AND the
+     * sub-one-second duration the old WAV-header test used to guarantee. Byte size alone is not a
+     * duration proxy — a long, quiet clip still encodes small — so this reads the LAST Ogg page's
+     * granule position (samples elapsed at that page, per the Ogg spec) straight out of the
+     * container instead of decoding audio: no extra dependency, and it keeps catching a clip that
+     * drifted long even after a variant swap (`cp .../habi_purr-c.ogg app/.../habi_purr.ogg`,
+     * exactly the workflow this family's README documents) copies in a longer file.
      */
     @Test
-    fun `every raw Habi sound is a valid OGG within the size budget`() {
+    fun `every raw Habi sound is a valid OGG within the size and duration budget`() {
         val ids =
             mapOf(
                 "habi_bump" to R.raw.habi_bump,
@@ -173,6 +178,8 @@ class HabiSoundsTest {
             val bytes = context.resources.openRawResource(id).use { it.readBytes() }
             assertEquals("$name: OggS magic", "OggS", bytes.ascii(0, 4))
             assertTrue("$name: ${bytes.size} bytes should be at most $MAX_CLIP_BYTES", bytes.size <= MAX_CLIP_BYTES)
+            val durationSeconds = bytes.oggDurationSeconds()
+            assertTrue("$name: duration ${durationSeconds}s should be under 1s", durationSeconds < 1.0)
             totalBytes += bytes.size
         }
         assertTrue("family: $totalBytes bytes should be at most $MAX_FAMILY_BYTES", totalBytes <= MAX_FAMILY_BYTES)
@@ -183,8 +190,34 @@ class HabiSoundsTest {
         length: Int,
     ) = String(this, offset, length, Charsets.US_ASCII)
 
+    private fun ByteArray.le64(offset: Int): Long {
+        var value = 0L
+        for (i in 0 until 8) value = value or ((this[offset + i].toLong() and 0xFF) shl (8 * i))
+        return value
+    }
+
+    /**
+     * Walks the Ogg page chain (`OggS` magic, then version/type/granule/serial/sequence/checksum/
+     * segment-count/segment-table per the container spec) to find the LAST page's granule
+     * position — for a mono Vorbis stream that IS the sample count, so dividing by [SAMPLE_RATE_HZ]
+     * gives the exact duration ffmpeg encoded, no decoder needed.
+     */
+    private fun ByteArray.oggDurationSeconds(): Double {
+        var offset = 0
+        var lastGranule = 0L
+        while (offset + 27 <= size && ascii(offset, 4) == "OggS") {
+            lastGranule = le64(offset + 6)
+            val segmentCount = this[offset + 26].toInt() and 0xFF
+            var bodyLength = 0
+            for (i in 0 until segmentCount) bodyLength += this[offset + 27 + i].toInt() and 0xFF
+            offset += 27 + segmentCount + bodyLength
+        }
+        return lastGranule.toDouble() / SAMPLE_RATE_HZ
+    }
+
     companion object {
         private const val MAX_CLIP_BYTES = 12 * 1024
         private const val MAX_FAMILY_BYTES = 70 * 1024
+        private const val SAMPLE_RATE_HZ = 44100
     }
 }
