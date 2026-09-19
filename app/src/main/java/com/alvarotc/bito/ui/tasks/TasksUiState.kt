@@ -19,8 +19,10 @@ data class TaskListRowUi(
 )
 
 /**
- * Snapshot the full tasks list screen renders (spec §8.4): five sections that never overlap —
- * a task touching Hoy shows up there and nowhere else.
+ * Snapshot the full tasks list screen renders (spec §8.4): sections grouped by due-kind. Hoy,
+ * Con plazo, Sin plazo and Hechas never overlap. Esta semana is the one exception (capataz
+ * ruling, 2026-09-19): it groups every open WEEK task of the current week regardless of whether
+ * it also touches Hoy, so a WEEK task due today can show in both.
  */
 data class TasksUiState(
     val today: LogicalDay = 0,
@@ -39,27 +41,34 @@ data class TasksUiState(
  * Derives the full tasks list from [state] as seen on [today]. Pure — no side effects, no
  * storage, no clock reads — same discipline as [com.alvarotc.bito.ui.today.buildTodayUiState].
  *
- * `inToday` is computed once from [Tasks.todayTasks] and reused by the four remaining sections,
- * which each exclude it: Hoy wins, so a task never appears twice.
+ * Hoy is [Tasks.todayTasks] minus its `THIS_WEEK` rows: those already have a home in [weekTasks],
+ * which groups every open WEEK task whose deadline has not passed ([Task.dueDay] `>= today`) —
+ * postponed today or not, whether or not it also happens to sit in Hoy (an overdue WEEK task
+ * stays OVERDUE, in Hoy only; one due exactly today stays DUE_TODAY, in both). `inToday` is
+ * computed from that trimmed Hoy list and reused only by Con plazo and Sin plazo, which keep
+ * excluding it — Esta semana does not (capataz ruling, 2026-09-19).
  */
 fun buildTasksUiState(
     state: DomainState,
     today: LogicalDay,
 ): TasksUiState {
-    val todayTasks = Tasks.todayTasks(state, today).map { it.task }
+    val todayTasks =
+        Tasks.todayTasks(state, today)
+            .filter { it.slot != Tasks.TodaySlot.THIS_WEEK }
+            .map { it.task }
     val inToday = todayTasks.map { it.id }.toSet()
-    val open = state.tasks.filter { it.status == TaskStatus.OPEN && it.id !in inToday }
+    val open = state.tasks.filter { it.status == TaskStatus.OPEN }
 
     val weekTasks =
-        open.filter { it.dueKind == DueKind.WEEK }
+        open.filter { it.dueKind == DueKind.WEEK && (it.dueDay ?: Int.MIN_VALUE) >= today }
             .sortedWith(compareBy({ it.dueDay ?: Int.MAX_VALUE }, { it.createdAtMillis }, { it.id }))
 
     val datedTasks =
-        open.filter { it.dueKind == DueKind.DATE }
+        open.filter { it.dueKind == DueKind.DATE && it.id !in inToday }
             .sortedWith(compareBy({ it.dueDay ?: Int.MAX_VALUE }, { it.createdAtMillis }, { it.id }))
 
     val looseTasks =
-        open.filter { it.dueKind == DueKind.NONE }
+        open.filter { it.dueKind == DueKind.NONE && it.id !in inToday }
             .sortedWith(compareBy({ sinkKeyOf(state, it.id, today) }, { it.createdOnDay }, { it.createdAtMillis }, { it.id }))
 
     val doneTasks =

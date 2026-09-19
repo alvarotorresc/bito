@@ -5,8 +5,10 @@ import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.datedTask
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.model.DueKind
+import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.domain.task
+import com.alvarotc.bito.domain.taskEvent
 import com.alvarotc.bito.domain.weekTask
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -18,17 +20,38 @@ class TasksUiStateTest {
     fun `sections do not overlap and today wins`() {
         val overdue = datedTask("overdue", TODAY - 2)
         val dueToday = datedTask("due-today", TODAY)
-        val week = weekTask("week", TODAY)
         val loose = task(id = "loose", dueKind = DueKind.NONE, createdOnDay = TODAY - 30)
-        val state = domainState(tasks = listOf(overdue, dueToday, week, loose))
+        val state = domainState(tasks = listOf(overdue, dueToday, loose))
 
         val ui = buildTasksUiState(state, TODAY)
 
-        assertEquals(setOf("overdue", "due-today", "week", "loose"), ui.todayTasks.map { it.id }.toSet())
+        assertEquals(setOf("overdue", "due-today", "loose"), ui.todayTasks.map { it.id }.toSet())
         assertTrue(ui.weekTasks.isEmpty())
         assertTrue(ui.datedTasks.isEmpty())
         assertTrue(ui.looseTasks.isEmpty())
         assertTrue(ui.todayTasks.all { it.inToday })
+    }
+
+    @Test
+    fun `an open week task sits in esta semana and not in hoy, postponed or not — an overdue one stays in hoy`() {
+        // weekTask(id, TODAY) dues on this week's Sunday (TODAY+2, since TODAY is a Friday): open, not overdue.
+        val open = weekTask("open-week", TODAY)
+        val postponedToday = weekTask("postponed-week", TODAY)
+        // A WEEK task whose Sunday already passed: still WEEK-kind, but slotOf sees it as OVERDUE, not THIS_WEEK.
+        val overdue = task(id = "overdue-week", dueKind = DueKind.WEEK, dueDay = TODAY - 5, createdOnDay = TODAY - 12)
+        val state =
+            domainState(
+                tasks = listOf(open, postponedToday, overdue),
+                taskEvents = listOf(taskEvent("postponed-week", TaskEventKind.POSTPONED, TODAY)),
+            )
+
+        val ui = buildTasksUiState(state, TODAY)
+
+        assertEquals(setOf("open-week", "postponed-week"), ui.weekTasks.map { it.id }.toSet())
+        assertTrue(ui.todayTasks.none { it.id == "open-week" || it.id == "postponed-week" })
+
+        assertEquals(listOf("overdue-week"), ui.todayTasks.map { it.id })
+        assertTrue(ui.weekTasks.none { it.id == "overdue-week" })
     }
 
     @Test
