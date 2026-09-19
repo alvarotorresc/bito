@@ -1,6 +1,8 @@
 package com.alvarotc.bito
 
 import android.app.Application
+import android.app.NotificationManager
+import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.test.core.app.ApplicationProvider
 import androidx.work.WorkManager
@@ -8,6 +10,7 @@ import androidx.work.testing.WorkManagerTestInitHelper
 import com.alvarotc.bito.data.backup.BackupWorker
 import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.ui.notifications.NotificationChannels
+import com.alvarotc.bito.ui.notifications.Notifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,6 +24,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.util.concurrent.TimeUnit
 
@@ -106,9 +110,30 @@ class AppStartupTest {
         // at the OS-API level (a unique work / a re-set alarm looks identical whether one or two
         // identical collectors produced it), so the only honest way to prove the SECOND start()
         // didn't launch a second set of collectors is this counter, incremented in lockstep with
-        // the actual `WidgetRefresher`/`ReminderSync`/`BackupSync` `.start()` calls inside the
-        // same guarded block (see AppStartup.start).
+        // the actual `WidgetRefresher`/`ReminderSync`/`BackupSync`/`FocusSync` `.start()` calls
+        // inside the same guarded block (see AppStartup.start).
         assertEquals(1, AppStartup.startInvocations.get())
+    }
+
+    @Test
+    fun `start launches a fourth collector that keeps the focus tray honest`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val notificationManager = app.getSystemService(NotificationManager::class.java)
+        NotificationChannels.ensure(app)
+        val notification =
+            NotificationCompat.Builder(app, NotificationChannels.REMINDERS)
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .setContentTitle("stand-in")
+                .build()
+        NotificationManagerCompat.from(app).notify(Notifier.FOCUS_ID, notification)
+
+        AppStartup.start(app, container, testScope())
+
+        // No session ever gets written for this container, so FocusSync's collector — the fourth
+        // one start() launches — reacts to the initial null emission by cancelling FOCUS_ID on
+        // its own, without anything else in this test touching the tray.
+        eventually { shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID) == null }
     }
 
     @Test

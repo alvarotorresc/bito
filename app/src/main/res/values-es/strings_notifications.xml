@@ -101,4 +101,8 @@
     <string name="notif_review_seal_neutra">Hay días anteriores sin sellar. Un toque y quedan cerrados.</string>
 
     <string name="notif_perfect_day_title">Día perfecto</string>
+
+    <!-- Bandeja de la sesion de foco: la permanente mientras dura, y la de un solo toque al acabar. -->
+    <string name="notif_focus_running">En marcha</string>
+    <string name="notif_focus_over">Se acabó el tiempo</string>
 </resources>

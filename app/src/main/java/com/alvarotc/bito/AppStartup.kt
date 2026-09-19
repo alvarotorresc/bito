@@ -2,6 +2,7 @@ package com.alvarotc.bito
 
 import android.app.Application
 import com.alvarotc.bito.data.backup.BackupSync
+import com.alvarotc.bito.ui.notifications.FocusSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
 import com.alvarotc.bito.ui.widget.WidgetRefresher
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger
  *
  * Robolectric shares this `object` across every test in the same JVM, and [defaultScope] used to
  * never get cancelled: a test that reached [start] (directly or via `BitoApp.onCreate`) leaked its
- * three collectors into whatever test ran next — [com.alvarotc.bito.data.backup.BackupSync]'s
+ * four collectors into whatever test ran next — [com.alvarotc.bito.data.backup.BackupSync]'s
  * WorkManager write and [com.alvarotc.bito.ui.widget.WidgetRefresher]'s tray refresh included. This
  * is the root cause ledgered against `TrayRefresherTest`'s full-suite-only flake since M8. [start]
  * is now idempotent ([started] guards a second call) and takes an injectable [scope] parameter so a
@@ -45,7 +46,7 @@ object AppStartup {
 
     /**
      * Test-only: how many times [start]'s body actually ran (as opposed to being no-op'd by
-     * [started]) — incremented in lockstep with the three `.start()` calls inside it (the
+     * [started]) — incremented in lockstep with the four `.start()` calls inside it (the
      * continuous collectors), so this is the hook a test uses to prove a second [start] call
      * doesn't launch a second set of them.
      */
@@ -62,6 +63,7 @@ object AppStartup {
         WidgetRefresher.start(app, container, scope)
         ReminderSync.start(app, container, scope)
         BackupSync.start(app, container, scope)
+        FocusSync.start(app, container, scope)
     }
 
     /**

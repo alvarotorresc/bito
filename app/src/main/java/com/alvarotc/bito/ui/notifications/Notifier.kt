@@ -23,6 +23,8 @@ object Notifier {
     const val REMINDER_ID = 1
     const val REVIEW_ID = 2
     const val CELEBRATION_ID = 3
+    const val TASKS_ID = 4
+    const val FOCUS_ID = 5
 
     /** Extra keys carried by [quickActionIntent] and read back in [QuickActionReceiver]. */
     const val EXTRA_HABIT_ID = "habitId"
@@ -158,6 +160,47 @@ object Notifier {
 
     /** Clears a stale review nudge (e.g. the day just got sealed in-app) — mejoras-qa M7 #3. */
     fun cancelReview(context: Context) = NotificationManagerCompat.from(context).cancel(REVIEW_ID)
+
+    /**
+     * El temporizador de foco, mientras dura. La cuenta atras la pinta SystemUI, no Bito: el
+     * proceso puede morir y el reloj sigue bajando. setAutoCancel(false) es obligatorio — lo
+     * hereda en true de baseBuilder, y una permanente que se borra al tocarla no es permanente.
+     */
+    fun showFocus(
+        context: Context,
+        taskTitle: String,
+        endsAtMillis: Long,
+    ) {
+        val builder =
+            baseBuilder(context, NotificationChannels.REMINDERS)
+                .setContentTitle(taskTitle)
+                .setContentText(context.getString(R.string.notif_focus_running))
+                .setContentIntent(contentIntent(context, "focus", 4))
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .setSilent(true)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
+                .setShowWhen(true)
+                .setWhen(endsAtMillis)
+        notify(context, FOCUS_ID, builder)
+    }
+
+    /** «Se acabo el tiempo»: ya no es permanente y se va al tocarla. */
+    fun showFocusOver(
+        context: Context,
+        taskTitle: String,
+    ) {
+        val builder =
+            baseBuilder(context, NotificationChannels.REMINDERS)
+                .setContentTitle(taskTitle)
+                .setContentText(context.getString(R.string.notif_focus_over))
+                .setContentIntent(contentIntent(context, "focus", 4))
+        notify(context, FOCUS_ID, builder)
+    }
+
+    /** Clears the focus tray. */
+    fun cancelFocus(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
 
     private fun baseBuilder(
         context: Context,

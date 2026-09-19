@@ -93,4 +93,8 @@
     <string name="notif_review_seal_neutra">Some earlier days are still unsealed. One tap closes them.</string>
 
     <string name="notif_perfect_day_title">Perfect day</string>
+
+    <!-- Focus session tray: the permanent notification while it runs, and the one-shot when time's up. -->
+    <string name="notif_focus_running">In progress</string>
+    <string name="notif_focus_over">Time\'s up</string>
 </resources>
