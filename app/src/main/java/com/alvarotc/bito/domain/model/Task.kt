@@ -16,7 +16,7 @@ enum class DueKind { NONE, WEEK, DATE }
  * `sealed Due` habria que aplanarlo igual en [com.alvarotc.bito.data.db.TaskEntity] y escribir
  * el mapeo dos veces. Es ademas lo que ya hace Habit con (timeBucket, timeOfDayMinutes). El
  * invariante que la jerarquia daria gratis — `dueKind == NONE` si y solo si `dueDay == null` —
- * lo sostiene la disciplina de construccion (`datedTask()`, `weekTask()`, los mapeadores); los
+ * no lo fuerza el tipo ni lo fija ningun test: lo sostiene quien construye la tarea, y los
  * mapeadores lo respetan, no lo reparan.
  *
  * [dueDay] es null si [dueKind] es NONE, el domingo de su semana natural si es WEEK
