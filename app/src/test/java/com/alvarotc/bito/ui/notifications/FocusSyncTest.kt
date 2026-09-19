@@ -7,6 +7,7 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.AppStartup
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.taskEntity
 import kotlinx.coroutines.CoroutineScope
@@ -62,12 +63,18 @@ class FocusSyncTest {
     fun setUp() {
         NotificationChannels.ensure(app)
         shadowOf(notificationManager).setNotificationsEnabled(true)
+        // Molde de FocusAlarmTest: una BitoApp implicita de este mismo fork de JVM puede haber
+        // disparado ya AppStartup.start() con SU propio container — quiescing cancela lo que ese
+        // arranque hubiera dejado vivo en defaultScope, para que el container de este test no
+        // comparta DataStore/Room con uno ajeno que nadie va a cerrar.
+        AppStartup.quiesceForTests()
     }
 
     @After
     fun tearDown() {
         runBlocking { withTimeout(5_000) { scopeJob?.cancelAndJoin() } }
         executor?.shutdownNow()
+        AppStartup.quiesceForTests()
     }
 
     private fun postStandInFocusNotification() {
