@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.time.ZoneId
 import java.util.UUID
 
@@ -53,7 +54,7 @@ class TodayViewModel(
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
     // must not race a runTest's virtual scheduler the way the real Dispatchers.Default would.
-    defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
     // Solo sirve para construir el valor por defecto de [ticker] de abajo.
     tickerMillis: Long = 60_000L,
     // Ticker grueso, inyectable como flujo — no como periodo — porque un generador con delay()
@@ -184,12 +185,18 @@ class TodayViewModel(
      * Solo recibe `today` a propósito: solo lee `ringDone`/`ringTotal`/`failed`, que no dependen
      * ni de `prefs` ni de la hora ni de los ojos — pasarlos aquí ataría cada escritura a un
      * segundo `settings.settings.first()` o al reloj sin ganar nada.
+     *
+     * Fuera del hilo principal, por el mismo [defaultDispatcher] que `uiState`: cada registro lo
+     * llama DOS veces (antes y después de escribir) y `buildTodayUiState` recorre todo el
+     * historial — el trabajo que ese `flowOn` ya se lleva del Main no tiene por qué volver a él
+     * por la vía de escritura.
      */
-    private suspend fun snapshotOf(today: LogicalDay): WriteSnapshot {
-        val entities = habits.observeHabits().first()
-        val state = buildTodayUiState(domainStateRepo.snapshot(), entities.associate { it.id to it.sortOrder }, today)
-        return WriteSnapshot(state.ringDone to state.ringTotal, state.cards.filter { it.failed }.mapTo(mutableSetOf()) { it.id })
-    }
+    private suspend fun snapshotOf(today: LogicalDay): WriteSnapshot =
+        withContext(defaultDispatcher) {
+            val entities = habits.observeHabits().first()
+            val state = buildTodayUiState(domainStateRepo.snapshot(), entities.associate { it.id to it.sortOrder }, today)
+            WriteSnapshot(state.ringDone to state.ringTotal, state.cards.filter { it.failed }.mapTo(mutableSetOf()) { it.id })
+        }
 
     private fun log(
         habitId: String,
