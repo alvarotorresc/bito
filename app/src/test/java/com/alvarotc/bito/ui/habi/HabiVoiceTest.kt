@@ -1,10 +1,12 @@
 package com.alvarotc.bito.ui.habi
 
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.HabiDayPhase
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 /**
  * [HabiVoice] is a pure lookup table — every (personality, mood) pair its mood-bearing functions
@@ -86,6 +88,46 @@ class HabiVoiceTest {
         assertEquals(R.string.habi_form_prompt_sargento, HabiVoice.formPromptRes(Personality.SARGENTO))
         assertEquals(R.string.habi_form_prompt_cheerleader, HabiVoice.formPromptRes(Personality.CHEERLEADER))
         assertEquals(R.string.habi_form_prompt_neutra, HabiVoice.formPromptRes(Personality.NEUTRA))
+    }
+
+    @Test
+    fun `eyeRitualRes maps each level and personality to its own string`() {
+        val seen = mutableSetOf<Int>()
+        for (level in listOf(1, 2)) {
+            for (personality in Personality.entries) {
+                seen += HabiVoice.eyeRitualRes(level, personality)
+            }
+        }
+        assertEquals(6, seen.size)
+    }
+
+    @Test
+    fun `dayPhaseRes says nothing while she is awake`() {
+        for (personality in Personality.entries) {
+            assertNull(HabiVoice.dayPhaseRes(HabiDayPhase.AWAKE, personality))
+        }
+    }
+
+    @Test
+    fun `dayPhaseRes maps waiting and asleep to six distinct strings`() {
+        val seen = mutableSetOf<Int>()
+        for (phase in listOf(HabiDayPhase.WAITING, HabiDayPhase.ASLEEP)) {
+            for (personality in Personality.entries) {
+                seen += HabiVoice.dayPhaseRes(phase, personality)!!
+            }
+        }
+        assertEquals(6, seen.size)
+    }
+
+    @Test
+    fun `greetingRes is untouched - the short hello stays`() {
+        val seen = mutableSetOf<Int>()
+        for (mood in Mood.entries) {
+            for (personality in Personality.entries) {
+                seen += HabiVoice.greetingRes(mood, personality)
+            }
+        }
+        assertEquals(12, seen.size)
     }
 
     /**

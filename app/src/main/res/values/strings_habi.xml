@@ -15,10 +15,13 @@
 
     <!--
         Habi's personality-voiced texts (T13/T8, HabiVoice) — M9 draft copy — pending architect
-        validation (docs/07). Ten contexts:
+        validation (docs/07). Ten contexts below, plus two more further down this file
+        (habi_day_waiting_*/habi_day_asleep_* and habi_eye_first_*/habi_eye_second_*, each with
+        its own comment block where it's defined):
         habi_bubble_* — Stats commentator, mood-only (no name).
         habi_home_*   — Habi screen's own bubble, playful home-context, %1$s = user name.
-        habi_greeting_* — Today's Habi corner, short, %1$s = user name (consumed by T14).
+        habi_greeting_* — Today's Habi corner, short, %1$s = user name (consumed by T14). Kept in
+        full this milestone (spec §12.1) — the corner still opens with a short hello.
         freezer_info_* — the freezers ⓘ sheet body, %1$s = user name. The price is deliberately
         never baked in here — it lives in EconomyConfig.
         habi_review_* — the E1 review mini-bubble, %1$s = user name.
@@ -26,7 +29,8 @@
         habi_sealed_* — the E2 normal day-sealed sheet, %1$s = user name.
         habi_perfect_* — the E2 perfect-day in-app sheet, %1$s = user name.
         habi_perfect_notif_* — the perfect-day notification body, %1$s = user name.
-        habi_badge_* — the badge-unlocked sheet, %1$s = user name, %2$s = badge name.
+        habi_badge_* — the badge-unlocked sheet, %1$s = user name, %2$s = badge name. Backs every
+        badge except streak-7, where habi_eye_second_* speaks instead (one bubble, not two).
     -->
     <string name="habi_bubble_sargento_radiant">A flawless week. Not one slip. That\'s the standard.</string>
     <string name="habi_bubble_sargento_normal">Acceptable. We both know you\'ve got more.</string>

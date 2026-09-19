@@ -102,9 +102,11 @@ class CelebrationSheetsTest {
     fun `the badge sheet speech bubble interpolates the user's name and the first badge`() {
         // habi_badge_neutra ("Badge unlocked: %2$s. Well earned.") never interpolates %1$s at
         // all, so it can't prove the name substitution actually worked — SARGENTO's
-        // "%2$s. Earned, %1$s. I never doubted it." uses both placeholders.
+        // "%2$s. Earned, %1$s. I never doubted it." uses both placeholders. streak-30 rather than
+        // streak-7 (task 20 recalibration): streak-7 now speaks the second-eye line instead of
+        // badgeUnlockedRes, so it can no longer exercise this generic path.
         val sargentoState =
-            state(newBadges = BadgeCatalog.all.filter { it.id == "streak-7" }, userName = "Álvaro")
+            state(newBadges = BadgeCatalog.all.filter { it.id == "streak-30" }, userName = "Álvaro")
                 .copy(personality = Personality.SARGENTO)
         compose.setContent {
             BitoTheme {
@@ -113,7 +115,40 @@ class CelebrationSheetsTest {
         }
         compose.waitForIdle()
 
-        compose.onNodeWithText("First flame. Earned, Álvaro. I never doubted it.", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Slow burn. Earned, Álvaro. I never doubted it.", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the streak seven sheet speaks the second eye, not the generic badge line`() {
+        // The eye ritual paints in silence (task 17's animation); this is the surface line the
+        // sheet speaks right after — HabiVoice.eyeRitualRes(level = 2, ...), not badgeUnlockedRes.
+        // One bubble, not two (task 20 ruling).
+        val badges = BadgeCatalog.all.filter { it.id == "streak-7" }
+        compose.setContent {
+            BitoTheme {
+                BadgeUnlockSheet(state(newBadges = badges, userName = "Álvaro"), onDismiss = {})
+            }
+        }
+        compose.waitForIdle()
+
+        // habi_eye_second_neutra: "Seven days. Now I see you with both, %1$s."
+        compose.onNodeWithText("Seven days. Now I see you with both, Álvaro.", useUnmergedTree = true).assertExists()
+        // habi_badge_neutra with the streak-7 badge name never renders alongside it.
+        compose.onNodeWithText("Badge unlocked: First flame. Well earned.", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `any other badge keeps the generic line`() {
+        val badges = BadgeCatalog.all.filter { it.id == "streak-30" }
+        compose.setContent {
+            BitoTheme {
+                BadgeUnlockSheet(state(newBadges = badges, userName = "Álvaro"), onDismiss = {})
+            }
+        }
+        compose.waitForIdle()
+
+        // habi_badge_neutra: "Badge unlocked: %2$s. Well earned."
+        compose.onNodeWithText("Badge unlocked: Slow burn. Well earned.", useUnmergedTree = true).assertExists()
     }
 
     @Test

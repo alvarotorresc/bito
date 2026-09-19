@@ -7,9 +7,9 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 
 /**
- * Resolves which string resource Habi speaks in each of its ten voiced contexts, by
- * [Personality] and (for three of the ten) [Mood]. `res/values{,-es}/strings_habi.xml` holds the
- * 57 mapped strings plus [R.string.habi_name_fallback] — M9 draft copy, pending architect
+ * Resolves which string resource Habi speaks in each of its twelve voiced contexts, by
+ * [Personality] and (for three of the twelve) [Mood]. `res/values{,-es}/strings_habi.xml` holds
+ * the 69 mapped strings plus [R.string.habi_name_fallback] — M9 draft copy, pending architect
  * validation (docs/07-textos-personalidades.md).
  *
  * - [bubbleRes] — the Stats commentator's card AND the Habi screen's own bubble (T11) both used
@@ -17,7 +17,8 @@ import com.alvarotc.bito.domain.model.Personality
  *   mockup gives it its own playful, name-addressed voice ("¿Me has traído algo, %1$s?").
  *   [bubbleRes] now backs Stats alone.
  * - [homeRes] — the Habi screen bubble, playful home-context lines, `%1$s` = the user's name.
- * - [greetingRes] — the Hoy corner (consumed by T14), short, `%1$s` = the user's name.
+ * - [greetingRes] — the Hoy corner (consumed by T14), short, `%1$s` = the user's name. Kept in
+ *   full for this milestone (spec §12.1): the Hoy corner is not going body-only.
  * - [freezerInfoRes] — the freezers ⓘ sheet body, personality-only (no mood), `%1$s` = the
  *   user's name. Deliberately never bakes the freezer price in — that lives in [com.alvarotc.bito.domain.model.EconomyConfig].
  * - [reviewRes] — the E1 review mini-bubble, personality-only, `%1$s` = the user's name.
@@ -28,20 +29,19 @@ import com.alvarotc.bito.domain.model.Personality
  * - [perfectDayNotifRes] — the perfect-day notification body, personality-only, `%1$s` = the
  *   user's name.
  * - [badgeUnlockedRes] — the badge-unlocked sheet, personality-only, `%1$s` = the user's name and
- *   `%2$s` = the badge name.
+ *   `%2$s` = the badge name. Backs every badge EXCEPT `streak-7`, where `BadgeUnlockSheet`
+ *   substitutes [eyeRitualRes] instead (one voice, not two — see that function's kdoc).
  * - [labelRes] — the speaker label ("SARGENTO"/"CHEERLEADER"/"NEUTRA") every `SpeechBubble` shows
  *   next to "HABI · ". Single source, replacing the seven identical private copies each screen
  *   used to keep.
  * - [formPromptRes] — the habit-form bubble's body, `habi_form_prompt_*`, no placeholders.
- * - [dayPhaseRes] — the Habi screen's own day line (T13, biblia §7.2), `habi_day_waiting_*` /
- *   `habi_day_asleep_*`, no placeholders. Written ahead of its real owner (T20, which reorders it
- *   into place once it lands the rest of the day's copy) because T13 needed a resolver to call —
- *   `HabiUiState.dayLineRes` never passes it [HabiDayPhase.AWAKE], the phase that says nothing.
+ * - [dayPhaseRes] — the Habi screen's own day line (biblia §7.2), `habi_day_waiting_*` /
+ *   `habi_day_asleep_*`, no placeholders, a dropper: two lines and only two, and only on the Habi
+ *   screen. Returns `null` for [HabiDayPhase.AWAKE], on purpose — see that function's kdoc.
  * - [eyeRitualRes] — the eye ritual's surface text (biblia §4), `habi_eye_first_*` /
  *   `habi_eye_second_*`, `%1$s` = the user's name. Never sits over the gesture itself (silent,
- *   wordless) — this is what the SCREEN shows after the paint completes: 7g's own line and the
- *   `streak-7` badge sheet's. Written ahead of its real owner (T20, same reason as [dayPhaseRes])
- *   because T17 needed a resolver to call.
+ *   wordless) — this is what the SCREEN shows after the paint completes: 7g's own line for the
+ *   first eye, the `streak-7` badge sheet's for the second.
  */
 object HabiVoice {
     @StringRes
@@ -213,15 +213,19 @@ object HabiVoice {
         }
 
     /**
-     * Only ever called with [HabiDayPhase.WAITING] or [HabiDayPhase.ASLEEP] — AWAKE has nothing
-     * to say about itself, so `HabiUiState.dayLineRes` never reaches this branch.
+     * Returns `null` for [HabiDayPhase.AWAKE], on purpose (biblia §7.2): her day speaks with a
+     * dropper, two lines and only two, and only from the Habi screen. `HabiUiState.dayLineRes`
+     * only ever passes [HabiDayPhase.WAITING] or [HabiDayPhase.ASLEEP] in practice, but the null
+     * branch is real, not a `when` formality — a day that narrates itself while she's still awake
+     * stops being a mirror and turns into a commentator.
      */
     @StringRes
     fun dayPhaseRes(
         phase: HabiDayPhase,
         personality: Personality,
-    ): Int =
+    ): Int? =
         when (phase) {
+            HabiDayPhase.AWAKE -> null
             HabiDayPhase.WAITING ->
                 when (personality) {
                     Personality.SARGENTO -> R.string.habi_day_waiting_sargento
@@ -234,14 +238,16 @@ object HabiVoice {
                     Personality.CHEERLEADER -> R.string.habi_day_asleep_cheerleader
                     Personality.NEUTRA -> R.string.habi_day_asleep_neutra
                 }
-            HabiDayPhase.AWAKE -> error("AWAKE has no day line — see this function's kdoc")
         }
 
     /**
      * [level] is [com.alvarotc.bito.domain.EyeTransition.to] — the number of eyes painted AFTER
      * the transition this line accompanies (1 = the first, 2 = the second/`streak-7`). Only ever
      * called with 1 or 2: a transition TO 0 doesn't exist ([com.alvarotc.bito.domain.EyeRitual]
-     * only ever heals upward).
+     * only ever heals upward). Never a bubble over the gesture itself — the paint always happens
+     * in silence, wordless — this is the line the surface that follows it speaks: onboarding 7g
+     * for the first eye, `BadgeUnlockSheet` for the second, where it REPLACES [badgeUnlockedRes]
+     * for the `streak-7` badge instead of stacking a second bubble next to it (one voice, not two).
      */
     @StringRes
     fun eyeRitualRes(

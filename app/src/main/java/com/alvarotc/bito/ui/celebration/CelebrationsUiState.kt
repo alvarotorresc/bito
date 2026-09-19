@@ -17,6 +17,14 @@ import com.alvarotc.bito.domain.model.equippedSetOf
 import com.alvarotc.bito.ui.habi.HabiSpec
 
 /**
+ * The `streak-7` badge id (biblia §4): the eye ritual's second eye. Shared by `BitoNavHost`
+ * (holds the badge sheet until the ritual has time to paint) and `BadgeUnlockSheet` (swaps its
+ * speech bubble for `HabiVoice.eyeRitualRes` when this badge is among [CelebrationsUiState.newBadges])
+ * — one id, not two literals.
+ */
+internal const val STREAK_SEVEN_BADGE = "streak-7"
+
+/**
  * Snapshot the global celebration sheets render: whether today's perfect-day sheet is pending,
  * how many points it earned, and which catalog badges unlocked since the badges sheet was last
  * dismissed. [spec] is what Habi looks like for the sheet's mini-avatar, the same shape the Stats

@@ -30,6 +30,7 @@ import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
 import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
 import com.alvarotc.bito.ui.celebration.PerfectDaySheet
+import com.alvarotc.bito.ui.celebration.STREAK_SEVEN_BADGE
 import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habi.HabiScreen
@@ -374,12 +375,6 @@ fun BitoNavHost(container: AppContainer) {
         }
     }
 }
-
-// Primero el ojo, en silencio y solo con el cuerpo; después la hoja del logro con su sonido
-// (biblia §4) — ambos, no solo el segundo. La Tarea 20 promueve STREAK_SEVEN_BADGE a
-// CelebrationsUiState.kt (internal const val) cuando CelebrationSheets.kt lo necesite también;
-// hasta entonces vive solo aquí para que esta tarea siga siendo un solo entregable.
-private const val STREAK_SEVEN_BADGE = "streak-7"
 
 /** La duración del rito del ojo (spec §3.4): lo que la hoja del logro espera antes de levantarse. */
 private const val EYE_RITUAL_HOLD_MS = 900L

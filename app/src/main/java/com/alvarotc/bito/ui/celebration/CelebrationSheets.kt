@@ -165,15 +165,19 @@ fun BadgeUnlockSheet(
             }
 
             val fallbackName = stringResource(R.string.habi_name_fallback)
-            val firstBadgeName = state.newBadges.firstOrNull()?.let { stringResource(BadgeStrings.badgeNameRes(it.id)) }.orEmpty()
+            val name = state.userName.ifBlank { fallbackName }
+            // El hito 7 va en orden (biblia §4): primero el ojo, en silencio y solo cuerpo, y
+            // DESPUÉS esta hoja — que habla del ojo, no del badge. Un solo globo, no dos.
+            val text =
+                if (state.newBadges.any { it.id == STREAK_SEVEN_BADGE }) {
+                    stringResource(HabiVoice.eyeRitualRes(level = 2, personality = state.personality), name)
+                } else {
+                    val firstBadgeName = state.newBadges.firstOrNull()?.let { stringResource(BadgeStrings.badgeNameRes(it.id)) }.orEmpty()
+                    stringResource(HabiVoice.badgeUnlockedRes(state.personality), name, firstBadgeName)
+                }
             SpeechBubble(
                 speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.personality))),
-                text =
-                    stringResource(
-                        HabiVoice.badgeUnlockedRes(state.personality),
-                        state.userName.ifBlank { fallbackName },
-                        firstBadgeName,
-                    ),
+                text = text,
                 modifier = Modifier.fillMaxWidth(),
             )
 

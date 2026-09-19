@@ -15,10 +15,13 @@
 
     <!--
         Textos con voz de personalidad de Habi (T13/T8, HabiVoice) — M9 draft copy — pending
-        architect validation (docs/07). Diez contextos:
+        architect validation (docs/07). Diez contextos abajo, más otros dos más adelante en este
+        fichero (habi_day_waiting_*/habi_day_asleep_* y habi_eye_first_*/habi_eye_second_*, cada
+        uno con su propio bloque de comentario donde se define):
         habi_bubble_* — comentarista de Stats, solo por ánimo (sin nombre).
         habi_home_*   — globo propio de la pantalla Habi, tono jugador de hogar, %1$s = nombre.
-        habi_greeting_* — esquina de Habi en Hoy, corto, %1$s = nombre (lo consume T14).
+        habi_greeting_* — esquina de Habi en Hoy, corto, %1$s = nombre (lo consume T14). Se
+        conserva entero este hito (spec §12.1) — la esquina sigue abriendo con un saludo corto.
         freezer_info_* — cuerpo de la hoja ⓘ de congeladores, %1$s = nombre. El precio nunca se
         hardcodea aquí a propósito — vive en EconomyConfig.
         habi_review_* — mini-globo del repaso E1, %1$s = nombre.
@@ -26,7 +29,9 @@
         habi_sealed_* — hoja de día sellado E2 normal, %1$s = nombre.
         habi_perfect_* — hoja in-app de día perfecto E2, %1$s = nombre.
         habi_perfect_notif_* — cuerpo de la notificación de día perfecto, %1$s = nombre.
-        habi_badge_* — hoja de logro desbloqueado, %1$s = nombre, %2$s = nombre del badge.
+        habi_badge_* — hoja de logro desbloqueado, %1$s = nombre, %2$s = nombre del badge. Habla
+        en todos los badges salvo streak-7, donde habla habi_eye_second_* en su lugar (un solo
+        globo, no dos).
     -->
     <string name="habi_bubble_sargento_radiant">Semana impecable. Ni un pero. Así se trabaja.</string>
     <string name="habi_bubble_sargento_normal">Aceptable. Tú y yo sabemos que puedes más.</string>
