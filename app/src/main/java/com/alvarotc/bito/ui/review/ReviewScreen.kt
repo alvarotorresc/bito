@@ -39,8 +39,10 @@ import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiMotion
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.habi.rememberHabiMotion
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.HojaTinte
 import com.alvarotc.bito.ui.theme.Papel
@@ -61,6 +63,26 @@ fun ReviewScreen(
     onClose: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    val cue by viewModel.habiCue.collectAsStateWithLifecycle()
+    val motion =
+        rememberHabiMotion(
+            pose = state.spec.pose,
+            mood = state.spec.mood,
+            personality = state.spec.personality,
+            onSound = viewModel::playHabiSound,
+        )
+    // Slot único (patrón de TodayScreen), consumido por id: la reacción de un sello sigue viva
+    // aunque, mientras dura, la pantalla salte de E1 a E2 (el sellado que la disparó).
+    LaunchedEffect(cue?.id) {
+        val envelope = cue ?: return@LaunchedEffect
+        try {
+            motion.play(envelope.cue, state.spec.personality)
+        } finally {
+            viewModel.consumeHabiCue(envelope.id)
+        }
+    }
+
     if (state.loading) {
         // First frame while the cold combine warms up: calm paper — never a flash of an empty
         // E1 that then swaps to E2 (QA 2026-08-24: entry read as transparent/stuck).
@@ -70,7 +92,7 @@ fun ReviewScreen(
     if (state.todaySealed) {
         SealedState(viewModel, state, onClose)
     } else {
-        OpenState(viewModel, state, onClose)
+        OpenState(viewModel, state, onClose, motion)
     }
 }
 
@@ -80,6 +102,7 @@ private fun OpenState(
     viewModel: ReviewViewModel,
     state: ReviewUiState,
     onClose: () -> Unit,
+    motion: HabiMotion,
 ) {
     var exactFor by remember { mutableStateOf<HabitCardUi?>(null) }
     var relapseFor by remember { mutableStateOf<HabitCardUi?>(null) }
@@ -114,7 +137,7 @@ private fun OpenState(
                         )
                     }
                     if (state.rows.isNotEmpty()) {
-                        item { ReviewHabiBubble(state.spec, state.userName) }
+                        item { ReviewHabiBubble(state.spec, state.userName, motion) }
                     }
                 }
             }
@@ -264,17 +287,18 @@ private fun EmptyReviewState(
     }
 }
 
-/** Habi mini, quietly observing under the pending rows. */
+/** Habi mini, viva bajo las filas pendientes: asiente a cada sello del lote (spec §8). */
 @Composable
 private fun ReviewHabiBubble(
     spec: HabiSpec,
     userName: String,
+    motion: HabiMotion,
 ) {
     val fallbackName = stringResource(R.string.habi_name_fallback)
     SpeechBubble(
         speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(spec.personality))),
         text = stringResource(HabiVoice.reviewRes(spec.personality), userName.ifBlank { fallbackName }),
         modifier = Modifier.fillMaxWidth(),
-        avatar = { HabiAvatar(spec, Modifier.size(40.dp), animated = false) },
+        avatar = { HabiAvatar(spec, Modifier.size(40.dp), motion = motion) },
     )
 }

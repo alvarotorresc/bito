@@ -18,6 +18,7 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.HabiCue
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
@@ -214,6 +215,39 @@ class ReviewViewModelTest {
             val seals = db.daySealDao().all().map { it.logicalDay }.sorted()
             assertEquals(listOf(today - 2, today - 1), seals)
             assertTrue(seals.none { it == today })
+        }
+
+    @Test
+    fun `sealing today emits one SEALED cue`() =
+        runTest {
+            state() // warms uiState before sealing
+
+            vm.sealToday()
+            advanceUntilIdle()
+
+            assertEquals(HabiCue.SEALED, vm.habiCue.value?.cue)
+        }
+
+    @Test
+    fun `a batch of three pending days nods three times`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    metric = Metric.CHECK,
+                    direction = Direction.ZERO,
+                    period = Period.DAY,
+                    createdOnDay = today - 3,
+                ),
+            )
+            assertEquals(listOf(today - 3, today - 2, today - 1), state().pendingSealDays)
+            val ids = mutableListOf<Long>()
+            backgroundScope.launch { vm.habiCue.collect { it?.let { e -> ids += e.id } } }
+
+            vm.sealPendingDays()
+            advanceUntilIdle()
+
+            assertEquals(3, ids.distinct().size)
         }
 
     // R7 follow-up: the screen's LaunchedEffect(state.todaySealed, state.perfectToday) can re-run

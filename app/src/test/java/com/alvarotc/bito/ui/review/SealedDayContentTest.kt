@@ -3,13 +3,17 @@ package com.alvarotc.bito.ui.review
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import com.alvarotc.bito.domain.TODAY
+import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.model.BadgeCatalog
 import com.alvarotc.bito.domain.model.BadgeDef
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.theme.BitoTheme
+import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -92,5 +96,15 @@ class SealedDayContentTest {
         compose.onNodeWithTag("review-badge-first-freezer", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("First flame", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Below zero", useUnmergedTree = true).assertExists()
+    }
+
+    // Spec §8: this sheet only ever exists once today is sealed, and HabiDay.phaseOf's `sealed`
+    // branch overrides everything else — the pose buildReviewUiState hands it is ALWAYS SLEEPING,
+    // never STANDING/WAITING, no matter the hour or how many cards were left open.
+    @Test
+    fun `the sealed sheet shows her asleep`() {
+        val state = buildReviewUiState(domainState(sealedDays = listOf(TODAY)), emptyMap(), TODAY)
+
+        assertEquals(HabiPose.SLEEPING, state.spec.pose)
     }
 }

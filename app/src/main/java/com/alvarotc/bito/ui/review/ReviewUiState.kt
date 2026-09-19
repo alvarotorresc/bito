@@ -55,10 +55,24 @@ fun buildReviewUiState(
     personality: Personality = Personality.NEUTRA,
     owned: List<CustomizationItemEntity> = emptyList(),
     userName: String = "",
+    minutesOfDay: Int = 0,
+    reviewTimeMinutes: Int = 21 * 60 + 30,
+    eyesPainted: Int = 2,
     badges: List<BadgeEntity> = emptyList(),
     badgesSeenUntilMillis: Long = 0L,
 ): ReviewUiState {
-    val todayUi = buildTodayUiState(state, sortOrder, today, personality, owned, userName)
+    val todayUi =
+        buildTodayUiState(
+            state,
+            sortOrder,
+            today,
+            personality,
+            owned,
+            userName,
+            minutesOfDay = minutesOfDay,
+            reviewTimeMinutes = reviewTimeMinutes,
+            eyesPainted = eyesPainted,
+        )
     return ReviewUiState(
         today = today,
         rows = reviewRowsOf(todayUi.cards, todayUi.todaySealed).filterNot { it.id in acknowledged },
