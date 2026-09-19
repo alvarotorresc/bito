@@ -14,4 +14,6 @@ data class DomainState(
     val pauseIntervals: List<PauseInterval> = emptyList(),
     val freezerUses: List<FreezerUse> = emptyList(),
     val pointsLedger: List<PointsLedgerEntry> = emptyList(),
+    val tasks: List<Task> = emptyList(),
+    val taskEvents: List<TaskEvent> = emptyList(),
 )
