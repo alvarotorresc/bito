@@ -42,15 +42,16 @@ import kotlin.math.roundToInt
 class HabiDrawingTest {
     private val size = 96
 
-    /** Mirrors the body-fill normalized center from the drawing spec (cx=0.5, cy=0.55). */
-    private fun bodyCenterPixel(sizePx: Int) = px(0.5f, sizePx) to px(0.55f, sizePx)
+    /** Lee las constantes del renderer en vez de duplicarlas: T8 mueve la geometría y esto la sigue sola. */
+    private fun bodyCenterPixel(sizePx: Int) = px(BODY_CX, sizePx) to px(BODY_CY, sizePx)
 
-    /** Mirrors the left-eye normalized center from the drawing spec (y=0.50, x=0.5-0.14 — art pass 2026-08-25). */
-    private fun leftEyePixel(sizePx: Int) = px(0.5f - 0.14f, sizePx) to px(0.5f, sizePx)
+    private fun leftEyePixel(sizePx: Int) = px(BODY_CX - EYE_DX, sizePx) to px(EYE_Y, sizePx)
+
+    private fun rightEyePixel(sizePx: Int) = px(BODY_CX + EYE_DX, sizePx) to px(EYE_Y, sizePx)
 
     /**
      * Mirrors the first sparkle's offset from the drawing spec, relative to the left eye.
-     * `eyeRy = eyeRx * 1.0` mirrors EYE_HEIGHT_MULT (round eyes per architect review, was 1.4/oval).
+     * `eyeRy = eyeRx * EYE_HEIGHT_MULT` (round eyes per architect review, was 1.4/oval).
      *
      * Uses `.toInt()` (truncate toward zero, i.e. floor for these always-positive coordinates),
      * not `.roundToInt()`: a bitmap pixel index `i` represents the half-open continuous interval
@@ -64,10 +65,10 @@ class HabiDrawingTest {
         sizePx: Int,
         eyeScale: Float,
     ): Pair<Int, Int> {
-        val eyeCenterX = (0.5f - 0.14f) * sizePx
-        val eyeCenterY = 0.5f * sizePx
-        val eyeRx = 0.048f * eyeScale * sizePx
-        val eyeRy = eyeRx * 1.0f
+        val eyeCenterX = (BODY_CX - EYE_DX) * sizePx
+        val eyeCenterY = EYE_Y * sizePx
+        val eyeRx = EYE_BASE_RX * eyeScale * sizePx
+        val eyeRy = eyeRx * EYE_HEIGHT_MULT
         val x = eyeCenterX + eyeRx * 0.55f
         val y = eyeCenterY - eyeRy * 0.75f
         return x.toInt() to y.toInt()
@@ -159,6 +160,54 @@ class HabiDrawingTest {
         assertEquals(HabiSalvia.toArgb(), closed)
     }
 
+    // --- T7: the eye ritual (HabiSpec.eyesPainted) ----------------------------------------------
+
+    @Test
+    fun `both eyes are painted by default`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val bitmap = renderHabiBitmap(spec, size)
+        val (lx, ly) = leftEyePixel(size)
+        val (rx, ry) = rightEyePixel(size)
+
+        assertEquals(Tinta.toArgb(), bitmap.getPixel(lx, ly))
+        assertEquals(Tinta.toArgb(), bitmap.getPixel(rx, ry))
+    }
+
+    @Test
+    fun `one painted eye is the left one - the daruma convention`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(), eyesPainted = 1)
+        val bitmap = renderHabiBitmap(spec, size)
+        val (lx, ly) = leftEyePixel(size)
+        val (rx, ry) = rightEyePixel(size)
+
+        assertEquals(Tinta.toArgb(), bitmap.getPixel(lx, ly))
+        assertNotEquals(Tinta.toArgb(), bitmap.getPixel(rx, ry))
+    }
+
+    @Test
+    fun `a newborn Habi has neither eye painted, and no sparkles either`() {
+        // CHEERLEADER RADIANT: eyeScale 1.2, sparkles 3 — con los ojos pintados ese píxel es Tarjeta.
+        val painted = HabiSpec(Mood.RADIANT, Personality.CHEERLEADER, EquippedSet())
+        val newborn = painted.copy(eyesPainted = 0)
+        val (lx, ly) = leftEyePixel(size)
+        val (sx, sy) = leftEyeSparklePixel(size, eyeScale = 1.2f)
+
+        assertNotEquals(Tinta.toArgb(), renderHabiBitmap(newborn, size).getPixel(lx, ly))
+        assertEquals(Tarjeta.toArgb(), renderHabiBitmap(painted, size).getPixel(sx, sy))
+        assertNotEquals(Tarjeta.toArgb(), renderHabiBitmap(newborn, size).getPixel(sx, sy))
+    }
+
+    @Test
+    fun `an unpainted eye still blinks - it is geometry, not fill`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(), eyesPainted = 0)
+        val (x, y) = leftEyePixel(size)
+
+        val open = renderWithBlink(spec, size, blink = 0f).getPixel(x, y)
+        val closed = renderWithBlink(spec, size, blink = 1f).getPixel(x, y)
+
+        assertNotEquals(open, closed)
+    }
+
     // --- Scene opts (mockup 7b): body tone override + closed-lid eyes --------------------------
 
     /** Onboarding 7b's muted sage, the override's one real consumer — any tone would exercise the axis. */
@@ -172,15 +221,15 @@ class HabiDrawingTest {
      * lands mid-stroke.
      */
     private fun leftClosedLidPixel(sizePx: Int): Pair<Int, Int> {
-        val x = (0.5f - 0.14f) * sizePx
-        val y = (0.5f + 0.05f + 0.018f) * sizePx
+        val x = (BODY_CX - EYE_DX) * sizePx
+        val y = (EYE_Y + 0.05f + 0.018f) * sizePx
         return x.toInt() to y.toInt()
     }
 
     /** Mirrors the lash mark's mid-arc centerline: LASH_DROP 0.07 under the lid line, sagging LASH_SAG 0.01. */
     private fun leftLashPixel(sizePx: Int): Pair<Int, Int> {
-        val x = (0.5f - 0.14f) * sizePx
-        val y = (0.5f + 0.05f + 0.07f + 0.01f) * sizePx
+        val x = (BODY_CX - EYE_DX) * sizePx
+        val y = (EYE_Y + 0.05f + 0.07f + 0.01f) * sizePx
         return x.toInt() to y.toInt()
     }
 

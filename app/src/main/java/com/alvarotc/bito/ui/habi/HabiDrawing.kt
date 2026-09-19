@@ -64,8 +64,9 @@ data class HabiSpec(
 
 // Body — egg/bean path, center (0.5, 0.55), slightly wider at the bottom (BODY_BULGE shifts the
 // widest point below center). Numbers are art-phase-tunable against design/mockups/m6/4-habi-pantalla.png.
-private const val BODY_CX = 0.5f
-private const val BODY_CY = 0.55f
+// BODY_CX/BODY_CY are internal so HabiDrawingTest reads them instead of duplicating them by hand.
+internal const val BODY_CX = 0.5f
+internal const val BODY_CY = 0.55f
 private const val BODY_RX = 0.34f
 private const val BODY_RY = 0.42f
 private const val BODY_BULGE = 0.05f
@@ -88,14 +89,16 @@ private const val SHADE_TONE_FACTOR = 0.7f
 // the eyes high and wide, which read scribbled. The mockup's face cluster sits LOWER and tighter —
 // a taller forehead over closer-set, slightly smaller eyes is what makes the bean read young and
 // tender instead of startled.
-private const val EYE_Y = 0.5f
-private const val EYE_DX = 0.14f
-private const val EYE_BASE_RX = 0.048f
+// Internal (along with EYE_BASE_RX/EYE_HEIGHT_MULT below and MOUTH_Y further down) so
+// HabiDrawingTest reads the renderer's own geometry instead of duplicating it by hand.
+internal const val EYE_Y = 0.5f
+internal const val EYE_DX = 0.14f
+internal const val EYE_BASE_RX = 0.048f
 
 // Architect review (post-T10 grids): round eyes match the mockup — was 1.4 (oval); 1.0 makes
 // rx == ry, a true circle when fully open. Blink still reads fine: ryOpen shrinks toward 0 as
 // blink -> 1, same "closing eyelid" motion, just starting from a circle instead of an oval.
-private const val EYE_HEIGHT_MULT = 1.0f
+internal const val EYE_HEIGHT_MULT = 1.0f
 
 // A closing eye shrinks toward its BOTTOM edge (the oval's center rides down as it closes), which
 // reads as an upper lid descending; the previous symmetric shrink read as a robotic squint.
@@ -104,6 +107,13 @@ private const val EYELID_BIAS = 0.55f
 // WILTED keeps its eyes heavy-lidded (mockup: relaxed, nearly-closed arcs) — a resting droop on
 // the same closing axis a blink uses, so the two compose instead of fighting.
 private const val WILTED_EYELID_DROOP = 0.42f
+
+// The newborn eye (EyeRitual, HabiSpec.eyesPainted 0/1): the SAME oval as a painted eye, but with
+// no iris fill and no sparkles — a lightened body tone instead, ringed by a faint ink stroke. It
+// blinks, droops and gazes exactly like a painted eye: only the fill changes.
+internal const val UNPAINTED_EYE_LIGHTEN = 1.25f
+internal const val UNPAINTED_EYE_STROKE = 0.012f
+internal const val UNPAINTED_EYE_STROKE_ALPHA = 0.55f
 
 // Closed-lid variant (HabiSpec.closedEyes, onboarding 7b): each eye is a round-capped arc that
 // SAGS below its endpoints — the tips are the high points, the opposite bow of the canon mustia
@@ -158,7 +168,7 @@ private const val BROW_WIDTH = 0.026f
 // Mouth strokes match the mockup's chunky trazo (4/120 ≈ 0.033; a touch under so the big stage
 // avatar doesn't turn cartoonish), and the mouth WIDENS with joy: rest width plus gains for an
 // open mouth and a positive curve, like the mockup's narrow "normal" vs wide "radiante".
-private const val MOUTH_Y = 0.66f
+internal const val MOUTH_Y = 0.66f
 private const val MOUTH_HALF_WIDTH = 0.065f
 private const val MOUTH_WIDTH_OPEN_GAIN = 0.022f
 private const val MOUTH_WIDTH_SMILE_GAIN = 0.02f
@@ -385,7 +395,7 @@ fun DrawScope.drawHabi(
     if (spec.closedEyes) {
         drawClosedEyes(vp, eyeColor)
     } else {
-        drawEyes(vp, face, blink, resolved.eyelidDroop, gaze, eyeColor)
+        drawEyes(vp, face, blink, resolved.eyelidDroop, gaze, eyeColor, spec.eyesPainted, bodyTone)
     }
     drawBrows(vp, face)
     drawMouth(vp, face, resolved.smirkProgress, resolved.mouthWobble)
@@ -732,6 +742,14 @@ private fun sparklePath(
 private fun Color.darken(factor: Float = PATTERN_TINT_FACTOR): Color =
     copy(red = red * factor, green = green * factor, blue = blue * factor)
 
+/** Variante aclarada de un tono — multiplica RGB hacia el blanco, alfa intacta. Espejo de `darken`. */
+internal fun Color.lighten(factor: Float): Color =
+    copy(
+        red = (red * factor).coerceAtMost(1f),
+        green = (green * factor).coerceAtMost(1f),
+        blue = (blue * factor).coerceAtMost(1f),
+    )
+
 private fun DrawScope.drawCheeks(
     vp: HabiViewport,
     face: FaceParams,
@@ -772,6 +790,8 @@ private fun DrawScope.drawEyes(
     droop: Float,
     gaze: Offset,
     eyeColor: Color,
+    eyesPainted: Int,
+    bodyTone: Color,
 ) {
     val rx = vp.len(EYE_BASE_RX * face.eyeScale)
     val ry = rx * EYE_HEIGHT_MULT
@@ -785,19 +805,31 @@ private fun DrawScope.drawEyes(
     // A glance, not a stare: both eyes shift together a tiny fraction toward the gaze target.
     val gazeDx = vp.len(GAZE_SHIFT_X) * gaze.x.coerceIn(-1f, 1f)
     val gazeDy = vp.len(GAZE_SHIFT_Y) * gaze.y.coerceIn(-1f, 1f)
+    // Convención del daruma (biblia §4): con un solo ojo pintado, el pintado es el IZQUIERDO.
+    val unpaintedFill = bodyTone.lighten(UNPAINTED_EYE_LIGHTEN)
 
     for (side in SIDES) {
+        val painted = if (side < 0f) eyesPainted >= 1 else eyesPainted >= 2
         val base = vp.point(BODY_CX + side * EYE_DX, EYE_Y)
         val center = Offset(base.x + gazeDx, base.y + lidShift + gazeDy)
-        if (ryOpen > 0f) {
-            drawOval(
-                color = eyeColor,
-                topLeft = Offset(center.x - rx, center.y - ryOpen),
-                size = Size(rx * 2f, ryOpen * 2f),
-            )
+        if (ryOpen <= 0f) continue
+        val topLeft = Offset(center.x - rx, center.y - ryOpen)
+        val ovalSize = Size(rx * 2f, ryOpen * 2f)
+        if (painted) {
+            drawOval(color = eyeColor, topLeft = topLeft, size = ovalSize)
             // Sparkles ride on the mostly-open eye only — over a nearly-shut slit they would read
             // as stray dots with nothing under them.
             if (closure < 0.5f) drawSparkles(center, rx, ryOpen, face.sparkles)
+        } else {
+            // El ojo por estrenar: el MISMO óvalo, con el cuerpo aclarado dentro y un perfil de
+            // tinta. Sin brillos — el brillo es vida en el ojo, y este todavía no la tiene.
+            drawOval(color = unpaintedFill, topLeft = topLeft, size = ovalSize)
+            drawOval(
+                color = Tinta.copy(alpha = UNPAINTED_EYE_STROKE_ALPHA),
+                topLeft = topLeft,
+                size = ovalSize,
+                style = Stroke(width = vp.len(UNPAINTED_EYE_STROKE)),
+            )
         }
     }
 }
