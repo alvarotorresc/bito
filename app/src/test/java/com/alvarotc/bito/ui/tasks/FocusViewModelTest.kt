@@ -355,12 +355,12 @@ class FocusViewModelTest {
             val presence2 = FakeFocusPresence()
             val vm2 = newViewModel("t2", presence2)
             activate(vm2)
-            val showCallsAfterEntering = presence2.showCalls // el repost de la sesion viva de t1, ajeno a keepOther
+            assertEquals(1, presence2.showCalls) // el repost de la sesion viva de t1, ajeno a keepOther
 
             vm2.keepOther()
             settle()
 
-            assertEquals(showCallsAfterEntering, presence2.showCalls)
+            assertEquals(1, presence2.showCalls)
             assertTrue(db.taskEventDao().all().isEmpty())
             assertEquals("t1", focusStore.session.first()!!.taskId)
             assertEquals(0, presence2.clearCalls)
@@ -403,6 +403,46 @@ class FocusViewModelTest {
             assertEquals(0L, vm.uiState.value.remainingMillis)
             assertTrue(vm.uiState.value.running)
             assertFalse(vm.uiState.value.gone)
+        }
+
+    @Test
+    fun `extending an expired session counts the extra minutes from now, not from the stale end`() =
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            val presence = FakeFocusPresence()
+            val vm = newViewModel("t1", presence)
+            activate(vm)
+            vm.select(5)
+            vm.start()
+            settle()
+
+            currentNow += 6 * 60_000L // ya paso el fin de una sesion de 5 minutos, como en el caso de arriba
+            advanceOneTick()
+            assertEquals(0L, vm.uiState.value.remainingMillis)
+
+            vm.extend(5)
+            settle()
+
+            assertEquals(5 * 60_000L, vm.uiState.value.remainingMillis)
+        }
+
+    @Test
+    fun `advancing both clocks by the same amount counts down what elapsed time took`() =
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            val vm = newViewModel("t1")
+            activate(vm)
+            vm.start()
+            settle()
+
+            // El tiempo pasa sin reiniciar el dispositivo: los dos relojes avanzan igual, la firma
+            // de arranque sigue coincidiendo y el reloj de uptime decide cuanto queda.
+            currentNow += 4 * 60_000L
+            currentElapsed += 4 * 60_000L
+            advanceOneTick()
+
+            assertEquals((FocusViewModel.DEFAULT_MINUTES - 4) * 60_000L, vm.uiState.value.remainingMillis)
+            assertTrue(vm.uiState.value.running)
         }
 
     @Test

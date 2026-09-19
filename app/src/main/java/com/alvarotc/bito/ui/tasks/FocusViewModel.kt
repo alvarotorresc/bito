@@ -159,11 +159,12 @@ class FocusViewModel(
                 }
         }
         // Se relanza solo con cada sesion nueva (empezar, alargar o limpiar) — un solo delay vivo
-        // a la vez, nunca uno acumulandose por cada "+".
+        // a la vez, nunca uno acumulandose por cada "+". Para solo al llegar a 0: una sesion vencida
+        // no necesita que la sigan despertando cada segundo para seguir enseñando el mismo 00:00.
         viewModelScope.launch {
             focus.session.collectLatest { session ->
                 if (session == null) return@collectLatest
-                while (true) {
+                while (FocusClock.remainingMillis(session, now(), elapsed()) > 0) {
                     delay(1_000)
                     tick.value++
                 }
@@ -235,19 +236,38 @@ class FocusViewModel(
         selection.value = minutes
     }
 
+    /** Nunca pisa en silencio la sesion viva de OTRA tarea: eso es el conflicto, no un arranque. */
     fun start() =
         viewModelScope.launch {
             val taskId = requestedTaskId ?: return@launch
+            val liveTaskId = focus.session.first()?.taskId
+            if (liveTaskId != null && liveTaskId != taskId) return@launch
             beginSession(taskId, selection.value)
         }
 
-    /** Mueve el fin y reprograma la alarma y la notificacion — no toca el dominio. */
+    /**
+     * Mueve el fin y reprograma la alarma y la notificacion — no toca el dominio. Cuenta desde lo
+     * que QUEDA (`FocusClock.remainingMillis`), no desde el fin crudo guardado: sobre una sesion ya
+     * vencida ese fin esta en el pasado, y sumarle minutos ahi la dejaria vencida igual o programaria
+     * la alarma antes de lo que la pantalla enseña. Reescribe la sesion entera (no
+     * `FocusStore.extendBy`, que no refresca la firma de arranque) para que el siguiente
+     * `remainingMillis` la lea con el mismo par de relojes que la escribio.
+     */
     fun extend(minutes: Int) =
         viewModelScope.launch {
             val session = focus.session.first() ?: return@launch
-            val newEndsAtMillis = session.endsAtMillis + minutes * 60_000L
-            focus.extendBy(minutes)
-            presence.show(titleOf(session.taskId), newEndsAtMillis)
+            val nowMillis = now()
+            val elapsedMillis = elapsed()
+            val rest = FocusClock.remainingMillis(session, nowMillis, elapsedMillis) + minutes * 60_000L
+            focus.start(
+                session.copy(
+                    endsAtMillis = nowMillis + rest,
+                    endsAtElapsed = elapsedMillis + rest,
+                    bootMillis = FocusClock.bootSignatureOf(nowMillis, elapsedMillis),
+                ),
+            )
+            val title = titleOf(session.taskId) ?: return@launch
+            presence.show(title, nowMillis + rest)
         }
 
     fun finish() =
@@ -306,10 +326,12 @@ class FocusViewModel(
                 bootMillis = FocusClock.bootSignatureOf(nowMillis, elapsedMillis),
             ),
         )
-        presence.show(titleOf(taskId), endsAtMillis)
+        val title = titleOf(taskId) ?: return
+        presence.show(title, endsAtMillis)
     }
 
-    private suspend fun titleOf(taskId: String): String = tasks.task(taskId)?.title.orEmpty()
+    /** Null si la tarea ya no existe — los llamantes de [presence.show] no postean sin titulo. */
+    private suspend fun titleOf(taskId: String): String? = tasks.task(taskId)?.title
 
     private suspend fun currentToday(): LogicalDay = LogicalDays.logicalDayOf(now(), settings.settings.first().dayCutoffMinutes, zone())
 }
