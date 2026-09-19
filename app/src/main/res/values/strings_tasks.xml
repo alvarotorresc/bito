@@ -21,4 +21,18 @@
     <string name="task_form_due_none">No deadline</string>
     <string name="task_form_due_week">This week</string>
     <string name="task_form_due_date">Date</string>
+    <string name="tasks_screen_title">Tasks</string>
+    <string name="tasks_section_today">Today</string>
+    <string name="tasks_section_week">This week</string>
+    <string name="tasks_section_dated">With a deadline</string>
+    <string name="tasks_section_loose">No deadline</string>
+    <string name="tasks_section_done">Done</string>
+    <string name="tasks_empty">Nothing pending.</string>
+    <string name="task_bring_today">Bring to today</string>
+    <string name="task_no_due">no deadline</string>
+    <string name="task_edit">Edit</string>
+    <string name="task_delete">Delete</string>
+    <string name="task_row_menu_cd">More options</string>
+    <string name="task_delete_confirm_title">Delete this task?</string>
+    <string name="task_delete_confirm_body">Its history goes with it. The points you earned are yours.</string>
 </resources>

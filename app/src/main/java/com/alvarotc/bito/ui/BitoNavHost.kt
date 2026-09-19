@@ -58,6 +58,7 @@ import com.alvarotc.bito.ui.stats.StatsViewModel
 import com.alvarotc.bito.ui.tasks.CreateChoiceSheet
 import com.alvarotc.bito.ui.tasks.TaskFormSheet
 import com.alvarotc.bito.ui.tasks.TaskFormState
+import com.alvarotc.bito.ui.tasks.TasksScreen
 import com.alvarotc.bito.ui.tasks.TasksViewModel
 import com.alvarotc.bito.ui.tasks.resolvedDueDay
 import com.alvarotc.bito.ui.theme.Papel
@@ -209,6 +210,7 @@ fun BitoNavHost(container: AppContainer) {
                         }
                     },
                     onOpenReview = { nav.navigate("review") },
+                    onOpenTasks = { nav.navigate("tasks") },
                 )
             }
             composable(
@@ -298,6 +300,13 @@ fun BitoNavHost(container: AppContainer) {
                 ReviewScreen(
                     viewModel = viewModel(factory = ReviewViewModel.factory(container)),
                     onClose = { nav.popBackStack() },
+                )
+            }
+            // Sin barra inferior: la lista es un destino secundario colgado de Hoy, como review.
+            composable("tasks") {
+                TasksScreen(
+                    viewModel = viewModel(factory = TasksViewModel.factory(container)),
+                    onBack = { nav.popBackStack() },
                 )
             }
         }

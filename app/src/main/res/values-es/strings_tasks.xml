@@ -21,4 +21,18 @@
     <string name="task_form_due_none">Sin plazo</string>
     <string name="task_form_due_week">Esta semana</string>
     <string name="task_form_due_date">Fecha</string>
+    <string name="tasks_screen_title">Tareas</string>
+    <string name="tasks_section_today">Hoy</string>
+    <string name="tasks_section_week">Esta semana</string>
+    <string name="tasks_section_dated">Con plazo</string>
+    <string name="tasks_section_loose">Sin plazo</string>
+    <string name="tasks_section_done">Hechas</string>
+    <string name="tasks_empty">Nada pendiente.</string>
+    <string name="task_bring_today">Traer a hoy</string>
+    <string name="task_no_due">sin plazo</string>
+    <string name="task_edit">Editar</string>
+    <string name="task_delete">Borrar</string>
+    <string name="task_row_menu_cd">Más opciones</string>
+    <string name="task_delete_confirm_title">¿Borrar la tarea?</string>
+    <string name="task_delete_confirm_body">Su historia se va con ella. Los puntos ganados son tuyos.</string>
 </resources>
