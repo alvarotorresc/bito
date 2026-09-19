@@ -17,6 +17,8 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertIs
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class HabiUiStateTest {
@@ -256,5 +258,42 @@ class HabiUiStateTest {
         val result = buildHabiUiState(domainState(), emptyList(), 0, Personality.NEUTRA, TODAY)
         assertEquals(2, result.spec.eyesPainted)
         assertEquals(HabiPose.STANDING, result.spec.pose)
+    }
+
+    @Test
+    fun `the asleep line always accompanies its phase, no marker needed`() {
+        // Sealing happens once per logical day, so unlike WAITING there is nothing to gate.
+        val result = buildHabiUiState(domainState(), emptyList(), 0, Personality.NEUTRA, TODAY, dayPhase = HabiDayPhase.ASLEEP)
+
+        assertNotNull(result.dayLineRes)
+    }
+
+    @Test
+    fun `the waiting line sounds once per logical day, then goes quiet`() {
+        // biblia §12.2: WAITING is entered many times the same day (complete, uncheck, complete
+        // again) — the marker is what keeps the line from repeating every time.
+        val unsaid =
+            buildHabiUiState(
+                domainState(),
+                emptyList(),
+                0,
+                Personality.NEUTRA,
+                TODAY,
+                dayPhase = HabiDayPhase.WAITING,
+                waitingSaidDay = -1,
+            )
+        assertNotNull(unsaid.dayLineRes)
+
+        val alreadySaid =
+            buildHabiUiState(
+                domainState(),
+                emptyList(),
+                0,
+                Personality.NEUTRA,
+                TODAY,
+                dayPhase = HabiDayPhase.WAITING,
+                waitingSaidDay = TODAY,
+            )
+        assertNull(alreadySaid.dayLineRes)
     }
 }

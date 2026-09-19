@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.HabiDayPhase
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.icons.BitoIcons
@@ -64,13 +65,16 @@ import kotlinx.coroutines.delay
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    // Su día, con cuentagotas (biblia §12.2): if a day line is showing when this screen leaves
-    // composition, mark it seen so WAITING's line only sounds once per logical day — the marker
-    // is never written from inside the VM's combine (see HabiViewModel.onDayLineSeen kdoc).
+    // Su día, con cuentagotas (biblia §12.2): if WAITING's line is showing when this screen leaves
+    // composition, mark it seen so it only sounds once per logical day — the marker is never
+    // written from inside the VM's combine (see HabiViewModel.onDayLineSeen kdoc). Scoped to
+    // WAITING specifically, not "any visible line": ASLEEP's line needs no marker (sealing is
+    // terminal within a day), and onDayLineSeen writes habiWaitingSaidDay — writing it off the
+    // back of ASLEEP's visit would be a name that lies about what actually got said.
     // rememberUpdatedState so onDispose reads whatever was showing LAST, not the first frame's.
-    val latestDayLineRes = rememberUpdatedState(state.dayLineRes)
+    val saidWaitingLine = rememberUpdatedState(state.dayPhase == HabiDayPhase.WAITING && state.dayLineRes != null)
     DisposableEffect(Unit) {
-        onDispose { if (latestDayLineRes.value != null) viewModel.onDayLineSeen() }
+        onDispose { if (saidWaitingLine.value) viewModel.onDayLineSeen() }
     }
     var showPointsSheet by remember { mutableStateOf(false) }
     // Pet streak (QA 2026-08-24): three quick pets within 1.5s send Habi into a 2.6s delight —
