@@ -11,9 +11,9 @@ Bito ya tiene sitio para eso que llevas tres semanas esquivando y que no es un h
 - **Tareas**: la llamada, el papeleo, el correo. Con o sin plazo — sin plazo, esta semana o un día concreto —, y con un primer paso que escribes tú si te ayuda a arrancar.
 - **Una sección en Hoy** con solo lo que toca hoy: lo vencido, lo de hoy, lo de esta semana, lo que viene en tres días, lo que traes a mano y una suelta que Habi te trae cada día. «Hoy no» la devuelve a la lista y mañana Habi trae otra.
 - **La lista completa**, colgada de esa sección, ordenada por plazo, donde se edita y se borra.
-- **Empezar**: tu primer paso y un temporizador de 5, 10 o 25 minutos con Habi acompañando. Sigue corriendo con la app cerrada y con la pantalla apagada: una notificación con la cuenta atrás avisa cuando se acaba, y puedes alargarlo con +5, +15 o +30 sin salir de ahí. «He terminado» lo cierra bien; «Ha habido un inconveniente, lo dejo» lo deja sin más.
+- **Empezar**: tu primer paso y un temporizador de 5, 10 o 25 minutos con Habi acompañando. Sigue corriendo con la app cerrada y con la pantalla apagada: una notificación con la cuenta atrás te acompaña mientras dura, un aviso aparte te dice cuándo se acaba, y puedes alargarlo con +5, +15 o +30 sin salir de ahí. «He terminado» lo cierra bien; «Ha habido un inconveniente, lo dejo» lo deja sin más.
 - **Avisos de tareas a mediodía** cuando un plazo se acerca, con un único interruptor en Ajustes.
-- **Las tareas dan puntos**: 3 por hacerla, 5 si la haces dentro de plazo. Posponerla no quita puntos, pero a Habi le sienta mal — y hacerlas anima su semana igual que tus hábitos.
+- **Las tareas dan puntos**: 3 por hacerla, 5 si la haces dentro de plazo. Posponerla no quita puntos, pero a Habi le sienta mal — y hacerlas también anima su semana, aunque nunca más de un tercio de lo que ya dicen tus hábitos.
 
 ### Changed
 
