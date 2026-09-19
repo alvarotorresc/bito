@@ -29,6 +29,14 @@ fun TaskFormState.resolvedDueDay(today: LogicalDay): LogicalDay? =
         DueKind.DATE -> dueDay
     }
 
+/**
+ * The day the "Date" picker should open on: whatever was already chosen (a re-open to double
+ * check, or an edit already anchored to a date), never [today] when a real choice already exists —
+ * silently snapping back to today on re-open would change the deadline without the user touching
+ * anything.
+ */
+fun TaskFormState.datePickerSeed(today: LogicalDay): LogicalDay = dueDay ?: today
+
 /** Recovers the form shape a stored task was built from, blanks included. */
 fun TaskEntity.toFormState(): TaskFormState =
     TaskFormState(

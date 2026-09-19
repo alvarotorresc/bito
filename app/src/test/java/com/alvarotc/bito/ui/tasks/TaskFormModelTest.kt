@@ -64,4 +64,21 @@ class TaskFormModelTest {
         assertEquals(DueKind.WEEK, form.dueKind)
         assertEquals(TODAY + 3, form.dueDay)
     }
+
+    // --- datePickerSeed --------------------------------------------------------------------
+
+    @Test
+    fun `the date picker seed is the already chosen day, not today`() {
+        val chosen = TODAY + 12
+        val form = TaskFormState(title = "Renovar el DNI", dueKind = DueKind.DATE, dueDay = chosen)
+
+        assertEquals(chosen, form.datePickerSeed(TODAY))
+    }
+
+    @Test
+    fun `the date picker seed falls back to today when nothing is chosen yet`() {
+        val form = TaskFormState(title = "Renovar el DNI")
+
+        assertEquals(TODAY, form.datePickerSeed(TODAY))
+    }
 }

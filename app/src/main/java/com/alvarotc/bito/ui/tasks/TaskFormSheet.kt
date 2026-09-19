@@ -118,7 +118,7 @@ fun TaskFormSheet(
         val todayMillis = today.toUtcMillis()
         val datePickerState =
             rememberDatePickerState(
-                initialSelectedDateMillis = todayMillis,
+                initialSelectedDateMillis = state.datePickerSeed(today).toUtcMillis(),
                 selectableDates =
                     object : SelectableDates {
                         // No past days: today itself is still a valid deadline.
