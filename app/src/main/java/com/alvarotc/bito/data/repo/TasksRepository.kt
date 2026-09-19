@@ -1,5 +1,6 @@
 package com.alvarotc.bito.data.repo
 
+import androidx.room.withTransaction
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.TaskEntity
 import com.alvarotc.bito.data.db.TaskEventEntity
@@ -13,7 +14,8 @@ import java.util.UUID
 /**
  * Tareas puntuales: la fila y su historia. Toda escritura pasa por aqui, que es donde se hacen
  * ciertos los invariantes del dominio: status DONE si y solo si doneOnDay != null (T1), titulo
- * recortado y nunca vacio y primer paso en blanco guardado como null (T3), y eventos que no se
+ * recortado, y en blanco se rechaza (T3 — red de seguridad: el formulario ya bloquea antes con
+ * canSave, como HabitFormModel), primer paso en blanco guardado como null, y eventos que no se
  * editan ni se borran (T4) — editar toca SOLO la fila de tasks.
  */
 class TasksRepository(private val db: BitoDatabase) {
@@ -30,8 +32,8 @@ class TasksRepository(private val db: BitoDatabase) {
         firstStep: String?,
         dueKind: DueKind,
         dueDay: Int?,
-    ) {
-        val current = db.taskDao().byId(id) ?: return
+    ) = db.withTransaction {
+        val current = db.taskDao().byId(id) ?: return@withTransaction
         db.taskDao().upsert(
             current.copy(title = title, firstStep = firstStep, dueKind = dueKind, dueDay = dueDay).normalized(),
         )
@@ -44,16 +46,17 @@ class TasksRepository(private val db: BitoDatabase) {
         id: String,
         today: LogicalDay,
         nowMillis: Long,
-    ) {
-        val current = db.taskDao().byId(id) ?: return
+    ) = db.withTransaction {
+        val current = db.taskDao().byId(id) ?: return@withTransaction
         db.taskDao().upsert(current.copy(status = TaskStatus.DONE, doneOnDay = today, doneAtMillis = nowMillis))
     }
 
     /** El deshacer del snackbar. El apunte de puntos se queda: lo ganado, ganado. */
-    suspend fun reopen(id: String) {
-        val current = db.taskDao().byId(id) ?: return
-        db.taskDao().upsert(current.copy(status = TaskStatus.OPEN, doneOnDay = null, doneAtMillis = null))
-    }
+    suspend fun reopen(id: String) =
+        db.withTransaction {
+            val current = db.taskDao().byId(id) ?: return@withTransaction
+            db.taskDao().upsert(current.copy(status = TaskStatus.OPEN, doneOnDay = null, doneAtMillis = null))
+        }
 
     suspend fun postpone(
         id: String,
@@ -80,5 +83,10 @@ class TasksRepository(private val db: BitoDatabase) {
         nowMillis: Long,
     ) = db.taskEventDao().insert(TaskEventEntity(UUID.randomUUID().toString(), taskId, kind, day, nowMillis))
 
-    private fun TaskEntity.normalized(): TaskEntity = copy(title = title.trim(), firstStep = firstStep?.trim()?.ifBlank { null })
+    /** Recorta ambos campos; un titulo que queda en blanco tras recortar se rechaza (T3). */
+    private fun TaskEntity.normalized(): TaskEntity {
+        val trimmed = copy(title = title.trim(), firstStep = firstStep?.trim()?.ifBlank { null })
+        require(trimmed.title.isNotBlank()) { "task title must not be blank" }
+        return trimmed
+    }
 }

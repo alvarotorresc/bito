@@ -14,6 +14,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -49,6 +50,19 @@ class TasksRepositoryTest {
         }
 
     @Test
+    fun `create rejects a blank title and writes nothing`() =
+        runTest {
+            try {
+                repo.create(taskEntity(id = "t1", title = "   "))
+                fail("a blank title should have thrown")
+            } catch (expected: IllegalArgumentException) {
+                // esperado
+            }
+
+            assertTrue(db.taskDao().all().isEmpty())
+        }
+
+    @Test
     fun `marking done sets both halves of the invariant, and reopening clears both`() =
         runTest {
             repo.create(taskEntity(id = "t1"))
@@ -67,18 +81,34 @@ class TasksRepositoryTest {
         }
 
     @Test
-    fun `editing touches only the task row, never its events`() =
+    fun `editing touches only the task row, never its events, and trims both fields`() =
         runTest {
             repo.create(taskEntity(id = "t1", title = "Viejo"))
             repo.postpone("t1", DAY_ZERO, nowMillis = 1_000L)
 
-            repo.update("t1", title = "Nuevo", firstStep = "Primer paso", dueKind = DueKind.DATE, dueDay = DAY_ZERO + 5)
+            repo.update("t1", title = " Nuevo ", firstStep = " Primer paso ", dueKind = DueKind.DATE, dueDay = DAY_ZERO + 5)
 
             val stored = repo.task("t1")!!
             assertEquals("Nuevo", stored.title)
+            assertEquals("Primer paso", stored.firstStep)
             assertEquals(DueKind.DATE, stored.dueKind)
             assertEquals(DAY_ZERO + 5, stored.dueDay)
             assertEquals(1, db.taskEventDao().all().size)
+        }
+
+    @Test
+    fun `update rejects a blank title and leaves the row untouched`() =
+        runTest {
+            repo.create(taskEntity(id = "t1", title = "Original"))
+
+            try {
+                repo.update("t1", title = "   ", firstStep = null, dueKind = DueKind.NONE, dueDay = null)
+                fail("a blank title should have thrown")
+            } catch (expected: IllegalArgumentException) {
+                // esperado
+            }
+
+            assertEquals("Original", repo.task("t1")!!.title)
         }
 
     @Test
