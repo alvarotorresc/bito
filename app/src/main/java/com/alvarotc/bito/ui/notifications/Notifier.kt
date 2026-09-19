@@ -227,6 +227,11 @@ object Notifier {
                 .setContentTitle(taskTitle)
                 .setContentText(context.getString(R.string.notif_focus_over))
                 .setContentIntent(contentIntent(context, "focus", 4))
+                // setOnlyAlertOnce(false) es obligatorio — lo hereda en true de baseBuilder, y esta
+                // notificacion postea bajo el mismo FOCUS_ID que ya ocupa la permanente; sin esto,
+                // sustituye a showFocus en silencio (sin sonido, sin vibracion, sin heads-up), y un
+                // aviso de fin que no avisa no es un aviso de fin.
+                .setOnlyAlertOnce(false)
         notify(context, FOCUS_ID, builder)
     }
 

@@ -10,6 +10,7 @@ import android.os.Looper
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.AppStartup
 import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.db.TaskEntity
@@ -18,6 +19,7 @@ import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -35,8 +37,10 @@ import org.robolectric.annotation.Config
  * two goAsync receivers — [FocusReceiver] and `BootReceiver`'s focus block — dispatched through
  * [Context.sendBroadcast] against the manifest so `goAsync()`/`finish()` see a real pending
  * result. The class default runs with a bare [Application] (no [BitoApp] boot, no `AppStartup`
- * collectors) for the tests that don't need a container; the two receiver tests override that
- * per-method to get a real [BitoApp].
+ * collectors) for the tests that don't need a container; the receiver tests override that
+ * per-method to get a real [BitoApp] — and, since that boot can trip `AppStartup`'s latch for
+ * real and launch [FocusSync] bound to that same container, [setUp]/[tearDown] quiesce it so a
+ * green assertion proves the receiver's own logic, not [FocusSync] racing in independently.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
@@ -49,6 +53,17 @@ class FocusAlarmTest {
     fun setUp() {
         NotificationChannels.ensure(context)
         shadowOf(notificationManager).setNotificationsEnabled(true)
+        // A test's own @Config(application = BitoApp::class) boots a real BitoApp.onCreate()
+        // before this even runs, which can trip AppStartup's one-shot latch for real and launch
+        // FocusSync bound to THIS test's container — quiescing here neutralizes that so a green
+        // "no live session only cleans the tray" assertion proves FocusReceiver's own cancel, not
+        // FocusSync's independent one racing in first (see AppStartup.quiesceForTests's KDoc).
+        AppStartup.quiesceForTests()
+    }
+
+    @After
+    fun tearDown() {
+        AppStartup.quiesceForTests()
     }
 
     @Suppress("DEPRECATION") // ShadowAlarmManager.ScheduledAlarm#operation has no replacement accessor.
@@ -56,7 +71,9 @@ class FocusAlarmTest {
     fun `scheduling leaves exactly one pending alarm`() {
         FocusAlarm.schedule(context, System.currentTimeMillis() + 5 * 60_000L)
 
-        assertEquals(1, shadowOf(alarmManager).scheduledAlarms.size)
+        val scheduled = shadowOf(alarmManager).scheduledAlarms
+        assertEquals(1, scheduled.size)
+        assertEquals(AlarmManager.RTC_WAKEUP, scheduled.single().type)
     }
 
     @Suppress("DEPRECATION") // ShadowAlarmManager.ScheduledAlarm#operation has no replacement accessor.
@@ -69,7 +86,9 @@ class FocusAlarmTest {
         FocusAlarm.schedule(context, now + 15 * 60_000L)
         FocusAlarm.schedule(context, now + 20 * 60_000L)
 
-        assertEquals(1, shadowOf(alarmManager).scheduledAlarms.size)
+        val scheduled = shadowOf(alarmManager).scheduledAlarms
+        assertEquals(1, scheduled.size)
+        assertEquals(now + 20 * 60_000L, scheduled.single().triggerAtTime)
     }
 
     @Test
@@ -83,7 +102,9 @@ class FocusAlarmTest {
 
     @Test
     fun `the focus notification is ongoing and survives a tap`() {
-        Notifier.showFocus(context, "Leer", System.currentTimeMillis() + 5 * 60_000L)
+        val endsAt = System.currentTimeMillis() + 5 * 60_000L
+
+        Notifier.showFocus(context, "Leer", endsAt)
 
         val posted = shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID)
 
@@ -96,6 +117,11 @@ class FocusAlarmTest {
         // this is the actual claim in Notifier.showFocus's KDoc, not just the flags above.
         assertTrue(posted.extras.getBoolean(Notification.EXTRA_SHOW_CHRONOMETER))
         assertTrue(posted.extras.getBoolean(Notification.EXTRA_CHRONOMETER_COUNT_DOWN))
+        // setWhen(endsAtMillis): the chronometer counts down TO this instant, not from "now".
+        assertEquals(endsAt, posted.`when`)
+        // setSilent(true): no sound, no vibration — SystemUI paints the tick, Bito doesn't alert.
+        assertNull(posted.sound)
+        assertNull(posted.vibrate)
     }
 
     @Test
@@ -105,6 +131,39 @@ class FocusAlarmTest {
         Notifier.cancelFocus(context)
 
         assertNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+    }
+
+    @Config(application = BitoApp::class)
+    @Test
+    fun `a fired alarm with a live session posts the time's up notification`() {
+        val container = (context.applicationContext as BitoApp).container
+        runBlocking { container.tasks.create(taskEntity("t1", "Leer")) }
+        runBlocking {
+            container.focus.start(
+                FocusSession(
+                    taskId = "t1",
+                    startedAtMillis = System.currentTimeMillis(),
+                    endsAtMillis = System.currentTimeMillis() + 5 * 60_000L,
+                    endsAtElapsed = 0L,
+                    bootMillis = 0L,
+                ),
+            )
+        }
+        Notifier.showFocus(context, "Leer", System.currentTimeMillis() + 5 * 60_000L)
+
+        context.sendBroadcast(Intent(context, FocusReceiver::class.java))
+        shadowOf(Looper.getMainLooper()).idle()
+
+        eventually {
+            val posted = shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID)
+            posted != null && posted.extras.getString(Notification.EXTRA_TEXT) == context.getString(R.string.notif_focus_over)
+        }
+        val posted = shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID)
+        assertEquals("Leer", posted.extras.getString(Notification.EXTRA_TITLE))
+        assertEquals(context.getString(R.string.notif_focus_over), posted.extras.getString(Notification.EXTRA_TEXT))
+        // showFocusOver's whole point: setOnlyAlertOnce(false) so this replaces the permanent
+        // notification with a real alert, not a silent swap under the same FOCUS_ID.
+        assertTrue(posted.flags and Notification.FLAG_ONLY_ALERT_ONCE == 0)
     }
 
     @Config(application = BitoApp::class)

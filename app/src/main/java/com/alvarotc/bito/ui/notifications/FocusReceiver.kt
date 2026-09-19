@@ -18,6 +18,8 @@ class FocusReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         CoroutineScope(Dispatchers.Default).launch {
             try {
+                // A DataStore/Room IO failure reading the session or the task must not crash the
+                // process — finish() below still has to run so the system doesn't ANR us.
                 runCatching {
                     val container = (context.applicationContext as BitoApp).container
                     val session = container.focus.session.first()

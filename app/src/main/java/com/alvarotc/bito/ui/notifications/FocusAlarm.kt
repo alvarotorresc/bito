@@ -20,8 +20,11 @@ object FocusAlarm {
         endsAtMillis: Long,
     ) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val pendingIntent = intentFor(context)
+        // FLAG_UPDATE_CURRENT nunca devuelve null — solo FLAG_NO_CREATE puede (ver cancel()).
+        val pendingIntent = intentFor(context, PendingIntent.FLAG_UPDATE_CURRENT)!!
         val canScheduleExact = Build.VERSION.SDK_INT < Build.VERSION_CODES.S || alarmManager.canScheduleExactAlarms()
+        // Una revocacion del permiso de alarma exacta entre canScheduleExactAlarms() y el set de
+        // arriba (TOCTOU) surge aqui como SecurityException — no debe tirar abajo a quien llama.
         runCatching {
             if (canScheduleExact) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, endsAtMillis, pendingIntent)
@@ -33,14 +36,19 @@ object FocusAlarm {
 
     fun cancel(context: Context) {
         val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        alarmManager.cancel(intentFor(context))
+        // FLAG_NO_CREATE: cancelar no debe crear el PendingIntent que va a cancelar. Si no hay
+        // alarma pendiente, intentFor devuelve null y no hay nada que hacer.
+        intentFor(context, PendingIntent.FLAG_NO_CREATE)?.let { alarmManager.cancel(it) }
     }
 
-    private fun intentFor(context: Context): PendingIntent =
+    private fun intentFor(
+        context: Context,
+        flag: Int,
+    ): PendingIntent? =
         PendingIntent.getBroadcast(
             context,
             RC,
             Intent(context, FocusReceiver::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            flag or PendingIntent.FLAG_IMMUTABLE,
         )
 }
