@@ -131,32 +131,18 @@ class FocusViewModel(
 
     init {
         // Un "forzar detencion" mata la alarma y la notificacion, pero la sesion sigue en el
-        // store: nadie la rearmaria (FocusSync solo cancela sin sesion, BootReceiver solo corre
-        // al arrancar). Cualquier pantalla de foco que se construya con esa sesion todavia viva
-        // la repostea — tambien si pide otra tarea y sale la hoja de conflicto: esa sesion sigue
-        // corriendo y merece su alarma y su bandeja igual. Idempotente por diseno (requestCode
-        // fijo en FocusAlarm, mismo FOCUS_ID en Notifier), asi que da igual si varias pantallas
-        // repostean la misma sesion. Vencida (remaining == 0) no se rearma nada: el 00:00 con los
-        // cinco botones ya sale de buildUiState solo.
+        // store: nadie la rearmaria (FocusSync solo cancela, nunca reposta ni reprograma;
+        // BootReceiver solo corre al arrancar). Cualquier pantalla de foco que se construya con
+        // esa sesion todavia viva la repostea — tambien si pide otra tarea y sale la hoja de
+        // conflicto: esa sesion sigue corriendo y merece su alarma y su bandeja igual. Idempotente
+        // por diseno (requestCode fijo en FocusAlarm, mismo FOCUS_ID en Notifier), asi que da
+        // igual si varias pantallas repostean la misma sesion. Vencida (remaining == 0) no se
+        // rearma nada: el 00:00 con los cinco botones ya sale de buildUiState solo.
         viewModelScope.launch {
             val session = focus.session.first() ?: return@launch
             val task = tasks.task(session.taskId) ?: return@launch
             val remaining = FocusClock.remainingMillis(session, now(), elapsed())
             if (remaining > 0) presence.show(task.title, session.endsAtMillis)
-        }
-        // Spec 8.5 "Recuperacion": una sesion viva cuyo taskId ya no existe (la tarea se borro) se
-        // limpia entera — store y presencia —, sin escribir DONE ni ATTEMPT: no hubo un "termino" ni
-        // un "lo dejo", la tarea ya no esta. Reacciona a cualquier cambio (se borra con la pantalla
-        // abierta, o ya estaba borrada al construirse) y se para sola: al limpiar, la sesion pasa a
-        // null y la condicion deja de cumplirse.
-        viewModelScope.launch {
-            combine(focus.session, domainState.observe()) { session, state -> session to state }
-                .collectLatest { (session, state) ->
-                    if (session != null && state.tasks.none { it.id == session.taskId }) {
-                        focus.clear()
-                        presence.clear()
-                    }
-                }
         }
         // Se relanza solo con cada sesion nueva (empezar, alargar o limpiar) — un solo delay vivo
         // a la vez, nunca uno acumulandose por cada "+". Para solo al llegar a 0: una sesion vencida

@@ -407,9 +407,10 @@ class FocusViewModelTest {
             tasksRepo.delete("t1")
             settle()
 
+            // La limpieza del store, la bandeja y la alarma ya no las hace este ViewModel — es
+            // FocusSync quien las posee (ver FocusSyncTest), asi que aqui solo queda comprobar que
+            // la pantalla se va sin ruido.
             assertTrue(vm.uiState.value.gone)
-            assertNull(focusStore.session.first())
-            assertEquals(1, presence.clearCalls)
             assertTrue(db.taskEventDao().all().isEmpty()) // ni DONE ni ATTEMPT: la tarea ya no esta
         }
 
