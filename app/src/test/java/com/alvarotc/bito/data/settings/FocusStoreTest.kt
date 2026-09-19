@@ -96,10 +96,11 @@ class FocusStoreTest {
                 endsAtElapsed = 4_600_000L,
                 bootMillis = 400_000L,
             )
-        // Same boot signature: elapsed clock wins.
-        val remaining = FocusClock.remainingMillis(session, nowMillis = 5_300_000L, elapsedMillis = 4_300_000L)
+        // Same boot signature: elapsed clock wins (and is already elapsed).
+        // Boot signature = nowMillis - elapsedMillis = 5_300_000 - 4_900_000 = 400_000 (matches bootMillis).
+        val remaining = FocusClock.remainingMillis(session, nowMillis = 5_300_000L, elapsedMillis = 4_900_000L)
 
-        assertEquals(300_000L, remaining)
+        assertEquals(0L, remaining)
     }
 
     @Test
