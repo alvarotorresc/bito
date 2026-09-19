@@ -783,4 +783,65 @@ class HabiDrawingTest {
 
         assertEquals(0, renderInto(size) { drawHabi(spec, grain = grain) }.getPixel(corner.first, corner.second))
     }
+
+    /**
+     * Varios puntos claramente fuera de la elipse del cuerpo (radios ~0,34/0,42 alrededor de
+     * (BODY_CX, BODY_CY)) Y fuera de la franja de la sombra (SHADOW_CY 0,95 +/- ~0,045, x en
+     * 0,24-0,76): dos esquinas superiores, los bordes izquierdo/derecho a media altura y el borde
+     * superior central. Ninguno cae dentro del bounding box del cuerpo ni de la sombra, así que el
+     * grano (enmascarado a `bodyPath`) no debería tocarlos bajo ninguna circunstancia.
+     */
+    private fun outsideBodyPixels(sizePx: Int): List<Pair<Int, Int>> =
+        listOf(0.02f to 0.02f, 0.98f to 0.02f, 0.02f to 0.5f, 0.98f to 0.5f, 0.5f to 0.02f)
+            .map { (nx, ny) -> px(nx, sizePx) to px(ny, sizePx) }
+
+    /**
+     * Los dos tests anteriores (del brief, verbatim) pasan igual con `grain` completamente inerte:
+     * la comparación de luminancia en el centro usa `<=` no estricto, y la esquina (2,2) es
+     * transparente con o sin grano. Ninguno detecta que el bloque `grain?.let { clipPath(...) {
+     * drawRect(...) } }` desaparezca por completo (verificado manualmente comentándolo: ambos
+     * siguen en verde). Este test agrega sobre toda la caja del cuerpo para cazar exactamente esa
+     * regresión: cuenta cuántos píxeles cambian, exige que la luminancia MEDIA de la caja baje de
+     * forma estricta y acotada, y confirma que fuera de la silueta nada se mueve.
+     */
+    @Test
+    fun `the grain measurably darkens the body box and nothing outside it`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val grain = HabiGrain.brush(ApplicationProvider.getApplicationContext())
+        val boxPoints = bodyBoundingBoxPixels(size)
+
+        val plain = renderHabiBitmap(spec, size)
+        val grained = renderInto(size) { drawHabi(spec, grain = grain) }
+
+        // (a) Una fraccion sustancial de la caja del cuerpo cambia. Medido con un test diagnostico
+        // (temporal, no commiteado) sobre esta misma caja: 4049 pixeles distintos de ~5427 — el
+        // umbral de 500 deja margen de sobra sin acercarse a lo que un no-op silencioso daria (0).
+        val diffCount = boxPoints.count { (x, y) -> plain.getPixel(x, y) != grained.getPixel(x, y) }
+        assertTrue("esperaba >= 500 pixeles distintos en la caja del cuerpo, vinieron $diffCount", diffCount >= 500)
+
+        // (b) La luminancia MEDIA de la caja baja de forma estricta, y no mas del techo teorico:
+        // con ALPHA 0.10 y un grano 0.78-1.00, el factor de multiplicacion efectivo va de 0.978 a
+        // 1.00 (como mucho ~2.2% de oscurecimiento en el interior del cuerpo); promediar sobre
+        // toda la caja (incluye esquinas fuera de la silueta, identicas en ambos renders) solo
+        // puede diluir esa caida, nunca superarla — 3% deja margen sin dejar pasar un no-op (que
+        // daria caida 0, fallando el estricto <).
+        val plainMean = boxPoints.map { (x, y) -> luminance(plain.getPixel(x, y)) }.average()
+        val grainedMean = boxPoints.map { (x, y) -> luminance(grained.getPixel(x, y)) }.average()
+        assertTrue(
+            "la luminancia media deberia bajar con el grano: plano=$plainMean, con grano=$grainedMean",
+            grainedMean < plainMean,
+        )
+        val relativeDrop = (plainMean - grainedMean) / plainMean
+        assertTrue("la caida relativa de luminancia ($relativeDrop) supera el techo del 3%", relativeDrop <= 0.03)
+
+        // (c) Fuera de la silueta (y lejos de la sombra), nada cambia: el grano esta enmascarado a
+        // bodyPath, no pintado sobre todo el lienzo.
+        for ((x, y) in outsideBodyPixels(size)) {
+            assertEquals(
+                "($x,$y), fuera de la silueta, no deberia cambiar con el grano",
+                plain.getPixel(x, y),
+                grained.getPixel(x, y),
+            )
+        }
+    }
 }
