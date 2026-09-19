@@ -48,7 +48,6 @@ import androidx.glance.unit.ColorProvider
 import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
-import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -89,17 +88,14 @@ class SingleHabitWidget : GlanceAppWidget() {
                 container.habits.observeHabits(),
                 container.rewards.observeOwnedItems(),
             ) { prefs, domain, entities, owned ->
-                val zone = ZoneId.systemDefault()
-                val nowMillis = System.currentTimeMillis()
-                val today = LogicalDays.logicalDayOf(nowMillis, prefs.dayCutoffMinutes, zone)
-                val local = java.time.Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalTime()
+                val clock = widgetClock(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
                 buildTodayUiState(
                     domain,
                     entities.associate { it.id to it.sortOrder },
-                    today,
+                    clock.today,
                     prefs.personality,
                     owned,
-                    minutesOfDay = local.hour * 60 + local.minute,
+                    minutesOfDay = clock.minutesOfDay,
                     reviewTimeMinutes = prefs.reviewTimeMinutes,
                     eyesPainted = prefs.habiEyesPainted,
                 )
