@@ -78,7 +78,7 @@ class HabiDayTest {
     }
 
     @Test
-    fun `a review time at midnight leaves the whole day awake`() {
+    fun `a review time at midnight leaves the whole day waiting`() {
         assertEquals(
             HabiDayPhase.WAITING,
             HabiDay.phaseOf(3, 1, sealed = false, minutesOfDay = 0, reviewTimeMinutes = 0),
