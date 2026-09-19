@@ -3,6 +3,7 @@ package com.alvarotc.bito.domain
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.model.TaskEventKind
 
 /** Habi's mood — a pure function of recent compliance. */
 object MoodEngine {
@@ -18,15 +19,18 @@ object MoodEngine {
     /**
      * Mood on [today]:
      *
-     * 1. DRAMATIC when [lastActivityDay] (the logical day of the most recent
-     *    entry or seal, null if none ever) is 3+ days behind [today]
-     *    [DECIDED 2026-08-14]. Null never triggers drama — the ratio below
-     *    decides (a genuinely fresh state has no decided periods -> NORMAL).
+     * 1. DRAMATIC when [lastActivityDay] (see [StatsEngine.lastActivityDay],
+     *    null if none ever) is 3+ days behind [today] [DECIDED 2026-08-14].
+     *    Null never triggers drama — the ratio below decides (a genuinely
+     *    fresh state has no decided periods -> NORMAL).
      * 2. Otherwise, compliance ratio over the closed 7-day window
      *    [today-7, today-1]: FULFILLED / (FULFILLED + FAILED) habit-periods.
      *    DAY-period habits contribute each requirable day; WEEK/MONTH habits
      *    contribute once, on windows containing their period's last day.
      *    PENDING and PAUSED periods stay out of both sides of the ratio.
+     * 2 bis. Tasks done/attempted in the window nudge the ratio up, postponed
+     *    tasks nudge it down — capped to at most one of each per (task, day)
+     *    and, as a block, to never more than a third of the window (D15).
      * 3. ratio > 0.8 -> RADIANT; ratio < 0.5 -> WILTED; otherwise NORMAL.
      *    No decided periods in the window -> NORMAL.
      */
@@ -59,7 +63,34 @@ object MoodEngine {
         }
         if (decided == 0) return Mood.NORMAL
 
-        val ratio = fulfilled.toDouble() / decided
+        // Las tareas matizan el animo de los habitos; no lo gobiernan. Dos topes:
+        // 1. Como mucho un positivo y un negativo por (tarea, dia) — si no, «Empezar -> lo dejo»
+        //    veinte veces en una tarde farmea animo. El tope va AQUI, en la derivacion pura, y
+        //    nunca suprimiendo escrituras de eventos: los eventos son historia, y una
+        //    restauracion que reprodujera eventos crudos daria un animo distinto del que vio el
+        //    usuario.
+        // 2. Las tareas no pasan nunca de un tercio de la ventana (D15): t/(h+t) <= 1/3 equivale
+        //    a t <= h/2. El peso las escala EN BLOQUE, asi que la proporcion entre hechas y
+        //    pospuestas se conserva exacta: capar no le cambia el signo a una semana, solo le
+        //    baja el volumen.
+        val positives =
+            (
+                state.tasks.asSequence().mapNotNull { t -> t.doneOnDay?.takeIf { it in window }?.let { t.id to it } } +
+                    state.taskEvents.asSequence()
+                        .filter { it.kind == TaskEventKind.ATTEMPT && it.logicalDay in window }
+                        .map { it.taskId to it.logicalDay }
+            ).toSet().size
+        val negatives =
+            state.taskEvents.asSequence()
+                .filter { it.kind == TaskEventKind.POSTPONED && it.logicalDay in window }
+                .map { it.taskId to it.logicalDay }
+                .toSet()
+                .size
+
+        val units = positives + negatives
+        val cap = decided / 2.0
+        val weight = if (units == 0) 0.0 else minOf(1.0, cap / units)
+        val ratio = (fulfilled + positives * weight) / (decided + units * weight)
         return when {
             ratio > RADIANT_RATIO -> Mood.RADIANT
             ratio < WILTED_RATIO -> Mood.WILTED

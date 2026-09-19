@@ -1,6 +1,8 @@
 package com.alvarotc.bito.domain
 
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
@@ -201,6 +203,15 @@ class StatsEngineTest {
     @Test
     fun `last activity day is null with no history`() {
         assertNull(StatsEngine.lastActivityDay(domainState()))
+    }
+
+    @Test
+    fun `lastActivityDay also sees tasks done and task events`() {
+        val done = domainState(tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY)))
+        val evented = domainState(taskEvents = listOf(taskEvent(taskId = "t1", kind = TaskEventKind.POSTPONED, day = TODAY)))
+
+        assertEquals(TODAY, StatsEngine.lastActivityDay(done))
+        assertEquals(TODAY, StatsEngine.lastActivityDay(evented))
     }
 
     @Test
