@@ -81,6 +81,9 @@ class BackupRoundTripTest {
             // the file at all (which is exactly the bug this pins).
             logSoundEnabled = false,
             logHapticEnabled = false,
+            // Apagado a proposito: su default es true, asi que una semilla en el default dejaria
+            // pasar el round-trip aunque el campo no viajara en el fichero.
+            taskNoticesEnabled = false,
             perfectDayCelebratedDay = 20679,
             badgesSeenUntilMillis = 4321L,
         )

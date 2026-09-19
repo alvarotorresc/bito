@@ -163,6 +163,7 @@ fun Settings.toBackup() =
         badgesSeenUntilMillis = badgesSeenUntilMillis,
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
+        taskNoticesEnabled = taskNoticesEnabled,
     )
 
 fun BackupSettings.toSettings() =
@@ -184,4 +185,5 @@ fun BackupSettings.toSettings() =
         badgesSeenUntilMillis = badgesSeenUntilMillis,
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
+        taskNoticesEnabled = taskNoticesEnabled,
     )

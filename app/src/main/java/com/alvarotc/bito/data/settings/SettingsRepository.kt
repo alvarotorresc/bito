@@ -39,6 +39,7 @@ data class Settings(
     val badgesSeenUntilMillis: Long = 0L,
     val lastAutoBackupAtMillis: Long? = null,
     val lastAutoBackupError: AutoBackupError? = null,
+    val taskNoticesEnabled: Boolean = true,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -67,6 +68,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val badgesSeenUntilMillis = longPreferencesKey("badges_seen_until_millis")
         val lastAutoBackupAtMillis = longPreferencesKey("last_auto_backup_at_millis")
         val lastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
+        val taskNoticesEnabled = booleanPreferencesKey("task_notices_enabled")
 
         /**
          * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
@@ -173,6 +175,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             badgesSeenUntilMillis = this[Keys.badgesSeenUntilMillis] ?: defaults.badgesSeenUntilMillis,
             lastAutoBackupAtMillis = this[Keys.lastAutoBackupAtMillis],
             lastAutoBackupError = this[Keys.lastAutoBackupError]?.let(AutoBackupError::valueOf),
+            taskNoticesEnabled = this[Keys.taskNoticesEnabled] ?: defaults.taskNoticesEnabled,
         )
     }
 
@@ -196,5 +199,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.badgesSeenUntilMillis] = badgesSeenUntilMillis
         lastAutoBackupAtMillis?.let { prefs[Keys.lastAutoBackupAtMillis] = it } ?: prefs.remove(Keys.lastAutoBackupAtMillis)
         lastAutoBackupError?.let { prefs[Keys.lastAutoBackupError] = it.name } ?: prefs.remove(Keys.lastAutoBackupError)
+        prefs[Keys.taskNoticesEnabled] = taskNoticesEnabled
     }
 }

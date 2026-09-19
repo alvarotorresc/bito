@@ -182,6 +182,7 @@ data class BackupSettings(
     val badgesSeenUntilMillis: Long = 0L,
     val logSoundEnabled: Boolean = true,
     val logHapticEnabled: Boolean = true,
+    val taskNoticesEnabled: Boolean = true,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

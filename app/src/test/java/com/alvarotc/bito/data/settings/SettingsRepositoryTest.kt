@@ -50,6 +50,7 @@ class SettingsRepositoryTest {
             assertEquals(0L, settings.badgesSeenUntilMillis)
             assertNull(settings.lastAutoBackupAtMillis)
             assertNull(settings.lastAutoBackupError)
+            assertEquals(true, settings.taskNoticesEnabled)
         }
 
     @Test
@@ -217,5 +218,14 @@ class SettingsRepositoryTest {
 
             repository.update { Settings(userName = "Álvaro") }
             assertFalse(repository.claimNotificationPrompt())
+        }
+
+    @Test
+    fun `the task notices switch persists`() =
+        runTest {
+            val repo = SettingsRepository(store("task-notices"))
+            repo.update { it.copy(taskNoticesEnabled = false) }
+
+            assertFalse(repo.settings.first().taskNoticesEnabled)
         }
 }

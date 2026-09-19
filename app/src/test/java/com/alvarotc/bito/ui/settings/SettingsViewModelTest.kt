@@ -225,6 +225,21 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `setTaskNotices writes through`() =
+        runTest {
+            advanceUntilIdle()
+            assertTrue(vm.state.value?.taskNoticesEnabled == true) // default
+
+            vm.setTaskNotices(false)
+            advanceUntilIdle()
+            assertEquals(false, vm.state.value?.taskNoticesEnabled)
+
+            vm.setTaskNotices(true)
+            advanceUntilIdle()
+            assertEquals(true, vm.state.value?.taskNoticesEnabled)
+        }
+
+    @Test
     fun `settings lets the user rename themselves`() =
         runTest {
             advanceUntilIdle()
