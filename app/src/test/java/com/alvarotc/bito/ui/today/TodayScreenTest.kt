@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -127,6 +128,9 @@ class TodayScreenTest {
                 now = { fixedNow },
                 zone = { utc },
                 defaultDispatcher = dispatcher,
+                // Un solo tic ya satisfecho: este test no ejerce el paso del tiempo, y el ticker
+                // real (con delay()) deja el scheduler de coroutines sin reposo bajo tiempo virtual.
+                ticker = flowOf(Unit),
             )
 
         compose.setContent {

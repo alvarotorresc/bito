@@ -17,6 +17,8 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.HabiCue
+import com.alvarotc.bito.domain.model.HabiDayPhase
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
@@ -25,7 +27,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -37,6 +41,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -87,6 +92,9 @@ class TodayViewModelTest {
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
+            // Un solo tic ya satisfecho: estos tests no ejercen el paso del tiempo, y el ticker
+            // real (con delay()) deja advanceUntilIdle() sin reposo bajo tiempo virtual.
+            ticker = flowOf(Unit),
         )
 
     @Before
@@ -294,5 +302,100 @@ class TodayViewModelTest {
             assertTrue(
                 db.pointsLedgerDao().all().any { it.reason == PointsReason.HABIT_DONE && it.refId == "h1:$today" },
             )
+        }
+
+    @Test
+    fun `logging emits a LOGGED cue with a fresh id each time`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.COUNT, direction = Direction.AT_LEAST, target = 10, step = 1, createdOnDay = today),
+            )
+            val card = state().cards.single { it.id == "h1" }
+
+            vm.tapPrimary(card)
+            advanceUntilIdle()
+            val first = vm.habiCue.value
+            assertEquals(HabiCue.LOGGED, first?.cue)
+
+            vm.consumeHabiCue()
+            assertNull(vm.habiCue.value)
+
+            vm.tapPrimary(state().cards.single { it.id == "h1" })
+            advanceUntilIdle()
+            val second = vm.habiCue.value
+            assertEquals(HabiCue.LOGGED, second?.cue)
+            assertNotEquals(first!!.id, second!!.id)
+        }
+
+    @Test
+    fun `finishing the last habit emits ALL_DONE exactly once`() =
+        runTest {
+            // Semanal, no diario: PerfectDays.isPerfectDay solo mira habitos de periodo DIA, asi
+            // que completar este no dispara TAMBIEN un dia perfecto (que ganaria el when de
+            // write() y taparia el ALL_DONE que este test quiere probar).
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    metric = Metric.CHECK,
+                    direction = Direction.AT_LEAST,
+                    target = 1,
+                    period = Period.WEEK,
+                    createdOnDay = today,
+                ),
+            )
+            val card = state().cards.single { it.id == "h1" }
+
+            vm.tapPrimary(card)
+            advanceUntilIdle()
+            assertEquals(HabiCue.ALL_DONE, vm.habiCue.value?.cue)
+
+            vm.consumeHabiCue()
+            // Una escritura real mas que NO cambia el anillo (mismo valor ya registrado) no
+            // vuelve a disparar ALL_DONE. reorder() no sirve para esto: no pasa por write().
+            vm.setExactToday(state().cards.single { it.id == "h1" }, 1)
+            advanceUntilIdle()
+            assertNull(vm.habiCue.value)
+        }
+
+    @Test
+    fun `sealing pending days emits SEALED`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.ZERO, target = 0, createdOnDay = today - 2),
+            )
+            state()
+            vm.sealPendingDays()
+            advanceUntilIdle()
+
+            assertEquals(HabiCue.SEALED, vm.habiCue.value?.cue)
+        }
+
+    @Test
+    fun `crossing review time flips the day phase with no write at all`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+            )
+            // Un reloj que solo se mueve cuando el propio test empuja un tic: el ticker real (con
+            // delay()) no tiene reposo bajo tiempo virtual, asi que aqui se dispara a mano. Arranca
+            // a las 21:00 y el segundo tic lo mueve a las 21:40.
+            var minute = 0L
+            val movingNow = { fixedNow + 21 * 3_600_000L + minute * 60_000L }
+            val ticks = MutableSharedFlow<Unit>(replay = 1)
+            ticks.tryEmit(Unit)
+            val ticking =
+                TodayViewModel(
+                    domainStateRepo, habitsRepo, journal, settingsRepo, reconciler, rewardsRepo,
+                    now = movingNow, zone = { utc }, defaultDispatcher = dispatcher, ticker = ticks,
+                )
+            backgroundScope.launch { ticking.uiState.collect() }
+            advanceUntilIdle()
+            assertEquals(HabiDayPhase.AWAKE, ticking.uiState.value.dayPhase)
+
+            minute = 40 // 21:40 > 21:30
+            ticks.emit(Unit)
+            advanceUntilIdle()
+
+            assertEquals(HabiDayPhase.WAITING, ticking.uiState.value.dayPhase)
         }
 }
