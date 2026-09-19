@@ -10,6 +10,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.ui.habi.HabiSounds
 
@@ -24,6 +25,12 @@ class AppContainer(context: Context) {
         SettingsRepository(
             PreferenceDataStoreFactory.create {
                 context.filesDir.resolve("settings.preferences_pb")
+            },
+        )
+    val focus =
+        FocusStore(
+            PreferenceDataStoreFactory.create {
+                context.filesDir.resolve("focus.preferences_pb")
             },
         )
     val habiSounds = HabiSounds(context, settings)
