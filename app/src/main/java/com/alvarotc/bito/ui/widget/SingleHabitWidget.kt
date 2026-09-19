@@ -89,13 +89,19 @@ class SingleHabitWidget : GlanceAppWidget() {
                 container.habits.observeHabits(),
                 container.rewards.observeOwnedItems(),
             ) { prefs, domain, entities, owned ->
-                val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+                val zone = ZoneId.systemDefault()
+                val nowMillis = System.currentTimeMillis()
+                val today = LogicalDays.logicalDayOf(nowMillis, prefs.dayCutoffMinutes, zone)
+                val local = java.time.Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalTime()
                 buildTodayUiState(
                     domain,
                     entities.associate { it.id to it.sortOrder },
                     today,
                     prefs.personality,
                     owned,
+                    minutesOfDay = local.hour * 60 + local.minute,
+                    reviewTimeMinutes = prefs.reviewTimeMinutes,
+                    eyesPainted = prefs.habiEyesPainted,
                 )
             }.conflate().flowOn(Dispatchers.Default)
         val initial = stateFlow.first()

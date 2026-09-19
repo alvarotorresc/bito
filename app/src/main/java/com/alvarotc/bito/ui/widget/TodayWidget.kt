@@ -47,6 +47,7 @@ import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.ui.habi.HabiGrain
 import com.alvarotc.bito.ui.habi.renderHabiBitmap
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -88,7 +89,10 @@ class TodayWidget : GlanceAppWidget() {
                 container.habits.observeHabits(),
                 container.rewards.observeOwnedItems(),
             ) { prefs, domain, entities, owned ->
-                val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+                val zone = ZoneId.systemDefault()
+                val nowMillis = System.currentTimeMillis()
+                val today = LogicalDays.logicalDayOf(nowMillis, prefs.dayCutoffMinutes, zone)
+                val local = java.time.Instant.ofEpochMilli(nowMillis).atZone(zone).toLocalTime()
                 val state =
                     buildTodayUiState(
                         domain,
@@ -96,8 +100,14 @@ class TodayWidget : GlanceAppWidget() {
                         today,
                         prefs.personality,
                         owned,
+                        minutesOfDay = local.hour * 60 + local.minute,
+                        reviewTimeMinutes = prefs.reviewTimeMinutes,
+                        eyesPainted = prefs.habiEyesPainted,
                     )
-                WidgetData(state, renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX))
+                // El grano va también aquí: a 96 px con densidad 1 el tile se repite vez y media,
+                // así que el grano sale proporcionalmente más grueso — justo lo que hace falta
+                // para que no se pierda a 28/36 dp.
+                WidgetData(state, renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX, HabiGrain.brush(context)))
             }.conflate().flowOn(Dispatchers.Default)
         // First paint stays synchronous-ish: seed with a real emission so the widget never shows
         // an empty frame while the flow warms up.

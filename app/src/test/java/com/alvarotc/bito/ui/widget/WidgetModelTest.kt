@@ -1,16 +1,25 @@
 package com.alvarotc.bito.ui.widget
 
+import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.HabiPose
+import com.alvarotc.bito.domain.model.Habit
+import com.alvarotc.bito.domain.model.LogMode
+import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.TargetChange
 import com.alvarotc.bito.domain.model.equippedSetOf
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.TodayUiState
+import com.alvarotc.bito.ui.today.buildTodayUiState
 import org.junit.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+
+private const val TODAY = 20679
 
 class WidgetModelTest {
     private fun card(
@@ -27,7 +36,27 @@ class WidgetModelTest {
     private fun state(
         vararg cards: HabitCardUi,
         spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, equippedSetOf(emptyList())),
-    ) = TodayUiState(today = 20679, ringDone = 0, ringTotal = cards.size, cards = cards.toList(), spec = spec, loading = false)
+    ) = TodayUiState(today = TODAY, ringDone = 0, ringTotal = cards.size, cards = cards.toList(), spec = spec, loading = false)
+
+    private fun dailyCheck(
+        id: String,
+        createdOnDay: Int,
+    ) = Habit(
+        id = id,
+        name = id,
+        metric = Metric.CHECK,
+        period = com.alvarotc.bito.domain.model.Period.DAY,
+        direction = com.alvarotc.bito.domain.model.Direction.AT_LEAST,
+        target = 1,
+        logMode = LogMode.BINARY,
+        createdOnDay = createdOnDay,
+    )
+
+    private fun stateOf(habits: List<Habit>) =
+        DomainState(
+            habits = habits,
+            targetChanges = habits.map { TargetChange(it.id, it.createdOnDay, it.target) },
+        )
 
     @Test
     fun `completed habits disappear from the widget`() {
@@ -75,5 +104,23 @@ class WidgetModelTest {
         assertEquals(Mood.RADIANT, model.spec.mood)
         assertEquals(Personality.CHEERLEADER, model.spec.personality)
         assertEquals("body-dorado", model.spec.equipped.bodyColor)
+    }
+
+    @Test
+    fun `the widget model carries the day pose and the eye level`() {
+        val state =
+            buildTodayUiState(
+                stateOf(listOf(dailyCheck(id = "cama", createdOnDay = TODAY))),
+                emptyMap(),
+                TODAY,
+                minutesOfDay = 22 * 60,
+                reviewTimeMinutes = 21 * 60 + 30,
+                eyesPainted = 1,
+            )
+
+        val model = buildWidgetModel(state, selectedIds = null)
+
+        assertEquals(HabiPose.WAITING, model.spec.pose)
+        assertEquals(1, model.spec.eyesPainted)
     }
 }
