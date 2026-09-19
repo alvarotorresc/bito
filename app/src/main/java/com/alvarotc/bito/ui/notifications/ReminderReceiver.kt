@@ -41,7 +41,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val key = intent.getStringExtra(ReminderScheduler.EXTRA_KEY) ?: return
         NotificationChannels.ensure(context)
         val container = (context.applicationContext as BitoApp).container
-        val useCase = ReminderUseCase(container.domainState, container.habits, container.settings)
+        val useCase = ReminderUseCase(container.domainState, container.habits, container.settings, container.rewards)
         when (val outcome = useCase.evaluate(kindName, key)) {
             is ReminderUseCase.Outcome.Stale -> Unit
             is ReminderUseCase.Outcome.Remind -> {
@@ -53,6 +53,7 @@ class ReminderReceiver : BroadcastReceiver() {
                     outcome.personality,
                     outcome.userName,
                     outcome.slot.minutesOfDay,
+                    outcome.spec,
                 )
                 reschedule(context, outcome.slot)
             }
@@ -61,7 +62,7 @@ class ReminderReceiver : BroadcastReceiver() {
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.Review -> {
-                Notifier.showReview(context, outcome.personality, outcome.userName, outcome.pendingCount)
+                Notifier.showReview(context, outcome.personality, outcome.userName, outcome.pendingCount, outcome.spec)
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.Silent -> reschedule(context, outcome.slot)

@@ -5,6 +5,7 @@ import android.content.Context
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.today.buildTodayUiState
@@ -25,7 +26,7 @@ object TrayRefresher {
         context: Context,
         container: AppContainer,
         treatAsActive: Boolean = false,
-    ) = refresh(context, container.settings, container.habits, container.domainState, treatAsActive)
+    ) = refresh(context, container.settings, container.habits, container.domainState, container.rewards, treatAsActive)
 
     /**
      * The testable seam behind [refresh]: takes repos directly instead of a whole [AppContainer]
@@ -45,19 +46,32 @@ object TrayRefresher {
         settings: SettingsRepository,
         habits: HabitsRepository,
         domainState: DomainStateRepository,
+        rewards: RewardsRepository,
         treatAsActive: Boolean = false,
         minutesOfDay: Int = localMinutesOfDay(),
     ) {
         val prefs = settings.settings.first()
         val entities = habits.observeHabits().first()
+        val owned = rewards.observeOwnedItems().first()
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
-        val state = buildTodayUiState(domainState.snapshot(), entities.associate { it.id to it.sortOrder }, today)
+        val state =
+            buildTodayUiState(
+                domainState.snapshot(),
+                entities.associate { it.id to it.sortOrder },
+                today,
+                prefs.personality,
+                owned,
+                prefs.userName,
+                minutesOfDay = minutesOfDay,
+                reviewTimeMinutes = prefs.reviewTimeMinutes,
+                eyesPainted = prefs.habiEyesPainted,
+            )
         if (!reviewIsPending(state)) Notifier.cancelReview(context)
         val payload = buildReminderPayload(state)
         if (payload == null) {
             Notifier.cancelReminder(context)
         } else if (treatAsActive || trayIsActive(context)) {
-            Notifier.showReminder(context, payload, prefs.personality, prefs.userName, minutesOfDay)
+            Notifier.showReminder(context, payload, prefs.personality, prefs.userName, minutesOfDay, state.spec)
         }
     }
 

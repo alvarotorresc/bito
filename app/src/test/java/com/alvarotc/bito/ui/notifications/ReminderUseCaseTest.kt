@@ -12,10 +12,12 @@ import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.today.CardKind
@@ -60,6 +62,7 @@ class ReminderUseCaseTest {
     private lateinit var habitsRepo: HabitsRepository
     private lateinit var journal: JournalRepository
     private lateinit var settingsRepo: SettingsRepository
+    private lateinit var rewardsRepo: RewardsRepository
     private lateinit var useCase: ReminderUseCase
 
     private fun settingsStore(name: String): DataStore<Preferences> =
@@ -99,7 +102,8 @@ class ReminderUseCaseTest {
         habitsRepo = HabitsRepository(db)
         journal = JournalRepository(db)
         settingsRepo = SettingsRepository(settingsStore("reminder-use-case"))
-        useCase = ReminderUseCase(domainStateRepo, habitsRepo, settingsRepo, now = { fixedNow }, zone = { utc })
+        rewardsRepo = RewardsRepository(db)
+        useCase = ReminderUseCase(domainStateRepo, habitsRepo, settingsRepo, rewardsRepo, now = { fixedNow }, zone = { utc })
     }
 
     @After
@@ -349,6 +353,48 @@ class ReminderUseCaseTest {
             assertEquals(1, review.pendingCount)
             assertEquals(Personality.CHEERLEADER, review.personality)
             assertEquals("Álvaro", review.userName)
+        }
+
+    @Test
+    fun `a global reminder travels with the spec that paints its icon`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(globalReminderMinutes = listOf(480)) }
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "Agua",
+                    metric = Metric.CHECK,
+                    direction = Direction.AT_LEAST,
+                    target = 1,
+                    createdOnDay = today,
+                ),
+            )
+
+            val outcome = useCase.evaluate("GLOBAL", "480")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Remind)
+            assertEquals(Personality.NEUTRA, (outcome as ReminderUseCase.Outcome.Remind).spec.personality)
+        }
+
+    @Test
+    fun `three silent days make the reminder face dramatic`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(globalReminderMinutes = listOf(480)) }
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "Agua",
+                    metric = Metric.CHECK,
+                    direction = Direction.AT_LEAST,
+                    target = 1,
+                    createdOnDay = today - 3,
+                ),
+            )
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today - 3, value = 1))
+
+            val outcome = useCase.evaluate("GLOBAL", "480") as ReminderUseCase.Outcome.Remind
+
+            assertEquals(Mood.DRAMATIC, outcome.spec.mood)
         }
 
     @Test

@@ -2,12 +2,14 @@ package com.alvarotc.bito.ui.notifications
 
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
-import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.buildTodayUiState
+import com.alvarotc.bito.ui.widget.widgetClock
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 
@@ -20,6 +22,7 @@ class ReminderUseCase(
     private val domainState: DomainStateRepository,
     private val habits: HabitsRepository,
     private val settings: SettingsRepository,
+    private val rewards: RewardsRepository,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
 ) {
@@ -30,13 +33,15 @@ class ReminderUseCase(
 
         /**
          * The GLOBAL slot still has pending habits. [personality] and [userName] travel with it
-         * so the receiver renders in Habi's voice without a second settings read.
+         * so the receiver renders in Habi's voice without a second settings read. [spec] paints
+         * the notification's large icon — the same face the Habi and Today screens show.
          */
         data class Remind(
             val payload: ReminderPayload,
             val slot: Slot,
             val personality: Personality,
             val userName: String,
+            val spec: HabiSpec,
         ) : Outcome
 
         /**
@@ -49,13 +54,14 @@ class ReminderUseCase(
         /**
          * The REVIEW slot found something unsealed or still open today. [pendingCount] is how
          * many rows today's review still has to decide (zero = only past days owed a seal);
-         * [personality] and [userName] voice the nudge.
+         * [personality] and [userName] voice the nudge, and [spec] paints the large icon.
          */
         data class Review(
             val slot: Slot,
             val pendingCount: Int,
             val personality: Personality,
             val userName: String,
+            val spec: HabiSpec,
         ) : Outcome
 
         /** Nothing to say, but the slot is still live — reprogram it without notifying. */
@@ -71,15 +77,27 @@ class ReminderUseCase(
         val slot =
             ReminderScheduler.slotsOf(prefs, entities).find { it.kind.name == kindName && it.key == key }
                 ?: return Outcome.Stale
-        val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-        val state = buildTodayUiState(domainState.snapshot(), entities.associate { it.id to it.sortOrder }, today)
+        val clock = widgetClock(now(), prefs.dayCutoffMinutes, zone())
+        val owned = rewards.observeOwnedItems().first()
+        val state =
+            buildTodayUiState(
+                domainState.snapshot(),
+                entities.associate { it.id to it.sortOrder },
+                clock.today,
+                prefs.personality,
+                owned,
+                prefs.userName,
+                minutesOfDay = clock.minutesOfDay,
+                reviewTimeMinutes = prefs.reviewTimeMinutes,
+                eyesPainted = prefs.habiEyesPainted,
+            )
         return when (slot.kind) {
             SlotKind.GLOBAL -> {
                 val payload = buildReminderPayload(state)
                 if (payload == null) {
                     Outcome.Silent(slot)
                 } else {
-                    Outcome.Remind(payload, slot, prefs.personality, prefs.userName)
+                    Outcome.Remind(payload, slot, prefs.personality, prefs.userName, state.spec)
                 }
             }
             SlotKind.HABIT -> {
@@ -92,7 +110,7 @@ class ReminderUseCase(
             }
             SlotKind.REVIEW ->
                 if (reviewIsPending(state)) {
-                    Outcome.Review(slot, reviewPendingCount(state), prefs.personality, prefs.userName)
+                    Outcome.Review(slot, reviewPendingCount(state), prefs.personality, prefs.userName, state.spec)
                 } else {
                     Outcome.Silent(slot)
                 }

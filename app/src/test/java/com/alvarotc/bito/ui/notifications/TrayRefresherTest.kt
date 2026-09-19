@@ -15,6 +15,7 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
@@ -39,12 +40,22 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 import java.io.File
 
-/** Drives [TrayRefresher]'s testable repo-based seam over an in-memory Room database. */
+/**
+ * Drives [TrayRefresher]'s testable repo-based seam over an in-memory Room database.
+ *
+ * [GraphicsMode.Mode.NATIVE] is required for the same reason as
+ * [com.alvarotc.bito.ui.habi.HabiDrawingTest]: a refresh now always resolves a [com.alvarotc.bito.ui.habi.HabiSpec]
+ * and, once a tray is actually posted, [Notifier.showReminder] paints its large icon through
+ * [HabiNotificationIcon.bitmapOf] — Robolectric's default LEGACY graphics mode crashes on the
+ * `ImageBitmap(w, h)` call underneath.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class TrayRefresherTest {
     @get:Rule
     val tmp = TemporaryFolder()
@@ -57,6 +68,7 @@ class TrayRefresherTest {
     private lateinit var domainStateRepo: DomainStateRepository
     private lateinit var habitsRepo: HabitsRepository
     private lateinit var settingsRepo: SettingsRepository
+    private lateinit var rewardsRepo: RewardsRepository
 
     private fun settingsStore(name: String): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -75,6 +87,7 @@ class TrayRefresherTest {
         domainStateRepo = DomainStateRepository(db)
         habitsRepo = HabitsRepository(db)
         settingsRepo = SettingsRepository(settingsStore("tray-refresher"))
+        rewardsRepo = RewardsRepository(db)
     }
 
     @After
@@ -123,14 +136,14 @@ class TrayRefresherTest {
             )
 
             // No tray showing yet — a pending payload alone must never conjure one.
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, rewardsRepo)
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
 
             // Once the tray is already up, the same pending payload refreshes its actual content —
             // proven by the title moving off the stand-in "stale" text to the real voiced title,
             // not just by a notification of *some* kind still existing under the id.
             postStaleReminder()
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, minutesOfDay = 10 * 60)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, rewardsRepo, minutesOfDay = 10 * 60)
             assertEquals(morningTitleForFallbackName(), postedTitle())
         }
 
@@ -142,7 +155,15 @@ class TrayRefresherTest {
             )
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
 
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true, minutesOfDay = 10 * 60)
+            TrayRefresher.refresh(
+                context,
+                settingsRepo,
+                habitsRepo,
+                domainStateRepo,
+                rewardsRepo,
+                treatAsActive = true,
+                minutesOfDay = 10 * 60,
+            )
 
             assertEquals(morningTitleForFallbackName(), postedTitle())
         }
@@ -155,7 +176,7 @@ class TrayRefresherTest {
             postStaleReminder()
             assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
 
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, rewardsRepo)
 
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID))
         }
@@ -167,7 +188,7 @@ class TrayRefresherTest {
                 habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1),
             )
 
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, rewardsRepo, treatAsActive = true)
 
             val notification = shadowOf(notificationManager).getNotification(Notifier.REMINDER_ID)
             assertNotNull(notification)
@@ -187,7 +208,7 @@ class TrayRefresherTest {
             assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
 
             // Refresh with no pending review (empty state)
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, rewardsRepo)
 
             // Review notification should be cancelled
             assertNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
@@ -211,7 +232,7 @@ class TrayRefresherTest {
             )
 
             // Refresh with pending review (unsealed today with something to act on)
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
+            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, rewardsRepo)
 
             // Review notification should still be there
             assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
@@ -225,7 +246,15 @@ class TrayRefresherTest {
                 habitEntity(id = "h1", name = "Agua", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1),
             )
 
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true, minutesOfDay = 21 * 60)
+            TrayRefresher.refresh(
+                context,
+                settingsRepo,
+                habitsRepo,
+                domainStateRepo,
+                rewardsRepo,
+                treatAsActive = true,
+                minutesOfDay = 21 * 60,
+            )
 
             assertEquals(context.getString(R.string.notif_reminder_title_sargento_evening, "Álvaro"), postedTitle())
             val expectedBody =
@@ -257,7 +286,15 @@ class TrayRefresherTest {
                 )
             }
 
-            TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo, treatAsActive = true, minutesOfDay = 15 * 60)
+            TrayRefresher.refresh(
+                context,
+                settingsRepo,
+                habitsRepo,
+                domainStateRepo,
+                rewardsRepo,
+                treatAsActive = true,
+                minutesOfDay = 15 * 60,
+            )
 
             assertEquals(
                 context.resources.getQuantityString(R.plurals.notif_reminder_body_neutra_afternoon, 4, 4, "Agua, Leer, Gym", 0, 4),

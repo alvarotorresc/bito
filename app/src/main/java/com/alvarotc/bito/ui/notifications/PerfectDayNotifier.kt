@@ -7,7 +7,10 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.ui.AppVisibility
 import com.alvarotc.bito.ui.celebration.CelebrationGate
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.today.buildTodayUiState
+import com.alvarotc.bito.ui.widget.widgetClock
 import kotlinx.coroutines.flow.first
+import java.time.ZoneId
 
 /**
  * Posts the voiced perfect-day notification (T13) after an out-of-app write. The call-site
@@ -24,7 +27,22 @@ object PerfectDayNotifier {
     ) {
         val prefs = container.settings.settings.first()
         if (!CelebrationGate.shouldNotifyPerfectDay(reachedNow, prefs.perfectDayCelebration, AppVisibility.visible)) return
-        Notifier.showPerfectDay(context, bodyFor(context, prefs))
+        val entities = container.habits.observeHabits().first()
+        val owned = container.rewards.observeOwnedItems().first()
+        val clock = widgetClock(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+        val state =
+            buildTodayUiState(
+                container.domainState.snapshot(),
+                entities.associate { it.id to it.sortOrder },
+                clock.today,
+                prefs.personality,
+                owned,
+                prefs.userName,
+                minutesOfDay = clock.minutesOfDay,
+                reviewTimeMinutes = prefs.reviewTimeMinutes,
+                eyesPainted = prefs.habiEyesPainted,
+            )
+        Notifier.showPerfectDay(context, bodyFor(context, prefs), state.spec)
     }
 
     /** Testable seam: the text the notification carries for a given settings snapshot. */

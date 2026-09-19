@@ -10,6 +10,7 @@ import androidx.core.app.NotificationManagerCompat
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.theme.Hoja
 
 /**
@@ -37,7 +38,8 @@ object Notifier {
      * in [personality]'s voice with the flavor [minutesOfDay] resolves to ([ReminderVoice]) —
      * the scheduled hour for a fired alarm, "now" for a tray refresh. The body carries the
      * useful part (pending count, up to three names, progress so far) under a BigTextStyle so
-     * it can breathe when expanded.
+     * it can breathe when expanded. [spec] paints the large icon when given — `null` posts with
+     * no face (a call site that hasn't computed one yet).
      */
     fun showReminder(
         context: Context,
@@ -45,6 +47,7 @@ object Notifier {
         personality: Personality,
         userName: String,
         minutesOfDay: Int,
+        spec: HabiSpec? = null,
     ) {
         val flavor = ReminderVoice.flavorOf(minutesOfDay)
         val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
@@ -65,6 +68,7 @@ object Notifier {
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+        spec?.let { builder.setLargeIcon(HabiNotificationIcon.bitmapOf(context, it)) }
         payload.targets.forEach { target ->
             val label =
                 if (target.isCheck) {
@@ -111,13 +115,15 @@ object Notifier {
      * The REVIEW nudge: something is still unsealed or open, on its own channel, in
      * [personality]'s voice. [pendingCount] is how many rows today's review still has to decide;
      * zero means the debt is only past days left unsealed, and the body says so. Tapping it
-     * deep-links straight into the review flow rather than opening Today bare (T11).
+     * deep-links straight into the review flow rather than opening Today bare (T11). [spec]
+     * paints the large icon when given.
      */
     fun showReview(
         context: Context,
         personality: Personality,
         userName: String,
         pendingCount: Int,
+        spec: HabiSpec? = null,
     ) {
         val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
         val title = context.getString(ReminderVoice.reviewTitleRes(personality), name)
@@ -133,6 +139,7 @@ object Notifier {
                 .setContentText(body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setContentIntent(contentIntent(context, "review", 2))
+        spec?.let { builder.setLargeIcon(HabiNotificationIcon.bitmapOf(context, it)) }
         notify(context, REVIEW_ID, builder)
     }
 
@@ -140,16 +147,19 @@ object Notifier {
      * The CELEBRATIONS nudge: [PerfectDayNotifier] already decided this write is worth
      * announcing outside the app — this just renders [body] under its own channel and id.
      * Tapping it opens Today bare, the same default [contentIntent] every other route falls
-     * back to, where the in-app perfect-day sheet takes over from there.
+     * back to, where the in-app perfect-day sheet takes over from there. [spec] paints the
+     * large icon when given.
      */
     fun showPerfectDay(
         context: Context,
         body: String,
+        spec: HabiSpec? = null,
     ) {
         val builder =
             baseBuilder(context, NotificationChannels.CELEBRATIONS)
                 .setContentTitle(context.getString(R.string.notif_perfect_day_title))
                 .setContentText(body)
+        spec?.let { builder.setLargeIcon(HabiNotificationIcon.bitmapOf(context, it)) }
         notify(context, CELEBRATION_ID, builder)
     }
 

@@ -17,14 +17,21 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
 
 /**
  * Uses a bare [Application] (not the manifest's BitoApp) so onCreate()'s AppStartup.start() —
  * which builds its own AppContainer — never opens a second DataStore on the same settings file
  * as the one built explicitly below (same reasoning as [com.alvarotc.bito.ui.BitoNavHostTest]).
+ *
+ * [GraphicsMode.Mode.NATIVE] is required for the same reason as
+ * [com.alvarotc.bito.ui.habi.HabiDrawingTest]: `maybeNotify` now resolves a
+ * [com.alvarotc.bito.ui.habi.HabiSpec] and paints it through [HabiNotificationIcon.bitmapOf] —
+ * Robolectric's default LEGACY graphics mode crashes on the `ImageBitmap(w, h)` call underneath.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
+@GraphicsMode(GraphicsMode.Mode.NATIVE)
 class PerfectDayNotifierTest {
     private val context = ApplicationProvider.getApplicationContext<Application>()
     private val notificationManager = context.getSystemService(NotificationManager::class.java)
