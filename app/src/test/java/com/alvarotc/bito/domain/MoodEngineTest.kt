@@ -259,21 +259,36 @@ class MoodEngineTest {
 
     @Test
     fun `at most one positive and one negative per task and day`() {
-        // halfKeptWindow (cap=2.0) es vacua aqui: con o sin deduplicar, 20 intentos del mismo
-        // dia dan NORMAL en los dos casos. nineDecidedWindow(7) (cap=4.5) si distingue: sin
-        // deduplicar, el peso capado (4.5/20) aun suma 4.5 puntos -> 11,5/13,5 = 0,85 -> RADIANT;
-        // deduplicado a una unidad, 8/10 = 0,80 -> NORMAL.
-        val base = nineDecidedWindow(kept = 7)
+        // Una ventana de 4 decididos con 2 cumplidos (cap 2,0) es vacua aqui: con o sin
+        // deduplicar, 20 intentos del mismo dia dan NORMAL en los dos casos. nineDecidedWindow(7)
+        // (cap=4,5) si distingue: sin deduplicar, el peso capado (4,5/20) aun suma 4,5 puntos ->
+        // 11,5/13,5 = 0,85 -> RADIANT; deduplicado a una unidad, 8/10 = 0,80 -> NORMAL. El `>`
+        // estricto de RADIANT es lo unico que salva la comparacion, asi que se fija tambien el
+        // valor esperado, no solo la igualdad entre los dos casos.
+        val positiveBase = nineDecidedWindow(kept = 7)
         val once =
-            base.copy(
+            positiveBase.copy(
                 taskEvents = listOf(taskEvent(taskId = "t1", kind = TaskEventKind.ATTEMPT, day = TODAY - 2)),
             )
         val twenty =
-            base.copy(
+            positiveBase.copy(
                 taskEvents = (1..20).map { taskEvent(taskId = "t1", kind = TaskEventKind.ATTEMPT, day = TODAY - 2) },
             )
 
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(once, TODAY, TODAY - 1))
         assertEquals(MoodEngine.moodOf(once, TODAY, TODAY - 1), MoodEngine.moodOf(twenty, TODAY, TODAY - 1))
+
+        // Gemelo negativo: nineDecidedWindow(6) (cap=4,5), 20 pospuestas del mismo (tarea, dia).
+        // Deduplicadas a una unidad: 6/10 = 0,60 -> NORMAL. Sin deduplicar, el bloque capado suma
+        // 4,5 puntos al denominador: 6/13,5 = 0,444 -> WILTED — el signo cambia, asi que el
+        // resultado real distingue si el tope de uno-por-dia esta implementado.
+        val negativeBase = nineDecidedWindow(kept = 6)
+        val twentyPostponedSameDay =
+            negativeBase.copy(
+                taskEvents = (1..20).map { taskEvent(taskId = "t1", kind = TaskEventKind.POSTPONED, day = TODAY - 2) },
+            )
+
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(twentyPostponedSameDay, TODAY, TODAY - 1))
     }
 
     @Test
@@ -299,8 +314,13 @@ class MoodEngineTest {
 
     @Test
     fun `three days of only tasks do not turn her dramatic`() {
+        // Sin la tarea de hoy, la ultima actividad de habitos es TODAY-3 -> 3 dias de silencio ->
+        // DRAMATIC. La tarea hecha hoy es la unica actividad mas reciente que cuenta, y saca a
+        // Habi de la sequia: ventana de habitos 5/7 = 0,714 -> NORMAL.
         val state =
             domainState(
+                habits = listOf(RealHabits.makeBed),
+                entries = entriesOn(RealHabits.makeBed, (TODAY - 7)..(TODAY - 3)),
                 tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY)),
             )
 

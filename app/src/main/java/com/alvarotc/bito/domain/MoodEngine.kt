@@ -7,7 +7,7 @@ import com.alvarotc.bito.domain.model.TaskEventKind
 
 /** Habi's mood — a pure function of recent compliance. */
 object MoodEngine {
-    /** Days without a single entry or seal that turn Habi dramatic. */
+    /** Days without a single sign of activity (see [StatsEngine.lastActivityDay]) that turn Habi dramatic. */
     private const val DRAMATIC_SILENCE_DAYS = 3
 
     /** Length of the closed window the ratio looks at. */
