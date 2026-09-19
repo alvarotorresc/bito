@@ -208,6 +208,50 @@ class HabiDrawingTest {
         assertNotEquals(open, closed)
     }
 
+    /**
+     * Pins the axiom T8/T9/T10 build on: an unpainted eye is the SAME oval, drawn with a lightened
+     * fill — not skipped. `assertNotEquals(Tinta, ...)` alone (the four tests above) can't tell
+     * "draws a lightened oval" apart from "skips the eye entirely and leaves bare body" — both give
+     * a non-Tinta pixel. An exact match against `bodyTone.lighten(UNPAINTED_EYE_LIGHTEN)` at the
+     * eye's own center rules the skip out: a skip would leave the RAW (un-lightened) body tone there.
+     */
+    @Test
+    fun `an unpainted eye's fill is the body tone lightened - not skipped, not the bare body`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(), eyesPainted = 0)
+        val (x, y) = leftEyePixel(size)
+
+        val pixel = renderHabiBitmap(spec, size).getPixel(x, y)
+
+        assertEquals(HabiSalvia.lighten(UNPAINTED_EYE_LIGHTEN).toArgb(), pixel)
+    }
+
+    /** Mirrors the unpainted eye's ink ring: centered on the oval's own edge, EYE_BASE_RX from the
+     * eye center. Uses [accessorySize] (defined below, T10) instead of [size]: at 96px the ring's
+     * antialiased edge and the fill's own antialiased edge overlap at this radius; 256px keeps a
+     * clean pixel inside the stroke band. */
+    private fun leftEyeRingPixel(
+        sizePx: Int,
+        eyeScale: Float,
+    ): Pair<Int, Int> {
+        val eyeCenterX = (BODY_CX - EYE_DX) * sizePx
+        val eyeCenterY = EYE_Y * sizePx
+        val eyeRx = EYE_BASE_RX * eyeScale * sizePx
+        return (eyeCenterX + eyeRx).toInt() to eyeCenterY.toInt()
+    }
+
+    /** Second half of the same axiom: the unpainted eye also carries the ink ring — a distinct
+     * stroke over the lightened fill, not a bare filled circle. */
+    @Test
+    fun `an unpainted eye carries an ink ring over the lightened fill`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(), eyesPainted = 0)
+        val (x, y) = leftEyeRingPixel(accessorySize, eyeScale = 1f)
+        val fillOnly = HabiSalvia.lighten(UNPAINTED_EYE_LIGHTEN).toArgb()
+
+        val ringPixel = renderHabiBitmap(spec, accessorySize).getPixel(x, y)
+
+        assertNotEquals(fillOnly, ringPixel)
+    }
+
     // --- Scene opts (mockup 7b): body tone override + closed-lid eyes --------------------------
 
     /** Onboarding 7b's muted sage, the override's one real consumer — any tone would exercise the axis. */
