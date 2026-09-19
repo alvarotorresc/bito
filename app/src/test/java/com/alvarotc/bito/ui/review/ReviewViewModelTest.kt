@@ -36,6 +36,7 @@ import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -252,6 +253,33 @@ class ReviewViewModelTest {
             advanceUntilIdle()
 
             assertEquals(List(3) { HabiCue.LOGGED }, cues)
+        }
+
+    // R14 review, ronda 1: los sellos no pueden depender de que el asentimiento termine — si el
+    // usuario navega a mitad del lote, viewModelScope muere y esa corrutina se cancela, pero los
+    // días ya deben estar en Room. `runCurrent()` (sin `advanceUntilIdle`) deja correr toda la
+    // escritura — que ya no tiene ningún `delay` de por medio — sin tocar el reloj virtual que
+    // gobierna el primer `delay(SEAL_NOD_GAP_MS)` del asentimiento: si los sellos ya están aquí,
+    // no dependen de esa corrutina.
+    @Test
+    fun `every pending day is sealed in Room before the first nod delay ever elapses`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    metric = Metric.CHECK,
+                    direction = Direction.ZERO,
+                    period = Period.DAY,
+                    createdOnDay = today - 3,
+                ),
+            )
+            assertEquals(listOf(today - 3, today - 2, today - 1), state().pendingSealDays)
+
+            vm.sealPendingDays()
+            runCurrent()
+
+            val seals = db.daySealDao().all().map { it.logicalDay }.sorted()
+            assertEquals(listOf(today - 3, today - 2, today - 1), seals)
         }
 
     // R7 follow-up: the screen's LaunchedEffect(state.todaySealed, state.perfectToday) can re-run

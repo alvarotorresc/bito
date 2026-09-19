@@ -154,11 +154,27 @@ class ReviewViewModel(
             habiSounds.play(HabiSound.SAD)
         }
 
-    fun sealPendingDays() =
-        write { today, nowMillis ->
-            val days = uiState.value.pendingSealDays
-            days.forEach { day ->
-                journal.sealDay(day, nowMillis)
+    /**
+     * Sella TODO el lote de una vez, sin ningún `delay` de por medio — R14 (review, ronda 1): un
+     * `delay` dentro de este `write` retrasaba [PointsReconciler.reconcile] 340 ms × (N-1) tras la
+     * última escritura y, peor, si el usuario navegaba a mitad del lote, `viewModelScope` moría
+     * con la pantalla y los días restantes NUNCA se sellaban — pérdida real de datos por un efecto
+     * cosmético. El asentimiento vive aparte, en [nodBatchSeal], DESPUÉS de que esto ya haya
+     * terminado.
+     */
+    fun sealPendingDays() {
+        write { _, nowMillis -> uiState.value.pendingSealDays.forEach { journal.sealDay(it, nowMillis) } }
+        nodBatchSeal(uiState.value.pendingSealDays)
+    }
+
+    /**
+     * El asentimiento del lote, DESVINCULADO de la escritura de arriba: si esta corrutina se
+     * cancela porque el usuario navega a mitad del lote (viewModelScope muere con la pantalla),
+     * los sellos ya están en Room — nada de datos depende de que este cuerpo termine.
+     */
+    private fun nodBatchSeal(days: List<LogicalDay>) =
+        viewModelScope.launch(defaultDispatcher) {
+            days.forEach { _ ->
                 // Un asentimiento por fila, no la coreografía de dormirse por lote: el cuerpo
                 // acompaña la lista con el gesto CORTO (LOGGED), no con SEALED.
                 emit(HabiCue.LOGGED)
@@ -168,7 +184,7 @@ class ReviewViewModel(
             // así que esta rama no dispara en la práctica — pero si el lote alguna vez incluyera
             // el día de hoy, el cierre del lote también merece su propio SEALED: la pose dormida
             // ya llega derivada por HabiDay.phaseOf, este cue es solo el gesto.
-            if (today in days) {
+            if (uiState.value.today in days) {
                 emit(HabiCue.SEALED)
             }
         }
