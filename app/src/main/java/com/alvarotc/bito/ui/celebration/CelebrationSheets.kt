@@ -89,7 +89,8 @@ fun PerfectDaySheet(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             // The day-perfect choreography (biblia §9): the only celebration surface with a full
-            // gesture, and the only one with confetti (already in this sheet).
+            // gesture. The biblia reserves confetti for the perfect day too, but this milestone
+            // does not implement it — pending for the architect (M13 polish).
             val motion = rememberHabiMotion(state.spec.pose, state.spec.mood, state.spec.personality)
             LaunchedEffect(Unit) { motion.play(HabiCue.PERFECT_DAY, state.spec.personality) }
             HabiAvatar(state.spec, Modifier.size(120.dp), motion = motion)
