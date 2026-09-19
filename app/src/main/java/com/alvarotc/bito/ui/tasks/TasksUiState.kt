@@ -39,13 +39,15 @@ data class TasksUiState(
  * Derives the full tasks list from [state] as seen on [today]. Pure — no side effects, no
  * storage, no clock reads — same discipline as [com.alvarotc.bito.ui.today.buildTodayUiState].
  *
- * Hoy is [Tasks.todayTasks] minus every task [isOpenThisWeek] (WEEK, not past its Sunday yet):
- * a WEEK task due exactly today (its Sunday) moves out of Hoy into Esta semana; an overdue one
- * ([Task.dueDay] `< today`) stays in Hoy, as `OVERDUE`. `inToday` is computed from that trimmed
- * Hoy list and reused by Esta semana, Con plazo and Sin plazo alike: each takes every open task
- * of its own [DueKind] not already in Hoy — the mechanism [isOpenThisWeek] alone cannot cover a
- * WEEK task postponed today, since [Tasks.todayTasks] drops postponed-today tasks before slotting
- * them, overdue or not; "not in Hoy" still gives it a home in Esta semana instead of none.
+ * Hoy is [Tasks.todayTasks] minus every task [isOpenThisWeek] (WEEK, its Sunday still ahead of
+ * today): a WEEK task whose Sunday IS today enters Hoy — same as the Hoy screen, since
+ * [Tasks.todayTasks] already slots a `dueDay == today` as `DUE_TODAY` before it ever looks at
+ * [DueKind.WEEK] — and only a WEEK task not yet due stays out, in Esta semana; an overdue one
+ * ([Task.dueDay] `< today`) stays in Hoy too, as `OVERDUE`. `inToday` is computed from that
+ * trimmed Hoy list and reused by Esta semana, Con plazo and Sin plazo alike: each takes every open
+ * task of its own [DueKind] not already in Hoy — the mechanism [isOpenThisWeek] alone cannot cover
+ * a WEEK task postponed today, since [Tasks.todayTasks] drops postponed-today tasks before
+ * slotting them, overdue or not; "not in Hoy" still gives it a home in Esta semana instead of none.
  */
 fun buildTasksUiState(
     state: DomainState,
@@ -90,11 +92,14 @@ fun buildTasksUiState(
     )
 }
 
-/** Open, WEEK-kind, not past its Sunday yet — the set Hoy gives up to Esta semana. */
+/**
+ * Open, WEEK-kind, its Sunday still strictly ahead of today — the set Hoy gives up to Esta semana.
+ * A Sunday that IS today (`==`, not `>=`) already belongs to Hoy, same as the Hoy screen.
+ */
 private fun isOpenThisWeek(
     task: Task,
     today: LogicalDay,
-): Boolean = task.dueKind == DueKind.WEEK && (task.dueDay ?: Int.MIN_VALUE) >= today
+): Boolean = task.dueKind == DueKind.WEEK && (task.dueDay ?: Int.MIN_VALUE) > today
 
 /**
  * Mirrors [Tasks.looseOfTheDay]'s private sink key through the public [Tasks.lastPostponedDay]:

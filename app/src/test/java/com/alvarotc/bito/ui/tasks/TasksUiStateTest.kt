@@ -37,13 +37,14 @@ class TasksUiStateTest {
         // weekTask(id, TODAY) dues on this week's Sunday (TODAY+2, since TODAY is a Friday): open, not overdue.
         val open = weekTask("open-week", TODAY)
         val postponedToday = weekTask("postponed-week", TODAY)
-        // Its Sunday is today: dueDay == today is not yet overdue, so it belongs to Esta semana only —
-        // not Hoy, even though slotOf alone would have called it DUE_TODAY.
+        // Its Sunday is today: same as slotOf alone would call it, DUE_TODAY — it belongs to Hoy,
+        // like the Hoy screen (isOpenThisWeek only holds a WEEK task back while its Sunday is
+        // still strictly ahead of today).
         val dueToday = task(id = "due-today-week", dueKind = DueKind.WEEK, dueDay = TODAY, createdOnDay = TODAY - 2)
         // A WEEK task whose Sunday already passed: still WEEK-kind, but its dueDay < today makes it OVERDUE.
         val overdue = task(id = "overdue-week", dueKind = DueKind.WEEK, dueDay = TODAY - 5, createdOnDay = TODAY - 12)
         // Overdue AND postponed today: Tasks.todayTasks drops it entirely (postponedOn), so isOpenThisWeek's
-        // dueDay >= today alone would leave it in no section. "not in Hoy" still gives it a home.
+        // dueDay > today alone would leave it in no section. "not in Hoy" still gives it a home.
         val overduePostponed =
             task(id = "overdue-postponed-week", dueKind = DueKind.WEEK, dueDay = TODAY - 5, createdOnDay = TODAY - 12)
         val state =
@@ -58,11 +59,13 @@ class TasksUiStateTest {
 
         val ui = buildTasksUiState(state, TODAY)
 
-        val weekIds = setOf("open-week", "postponed-week", "due-today-week", "overdue-postponed-week")
+        // due-today-week ya no esta aqui: su domingo es hoy, y eso ahora es Hoy, no Esta semana.
+        val weekIds = setOf("open-week", "postponed-week", "overdue-postponed-week")
         assertEquals(weekIds, ui.weekTasks.map { it.id }.toSet())
         assertTrue(ui.todayTasks.none { it.id in weekIds })
 
-        assertEquals(listOf("overdue-week"), ui.todayTasks.map { it.id })
+        // OVERDUE antes que DUE_TODAY, el mismo orden de Tasks.TodaySlot.
+        assertEquals(listOf("overdue-week", "due-today-week"), ui.todayTasks.map { it.id })
         assertTrue(ui.weekTasks.none { it.id == "overdue-week" })
 
         // The overdue-and-postponed-today task shows up exactly once, in Esta semana.

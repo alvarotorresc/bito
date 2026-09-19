@@ -226,6 +226,26 @@ class FocusViewModelTest {
         }
 
     @Test
+    fun `two extends fired back to back without waiting between them still add up`() =
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            val vm = newViewModel("t1")
+            activate(vm)
+            vm.start()
+            settle()
+            val startEndsAtMillis = focusStore.session.first()!!.endsAtMillis
+
+            // Sin settle() entre medias: las dos corrutinas de extend() quedan encoladas antes de
+            // que ninguna llegue a leer la sesion — el mutex es lo unico que evita que ambas lean
+            // la MISMA sesion vieja y una de las dos "+" se pierda.
+            vm.extend(5)
+            vm.extend(5)
+            settle()
+
+            assertEquals(startEndsAtMillis + 10 * 60_000L, focusStore.session.first()!!.endsAtMillis)
+        }
+
+    @Test
     fun `finishing marks the task done, clears the session and the presence`() =
         runFocusTest {
             tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))

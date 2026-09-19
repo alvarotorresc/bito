@@ -50,25 +50,6 @@ class FocusStoreTest {
         }
 
     @Test
-    fun `extendBy moves both clocks by the same amount`() =
-        runTest {
-            val focus = FocusStore(store("extend"))
-            val session =
-                FocusSession(
-                    taskId = "t1",
-                    startedAtMillis = 5_000_000L,
-                    endsAtMillis = 5_600_000L,
-                    endsAtElapsed = 4_600_000L,
-                    bootMillis = 400_000L,
-                )
-            focus.start(session)
-            focus.extendBy(5)
-            val extended = focus.session.first()!!
-            assertEquals(session.endsAtMillis + 5 * 60_000L, extended.endsAtMillis)
-            assertEquals(session.endsAtElapsed + 5 * 60_000L, extended.endsAtElapsed)
-        }
-
-    @Test
     fun `clear leaves it null`() =
         runTest {
             val focus = FocusStore(store("clear"))

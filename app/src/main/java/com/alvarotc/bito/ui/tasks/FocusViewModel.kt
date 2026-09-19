@@ -39,6 +39,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.time.ZoneId
 
 /**
@@ -120,6 +122,9 @@ class FocusViewModel(
 
     /** Fuerza recalcular [uiState] cada segundo mientras hay sesion — el propio valor no importa. */
     private val tick = MutableStateFlow(0L)
+
+    /** Serializa [extend]: dos "+" seguidos no deben leer la misma sesion antes de que el primero la reescriba. */
+    private val extendMutex = Mutex()
 
     val uiState: StateFlow<FocusUiState> =
         combine(
@@ -247,25 +252,29 @@ class FocusViewModel(
      * Mueve el fin y reprograma la alarma y la notificacion — no toca el dominio. Cuenta desde lo
      * que QUEDA (`FocusClock.remainingMillis`), no desde el fin crudo guardado: sobre una sesion ya
      * vencida ese fin esta en el pasado, y sumarle minutos ahi la dejaria vencida igual o programaria
-     * la alarma antes de lo que la pantalla enseña. Reescribe la sesion entera (no
-     * `FocusStore.extendBy`, que no refresca la firma de arranque) para que el siguiente
-     * `remainingMillis` la lea con el mismo par de relojes que la escribio.
+     * la alarma antes de lo que la pantalla enseña. Reescribe la sesion entera para que el
+     * siguiente `remainingMillis` la lea con el mismo par de relojes que la escribio.
+     *
+     * [extendMutex] serializa dos "+" seguidos: sin el, ambos podrian leer la sesion ANTES de que
+     * el primero terminara de reescribirla, y el segundo "+" se perderia en vez de sumarse.
      */
     fun extend(minutes: Int) =
         viewModelScope.launch {
-            val session = focus.session.first() ?: return@launch
-            val nowMillis = now()
-            val elapsedMillis = elapsed()
-            val rest = FocusClock.remainingMillis(session, nowMillis, elapsedMillis) + minutes * 60_000L
-            focus.start(
-                session.copy(
-                    endsAtMillis = nowMillis + rest,
-                    endsAtElapsed = elapsedMillis + rest,
-                    bootMillis = FocusClock.bootSignatureOf(nowMillis, elapsedMillis),
-                ),
-            )
-            val title = titleOf(session.taskId) ?: return@launch
-            presence.show(title, nowMillis + rest)
+            extendMutex.withLock {
+                val session = focus.session.first() ?: return@withLock
+                val nowMillis = now()
+                val elapsedMillis = elapsed()
+                val rest = FocusClock.remainingMillis(session, nowMillis, elapsedMillis) + minutes * 60_000L
+                focus.start(
+                    session.copy(
+                        endsAtMillis = nowMillis + rest,
+                        endsAtElapsed = elapsedMillis + rest,
+                        bootMillis = FocusClock.bootSignatureOf(nowMillis, elapsedMillis),
+                    ),
+                )
+                val title = titleOf(session.taskId) ?: return@withLock
+                presence.show(title, nowMillis + rest)
+            }
         }
 
     fun finish() =

@@ -194,6 +194,30 @@ class TasksTest {
     }
 
     @Test
+    fun `two brought tasks with different due days sort by creation, not by due day`() {
+        val state =
+            domainState(
+                tasks =
+                    listOf(
+                        // Vence mas tarde pero es mas nueva: si el plazo mandara, iria despues.
+                        datedTask("far-but-newer", TODAY + 9, createdAtMillis = 200L),
+                        // Vence antes pero es mas vieja: por antiguedad, esta va primero.
+                        datedTask("farther-but-older", TODAY + 20, createdAtMillis = 100L),
+                    ),
+                taskEvents =
+                    listOf(
+                        taskEvent(taskId = "far-but-newer", kind = TaskEventKind.BROUGHT, day = TODAY),
+                        taskEvent(taskId = "farther-but-older", kind = TaskEventKind.BROUGHT, day = TODAY),
+                    ),
+            )
+
+        assertEquals(
+            listOf("farther-but-older", "far-but-newer"),
+            Tasks.todayTasks(state, TODAY).map { it.task.id },
+        )
+    }
+
+    @Test
     fun `inside a group the oldest creation wins, and the id breaks a perfect tie`() {
         val state =
             domainState(

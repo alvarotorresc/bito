@@ -68,14 +68,6 @@ class FocusStore(private val dataStore: DataStore<Preferences>) {
         }
     }
 
-    suspend fun extendBy(minutes: Int) {
-        dataStore.edit { prefs ->
-            val delta = minutes * 60_000L
-            prefs[Keys.endsAtMillis] = (prefs[Keys.endsAtMillis] ?: 0L) + delta
-            prefs[Keys.endsAtElapsed] = (prefs[Keys.endsAtElapsed] ?: 0L) + delta
-        }
-    }
-
     suspend fun clear() {
         dataStore.edit { prefs ->
             prefs.clear()

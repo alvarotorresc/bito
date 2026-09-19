@@ -89,12 +89,25 @@ object Tasks {
         return candidates.sortedWith(
             compareBy(
                 { it.slot.ordinal },
-                { it.task.dueDay ?: Int.MAX_VALUE },
+                ::dueOrderKeyOf,
                 { it.task.createdAtMillis },
                 { it.task.id },
             ),
         )
     }
+
+    /**
+     * Plazo ascendente SOLO dentro de OVERDUE y DUE_SOON (spec §4.1) — en el resto de vias el
+     * plazo no defiende el orden (DUE_TODAY comparte el mismo dia; THIS_WEEK y BROUGHT pueden traer
+     * un `dueDay` que nada tiene que ver con la antiguedad que sí manda ahi), asi que la clave es
+     * constante y el siguiente criterio (`createdAtMillis`) decide.
+     */
+    private fun dueOrderKeyOf(todayTask: TodayTask): Int =
+        if (todayTask.slot == TodaySlot.OVERDUE || todayTask.slot == TodaySlot.DUE_SOON) {
+            todayTask.task.dueDay ?: Int.MAX_VALUE
+        } else {
+            0
+        }
 
     private fun slotOf(
         state: DomainState,
@@ -178,8 +191,8 @@ object Tasks {
             .filter { task ->
                 when (task.dueKind) {
                     DueKind.NONE -> today - task.createdOnDay == LOOSE_NOTICE_DAYS
-                    DueKind.WEEK -> task.dueDay!! - today == WEEK_NOTICE_BEFORE_END
-                    DueKind.DATE -> task.dueDay!! - today in setOf(DUE_SOON_DAYS, 1, 0)
+                    DueKind.WEEK -> task.dueDay?.let { it - today == WEEK_NOTICE_BEFORE_END } ?: false
+                    DueKind.DATE -> task.dueDay?.let { it - today in setOf(DUE_SOON_DAYS, 1, 0) } ?: false
                 }
             }
             .sortedWith(compareBy({ it.dueDay ?: Int.MAX_VALUE }, { it.createdAtMillis }, { it.id }))
