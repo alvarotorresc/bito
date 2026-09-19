@@ -275,6 +275,22 @@ class OnboardingViewModelTest {
             assertEquals(0, settingsRepo.settings.first().habiEyesPainted)
         }
 
+    /**
+     * Belt-and-braces, same reasoning as [finish]'s own guard test above: the real UI never
+     * calls this on a replay VM (`eyeRitual` never leaves `null` there), but the guard is a
+     * property of the function itself, not of how it happens to be called today.
+     */
+    @Test
+    fun `finishEyeRitual does nothing in replay`() =
+        runTest {
+            val replay = replayViewModel()
+            advanceUntilIdle()
+
+            replay.finishEyeRitual()
+
+            assertFalse(replay.uiState.value.done)
+        }
+
     @Test
     fun `finish with a blank habit name creates nothing but still completes`() =
         runTest {

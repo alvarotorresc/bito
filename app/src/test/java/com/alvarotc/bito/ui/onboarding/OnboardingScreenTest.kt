@@ -514,6 +514,45 @@ class OnboardingScreenTest {
     }
 
     /**
+     * Task 17 review, minor #6: `finish()` already persisted the name/personality/habit by the
+     * time the ritual shows on 7g — stepping back to NAME/PERSONALITY from there would open an
+     * editing window whose edits can never land. Neither the system back gesture nor a swipe may
+     * move the step while [OnboardingUiState.eyeRitual] is non-null; both stay live once the
+     * ritual clears (this test doesn't drive it that far — [OnboardingViewModelTest]'s own
+     * `finishEyeRitual` tests cover that half).
+     */
+    @Test
+    fun `neither back nor a swipe can leave 7g while the eye ritual is showing`() {
+        val vm = newViewModel("onboarding-screen-ritual-back-gate")
+        val backOwner = FakeBackDispatcherOwner()
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides backOwner) {
+                    OnboardingScreen(vm)
+                }
+            }
+        }
+        compose.waitForIdle()
+        goToFirstHabit(vm)
+
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-eye-ritual", useUnmergedTree = true).assertExists()
+        assertEquals(OnboardingStep.FIRST_HABIT, vm.uiState.value.step)
+
+        compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+        assertEquals(OnboardingStep.FIRST_HABIT, vm.uiState.value.step)
+
+        compose.onNodeWithTag("onb-pager", useUnmergedTree = true).performTouchInput { swipeRight() }
+        compose.waitForIdle()
+        assertEquals(OnboardingStep.FIRST_HABIT, vm.uiState.value.step)
+    }
+
+    /**
      * The two behaviors the brief names explicitly, both gated on the SAME `ritualDone`: the
      * button stays disabled until the gesture paints ("nadie se salta el rito con un doble
      * toque"), and the line only shows up AFTER — the ritual itself is silent and wordless

@@ -95,7 +95,6 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -164,7 +163,16 @@ fun OnboardingScreen(
     // handler there, rather than wiring it unconditionally and relying on OnboardingViewModel.back
     // being a no-op at the first step, is what lets the system gesture actually fall through to
     // that default instead of being swallowed by a handler that intercepted it and did nothing.
-    BackHandler(enabled = state.step > OnboardingStep.WELCOME, onBack = viewModel::back)
+    //
+    // While the eye ritual holds 7g (state.eyeRitual != null), the handler stays ENABLED (still
+    // swallows the press -- the app must not exit mid-ritual either) but onBack becomes a no-op:
+    // finish() already persisted the name/personality/habit by the time the ritual shows, so
+    // stepping back to NAME/PERSONALITY would open an editing window whose edits can never land
+    // (the pager below also blocks the swipe that would reach it).
+    BackHandler(
+        enabled = state.step > OnboardingStep.WELCOME,
+        onBack = { if (state.eyeRitual == null) viewModel.back() },
+    )
     if (state.step == OnboardingStep.WELCOME) {
         WelcomeScene(
             languageTag = state.languageTag,
@@ -417,6 +425,10 @@ private fun StoryPagerScaffold(
                 }
                 HorizontalPager(
                     state = pagerState,
+                    // Blocked, not just the BackHandler above, while the eye ritual holds 7g --
+                    // a swipe bypasses the BackHandler entirely, same reasoning as the NAME step's
+                    // own blank-name gate a few lines up.
+                    userScrollEnabled = state.eyeRitual == null,
                     modifier = Modifier.fillMaxSize(),
                 ) { page ->
                     // Only `page == pageIndex` is the page this remount landed on -- guards the
@@ -863,8 +875,10 @@ private fun FirstHabitStepContent(
                 // `transition.from` y salta a `transition.to` cuando el gesto lo dice.
                 var painted by remember { mutableStateOf(transition.from) }
                 val motion = rememberHabiMotion(HabiPose.STANDING, Mood.NORMAL, personality)
+                // Sin quietud propia: `runEyeRitual` (HabiMotion) ya abre con sus 200 ms de
+                // quietud antes de asentir — duplicarla aquí solo alargaba el rito sin motivo.
+                // El ojo se pinta justo al arrancar el asentimiento.
                 LaunchedEffect(transition) {
-                    delay(EYE_RITUAL_STILL_MS)
                     painted = transition.to
                     motion.playEyeRitual()
                     onRitualPainted()
@@ -890,9 +904,6 @@ private fun FirstHabitStepContent(
         Spacer(Modifier.height(24.dp))
     }
 }
-
-/** «se queda quieta un instante» (biblia §6): el cuerpo no salta directo al segundo ojo. */
-private const val EYE_RITUAL_STILL_MS = 200L
 
 /** Mockup style, not the real form's: checkmark + hoja border on the selected pill (the form itself
  * fills the selected pill with [HojaTinte] instead — different visual language for the same five

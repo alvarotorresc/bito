@@ -262,8 +262,17 @@ class OnboardingViewModel(
         }
     }
 
-    /** El usuario ha visto el ojo pintarse: se cierra el rito y el flujo navega a Hoy. */
-    fun finishEyeRitual() = state.update { it.copy(eyeRitual = null, done = true) }
+    /**
+     * El usuario ha visto el ojo pintarse: se cierra el rito y el flujo navega a Hoy.
+     *
+     * Misma guarda que [finish]: en replay `eyeRitual` nunca deja de ser `null` (nada la escribe
+     * ahí), así que esta función nunca se llama desde la UI del replay -- pero por convención del
+     * fichero, cada escritura cuelga de [persist], no solo de que la vía real nunca la dispare.
+     */
+    fun finishEyeRitual() {
+        if (!persist) return
+        state.update { it.copy(eyeRitual = null, done = true) }
+    }
 
     companion object {
         /** [persist] = false builds the read-only replay VM Ajustes opens; see the constructor. */

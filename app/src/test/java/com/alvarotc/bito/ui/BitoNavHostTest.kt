@@ -25,6 +25,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.LogicalDays
@@ -91,6 +92,13 @@ class BitoNavHostTest {
      * eye's genuine transition holds 7g on its own ritual first. Every test below that fills
      * "onb-habit-name-field" and taps "onb-create-start" to actually finish onboarding needs
      * this second tap once the ritual paints, instead of the one click that used to be enough.
+     *
+     * This helper's own second `performClick()` — real UI, real [HorizontalPager] state, real
+     * [OnboardingViewModel] instance — is the ONLY coverage anywhere in the suite of the actual
+     * "Seguir" pill's wiring to [com.alvarotc.bito.ui.onboarding.OnboardingViewModel.finishEyeRitual]
+     * once the ritual has painted: `OnboardingScreenTest`'s own ritual tests either bypass it by
+     * calling `finishEyeRitual()` directly on the VM, or never drive the gesture to completion at
+     * all (see that file's own KDoc on why).
      */
     private fun finishFirstHabitStep() {
         // The first click (regular autoAdvance -- proven by every OTHER click in this file) runs
@@ -434,6 +442,55 @@ class BitoNavHostTest {
         val cutoff = runBlocking { container.settings.settings.first().dayCutoffMinutes }
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), cutoff, ZoneId.systemDefault())
         assertEquals("$today:perfect-day", celebrations().lastCued)
+    }
+
+    /**
+     * Task 17 review, Important #2: the `streak-7` hold (`BitoNavHost`'s own `badgesReady`) —
+     * first the second eye, in silence, then the badge sheet with its sound (biblia §4). Proves
+     * BOTH halves the same reasoning "the celebration cue stays untouched..." above already
+     * argues for the perfect-day case: the sheet AND the cue stay held.
+     *
+     * Waits for [CelebrationsViewModel.uiState] to actually carry the badge FIRST (that state
+     * combines off a real dispatcher — same hazard "a pending perfect day shows the sheet..."
+     * documents), so the absence assertion right after proves the hold is doing something, not
+     * just that the flow hasn't emitted yet.
+     */
+    @Test
+    fun `a streak-7 badge holds its sheet and cue until the eye has time to paint`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        runBlocking {
+            completeOnboarding(container)
+            container.database.badgeDao().insert(BadgeEntity("streak-7", unlockedAtMillis = 1_000L))
+        }
+        val vmOwner = FakeViewModelStoreOwner()
+
+        fun celebrations() = ViewModelProvider(vmOwner, CelebrationsViewModel.factory(container))[CelebrationsViewModel::class.java]
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides vmOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+
+        compose.waitUntil(timeoutMillis = 5_000) { celebrations().uiState.value.newBadges.isNotEmpty() }
+        compose.onNodeWithTag("badge-sheet", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(celebrations().lastCued)
+
+        // NOT waitForIdle()/waitUntil() from here: the hold is a genuine suspend `delay()`
+        // ([EYE_RITUAL_HOLD_MS], 900ms), same reasoning as `finishFirstHabitStep`'s own KDoc --
+        // manual clock stepping is what actually resumes it.
+        compose.mainClock.autoAdvance = false
+        repeat(80) { compose.mainClock.advanceTimeByFrame() }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("badge-sheet", useUnmergedTree = true).assertExists()
+        assertTrue(celebrations().lastCued != null)
     }
 
     @Test
