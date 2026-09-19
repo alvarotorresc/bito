@@ -6,8 +6,18 @@
     <string name="task_not_today">Hoy no</string>
     <string name="task_done">Hecha</string>
     <string name="task_due_today">hoy</string>
-    <string name="task_due_in">en %1$d días</string>
-    <string name="task_overdue">vencida hace %1$d días</string>
+    <plurals name="task_due_in">
+        <item quantity="one">en %1$d día</item>
+        <!-- es CLDR's "many" only fires on huge round numbers (millions+); day counts never
+             reach that range, so this mirrors "other" — added to satisfy lint's completeness check. -->
+        <item quantity="many">en %1$d días</item>
+        <item quantity="other">en %1$d días</item>
+    </plurals>
+    <plurals name="task_overdue">
+        <item quantity="one">vencida hace %1$d día</item>
+        <item quantity="many">vencida hace %1$d días</item>
+        <item quantity="other">vencida hace %1$d días</item>
+    </plurals>
     <string name="task_due_this_week">esta semana</string>
     <string name="task_due_week_today">se acaba hoy</string>
     <string name="task_due_last_week">de la semana pasada</string>
@@ -21,6 +31,7 @@
     <string name="task_form_due_none">Sin plazo</string>
     <string name="task_form_due_week">Esta semana</string>
     <string name="task_form_due_date">Fecha</string>
+    <string name="task_form_date_confirm">Elegir</string>
     <string name="tasks_screen_title">Tareas</string>
     <string name="tasks_section_today">Hoy</string>
     <string name="tasks_section_week">Esta semana</string>

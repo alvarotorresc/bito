@@ -133,7 +133,7 @@ fun TaskFormSheet(
                         state = state.copy(dueKind = DueKind.DATE, dueDay = millis.toLogicalDay())
                     }
                     showDatePicker = false
-                }) { Text(stringResource(R.string.save)) }
+                }) { Text(stringResource(R.string.task_form_date_confirm)) }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) { Text(stringResource(R.string.cancel)) }

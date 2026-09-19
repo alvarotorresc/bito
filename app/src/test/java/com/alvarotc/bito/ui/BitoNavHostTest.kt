@@ -295,7 +295,7 @@ class BitoNavHostTest {
     fun `the bottom bar hides on the habit form but survives on stats`() {
         setContent()
 
-        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
@@ -315,7 +315,7 @@ class BitoNavHostTest {
     fun `tapping create opens the choice sheet with a habit and a task`() {
         setContent()
 
-        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -329,7 +329,7 @@ class BitoNavHostTest {
     fun `choosing a habit from the choice sheet reaches the usual habit form`() {
         setContent()
 
-        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
@@ -354,7 +354,7 @@ class BitoNavHostTest {
     fun `choosing a task from the choice sheet opens the task form with saving disabled on a blank title`() {
         setContent()
 
-        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }

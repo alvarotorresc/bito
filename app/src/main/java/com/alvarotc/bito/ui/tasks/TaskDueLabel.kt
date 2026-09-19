@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.tasks
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.DueKind
@@ -28,9 +29,9 @@ fun taskDueLabel(
             }
         DueKind.DATE ->
             when {
-                delta < 0 -> stringResource(R.string.task_overdue, -delta)
+                delta < 0 -> pluralStringResource(R.plurals.task_overdue, -delta, -delta)
                 delta == 0 -> stringResource(R.string.task_due_today)
-                else -> stringResource(R.string.task_due_in, delta)
+                else -> pluralStringResource(R.plurals.task_due_in, delta, delta)
             }
     }
 }

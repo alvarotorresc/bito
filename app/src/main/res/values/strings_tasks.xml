@@ -6,8 +6,14 @@
     <string name="task_not_today">Not today</string>
     <string name="task_done">Done</string>
     <string name="task_due_today">today</string>
-    <string name="task_due_in">in %1$d days</string>
-    <string name="task_overdue">%1$d days overdue</string>
+    <plurals name="task_due_in">
+        <item quantity="one">in %1$d day</item>
+        <item quantity="other">in %1$d days</item>
+    </plurals>
+    <plurals name="task_overdue">
+        <item quantity="one">%1$d day overdue</item>
+        <item quantity="other">%1$d days overdue</item>
+    </plurals>
     <string name="task_due_this_week">this week</string>
     <string name="task_due_week_today">ends today</string>
     <string name="task_due_last_week">from last week</string>
@@ -21,6 +27,7 @@
     <string name="task_form_due_none">No deadline</string>
     <string name="task_form_due_week">This week</string>
     <string name="task_form_due_date">Date</string>
+    <string name="task_form_date_confirm">Choose</string>
     <string name="tasks_screen_title">Tasks</string>
     <string name="tasks_section_today">Today</string>
     <string name="tasks_section_week">This week</string>

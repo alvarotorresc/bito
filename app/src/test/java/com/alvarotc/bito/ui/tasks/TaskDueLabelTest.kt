@@ -51,6 +51,11 @@ class TaskDueLabelTest {
     }
 
     @Test
+    fun `a DATE task due tomorrow uses the singular`() {
+        assertEquals("in 1 day", label(DueKind.DATE, today + 1))
+    }
+
+    @Test
     fun `a DATE task due exactly today says so`() {
         assertEquals("today", label(DueKind.DATE, today))
     }
@@ -59,6 +64,12 @@ class TaskDueLabelTest {
     fun `an overdue DATE task says how many days late, and taskDueOverdue agrees`() {
         assertEquals("3 days overdue", label(DueKind.DATE, today - 3))
         assertTrue(taskDueOverdue(DueKind.DATE, today - 3, today))
+    }
+
+    @Test
+    fun `a DATE task overdue by exactly one day uses the singular, and taskDueOverdue agrees`() {
+        assertEquals("1 day overdue", label(DueKind.DATE, today - 1))
+        assertTrue(taskDueOverdue(DueKind.DATE, today - 1, today))
     }
 
     @Test
