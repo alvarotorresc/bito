@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.habi.EYE_Y
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.theme.Borde
@@ -250,25 +251,30 @@ private fun FrustrationTicks(modifier: Modifier) {
 
 /**
  * The mockup's furrowed brows, drawn over the avatar box. Anchored to HabiDrawing's published eye
- * geometry (eyes at x = 0.5 +- 0.14, y = 0.5 of the box — EYE_Y/EYE_DX), sitting just above each
- * eye and descending toward the center. Static-scene-only: the avatar underneath renders its
- * resting frame (`animated = false`), so the anchor cannot drift mid-life.
+ * geometry (eyes at x = 0.5 +- 0.14, y = EYE_Y of the box — EYE_Y/EYE_DX), sitting just above each
+ * eye and descending toward the center. The two y's are EYE_Y minus a fixed offset (0.105/0.042,
+ * measured against the mockup when EYE_Y was still 0.5) rather than literals, so T8's -0.03
+ * silhouette shift carried the brows along with it instead of leaving them stranded at the old eye
+ * height. Static-scene-only: the avatar underneath renders its resting frame (`animated = false`),
+ * so the anchor cannot drift mid-life.
  */
 @Composable
 private fun AngryBrows(modifier: Modifier) {
     Canvas(modifier) {
         val stroke = 3.5.dp.toPx()
+        val browOuterY = EYE_Y - 0.105f
+        val browInnerY = EYE_Y - 0.042f
         drawLine(
             Tinta,
-            Offset(size.width * 0.30f, size.height * 0.395f),
-            Offset(size.width * 0.455f, size.height * 0.458f),
+            Offset(size.width * 0.30f, size.height * browOuterY),
+            Offset(size.width * 0.455f, size.height * browInnerY),
             strokeWidth = stroke,
             cap = StrokeCap.Round,
         )
         drawLine(
             Tinta,
-            Offset(size.width * 0.70f, size.height * 0.395f),
-            Offset(size.width * 0.545f, size.height * 0.458f),
+            Offset(size.width * 0.70f, size.height * browOuterY),
+            Offset(size.width * 0.545f, size.height * browInnerY),
             strokeWidth = stroke,
             cap = StrokeCap.Round,
         )
