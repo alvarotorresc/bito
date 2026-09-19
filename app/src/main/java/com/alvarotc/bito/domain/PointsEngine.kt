@@ -30,6 +30,7 @@ object PointsEngine {
      *   last day, with refIds "day:D" / "week:K" / "month:K".
      * - STREAK_MILESTONE per habit and reached length (via
      *   [Streaks.reachedMilestones]), granted at most once per habit+length.
+     * - TASK_DONE once per completed task, refId "task:<id>".
      */
     fun earnedEvents(
         state: DomainState,

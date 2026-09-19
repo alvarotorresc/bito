@@ -99,10 +99,10 @@ class HabiVoiceTest {
     }
 
     /**
-     * Every one of the ten voiced contexts — the three mood-bearing ones per mood, plus the seven
-     * personality-only ones — must give each of the three personalities its OWN resource. This is
-     * the copy-paste guard: a context that accidentally reused another personality's id would pass
-     * unnoticed otherwise.
+     * Every one of the twelve voiced contexts — the three mood-bearing ones per mood, plus the
+     * nine personality-only ones — must give each of the three personalities its OWN resource.
+     * This is the copy-paste guard: a context that accidentally reused another personality's id
+     * would pass unnoticed otherwise.
      */
     @Test
     fun `every voiced context resolves a distinct resource per personality`() {
@@ -123,6 +123,8 @@ class HabiVoiceTest {
                 HabiVoice::perfectDayRes,
                 HabiVoice::perfectDayNotifRes,
                 HabiVoice::badgeUnlockedRes,
+                HabiVoice::taskDoneRes,
+                HabiVoice::taskFocusRes,
             )
         for (resolve in personalityOnlyRes) {
             assertAllDistinctPersonalityOnly(resolve)
@@ -130,16 +132,16 @@ class HabiVoiceTest {
     }
 
     /**
-     * The full 57-string mapping (12 + 12 + 12 + 3 + 3 + 3 + 3 + 3 + 3 + 3) never collides with
-     * itself — bubbleRes, homeRes and greetingRes are three DIFFERENT mood-bearing contexts that
-     * intentionally give the same (personality, mood) pair three different resources (e.g. the
-     * Stats commentator's `habi_bubble_sargento_normal` is not the Habi screen's
-     * `habi_home_sargento_normal`), and freezerInfoRes plus the six review/celebration/badge
-     * functions are seven more DIFFERENT personality-only contexts, so the whole 57-id set — not
-     * just each function on its own — must have zero duplicate ids.
+     * The full 63-string mapping (12 + 12 + 12 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3) never
+     * collides with itself — bubbleRes, homeRes and greetingRes are three DIFFERENT mood-bearing
+     * contexts that intentionally give the same (personality, mood) pair three different
+     * resources (e.g. the Stats commentator's `habi_bubble_sargento_normal` is not the Habi
+     * screen's `habi_home_sargento_normal`), and freezerInfoRes plus the eight
+     * review/celebration/badge/task functions are nine more DIFFERENT personality-only contexts,
+     * so the whole 63-id set — not just each function on its own — must have zero duplicate ids.
      */
     @Test
-    fun `the full 57-string mapping has no collisions across contexts`() {
+    fun `the full 63-string mapping has no collisions across contexts`() {
         val moodRes = listOf(HabiVoice::bubbleRes, HabiVoice::homeRes, HabiVoice::greetingRes)
         val personalityOnlyRes =
             listOf(
@@ -150,12 +152,14 @@ class HabiVoiceTest {
                 HabiVoice::perfectDayRes,
                 HabiVoice::perfectDayNotifRes,
                 HabiVoice::badgeUnlockedRes,
+                HabiVoice::taskDoneRes,
+                HabiVoice::taskFocusRes,
             )
         val ids =
             moodRes.flatMap { fn -> Personality.entries.flatMap { p -> Mood.entries.map { m -> fn(m, p) } } } +
                 personalityOnlyRes.flatMap { fn -> Personality.entries.map { p -> fn(p) } }
 
-        assertEquals(12 + 12 + 12 + 3 + 3 + 3 + 3 + 3 + 3 + 3, ids.size)
+        assertEquals(12 + 12 + 12 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3, ids.size)
         assertEquals(ids.size, ids.toSet().size)
     }
 

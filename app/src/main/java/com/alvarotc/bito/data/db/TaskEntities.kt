@@ -9,8 +9,8 @@ import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
 
 /**
- * Fila de una tarea puntual (spec §7.1). Las 8 tablas del doc tecnico §3 pasan a 10 con esta y
- * con [TaskEventEntity]. Los dias logicos se guardan como hechos capturados en su momento, nunca
+ * Fila de una tarea puntual (spec §7.1). Las nueve tablas del doc tecnico §3 pasan a once con esta
+ * y con [TaskEventEntity]. Los dias logicos se guardan como hechos capturados en su momento, nunca
  * recalculados desde millis (regla E7, misma disciplina que [HabitEntity]).
  *
  * El ORDEN de estos campos es el orden de las columnas del DDL que genera Room y que copia
