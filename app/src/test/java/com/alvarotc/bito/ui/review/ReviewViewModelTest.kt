@@ -228,8 +228,12 @@ class ReviewViewModelTest {
             assertEquals(HabiCue.SEALED, vm.habiCue.value?.cue)
         }
 
+    // Biblia §6: el repaso reacciona a cada sello del lote con el asentimiento CORTO (LOGGED,
+    // ~320 ms), no con la coreografía de dormirse (SEALED, ~900 ms). pendingSealDays nunca
+    // incluye hoy (Sealing.pendingSealDays es estrictamente anterior a today), así que un lote de
+    // días pasados no dispara ningún SEALED de cierre — solo un LOGGED por fila.
     @Test
-    fun `a batch of three pending days nods three times`() =
+    fun `a batch of three pending days nods LOGGED per row, with no trailing SEALED`() =
         runTest {
             habitsRepo.create(
                 habitEntity(
@@ -241,13 +245,13 @@ class ReviewViewModelTest {
                 ),
             )
             assertEquals(listOf(today - 3, today - 2, today - 1), state().pendingSealDays)
-            val ids = mutableListOf<Long>()
-            backgroundScope.launch { vm.habiCue.collect { it?.let { e -> ids += e.id } } }
+            val cues = mutableListOf<HabiCue>()
+            backgroundScope.launch { vm.habiCue.collect { it?.let { e -> cues += e.cue } } }
 
             vm.sealPendingDays()
             advanceUntilIdle()
 
-            assertEquals(3, ids.distinct().size)
+            assertEquals(List(3) { HabiCue.LOGGED }, cues)
         }
 
     // R7 follow-up: the screen's LaunchedEffect(state.todaySealed, state.perfectToday) can re-run

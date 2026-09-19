@@ -37,9 +37,9 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.util.UUID
 
-// Justo por encima de los ~320 ms del asentimiento (HabiMotion.playSealed), para que dos sellos
-// seguidos del mismo lote no se pisen — cada emisión tiene tiempo de resolverse antes de la
-// siguiente.
+// Justo por encima de los ~320 ms del asentimiento de HabiMotion.playLogged (el gesto CORTO,
+// no el bostezo de playSealed de ~900 ms), para que dos filas seguidas del mismo lote no se
+// pisen — cada emisión tiene tiempo de resolverse antes de la siguiente.
 private const val SEAL_NOD_GAP_MS = 340L
 
 /** Backs the nightly review screen: derives its state and runs every registration action. */
@@ -155,12 +155,21 @@ class ReviewViewModel(
         }
 
     fun sealPendingDays() =
-        write { _, nowMillis ->
-            uiState.value.pendingSealDays.forEach { day ->
+        write { today, nowMillis ->
+            val days = uiState.value.pendingSealDays
+            days.forEach { day ->
                 journal.sealDay(day, nowMillis)
-                emit(HabiCue.SEALED)
-                // Un asentimiento por fila, no uno por lote: el cuerpo acompaña la lista.
+                // Un asentimiento por fila, no la coreografía de dormirse por lote: el cuerpo
+                // acompaña la lista con el gesto CORTO (LOGGED), no con SEALED.
+                emit(HabiCue.LOGGED)
                 delay(SEAL_NOD_GAP_MS)
+            }
+            // pendingSealDays es siempre estrictamente anterior a hoy (Sealing.pendingSealDays),
+            // así que esta rama no dispara en la práctica — pero si el lote alguna vez incluyera
+            // el día de hoy, el cierre del lote también merece su propio SEALED: la pose dormida
+            // ya llega derivada por HabiDay.phaseOf, este cue es solo el gesto.
+            if (today in days) {
+                emit(HabiCue.SEALED)
             }
         }
 
