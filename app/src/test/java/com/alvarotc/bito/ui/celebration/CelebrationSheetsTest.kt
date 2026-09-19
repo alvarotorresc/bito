@@ -131,8 +131,10 @@ class CelebrationSheetsTest {
         }
         compose.waitForIdle()
 
-        // habi_eye_second_neutra: "Seven days. Now I see you with both, %1$s."
-        compose.onNodeWithText("Seven days. Now I see you with both, Álvaro.", useUnmergedTree = true).assertExists()
+        // habi_eye_second_neutra: "Both eyes on you now, %1$s. Seven days straight." — recalibrated
+        // with task 21's definitive copy; what this asserts (the second-eye line replaces the
+        // generic badge one) is unchanged.
+        compose.onNodeWithText("Both eyes on you now, Álvaro. Seven days straight.", useUnmergedTree = true).assertExists()
         // habi_badge_neutra with the streak-7 badge name never renders alongside it.
         compose.onNodeWithText("Badge unlocked: First flame. Well earned.", useUnmergedTree = true).assertDoesNotExist()
     }

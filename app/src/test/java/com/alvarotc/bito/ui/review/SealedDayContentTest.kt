@@ -60,9 +60,11 @@ class SealedDayContentTest {
         compose.setContent { BitoTheme { SealedDayContent(state(perfectToday = false), onClose = {}) } }
         compose.waitForIdle()
 
-        // habi_sealed_sargento: "Day closed, %1$s. Tomorrow, more." — a generic fallback name
-        // or a broken %1$s substitution would both fail to find this exact sentence.
-        compose.onNodeWithText("Day closed, Álvaro. Tomorrow, more.", useUnmergedTree = true).assertExists()
+        // habi_sealed_sargento: "Closed, %1$s. Tomorrow, more." — a generic fallback name
+        // or a broken %1$s substitution would both fail to find this exact sentence. Recalibrated
+        // with task 21's definitive copy: the sealed sheet got shorter (docs/07 §2.7), so the
+        // literal moved with it; what this asserts — the name really lands in the bubble — is unchanged.
+        compose.onNodeWithText("Closed, Álvaro. Tomorrow, more.", useUnmergedTree = true).assertExists()
     }
 
     @Test

@@ -3,8 +3,9 @@
     <string name="habi_avatar_cd">Habi</string>
     <!-- Descripción real de HabiAvatar para TalkBack: "%1$s" = habi_avatar_cd, "%2$s" = mood_label_*
          de abajo — solo por ánimo a propósito, sin copy de personalidad (ver kdoc de moodLabelRes).
-         mood_label_* es texto borrador de T7b, igual que habi_bubble_*/habi_home_*/etc. de abajo —
-         pendiente de validación del arquitecto (docs/07). -->
+         mood_label_* es texto solo de TalkBack y queda FUERA a propósito de las tablas de voz
+         de docs/07 §2 (sin personalidad, sin nombre), así que la validación de M10 ni lo cubre
+         ni lo deja pendiente — ver la nota de cobertura al final de docs/07 §2. -->
     <string name="habi_avatar_cd_mood">%1$s, %2$s</string>
     <string name="mood_label_radiant">de maravilla</string>
     <string name="mood_label_normal">bien</string>
@@ -14,10 +15,11 @@
     <string name="habi_name_fallback">campeón</string>
 
     <!--
-        Textos con voz de personalidad de Habi (T13/T8, HabiVoice) — M9 draft copy — pending
-        architect validation (docs/07). Diez contextos abajo, más otros dos más adelante en este
-        fichero (habi_day_waiting_*/habi_day_asleep_* y habi_eye_first_*/habi_eye_second_*, cada
-        uno con su propio bloque de comentario donde se define):
+        Textos con voz de personalidad de Habi (T13/T8, HabiVoice) — copy VALIDADO en M10
+        contra docs/07 (candidata B: compañera que va contigo, no espejo que comenta). Diez
+        contextos abajo, más otros dos más adelante en este fichero
+        (habi_day_waiting_*/habi_day_asleep_* y habi_eye_first_*/habi_eye_second_*, cada uno con
+        su propio bloque de comentario donde se define):
         habi_bubble_* — comentarista de Stats, solo por ánimo (sin nombre).
         habi_home_*   — globo propio de la pantalla Habi, tono jugador de hogar, %1$s = nombre.
         habi_greeting_* — esquina de Habi en Hoy, corto, %1$s = nombre (lo consume T14). Se
@@ -62,12 +64,12 @@
     <string name="habi_greeting_sargento_radiant">Buen nivel, %1$s. Mantenlo.</string>
     <string name="habi_greeting_sargento_normal">En marcha, %1$s.</string>
     <string name="habi_greeting_sargento_wilted">%1$s, esos hábitos no se hacen solos.</string>
-    <string name="habi_greeting_sargento_dramatic">%1$s, se acabó el descanso.</string>
+    <string name="habi_greeting_sargento_dramatic">Te estaba esperando, %1$s. Empieza por uno.</string>
     <string name="habi_greeting_cheerleader_radiant">¡Vas que vuelas, %1$s!</string>
     <string name="habi_greeting_cheerleader_normal">Hola, %1$s. ¡A por hoy!</string>
     <string name="habi_greeting_cheerleader_wilted">Ánimo, %1$s. Hoy remontamos.</string>
     <string name="habi_greeting_cheerleader_dramatic">¡Te echaba de menos, %1$s!</string>
-    <string name="habi_greeting_neutra_radiant">Buena inercia, %1$s.</string>
+    <string name="habi_greeting_neutra_radiant">Vamos bien, %1$s.</string>
     <string name="habi_greeting_neutra_normal">Hola, %1$s.</string>
     <string name="habi_greeting_neutra_wilted">%1$s, hoy es un buen día para retomar.</string>
     <string name="habi_greeting_neutra_dramatic">%1$s, qué bien verte de vuelta.</string>
@@ -84,9 +86,9 @@
     <string name="habi_review_clear_cheerleader">¡%1$s, lo tienes todo hecho! Sella y a descansar.</string>
     <string name="habi_review_clear_neutra">Nada pendiente, %1$s. Puedes sellar el día.</string>
 
-    <string name="habi_sealed_sargento">Día cerrado, %1$s. Mañana, más.</string>
-    <string name="habi_sealed_cheerleader">¡Otro día en el bolsillo, %1$s! Qué bien sienta, ¿eh? Mañana seguimos.</string>
-    <string name="habi_sealed_neutra">Día sellado, %1$s. Hasta mañana.</string>
+    <string name="habi_sealed_sargento">Cerrado, %1$s. Mañana, más.</string>
+    <string name="habi_sealed_cheerleader">¡Otro día nuestro, %1$s! Qué gusto.</string>
+    <string name="habi_sealed_neutra">Ya está, %1$s. Descansa.</string>
 
     <string name="habi_perfect_sargento">Día perfecto, %1$s. Así se hace. No te relajes.</string>
     <string name="habi_perfect_cheerleader">¡Día perfecto, %1$s! Todo hecho, todo. Estoy que no quepo en mí.</string>
@@ -162,21 +164,22 @@
     <string name="item_lower_zapatillas">Zapatillas</string>
 
     <!-- Su día, con cuentagotas (biblia §7.2): DOS líneas, y solo en la pantalla Habi. Sin
-         placeholders. PROVISIONAL M10 — pendiente de validación del arquitecto (docs/07). -->
-    <string name="habi_day_waiting_sargento">Todo tuyo hecho. Me siento a esperar el cierre.</string>
-    <string name="habi_day_waiting_cheerleader">¡Listo! Me quedo aquí hasta que cierres el día.</string>
-    <string name="habi_day_waiting_neutra">Ya está. Espero contigo a cerrar.</string>
-    <string name="habi_day_asleep_sargento">Día cerrado. Me apago hasta mañana.</string>
-    <string name="habi_day_asleep_cheerleader">Día cerrado. Me duermo contentísima.</string>
+         placeholders — el sitio donde se pintan no las formatea. Copy VALIDADO en M10 contra
+         docs/07 §7 (la de esperar el cierre suena una vez por día lógico). -->
+    <string name="habi_day_waiting_sargento">Mi día está hecho. Cierra el tuyo cuando toque.</string>
+    <string name="habi_day_waiting_cheerleader">Lo mío ya está hecho. ¡Me quedo contigo hasta cerrar!</string>
+    <string name="habi_day_waiting_neutra">He terminado mi día. Aquí me quedo, esperando el tuyo.</string>
+    <string name="habi_day_asleep_sargento">Me duermo. Tú también deberías.</string>
+    <string name="habi_day_asleep_cheerleader">Me duermo feliz. ¡Hasta mañana!</string>
     <string name="habi_day_asleep_neutra">Día cerrado. Buenas noches.</string>
 
     <!-- El ritual del ojo (biblia §4). NO son globos del gesto: el rito se pinta en silencio y sin
          texto, y estas líneas son el texto de la SUPERFICIE que lo acompaña — la página 7g y la
-         hoja del logro. %1$s = nombre. PROVISIONAL M10 — pendiente de validación (docs/07). -->
-    <string name="habi_eye_first_sargento">Un ojo, %1$s. El otro te lo tienes que ganar.</string>
-    <string name="habi_eye_first_cheerleader">¡Mírame, %1$s! Ya te veo con un ojo.</string>
-    <string name="habi_eye_first_neutra">Ya te veo, %1$s. Con un ojo, de momento.</string>
-    <string name="habi_eye_second_sargento">Siete días, %1$s. Ahora te miro de frente.</string>
-    <string name="habi_eye_second_cheerleader">¡Los dos ojos, %1$s! Ya te veo entera.</string>
-    <string name="habi_eye_second_neutra">Siete días. Ya te miro con los dos, %1$s.</string>
+         hoja del logro. %1$s = nombre. Copy VALIDADO en M10 contra docs/07 §6. -->
+    <string name="habi_eye_first_sargento">Un ojo, %1$s. El otro se gana.</string>
+    <string name="habi_eye_first_cheerleader">¡Ya te veo, %1$s! Con un ojo, pero te veo.</string>
+    <string name="habi_eye_first_neutra">Ya te distingo, %1$s. Con un ojo basta para empezar.</string>
+    <string name="habi_eye_second_sargento">Te has ganado el otro ojo, %1$s. Ahora te miro de frente.</string>
+    <string name="habi_eye_second_cheerleader">¡Los dos ojos, %1$s! Ahora te veo de verdad.</string>
+    <string name="habi_eye_second_neutra">Ya te miro con los dos, %1$s. Siete días seguidos.</string>
 </resources>
