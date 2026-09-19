@@ -11,6 +11,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
@@ -688,5 +689,98 @@ class HabiDrawingTest {
         val (x, y) = bodyCenterPixel(size)
 
         assertEquals(bareBitmap.getPixel(x, y), unknownBitmap.getPixel(x, y))
+    }
+
+    // --- T9: the grain -------------------------------------------------------------------------
+
+    /**
+     * El grano multiplica cada píxel del cuerpo por un gris irregular (~0,78-1,00), así que las
+     * comparaciones de tono dejan de ser igualdad exacta. La tolerancia cubre ese rango con
+     * margen; lo que estos tests siguen probando es el TONO, no el valor exacto.
+     */
+    private fun assertArgbCloseTo(
+        expected: Color,
+        actualArgb: Int,
+        tolerance: Int = 64,
+    ) {
+        val expectedArgb = expected.toArgb()
+        for (shift in listOf(16, 8, 0)) {
+            val e = (expectedArgb shr shift) and 0xFF
+            val a = (actualArgb shr shift) and 0xFF
+            assertTrue("canal $shift: esperaba ~$e, vino $a", kotlin.math.abs(e - a) <= tolerance)
+        }
+        assertEquals(0xFF, (actualArgb shr 24) and 0xFF)
+    }
+
+    /** Luminancia perceptual (Rec. 709) de un ARGB. */
+    private fun luminance(argb: Int): Double {
+        val r = (argb shr 16) and 0xFF
+        val g = (argb shr 8) and 0xFF
+        val b = argb and 0xFF
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    }
+
+    /**
+     * El grano multiplica RGB de forma pareja, así que las proporciones entre canales (el tinte)
+     * se conservan dentro de tolerancia, aunque el valor absoluto de cada canal baje.
+     */
+    private fun assertRatioCloseTo(
+        a: Int,
+        b: Int,
+        tolerance: Double = 0.06,
+    ) {
+        val ar = (a shr 16) and 0xFF
+        val ag = (a shr 8) and 0xFF
+        val ab = a and 0xFF
+        val br = (b shr 16) and 0xFF
+        val bg = (b shr 8) and 0xFF
+        val bb = b and 0xFF
+
+        fun assertRatio(
+            aNum: Int,
+            aDen: Int,
+            bNum: Int,
+            bDen: Int,
+            label: String,
+        ) {
+            if (aDen == 0 || bDen == 0) {
+                assertEquals("$label: un denominador es 0", aNum == 0, bNum == 0)
+                return
+            }
+            val ratioA = aNum.toDouble() / aDen
+            val ratioB = bNum.toDouble() / bDen
+            assertTrue(
+                "$label: esperaba ~$ratioA, vino $ratioB",
+                kotlin.math.abs(ratioA - ratioB) <= tolerance,
+            )
+        }
+
+        assertRatio(ar, ag, br, bg, "R/G")
+        assertRatio(ag, ab, bg, bb, "G/B")
+    }
+
+    @Test
+    fun `the grain darkens without shifting the hue`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (x, y) = bodyCenterPixel(size)
+        val grain = HabiGrain.brush(ApplicationProvider.getApplicationContext())
+
+        val plain = renderHabiBitmap(spec, size).getPixel(x, y)
+        val grained = renderInto(size) { drawHabi(spec, grain = grain) }.getPixel(x, y)
+
+        // Más oscuro en luminancia…
+        assertTrue(luminance(grained) <= luminance(plain))
+        // …y con el mismo tinte: las proporciones R:G:B se conservan dentro de tolerancia.
+        assertRatioCloseTo(plain, grained)
+    }
+
+    @Test
+    fun `the grain never leaks outside the body silhouette`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val grain = HabiGrain.brush(ApplicationProvider.getApplicationContext())
+        // Esquina superior izquierda: fuera de la silueta y fuera de la sombra.
+        val corner = 2 to 2
+
+        assertEquals(0, renderInto(size) { drawHabi(spec, grain = grain) }.getPixel(corner.first, corner.second))
     }
 }

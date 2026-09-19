@@ -39,6 +39,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -144,6 +145,7 @@ fun HabiAvatar(
     groundShadow: Boolean = true,
 ) {
     val density = LocalDensity.current
+    val grain = HabiGrain.brush(LocalContext.current)
     val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
     val breathLiftPx = with(density) { BREATH_LIFT_DP.dp.toPx() }
     val restingMotion = restingFaceMotion(spec, delighted)
@@ -435,7 +437,15 @@ fun HabiAvatar(
             }
 
     Canvas(canvasModifier) {
-        drawHabi(spec, blink = blinkValue, delighted = delighted, motion = motion, gaze = gazeValue, groundShadow = groundShadow)
+        drawHabi(
+            spec,
+            blink = blinkValue,
+            delighted = delighted,
+            motion = motion,
+            gaze = gazeValue,
+            groundShadow = groundShadow,
+            grain = grain,
+        )
         if (delighted) drawHearts(heartsPhaseValue)
     }
 }

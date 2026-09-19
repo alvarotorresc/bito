@@ -4,11 +4,13 @@ import android.graphics.Bitmap
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -447,7 +449,9 @@ private fun DrawScope.drawGroundShadow(
  * [motion] and [gaze] are the avatar's live animation channels; static consumers (widget bitmap,
  * frozen test frames) leave the defaults and get the resting expression. [body] es el transform
  * del cuerpo (T8): en reposo es la identidad. [groundShadow] se apaga solo cuando la escena
- * pinta su propia sombra a mano contra un mockup (`StoryScenes`).
+ * pinta su propia sombra a mano contra un mockup (`StoryScenes`). [grain] es el material de
+ * objeto pintado (T9): `null` en cualquier consumidor sin `Context` (tests, previews) dibuja la
+ * Habi correcta, solo que sin textura.
  */
 fun DrawScope.drawHabi(
     spec: HabiSpec,
@@ -457,6 +461,7 @@ fun DrawScope.drawHabi(
     gaze: Offset = Offset.Zero,
     body: HabiBodyMotion = HabiBodyMotion.Rest,
     groundShadow: Boolean = true,
+    grain: ShaderBrush? = null,
 ) {
     val resolved = motion ?: restingFaceMotion(spec, delighted)
     val face = resolved.face
@@ -480,6 +485,15 @@ fun DrawScope.drawHabi(
         drawBody(vp, bodyTone, spec.equipped.bodyColor)
         drawPattern(vp, spec.equipped.pattern, bodyTone)
         drawBodyShading(vp, bodyTone)
+        // El grano es MATERIAL: la fibra del objeto, que cuerpo, patrón y sombreado comparten. La
+        // cara va pintada encima con pincel y debe leerse limpia — granular los ojos los ensucia.
+        // Multiply sobre un ruido gris claro oscurece de forma irregular SIN cambiar el tinte: el
+        // color de cuerpo que el usuario compró sigue siendo el que pagó.
+        grain?.let {
+            clipPath(bodyPath(vp)) {
+                drawRect(brush = it, alpha = HabiGrain.ALPHA, blendMode = BlendMode.Multiply)
+            }
+        }
         drawCheeks(vp, face)
         // Closed lids are a whole-eye replacement, not a closure amount: blink, droop, gaze and
         // sparkles all describe an OPEN eye, so none of them apply over the arcs.
@@ -507,6 +521,7 @@ fun DrawScope.drawHabi(
 fun renderHabiBitmap(
     spec: HabiSpec,
     sizePx: Int,
+    grain: ShaderBrush? = null,
 ): Bitmap {
     val imageBitmap = ImageBitmap(sizePx, sizePx)
     CanvasDrawScope().draw(
@@ -515,7 +530,7 @@ fun renderHabiBitmap(
         Canvas(imageBitmap),
         Size(sizePx.toFloat(), sizePx.toFloat()),
     ) {
-        drawHabi(spec)
+        drawHabi(spec, grain = grain)
     }
     return imageBitmap.asAndroidBitmap()
 }
