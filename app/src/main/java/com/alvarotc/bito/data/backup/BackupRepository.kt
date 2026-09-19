@@ -98,5 +98,8 @@ class BackupRepository(
             file.customizationItems.forEach { db.customizationItemDao().upsert(it.toEntity()) }
         }
         settings.update { file.settings.toSettings() }
+        // Los ojos llegan pintados y en silencio: el nivel se deriva del estado restaurado en el
+        // primer reconcile, sin ceremonia (biblia §4). Mismo espíritu que migrateLegacyMarkers.
+        settings.markRestoredForSilentEyes()
     }
 }

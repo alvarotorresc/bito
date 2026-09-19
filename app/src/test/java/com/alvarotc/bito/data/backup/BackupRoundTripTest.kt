@@ -38,6 +38,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -323,5 +324,17 @@ class BackupRoundTripTest {
             // v2 predates the "Al registrar" switches just as v1 does: absent, so both come back on.
             assertTrue(persisted.logSoundEnabled)
             assertTrue(persisted.logHapticEnabled)
+        }
+
+    @Test
+    fun `importing a backup marks the eye heal as silent`() =
+        runTest {
+            seedEverything()
+            val json = backup.exportJson(nowMillis = 1_700_000_000_000L)
+            backup.import(json)
+
+            // Primera reclamación: el restore la dejó armada. Segunda: ya gastada.
+            assertTrue(settingsRepo.claimSilentEyeHeal())
+            assertFalse(settingsRepo.claimSilentEyeHeal())
         }
 }

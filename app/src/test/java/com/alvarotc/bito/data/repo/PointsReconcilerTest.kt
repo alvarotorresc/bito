@@ -1,35 +1,53 @@
 package com.alvarotc.bito.data.repo
 
 import android.content.Context
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.DAY_ZERO
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.EyeTransition
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class PointsReconcilerTest {
+    @get:Rule
+    val tmp = TemporaryFolder()
+
     private lateinit var db: BitoDatabase
     private lateinit var habits: HabitsRepository
     private lateinit var journal: JournalRepository
     private lateinit var rewards: RewardsRepository
     private lateinit var reconciler: PointsReconciler
+    private lateinit var settingsRepo: SettingsRepository
+    private lateinit var reconcilerWithSettings: PointsReconciler
 
     @Before
     fun setUp() {
@@ -39,11 +57,33 @@ class PointsReconcilerTest {
         journal = JournalRepository(db)
         rewards = RewardsRepository(db)
         reconciler = PointsReconciler(DomainStateRepository(db), rewards)
+        settingsRepo =
+            SettingsRepository(
+                PreferenceDataStoreFactory.create(
+                    scope = CoroutineScope(UnconfinedTestDispatcher() + Job()),
+                ) { File(tmp.root, "settings.preferences_pb") },
+            )
+        reconcilerWithSettings = PointsReconciler(DomainStateRepository(db), rewards, settings = settingsRepo)
     }
 
     @After
     fun tearDown() {
         db.close()
+    }
+
+    private suspend fun seedSevenDayRun(habitId: String) {
+        habits.create(
+            habitEntity(
+                id = habitId,
+                metric = Metric.CHECK,
+                direction = Direction.AT_LEAST,
+                target = 1,
+                createdOnDay = DAY_ZERO - 6,
+            ),
+        )
+        for (day in (DAY_ZERO - 6)..DAY_ZERO) {
+            journal.log(entryEntity(id = "e$day", habitId = habitId, logicalDay = day, value = 1))
+        }
     }
 
     @Test
@@ -153,5 +193,68 @@ class PointsReconcilerTest {
             assertTrue(result.reachedPerfectDay(DAY_ZERO))
             assertFalse(result.reachedPerfectDay(DAY_ZERO + 1))
             assertTrue("perfect-day-1" in result.newBadges)
+        }
+
+    @Test
+    fun `the first habit paints the first eye, once`() =
+        runTest {
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, target = 1))
+
+            val first = reconcilerWithSettings.reconcile(DAY_ZERO, 10L)
+            assertEquals(EyeTransition(0, 1), first.eyeRitual)
+            assertEquals(1, settingsRepo.settings.first().habiEyesPainted)
+
+            val second = reconcilerWithSettings.reconcile(DAY_ZERO, 20L)
+            assertNull(second.eyeRitual)
+        }
+
+    @Test
+    fun `a seven day run paints the second eye`() =
+        runTest {
+            // Sembrar un hábito diario con 7 días seguidos cumplidos hasta DAY_ZERO — mismo patrón
+            // que `reconcile grants the streak exclusive` ya usa en este fichero.
+            seedSevenDayRun(habitId = "cama")
+
+            val result = reconcilerWithSettings.reconcile(DAY_ZERO, 10L)
+
+            assertEquals(EyeTransition(0, 2), result.eyeRitual)
+            assertEquals(2, settingsRepo.settings.first().habiEyesPainted)
+        }
+
+    @Test
+    fun `a reconciler without settings never reports the ritual`() =
+        runTest {
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, target = 1))
+            assertNull(reconciler.reconcile(DAY_ZERO, 10L).eyeRitual)
+        }
+
+    @Test
+    fun `a restored install heals its eyes in silence`() =
+        runTest {
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, target = 1))
+            settingsRepo.markRestoredForSilentEyes()
+
+            val result = reconcilerWithSettings.reconcile(DAY_ZERO, 10L)
+
+            assertNull(result.eyeRitual)
+            assertEquals(1, settingsRepo.settings.first().habiEyesPainted)
+        }
+
+    // El marcador se reclama INCONDICIONALMENTE al entrar en healEyeRitual, antes del corte
+    // "sin cambio": un restore sin hábitos deja stored=0 y derived=0 (no hay salto que sanar),
+    // pero el marcador tiene que gastarse igual en ESE primer reconcile. Si se reclamara solo
+    // cuando hay cambio, quedaría armado y se comería la transición real 0→1 del primer hábito
+    // creado después del restore — el primer ojo nunca se celebraría.
+    @Test
+    fun `a restore with no habits does not swallow the first eye`() =
+        runTest {
+            settingsRepo.markRestoredForSilentEyes()
+            assertNull(reconcilerWithSettings.reconcile(DAY_ZERO, 10L).eyeRitual)
+
+            habits.create(habitEntity(id = "cama", metric = Metric.CHECK, target = 1))
+            val second = reconcilerWithSettings.reconcile(DAY_ZERO, 20L)
+
+            assertEquals(EyeTransition(0, 1), second.eyeRitual)
+            assertEquals(1, settingsRepo.settings.first().habiEyesPainted)
         }
 }

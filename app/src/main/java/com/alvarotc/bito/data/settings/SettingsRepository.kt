@@ -87,6 +87,17 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
          * to this device, where the permission has never been requested at all.
          */
         val notificationPromptClaimed = booleanPreferencesKey("notification_prompt_claimed")
+
+        /**
+         * Marcador de un solo uso escrito por [com.alvarotc.bito.data.backup.BackupRepository.import]:
+         * el primer [com.alvarotc.bito.data.repo.PointsReconciler] posterior sana el nivel de ojo
+         * EN SILENCIO (biblia §4: restaurar un backup con vida ya vivida no repite el rito). El
+         * primer reconcile posterior al restore lo gasta SIEMPRE, sane o no sane algo en ese mismo
+         * pase — ver `PointsReconciler.healEyeRitual`. Fuera de [Settings] por la misma razón que
+         * [defaultRemindersSeeded]: el restore escribe un [Settings] entero sobre el almacén, y un
+         * campo volvería a su default justo ahí.
+         */
+        val silentEyeHealPending = booleanPreferencesKey("silent_eye_heal_pending")
     }
 
     val settings: Flow<Settings> = dataStore.data.map { it.toSettings() }
@@ -144,6 +155,29 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
                 return@edit
             }
             prefs[Keys.notificationPromptClaimed] = true
+            claimed = true
+        }
+        return claimed
+    }
+
+    /** Arma la sanación silenciosa del ritual del ojo; la llama el restore, nadie más. */
+    suspend fun markRestoredForSilentEyes() {
+        dataStore.edit { prefs -> prefs[Keys.silentEyeHealPending] = true }
+    }
+
+    /**
+     * Gasta el marcador: devuelve true exactamente una vez tras un restore, false siempre después.
+     * Reclamado dentro del mismo `edit` que lo lee, así dos reconciles simultáneos no pueden
+     * llevarse los dos un true.
+     */
+    suspend fun claimSilentEyeHeal(): Boolean {
+        var claimed = false
+        dataStore.edit { prefs ->
+            if (prefs[Keys.silentEyeHealPending] != true) {
+                claimed = false
+                return@edit
+            }
+            prefs.remove(Keys.silentEyeHealPending)
             claimed = true
         }
         return claimed
