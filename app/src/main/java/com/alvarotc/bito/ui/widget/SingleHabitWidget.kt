@@ -48,6 +48,7 @@ import androidx.glance.unit.ColorProvider
 import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.logicalClockAt
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -88,7 +89,7 @@ class SingleHabitWidget : GlanceAppWidget() {
                 container.habits.observeHabits(),
                 container.rewards.observeOwnedItems(),
             ) { prefs, domain, entities, owned ->
-                val clock = widgetClock(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+                val clock = logicalClockAt(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
                 buildTodayUiState(
                     domain,
                     entities.associate { it.id to it.sortOrder },

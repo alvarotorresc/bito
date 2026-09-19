@@ -4,11 +4,11 @@ import android.content.Context
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.Settings
+import com.alvarotc.bito.domain.logicalClockAt
 import com.alvarotc.bito.ui.AppVisibility
 import com.alvarotc.bito.ui.celebration.CelebrationGate
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.today.buildTodayUiState
-import com.alvarotc.bito.ui.widget.widgetClock
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 
@@ -29,7 +29,7 @@ object PerfectDayNotifier {
         if (!CelebrationGate.shouldNotifyPerfectDay(reachedNow, prefs.perfectDayCelebration, AppVisibility.visible)) return
         val entities = container.habits.observeHabits().first()
         val owned = container.rewards.observeOwnedItems().first()
-        val clock = widgetClock(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
+        val clock = logicalClockAt(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
         val state =
             buildTodayUiState(
                 container.domainState.snapshot(),

@@ -4,12 +4,12 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.logicalClockAt
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.buildTodayUiState
-import com.alvarotc.bito.ui.widget.widgetClock
 import kotlinx.coroutines.flow.first
 import java.time.ZoneId
 
@@ -77,7 +77,7 @@ class ReminderUseCase(
         val slot =
             ReminderScheduler.slotsOf(prefs, entities).find { it.kind.name == kindName && it.key == key }
                 ?: return Outcome.Stale
-        val clock = widgetClock(now(), prefs.dayCutoffMinutes, zone())
+        val clock = logicalClockAt(now(), prefs.dayCutoffMinutes, zone())
         val owned = rewards.observeOwnedItems().first()
         val state =
             buildTodayUiState(
