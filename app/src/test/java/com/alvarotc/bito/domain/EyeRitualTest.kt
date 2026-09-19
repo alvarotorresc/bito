@@ -64,16 +64,26 @@ class EyeRitualTest {
         thenMissedDays: Int = 0,
         status: HabitStatus = HabitStatus.ACTIVE,
     ): DomainState {
-        var habit =
-            dailyCheck(id = "test-habit", createdOnDay = TODAY - days - thenMissedDays + 1)
+        // When archiving, ensure at least 1 missed day so the last entry is before TODAY,
+        // allowing the archive period to be encountered during evaluation
+        val actualMissedDays =
+            if (status == HabitStatus.ARCHIVED) maxOf(thenMissedDays, 1) else thenMissedDays
+
+        val createdDay = TODAY - days - actualMissedDays + 1
+        val lastEntryDay = TODAY - actualMissedDays
+
+        var habit = dailyCheck(id = "test-habit", createdOnDay = createdDay)
+
         if (status == HabitStatus.ARCHIVED) {
-            // Archive on the day after the last entry so history is still counted
-            habit = habit.copy(status = status, archivedOnDay = TODAY - thenMissedDays + 1)
+            // Archive on TODAY so the ENDS_WALK is encountered when evaluating at TODAY,
+            // properly testing the archive logic while preserving the days-long history
+            habit = habit.archivedOn(TODAY)
         } else {
             habit = habit.copy(status = status)
         }
-        // Entries from (TODAY - days - thenMissedDays + 1) to (TODAY - thenMissedDays)
-        val entries = entriesOn(habit, (TODAY - days - thenMissedDays + 1)..(TODAY - thenMissedDays))
+
+        // Entries from createdDay to lastEntryDay
+        val entries = entriesOn(habit, createdDay..lastEntryDay)
         return domainState(habits = listOf(habit), entries = entries)
     }
 
