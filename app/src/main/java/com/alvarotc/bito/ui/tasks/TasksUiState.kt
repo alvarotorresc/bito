@@ -39,11 +39,13 @@ data class TasksUiState(
  * Derives the full tasks list from [state] as seen on [today]. Pure — no side effects, no
  * storage, no clock reads — same discipline as [com.alvarotc.bito.ui.today.buildTodayUiState].
  *
- * Hoy is [Tasks.todayTasks] minus every task [isOpenThisWeek] — exactly the set that goes to
- * [weekTasks] instead, postponed today or not: a WEEK task due exactly today (its Sunday) moves
- * out of Hoy and shows only in Esta semana; an overdue one ([Task.dueDay] `< today`) still shows
- * only in Hoy, as `OVERDUE`. `inToday` is computed from that trimmed Hoy list and reused by Con
- * plazo and Sin plazo, which keep excluding it — Hoy wins there, so no task appears twice.
+ * Hoy is [Tasks.todayTasks] minus every task [isOpenThisWeek] (WEEK, not past its Sunday yet):
+ * a WEEK task due exactly today (its Sunday) moves out of Hoy into Esta semana; an overdue one
+ * ([Task.dueDay] `< today`) stays in Hoy, as `OVERDUE`. `inToday` is computed from that trimmed
+ * Hoy list and reused by Esta semana, Con plazo and Sin plazo alike: each takes every open task
+ * of its own [DueKind] not already in Hoy — the mechanism [isOpenThisWeek] alone cannot cover a
+ * WEEK task postponed today, since [Tasks.todayTasks] drops postponed-today tasks before slotting
+ * them, overdue or not; "not in Hoy" still gives it a home in Esta semana instead of none.
  */
 fun buildTasksUiState(
     state: DomainState,
@@ -57,7 +59,7 @@ fun buildTasksUiState(
     val open = state.tasks.filter { it.status == TaskStatus.OPEN }
 
     val weekTasks =
-        open.filter { isOpenThisWeek(it, today) }
+        open.filter { it.dueKind == DueKind.WEEK && it.id !in inToday }
             .sortedWith(compareBy({ it.dueDay ?: Int.MAX_VALUE }, { it.createdAtMillis }, { it.id }))
 
     val datedTasks =
@@ -88,7 +90,7 @@ fun buildTasksUiState(
     )
 }
 
-/** Open, WEEK-kind, not past its Sunday yet — the set Esta semana groups and Hoy gives up to it. */
+/** Open, WEEK-kind, not past its Sunday yet — the set Hoy gives up to Esta semana. */
 private fun isOpenThisWeek(
     task: Task,
     today: LogicalDay,

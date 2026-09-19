@@ -42,19 +42,32 @@ class TasksUiStateTest {
         val dueToday = task(id = "due-today-week", dueKind = DueKind.WEEK, dueDay = TODAY, createdOnDay = TODAY - 2)
         // A WEEK task whose Sunday already passed: still WEEK-kind, but its dueDay < today makes it OVERDUE.
         val overdue = task(id = "overdue-week", dueKind = DueKind.WEEK, dueDay = TODAY - 5, createdOnDay = TODAY - 12)
+        // Overdue AND postponed today: Tasks.todayTasks drops it entirely (postponedOn), so isOpenThisWeek's
+        // dueDay >= today alone would leave it in no section. "not in Hoy" still gives it a home.
+        val overduePostponed =
+            task(id = "overdue-postponed-week", dueKind = DueKind.WEEK, dueDay = TODAY - 5, createdOnDay = TODAY - 12)
         val state =
             domainState(
-                tasks = listOf(open, postponedToday, dueToday, overdue),
-                taskEvents = listOf(taskEvent("postponed-week", TaskEventKind.POSTPONED, TODAY)),
+                tasks = listOf(open, postponedToday, dueToday, overdue, overduePostponed),
+                taskEvents =
+                    listOf(
+                        taskEvent("postponed-week", TaskEventKind.POSTPONED, TODAY),
+                        taskEvent("overdue-postponed-week", TaskEventKind.POSTPONED, TODAY),
+                    ),
             )
 
         val ui = buildTasksUiState(state, TODAY)
 
-        assertEquals(setOf("open-week", "postponed-week", "due-today-week"), ui.weekTasks.map { it.id }.toSet())
-        assertTrue(ui.todayTasks.none { it.id in setOf("open-week", "postponed-week", "due-today-week") })
+        val weekIds = setOf("open-week", "postponed-week", "due-today-week", "overdue-postponed-week")
+        assertEquals(weekIds, ui.weekTasks.map { it.id }.toSet())
+        assertTrue(ui.todayTasks.none { it.id in weekIds })
 
         assertEquals(listOf("overdue-week"), ui.todayTasks.map { it.id })
         assertTrue(ui.weekTasks.none { it.id == "overdue-week" })
+
+        // The overdue-and-postponed-today task shows up exactly once, in Esta semana.
+        val allSections = ui.todayTasks + ui.weekTasks + ui.datedTasks + ui.looseTasks + ui.doneTasks
+        assertEquals(1, allSections.count { it.id == "overdue-postponed-week" })
     }
 
     @Test
