@@ -17,6 +17,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -43,14 +46,20 @@ import com.alvarotc.bito.ui.theme.TintaSuave
  * At rest: [HabiStage] on the user's real [FocusUiState.spec] (no new pose, no new sound — the
  * stage is shared with [com.alvarotc.bito.ui.review.SealedDayContent]), the task's title and
  * first step, the three lengths ([FocusViewModel.OPTIONS]) and "Empezar". Running: the same Habi
- * and task copy, the entrance line spoken once in [HabiVoice.taskFocusRes] and the mm:ss countdown
- * next to the five actions — "he terminado", the three "+" extensions
+ * and task copy, the mm:ss countdown next to the five actions — "he terminado", the three "+" extensions
  * ([FocusViewModel.EXTENSIONS]) and "lo dejo". At `00:00` nothing changes: [FocusUiState] never
  * decides FOR the user, so the same five actions stay live past the deadline (a "+" still works
  * on an already-finished countdown). [FocusUiState.busyWith] non-null means another task's session
  * is already running — a [ModalBottomSheet] the user must resolve, one way or the other, before
  * seeing anything else. [FocusUiState.gone] closes the screen without any extra copy: the state
  * itself already covers "finished", "gave up" and "the task was deleted from under it".
+ *
+ * `justStarted` gates the one-time entrance line ([HabiVoice.taskFocusRes]) to the act of starting
+ * a session FROM this screen — pressing "Empezar" or "Dejarla y empezar esta". Reading it off
+ * [FocusUiState.selectedMinutes] instead would be wrong on any other path into a running session
+ * (the permanent notification's bare `"focus"`, re-opening on a session another screen started,
+ * `onKeepOther`'s own re-entry): `selectedMinutes` is this VM's own pending choice, not what the
+ * live session actually started with, and Habi never said anything on those paths anyway.
  *
  * [onKeepOther] is not in the original route sketch — [FocusViewModel.keepOther] writes nothing
  * (the conflict simply resolves in the user's favor), so this screen still needs a way back to the
@@ -68,6 +77,7 @@ fun FocusScreen(
     onKeepOther: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    var justStarted by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.gone) {
         if (state.gone) onClose()
@@ -97,17 +107,19 @@ fun FocusScreen(
             state.firstStep?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = TintaSuave) }
 
             if (state.running) {
-                val fallbackName = stringResource(R.string.habi_name_fallback)
-                SpeechBubble(
-                    speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
-                    text =
-                        stringResource(
-                            HabiVoice.taskFocusRes(state.spec.personality),
-                            state.userName.ifBlank { fallbackName },
-                            state.selectedMinutes,
-                        ),
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (justStarted) {
+                    val fallbackName = stringResource(R.string.habi_name_fallback)
+                    SpeechBubble(
+                        speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
+                        text =
+                            stringResource(
+                                HabiVoice.taskFocusRes(state.spec.personality),
+                                state.userName.ifBlank { fallbackName },
+                                state.selectedMinutes,
+                            ),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
                 val totalSeconds = state.remainingMillis / 1_000L
                 Text(
                     "%02d:%02d".format(totalSeconds / 60, totalSeconds % 60),
@@ -143,7 +155,10 @@ fun FocusScreen(
                 )
                 PillButton(
                     text = stringResource(R.string.task_start),
-                    onClick = viewModel::start,
+                    onClick = {
+                        justStarted = true
+                        viewModel.start()
+                    },
                     modifier = Modifier.fillMaxWidth().testTag("focus-start"),
                 )
             }
@@ -177,7 +192,10 @@ fun FocusScreen(
                 Spacer(Modifier.height(8.dp))
                 GhostPillButton(
                     text = stringResource(R.string.focus_busy_switch),
-                    onClick = viewModel::switchToRequested,
+                    onClick = {
+                        justStarted = true
+                        viewModel.switchToRequested()
+                    },
                     modifier = Modifier.fillMaxWidth().testTag("focus-busy-switch"),
                 )
             }

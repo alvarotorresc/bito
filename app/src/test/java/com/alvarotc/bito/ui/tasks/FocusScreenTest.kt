@@ -195,6 +195,9 @@ class FocusScreenTest {
         compose.onNodeWithText("+15", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("+30", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Something came up, I'll stop", useUnmergedTree = true).assertExists()
+        // The entrance line, spoken once for a session actually started FROM this tap — default
+        // spec is NEUTRA with a blank userName (habi_name_fallback = "champ").
+        compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -225,6 +228,9 @@ class FocusScreenTest {
         compose.onNodeWithText("+15", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("+30", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Something came up, I'll stop", useUnmergedTree = true).assertExists()
+        // This screen did not start the session (it was seeded directly, as a re-entry onto an
+        // already-live one would look) — Habi never said anything, so no entrance line here.
+        compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -264,5 +270,8 @@ class FocusScreenTest {
 
         assertEquals("t2", runBlocking { focusStore.session.first() }?.taskId)
         compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists()
+        // "Dejarla y empezar esta" DOES start a session from this screen, same as "Empezar" —
+        // the entrance line belongs here too, for t2 (not t1's, which never got one).
+        compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertExists()
     }
 }
