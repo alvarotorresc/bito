@@ -114,11 +114,75 @@ object Tasks {
         }
     }
 
-    /** La suelta del dia — la Tarea 3 la implementa; aqui todavia no hay ninguna. */
+    /**
+     * La que Habi trae hoy: de las abiertas SIN plazo (una WEEK nunca es candidata, ya sale sola
+     * todos los dias), la que lleva mas tiempo sin tocarse. Posponer la hunde al final de la cola
+     * — eso es lo que significa «vuelve a la lista» (D5): mañana Habi trae la siguiente.
+     *
+     * Dos medias reglas que hay que dejar como estan:
+     * 1. Si la elegida esta pospuesta HOY, hoy no hay suelta. No hay sustituta: Habi trae una al
+     *    dia, y si la contestas «hoy no», ese hueco queda vacio hasta mañana.
+     * 2. Si la elegida ya entro por BROUGHT, no se duplica — eso lo resuelve el orden del `when`
+     *    de [slotOf], que mira BROUGHT antes que LOOSE.
+     *
+     * El hundimiento por posponer solo cuenta a partir de mañana: [sunkOn] ignora un pospuesto de
+     * HOY mismo (todavia compite por edad como cualquier otra), asi que hoy la elegida sigue
+     * siendo ella y es la comprobacion de mas abajo la que vacia el hueco — no una reordenacion
+     * que ya la hubiera descartado antes de llegar ahi.
+     */
     fun looseOfTheDay(
         state: DomainState,
         today: LogicalDay,
-    ): Task? = null
+    ): Task? {
+        val chosen =
+            state.tasks
+                .filter { it.status == TaskStatus.OPEN && it.dueKind == DueKind.NONE }
+                .minWithOrNull(
+                    compareBy(
+                        { sunkOn(state, it.id, today) },
+                        { it.createdOnDay },
+                        { it.createdAtMillis },
+                        { it.id },
+                    ),
+                ) ?: return null
+        return if (postponedOn(state, chosen.id, today)) null else chosen
+    }
+
+    /** El dia en que la tarea quedo hundida al final de la cola, o el minimo si aun no cuenta. */
+    private fun sunkOn(
+        state: DomainState,
+        taskId: String,
+        today: LogicalDay,
+    ): LogicalDay {
+        val lastPostponed = lastPostponedDay(state, taskId) ?: return Int.MIN_VALUE
+        return if (lastPostponed < today) lastPostponed else Int.MIN_VALUE
+    }
+
+    /**
+     * De que se avisa hoy a las 12:00. Como el slot dispara UNA vez al dia y el predicado solo es
+     * cierto en dias concretos, el recuento esta acotado por construccion: no hace falta guardar
+     * «ya avisada», y por tanto no hay marcador que sincronizar, restaurar ni migrar.
+     *
+     * Una vencida NO vuelve a avisar: ya esta en Hoy todos los dias, e insistir seria regañar.
+     *
+     * Orden: plazo mas cercano primero. La notificacion solo nombra tres titulos, asi que el
+     * orden decide cuales se ven — y la que vence antes es la que hay que ver. Es una decision
+     * de producto, no un efecto secundario del filtro.
+     */
+    fun noticesOn(
+        state: DomainState,
+        today: LogicalDay,
+    ): List<Task> =
+        state.tasks
+            .filter { it.status == TaskStatus.OPEN }
+            .filter { task ->
+                when (task.dueKind) {
+                    DueKind.NONE -> today - task.createdOnDay == LOOSE_NOTICE_DAYS
+                    DueKind.WEEK -> task.dueDay!! - today == WEEK_NOTICE_BEFORE_END
+                    DueKind.DATE -> task.dueDay!! - today in setOf(DUE_SOON_DAYS, 1, 0)
+                }
+            }
+            .sortedWith(compareBy({ it.dueDay ?: Int.MAX_VALUE }, { it.createdAtMillis }, { it.id }))
 
     private fun hasEvent(
         state: DomainState,

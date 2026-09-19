@@ -207,4 +207,121 @@ class TasksTest {
 
         assertEquals(listOf("c", "a", "b"), Tasks.todayTasks(state, TODAY).map { it.task.id })
     }
+
+    @Test
+    fun `the loose of the day is the oldest one, and postponing it sinks it to the back`() {
+        val old = task(id = "old", createdOnDay = TODAY - 10, createdAtMillis = 100L)
+        val newer = task(id = "newer", createdOnDay = TODAY - 2, createdAtMillis = 200L)
+        val fresh = domainState(tasks = listOf(newer, old))
+
+        assertEquals("old", Tasks.looseOfTheDay(fresh, TODAY)?.id)
+
+        val postponed =
+            domainState(
+                tasks = listOf(newer, old),
+                taskEvents = listOf(taskEvent(taskId = "old", kind = TaskEventKind.POSTPONED, day = TODAY)),
+            )
+
+        assertNull("hoy no hay suelta: no hay sustituta", Tasks.looseOfTheDay(postponed, TODAY))
+        assertEquals("newer", Tasks.looseOfTheDay(postponed, TODAY + 1)?.id)
+    }
+
+    @Test
+    fun `a loose task already brought by hand does not fill the loose slot twice`() {
+        val state =
+            domainState(
+                tasks = listOf(task(id = "only", createdOnDay = TODAY - 3)),
+                taskEvents = listOf(taskEvent(taskId = "only", kind = TaskEventKind.BROUGHT, day = TODAY)),
+            )
+
+        val todays = Tasks.todayTasks(state, TODAY)
+
+        assertEquals(1, todays.size)
+        assertEquals(Tasks.TodaySlot.BROUGHT, todays.single().slot)
+    }
+
+    @Test
+    fun `a week task is never the loose of the day`() {
+        val state = domainState(tasks = listOf(weekTask("week", TODAY)))
+
+        assertNull(Tasks.looseOfTheDay(state, TODAY))
+    }
+
+    @Test
+    fun `a done task is never the loose of the day`() {
+        val state =
+            domainState(
+                tasks = listOf(task(id = "done", status = TaskStatus.DONE, doneOnDay = TODAY - 1, createdOnDay = TODAY - 9)),
+            )
+
+        assertNull(Tasks.looseOfTheDay(state, TODAY))
+    }
+
+    @Test
+    fun `the loose of the day reaches today under its own slot`() {
+        val state = domainState(tasks = listOf(task(id = "loose", createdOnDay = TODAY - 6)))
+
+        assertEquals(Tasks.TodaySlot.LOOSE, Tasks.todayTasks(state, TODAY).single().slot)
+    }
+
+    @Test
+    fun `a dated task warns three days out, the day before and the day itself — and nowhere else`() {
+        val state = domainState(tasks = listOf(datedTask("dated", TODAY)))
+
+        for (day in listOf(TODAY - 3, TODAY - 1, TODAY)) {
+            assertEquals("day $day", listOf("dated"), Tasks.noticesOn(state, day).map { it.id })
+        }
+        for (day in listOf(TODAY - 4, TODAY - 2, TODAY + 1)) {
+            assertTrue("day $day", Tasks.noticesOn(state, day).isEmpty())
+        }
+    }
+
+    @Test
+    fun `a loose task warns once, seven days after it was created`() {
+        val state = domainState(tasks = listOf(task(id = "loose", createdOnDay = TODAY)))
+
+        assertEquals(listOf("loose"), Tasks.noticesOn(state, TODAY + Tasks.LOOSE_NOTICE_DAYS).map { it.id })
+        assertTrue(Tasks.noticesOn(state, TODAY + Tasks.LOOSE_NOTICE_DAYS - 1).isEmpty())
+        assertTrue(Tasks.noticesOn(state, TODAY + Tasks.LOOSE_NOTICE_DAYS + 1).isEmpty())
+    }
+
+    @Test
+    fun `a week task warns on friday and only on friday`() {
+        val friday = THIS_SUNDAY - Tasks.WEEK_NOTICE_BEFORE_END
+        val state = domainState(tasks = listOf(weekTask("week", THIS_MONDAY)))
+
+        assertEquals(listOf("week"), Tasks.noticesOn(state, friday).map { it.id })
+        for (day in THIS_MONDAY..THIS_SUNDAY) {
+            if (day != friday) assertTrue("day $day", Tasks.noticesOn(state, day).isEmpty())
+        }
+    }
+
+    @Test
+    fun `a week task created on saturday never warns — its friday is already gone`() {
+        val saturday = THIS_SUNDAY - 1
+        val state = domainState(tasks = listOf(weekTask("week", saturday)))
+
+        for (day in saturday..THIS_SUNDAY + 7) {
+            assertTrue("day $day", Tasks.noticesOn(state, day).isEmpty())
+        }
+    }
+
+    @Test
+    fun `a done task never warns`() {
+        val state =
+            domainState(
+                tasks =
+                    listOf(
+                        task(
+                            id = "done",
+                            dueKind = DueKind.DATE,
+                            dueDay = TODAY,
+                            status = TaskStatus.DONE,
+                            doneOnDay = TODAY - 1,
+                        ),
+                    ),
+            )
+
+        assertTrue(Tasks.noticesOn(state, TODAY).isEmpty())
+    }
 }
