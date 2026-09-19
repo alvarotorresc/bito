@@ -12,9 +12,12 @@ import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
+import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
@@ -59,6 +62,7 @@ class ReminderUseCaseTest {
     private lateinit var domainStateRepo: DomainStateRepository
     private lateinit var habitsRepo: HabitsRepository
     private lateinit var journal: JournalRepository
+    private lateinit var tasksRepo: TasksRepository
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var useCase: ReminderUseCase
 
@@ -98,6 +102,7 @@ class ReminderUseCaseTest {
         domainStateRepo = DomainStateRepository(db)
         habitsRepo = HabitsRepository(db)
         journal = JournalRepository(db)
+        tasksRepo = TasksRepository(db)
         settingsRepo = SettingsRepository(settingsStore("reminder-use-case"))
         useCase = ReminderUseCase(domainStateRepo, habitsRepo, settingsRepo, now = { fixedNow }, zone = { utc })
     }
@@ -414,5 +419,48 @@ class ReminderUseCaseTest {
 
             assertTrue(outcome is ReminderUseCase.Outcome.Silent)
             assertEquals(SlotKind.HABIT, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
+        }
+
+    @Test
+    fun `with the switch off a fired tasks alarm is stale`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(taskNoticesEnabled = false) }
+
+            val outcome = useCase.evaluate("TASKS", "")
+
+            assertEquals(ReminderUseCase.Outcome.Stale, outcome)
+        }
+
+    @Test
+    fun `with the switch on and nothing to warn about it is silent`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(taskNoticesEnabled = true) }
+
+            val outcome = useCase.evaluate("TASKS", "")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Silent)
+            assertEquals(SlotKind.TASKS, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
+        }
+
+    @Test
+    fun `with something to warn about it returns Tasks with its titles`() =
+        runTest(dispatcher) {
+            settingsRepo.update {
+                it.copy(taskNoticesEnabled = true, personality = Personality.NEUTRA, userName = "Álvaro")
+            }
+            // DUE_SOON_DAYS = 3: a DATE task due exactly 3 days out notices today.
+            tasksRepo.create(
+                taskEntity(id = "t1", title = "Renovar el DNI", dueKind = DueKind.DATE, dueDay = today + 3),
+            )
+
+            val outcome = useCase.evaluate("TASKS", "")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Tasks)
+            val tasks = outcome as ReminderUseCase.Outcome.Tasks
+            assertEquals(listOf("Renovar el DNI"), tasks.titles)
+            assertEquals(1, tasks.pendingCount)
+            assertEquals(Personality.NEUTRA, tasks.personality)
+            assertEquals("Álvaro", tasks.userName)
+            assertEquals(SlotKind.TASKS, tasks.slot.kind)
         }
 }

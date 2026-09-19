@@ -4,6 +4,7 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
@@ -60,6 +61,20 @@ class ReminderUseCase(
 
         /** Nothing to say, but the slot is still live — reprogram it without notifying. */
         data class Silent(val slot: Slot) : Outcome
+
+        /**
+         * The TASKS slot found something to notice (D8). [titles] carries up to
+         * [ReminderVoice.MAX_NAMED_PENDING] titles, nearest deadline first; [pendingCount] is the
+         * total notice count, which is what picks the plural — it may exceed `titles.size`.
+         * [personality] and [userName] voice the nudge, same shape as [Remind] and [Review].
+         */
+        data class Tasks(
+            val slot: Slot,
+            val titles: List<String>,
+            val pendingCount: Int,
+            val personality: Personality,
+            val userName: String,
+        ) : Outcome
     }
 
     suspend fun evaluate(
@@ -72,7 +87,8 @@ class ReminderUseCase(
             ReminderScheduler.slotsOf(prefs, entities).find { it.kind.name == kindName && it.key == key }
                 ?: return Outcome.Stale
         val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-        val state = buildTodayUiState(domainState.snapshot(), entities.associate { it.id to it.sortOrder }, today)
+        val snapshot = domainState.snapshot()
+        val state = buildTodayUiState(snapshot, entities.associate { it.id to it.sortOrder }, today)
         return when (slot.kind) {
             SlotKind.GLOBAL -> {
                 val payload = buildReminderPayload(state)
@@ -96,6 +112,20 @@ class ReminderUseCase(
                 } else {
                     Outcome.Silent(slot)
                 }
+            SlotKind.TASKS -> {
+                val notices = Tasks.noticesOn(snapshot, today)
+                if (notices.isEmpty()) {
+                    Outcome.Silent(slot)
+                } else {
+                    Outcome.Tasks(
+                        slot = slot,
+                        titles = notices.take(ReminderVoice.MAX_NAMED_PENDING).map { it.title },
+                        pendingCount = notices.size,
+                        personality = prefs.personality,
+                        userName = prefs.userName,
+                    )
+                }
+            }
         }
     }
 }

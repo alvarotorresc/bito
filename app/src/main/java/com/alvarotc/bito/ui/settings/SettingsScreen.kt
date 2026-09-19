@@ -259,6 +259,8 @@ fun SettingsScreen(
                         notificationsBlocked = notificationsBlocked,
                         celebrationEnabled = current.perfectDayCelebration,
                         onSetCelebration = settingsViewModel::setPerfectDayCelebration,
+                        taskNoticesEnabled = current.taskNoticesEnabled,
+                        onSetTaskNotices = settingsViewModel::setTaskNotices,
                         onAddReminder = { minutes ->
                             settingsViewModel.addReminder(minutes)
                             // Asked because the permission is MISSING, never because this happens
@@ -395,6 +397,8 @@ private fun NotificationsSectionCard(
     notificationsBlocked: Boolean,
     celebrationEnabled: Boolean,
     onSetCelebration: (Boolean) -> Unit,
+    taskNoticesEnabled: Boolean,
+    onSetTaskNotices: (Boolean) -> Unit,
     onAddReminder: (Int) -> Unit,
     onEditReminder: (old: Int, new: Int) -> Unit,
     onRemoveReminder: (Int) -> Unit,
@@ -436,6 +440,15 @@ private fun NotificationsSectionCard(
             tag = "celebration",
             checked = celebrationEnabled,
             onChange = onSetCelebration,
+        )
+        SettingsDivider()
+        ToggleSettingsRow(
+            icon = BitoIcons.Bell,
+            label = stringResource(R.string.settings_task_notices_label),
+            hint = stringResource(R.string.settings_task_notices_hint),
+            tag = "task-notices",
+            checked = taskNoticesEnabled,
+            onChange = onSetTaskNotices,
         )
         // Notifications off outranks the exact-alarm notice: with this one true, nothing in this
         // whole card can reach the user at all — an exactly-on-time reminder that is never shown

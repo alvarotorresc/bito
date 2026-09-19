@@ -18,11 +18,13 @@ enum class ReminderFlavor { MORNING, AFTERNOON, EVENING }
  * `res/values{,-es}/strings_notifications.xml`, written in each personality's docs/07 register.
  *
  * Placeholder contracts (every sibling key keeps the same one so the render call is uniform):
- * - [titleRes] / [reviewTitleRes] — `%1$s` = the user's name.
+ * - [titleRes] / [reviewTitleRes] / [tasksTitleRes] — `%1$s` = the user's name.
  * - [bodyRes] — plurals keyed by the pending count: `%1$d` = pending count, `%2$s` = up to
  *   [MAX_NAMED_PENDING] pending names joined, `%3$d` = done today, `%4$d` = total today.
  * - [reviewBodyRes] — plurals keyed by the still-to-decide count: `%1$d` = that count.
  * - [reviewSealOnlyRes] — no placeholders: nothing to decide today, only past days unsealed.
+ * - [tasksBodyRes] — plurals keyed by the notice count: `%1$d` = how many are left unnamed,
+ *   `%2$s` = up to [MAX_NAMED_PENDING] titles joined. One shared plural, not per-personality.
  */
 object ReminderVoice {
     /** The GLOBAL body names at most this many pending habits — the count still says the rest. */
@@ -118,5 +120,22 @@ object ReminderVoice {
             Personality.SARGENTO -> R.string.notif_review_seal_sargento
             Personality.CHEERLEADER -> R.string.notif_review_seal_cheerleader
             Personality.NEUTRA -> R.string.notif_review_seal_neutra
+        }
+
+    @StringRes
+    fun tasksTitleRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.notif_tasks_title_sargento
+            Personality.CHEERLEADER -> R.string.notif_tasks_title_cheerleader
+            Personality.NEUTRA -> R.string.notif_tasks_title_neutra
+        }
+
+    /** Un unico plural compartido por las tres personalidades (⚑CALL 4): sin variacion aun. */
+    @PluralsRes
+    fun tasksBodyRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.plurals.notif_tasks_body
+            Personality.CHEERLEADER -> R.plurals.notif_tasks_body
+            Personality.NEUTRA -> R.plurals.notif_tasks_body
         }
 }

@@ -11,8 +11,8 @@ import com.alvarotc.bito.domain.ClockTimes
 import com.alvarotc.bito.domain.model.HabitStatus
 import java.time.ZoneId
 
-/** What a scheduled reminder slot is for. */
-enum class SlotKind { GLOBAL, HABIT, REVIEW }
+/** What a scheduled reminder slot is for. TASKS al final: el nombre viaja en el Intent. */
+enum class SlotKind { GLOBAL, HABIT, REVIEW, TASKS }
 
 /**
  * A single reminder to fire at [minutesOfDay]. [key] disambiguates slots of the same [kind]:
@@ -30,12 +30,16 @@ object ReminderScheduler {
     const val EXTRA_KIND = "kind"
     const val EXTRA_KEY = "key"
 
+    /** Los avisos de tareas son a mediodia y no se configuran (D8): un solo interruptor. */
+    const val TASKS_NOTICE_MINUTES = 12 * 60
+
     /** The stable [PendingIntent] request code for [slot] — unique per kind+key, deterministic. */
     fun requestCodeOf(slot: Slot): Int = "${slot.kind}:${slot.key}".hashCode()
 
     /**
      * The reminder slots implied by current settings and habits: one GLOBAL slot per configured
-     * hour, one HABIT slot per `ACTIVE` habit with a reminder set, and always one REVIEW slot.
+     * hour, one HABIT slot per `ACTIVE` habit with a reminder set, always one REVIEW slot, and
+     * one TASKS slot at noon while [Settings.taskNoticesEnabled] is on.
      */
     fun slotsOf(
         settings: Settings,
@@ -47,7 +51,9 @@ object ReminderScheduler {
                 .filter { it.status == HabitStatus.ACTIVE && it.reminderMinutes != null }
                 .map { Slot(SlotKind.HABIT, it.id, it.reminderMinutes!!) }
         val review = Slot(SlotKind.REVIEW, "", settings.reviewTimeMinutes)
-        return global + habit + listOf(review)
+        val tasks =
+            if (settings.taskNoticesEnabled) listOf(Slot(SlotKind.TASKS, "", TASKS_NOTICE_MINUTES)) else emptyList()
+        return global + habit + listOf(review) + tasks
     }
 
     fun scheduleAll(

@@ -105,4 +105,19 @@
     <!-- Bandeja de la sesion de foco: la permanente mientras dura, y la de un solo toque al acabar. -->
     <string name="notif_focus_running">En marcha</string>
     <string name="notif_focus_over">Se acabó el tiempo</string>
+
+    <!--
+        Aviso de TAREAS de mediodia, con la voz de Habi. Titulos: %1$s = nombre del usuario. El
+        cuerpo es un unico plural compartido (no por personalidad, a diferencia del resto):
+        %1$d = cuantas quedan sin nombrar, %2$s = hasta MAX_NAMED_PENDING titulos unidos. Se
+        elige por el recuento total de avisos.
+    -->
+    <string name="notif_tasks_title_sargento">%1$s, hay algo esperando.</string>
+    <string name="notif_tasks_title_cheerleader">¿Le entramos, %1$s?</string>
+    <string name="notif_tasks_title_neutra">Tienes una tarea, %1$s.</string>
+    <plurals name="notif_tasks_body">
+        <item quantity="one">%2$s</item>
+        <item quantity="many">%2$s y %1$d más</item>
+        <item quantity="other">%2$s y %1$d más</item>
+    </plurals>
 </resources>

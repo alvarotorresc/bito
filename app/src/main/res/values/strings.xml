@@ -172,6 +172,8 @@
     <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
     <string name="notif_permission_hint">Allow notifications to hear reminders</string>
     <string name="settings_notifications_section">Notifications</string>
+    <string name="settings_task_notices_label">Task reminders</string>
+    <string name="settings_task_notices_hint">At noon, when a deadline is close</string>
     <string name="sheet_done">Done</string>
 
     <string name="settings_habi_section">Habi</string>

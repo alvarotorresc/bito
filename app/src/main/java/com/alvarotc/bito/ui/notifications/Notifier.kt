@@ -162,6 +162,37 @@ object Notifier {
     fun cancelReview(context: Context) = NotificationManagerCompat.from(context).cancel(REVIEW_ID)
 
     /**
+     * El aviso de tareas de mediodia: una sola notificacion agrupada, con hasta tres titulos y el
+     * recuento. SIN botones de accion — no hay accion honesta de un toque: marcar hecha desde la
+     * bandeja una tarea que no has abierto es lo contrario de «empezar». Al tocarla abre la lista.
+     */
+    fun showTasks(
+        context: Context,
+        titles: List<String>,
+        pendingCount: Int,
+        personality: Personality,
+        userName: String,
+    ) {
+        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
+        val title = context.getString(ReminderVoice.tasksTitleRes(personality), name)
+        val named = titles.take(ReminderVoice.MAX_NAMED_PENDING).joinToString(", ")
+        val body =
+            context.resources.getQuantityString(
+                ReminderVoice.tasksBodyRes(personality),
+                pendingCount,
+                pendingCount - titles.size,
+                named,
+            )
+        val builder =
+            baseBuilder(context, NotificationChannels.REMINDERS)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setContentIntent(contentIntent(context, "tasks", 3))
+        notify(context, TASKS_ID, builder)
+    }
+
+    /**
      * El temporizador de foco, mientras dura. La cuenta atras la pinta SystemUI, no Bito: el
      * proceso puede morir y el reloj sigue bajando. setAutoCancel(false) es obligatorio — lo
      * hereda en true de baseBuilder, y una permanente que se borra al tocarla no es permanente.
