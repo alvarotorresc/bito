@@ -1,12 +1,26 @@
 package com.alvarotc.bito.ui.habi
 
+import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.HabiCue
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -18,6 +32,10 @@ import org.robolectric.annotation.Config
  * [Mood] — the [D]/[E] a11y finding this closes. `animated = false` avoids fighting the idle
  * bob/blink infinite transitions, same reasoning [StoreSectionTest]'s own kdoc gives for skipping
  * a full [HabiScreen] render.
+ *
+ * Los tests de [HabiMotion] son de CONTRATO, no de pixel: que el avatar se monte con y sin mango
+ * externo, que el mango sobreviva a la recomposicion y que el sonido salga por el unico conducto.
+ * El movimiento se mira en el Pixel, no se testea.
  */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -37,17 +55,121 @@ class HabiAvatarTest {
         }
     }
 
+    /** La descripcion que [HabiAvatar] compone: el nombre y el animo, como los ve TalkBack. */
+    private fun habiDescription(mood: Mood): String =
+        when (mood) {
+            Mood.RADIANT -> "Habi, feeling great"
+            Mood.NORMAL -> "Habi, doing okay"
+            Mood.WILTED -> "Habi, feeling low"
+            Mood.DRAMATIC -> "Habi, having a hard time"
+        }
+
     @Test
     fun `a radiant Habi describes its mood, not just its name`() {
         setContent(Mood.RADIANT)
 
-        compose.onNodeWithContentDescription("Habi, feeling great").assertExists()
+        compose.onNodeWithContentDescription(habiDescription(Mood.RADIANT)).assertExists()
     }
 
     @Test
     fun `a wilted Habi describes a different mood`() {
         setContent(Mood.WILTED)
 
-        compose.onNodeWithContentDescription("Habi, feeling low").assertExists()
+        compose.onNodeWithContentDescription(habiDescription(Mood.WILTED)).assertExists()
+    }
+
+    @Test
+    fun `the avatar renders without an external motion handle`() {
+        compose.setContent {
+            BitoTheme { HabiAvatar(HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()), Modifier.size(72.dp)) }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription(habiDescription(Mood.NORMAL)).assertExists()
+    }
+
+    @Test
+    fun `an external motion handle survives recomposition`() {
+        var handle: HabiMotion? = null
+        var pose by mutableStateOf(HabiPose.STANDING)
+        compose.setContent {
+            BitoTheme {
+                val motion = rememberHabiMotion(pose, Mood.NORMAL, Personality.NEUTRA)
+                handle = motion
+                HabiAvatar(
+                    HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(), pose = pose),
+                    Modifier.size(72.dp),
+                    motion = motion,
+                )
+            }
+        }
+        compose.waitForIdle()
+        val first = handle
+
+        pose = HabiPose.WAITING
+        compose.waitForIdle()
+
+        assertSame(first, handle)
+    }
+
+    @Test
+    fun `a cue plays its sound through the one conduit`() {
+        val played = mutableListOf<HabiSound>()
+        var motion: HabiMotion? = null
+        var scope: CoroutineScope? = null
+        compose.setContent {
+            BitoTheme {
+                scope = rememberCoroutineScope()
+                motion =
+                    rememberHabiMotion(
+                        HabiPose.STANDING,
+                        Mood.NORMAL,
+                        Personality.NEUTRA,
+                        onSound = { played += it },
+                    )
+                HabiAvatar(
+                    HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
+                    Modifier.size(72.dp),
+                    motion = motion,
+                )
+            }
+        }
+        compose.waitForIdle()
+
+        // `play` suspende hasta que el gesto asienta, asi que se lanza y se espera al sonido.
+        scope!!.launch { motion!!.play(HabiCue.LOGGED, Personality.NEUTRA) }
+        compose.waitUntil { played.isNotEmpty() }
+
+        assertEquals(listOf(HabiSound.LOG), played)
+    }
+
+    @Test
+    fun `the eye ritual is silent`() {
+        val played = mutableListOf<HabiSound>()
+        var motion: HabiMotion? = null
+        var scope: CoroutineScope? = null
+        compose.setContent {
+            BitoTheme {
+                scope = rememberCoroutineScope()
+                motion =
+                    rememberHabiMotion(
+                        HabiPose.STANDING,
+                        Mood.NORMAL,
+                        Personality.NEUTRA,
+                        onSound = { played += it },
+                    )
+                HabiAvatar(
+                    HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(), eyesPainted = 0),
+                    Modifier.size(72.dp),
+                    motion = motion,
+                )
+            }
+        }
+        compose.waitForIdle()
+
+        scope!!.launch { motion!!.playEyeRitual() }
+        compose.waitForIdle()
+
+        assertTrue(played.isEmpty())
     }
 }
