@@ -132,13 +132,14 @@ class FocusViewModel(
     init {
         // Un "forzar detencion" mata la alarma y la notificacion, pero la sesion sigue en el
         // store: nadie la rearmaria (FocusSync solo cancela sin sesion, BootReceiver solo corre
-        // al arrancar). Al entrar en la pantalla de la MISMA sesion que ya corre — a secas o
-        // pidiendo su tarea, nunca la de otra tarea, que es la hoja de conflicto — se repostea.
-        // Vencida (remaining == 0) no se rearma nada: el 00:00 con los cinco botones ya sale de
-        // buildUiState solo.
+        // al arrancar). Cualquier pantalla de foco que se construya con esa sesion todavia viva
+        // la repostea — tambien si pide otra tarea y sale la hoja de conflicto: esa sesion sigue
+        // corriendo y merece su alarma y su bandeja igual. Idempotente por diseno (requestCode
+        // fijo en FocusAlarm, mismo FOCUS_ID en Notifier), asi que da igual si varias pantallas
+        // repostean la misma sesion. Vencida (remaining == 0) no se rearma nada: el 00:00 con los
+        // cinco botones ya sale de buildUiState solo.
         viewModelScope.launch {
             val session = focus.session.first() ?: return@launch
-            if (requestedTaskId != null && requestedTaskId != session.taskId) return@launch
             val task = tasks.task(session.taskId) ?: return@launch
             val remaining = FocusClock.remainingMillis(session, now(), elapsed())
             if (remaining > 0) presence.show(task.title, session.endsAtMillis)

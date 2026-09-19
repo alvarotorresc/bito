@@ -325,6 +325,8 @@ class FocusViewModelTest {
             val presence2 = FakeFocusPresence()
             val vm2 = newViewModel("t2", presence2)
             activate(vm2)
+            // La sesion de t1 sigue viva: se repostea aunque esta pantalla pida t2 y muestre el conflicto.
+            assertEquals(1, presence2.showCalls)
             assertEquals("Tarea uno", vm2.uiState.value.busyWith)
             assertEquals("t2", vm2.uiState.value.taskId)
             assertFalse(vm2.uiState.value.running)
@@ -337,7 +339,7 @@ class FocusViewModelTest {
             )
             val session = focusStore.session.first()!!
             assertEquals("t2", session.taskId)
-            assertEquals(1, presence2.showCalls)
+            assertEquals(2, presence2.showCalls) // el repost de t1 al construirse + el arranque de t2
         }
 
     @Test
@@ -353,13 +355,14 @@ class FocusViewModelTest {
             val presence2 = FakeFocusPresence()
             val vm2 = newViewModel("t2", presence2)
             activate(vm2)
+            val showCallsAfterEntering = presence2.showCalls // el repost de la sesion viva de t1, ajeno a keepOther
 
             vm2.keepOther()
             settle()
 
+            assertEquals(showCallsAfterEntering, presence2.showCalls)
             assertTrue(db.taskEventDao().all().isEmpty())
             assertEquals("t1", focusStore.session.first()!!.taskId)
-            assertEquals(0, presence2.showCalls)
             assertEquals(0, presence2.clearCalls)
             assertEquals(TaskStatus.OPEN, db.taskDao().byId("t1")!!.status)
         }
