@@ -926,4 +926,42 @@ class HabiDrawingTest {
             assertTrue("$pose shadowScale $shadowScale excede SHADOW_SCALE_MAX", shadowScale <= SHADOW_SCALE_MAX)
         }
     }
+
+    // --- T10 fix 1: la pose dormida cierra los ojos -----------------------------------------
+
+    /**
+     * Biblia §5/§6, «se duerme»: SLEEPING activa la misma variante de parpados cerrados que
+     * `closedEyes` (onboarding 7b), sin duplicar el arte. `renderHabiBitmap` deja `body` en su
+     * default (`Rest`): esto aisla el cambio de parpados del transform del cuerpo — EYE_Y/EYE_DX
+     * no dependen de la pose, asi que ambos renders colocan el arco en el mismo pixel.
+     */
+    @Test
+    fun `sleeping closes the eyes like the closed-lid variant`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val sleeping = spec.copy(pose = HabiPose.SLEEPING)
+        val closed = spec.copy(closedEyes = true) // pose STANDING (default), misma variante
+        val (eyeX, eyeY) = leftEyePixel(size)
+        val (lidX, lidY) = leftClosedLidPixel(size)
+        val (lashX, lashY) = leftLashPixel(size)
+
+        val sleepingBitmap = renderHabiBitmap(sleeping, size)
+        val closedBitmap = renderHabiBitmap(closed, size)
+
+        // Ni el iris pintado ni el ovalo abierto asoman en el centro del ojo.
+        assertNotEquals(Tinta.toArgb(), sleepingBitmap.getPixel(eyeX, eyeY))
+        // Coincide, pixel a pixel, con la variante closedEyes ya probada: mismo arco, misma pestaña.
+        assertEquals(closedBitmap.getPixel(lidX, lidY), sleepingBitmap.getPixel(lidX, lidY))
+        assertEquals(closedBitmap.getPixel(lashX, lashY), sleepingBitmap.getPixel(lashX, lashY))
+    }
+
+    @Test
+    fun `every pose except sleeping keeps the eyes open`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (x, y) = leftEyePixel(size)
+
+        for (pose in HabiPose.entries.filterNot { it == HabiPose.SLEEPING }) {
+            val bitmap = renderHabiBitmap(spec.copy(pose = pose), size)
+            assertEquals("$pose deberia tener el ojo abierto", Tinta.toArgb(), bitmap.getPixel(x, y))
+        }
+    }
 }

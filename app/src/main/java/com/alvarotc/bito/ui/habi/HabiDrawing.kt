@@ -530,8 +530,10 @@ fun DrawScope.drawHabi(
         }
         drawCheeks(vp, face)
         // Closed lids are a whole-eye replacement, not a closure amount: blink, droop, gaze and
-        // sparkles all describe an OPEN eye, so none of them apply over the arcs.
-        if (spec.closedEyes) {
+        // sparkles all describe an OPEN eye, so none of them apply over the arcs. SLEEPING se
+        // duerme (biblia §5/§6): la misma variante de párpados cerrados del onboarding 7b, sin
+        // duplicar el arte.
+        if (spec.closedEyes || spec.pose == HabiPose.SLEEPING) {
             drawClosedEyes(vp, eyeColor)
         } else {
             drawEyes(vp, face, blink, resolved.eyelidDroop, gaze, eyeColor, spec.eyesPainted, bodyTone)
