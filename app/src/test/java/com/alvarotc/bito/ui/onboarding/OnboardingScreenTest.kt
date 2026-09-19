@@ -6,6 +6,7 @@ import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.assertContentDescriptionEquals
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
@@ -456,11 +457,9 @@ class OnboardingScreenTest {
      * Task 17: the first habit's first eye now holds 7g on the ritual instead of flipping `done`
      * in the same beat (see [OnboardingViewModelTest]'s own VM-level proof) — this test's own
      * closing step, [OnboardingViewModel.finishEyeRitual], mirrors exactly what the "Seguir" pill
-     * calls once the gesture has painted, WITHOUT pumping the ~700ms of HabiMotion choreography
-     * that gates it in the real screen: `runEyeRitual`'s own `delay()` calls run on this test's
-     * [org.robolectric.RobolectricTestRunner] main dispatcher, whose virtual clock nothing here
-     * ever advances — [compose]'s own `mainClock` only pumps Compose's animation clock (springs,
-     * `animateXAsState`), never a raw suspend `delay()`.
+     * calls once the gesture has painted, WITHOUT pumping the real ~700ms of HabiMotion
+     * choreography that gates it in the real screen (see "the button stays disabled..." below for
+     * the one test that DOES pump it, and what pumping it actually takes here).
      */
     @Test
     fun `the first habit step creates the habit and completes onboarding`() {
@@ -511,7 +510,52 @@ class OnboardingScreenTest {
         compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("onb-eye-ritual", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("onb-eye-ritual", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    /**
+     * The two behaviors the brief names explicitly, both gated on the SAME `ritualDone`: the
+     * button stays disabled until the gesture paints ("nadie se salta el rito con un doble
+     * toque"), and the line only shows up AFTER — the ritual itself is silent and wordless
+     * (biblia §4). Pumping BOTH clocks is what it takes to resolve `runEyeRitual`'s real `delay()`
+     * calls here: `dispatcher` (this file's own [Dispatchers.setMain] override) drives the
+     * coroutine's own suspensions, `compose.mainClock` drives the [HabiAvatar]'s springs and the
+     * `LaunchedEffect`'s composition-scoped resumption between them — neither alone is enough,
+     * proven empirically while writing this test: a `dispatcher`-only pump (no `mainClock` frame
+     * stepping) left the button disabled outright, same as [BitoNavHostTest]'s own equivalent
+     * needing `mainClock` frame stepping (that file has no [Dispatchers.setMain] override of its
+     * own, so `dispatcher` doesn't apply there — see its own `finishFirstHabitStep` KDoc).
+     */
+    @Test
+    fun `the button stays disabled and the line stays hidden until the eye is actually painted`() {
+        val vm = newViewModel("onboarding-screen-eye-ritual-timing")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        goToFirstHabit(vm)
+
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val line = context.getString(R.string.habi_eye_first_neutra, "Alvaro")
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).assertIsNotEnabled()
+        compose.onNodeWithText(line, useUnmergedTree = true).assertDoesNotExist()
+
+        dispatcher.scheduler.advanceUntilIdle()
+        compose.mainClock.autoAdvance = false
+        repeat(150) { compose.mainClock.advanceTimeByFrame() }
+        dispatcher.scheduler.advanceUntilIdle()
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).assertIsEnabled()
+        compose.onNodeWithText(line, useUnmergedTree = true).assertExists()
     }
 
     @Test
