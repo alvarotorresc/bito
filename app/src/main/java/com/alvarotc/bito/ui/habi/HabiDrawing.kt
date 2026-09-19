@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import com.alvarotc.bito.domain.model.CheekStyle
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.FaceParams
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.delightedParamsOf
@@ -51,6 +52,10 @@ data class HabiSpec(
     val mood: Mood,
     val personality: Personality,
     val equipped: EquippedSet,
+    /** 0/1/2 — el ritual del ojo (EyeRitual). 2 por defecto: cualquier spec construido a mano dibuja la Habi de siempre. */
+    val eyesPainted: Int = 2,
+    /** La pose del día (HabiDay.phaseOf) o la efímera que un gesto imponga. Es una POSE, no una animación. */
+    val pose: HabiPose = HabiPose.STANDING,
     /** Replaces the equipped catalog body color (pattern tint and shading follow it); null = catalog color. */
     val bodyToneOverride: Color? = null,
     /** Draws each eye as a sagging closed arc with a faint lash mark below, instead of the open oval. */

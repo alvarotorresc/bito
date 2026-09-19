@@ -11,6 +11,8 @@ import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Entry
+import com.alvarotc.bito.domain.model.HabiDayPhase
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
@@ -447,5 +449,46 @@ class TodayUiStateTest {
         assertTrue(
             buildTodayUiState(stateOf(listOf(habit), seals = listOf(DaySeal(TODAY, 0L))), emptyMap(), TODAY).todaySealed,
         )
+    }
+
+    @Test
+    fun `the day phase and the pose travel together in the state`() {
+        val habit = habit(id = "cama", createdOnDay = TODAY)
+        val state = stateOf(listOf(habit))
+
+        val morning = buildTodayUiState(state, emptyMap(), TODAY, minutesOfDay = 9 * 60, reviewTimeMinutes = 21 * 60 + 30)
+
+        assertEquals(HabiDayPhase.AWAKE, morning.dayPhase)
+        assertEquals(HabiPose.STANDING, morning.spec.pose)
+    }
+
+    @Test
+    fun `review time moves her to waiting even with work left`() {
+        val habit = habit(id = "cama", createdOnDay = TODAY)
+        val state = stateOf(listOf(habit))
+
+        val evening = buildTodayUiState(state, emptyMap(), TODAY, minutesOfDay = 22 * 60, reviewTimeMinutes = 21 * 60 + 30)
+
+        assertEquals(HabiDayPhase.WAITING, evening.dayPhase)
+        assertEquals(HabiPose.WAITING, evening.spec.pose)
+    }
+
+    @Test
+    fun `a sealed day sleeps`() {
+        val habit = habit(id = "cama", createdOnDay = TODAY)
+        val state = stateOf(listOf(habit), seals = listOf(DaySeal(TODAY, 0L)))
+
+        val sealed = buildTodayUiState(state, emptyMap(), TODAY, minutesOfDay = 9 * 60)
+
+        assertEquals(HabiDayPhase.ASLEEP, sealed.dayPhase)
+        assertEquals(HabiPose.SLEEPING, sealed.spec.pose)
+    }
+
+    @Test
+    fun `the eye level reaches the spec, and defaults to both painted`() {
+        val state = stateOf(emptyList())
+
+        assertEquals(2, buildTodayUiState(state, emptyMap(), TODAY).spec.eyesPainted)
+        assertEquals(0, buildTodayUiState(state, emptyMap(), TODAY, eyesPainted = 0).spec.eyesPainted)
     }
 }

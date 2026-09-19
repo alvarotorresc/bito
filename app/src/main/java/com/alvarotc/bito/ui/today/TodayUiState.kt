@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.today
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.Compliance
 import com.alvarotc.bito.domain.ComplianceStatus
+import com.alvarotc.bito.domain.HabiDay
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.MoodEngine
 import com.alvarotc.bito.domain.Sealing
@@ -11,6 +12,7 @@ import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.HabiDayPhase
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
@@ -20,6 +22,7 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.domain.model.toPose
 import com.alvarotc.bito.ui.habi.HabiSpec
 
 /** Visual treatment of a habit card, derived from its metric/log mode/direction. */
@@ -79,6 +82,7 @@ data class TodayUiState(
     val userName: String = "",
     val logHapticEnabled: Boolean = true,
     val loading: Boolean = true,
+    val dayPhase: HabiDayPhase = HabiDayPhase.AWAKE,
 )
 
 /**
@@ -95,6 +99,9 @@ fun buildTodayUiState(
     owned: List<CustomizationItemEntity> = emptyList(),
     userName: String = "",
     logHapticEnabled: Boolean = true,
+    minutesOfDay: Int = 0,
+    reviewTimeMinutes: Int = 21 * 60 + 30,
+    eyesPainted: Int = 2,
 ): TodayUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -117,6 +124,15 @@ fun buildTodayUiState(
             }
             .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
             .map { PausedHabitUi(it.id, it.name) }
+    val sealed = Sealing.isSealed(state, today)
+    val dayPhase =
+        HabiDay.phaseOf(
+            requirableCount = cards.size,
+            doneCount = cards.count { it.doneToday },
+            sealed = sealed,
+            minutesOfDay = minutesOfDay,
+            reviewTimeMinutes = reviewTimeMinutes,
+        )
     return TodayUiState(
         today = today,
         ringDone = cards.count { it.doneToday },
@@ -124,11 +140,12 @@ fun buildTodayUiState(
         cards = cards,
         pausedHabits = pausedHabits,
         pendingSealDays = Sealing.pendingSealDays(state, today),
-        todaySealed = Sealing.isSealed(state, today),
-        spec = HabiSpec(mood, personality, equippedSetOf(equippedIds)),
+        todaySealed = sealed,
+        spec = HabiSpec(mood, personality, equippedSetOf(equippedIds), eyesPainted = eyesPainted, pose = dayPhase.toPose()),
         userName = userName,
         logHapticEnabled = logHapticEnabled,
         loading = false,
+        dayPhase = dayPhase,
     )
 }
 
