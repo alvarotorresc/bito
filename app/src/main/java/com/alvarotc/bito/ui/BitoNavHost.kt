@@ -348,33 +348,47 @@ fun BitoNavHost(container: AppContainer) {
         val cState by celebrations.uiState.collectAsStateWithLifecycle()
         val celebrationsSuppressed =
             currentRoute == "review" || currentRoute == "onboarding" || currentRoute == "onboarding_replay" || pendingRoute != null
-        // Primero el ojo, en silencio y solo con el cuerpo; después la hoja del logro con su
-        // sonido (biblia §4). Un rito que compite con un confeti deja de ser un rito.
+        // Primero el ojo, en silencio y solo con el cuerpo; después la hoja de celebración que
+        // toque, con su sonido (biblia §4). Un rito que compite con un confeti deja de ser un
+        // rito — y eso vale igual para la hoja del logro que para la del día perfecto: si las dos
+        // llegan el mismo día (streak-7 más un día perfecto), la retención cubre las dos ramas del
+        // `when` de abajo, no solo la del badge. Tras la retención el orden no cambia: el día
+        // perfecto sigue ganando siempre primero.
         var badgesReady by remember(cState.newBadges) { mutableStateOf(cState.newBadges.none { it.id == STREAK_SEVEN_BADGE }) }
         LaunchedEffect(cState.newBadges) {
             if (!badgesReady) {
-                delay(EYE_RITUAL_HOLD_MS)
+                delay(BADGE_SHEET_HOLD_MS)
                 badgesReady = true
             }
         }
         if (!celebrationsSuppressed) {
             when {
-                cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
+                cState.perfectDayPending && badgesReady -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
                 cState.newBadges.isNotEmpty() && badgesReady -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
             }
         }
-        // badgesReady also gates the badge branch of the cue itself, not just the sheet: cue()
-        // is what plays HabiSound.JINGLE, and firing that the instant the badge unlocks
-        // (rather than once the sheet is actually about to show) would sound right over the
-        // still-silent eye ritual this hold exists to protect.
+        // badgesReady also gates BOTH cue branches, not just the badge one, for the same reason
+        // as the `when` above: cue() is what plays HabiSound.JINGLE, and firing it the instant
+        // either celebration becomes pending (rather than once its sheet is actually about to
+        // show) would sound right over the still-silent eye ritual this hold exists to protect.
         LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute, pendingRoute, badgesReady) {
+            val perfectDayCueReady = cState.perfectDayPending && badgesReady
             val badgesCueReady = cState.newBadges.isNotEmpty() && badgesReady
-            if (!celebrationsSuppressed && (cState.perfectDayPending || badgesCueReady)) {
+            if (!celebrationsSuppressed && (perfectDayCueReady || badgesCueReady)) {
                 celebrations.cue()
             }
         }
     }
 }
 
-/** La duración del rito del ojo (spec §3.4): lo que la hoja del logro espera antes de levantarse. */
-private const val EYE_RITUAL_HOLD_MS = 900L
+/**
+ * Lo que la hoja de celebración (día perfecto o logro) espera antes de levantarse cuando el hito
+ * `streak-7` está entre los badges nuevos (spec §3.4) — fuera de ese caso `badgesReady` ya nace en
+ * `true` y este delay nunca corre. Medido con [com.alvarotc.bito.ui.habi.HabiAvatarTest]'s
+ * `` `the eye ritual takes about 1600ms end to end` ``: reloj virtual congelado, avance fotograma
+ * a fotograma (16 ms, el tick real), 1600 ms de principio a fin del rito. 1600 ms redondeado
+ * arriba + ~30% de margen = 2100 ms. Nombre distinto a `HabiMotion`'s propia
+ * `EYE_RITUAL_HOLD_MS` (300 ms, otro significado: la quietud final del propio gesto) a propósito
+ * — misma sílaba, constantes distintas en ficheros distintos, ya colisionaba de nombre.
+ */
+private const val BADGE_SHEET_HOLD_MS = 2100L

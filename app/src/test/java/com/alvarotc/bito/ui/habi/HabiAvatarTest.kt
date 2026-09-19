@@ -58,6 +58,14 @@ class HabiAvatarTest {
         const val IDLE_MIN_HITS = 4
         const val MOVING_EPS = 0.01f
 
+        // Medicion del rito del ojo completo (task 20, ronda de fix): 16ms es el tick real de
+        // fotograma de produccion, no un redondeo de conveniencia. 200 fotogramas = 3200ms, muy
+        // por encima de los 1600ms medidos, solo para no colgar el test si algo se rompe de verdad.
+        const val RITUAL_PROBE_FRAME_MS = 16
+        const val RITUAL_PROBE_MAX_FRAMES = 200
+        const val RITUAL_EXPECTED_MIN_MS = 1500
+        const val RITUAL_EXPECTED_MAX_MS = 1700
+
         /** El cuerpo se ha movido de su reposo: un micro-gesto esta en marcha. */
         fun HabiBodyMotion.movedFrom(still: HabiBodyMotion): Boolean =
             abs(tiltDeg - still.tiltDeg) > MOVING_EPS ||
@@ -368,5 +376,59 @@ class HabiAvatarTest {
         compose.waitForIdle()
 
         assertTrue(played.isEmpty())
+    }
+
+    /**
+     * Cuanto dura de verdad el rito completo de principio a fin (task 20, ronda de fix): reloj
+     * congelado, avance fotograma a fotograma (16 ms, el tick real de produccion, no un
+     * `advanceTimeBy` grande) porque `runEyeRitual` mezcla un `delay()` real (EYE_RITUAL_STILL_MS,
+     * EYE_RITUAL_HOLD_MS) con dos animaciones de [NudgeSpring] — solo el reloj manual resuelve las
+     * dos cosas a la vez (mismo motivo que `BitoNavHostTest`'s "a streak-7 badge holds...").
+     * `idle = false` para que ningun micro-gesto de fondo contamine la medicion.
+     *
+     * Midio 1600 ms (100 fotogramas), estable en varias corridas — nada de esto usa aleatoriedad,
+     * es una simulacion de muelles determinista. Esa medicion es la que fija
+     * `BitoNavHost.BADGE_SHEET_HOLD_MS` (1600 ms redondeado arriba + ~30% de margen = 2100 ms): si
+     * este test se mueve fuera de la ventana, esa constante tiene que remedirse con el.
+     */
+    @Test
+    fun `the eye ritual takes about 1600ms end to end`() {
+        compose.mainClock.autoAdvance = false
+        var motion: HabiMotion? = null
+        var scope: CoroutineScope? = null
+        compose.setContent {
+            BitoTheme {
+                scope = rememberCoroutineScope()
+                motion = rememberHabiMotion(HabiPose.STANDING, Mood.NORMAL, Personality.NEUTRA, idle = false)
+                HabiAvatar(
+                    HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
+                    Modifier.size(72.dp),
+                    motion = motion,
+                )
+            }
+        }
+        compose.waitForIdle()
+
+        var finished = false
+        scope!!.launch {
+            motion!!.playEyeRitual()
+            finished = true
+        }
+
+        var frames = 0
+        while (!finished && frames < RITUAL_PROBE_MAX_FRAMES) {
+            compose.mainClock.advanceTimeByFrame()
+            frames++
+        }
+        compose.mainClock.autoAdvance = true
+
+        assertTrue("el rito no termino dentro de $RITUAL_PROBE_MAX_FRAMES fotogramas", finished)
+        val elapsedMs = frames * RITUAL_PROBE_FRAME_MS
+        assertTrue(
+            "el rito duro ${elapsedMs}ms, fuera de la ventana esperada " +
+                "[$RITUAL_EXPECTED_MIN_MS, $RITUAL_EXPECTED_MAX_MS] -- si el motion cambio a proposito, " +
+                "remedir y actualizar BitoNavHost.BADGE_SHEET_HOLD_MS junto con este comentario",
+            elapsedMs in RITUAL_EXPECTED_MIN_MS..RITUAL_EXPECTED_MAX_MS,
+        )
     }
 }

@@ -482,14 +482,64 @@ class BitoNavHostTest {
         assertNull(celebrations().lastCued)
 
         // NOT waitForIdle()/waitUntil() from here: the hold is a genuine suspend `delay()`
-        // ([EYE_RITUAL_HOLD_MS], 900ms), same reasoning as `finishFirstHabitStep`'s own KDoc --
-        // manual clock stepping is what actually resumes it.
+        // (`BADGE_SHEET_HOLD_MS`, 2100ms — measured off the real eye-ritual duration, task 20 fix
+        // round), same reasoning as `finishFirstHabitStep`'s own KDoc -- manual clock stepping is
+        // what actually resumes it. 150 frames * 16ms = 2400ms, comfortably past the 2100ms hold.
         compose.mainClock.autoAdvance = false
-        repeat(80) { compose.mainClock.advanceTimeByFrame() }
+        repeat(150) { compose.mainClock.advanceTimeByFrame() }
         compose.mainClock.autoAdvance = true
         compose.waitForIdle()
 
         compose.onNodeWithTag("badge-sheet", useUnmergedTree = true).assertExists()
+        assertTrue(celebrations().lastCued != null)
+    }
+
+    /**
+     * Task 20 fix round, Hueco 2 (traspaso T17): `streak-7` y un día perfecto pendientes el mismo
+     * día. Antes de esta corrección, `PerfectDaySheet` no miraba `badgesReady` — se colaba encima
+     * del ojo silencioso mientras la hoja del badge sí esperaba. El ruling: la retención cubre
+     * AMBAS ramas del `when` (ni sheet ni cue de ninguna hasta que el ojo tuvo su tiempo), y tras
+     * la retención el día perfecto sigue ganando siempre primero — nunca la hoja del badge, ni
+     * con las dos pendientes a la vez.
+     */
+    @Test
+    fun `a streak-7 badge together with a pending perfect day holds both until the eye has time to paint`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        runBlocking {
+            completeOnboarding(container)
+            container.database.badgeDao().insert(BadgeEntity("streak-7", unlockedAtMillis = 1_000L))
+            seedPerfectDayToday(container)
+        }
+        val vmOwner = FakeViewModelStoreOwner()
+
+        fun celebrations() = ViewModelProvider(vmOwner, CelebrationsViewModel.factory(container))[CelebrationsViewModel::class.java]
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalViewModelStoreOwner provides vmOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            celebrations().uiState.value.newBadges.isNotEmpty() && celebrations().uiState.value.perfectDayPending
+        }
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("badge-sheet", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(celebrations().lastCued)
+
+        // Same manual clock stepping as the streak-7-alone test above: the hold is a real delay().
+        compose.mainClock.autoAdvance = false
+        repeat(150) { compose.mainClock.advanceTimeByFrame() }
+        compose.mainClock.autoAdvance = true
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("perfect-day-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("badge-sheet", useUnmergedTree = true).assertDoesNotExist()
         assertTrue(celebrations().lastCued != null)
     }
 
