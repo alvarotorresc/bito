@@ -379,6 +379,41 @@ class HabiAvatarTest {
     }
 
     /**
+     * El dia perfecto es MUDO en la coreografia: su jingle lo emite la hoja de celebracion, que es
+     * quien decide cuando se levanta. Si la coreografia lo emitiera tambien, el mismo dia perfecto
+     * lanzado desde Hoy sonaria dos veces (la reaccion y la hoja, a la vez).
+     */
+    @Test
+    fun `the perfect day choreography is silent - its jingle belongs to the sheet`() {
+        val played = mutableListOf<HabiSound>()
+        var motion: HabiMotion? = null
+        var scope: CoroutineScope? = null
+        compose.setContent {
+            BitoTheme {
+                scope = rememberCoroutineScope()
+                motion =
+                    rememberHabiMotion(
+                        HabiPose.STANDING,
+                        Mood.NORMAL,
+                        Personality.NEUTRA,
+                        onSound = { played += it },
+                    )
+                HabiAvatar(
+                    HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
+                    Modifier.size(72.dp),
+                    motion = motion,
+                )
+            }
+        }
+        compose.waitForIdle()
+
+        scope!!.launch { motion!!.play(HabiCue.PERFECT_DAY, Personality.NEUTRA) }
+        compose.waitForIdle()
+
+        assertTrue("el dia perfecto sono por su cuenta: $played", played.isEmpty())
+    }
+
+    /**
      * Cuanto dura de verdad el rito completo de principio a fin (task 20, ronda de fix): reloj
      * congelado, avance fotograma a fotograma (16 ms, el tick real de produccion, no un
      * `advanceTimeBy` grande) porque `runEyeRitual` mezcla un `delay()` real (EYE_RITUAL_STILL_MS,

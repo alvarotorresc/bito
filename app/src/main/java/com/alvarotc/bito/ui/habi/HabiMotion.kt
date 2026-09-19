@@ -194,13 +194,13 @@ private val PoseSpring = spring<Float>(dampingRatio = 0.90f, stiffness = 140f)
 /** El asentimiento al registrar: corto y seco. */
 private val NudgeSpring = spring<Float>(dampingRatio = 0.55f, stiffness = 500f)
 
-// El catalogo de sonidos ya nombra MOMENTOS, no emociones (tarea de la voz): estas cinco lineas
-// solo evitan repetir `HabiSound.` en cada coreografia de abajo.
+// El catalogo de sonidos ya nombra MOMENTOS, no emociones (tarea de la voz): estas cuatro lineas
+// solo evitan repetir `HabiSound.` en cada coreografia de abajo. El jingle NO esta: el dia
+// perfecto es mudo aqui y lo emite su hoja de celebracion.
 private val SOUND_BUMP = HabiSound.BUMP
 private val SOUND_MEEH = HabiSound.MEEH
 private val SOUND_TICK = HabiSound.TICK
 private val SOUND_SIGH = HabiSound.SIGH
-private val SOUND_JINGLE = HabiSound.JINGLE
 
 /**
  * El movimiento de Habi, fuera de la composicion.
@@ -558,9 +558,15 @@ class HabiMotion internal constructor(
         }
     }
 
-    /** El dia perfecto (~2 s): la coreografia mas larga del catalogo. */
+    /**
+     * El dia perfecto (~2 s): la coreografia mas larga del catalogo, y MUDA.
+     *
+     * El jingle lo emite la hoja de celebracion (`CelebrationsViewModel.cue()`), no el gesto: un
+     * dia perfecto registrado desde Hoy levanta la hoja Y lanza esta reaccion, asi que un sonido
+     * aqui seria el mismo jingle dos veces. [playAllDone] no tiene ese caso —«todos hechos» no
+     * levanta ninguna hoja— y conserva el suyo.
+     */
     private suspend fun playPerfectDay() {
-        onSound(SOUND_JINGLE)
         coroutineScope {
             launch { squash.animateTo(-PERFECT_STRETCH, tween(PERFECT_STRETCH_MS, easing = LinearOutSlowInEasing)) }
             launch { shadowScale.animateTo(SHADOW_SCALE_UP, tween(PERFECT_STRETCH_MS, easing = LinearOutSlowInEasing)) }
