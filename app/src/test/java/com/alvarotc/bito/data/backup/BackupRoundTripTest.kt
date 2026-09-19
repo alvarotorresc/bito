@@ -74,6 +74,7 @@ class BackupRoundTripTest {
             logHapticEnabled = false,
             perfectDayCelebratedDay = 20679,
             badgesSeenUntilMillis = 4321L,
+            habiEyesPainted = 2,
         )
 
     @Before

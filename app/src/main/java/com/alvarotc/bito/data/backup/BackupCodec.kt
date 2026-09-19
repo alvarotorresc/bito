@@ -18,6 +18,9 @@ object BackupCodec {
     // default to true when absent, which is exactly what an older file means (the switches did not
     // exist, so they were on), so there is nothing for decode to migrate. Bumping would only make
     // every 1.0.0 export unreadable to earlier builds for no gain.
+    // v1.1.0: v3 files also carry settings.habiEyesPainted. NO bump — an older file decodes to 0,
+    // and the first reconcile after the restore heals it from the restored history (EyeRitual), so
+    // there is nothing for decode to migrate: the eyes travel with the walk, not with the setting.
     const val SCHEMA_VERSION = 3
 
     private val json =

@@ -50,6 +50,16 @@ class SettingsRepositoryTest {
             assertEquals(0L, settings.badgesSeenUntilMillis)
             assertNull(settings.lastAutoBackupAtMillis)
             assertNull(settings.lastAutoBackupError)
+            assertEquals(0, settings.habiEyesPainted)
+        }
+
+    @Test
+    fun `the eye ritual level round-trips through the store`() =
+        runTest {
+            val repo = SettingsRepository(store("eyes"))
+            assertEquals(0, repo.settings.first().habiEyesPainted)
+            repo.update { it.copy(habiEyesPainted = 2) }
+            assertEquals(2, repo.settings.first().habiEyesPainted)
         }
 
     @Test
@@ -81,6 +91,7 @@ class SettingsRepositoryTest {
                     backupEncryption = true,
                     onboardingDone = true,
                     habiSoundsEnabled = false,
+                    habiEyesPainted = 2,
                 )
             repository.update { written }
             assertEquals(written, repository.settings.first())

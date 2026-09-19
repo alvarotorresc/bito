@@ -198,6 +198,19 @@ class BackupCodecTest {
     }
 
     @Test
+    fun `a backup without the eye ritual field imports at zero and keeps schema 3`() {
+        val seeded = sampleFile().copy(settings = sampleFile().settings.copy(habiEyesPainted = 2))
+        val withoutField =
+            BackupCodec.encode(seeded)
+                .replace(Regex(",?\\s*\"habiEyesPainted\":\\s*\\d+"), "")
+
+        val decoded = BackupCodec.decode(withoutField)
+
+        assertEquals(0, decoded.settings.habiEyesPainted)
+        assertEquals(3, BackupCodec.SCHEMA_VERSION)
+    }
+
+    @Test
     fun `preview counts what the confirmation sheet shows`() {
         val preview = BackupCodec.decode(BackupCodec.encode(sampleFile())).toPreview()
         assertEquals(BackupPreview("2026-08-15T10:00:00Z", "0.3.0", 1, 1), preview)
