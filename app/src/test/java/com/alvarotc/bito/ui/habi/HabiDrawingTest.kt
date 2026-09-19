@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.HabiSalvia
@@ -842,6 +843,87 @@ class HabiDrawingTest {
                 plain.getPixel(x, y),
                 grained.getPixel(x, y),
             )
+        }
+    }
+
+    // --- T10: las cinco poses --------------------------------------------------------------
+
+    /**
+     * Columna de muestras a la x del ojo izquierdo, de la coronilla a la base: cruza la silueta,
+     * el pivote (rotacion/escala) y el borde de la sombra, asi que un cambio de pose (tilt, scale
+     * o el bulto de `bodyPath`) mueve varias de estas muestras a la vez. Un unico pixel (el ojo
+     * izquierdo, p.ej.) puede caer sobre relleno de cuerpo liso en dos o mas poses distintas y
+     * colapsar el set; una columna entera no.
+     */
+    private fun leftEyeColumnPixels(sizePx: Int): List<Pair<Int, Int>> {
+        val x = px(BODY_CX - EYE_DX, sizePx)
+        return (0..9).map { i -> x to px(0.05f + i * 0.09f, sizePx) }
+    }
+
+    @Test
+    fun `each pose renders a distinct body`() {
+        val base = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val columnPoints = leftEyeColumnPixels(size)
+        val seen = mutableSetOf<List<Int>>()
+
+        for (pose in HabiPose.entries) {
+            val body = poseBodyMotion(pose)
+            val bitmap = renderInto(size) { drawHabi(base.copy(pose = pose), body = body) }
+            seen += columnPoints.map { (x, y) -> bitmap.getPixel(x, y) }
+        }
+
+        // Cinco poses, cinco perfiles de columna distintos: ninguna es un alias de otra.
+        assertEquals(HabiPose.entries.size, seen.size)
+    }
+
+    @Test
+    fun `sleeping widens the shadow and standing does not`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        // Un pixel al borde de la sombra en reposo: dentro cuando se ensancha, fuera cuando no.
+        val edgeX = px(BODY_CX + 0.28f, size)
+        val edgeY = px(SHADOW_CY, size)
+
+        val standing = renderInto(size) { drawHabi(spec.copy(pose = HabiPose.STANDING), body = poseBodyMotion(HabiPose.STANDING)) }
+        val sleeping = renderInto(size) { drawHabi(spec.copy(pose = HabiPose.SLEEPING), body = poseBodyMotion(HabiPose.SLEEPING)) }
+
+        assertEquals(0, standing.getPixel(edgeX, edgeY))
+        assertNotEquals(0, sleeping.getPixel(edgeX, edgeY))
+    }
+
+    /**
+     * `SEATED_EXTRA_BULGE` solo baja el punto MAS ancho del huevo (nunca ensancha mas alla de
+     * `BODY_RX`, privada) — el hueco entre las dos siluetas es maximo hacia la base, no a la
+     * altura del ombligo (`BODY_CY + 0.06`, donde el brief lo probaba y donde el hueco resulto ser
+     * negativo: se movio el test, no el arte). Medido con la geometria real del huevo, el hueco
+     * ronda su pico (~0.01 normalizado) sobre `BODY_CY + 0.285`; a 96px eso es <1px y se pierde en
+     * el antialiasing (mismo motivo que `accessorySize` en los tests de upper/lower), asi que esta
+     * prueba usa un lienzo mayor.
+     */
+    @Test
+    fun `the seated silhouette is wider at the base than the standing one`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val probeSize = 256
+        val x = px(BODY_CX + 0.2697f, probeSize)
+        val y = px(BODY_CY + 0.285f, probeSize)
+
+        val standing = renderInto(probeSize) { drawHabi(spec) }
+        val seated = renderInto(probeSize) { drawHabi(spec.copy(pose = HabiPose.SEATED)) }
+
+        assertEquals(0, standing.getPixel(x, y))
+        assertNotEquals(0, seated.getPixel(x, y))
+    }
+
+    /**
+     * El comentario de `HabiBodyMotion.shadowScale` documenta un techo practico (~1,11) antes de
+     * que el borde inferior de la sombra salga del viewport y `poseBodyMotion` es quien debe
+     * clampear a el. Un guard barato: sin renderizar nada, comprueba que ninguna pose pida mas de
+     * `SHADOW_SCALE_MAX`.
+     */
+    @Test
+    fun `no pose pushes the shadow out of the viewport`() {
+        for (pose in HabiPose.entries) {
+            val shadowScale = poseBodyMotion(pose).shadowScale
+            assertTrue("$pose shadowScale $shadowScale excede SHADOW_SCALE_MAX", shadowScale <= SHADOW_SCALE_MAX)
         }
     }
 }

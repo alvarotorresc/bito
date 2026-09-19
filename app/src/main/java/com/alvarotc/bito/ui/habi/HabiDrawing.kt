@@ -80,6 +80,10 @@ private const val BODY_RX = 0.34f
 private const val BODY_RY = 0.42f
 private const val BODY_BULGE = 0.05f
 
+// SEATED y SLEEPING ensanchan la base de la silueta (spec §2.2/§15.1): el eggPath del cuerpo gana
+// bulto abajo en esas dos poses, encima de BODY_BULGE.
+private const val SEATED_EXTRA_BULGE = 0.035f
+
 // El pie es la base real de la silueta (biblia §9.1): donde el cuerpo pivota y donde se apoya la
 // sombra. FOOT_Y deriva de BODY_CY/BODY_RY en vez de un literal para que nunca se desincronice de
 // la silueta si esta vuelve a moverse. La sombra vive en su propia franja, fuera de la silueta y
@@ -89,6 +93,12 @@ internal const val SHADOW_CY = 0.95f
 private const val SHADOW_RX = 0.26f
 private const val SHADOW_RY = 0.045f
 internal const val SHADOW_ALPHA_REST = 0.22f
+
+// Techo practico de HabiBodyMotion.shadowScale, derivado en vez de literal (mismo principio que
+// FOOT_Y): la sombra cabe entera en el viewport mientras SHADOW_CY + SHADOW_RY * shadowScale <= 1.
+// poseBodyMotion clampea a este techo — quien conecte T11 hereda ya el clamp en los dos extremos
+// que interpola.
+internal const val SHADOW_SCALE_MAX = (1f - SHADOW_CY) / SHADOW_RY
 
 private const val HIGHLIGHT_CX = 0.5f
 private const val HIGHLIGHT_CY = 0.13f
@@ -417,6 +427,30 @@ data class HabiBodyMotion(
 }
 
 /**
+ * El reposo del cuerpo para cada pose del día: una POSE, no una animación (biblia §5, «tres
+ * estados, deliberadamente tres, para no disparar el arte»). [HabiMotion] interpola entre dos de
+ * estos con PoseSpring; el widget y la notificación se quedan en el valor plano.
+ */
+internal fun poseBodyMotion(pose: HabiPose): HabiBodyMotion {
+    val raw =
+        when (pose) {
+            HabiPose.STANDING -> HabiBodyMotion.Rest
+            // Asentada, más baja, relajada.
+            HabiPose.WAITING -> HabiBodyMotion(scaleX = 1.05f, scaleY = 0.94f, shadowScale = 1.06f)
+            // Recogida, la sombra ancha y quieta.
+            HabiPose.SLEEPING -> HabiBodyMotion(scaleX = 1.09f, scaleY = 0.88f, shadowScale = 1.15f, shadowAlpha = 0.28f)
+            // Volcada: transitoria, la impone el vuelco.
+            HabiPose.TIPPED -> HabiBodyMotion(tiltDeg = 78f, shadowScale = 1.15f, shadowAlpha = 0.32f)
+            // Leyendo: inclinada sobre los datos, no de frente.
+            HabiPose.SEATED -> HabiBodyMotion(tiltDeg = -7f, scaleX = 1.06f, scaleY = 0.92f, shadowScale = 1.08f)
+        }
+    // SLEEPING y TIPPED piden 1.15, por encima del techo documentado en HabiBodyMotion.shadowScale
+    // (~1,11): clampeado aqui, no en drawGroundShadow, para que T11 herede ya el limite en los dos
+    // extremos que interpola.
+    return if (raw.shadowScale > SHADOW_SCALE_MAX) raw.copy(shadowScale = SHADOW_SCALE_MAX) else raw
+}
+
+/**
  * La sombra en el suelo: primera capa y FUERA del transform del cuerpo — es el suelo, no Habi
  * (biblia §3.4, «la sombra es parte del personaje, no un efecto»). Dentro del transform rotaria
  * con el vuelco. Va antes de todo porque el cuerpo debe taparla donde se solapan.
@@ -482,15 +516,15 @@ fun DrawScope.drawHabi(
         scale(body.scaleX, body.scaleY, pivot)
         translate(0f, -vp.len(body.liftN))
     }) {
-        drawBody(vp, bodyTone, spec.equipped.bodyColor)
-        drawPattern(vp, spec.equipped.pattern, bodyTone)
-        drawBodyShading(vp, bodyTone)
+        drawBody(vp, bodyTone, spec.equipped.bodyColor, spec.pose)
+        drawPattern(vp, spec.equipped.pattern, bodyTone, spec.pose)
+        drawBodyShading(vp, bodyTone, spec.pose)
         // El grano es MATERIAL: la fibra del objeto, que cuerpo, patrón y sombreado comparten. La
         // cara va pintada encima con pincel y debe leerse limpia — granular los ojos los ensucia.
         // Multiply sobre un ruido gris claro oscurece de forma irregular SIN cambiar el tinte: el
         // color de cuerpo que el usuario compró sigue siendo el que pagó.
         grain?.let {
-            clipPath(bodyPath(vp)) {
+            clipPath(bodyPath(vp, spec.pose)) {
                 drawRect(brush = it, alpha = HabiGrain.ALPHA, blendMode = BlendMode.Multiply)
             }
         }
@@ -535,15 +569,22 @@ fun renderHabiBitmap(
     return imageBitmap.asAndroidBitmap()
 }
 
-/** The body/pattern silhouette — extracted so drawBody and drawPattern can't drift apart. */
-private fun bodyPath(vp: HabiViewport): Path = eggPath(vp, BODY_CX, BODY_CY, BODY_RX, BODY_RY, BODY_BULGE)
+/** La silueta del cuerpo, con la base más lastrada en las poses asentadas. */
+private fun bodyPath(
+    vp: HabiViewport,
+    pose: HabiPose = HabiPose.STANDING,
+): Path {
+    val bulge = BODY_BULGE + if (pose == HabiPose.SEATED || pose == HabiPose.SLEEPING) SEATED_EXTRA_BULGE else 0f
+    return eggPath(vp, BODY_CX, BODY_CY, BODY_RX, BODY_RY, bulge)
+}
 
 private fun DrawScope.drawBody(
     vp: HabiViewport,
     bodyTone: Color,
     bodyItemId: String,
+    pose: HabiPose,
 ) {
-    val bodyPath = bodyPath(vp)
+    val bodyPath = bodyPath(vp, pose)
     drawPath(bodyPath, color = bodyTone)
 
     if (bodyItemId == DORADO_BODY_ITEM) {
@@ -568,8 +609,9 @@ private fun DrawScope.drawBody(
 private fun DrawScope.drawBodyShading(
     vp: HabiViewport,
     bodyTone: Color,
+    pose: HabiPose,
 ) {
-    val bodyPath = bodyPath(vp)
+    val bodyPath = bodyPath(vp, pose)
     val shadeTone = bodyTone.darken(SHADE_TONE_FACTOR)
 
     clipPath(bodyPath) {
@@ -602,11 +644,12 @@ private fun DrawScope.drawPattern(
     vp: HabiViewport,
     patternId: String?,
     bodyTone: Color,
+    pose: HabiPose,
 ) {
     if (patternId == null) return
     val tint = bodyTone.darken()
 
-    clipPath(bodyPath(vp)) {
+    clipPath(bodyPath(vp, pose)) {
         when (patternId) {
             "pattern-motas" -> drawPatternMotas(vp, tint)
             "pattern-rayitas" -> drawPatternRayitas(vp, tint)
