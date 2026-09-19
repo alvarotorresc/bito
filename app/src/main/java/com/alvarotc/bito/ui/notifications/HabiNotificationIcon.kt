@@ -33,7 +33,16 @@ object HabiNotificationIcon {
         context: Context,
         spec: HabiSpec,
     ): Bitmap {
-        val key = Objects.hash(spec.mood, spec.personality, spec.equipped, spec.eyesPainted, spec.pose)
+        val key =
+            Objects.hash(
+                spec.mood,
+                spec.personality,
+                spec.equipped,
+                spec.eyesPainted,
+                spec.pose,
+                spec.bodyToneOverride,
+                spec.closedEyes,
+            )
         cached?.let { if (cachedKey == key) return it }
         val bitmap = renderHabiBitmap(spec, SIZE_PX, HabiGrain.brush(context))
         cachedKey = key

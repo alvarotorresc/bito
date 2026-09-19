@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.notifications
 
 import android.content.Context
+import androidx.compose.ui.graphics.Color
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
@@ -42,5 +43,22 @@ class HabiNotificationIconTest {
         val dramatic = HabiNotificationIcon.bitmapOf(context, HabiSpec(Mood.DRAMATIC, Personality.NEUTRA, EquippedSet()))
 
         assertNotSame(normal, dramatic)
+    }
+
+    /**
+     * La caché es de UNA entrada, así que una clave incompleta no sirve un bitmap viejo: sirve el
+     * bitmap EQUIVOCADO. Los dos campos que `HabiSpec` puede cambiar sin tocar mood, personalidad,
+     * equipo, ojos ni pose tienen que entrar en la clave como el resto.
+     */
+    @Test
+    fun `the body tone override and the closed lids invalidate the cache too`() {
+        val base = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+
+        val plain = HabiNotificationIcon.bitmapOf(context, base)
+        val tinted = HabiNotificationIcon.bitmapOf(context, base.copy(bodyToneOverride = Color.Magenta))
+        val closed = HabiNotificationIcon.bitmapOf(context, base.copy(closedEyes = true))
+
+        assertNotSame(plain, tinted)
+        assertNotSame(tinted, closed)
     }
 }
