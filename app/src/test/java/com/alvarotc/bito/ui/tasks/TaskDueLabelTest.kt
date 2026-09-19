@@ -41,8 +41,18 @@ class TaskDueLabelTest {
     }
 
     @Test
+    fun `a WEEK task due exactly today, its Sunday, says it ends today`() {
+        assertEquals("ends today", label(DueKind.WEEK, today))
+    }
+
+    @Test
     fun `a DATE task a few days out counts them down`() {
         assertEquals("in 3 days", label(DueKind.DATE, today + 3))
+    }
+
+    @Test
+    fun `a DATE task due exactly today says so`() {
+        assertEquals("today", label(DueKind.DATE, today))
     }
 
     @Test
@@ -52,7 +62,8 @@ class TaskDueLabelTest {
     }
 
     @Test
-    fun `a WEEK task past its Sunday is not the Peligro branch`() {
+    fun `a WEEK task past its Sunday says from last week, and is not the Peligro branch`() {
+        assertEquals("from last week", label(DueKind.WEEK, today - 3))
         assertFalse(taskDueOverdue(DueKind.WEEK, today - 3, today))
     }
 }

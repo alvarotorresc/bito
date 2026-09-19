@@ -377,13 +377,3 @@ private fun DeleteTaskConfirmSheet(
         }
     }
 }
-
-/** Recovers the form shape straight from a row — same fields [com.alvarotc.bito.data.db.TaskEntity.toFormState] reads off storage. */
-private fun TaskListRowUi.toFormState(): TaskFormState =
-    TaskFormState(
-        editingId = id,
-        title = title,
-        firstStep = firstStep.orEmpty(),
-        dueKind = dueKind,
-        dueDay = dueDay,
-    )
