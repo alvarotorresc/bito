@@ -99,15 +99,15 @@
     <string name="notif_focus_over">Time\'s up</string>
 
     <!--
-        Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name. Body is a single
-        shared plural (not per-personality, unlike the others): %1$d = how many are left
-        unnamed, %2$s = up to MAX_NAMED_PENDING titles joined. Chosen by the total notice count.
+        Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name. The body itself is
+        the named titles joined by the caller, not a resource — this plural is only the "and N
+        more" tail, appended when some notices are left unnamed. No personality variation.
     -->
     <string name="notif_tasks_title_sargento">%1$s, something\'s waiting.</string>
     <string name="notif_tasks_title_cheerleader">Shall we, %1$s?</string>
     <string name="notif_tasks_title_neutra">You have a task, %1$s.</string>
-    <plurals name="notif_tasks_body">
-        <item quantity="one">%2$s</item>
-        <item quantity="other">%2$s and %1$d more</item>
+    <plurals name="notif_tasks_more">
+        <item quantity="one">and %1$d more</item>
+        <item quantity="other">and %1$d more</item>
     </plurals>
 </resources>

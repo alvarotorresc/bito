@@ -23,8 +23,10 @@ enum class ReminderFlavor { MORNING, AFTERNOON, EVENING }
  *   [MAX_NAMED_PENDING] pending names joined, `%3$d` = done today, `%4$d` = total today.
  * - [reviewBodyRes] — plurals keyed by the still-to-decide count: `%1$d` = that count.
  * - [reviewSealOnlyRes] — no placeholders: nothing to decide today, only past days unsealed.
- * - [tasksBodyRes] — plurals keyed by the notice count: `%1$d` = how many are left unnamed,
- *   `%2$s` = up to [MAX_NAMED_PENDING] titles joined. One shared plural, not per-personality.
+ *
+ * The TASKS body has no personality-voiced resolver here: [Notifier.showTasks] joins the named
+ * titles itself and appends `R.plurals.notif_tasks_more` directly, the same way it reaches for
+ * `R.string.notif_action_done` — copy with no personality variation skips this lookup table.
  */
 object ReminderVoice {
     /** The GLOBAL body names at most this many pending habits — the count still says the rest. */
@@ -128,14 +130,5 @@ object ReminderVoice {
             Personality.SARGENTO -> R.string.notif_tasks_title_sargento
             Personality.CHEERLEADER -> R.string.notif_tasks_title_cheerleader
             Personality.NEUTRA -> R.string.notif_tasks_title_neutra
-        }
-
-    /** Un unico plural compartido por las tres personalidades (⚑CALL 4): sin variacion aun. */
-    @PluralsRes
-    fun tasksBodyRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.plurals.notif_tasks_body
-            Personality.CHEERLEADER -> R.plurals.notif_tasks_body
-            Personality.NEUTRA -> R.plurals.notif_tasks_body
         }
 }

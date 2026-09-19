@@ -165,6 +165,10 @@ object Notifier {
      * El aviso de tareas de mediodia: una sola notificacion agrupada, con hasta tres titulos y el
      * recuento. SIN botones de accion — no hay accion honesta de un toque: marcar hecha desde la
      * bandeja una tarea que no has abierto es lo contrario de «empezar». Al tocarla abre la lista.
+     *
+     * El cuerpo son los titulos nombrados unidos por « · »; la coletilla «y N mas»
+     * (`notif_tasks_more`) solo se añade cuando queda algun aviso sin nombrar — con [titles]
+     * cubriendo todo [pendingCount], «A · B» ya lo dice todo y no hace falta un «y 0 mas».
      */
     fun showTasks(
         context: Context,
@@ -175,14 +179,15 @@ object Notifier {
     ) {
         val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
         val title = context.getString(ReminderVoice.tasksTitleRes(personality), name)
-        val named = titles.take(ReminderVoice.MAX_NAMED_PENDING).joinToString(", ")
+        val named = titles.take(ReminderVoice.MAX_NAMED_PENDING)
+        val remaining = pendingCount - named.size
         val body =
-            context.resources.getQuantityString(
-                ReminderVoice.tasksBodyRes(personality),
-                pendingCount,
-                pendingCount - titles.size,
-                named,
-            )
+            if (remaining > 0) {
+                val more = context.resources.getQuantityString(R.plurals.notif_tasks_more, remaining, remaining)
+                "${named.joinToString(" · ")} $more"
+            } else {
+                named.joinToString(" · ")
+            }
         val builder =
             baseBuilder(context, NotificationChannels.REMINDERS)
                 .setContentTitle(title)

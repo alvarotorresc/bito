@@ -70,13 +70,4 @@ class ReminderVoiceTest {
 
         assertEquals(Personality.entries.size, ids.toSet().size)
     }
-
-    // Unlike the title, the tasks body copy has no personality variation yet (CALL 4 draft):
-    // every personality shares the same plural resource.
-    @Test
-    fun `tasksBodyRes resolves the same shared plural for every personality`() {
-        val ids = Personality.entries.map { ReminderVoice.tasksBodyRes(it) }.toSet()
-
-        assertEquals(1, ids.size)
-    }
 }
