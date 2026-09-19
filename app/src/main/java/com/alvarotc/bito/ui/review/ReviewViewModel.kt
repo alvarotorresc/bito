@@ -151,7 +151,7 @@ class ReviewViewModel(
     fun logRelapse(card: HabitCardUi) =
         write { today, nowMillis ->
             journal.log(EntryEntity(UUID.randomUUID().toString(), card.id, today, 1, nowMillis))
-            habiSounds.play(HabiSound.SAD)
+            habiSounds.play(HabiSound.MEEH)
         }
 
     /**
@@ -235,7 +235,7 @@ class ReviewViewModel(
         val day = uiState.value.today
         if (cuedForDay != day) {
             cuedForDay = day
-            habiSounds.play(HabiSound.CELEBRATION)
+            habiSounds.play(HabiSound.JINGLE)
         }
     }
 

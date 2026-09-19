@@ -161,7 +161,7 @@ class HabiAvatarTest {
         scope!!.launch { motion!!.play(HabiCue.LOGGED, Personality.NEUTRA) }
         compose.waitUntil { played.isNotEmpty() }
 
-        assertEquals(listOf(HabiSound.LOG), played)
+        assertEquals(listOf(HabiSound.TICK), played)
     }
 
     /**
@@ -336,7 +336,7 @@ class HabiAvatarTest {
         scope!!.launch { motion!!.play(HabiCue.LOGGED, Personality.NEUTRA) }
         compose.waitUntil(timeoutMillis = WAIT_MS) { second.isNotEmpty() }
 
-        assertEquals(listOf(HabiSound.LOG), second)
+        assertEquals(listOf(HabiSound.TICK), second)
         assertTrue("el conducto viejo seguia recibiendo", first.isEmpty())
     }
 

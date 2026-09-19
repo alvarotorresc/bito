@@ -30,14 +30,14 @@ import java.io.File
 /**
  * [HabiSounds.shouldPlay] is the real unit under test — a pure gate, checked directly, no
  * Robolectric shadow involved. Per the architect's 2026-08-19 ruling (class KDoc), it depends
- * ONLY on `habiSoundsEnabled`: these cues are routed as `USAGE_GAME` (media stream), so the
- * ringer mode is never a factor — a QA Pixel in vibrate mode stayed silent under the previous
- * `USAGE_ASSISTANCE_SONIFICATION` routing, which this ruling fixes. The rest of this suite is a
- * thinner smoke check: a real [HabiSounds] wired to a real (Robolectric) [Context] and
- * [SettingsRepository] never crashes calling [HabiSounds.play], on or off, for every [HabiSound],
- * and — explicitly — across every ringer mode while enabled, demonstrating the ringer is no
- * longer consulted. Its `SoundPool` is a private lazy field with no handle exposed outside the
- * class, so there's no way to assert it was actually told to play — "doesn't crash and reaches
+ * ONLY on `habiSoundsEnabled` (`logSoundEnabled` for TICK): these cues are routed as `USAGE_GAME`
+ * (media stream), so the ringer mode is never a factor — a QA Pixel in vibrate mode stayed silent
+ * under the previous `USAGE_ASSISTANCE_SONIFICATION` routing, which this ruling fixes. The rest of
+ * this suite is a thinner smoke check: a real [HabiSounds] wired to a real (Robolectric) [Context]
+ * and [SettingsRepository] never crashes calling [HabiSounds.play], on or off, for every
+ * [HabiSound], and — explicitly — across every ringer mode while enabled, demonstrating the ringer
+ * is no longer consulted. Its `SoundPool` is a private lazy field with no handle exposed outside
+ * the class, so there's no way to assert it was actually told to play — "doesn't crash and reaches
  * the SoundPool call" is the ceiling of what's checkable here (docs §5.3 / task-16 brief), which
  * is exactly why [HabiSounds.shouldPlay] is split out as pure in the first place. [HabiSounds]
  * takes an injectable dispatcher for exactly this: so `play`'s internally-launched coroutine can
@@ -65,18 +65,28 @@ class HabiSoundsTest {
 
     @Test
     fun `shouldPlay is true when sounds are enabled`() {
-        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true), HabiSound.GREETING))
+        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true), HabiSound.BUMP))
     }
 
     @Test
     fun `shouldPlay is false when the toggle is off`() {
-        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false), HabiSound.GREETING))
+        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false), HabiSound.BUMP))
     }
 
     @Test
-    fun `the log tick follows its own toggle, not the Habi one`() {
-        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false, logSoundEnabled = true), HabiSound.LOG))
-        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true, logSoundEnabled = false), HabiSound.LOG))
+    fun `the registro switch governs the tick, and nothing else`() {
+        assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false, logSoundEnabled = true), HabiSound.TICK))
+        assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true, logSoundEnabled = false), HabiSound.TICK))
+    }
+
+    @Test
+    fun `the other five obey Habi's own switch`() {
+        val voice = HabiSound.entries.filter { it != HabiSound.TICK }
+        assertEquals(5, voice.size)
+        for (sound in voice) {
+            assertTrue(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = true, logSoundEnabled = false), sound))
+            assertFalse(HabiSounds.shouldPlay(Settings(habiSoundsEnabled = false, logSoundEnabled = true), sound))
+        }
     }
 
     // --- construction: preloads eagerly, not lazily on the first play() ----------------------
@@ -84,12 +94,12 @@ class HabiSoundsTest {
     /**
      * Robolectric's `SoundPool` shadow doesn't model the real async decode this preload targets
      * (see class KDoc "ceiling of what's checkable here"), so this can only prove construction
-     * itself never throws now that it eagerly builds the pool and calls `load` four times — not
+     * itself never throws now that it eagerly builds the pool and calls `load` six times — not
      * that the decode actually finishes before a same-instant `play()` on a real device. The fix
      * itself is that `soundPool`/`soundIds` are no longer `by lazy`: this line alone loads them.
      */
     @Test
-    fun `constructing HabiSounds preloads the four samples without a play call first`() {
+    fun `constructing HabiSounds preloads the six samples without a play call first`() {
         HabiSounds(context, SettingsRepository(settingsStore("habi-sounds-preload")))
     }
 
@@ -133,47 +143,39 @@ class HabiSoundsTest {
 
             listOf(AudioManager.RINGER_MODE_NORMAL, AudioManager.RINGER_MODE_VIBRATE, AudioManager.RINGER_MODE_SILENT).forEach { mode ->
                 audioManager().ringerMode = mode
-                habiSounds.play(HabiSound.GREETING)
+                habiSounds.play(HabiSound.BUMP)
             }
             advanceUntilIdle()
         }
 
-    // --- the four assets themselves ----------------------------------------------------------
+    // --- the six assets themselves ------------------------------------------------------------
 
     /**
-     * Reads each `res/raw` WAV back through [Context.getResources] — available on the classpath
-     * under Robolectric the same way it is on device — and checks the RIFF/WAVE/fmt/data header
-     * `tools/habi_sounds.py` writes (the plain 44-byte layout Python's `wave` module produces, no
-     * extra chunks) plus the sub-one-second duration the brief requires.
+     * Reads each `res/raw` OGG back through [Context.getResources] — available on the classpath
+     * under Robolectric the same way it is on device — and checks the `OggS` magic
+     * `tools/habi_cues.py` produces (via `ffmpeg -c:a libvorbis`) plus the per-clip and
+     * whole-family size budget from spec §10.2 (≤12 KB each, ≤70 KB the six together). This
+     * replaces the old WAV-header check: the family is OGG Vorbis now, not 16-bit PCM.
      */
     @Test
-    fun `every raw Habi sound is a valid sub-second mono 16-bit WAV`() {
+    fun `every raw Habi sound is a valid OGG within the size budget`() {
         val ids =
             mapOf(
+                "habi_bump" to R.raw.habi_bump,
                 "habi_meeh" to R.raw.habi_meeh,
-                "habi_cheer" to R.raw.habi_cheer,
-                "habi_sad" to R.raw.habi_sad,
-                "habi_pop" to R.raw.habi_pop,
-                "log_tick" to R.raw.log_tick,
-                "habi_happy" to R.raw.habi_happy,
+                "habi_tick" to R.raw.habi_tick,
+                "habi_sigh" to R.raw.habi_sigh,
+                "habi_jingle" to R.raw.habi_jingle,
+                "habi_purr" to R.raw.habi_purr,
             )
+        var totalBytes = 0
         ids.forEach { (name, id) ->
             val bytes = context.resources.openRawResource(id).use { it.readBytes() }
-            assertEquals("$name: RIFF header", "RIFF", bytes.ascii(0, 4))
-            assertEquals("$name: WAVE format", "WAVE", bytes.ascii(8, 4))
-            assertEquals("$name: fmt chunk", "fmt ", bytes.ascii(12, 4))
-            val channels = bytes.le16(22)
-            val sampleRate = bytes.le32(24)
-            val bitsPerSample = bytes.le16(34)
-            assertEquals("$name: mono", 1, channels)
-            assertEquals("$name: 22050 Hz", 22050, sampleRate)
-            assertEquals("$name: 16-bit", 16, bitsPerSample)
-            assertEquals("$name: data chunk", "data", bytes.ascii(36, 4))
-            val dataSize = bytes.le32(40)
-            val byteRate = bytes.le32(28)
-            val durationSeconds = dataSize.toDouble() / byteRate
-            assertTrue("$name: duration ${durationSeconds}s should be under 1s", durationSeconds < 1.0)
+            assertEquals("$name: OggS magic", "OggS", bytes.ascii(0, 4))
+            assertTrue("$name: ${bytes.size} bytes should be at most $MAX_CLIP_BYTES", bytes.size <= MAX_CLIP_BYTES)
+            totalBytes += bytes.size
         }
+        assertTrue("family: $totalBytes bytes should be at most $MAX_FAMILY_BYTES", totalBytes <= MAX_FAMILY_BYTES)
     }
 
     private fun ByteArray.ascii(
@@ -181,11 +183,8 @@ class HabiSoundsTest {
         length: Int,
     ) = String(this, offset, length, Charsets.US_ASCII)
 
-    private fun ByteArray.le16(offset: Int): Int = (this[offset].toInt() and 0xFF) or ((this[offset + 1].toInt() and 0xFF) shl 8)
-
-    private fun ByteArray.le32(offset: Int): Int =
-        (this[offset].toInt() and 0xFF) or
-            ((this[offset + 1].toInt() and 0xFF) shl 8) or
-            ((this[offset + 2].toInt() and 0xFF) shl 16) or
-            ((this[offset + 3].toInt() and 0xFF) shl 24)
+    companion object {
+        private const val MAX_CLIP_BYTES = 12 * 1024
+        private const val MAX_FAMILY_BYTES = 70 * 1024
+    }
 }

@@ -363,7 +363,7 @@ fun BitoNavHost(container: AppContainer) {
             }
         }
         // badgesReady also gates the badge branch of the cue itself, not just the sheet: cue()
-        // is what plays HabiSound.CELEBRATION, and firing that the instant the badge unlocks
+        // is what plays HabiSound.JINGLE, and firing that the instant the badge unlocks
         // (rather than once the sheet is actually about to show) would sound right over the
         // still-silent eye ritual this hold exists to protect.
         LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute, pendingRoute, badgesReady) {

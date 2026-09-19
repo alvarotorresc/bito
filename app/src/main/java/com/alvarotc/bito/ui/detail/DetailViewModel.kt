@@ -103,7 +103,7 @@ class DetailViewModel(
     fun logRelapseOn(day: LogicalDay) =
         write { _, nowMillis ->
             journal.log(EntryEntity(UUID.randomUUID().toString(), habitId, day, 1, nowMillis))
-            habiSounds.play(HabiSound.SAD)
+            habiSounds.play(HabiSound.MEEH)
         }
 
     /** Batch-seal's single-day twin: clears the day's entries, then seals it — same as "todo limpio". */

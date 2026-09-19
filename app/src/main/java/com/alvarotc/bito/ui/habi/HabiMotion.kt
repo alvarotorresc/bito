@@ -194,14 +194,13 @@ private val PoseSpring = spring<Float>(dampingRatio = 0.90f, stiffness = 140f)
 /** El asentimiento al registrar: corto y seco. */
 private val NudgeSpring = spring<Float>(dampingRatio = 0.55f, stiffness = 500f)
 
-// El catalogo de sonidos de hoy todavia nombra EMOCIONES; la tarea de la voz lo sustituye por
-// nombres de MOMENTO (BUMP/MEEH/TICK/SIGH/JINGLE). Nombrar aqui el momento deja ese relevo en un
-// renombrado de estas cinco lineas, en vez de una relectura de las coreografias.
-private val SOUND_BUMP = HabiSound.GREETING
-private val SOUND_MEEH = HabiSound.SAD
-private val SOUND_TICK = HabiSound.LOG
-private val SOUND_SIGH = HabiSound.HAPPY
-private val SOUND_JINGLE = HabiSound.CELEBRATION
+// El catalogo de sonidos ya nombra MOMENTOS, no emociones (tarea de la voz): estas cinco lineas
+// solo evitan repetir `HabiSound.` en cada coreografia de abajo.
+private val SOUND_BUMP = HabiSound.BUMP
+private val SOUND_MEEH = HabiSound.MEEH
+private val SOUND_TICK = HabiSound.TICK
+private val SOUND_SIGH = HabiSound.SIGH
+private val SOUND_JINGLE = HabiSound.JINGLE
 
 /**
  * El movimiento de Habi, fuera de la composicion.

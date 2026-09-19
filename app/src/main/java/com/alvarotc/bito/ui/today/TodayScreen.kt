@@ -156,7 +156,7 @@ fun TodayScreen(
     // Registro feedback (QA 2026-08-23/24): a real Vibrator buzz on every log tap, gated ONLY by
     // the app's own Ajustes switch — performHapticFeedback obeyed the system touch-feedback
     // toggle, which most people keep off, so it read as "vibration doesn't work". The tick sound
-    // half lives in the ViewModel (HabiSound.LOG).
+    // half lives in the ViewModel (HabiSound.TICK).
     val vibrator =
         remember {
             if (Build.VERSION.SDK_INT >= 31) {

@@ -113,7 +113,7 @@ class CelebrationsViewModel(
             }
         if (signature != lastCuedSignature) {
             lastCuedSignature = signature
-            habiSounds.play(HabiSound.CELEBRATION)
+            habiSounds.play(HabiSound.JINGLE)
         }
     }
 

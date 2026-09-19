@@ -116,7 +116,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 delighted = delighted,
                 onTap = {
                     // Taps are ignored for the whole delight: the else branch below would
-                    // otherwise fire a GREETING meow on top of the HAPPY one still playing.
+                    // otherwise fire a BUMP on top of the PURR still playing.
                     if (!delighted) {
                         val now = System.currentTimeMillis()
                         petTimes.addLast(now)

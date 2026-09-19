@@ -140,14 +140,14 @@ class HabiViewModel(
         previewItemId.value = itemId
     }
 
-    /** Tapping the stage avatar (T16): Habi's greeting cue, gated on the Ajustes toggle and ringer mode. */
+    /** Tapping the stage avatar (T16): Habi's little thud, gated on the Ajustes toggle and ringer mode. */
     fun onAvatarTap() {
-        habiSounds.play(HabiSound.GREETING)
+        habiSounds.play(HabiSound.BUMP)
     }
 
-    /** Three quick pets in a row: the happier double-meow (same recording, different shape). */
+    /** Three quick pets in a row: the caress cue. */
     fun onPetStreak() {
-        habiSounds.play(HabiSound.HAPPY)
+        habiSounds.play(HabiSound.PURR)
     }
 
     /**
@@ -165,7 +165,9 @@ class HabiViewModel(
             val today = todayOf(settings.settings.first())
             if (rewards.purchase(item, today, now())) {
                 preview(null)
-                habiSounds.play(HabiSound.PURCHASE)
+                // Seis clips, no siete: la compra reutiliza el BUMP un punto mas agudo (decision
+                // del arquitecto).
+                habiSounds.play(HabiSound.BUMP, rate = 1.15f)
             }
         }
     }
@@ -180,7 +182,7 @@ class HabiViewModel(
             val ledger = domainState.snapshot().pointsLedger
             if (PointsEngine.canSpend(ledger, economy.freezerPrice)) {
                 rewards.spend(-economy.freezerPrice, PointsReason.BUY_FREEZER, UUID.randomUUID().toString(), today, nowMillis)
-                habiSounds.play(HabiSound.PURCHASE)
+                habiSounds.play(HabiSound.BUMP, rate = 1.15f)
             }
         }
 

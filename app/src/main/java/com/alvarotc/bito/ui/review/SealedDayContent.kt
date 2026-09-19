@@ -70,7 +70,7 @@ fun SealedDayContent(
     modifier: Modifier = Modifier,
 ) {
     // Entrance scale 0.9 -> 1 (200ms ease-out) every time E2 is shown, per GUIA 5b — no confetti,
-    // no emojis; the perfect day's own "juicy" beat is the CELEBRATION cue fired by ReviewScreen.
+    // no emojis; the perfect day's own "juicy" beat is the JINGLE cue fired by ReviewScreen.
     var entered by remember { mutableStateOf(false) }
     val scale by
         animateFloatAsState(
