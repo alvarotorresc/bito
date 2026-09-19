@@ -8,8 +8,10 @@ import com.alvarotc.bito.domain.MoodEngine
 import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
+import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -62,6 +64,16 @@ val HabitCardUi.showsLoggingChips: Boolean
 /** A paused habit's compact row in Today's "paused" section — no progress, just a way back in. */
 data class PausedHabitUi(val id: String, val name: String)
 
+/** One task's Today-screen row, with the via ([slot]) that brought it in, ready for the UI. */
+data class TaskRowUi(
+    val id: String,
+    val title: String,
+    val firstStep: String?,
+    val slot: Tasks.TodaySlot,
+    val dueKind: DueKind,
+    val dueDay: LogicalDay?,
+)
+
 /**
  * Snapshot the Today screen renders: the ring, the cards, and the pending-seal prompt.
  * [spec] and [userName] feed the header's corner avatar and greeting (T14) — the same
@@ -78,6 +90,7 @@ data class TodayUiState(
     val spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
     val userName: String = "",
     val logHapticEnabled: Boolean = true,
+    val tasks: List<TaskRowUi> = emptyList(),
     val loading: Boolean = true,
 )
 
@@ -117,6 +130,17 @@ fun buildTodayUiState(
             }
             .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
             .map { PausedHabitUi(it.id, it.name) }
+    val taskRows =
+        Tasks.todayTasks(state, today).map { todayTask ->
+            TaskRowUi(
+                id = todayTask.task.id,
+                title = todayTask.task.title,
+                firstStep = todayTask.task.firstStep,
+                slot = todayTask.slot,
+                dueKind = todayTask.task.dueKind,
+                dueDay = todayTask.task.dueDay,
+            )
+        }
     return TodayUiState(
         today = today,
         ringDone = cards.count { it.doneToday },
@@ -128,6 +152,7 @@ fun buildTodayUiState(
         spec = HabiSpec(mood, personality, equippedSetOf(equippedIds)),
         userName = userName,
         logHapticEnabled = logHapticEnabled,
+        tasks = taskRows,
         loading = false,
     )
 }

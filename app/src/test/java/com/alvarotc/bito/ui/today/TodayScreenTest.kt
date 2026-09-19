@@ -26,6 +26,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
@@ -102,6 +103,7 @@ class TodayScreenTest {
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore("today-screen"))
         val rewards = RewardsRepository(db)
+        val tasks = TasksRepository(db)
         val reconciler = PointsReconciler(domainState, rewards)
 
         // Both habits must be created today: an older createdOnDay (the fixture default,
@@ -124,6 +126,7 @@ class TodayScreenTest {
                 settings,
                 reconciler,
                 rewards,
+                tasks = tasks,
                 now = { fixedNow },
                 zone = { utc },
                 defaultDispatcher = dispatcher,

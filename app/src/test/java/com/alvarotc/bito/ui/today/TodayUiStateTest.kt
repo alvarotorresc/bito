@@ -5,11 +5,13 @@ import com.alvarotc.bito.domain.ComplianceStatus
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.RealHabits
 import com.alvarotc.bito.domain.THIS_MONDAY
+import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
 import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.Entry
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -20,6 +22,8 @@ import com.alvarotc.bito.domain.model.PauseInterval
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.TargetChange
+import com.alvarotc.bito.domain.model.Task
+import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.domain.pauseOn
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -447,5 +451,37 @@ class TodayUiStateTest {
         assertTrue(
             buildTodayUiState(stateOf(listOf(habit), seals = listOf(DaySeal(TODAY, 0L))), emptyMap(), TODAY).todaySealed,
         )
+    }
+
+    @Test
+    fun `today carries the tasks that touch today, in the domain's order`() {
+        val state =
+            stateOf(habits = emptyList()).copy(
+                tasks =
+                    listOf(
+                        Task("t1", "Llamar", null, DueKind.DATE, TODAY - 1, TaskStatus.OPEN, TODAY - 5, 100L),
+                        Task("t2", "Papeleo", "Abrir el sobre", DueKind.NONE, null, TaskStatus.OPEN, TODAY - 9, 200L),
+                    ),
+            )
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertEquals(listOf("t1", "t2"), ui.tasks.map { it.id })
+        assertEquals(Tasks.TodaySlot.OVERDUE, ui.tasks.first().slot)
+        assertEquals(Tasks.TodaySlot.LOOSE, ui.tasks.last().slot)
+        assertEquals("Abrir el sobre", ui.tasks.last().firstStep)
+    }
+
+    @Test
+    fun `the ring still counts only habits`() {
+        val state =
+            stateOf(habits = listOf(habit("h1"))).copy(
+                tasks = listOf(Task("t1", "Llamar", null, DueKind.DATE, TODAY, TaskStatus.OPEN, TODAY, 100L)),
+            )
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertEquals(1, ui.ringTotal)
+        assertEquals(1, ui.tasks.size)
     }
 }
