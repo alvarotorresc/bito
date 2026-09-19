@@ -45,4 +45,21 @@ class NavRequestsTest {
 
         assertNull(NavRequests.pending.value)
     }
+
+    @Test
+    fun `open sets focus as the pending route`() {
+        NavRequests.open("focus")
+
+        assertEquals("focus", NavRequests.pending.value)
+    }
+
+    @Test
+    fun `open ignores focus with a query string, exact strings only`() {
+        // The allowlist is a set of exact strings, never a pattern — a route carrying an id
+        // (as the notification's Intent extra never does, but a hostile one could try) must be
+        // rejected exactly like any other non-allowlisted string.
+        NavRequests.open("focus?taskId=abc")
+
+        assertNull(NavRequests.pending.value)
+    }
 }

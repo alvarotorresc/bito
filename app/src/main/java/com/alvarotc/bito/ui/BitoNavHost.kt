@@ -18,9 +18,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -56,6 +58,8 @@ import com.alvarotc.bito.ui.stats.RecordsViewModel
 import com.alvarotc.bito.ui.stats.StatsScreen
 import com.alvarotc.bito.ui.stats.StatsViewModel
 import com.alvarotc.bito.ui.tasks.CreateChoiceSheet
+import com.alvarotc.bito.ui.tasks.FocusScreen
+import com.alvarotc.bito.ui.tasks.FocusViewModel
 import com.alvarotc.bito.ui.tasks.TaskFormSheet
 import com.alvarotc.bito.ui.tasks.TaskFormState
 import com.alvarotc.bito.ui.tasks.TasksScreen
@@ -105,6 +109,7 @@ fun BitoNavHost(container: AppContainer) {
     val startDestination = remember { if (loadedSettings.onboardingDone) "today" else "onboarding" }
 
     val nav = rememberNavController()
+    val context = LocalContext.current
     // Stats and Habi retain their ViewModels across tab visits (scoped to this composable's own
     // store owner — the Activity — instead of each NavBackStackEntry): re-entering shows the
     // retained state instantly instead of a multi-second cold combine behind the loading gate
@@ -211,6 +216,7 @@ fun BitoNavHost(container: AppContainer) {
                     },
                     onOpenReview = { nav.navigate("review") },
                     onOpenTasks = { nav.navigate("tasks") },
+                    onStartFocus = { nav.navigate("focus?taskId=$it") },
                 )
             }
             composable(
@@ -307,6 +313,35 @@ fun BitoNavHost(container: AppContainer) {
                 TasksScreen(
                     viewModel = viewModel(factory = TasksViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
+                    onStartFocus = { nav.navigate("focus?taskId=$it") },
+                )
+            }
+            // El argumento es opcional a proposito: sin defaultValue = null, navegar a "focus" a
+            // secas (la notificacion permanente, y el sheet de conflicto de esta misma pantalla)
+            // no casaria con este patron y navigate() lanzaria IllegalArgumentException. Sin barra
+            // inferior, como "review" y "tasks" arriba — una sesion en marcha no es una pestana.
+            // "focus" gana la allowlist de NavRequests (arriba en este fichero) precisamente para
+            // que esa notificacion pueda pedirla.
+            composable(
+                "focus?taskId={taskId}",
+                arguments =
+                    listOf(
+                        navArgument("taskId") {
+                            type = NavType.StringType
+                            nullable = true
+                            defaultValue = null
+                        },
+                    ),
+            ) { entry ->
+                FocusScreen(
+                    viewModel =
+                        viewModel(factory = FocusViewModel.factory(container, context, entry.arguments?.getString("taskId"))),
+                    onClose = { nav.popBackStack() },
+                    // keepOther() no escribe nada — el conflicto se resuelve solo a favor de la
+                    // sesion viva, que este estado no lleva id (solo su titulo en busyWith). Volver
+                    // a la ruta desnuda es el mismo camino que ya usa la notificacion permanente
+                    // para resolver contra la sesion viva, sin anadir un id a FocusUiState.
+                    onKeepOther = { nav.navigate("focus") },
                 )
             }
         }

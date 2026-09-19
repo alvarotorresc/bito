@@ -80,6 +80,11 @@ class HabiVoiceTest {
     }
 
     @Test
+    fun `taskFocusRes resolves a distinct resource per personality`() {
+        assertAllDistinctPersonalityOnly(HabiVoice::taskFocusRes)
+    }
+
+    @Test
     fun `labelRes maps each personality to its label`() {
         assertEquals(R.string.personality_sargento, HabiVoice.labelRes(Personality.SARGENTO))
         assertEquals(R.string.personality_cheerleader, HabiVoice.labelRes(Personality.CHEERLEADER))

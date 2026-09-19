@@ -18,7 +18,7 @@ object NavRequests {
      * `IllegalArgumentException` for any route that isn't a real destination. Both are exact
      * strings, and neither carries arguments.
      */
-    private val deepLinkable = setOf("review", "tasks")
+    private val deepLinkable = setOf("review", "tasks", "focus")
 
     private val _pending = MutableStateFlow<String?>(null)
     val pending: StateFlow<String?> = _pending.asStateFlow()

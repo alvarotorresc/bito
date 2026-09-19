@@ -35,4 +35,12 @@
     <string name="task_row_menu_cd">Más opciones</string>
     <string name="task_delete_confirm_title">¿Borrar la tarea?</string>
     <string name="task_delete_confirm_body">Su historia se va con ella. Los puntos ganados son tuyos.</string>
+    <string name="focus_title">Foco</string>
+    <string name="focus_minutes">%1$d min</string>
+    <string name="focus_done">He terminado</string>
+    <string name="focus_plus">+%1$d</string>
+    <string name="focus_give_up">Ha habido un inconveniente, lo dejo</string>
+    <string name="focus_busy_title">Ya tienes algo en marcha</string>
+    <string name="focus_busy_keep">Seguir con %1$s</string>
+    <string name="focus_busy_switch">Dejarla y empezar esta</string>
 </resources>

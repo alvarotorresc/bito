@@ -28,6 +28,9 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
+import com.alvarotc.bito.data.settings.FocusClock
+import com.alvarotc.bito.data.settings.FocusSession
+import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
@@ -761,5 +764,65 @@ class BitoNavHostTest {
 
         val created = runBlocking { container.database.habitDao().all().single { it.name == "Beber agua" } }
         assertEquals(Metric.CHECK, created.metric)
+    }
+
+    /**
+     * T19: the permanent notification's own path — "focus" bare, no id — must resolve against
+     * whatever session happens to be live, same guard shape as "a pending review request opens
+     * the review flow and hides the bar" above. Seeding the session BEFORE the FocusViewModel is
+     * ever built is what proves the bare route resolves against it, rather than just proving the
+     * screen doesn't crash on an absent one.
+     */
+    @Test
+    fun `a pending focus request opens the focus screen against the live session`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today))
+            val now = System.currentTimeMillis()
+            val elapsed = android.os.SystemClock.elapsedRealtime()
+            container.focus.start(
+                FocusSession(
+                    taskId = "t1",
+                    startedAtMillis = now,
+                    endsAtMillis = now + 10 * 60_000L,
+                    endsAtElapsed = elapsed + 10 * 60_000L,
+                    bootMillis = FocusClock.bootSignatureOf(now, elapsed),
+                ),
+            )
+        }
+        // Set BEFORE setContent, same reasoning as the review test above: the request must
+        // already be waiting the very first time BitoNavHost composes.
+        NavRequests.open("focus")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+
+        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(NavRequests.pending.value)
+    }
+
+    /** T19: proves the wiring this task adds — Today's own "Empezar" reaching the focus route,
+     * not just [com.alvarotc.bito.ui.today.TodayScreen]'s own `onStartFocus` callback in isolation. */
+    @Test
+    fun `starting a task from Today opens the focus screen`() {
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        setContentSeeded { tasks.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today)) }
+
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
     }
 }

@@ -30,6 +30,9 @@ import com.alvarotc.bito.domain.model.Personality
  *   `%2$s` = the badge name.
  * - [taskDoneRes] — the Today task row's undo-snackbar text (T13), personality-only, `%1$s` =
  *   the user's name — except `habi_task_done_sargento`, which deliberately carries no name.
+ * - [taskFocusRes] — [com.alvarotc.bito.ui.tasks.FocusScreen]'s entrance line, spoken once a
+ *   session starts (T19), personality-only, `%1$s` = the user's name and `%2$d` = the chosen
+ *   minutes — only `habi_task_focus_sargento` uses the second placeholder; the other two ignore it.
  * - [labelRes] — the speaker label ("SARGENTO"/"CHEERLEADER"/"NEUTRA") every `SpeechBubble` shows
  *   next to "HABI · ". Single source, replacing the seven identical private copies each screen
  *   used to keep.
@@ -185,6 +188,14 @@ object HabiVoice {
             Personality.SARGENTO -> R.string.habi_task_done_sargento
             Personality.CHEERLEADER -> R.string.habi_task_done_cheerleader
             Personality.NEUTRA -> R.string.habi_task_done_neutra
+        }
+
+    @StringRes
+    fun taskFocusRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.habi_task_focus_sargento
+            Personality.CHEERLEADER -> R.string.habi_task_focus_cheerleader
+            Personality.NEUTRA -> R.string.habi_task_focus_neutra
         }
 
     @StringRes
