@@ -164,4 +164,14 @@
     <string name="habi_day_asleep_sargento">Día cerrado. Me apago hasta mañana.</string>
     <string name="habi_day_asleep_cheerleader">Día cerrado. Me duermo contentísima.</string>
     <string name="habi_day_asleep_neutra">Día cerrado. Buenas noches.</string>
+
+    <!-- El ritual del ojo (biblia §4). NO son globos del gesto: el rito se pinta en silencio y sin
+         texto, y estas líneas son el texto de la SUPERFICIE que lo acompaña — la página 7g y la
+         hoja del logro. %1$s = nombre. PROVISIONAL M10 — pendiente de validación (docs/07). -->
+    <string name="habi_eye_first_sargento">Un ojo, %1$s. El otro te lo tienes que ganar.</string>
+    <string name="habi_eye_first_cheerleader">¡Mírame, %1$s! Ya te veo con un ojo.</string>
+    <string name="habi_eye_first_neutra">Ya te veo, %1$s. Con un ojo, de momento.</string>
+    <string name="habi_eye_second_sargento">Siete días, %1$s. Ahora te miro de frente.</string>
+    <string name="habi_eye_second_cheerleader">¡Los dos ojos, %1$s! Ya te veo entera.</string>
+    <string name="habi_eye_second_neutra">Siete días. Ya te miro con los dos, %1$s.</string>
 </resources>

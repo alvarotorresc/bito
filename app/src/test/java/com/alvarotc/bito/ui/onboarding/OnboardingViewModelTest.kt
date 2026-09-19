@@ -14,6 +14,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.EyeTransition
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
@@ -34,6 +35,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -112,7 +114,10 @@ class OnboardingViewModelTest {
                 .build()
         habitsRepo = HabitsRepository(db)
         settingsRepo = SettingsRepository(settingsStore("onboarding-vm"))
-        reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db))
+        // settingsRepo, not the null default: PointsReconciler.healEyeRitual short-circuits to
+        // null without it (see its own KDoc), so the eye-ritual tests below need it wired in to
+        // ever see a real EyeTransition.
+        reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db), settings = settingsRepo)
     }
 
     @After
@@ -226,6 +231,48 @@ class OnboardingViewModelTest {
             val created = db.habitDao().all().single { it.name == "Fumar" }
             assertEquals(Direction.ZERO, created.direction)
             assertEquals(0, created.target)
+        }
+
+    @Test
+    fun `creating the first habit holds on 7g to paint the first eye`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.setHabitName("Beber agua")
+            vm.finish()
+            advanceUntilIdle()
+
+            assertEquals(EyeTransition(0, 1), vm.uiState.value.eyeRitual)
+            assertFalse(vm.uiState.value.done)
+
+            vm.finishEyeRitual()
+
+            assertTrue(vm.uiState.value.done)
+        }
+
+    @Test
+    fun `an empty habit name finishes without any ritual`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Alvaro")
+            vm.finish()
+            advanceUntilIdle()
+
+            assertNull(vm.uiState.value.eyeRitual)
+            assertTrue(vm.uiState.value.done)
+        }
+
+    @Test
+    fun `the replay never paints an eye`() =
+        runTest {
+            val replay = replayViewModel()
+            advanceUntilIdle()
+            replay.setHabitName("Beber agua")
+            replay.finish()
+            advanceUntilIdle()
+
+            assertNull(replay.uiState.value.eyeRitual)
+            assertEquals(0, settingsRepo.settings.first().habiEyesPainted)
         }
 
     @Test

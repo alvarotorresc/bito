@@ -9,6 +9,7 @@ import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.EyeTransition
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Personality
@@ -46,6 +47,8 @@ data class OnboardingUiState(
     val busy: Boolean = false,
     // true -> NavHost navigates to today.
     val done: Boolean = false,
+    // No nulo ⇒ 7g se queda en pantalla pintando el ojo, en vez de navegar a Hoy.
+    val eyeRitual: EyeTransition? = null,
 )
 
 /**
@@ -204,6 +207,11 @@ class OnboardingViewModel(
      * name still completes onboarding; it just creates nothing (controller ruling: nothing was
      * written, so there is nothing to reconcile).
      *
+     * When that reconcile pass returns an [EyeTransition] (the first habit's first eye), `done`
+     * is NOT set here — [OnboardingUiState.eyeRitual] is, and 7g holds the flow to paint the eye
+     * genuinely, in the same beat, rather than in Hoy right after. [finishEyeRitual] is what
+     * actually flips `done`, once the screen has shown the gesture.
+     *
      * Belt-and-braces for the NAME step's blank-name gate (the screen disables "Seguir" and the
      * pager's swipe on a blank field, but this is the last line of defense against anything that
      * still reaches `finish()` with [OnboardingUiState.name] blank): a blank trimmed name never
@@ -236,16 +244,26 @@ class OnboardingViewModel(
             }
 
             val habitName = current.habitName.trim()
+            var ritual: EyeTransition? = null
             if (habitName.isNotBlank()) {
                 val sortOrder = (habits.observeHabits().first().maxOfOrNull { it.sortOrder } ?: -1) + 1
                 val form = HabitFormState(name = habitName, preset = current.habitKind, target = current.habitTarget)
                 habits.create(form.toNewEntity(UUID.randomUUID().toString(), today, now(), sortOrder))
-                reconciler.reconcile(today, now())
+                ritual = reconciler.reconcile(today, now()).eyeRitual
             }
 
-            state.update { it.copy(done = true) }
+            // El rito retiene 7g: el ojo se pinta AQUÍ, no en Hoy. Sin hábito no hay rito y el
+            // flujo termina igual de rápido para quien se lo salta.
+            if (ritual != null) {
+                state.update { it.copy(eyeRitual = ritual) }
+            } else {
+                state.update { it.copy(done = true) }
+            }
         }
     }
+
+    /** El usuario ha visto el ojo pintarse: se cierra el rito y el flujo navega a Hoy. */
+    fun finishEyeRitual() = state.update { it.copy(eyeRitual = null, done = true) }
 
     companion object {
         /** [persist] = false builds the read-only replay VM Ajustes opens; see the constructor. */

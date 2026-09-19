@@ -37,6 +37,11 @@ import com.alvarotc.bito.domain.model.Personality
  *   `habi_day_asleep_*`, no placeholders. Written ahead of its real owner (T20, which reorders it
  *   into place once it lands the rest of the day's copy) because T13 needed a resolver to call —
  *   `HabiUiState.dayLineRes` never passes it [HabiDayPhase.AWAKE], the phase that says nothing.
+ * - [eyeRitualRes] — the eye ritual's surface text (biblia §4), `habi_eye_first_*` /
+ *   `habi_eye_second_*`, `%1$s` = the user's name. Never sits over the gesture itself (silent,
+ *   wordless) — this is what the SCREEN shows after the paint completes: 7g's own line and the
+ *   `streak-7` badge sheet's. Written ahead of its real owner (T20, same reason as [dayPhaseRes])
+ *   because T17 needed a resolver to call.
  */
 object HabiVoice {
     @StringRes
@@ -230,6 +235,33 @@ object HabiVoice {
                     Personality.NEUTRA -> R.string.habi_day_asleep_neutra
                 }
             HabiDayPhase.AWAKE -> error("AWAKE has no day line — see this function's kdoc")
+        }
+
+    /**
+     * [level] is [com.alvarotc.bito.domain.EyeTransition.to] — the number of eyes painted AFTER
+     * the transition this line accompanies (1 = the first, 2 = the second/`streak-7`). Only ever
+     * called with 1 or 2: a transition TO 0 doesn't exist ([com.alvarotc.bito.domain.EyeRitual]
+     * only ever heals upward).
+     */
+    @StringRes
+    fun eyeRitualRes(
+        level: Int,
+        personality: Personality,
+    ): Int =
+        when (level) {
+            1 ->
+                when (personality) {
+                    Personality.SARGENTO -> R.string.habi_eye_first_sargento
+                    Personality.CHEERLEADER -> R.string.habi_eye_first_cheerleader
+                    Personality.NEUTRA -> R.string.habi_eye_first_neutra
+                }
+            2 ->
+                when (personality) {
+                    Personality.SARGENTO -> R.string.habi_eye_second_sargento
+                    Personality.CHEERLEADER -> R.string.habi_eye_second_cheerleader
+                    Personality.NEUTRA -> R.string.habi_eye_second_neutra
+                }
+            else -> error("eyeRitualRes only maps a transition TO 1 or 2, got $level")
         }
 
     /**

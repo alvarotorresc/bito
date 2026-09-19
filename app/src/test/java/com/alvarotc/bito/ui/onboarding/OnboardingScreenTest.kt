@@ -98,7 +98,10 @@ class OnboardingScreenTest {
         val settings = SettingsRepository(settingsStore(name))
         runBlocking { settings.seedSettings() }
         val habits = HabitsRepository(db)
-        val reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db))
+        // settings wired in, not the null default: PointsReconciler.healEyeRitual short-circuits
+        // to null without it (see its own KDoc), so the eye-ritual test below needs it to ever
+        // see a real EyeTransition and render 7g's own testTag("onb-eye-ritual").
+        val reconciler = PointsReconciler(DomainStateRepository(db), RewardsRepository(db), settings = settings)
         return OnboardingViewModel(settings, habits, reconciler)
     }
 
@@ -448,7 +451,16 @@ class OnboardingScreenTest {
      * mounts — see `BitoNavHostTest`'s own "the first habit step creates and lands on today" for
      * that. This one instead proves 7g's own contribution: filling the habit-name field and
      * tapping "Crear y empezar" drives [OnboardingViewModel.finish] and creates the habit through
-     * the real write path, ending in [OnboardingUiState.done].
+     * the real write path.
+     *
+     * Task 17: the first habit's first eye now holds 7g on the ritual instead of flipping `done`
+     * in the same beat (see [OnboardingViewModelTest]'s own VM-level proof) — this test's own
+     * closing step, [OnboardingViewModel.finishEyeRitual], mirrors exactly what the "Seguir" pill
+     * calls once the gesture has painted, WITHOUT pumping the ~700ms of HabiMotion choreography
+     * that gates it in the real screen: `runEyeRitual`'s own `delay()` calls run on this test's
+     * [org.robolectric.RobolectricTestRunner] main dispatcher, whose virtual clock nothing here
+     * ever advances — [compose]'s own `mainClock` only pumps Compose's animation clock (springs,
+     * `animateXAsState`), never a raw suspend `delay()`.
      */
     @Test
     fun `the first habit step creates the habit and completes onboarding`() {
@@ -465,12 +477,41 @@ class OnboardingScreenTest {
         compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
         compose.waitForIdle()
         compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
 
-        compose.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.done }
+        assertFalse(vm.uiState.value.done)
+        vm.finishEyeRitual()
+        compose.waitForIdle()
 
+        assertTrue(vm.uiState.value.done)
         val created = runBlocking { db.habitDao().all().single { it.name == "Beber agua" } }
         assertEquals(Metric.CHECK, created.metric)
         assertEquals(1, created.target)
+    }
+
+    /**
+     * The newborn Habi shows up in the space mockup 7g leaves under the widget card the instant
+     * the first eye's transition lands (rendered as soon as [OnboardingUiState.eyeRitual] is
+     * non-null — the gesture itself, and the text that follows it, are a separate concern this
+     * test doesn't need to pump, same reasoning as the test above).
+     */
+    @Test
+    fun `the newborn Habi shows up on 7g after the habit is created`() {
+        val vm = newViewModel("onboarding-screen-eye-ritual")
+        compose.setContent {
+            BitoTheme {
+                OnboardingScreen(vm)
+            }
+        }
+        compose.waitForIdle()
+        goToFirstHabit(vm)
+
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("onb-eye-ritual", useUnmergedTree = true).assertExists()
     }
 
     @Test

@@ -4,6 +4,7 @@ import android.app.Application
 import android.app.NotificationManager
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
@@ -82,6 +83,34 @@ class BitoNavHostTest {
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("app-loading", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()
         }
+    }
+
+    /**
+     * Task 17: creating the first habit no longer flips
+     * [com.alvarotc.bito.ui.onboarding.OnboardingUiState.done] in the same click — the first
+     * eye's genuine transition holds 7g on its own ritual first. Every test below that fills
+     * "onb-habit-name-field" and taps "onb-create-start" to actually finish onboarding needs
+     * this second tap once the ritual paints, instead of the one click that used to be enough.
+     */
+    private fun finishFirstHabitStep() {
+        // The first click (regular autoAdvance -- proven by every OTHER click in this file) runs
+        // finish() to completion and mounts the ritual's own [HabiAvatar]. FROM THAT POINT ON, NOT
+        // waitForIdle()/waitUntil(): that avatar carries the usual infinite idle breathing/blink/
+        // gesture loops (same reason "the habi tab..." test above freezes the clock before
+        // navigating there) -- true idle is never reached while it's on screen, so idle-sync spins
+        // forever instead of ever returning. HabiMotion's own choreography (`runEyeRitual`) is
+        // genuine suspend `delay()`, not just frame-driven [androidx.compose.animation.core.Animatable]
+        // work, so manually driving the SAME shared clock its springs use is what resumes it.
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("onb-eye-ritual", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.mainClock.autoAdvance = false
+        repeat(150) { compose.mainClock.advanceTimeByFrame() }
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).assertIsEnabled()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        repeat(10) { compose.mainClock.advanceTimeByFrame() }
+        compose.mainClock.autoAdvance = true
     }
 
     /** Every test below except the onboarding-route ones themselves assumes a completed
@@ -558,7 +587,7 @@ class BitoNavHostTest {
         compose.waitForIdle()
         compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
         compose.waitForIdle()
-        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        finishFirstHabitStep()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -615,7 +644,7 @@ class BitoNavHostTest {
         compose.waitForIdle()
         compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
         compose.waitForIdle()
-        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        finishFirstHabitStep()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -670,7 +699,7 @@ class BitoNavHostTest {
         compose.waitForIdle()
         compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
         compose.waitForIdle()
-        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+        finishFirstHabitStep()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("onboarding-screen", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()

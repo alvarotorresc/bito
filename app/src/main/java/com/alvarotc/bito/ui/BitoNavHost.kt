@@ -57,6 +57,7 @@ import com.alvarotc.bito.ui.stats.StatsViewModel
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun BitoNavHost(container: AppContainer) {
@@ -346,16 +347,39 @@ fun BitoNavHost(container: AppContainer) {
         val cState by celebrations.uiState.collectAsStateWithLifecycle()
         val celebrationsSuppressed =
             currentRoute == "review" || currentRoute == "onboarding" || currentRoute == "onboarding_replay" || pendingRoute != null
+        // Primero el ojo, en silencio y solo con el cuerpo; después la hoja del logro con su
+        // sonido (biblia §4). Un rito que compite con un confeti deja de ser un rito.
+        var badgesReady by remember(cState.newBadges) { mutableStateOf(cState.newBadges.none { it.id == STREAK_SEVEN_BADGE }) }
+        LaunchedEffect(cState.newBadges) {
+            if (!badgesReady) {
+                delay(EYE_RITUAL_HOLD_MS)
+                badgesReady = true
+            }
+        }
         if (!celebrationsSuppressed) {
             when {
                 cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
-                cState.newBadges.isNotEmpty() -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
+                cState.newBadges.isNotEmpty() && badgesReady -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
             }
         }
-        LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute, pendingRoute) {
-            if (!celebrationsSuppressed && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
+        // badgesReady also gates the badge branch of the cue itself, not just the sheet: cue()
+        // is what plays HabiSound.CELEBRATION, and firing that the instant the badge unlocks
+        // (rather than once the sheet is actually about to show) would sound right over the
+        // still-silent eye ritual this hold exists to protect.
+        LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute, pendingRoute, badgesReady) {
+            val badgesCueReady = cState.newBadges.isNotEmpty() && badgesReady
+            if (!celebrationsSuppressed && (cState.perfectDayPending || badgesCueReady)) {
                 celebrations.cue()
             }
         }
     }
 }
+
+// Primero el ojo, en silencio y solo con el cuerpo; después la hoja del logro con su sonido
+// (biblia §4) — ambos, no solo el segundo. La Tarea 20 promueve STREAK_SEVEN_BADGE a
+// CelebrationsUiState.kt (internal const val) cuando CelebrationSheets.kt lo necesite también;
+// hasta entonces vive solo aquí para que esta tarea siga siendo un solo entregable.
+private const val STREAK_SEVEN_BADGE = "streak-7"
+
+/** La duración del rito del ojo (spec §3.4): lo que la hoja del logro espera antes de levantarse. */
+private const val EYE_RITUAL_HOLD_MS = 900L

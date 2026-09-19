@@ -72,7 +72,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.EyeTransition
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.BitoCard
@@ -81,6 +83,7 @@ import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.habi.rememberHabiMotion
 import com.alvarotc.bito.ui.habitform.HabitPreset
 import com.alvarotc.bito.ui.habitform.labelRes
 import com.alvarotc.bito.ui.icons.BitoIcons
@@ -92,6 +95,7 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -179,6 +183,7 @@ fun OnboardingScreen(
             onSetHabitKind = viewModel::setHabitKind,
             onSetHabitTarget = viewModel::setHabitTarget,
             onFinish = replayOnClose ?: viewModel::finish,
+            onFinishRitual = viewModel::finishEyeRitual,
             replay = replayOnClose != null,
         )
     }
@@ -340,12 +345,18 @@ private fun StoryPagerScaffold(
     onSetHabitKind: (HabitPreset) -> Unit,
     onSetHabitTarget: (Int) -> Unit,
     onFinish: () -> Unit,
+    onFinishRitual: () -> Unit,
     replay: Boolean = false,
 ) {
     val step = state.step
     val pageIndex = PAGER_STEPS.indexOf(step).coerceAtLeast(0)
     // Survives the key(pageIndex) remount below on purpose — see OnboardingSwipeFadeLatch's KDoc.
     val swipeFadeLatch = remember { OnboardingSwipeFadeLatch() }
+    // Lives HERE, not inside FirstHabitStepContent, because the bottom pill below (this same
+    // Composable) needs it too, to gate its enabled state and swap its onClick to
+    // [onFinishRitual] — see that `when (step)` branch. Keyed on [OnboardingUiState.eyeRitual]
+    // itself (not just non-null) so a fresh transition always starts its own text hidden.
+    var ritualDone by remember(state.eyeRitual) { mutableStateOf(false) }
 
     Column(Modifier.fillMaxSize().background(Papel)) {
         Box(Modifier.fillMaxWidth().padding(top = 12.dp, end = 12.dp), contentAlignment = Alignment.TopEnd) {
@@ -430,6 +441,8 @@ private fun StoryPagerScaffold(
                             onSetHabitName,
                             onSetHabitKind,
                             onSetHabitTarget,
+                            ritualDone = ritualDone,
+                            onRitualPainted = { ritualDone = true },
                         )
                     }
                 }
@@ -454,19 +467,27 @@ private fun StoryPagerScaffold(
                     onClick = onNext,
                     modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp).testTag("onb-continue"),
                 )
-            OnboardingStep.FIRST_HABIT ->
+            OnboardingStep.FIRST_HABIT -> {
+                // The rito holds the button too: once it's under way, "Crear y empezar" has
+                // already run — a second tap must close the ritual, not re-run finish() (which
+                // guards on `busy`/`done` and would no-op anyway, but the LABEL still has to
+                // change, or the button would keep promising to create a habit it already did).
+                val ritual = state.eyeRitual
                 PillButton(
                     text =
                         stringResource(
                             when {
+                                ritual != null -> R.string.celebration_continue
                                 replay -> R.string.onb_replay_close
                                 state.habitName.trim().isNotEmpty() -> R.string.onb_habit_create
                                 else -> R.string.onb_habit_start
                             },
                         ),
-                    onClick = onFinish,
+                    onClick = if (ritual != null) onFinishRitual else onFinish,
+                    enabled = ritual == null || ritualDone,
                     modifier = Modifier.fillMaxWidth().padding(start = 24.dp, end = 24.dp, bottom = 24.dp).testTag("onb-create-start"),
                 )
+            }
             else -> {}
         }
     }
@@ -481,6 +502,8 @@ private fun StoryPageContent(
     onSetHabitName: (String) -> Unit,
     onSetHabitKind: (HabitPreset) -> Unit,
     onSetHabitTarget: (Int) -> Unit,
+    ritualDone: Boolean,
+    onRitualPainted: () -> Unit,
 ) {
     when (step) {
         in STORY_STEPS ->
@@ -522,6 +545,11 @@ private fun StoryPageContent(
                 onSetHabitName = onSetHabitName,
                 onSetHabitKind = onSetHabitKind,
                 onSetHabitTarget = onSetHabitTarget,
+                eyeRitual = state.eyeRitual,
+                personality = state.personality,
+                userName = state.name,
+                ritualDone = ritualDone,
+                onRitualPainted = onRitualPainted,
             )
         else -> error("unreachable: every OnboardingStep in PAGER_STEPS is handled above")
     }
@@ -790,6 +818,14 @@ private fun FirstHabitStepContent(
     onSetHabitName: (String) -> Unit,
     onSetHabitKind: (HabitPreset) -> Unit,
     onSetHabitTarget: (Int) -> Unit,
+    // Non-null once [OnboardingViewModel.finish] has created the first habit and reconciled a
+    // genuine eye transition -- this is where the newborn Habi actually paints it (mockup
+    // 7g's own ~280dp of empty space under the widget card), not in Hoy right after.
+    eyeRitual: EyeTransition?,
+    personality: Personality,
+    userName: String,
+    ritualDone: Boolean,
+    onRitualPainted: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp)) {
         Spacer(Modifier.height(8.dp))
@@ -817,9 +853,46 @@ private fun FirstHabitStepContent(
         GoalRow(kind = habitKind, target = habitTarget, onAdjust = onSetHabitTarget)
         Spacer(Modifier.height(16.dp))
         WidgetHintCard()
+        eyeRitual?.let { transition ->
+            Spacer(Modifier.height(32.dp))
+            Column(
+                Modifier.fillMaxWidth().testTag("onb-eye-ritual"),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Nace con los DOS ojos en blanco y el primero se pinta aquí: `painted` arranca en
+                // `transition.from` y salta a `transition.to` cuando el gesto lo dice.
+                var painted by remember { mutableStateOf(transition.from) }
+                val motion = rememberHabiMotion(HabiPose.STANDING, Mood.NORMAL, personality)
+                LaunchedEffect(transition) {
+                    delay(EYE_RITUAL_STILL_MS)
+                    painted = transition.to
+                    motion.playEyeRitual()
+                    onRitualPainted()
+                }
+                HabiAvatar(
+                    HabiSpec(Mood.NORMAL, personality, EquippedSet(), eyesPainted = painted),
+                    Modifier.size(140.dp),
+                    motion = motion,
+                )
+                // El texto aparece DESPUÉS de que el ojo esté pintado: el rito no lleva palabra encima.
+                if (ritualDone) {
+                    Spacer(Modifier.height(16.dp))
+                    val fallbackName = stringResource(R.string.habi_name_fallback)
+                    Text(
+                        stringResource(HabiVoice.eyeRitualRes(transition.to, personality), userName.trim().ifEmpty { fallbackName }),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Tinta,
+                        textAlign = TextAlign.Center,
+                    )
+                }
+            }
+        }
         Spacer(Modifier.height(24.dp))
     }
 }
+
+/** «se queda quieta un instante» (biblia §6): el cuerpo no salta directo al segundo ojo. */
+private const val EYE_RITUAL_STILL_MS = 200L
 
 /** Mockup style, not the real form's: checkmark + hoja border on the selected pill (the form itself
  * fills the selected pill with [HojaTinte] instead — different visual language for the same five
