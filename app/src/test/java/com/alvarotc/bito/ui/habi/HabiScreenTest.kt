@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.habi
 
+import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -7,15 +8,36 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.room.Room
+import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.repo.DomainStateRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
+import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
+import java.time.ZoneId
 
 /**
  * [PersonalityPills] standalone — same reasoning [StoreSectionTest] gives for testing
@@ -23,12 +45,94 @@ import org.robolectric.annotation.Config
  * transition to fight). It's `internal` (not `private`) precisely so this test can reach it
  * directly.
  */
-@OptIn(ExperimentalTestApi::class)
+@OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp")
 class HabiScreenTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @get:Rule
+    val tmp = TemporaryFolder()
+
+    // Local midnight — the default reviewTimeMinutes (21:30) is still hours away, so a fresh
+    // settings store lands AWAKE with zero habits. The WAITING test overrides reviewTimeMinutes
+    // to 0 instead of seeding habits/entries, since HabiDay.phaseOf enters WAITING "queden cosas
+    // o no haya ninguna" once minutesOfDay >= reviewTimeMinutes.
+    private val fixedNow = 1_755_216_000_000L // 2025-08-15T00:00:00Z
+    private val utc = ZoneId.of("UTC")
+
+    /** Wires a real [HabiViewModel] over an in-memory Room DB, [HabiViewModelTest]'s harness. */
+    private fun habiViewModel(
+        dispatcher: TestDispatcher,
+        storeName: String,
+        reviewTimeMinutes: Int? = null,
+    ): Pair<BitoDatabase, HabiViewModel> {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val db =
+            Room.inMemoryDatabaseBuilder(context, BitoDatabase::class.java)
+                .setQueryExecutor(dispatcher.asExecutor())
+                .setTransactionExecutor(dispatcher.asExecutor())
+                .allowMainThreadQueries()
+                .build()
+        val settingsRepo =
+            SettingsRepository(
+                PreferenceDataStoreFactory.create(
+                    scope = CoroutineScope(dispatcher + Job()),
+                ) { File(tmp.root, "$storeName.preferences_pb") },
+            )
+        if (reviewTimeMinutes != null) {
+            runBlocking { settingsRepo.update { it.copy(reviewTimeMinutes = reviewTimeMinutes) } }
+        }
+        val domainStateRepo = DomainStateRepository(db)
+        val rewardsRepo = RewardsRepository(db)
+        val reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
+        val habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
+        val vm =
+            HabiViewModel(
+                domainStateRepo,
+                rewardsRepo,
+                settingsRepo,
+                reconciler,
+                habiSounds,
+                now = { fixedNow },
+                zone = { utc },
+                defaultDispatcher = dispatcher,
+            )
+        return db to vm
+    }
+
+    @Test
+    fun `waiting for the close says its line, once`() {
+        val dispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(dispatcher)
+        val (db, vm) = habiViewModel(dispatcher, "habi-screen-waiting", reviewTimeMinutes = 0)
+        try {
+            compose.setContent { BitoTheme { HabiScreen(vm) } }
+            compose.waitForIdle()
+
+            compose.onNodeWithTag("habi-day-line", useUnmergedTree = true).assertExists()
+        } finally {
+            Dispatchers.resetMain()
+            db.close()
+        }
+    }
+
+    @Test
+    fun `an awake day says nothing about itself`() {
+        val dispatcher = UnconfinedTestDispatcher()
+        Dispatchers.setMain(dispatcher)
+        val (db, vm) = habiViewModel(dispatcher, "habi-screen-awake")
+        try {
+            compose.setContent { BitoTheme { HabiScreen(vm) } }
+            compose.waitForIdle()
+
+            compose.onNodeWithTag("habi-day-line", useUnmergedTree = true).assertDoesNotExist()
+        } finally {
+            Dispatchers.resetMain()
+            db.close()
+        }
+    }
 
     @Test
     fun `the active personality pill is announced as selected, not just clickable`() {

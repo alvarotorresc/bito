@@ -76,6 +76,7 @@ class BackupRoundTripTest {
             perfectDayCelebratedDay = 20679,
             badgesSeenUntilMillis = 4321L,
             habiEyesPainted = 2,
+            habiWaitingSaidDay = 20679,
         )
 
     @Before

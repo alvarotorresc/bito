@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.habi
 
 import androidx.annotation.StringRes
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.HabiDayPhase
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 
@@ -32,6 +33,10 @@ import com.alvarotc.bito.domain.model.Personality
  *   next to "HABI · ". Single source, replacing the seven identical private copies each screen
  *   used to keep.
  * - [formPromptRes] — the habit-form bubble's body, `habi_form_prompt_*`, no placeholders.
+ * - [dayPhaseRes] — the Habi screen's own day line (T13, biblia §7.2), `habi_day_waiting_*` /
+ *   `habi_day_asleep_*`, no placeholders. Written ahead of its real owner (T20, which reorders it
+ *   into place once it lands the rest of the day's copy) because T13 needed a resolver to call —
+ *   `HabiUiState.dayLineRes` never passes it [HabiDayPhase.AWAKE], the phase that says nothing.
  */
 object HabiVoice {
     @StringRes
@@ -200,6 +205,31 @@ object HabiVoice {
             Personality.SARGENTO -> R.string.habi_form_prompt_sargento
             Personality.CHEERLEADER -> R.string.habi_form_prompt_cheerleader
             Personality.NEUTRA -> R.string.habi_form_prompt_neutra
+        }
+
+    /**
+     * Only ever called with [HabiDayPhase.WAITING] or [HabiDayPhase.ASLEEP] — AWAKE has nothing
+     * to say about itself, so `HabiUiState.dayLineRes` never reaches this branch.
+     */
+    @StringRes
+    fun dayPhaseRes(
+        phase: HabiDayPhase,
+        personality: Personality,
+    ): Int =
+        when (phase) {
+            HabiDayPhase.WAITING ->
+                when (personality) {
+                    Personality.SARGENTO -> R.string.habi_day_waiting_sargento
+                    Personality.CHEERLEADER -> R.string.habi_day_waiting_cheerleader
+                    Personality.NEUTRA -> R.string.habi_day_waiting_neutra
+                }
+            HabiDayPhase.ASLEEP ->
+                when (personality) {
+                    Personality.SARGENTO -> R.string.habi_day_asleep_sargento
+                    Personality.CHEERLEADER -> R.string.habi_day_asleep_cheerleader
+                    Personality.NEUTRA -> R.string.habi_day_asleep_neutra
+                }
+            HabiDayPhase.AWAKE -> error("AWAKE has no day line — see this function's kdoc")
         }
 
     /**

@@ -20,6 +20,7 @@ import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.time.ZoneId
 import java.util.UUID
 
@@ -68,7 +70,21 @@ class HabiViewModel(
             previewItemId,
         ) { state, owned, balance, prefs, preview ->
             val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-            buildHabiUiState(state, owned, balance, prefs.personality, today, preview, prefs.userName, economy.freezerPrice, economy)
+            val local = Instant.ofEpochMilli(now()).atZone(zone()).toLocalTime()
+            // Reutiliza el builder de Hoy solo para la fase: duplicar aquí el conteo de exigibles
+            // (Compliance.isRequirableOn + Sealing) sería una segunda verdad sobre el mismo hecho.
+            val dayPhase =
+                buildTodayUiState(
+                    state,
+                    emptyMap(),
+                    today,
+                    minutesOfDay = local.hour * 60 + local.minute,
+                    reviewTimeMinutes = prefs.reviewTimeMinutes,
+                ).dayPhase
+            buildHabiUiState(
+                state, owned, balance, prefs.personality, today, preview, prefs.userName,
+                economy.freezerPrice, economy, dayPhase, prefs.habiEyesPainted, prefs.habiWaitingSaidDay,
+            )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HabiUiState())
 
@@ -85,6 +101,20 @@ class HabiViewModel(
 
     fun setPersonality(personality: Personality) {
         viewModelScope.launch { settings.update { it.copy(personality = personality) } }
+    }
+
+    /**
+     * Writes the "already said today" marker (biblia §12.2) — called by [HabiScreen] as it leaves
+     * composition, and only when its day line was showing. Never inside the [combine] above: that
+     * flow already includes [settings], so writing the marker from there would re-emit and hide
+     * the line the instant it appeared, before anyone could ever read it. A plain settings write,
+     * no [reconciler] — same as [setPersonality]: nothing derived from a marker to re-derive.
+     */
+    fun onDayLineSeen() {
+        viewModelScope.launch {
+            val today = todayOf(settings.settings.first())
+            settings.update { it.copy(habiWaitingSaidDay = today) }
+        }
     }
 
     fun equip(itemId: String) {

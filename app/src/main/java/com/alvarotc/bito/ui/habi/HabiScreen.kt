@@ -23,10 +23,12 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,6 +64,14 @@ import kotlinx.coroutines.delay
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    // Su día, con cuentagotas (biblia §12.2): if a day line is showing when this screen leaves
+    // composition, mark it seen so WAITING's line only sounds once per logical day — the marker
+    // is never written from inside the VM's combine (see HabiViewModel.onDayLineSeen kdoc).
+    // rememberUpdatedState so onDispose reads whatever was showing LAST, not the first frame's.
+    val latestDayLineRes = rememberUpdatedState(state.dayLineRes)
+    DisposableEffect(Unit) {
+        onDispose { if (latestDayLineRes.value != null) viewModel.onDayLineSeen() }
+    }
     var showPointsSheet by remember { mutableStateOf(false) }
     // Pet streak (QA 2026-08-24): three quick pets within 1.5s send Habi into a 2.6s delight —
     // huge smile, floating hearts, happier meow. Purely visual/audible; nothing persists.
@@ -133,6 +143,17 @@ fun HabiScreen(viewModel: HabiViewModel) {
                     ),
                 modifier = Modifier.fillMaxWidth(),
             )
+            // Su día con cuentagotas: solo aquí, solo dos líneas, y la de esperar el cierre solo
+            // la primera vez que el día entra en esa fase (biblia §7.2) — dayLineRes ya resuelve
+            // ese gating en el builder puro (HabiUiState.dayLineRes).
+            state.dayLineRes?.let { res ->
+                Text(
+                    stringResource(res),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TintaSuave,
+                    modifier = Modifier.fillMaxWidth().testTag("habi-day-line"),
+                )
+            }
             PersonalityPills(
                 selected = state.spec.personality,
                 onSelect = viewModel::setPersonality,

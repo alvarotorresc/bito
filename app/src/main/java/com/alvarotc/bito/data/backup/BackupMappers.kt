@@ -128,6 +128,7 @@ fun Settings.toBackup() =
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
         habiEyesPainted = habiEyesPainted,
+        habiWaitingSaidDay = habiWaitingSaidDay,
     )
 
 fun BackupSettings.toSettings() =
@@ -150,4 +151,5 @@ fun BackupSettings.toSettings() =
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
         habiEyesPainted = habiEyesPainted,
+        habiWaitingSaidDay = habiWaitingSaidDay,
     )

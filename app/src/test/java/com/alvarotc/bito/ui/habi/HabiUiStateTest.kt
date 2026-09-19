@@ -8,6 +8,8 @@ import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
 import com.alvarotc.bito.domain.ledgerEntry
 import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.HabiDayPhase
+import com.alvarotc.bito.domain.model.HabiPose
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
@@ -229,5 +231,30 @@ class HabiUiStateTest {
         // The screens' first-frame gates (QA 2026-08-23) rely on this default: if it ever flips,
         // both gates die silently while every other test keeps passing.
         assertTrue(HabiUiState().loading)
+    }
+
+    @Test
+    fun `her own day and her eyes reach the Habi screen state`() {
+        val result =
+            buildHabiUiState(
+                domainState(),
+                emptyList(),
+                balance = 0,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                dayPhase = HabiDayPhase.ASLEEP,
+                eyesPainted = 1,
+            )
+
+        assertEquals(HabiDayPhase.ASLEEP, result.dayPhase)
+        assertEquals(HabiPose.SLEEPING, result.spec.pose)
+        assertEquals(1, result.spec.eyesPainted)
+    }
+
+    @Test
+    fun `both eyes painted is the default for a hand built state`() {
+        val result = buildHabiUiState(domainState(), emptyList(), 0, Personality.NEUTRA, TODAY)
+        assertEquals(2, result.spec.eyesPainted)
+        assertEquals(HabiPose.STANDING, result.spec.pose)
     }
 }

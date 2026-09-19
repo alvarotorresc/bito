@@ -21,6 +21,8 @@ object BackupCodec {
     // v1.1.0: v3 files also carry settings.habiEyesPainted. NO bump — an older file decodes to 0,
     // and the first reconcile after the restore heals it from the restored history (EyeRitual), so
     // there is nothing for decode to migrate: the eyes travel with the walk, not with the setting.
+    // v1.1.0 también lleva settings.habiWaitingSaidDay. NO bump — un fichero viejo decodifica a
+    // -1, que es exactamente lo que significa: la línea nunca se dijo.
     const val SCHEMA_VERSION = 3
 
     private val json =

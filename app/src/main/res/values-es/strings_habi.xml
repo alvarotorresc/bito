@@ -155,4 +155,13 @@
 
     <string name="item_lower_calcetines">Calcetines</string>
     <string name="item_lower_zapatillas">Zapatillas</string>
+
+    <!-- Su día, con cuentagotas (biblia §7.2): DOS líneas, y solo en la pantalla Habi. Sin
+         placeholders. PROVISIONAL M10 — pendiente de validación del arquitecto (docs/07). -->
+    <string name="habi_day_waiting_sargento">Todo tuyo hecho. Me siento a esperar el cierre.</string>
+    <string name="habi_day_waiting_cheerleader">¡Listo! Me quedo aquí hasta que cierres el día.</string>
+    <string name="habi_day_waiting_neutra">Ya está. Espero contigo a cerrar.</string>
+    <string name="habi_day_asleep_sargento">Día cerrado. Me apago hasta mañana.</string>
+    <string name="habi_day_asleep_cheerleader">Día cerrado. Me duermo contentísima.</string>
+    <string name="habi_day_asleep_neutra">Día cerrado. Buenas noches.</string>
 </resources>

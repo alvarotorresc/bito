@@ -12,10 +12,12 @@ import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabiCatalog
+import com.alvarotc.bito.domain.model.HabiDayPhase
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.domain.model.toPose
 
 /** One store card: a catalog entry paired with its derived purchase/equip state. */
 data class StoreEntry(val item: CatalogItem, val state: StoreItemState)
@@ -41,6 +43,10 @@ data class HabiUiState(
     // R.string.habi_name_fallback when interpolating a HabiVoice %1$s.
     val userName: String = "",
     val loading: Boolean = true,
+    // Su día, con cuentagotas (biblia §7.2): la fase que decide la pose (spec.pose ya la lleva) y,
+    // si toca decir algo, qué recurso decirlo con. HabiScreen es el único sitio que lo pinta.
+    val dayPhase: HabiDayPhase = HabiDayPhase.AWAKE,
+    val dayLineRes: Int? = null,
 )
 
 /** Axis order the store's pill row follows (GUIA: Colores · Patrones · Ojos · Arriba · Abajo). */
@@ -70,6 +76,14 @@ fun buildHabiUiState(
     // economy.freezerPrice so the store card and buyFreezer() can never disagree on the price.
     freezerPrice: Int = EconomyConfig().freezerPrice,
     economy: EconomyConfig = EconomyConfig(),
+    dayPhase: HabiDayPhase = HabiDayPhase.AWAKE,
+    // 0/1/2 — el ritual del ojo (EyeRitual), directo desde Settings.habiEyesPainted. 2 por
+    // defecto: cualquier caller que no lo pase (todo test previo a T13) dibuja la Habi de siempre.
+    eyesPainted: Int = 2,
+    // El marcador «esta línea ya se dijo hoy» (Settings.habiWaitingSaidDay), mismo patrón que
+    // perfectDayCelebratedDay: -1 por defecto = nunca se dijo. Solo importa para WAITING; ASLEEP
+    // no lo necesita porque el sellado ocurre una sola vez por día.
+    waitingSaidDay: LogicalDay = -1,
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -93,8 +107,21 @@ fun buildHabiUiState(
     // wins its axis (equippedSetOf keeps the last id per category), same as a real equip would.
     val displayEquipped = if (previewItemId != null) equippedSetOf(equippedIds + previewItemId) else equipped
 
+    // La línea de "esperando el cierre" suena una vez por día lógico, no por cada entrada en la
+    // fase (biblia §12.2): WAITING se pisa varias veces el mismo día (completar, desmarcar,
+    // volver a completar) y el marcador solo se escribe cuando la pantalla se abandona
+    // (HabiViewModel.onDayLineSeen) — no aquí, así que el mismo día lógico sigue devolviendo la
+    // línea mientras el usuario esté mirando la pantalla. ASLEEP no lleva marcador: el sellado
+    // ocurre una sola vez por día, así que su línea siempre acompaña esa fase.
+    val dayLineRes =
+        when {
+            dayPhase == HabiDayPhase.ASLEEP -> HabiVoice.dayPhaseRes(HabiDayPhase.ASLEEP, personality)
+            dayPhase == HabiDayPhase.WAITING && waitingSaidDay != today -> HabiVoice.dayPhaseRes(HabiDayPhase.WAITING, personality)
+            else -> null
+        }
+
     return HabiUiState(
-        spec = HabiSpec(mood, personality, displayEquipped),
+        spec = HabiSpec(mood, personality, displayEquipped, eyesPainted = eyesPainted, pose = dayPhase.toPose()),
         balance = balance,
         freezersOwned = PointsEngine.freezersOwned(state),
         freezerPrice = freezerPrice,
@@ -103,5 +130,7 @@ fun buildHabiUiState(
         previewItemId = previewItemId,
         userName = userName,
         loading = false,
+        dayPhase = dayPhase,
+        dayLineRes = dayLineRes,
     )
 }

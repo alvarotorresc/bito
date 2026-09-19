@@ -51,6 +51,7 @@ class SettingsRepositoryTest {
             assertNull(settings.lastAutoBackupAtMillis)
             assertNull(settings.lastAutoBackupError)
             assertEquals(0, settings.habiEyesPainted)
+            assertEquals(-1, settings.habiWaitingSaidDay)
         }
 
     @Test
@@ -92,6 +93,7 @@ class SettingsRepositoryTest {
                     onboardingDone = true,
                     habiSoundsEnabled = false,
                     habiEyesPainted = 2,
+                    habiWaitingSaidDay = 20679,
                 )
             repository.update { written }
             assertEquals(written, repository.settings.first())

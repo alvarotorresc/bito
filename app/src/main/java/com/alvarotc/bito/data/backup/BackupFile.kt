@@ -150,6 +150,7 @@ data class BackupSettings(
     val logSoundEnabled: Boolean = true,
     val logHapticEnabled: Boolean = true,
     val habiEyesPainted: Int = 0,
+    val habiWaitingSaidDay: Int = -1,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

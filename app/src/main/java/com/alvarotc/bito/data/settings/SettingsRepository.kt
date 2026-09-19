@@ -41,6 +41,13 @@ data class Settings(
     val lastAutoBackupError: AutoBackupError? = null,
     /** 0/1/2 — caché del ritual del ojo (EyeRitual). No es la verdad: se auto-sana desde el historial. */
     val habiEyesPainted: Int = 0,
+    /**
+     * Día lógico en el que ya sonó la línea de «esperando el cierre» de la pantalla Habi (biblia
+     * §12.2) — mismo patrón que [perfectDayCelebratedDay]: -1 = nunca se dijo. WAITING se entra
+     * varias veces el mismo día (completar, desmarcar, volver a completar); sin este marcador la
+     * línea se repetiría cada vez.
+     */
+    val habiWaitingSaidDay: Int = -1,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -70,6 +77,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val lastAutoBackupAtMillis = longPreferencesKey("last_auto_backup_at_millis")
         val lastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
         val habiEyesPainted = intPreferencesKey("habi_eyes_painted")
+        val habiWaitingSaidDay = intPreferencesKey("habi_waiting_said_day")
 
         /**
          * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
@@ -211,6 +219,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             lastAutoBackupAtMillis = this[Keys.lastAutoBackupAtMillis],
             lastAutoBackupError = this[Keys.lastAutoBackupError]?.let(AutoBackupError::valueOf),
             habiEyesPainted = this[Keys.habiEyesPainted] ?: defaults.habiEyesPainted,
+            habiWaitingSaidDay = this[Keys.habiWaitingSaidDay] ?: defaults.habiWaitingSaidDay,
         )
     }
 
@@ -235,5 +244,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         lastAutoBackupAtMillis?.let { prefs[Keys.lastAutoBackupAtMillis] = it } ?: prefs.remove(Keys.lastAutoBackupAtMillis)
         lastAutoBackupError?.let { prefs[Keys.lastAutoBackupError] = it.name } ?: prefs.remove(Keys.lastAutoBackupError)
         prefs[Keys.habiEyesPainted] = habiEyesPainted
+        prefs[Keys.habiWaitingSaidDay] = habiWaitingSaidDay
     }
 }
