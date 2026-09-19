@@ -131,6 +131,7 @@ private fun SofaScene(modifier: Modifier) {
                 ),
             modifier = Modifier.align(Alignment.Center).offset((-24).dp, (-23).dp).size(92.dp),
             animated = false,
+            groundShadow = false,
         )
         // Seat cushion, lightest tone, painted over Habi's lap so the bean sinks into the couch.
         Box(
@@ -215,6 +216,7 @@ private fun BlockedScene(modifier: Modifier) {
                 spec = HabiSpec(Mood.DRAMATIC, Personality.NEUTRA, EquippedSet()),
                 modifier = Modifier.matchParentSize(),
                 animated = false,
+                groundShadow = false,
             )
             AngryBrows(Modifier.matchParentSize())
         }
@@ -409,6 +411,7 @@ private fun SystemScene(modifier: Modifier) {
             spec = HabiSpec(Mood.RADIANT, Personality.NEUTRA, EquippedSet()),
             modifier = Modifier.align(Alignment.Center).offset((-47).dp, (-23).dp).size(100.dp),
             animated = false,
+            groundShadow = false,
         )
         HabitMiniCard(Modifier.align(Alignment.Center).offset(24.dp, 20.dp))
         PottedPlant(Modifier.align(Alignment.Center).offset(104.dp, 34.dp).size(40.dp, 77.dp))

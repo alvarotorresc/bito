@@ -130,6 +130,9 @@ private val FaceMorphSpring = spring<Float>(dampingRatio = 0.8f, stiffness = 260
  * independent Animatable from the idle blink loop so neither interrupts the other), darts the eyes
  * toward the finger, and plays the jelly compression described above. Callers with
  * `animated = false` (the Today corner avatar) keep the plain press squash only.
+ *
+ * [groundShadow] = false para una escena que ya pinta la suya a mano contra un mockup
+ * (`StoryScenes`), unica razon legitima para apagarla.
  */
 @Composable
 fun HabiAvatar(
@@ -138,6 +141,7 @@ fun HabiAvatar(
     animated: Boolean = true,
     onTap: (() -> Unit)? = null,
     delighted: Boolean = false,
+    groundShadow: Boolean = true,
 ) {
     val density = LocalDensity.current
     val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
@@ -431,7 +435,7 @@ fun HabiAvatar(
             }
 
     Canvas(canvasModifier) {
-        drawHabi(spec, blink = blinkValue, delighted = delighted, motion = motion, gaze = gazeValue)
+        drawHabi(spec, blink = blinkValue, delighted = delighted, motion = motion, gaze = gazeValue, groundShadow = groundShadow)
         if (delighted) drawHearts(heartsPhaseValue)
     }
 }

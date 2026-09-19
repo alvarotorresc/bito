@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -49,6 +50,9 @@ class HabiDrawingTest {
 
     private fun rightEyePixel(sizePx: Int) = px(BODY_CX + EYE_DX, sizePx) to px(EYE_Y, sizePx)
 
+    /** Mirrors SHADOW_CY plus a couple of hundredths below it: suelo puro, fuera de la silueta. */
+    private fun groundPixel(sizePx: Int) = px(BODY_CX, sizePx) to px(SHADOW_CY + 0.02f, sizePx)
+
     /**
      * Mirrors the first sparkle's offset from the drawing spec, relative to the left eye.
      * `eyeRy = eyeRx * EYE_HEIGHT_MULT` (round eyes per architect review, was 1.4/oval).
@@ -84,6 +88,22 @@ class HabiDrawingTest {
         spec: HabiSpec,
         sizePx: Int,
         blink: Float,
+    ): Bitmap = renderInto(sizePx) { drawHabi(spec, blink = blink) }
+
+    private fun renderWithBody(
+        spec: HabiSpec,
+        sizePx: Int,
+        body: HabiBodyMotion,
+    ): Bitmap = renderInto(sizePx) { drawHabi(spec, body = body) }
+
+    private fun renderWithoutShadow(
+        spec: HabiSpec,
+        sizePx: Int,
+    ): Bitmap = renderInto(sizePx) { drawHabi(spec, groundShadow = false) }
+
+    private fun renderInto(
+        sizePx: Int,
+        block: DrawScope.() -> Unit,
     ): Bitmap {
         val imageBitmap = ImageBitmap(sizePx, sizePx)
         CanvasDrawScope().draw(
@@ -91,9 +111,8 @@ class HabiDrawingTest {
             LayoutDirection.Ltr,
             Canvas(imageBitmap),
             Size(sizePx.toFloat(), sizePx.toFloat()),
-        ) {
-            drawHabi(spec, blink = blink)
-        }
+            block,
+        )
         return imageBitmap.asAndroidBitmap()
     }
 
@@ -158,6 +177,98 @@ class HabiDrawingTest {
 
         assertEquals(Tarjeta.toArgb(), open)
         assertEquals(HabiSalvia.toArgb(), closed)
+    }
+
+    // --- T8: the ground shadow and the foot pivot -----------------------------------------------
+
+    @Test
+    fun `the ground shadow paints under her, and the body still covers its own center`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val bitmap = renderHabiBitmap(spec, size)
+        val (gx, gy) = groundPixel(size)
+        val (bx, by) = bodyCenterPixel(size)
+
+        assertNotEquals(0, bitmap.getPixel(gx, gy)) // deja de ser transparente
+        assertEquals(HabiSalvia.toArgb(), bitmap.getPixel(bx, by))
+    }
+
+    @Test
+    fun `groundShadow off leaves the floor untouched`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (gx, gy) = groundPixel(size)
+
+        assertEquals(0, renderWithoutShadow(spec, size).getPixel(gx, gy))
+    }
+
+    @Test
+    fun `a tipped body moves the eye out of its resting pixel`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (x, y) = leftEyePixel(size)
+
+        val upright = renderHabiBitmap(spec, size).getPixel(x, y)
+        val tipped = renderWithBody(spec, size, HabiBodyMotion(tiltDeg = 78f)).getPixel(x, y)
+
+        assertNotEquals(upright, tipped)
+    }
+
+    @Test
+    fun `the widget bitmap carries the same shadow as the canvas`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val (gx, gy) = groundPixel(size)
+
+        assertEquals(
+            renderWithBody(spec, size, HabiBodyMotion.Rest).getPixel(gx, gy),
+            renderHabiBitmap(spec, size).getPixel(gx, gy),
+        )
+    }
+
+    /**
+     * El paso mas propenso a error del pase de T8: bajar la silueta 0,03 en el viewport
+     * normalizado es una resta que toca decenas de constantes, y una sola olvidada produce una
+     * Habi sutilmente mal puesta que ningun otro test caza (las coordenadas de los demas tests se
+     * movieron en bloque con las constantes que ahora leen).
+     *
+     * El delta boca-cuerpo (+0,11 respecto a BODY_CY) es el del pase de arte, fijado aqui como
+     * literal INDEPENDIENTE de MOUTH_Y a proposito: si esa constante se hubiera quedado sin
+     * desplazar, su propio simbolo seguiria coincidiendo consigo mismo (una prueba inutil que no
+     * puede fallar nunca), pero la distancia real al centro del cuerpo la delataria — la boca
+     * dejaria de caer donde este test la busca (verificado: revertir MOUTH_Y a 0.66f pone este
+     * test en rojo).
+     *
+     * El ojo no puede verificarse igual: su propio ovalo (radio ~4,6px a 96px) es mas ancho que
+     * el desplazamiento de 0,03 (~2,9px), asi que un pixel en su centro sigue cayendo dentro del
+     * ovalo aunque EYE_Y se hubiera quedado sin mover — no discrimina (verificado). El brillo si:
+     * es un glifo diminuto (~1,3px de radio), pero SOLO si su posicion esperada tambien se calcula
+     * con el delta ojo-cuerpo (-0,05 respecto a BODY_CY) en vez de leer EYE_Y — leer EYE_Y aqui
+     * repetiria el mismo fallo (el propio simbolo se mueve con el bug y deja de discriminar).
+     * [leftEyeSparklePixel] SI lee EYE_Y a proposito (prueba el comportamiento del brillo, no el
+     * desplazamiento), por eso este test no lo reutiliza.
+     */
+    @Test
+    fun `the shift moved the origin, not the anatomy`() {
+        val bodySpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val bodyBitmap = renderHabiBitmap(bodySpec, size)
+        val (bx, by) = bodyCenterPixel(size)
+        val mouthY = px(BODY_CY + 0.11f, size)
+        val mouthXs = px(BODY_CX - 0.1f, size)..px(BODY_CX + 0.1f, size)
+
+        assertEquals(HabiSalvia.toArgb(), bodyBitmap.getPixel(bx, by))
+        // La boca es una curva, no una linea recta: escanea un tramo horizontal a la altura
+        // esperada en vez de un unico pixel exacto.
+        assertTrue(mouthXs.any { x -> bodyBitmap.getPixel(x, mouthY) == Tinta.toArgb() })
+
+        // CHEERLEADER RADIANT: eyeScale 1.2 (1.15 base + 0.05 radiant). Mirrors drawSparkles'
+        // first spot (eyeCenter.x + eyeRx*0.55, eyeCenter.y - eyeRy*0.75) but with eyeCenterY
+        // computed from BODY_CY - 0.05, not from EYE_Y.
+        val sparkleSpec = HabiSpec(Mood.RADIANT, Personality.CHEERLEADER, EquippedSet())
+        val eyeRx = EYE_BASE_RX * 1.2f * size
+        val eyeRy = eyeRx * EYE_HEIGHT_MULT
+        val eyeCenterX = (BODY_CX - EYE_DX) * size
+        val eyeCenterY = (BODY_CY - 0.05f) * size
+        val sx = (eyeCenterX + eyeRx * 0.55f).toInt()
+        val sy = (eyeCenterY - eyeRy * 0.75f).toInt()
+
+        assertEquals(Tarjeta.toArgb(), renderHabiBitmap(sparkleSpec, size).getPixel(sx, sy))
     }
 
     // --- T7: the eye ritual (HabiSpec.eyesPainted) ----------------------------------------------
@@ -343,9 +454,11 @@ class HabiDrawingTest {
     fun `closed eyes draw no sparkles`() {
         // WILTED CHEERLEADER keeps one sparkle on its drooped open eye — closed lids must not
         // carry it over. Scans the whole upper left-eye socket instead of one offset: every
-        // sparkle spot lands above/beside the eye center, well clear of the arcs at y 0.55+.
+        // sparkle spot lands above/beside the eye center, well clear of the arcs below EYE_Y.
+        // Built off leftEyePixel (not hardcoded) so it tracks EYE_Y/EYE_DX on its own.
         val spec = HabiSpec(Mood.WILTED, Personality.CHEERLEADER, EquippedSet(), closedEyes = true)
-        val socket = (28..42).flatMap { x -> (40..52).map { y -> x to y } }
+        val (eyeCenterX, eyeCenterY) = leftEyePixel(size)
+        val socket = (eyeCenterX - 7..eyeCenterX + 7).flatMap { x -> (eyeCenterY - 8..eyeCenterY + 4).map { y -> x to y } }
 
         val bitmap = renderHabiBitmap(spec, size)
 
@@ -358,12 +471,16 @@ class HabiDrawingTest {
      * at 96px can flip a pixel's alpha. 256px keeps the transparent-vs-opaque margin unambiguous. */
     private val accessorySize = 256
 
-    /** Every pixel in the body's bounding box, for a scan that survives pattern geometry retuning. */
+    /**
+     * Every pixel in the body's bounding box, for a scan that survives pattern geometry retuning.
+     * BODY_CX/BODY_CY are read from the renderer (T8 moved BODY_CY); the 0.34/0.42 half-extents
+     * mirror BODY_RX/BODY_RY, which stayed private — T8 only moves the silueta, never its radii.
+     */
     private fun bodyBoundingBoxPixels(sizePx: Int): List<Pair<Int, Int>> {
-        val minX = px(0.5f - 0.34f, sizePx)
-        val maxX = px(0.5f + 0.34f, sizePx)
-        val minY = px(0.55f - 0.42f, sizePx)
-        val maxY = px(0.55f + 0.42f, sizePx)
+        val minX = px(BODY_CX - 0.34f, sizePx)
+        val maxX = px(BODY_CX + 0.34f, sizePx)
+        val minY = px(BODY_CY - 0.42f, sizePx)
+        val maxY = px(BODY_CY + 0.42f, sizePx)
         return (minX..maxX).flatMap { x -> (minY..maxY).map { y -> x to y } }
     }
 
@@ -408,10 +525,11 @@ class HabiDrawingTest {
 
     @Test
     fun `upper items draw above the body apex`() {
-        // Apex is BODY_CY - BODY_RY = 0.55 - 0.42 = 0.13; probe just above it, inside the beanie dome.
+        // Apex is BODY_CY - BODY_RY = 0.52 - 0.42 = 0.10 (T8 moved BODY_CY, the -0.03 shift);
+        // probe just above it, inside the beanie dome.
         val withUpper = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(upper = "upper-gorro-lana"))
         val withoutUpper = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
-        val (x, y) = px(0.5f, accessorySize) to px(0.10f, accessorySize)
+        val (x, y) = px(0.5f, accessorySize) to px(0.07f, accessorySize)
 
         val equippedAlpha = android.graphics.Color.alpha(renderHabiBitmap(withUpper, accessorySize).getPixel(x, y))
         val bareAlpha = android.graphics.Color.alpha(renderHabiBitmap(withoutUpper, accessorySize).getPixel(x, y))
@@ -425,9 +543,11 @@ class HabiDrawingTest {
         // LOWER_DX = 0.20 (both lower items' shared anchor); probe at 0.22 clears the bare egg's
         // antialiased edge at this y (measured: alpha 11 at 0.20, 0 at 0.22) while staying inside
         // both the sock (half-width 0.05) and sneaker (half-width 0.065) shapes drawn at the anchor.
+        // y 0.87 (was 0.90, T8's -0.03 shift): SOCK_TOP_Y..SOCK_BOTTOM_Y is 0.815-0.935 and
+        // SNEAKER_TOP_Y..SNEAKER_BOTTOM_Y is 0.83-0.92 post-shift, both still cover it.
         val withLower = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(lower = "lower-calcetines"))
         val withoutLower = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
-        val (x, y) = px(0.5f + 0.22f, accessorySize) to px(0.90f, accessorySize)
+        val (x, y) = px(0.5f + 0.22f, accessorySize) to px(0.87f, accessorySize)
 
         val equippedAlpha = android.graphics.Color.alpha(renderHabiBitmap(withLower, accessorySize).getPixel(x, y))
         val bareAlpha = android.graphics.Color.alpha(renderHabiBitmap(withoutLower, accessorySize).getPixel(x, y))

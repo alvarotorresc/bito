@@ -17,6 +17,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
@@ -28,6 +31,7 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.delightedParamsOf
 import com.alvarotc.bito.domain.model.faceParamsOf
+import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Mofletes
@@ -62,17 +66,30 @@ data class HabiSpec(
     val closedEyes: Boolean = false,
 )
 
-// Body — egg/bean path, center (0.5, 0.55), slightly wider at the bottom (BODY_BULGE shifts the
+// El viewport normalizado reserva su franja inferior para la sombra (SHADOW_CY 0,95): toda la
+// silueta y cuanto cuelga de ella subio 0,03 respecto del pase de arte de 2026-08-25. Los radios
+// no cambiaron: es un desplazamiento, no un reescalado.
+// Body — egg/bean path, center (0.5, 0.52), slightly wider at the bottom (BODY_BULGE shifts the
 // widest point below center). Numbers are art-phase-tunable against design/mockups/m6/4-habi-pantalla.png.
 // BODY_CX/BODY_CY are internal so HabiDrawingTest reads them instead of duplicating them by hand.
 internal const val BODY_CX = 0.5f
-internal const val BODY_CY = 0.55f
+internal const val BODY_CY = 0.52f
 private const val BODY_RX = 0.34f
 private const val BODY_RY = 0.42f
 private const val BODY_BULGE = 0.05f
 
+// El pie es la base real de la silueta (biblia §9.1): donde el cuerpo pivota y donde se apoya la
+// sombra. FOOT_Y deriva de BODY_CY/BODY_RY en vez de un literal para que nunca se desincronice de
+// la silueta si esta vuelve a moverse. La sombra vive en su propia franja, fuera de la silueta y
+// del transform del cuerpo — cabe entera en el viewport (0,95 +/- 0,045).
+internal const val FOOT_Y = BODY_CY + BODY_RY
+internal const val SHADOW_CY = 0.95f
+private const val SHADOW_RX = 0.26f
+private const val SHADOW_RY = 0.045f
+internal const val SHADOW_ALPHA_REST = 0.22f
+
 private const val HIGHLIGHT_CX = 0.5f
-private const val HIGHLIGHT_CY = 0.16f
+private const val HIGHLIGHT_CY = 0.13f
 private const val HIGHLIGHT_RX = 0.05f
 private const val HIGHLIGHT_RY = 0.035f
 
@@ -80,8 +97,8 @@ private const val HIGHLIGHT_RY = 0.035f
 // fill read as a sticker, and the flatness was worst with a pattern equipped. The shade is the
 // body's own tone darkened — never a gray — and it paints OVER the pattern so print dims into the
 // shadow exactly like the body does. Starts below the face cluster so the mouth stays on clean
-// ground and the body-center test pixel (0.5, 0.55) is untouched.
-private const val SHADE_TOP_Y = 0.78f
+// ground and the body-center test pixel (0.5, 0.52) is untouched.
+private const val SHADE_TOP_Y = 0.75f
 private const val SHADE_ALPHA = 0.11f
 private const val SHADE_TONE_FACTOR = 0.7f
 
@@ -91,7 +108,7 @@ private const val SHADE_TONE_FACTOR = 0.7f
 // tender instead of startled.
 // Internal (along with EYE_BASE_RX/EYE_HEIGHT_MULT below and MOUTH_Y further down) so
 // HabiDrawingTest reads the renderer's own geometry instead of duplicating it by hand.
-internal const val EYE_Y = 0.5f
+internal const val EYE_Y = 0.47f
 internal const val EYE_DX = 0.14f
 internal const val EYE_BASE_RX = 0.048f
 
@@ -140,7 +157,7 @@ private val SPARKLE_RADII = listOf(0.27f, 0.155f, 0.115f)
 private const val GAZE_SHIFT_X = 0.014f
 private const val GAZE_SHIFT_Y = 0.01f
 
-private const val CHEEK_Y = 0.615f
+private const val CHEEK_Y = 0.585f
 private const val CHEEK_DX = 0.2f
 private const val BLUSH_RADIUS = 0.05f
 
@@ -150,9 +167,9 @@ private const val BLUSH_ALPHA_BASE = 0.55f
 private const val BLUSH_ALPHA_SMILE_GAIN = 0.2f
 
 // War paint sits right under the eyes (mockup 4a), not down at BLUSH's cheek height. Clear of the
-// eye oval's own bottom edge (EYE_Y + eye ry = 0.548) so it reads as a separate mark, not
+// eye oval's own bottom edge (EYE_Y + eye ry = 0.518) so it reads as a separate mark, not
 // camouflaged against the eye's outline.
-private const val WAR_PAINT_Y = 0.6f
+private const val WAR_PAINT_Y = 0.57f
 private const val WAR_PAINT_DX = 0.14f
 private const val WAR_PAINT_LENGTH = 0.09f
 private const val WAR_PAINT_WIDTH = 0.03f
@@ -161,14 +178,14 @@ private const val WAR_PAINT_ALPHA = 0.95f
 
 // Brows hover just over the eyes (mockup: almost touching), not up on the forehead — distance
 // from the eye is what turned "angry" into "surprised" in the first draft.
-private const val BROW_Y = 0.42f
+private const val BROW_Y = 0.39f
 private const val BROW_LENGTH = 0.12f
 private const val BROW_WIDTH = 0.026f
 
 // Mouth strokes match the mockup's chunky trazo (4/120 ≈ 0.033; a touch under so the big stage
 // avatar doesn't turn cartoonish), and the mouth WIDENS with joy: rest width plus gains for an
 // open mouth and a positive curve, like the mockup's narrow "normal" vs wide "radiante".
-internal const val MOUTH_Y = 0.66f
+internal const val MOUTH_Y = 0.63f
 private const val MOUTH_HALF_WIDTH = 0.065f
 private const val MOUTH_WIDTH_OPEN_GAIN = 0.022f
 private const val MOUTH_WIDTH_SMILE_GAIN = 0.02f
@@ -244,7 +261,7 @@ private val CHISPAS_POSITIONS =
     )
 
 private const val LLAMA_TINT_BLEND = 0.2f // 0 = pure Brasa; blends toward body color so it still reads as "this body's fire".
-private const val LLAMA_BASE_Y = 0.90f // where the body is still wide (not the tapering bottom tip at 0.97).
+private const val LLAMA_BASE_Y = 0.87f // where the body is still wide (not the tapering bottom tip at FOOT_Y 0.94).
 
 // Fixed tongues: (base x offset from BODY_CX, height, width) — heights within the 0.15-0.25 spec range.
 private val LLAMA_TONGUES =
@@ -259,16 +276,16 @@ private val LLAMA_TONGUES =
 // --- Upper slot (T10) — anchored at the head top, center x=BODY_CX. Half-widths are checked
 // against the egg's own half-width at that y (see eggPath) so hats hug the head instead of
 // floating past it; the top hat's brim is the one deliberate exception (brims overhang).
-private const val GORRO_DOME_TOP_Y = 0.035f
-private const val GORRO_DOME_BOTTOM_Y = 0.185f
+private const val GORRO_DOME_TOP_Y = 0.005f
+private const val GORRO_DOME_BOTTOM_Y = 0.155f
 private const val GORRO_DOME_RX = 0.15f
-private const val GORRO_BAND_TOP_Y = 0.175f
-private const val GORRO_BAND_BOTTOM_Y = 0.215f
+private const val GORRO_BAND_TOP_Y = 0.145f
+private const val GORRO_BAND_BOTTOM_Y = 0.185f
 private const val GORRO_BAND_RX = 0.165f
-private const val GORRO_POMPOM_Y = 0.025f
+private const val GORRO_POMPOM_Y = -0.005f
 private const val GORRO_POMPOM_RADIUS = 0.028f
 
-// Knot is centered on the body highlight (HIGHLIGHT_CY=0.16) with radius > highlight's own rx/ry
+// Knot is centered on the body highlight (HIGHLIGHT_CY=0.13) with radius > highlight's own rx/ry
 // (0.05/0.035) so it fully covers the highlight — a circle centered on an ellipse's center always
 // contains it once its radius exceeds the ellipse's larger semi-axis. Wings pinch to a point at the
 // neck, so they can't help with that; the knot alone has to do it.
@@ -278,35 +295,35 @@ private const val LAZO_WING_HALF_HEIGHT = 0.065f
 private const val LAZO_KNOT_RADIUS = 0.06f
 
 // Brim's bottom edge (COPA_BRIM_Y + COPA_BRIM_RY) must reach past the highlight's bottom
-// (HIGHLIGHT_CY + HIGHLIGHT_RY = 0.195), and the cylinder must reach the brim's top with no gap.
-private const val COPA_CYLINDER_TOP_Y = 0.02f
-private const val COPA_CYLINDER_BOTTOM_Y = 0.16f
+// (HIGHLIGHT_CY + HIGHLIGHT_RY = 0.165), and the cylinder must reach the brim's top with no gap.
+private const val COPA_CYLINDER_TOP_Y = -0.01f
+private const val COPA_CYLINDER_BOTTOM_Y = 0.13f
 private const val COPA_CYLINDER_RX = 0.09f
-private const val COPA_BAND_TOP_Y = 0.105f
-private const val COPA_BAND_BOTTOM_Y = 0.125f
-private const val COPA_BRIM_Y = 0.178f
+private const val COPA_BAND_TOP_Y = 0.075f
+private const val COPA_BAND_BOTTOM_Y = 0.095f
+private const val COPA_BRIM_Y = 0.148f
 private const val COPA_BRIM_RX = 0.17f
 private const val COPA_BRIM_RY = 0.02f
 
-private const val CORONA_BASE_Y = 0.205f
-private const val CORONA_BAND_TOP_Y = 0.165f
+private const val CORONA_BASE_Y = 0.175f
+private const val CORONA_BAND_TOP_Y = 0.135f
 private const val CORONA_RX = 0.165f
-private const val CORONA_PEAK_CENTER_Y = 0.035f
-private const val CORONA_PEAK_SIDE_Y = 0.095f
-private const val CORONA_VALLEY_Y = 0.14f
+private const val CORONA_PEAK_CENTER_Y = 0.005f
+private const val CORONA_PEAK_SIDE_Y = 0.065f
+private const val CORONA_VALLEY_Y = 0.11f
 
 // --- Lower slot (T10) — anchored below the body (drawn last, so it always paints over the egg's
 // tapering bottom rather than being occluded by it). Both items share the same DX/anchor so a
 // single probe point covers either.
 private const val LOWER_DX = 0.20f
-private const val SOCK_TOP_Y = 0.845f
-private const val SOCK_BOTTOM_Y = 0.965f
+private const val SOCK_TOP_Y = 0.815f
+private const val SOCK_BOTTOM_Y = 0.935f
 private const val SOCK_HALF_WIDTH = 0.05f
-private const val SOCK_STRIPE_TOP_Y = 0.875f
-private const val SOCK_STRIPE_BOTTOM_Y = 0.905f
+private const val SOCK_STRIPE_TOP_Y = 0.845f
+private const val SOCK_STRIPE_BOTTOM_Y = 0.875f
 
-private const val SNEAKER_TOP_Y = 0.86f
-private const val SNEAKER_BOTTOM_Y = 0.95f
+private const val SNEAKER_TOP_Y = 0.83f
+private const val SNEAKER_BOTTOM_Y = 0.92f
 private const val SNEAKER_HALF_WIDTH = 0.065f
 private const val SNEAKER_SOLE_HEIGHT = 0.022f
 
@@ -362,13 +379,60 @@ fun restingFaceMotion(
 }
 
 /**
- * Paints Habi: body (tinted) -> pattern -> shading -> cheeks -> eyes+highlights -> brows -> mouth
- * -> upper -> lower (tech doc §7.1, layer order is LAW; the shade/highlight pass is part of the
- * body layer, lifted above the pattern so light sits ON the printed body, not under it) — this is
- * the single call site every layer hangs off.
+ * El transform del CUERPO, en valores planos (no `State`): baja hasta [drawHabi] para que el
+ * widget y el `largeIcon` de las notificaciones — que dibujan por software, sin `graphicsLayer` —
+ * hereden sombra y transform exactamente igual que la pantalla. Los canales por defecto ([Rest])
+ * son la identidad: ningun llamador real de [HabiAvatar] lo pasa todavia (T10/T11 lo conectan), asi
+ * que la pantalla actual no se deforma dos veces contra el `graphicsLayer` que ya trae.
+ */
+data class HabiBodyMotion(
+    val tiltDeg: Float = 0f,
+    val scaleX: Float = 1f,
+    val scaleY: Float = 1f,
+    // liftN: fraccion del viewport, positivo = sube.
+    val liftN: Float = 0f,
+    val shadowScale: Float = 1f,
+    val shadowAlpha: Float = SHADOW_ALPHA_REST,
+) {
+    companion object {
+        val Rest = HabiBodyMotion()
+    }
+}
+
+/**
+ * La sombra en el suelo: primera capa y FUERA del transform del cuerpo — es el suelo, no Habi
+ * (biblia §3.4, «la sombra es parte del personaje, no un efecto»). Dentro del transform rotaria
+ * con el vuelco. Va antes de todo porque el cuerpo debe taparla donde se solapan.
+ *
+ * Se estrecha cuando sube y se ensancha cuando se posa ([HabiBodyMotion.shadowScale]): una sombra
+ * quieta mata el peso del gesto.
+ */
+private fun DrawScope.drawGroundShadow(
+    vp: HabiViewport,
+    body: HabiBodyMotion,
+) {
+    val rx = vp.len(SHADOW_RX * body.shadowScale)
+    val ry = vp.len(SHADOW_RY * body.shadowScale)
+    val center = vp.point(BODY_CX, SHADOW_CY)
+    drawOval(
+        color = Borde.copy(alpha = body.shadowAlpha),
+        topLeft = Offset(center.x - rx, center.y - ry),
+        size = Size(rx * 2f, ry * 2f),
+    )
+}
+
+/**
+ * Paints Habi: sombra en el suelo -> [transform, pivote en el pie] cuerpo (tinted) -> pattern ->
+ * shading -> cheeks -> eyes+highlights -> brows -> mouth -> upper -> lower [fin transform] (tech
+ * doc §7.1, layer order is LAW; the shade/highlight pass is part of the body layer, lifted above
+ * the pattern so light sits ON the printed body, not under it) — this is the single call site
+ * every layer hangs off. `lower` va el ultimo y DENTRO del transform: es de Habi, se vuelca con
+ * ella.
  *
  * [motion] and [gaze] are the avatar's live animation channels; static consumers (widget bitmap,
- * frozen test frames) leave the defaults and get the resting expression.
+ * frozen test frames) leave the defaults and get the resting expression. [body] es el transform
+ * del cuerpo (T8): en reposo es la identidad. [groundShadow] se apaga solo cuando la escena
+ * pinta su propia sombra a mano contra un mockup (`StoryScenes`).
  */
 fun DrawScope.drawHabi(
     spec: HabiSpec,
@@ -376,6 +440,8 @@ fun DrawScope.drawHabi(
     delighted: Boolean = false,
     motion: HabiFaceMotion? = null,
     gaze: Offset = Offset.Zero,
+    body: HabiBodyMotion = HabiBodyMotion.Rest,
+    groundShadow: Boolean = true,
 ) {
     val resolved = motion ?: restingFaceMotion(spec, delighted)
     val face = resolved.face
@@ -386,21 +452,32 @@ fun DrawScope.drawHabi(
     // right back.
     val bodyTone = spec.bodyToneOverride ?: HabiPalette.bodyColor(spec.equipped.bodyColor)
 
-    drawBody(vp, bodyTone, spec.equipped.bodyColor)
-    drawPattern(vp, spec.equipped.pattern, bodyTone)
-    drawBodyShading(vp, bodyTone)
-    drawCheeks(vp, face)
-    // Closed lids are a whole-eye replacement, not a closure amount: blink, droop, gaze and
-    // sparkles all describe an OPEN eye, so none of them apply over the arcs.
-    if (spec.closedEyes) {
-        drawClosedEyes(vp, eyeColor)
-    } else {
-        drawEyes(vp, face, blink, resolved.eyelidDroop, gaze, eyeColor, spec.eyesPainted, bodyTone)
+    if (groundShadow) drawGroundShadow(vp, body)
+
+    withTransform({
+        // El pivote es la BASE, no el centro (biblia §9.1): Habi gira y se balancea desde el
+        // suelo. Trasladarse en vertical desde el centro es exactamente lo que sonaba a robot.
+        val pivot = vp.point(BODY_CX, FOOT_Y)
+        rotate(body.tiltDeg, pivot)
+        scale(body.scaleX, body.scaleY, pivot)
+        translate(0f, -vp.len(body.liftN))
+    }) {
+        drawBody(vp, bodyTone, spec.equipped.bodyColor)
+        drawPattern(vp, spec.equipped.pattern, bodyTone)
+        drawBodyShading(vp, bodyTone)
+        drawCheeks(vp, face)
+        // Closed lids are a whole-eye replacement, not a closure amount: blink, droop, gaze and
+        // sparkles all describe an OPEN eye, so none of them apply over the arcs.
+        if (spec.closedEyes) {
+            drawClosedEyes(vp, eyeColor)
+        } else {
+            drawEyes(vp, face, blink, resolved.eyelidDroop, gaze, eyeColor, spec.eyesPainted, bodyTone)
+        }
+        drawBrows(vp, face)
+        drawMouth(vp, face, resolved.smirkProgress, resolved.mouthWobble)
+        drawUpper(vp, spec.equipped.upper)
+        drawLower(vp, spec.equipped.lower)
     }
-    drawBrows(vp, face)
-    drawMouth(vp, face, resolved.smirkProgress, resolved.mouthWobble)
-    drawUpper(vp, spec.equipped.upper)
-    drawLower(vp, spec.equipped.lower)
 }
 
 /**
