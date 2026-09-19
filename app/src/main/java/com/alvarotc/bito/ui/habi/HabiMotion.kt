@@ -65,6 +65,9 @@ private const val BREATH_JITTER = 0.08f
 private const val IDLE_GESTURE_MIN_DELAY_MS = 5000L
 private const val IDLE_GESTURE_MAX_DELAY_MS = 11000L
 private const val IDLE_GESTURE_COUNT = 4 // curiosidad, estiron, mirada de reojo y balanceo minimo.
+private const val IDLE_GESTURE_CURIOSITY = 0
+private const val IDLE_GESTURE_STRETCH = 1
+private const val IDLE_GESTURE_GLANCE = 2 // el unico que no toca el cuerpo: solo los ojos.
 private const val IDLE_TILT_DEG = 5f
 private const val IDLE_TILT_IN_MS = 240
 private const val IDLE_TILT_HOLD_MS = 320L
@@ -118,7 +121,10 @@ private const val EYES_LEAD_MS = 70L
 // La sombra es parte del gesto: se estrecha cuando el cuerpo sube y se ensancha y oscurece cuando
 // se posa. `body()` la clampea a SHADOW_SCALE_MAX (~1,11), el techo que la deja dentro del viewport.
 private const val SHADOW_SCALE_UP = 0.7f
-private const val SHADOW_SCALE_DOWN = 1.15f
+
+// 1,10 y no 1,15: el clamp de `body()` es SHADOW_SCALE_MAX (~1,11), asi que un 1,15 se recortaba
+// entero y el ensanchado al posarse no llegaba a verse. Este cabe por debajo del techo.
+private const val SHADOW_SCALE_DOWN = 1.10f
 private const val SHADOW_ALPHA_SETTLED = 0.32f
 
 // Variacion por personalidad (spec §3.4): Sargento seco, Cheerleader amplio, Neutra al medio.
@@ -248,6 +254,7 @@ class HabiMotion internal constructor(
     private var pressY by mutableFloatStateOf(1f)
 
     private var gestureJob: Job? = null
+    private var gazeJob: Job? = null
     private var lastIdleGesture = -1
     private var lastGestureHopped = false
     private var lidsHeld = false
@@ -285,22 +292,26 @@ class HabiMotion internal constructor(
 
     /**
      * Dispara la coreografia del cue y su sonido, cancelando la anterior. **Suspende hasta que el
-     * gesto ha asentado**, como [settleInto]: quien secuencia «gesto y luego texto» lo necesita, y
-     * quien no quiera esperar lo lanza en su propio scope.
+     * CUERPO ha asentado**, como [settleInto]: quien secuencia «gesto y luego texto» lo necesita,
+     * y quien no quiera esperar lo lanza en su propio scope. La mirada que el gesto dispare puede
+     * seguir volviendo a su sitio despues: es un `Job` aparte, y esperar sus ~400 ms de sostenido
+     * habria retrasado el texto por algo que el usuario ya no esta mirando.
+     *
+     * Devuelve `true` si el gesto llego al final y `false` si lo interrumpio otro: quien encadene
+     * algo al gesto puede distinguirlos. Ignorar el valor es perfectamente legitimo.
      *
      * Un cue mueve los CANALES y nada mas: la pose es de la pantalla y solo entra por [settleInto].
      */
     suspend fun play(
         cue: HabiCue,
         personality: Personality,
-    ) {
-        awaitGesture { playCue(cue, personality) }
-    }
+    ): Boolean = awaitGesture { playCue(cue, personality) }
 
-    /** El rito del ojo: quieta, el ojo se pinta, el cuerpo asiente. SIN sonido (biblia §4). */
-    suspend fun playEyeRitual() {
-        awaitGesture { runEyeRitual() }
-    }
+    /**
+     * El rito del ojo: quieta, el ojo se pinta, el cuerpo asiente. SIN sonido (biblia §4).
+     * Devuelve `true` si completo, `false` si otro gesto lo interrumpio.
+     */
+    suspend fun playEyeRitual(): Boolean = awaitGesture { runEyeRitual() }
 
     /** El toque: se tambalea desde la base y vuelve, con peso. No espera: el dedo ya se fue. */
     fun poke(
@@ -382,36 +393,43 @@ class HabiMotion internal constructor(
             delay(idleDelayMs(personality))
             if (asleep() || gestureJob?.isActive == true) continue
             val gain = amplitudeGain(personality)
-            when (nextIdleGesture()) {
-                0 -> {
-                    tilt.animateTo(-IDLE_TILT_DEG * gain, tween(IDLE_TILT_IN_MS, easing = EaseInOut))
-                    delay(IDLE_TILT_HOLD_MS)
-                    tilt.animateTo(0f, SettleSpring)
-                }
-                1 -> {
-                    // El estiron, ahora CON sombra: subir sin que la sombra se estreche era
-                    // exactamente el peso que le faltaba.
-                    coroutineScope {
-                        launch { squash.animateTo(-IDLE_STRETCH * gain, tween(IDLE_STRETCH_IN_MS, easing = EaseInOut)) }
-                        launch { shadowScale.animateTo(SHADOW_SCALE_UP, tween(IDLE_STRETCH_IN_MS, easing = EaseInOut)) }
+            val gesture = nextIdleGesture()
+            if (gesture == IDLE_GESTURE_GLANCE) {
+                // La mirada de reojo no toca el cuerpo: corre por su propio Job, como toda mirada.
+                val side = if (Random.nextBoolean()) 1f else -1f
+                glanceAt(Offset(side * IDLE_GLANCE_X, 0f), IDLE_GLANCE_IN_MS, IDLE_GLANCE_HOLD_MS)
+                continue
+            }
+            // Por la MISMA maquinaria que los gestos grandes, y no sueltos: asi un toque o un cue
+            // que llegue a mitad de un micro-gesto lo cancela por su `Job` en vez de reventar el
+            // `animateTo` desde el MutatorMutex. Esa excepcion escapaba del `while` y dejaba a Habi
+            // sin micro-gestos el resto de la sesion; `join()` no la propaga, el bucle sigue vivo.
+            awaitGesture {
+                when (gesture) {
+                    IDLE_GESTURE_CURIOSITY -> {
+                        tilt.animateTo(-IDLE_TILT_DEG * gain, tween(IDLE_TILT_IN_MS, easing = EaseInOut))
+                        delay(IDLE_TILT_HOLD_MS)
+                        tilt.animateTo(0f, SettleSpring)
                     }
-                    delay(IDLE_STRETCH_HOLD_MS)
-                    coroutineScope {
-                        launch { squash.animateTo(0f, SettleSpring) }
-                        launch { shadowScale.animateTo(1f, SettleSpring) }
+                    IDLE_GESTURE_STRETCH -> {
+                        // El estiron, ahora CON sombra: subir sin que la sombra se estreche era
+                        // exactamente el peso que le faltaba.
+                        coroutineScope {
+                            launch { squash.animateTo(-IDLE_STRETCH * gain, tween(IDLE_STRETCH_IN_MS, easing = EaseInOut)) }
+                            launch { shadowScale.animateTo(SHADOW_SCALE_UP, tween(IDLE_STRETCH_IN_MS, easing = EaseInOut)) }
+                        }
+                        delay(IDLE_STRETCH_HOLD_MS)
+                        coroutineScope {
+                            launch { squash.animateTo(0f, SettleSpring) }
+                            launch { shadowScale.animateTo(1f, SettleSpring) }
+                        }
                     }
-                }
-                2 -> {
-                    val side = if (Random.nextBoolean()) 1f else -1f
-                    gazeX.animateTo(side * IDLE_GLANCE_X, tween(IDLE_GLANCE_IN_MS, easing = LinearOutSlowInEasing))
-                    delay(IDLE_GLANCE_HOLD_MS)
-                    gazeX.animateTo(0f, GazeSpring)
-                }
-                else -> {
-                    val side = if (Random.nextBoolean()) 1f else -1f
-                    tilt.animateTo(side * IDLE_SWAY_DEG, SettleSpring)
-                    delay(IDLE_SWAY_HOLD_MS)
-                    tilt.animateTo(0f, SettleSpring)
+                    else -> {
+                        val side = if (Random.nextBoolean()) 1f else -1f
+                        tilt.animateTo(side * IDLE_SWAY_DEG, SettleSpring)
+                        delay(IDLE_SWAY_HOLD_MS)
+                        tilt.animateTo(0f, SettleSpring)
+                    }
                 }
             }
         }
@@ -437,32 +455,25 @@ class HabiMotion internal constructor(
     private suspend fun playLogged(personality: Personality) {
         onSound(SOUND_TICK)
         val gain = amplitudeGain(personality)
+        // Ojos primero, y por su cuenta: el cuerpo no espera a que la mirada vuelva del item.
+        glanceAt(Offset(0f, LOGGED_GAZE_Y), LOGGED_GAZE_MS, GAZE_HOLD_MS)
+        delay(EYES_LEAD_MS)
         coroutineScope {
+            launch { tilt.animateTo(LOGGED_TILT_DEG * gain, NudgeSpring) }
+            launch { squash.animateTo(LOGGED_SQUASH * gain, NudgeSpring) }
             launch {
-                gazeY.animateTo(LOGGED_GAZE_Y, tween(LOGGED_GAZE_MS, easing = LinearOutSlowInEasing))
-                delay(GAZE_HOLD_MS)
-                gazeY.animateTo(0f, GazeSpring)
-            }
-            launch {
-                delay(EYES_LEAD_MS)
-                coroutineScope {
-                    launch { tilt.animateTo(LOGGED_TILT_DEG * gain, NudgeSpring) }
-                    launch { squash.animateTo(LOGGED_SQUASH * gain, NudgeSpring) }
-                    launch {
-                        shadowScale.animateTo(LOGGED_SHADOW_NARROW, tween(LOGGED_SHADOW_MS, easing = FastOutSlowInEasing))
-                    }
-                }
-                if (rollHop(personality)) hopOnce(LOGGED_HOP * gain)
-                coroutineScope {
-                    launch { tilt.animateTo(0f, NudgeSpring) }
-                    launch { squash.animateTo(0f, NudgeSpring) }
-                    launch {
-                        shadowScale.animateTo(LOGGED_SHADOW_WIDE, tween(LOGGED_SHADOW_MS, easing = FastOutSlowInEasing))
-                    }
-                }
-                shadowScale.animateTo(1f, SettleSpring)
+                shadowScale.animateTo(LOGGED_SHADOW_NARROW, tween(LOGGED_SHADOW_MS, easing = FastOutSlowInEasing))
             }
         }
+        if (rollHop(personality)) hopOnce(LOGGED_HOP * gain)
+        coroutineScope {
+            launch { tilt.animateTo(0f, NudgeSpring) }
+            launch { squash.animateTo(0f, NudgeSpring) }
+            launch {
+                shadowScale.animateTo(LOGGED_SHADOW_WIDE, tween(LOGGED_SHADOW_MS, easing = FastOutSlowInEasing))
+            }
+        }
+        shadowScale.animateTo(1f, SettleSpring)
     }
 
     /**
@@ -491,6 +502,11 @@ class HabiMotion internal constructor(
             launch { tilt.animateTo(-TIP_ANTICIPATION_DEG * side, tween(TIP_ANTICIPATION_MS, easing = FastOutSlowInEasing)) }
             launch { squash.animateTo(TIP_ANTICIPATION_SQUASH, tween(TIP_ANTICIPATION_MS, easing = FastOutSlowInEasing)) }
         }
+        // Ojos primero tambien aqui: la mirada se va hacia donde va a caer y el cuerpo la sigue
+        // 70 ms despues. Aguanta volcada toda la pausa y vuelve al centro —al usuario— justo
+        // cuando empieza el enderezado.
+        glanceAt(Offset(side, 0f), TIP_FALL_MS, TIP_HOLD_MS)
+        delay(EYES_LEAD_MS)
         coroutineScope {
             launch { tilt.animateTo(TIP_DEG * side, tween(TIP_FALL_MS, easing = FastOutLinearInEasing)) }
             launch { squash.animateTo(0f, tween(TIP_FALL_MS, easing = FastOutLinearInEasing)) }
@@ -501,7 +517,6 @@ class HabiMotion internal constructor(
                     tween(TIP_FALL_MS, easing = FastOutLinearInEasing),
                 )
             }
-            launch { gazeX.animateTo(side, tween(TIP_FALL_MS, easing = LinearOutSlowInEasing)) }
         }
         onSound(SOUND_BUMP)
         delay(TIP_HOLD_MS)
@@ -511,18 +526,18 @@ class HabiMotion internal constructor(
             launch { shadowScale.animateTo(1f, TipSpring) }
             launch { shadowAlphaDelta.animateTo(0f, TipSpring) }
         }
-        coroutineScope {
-            launch { tilt.animateTo(0f, SettleSpring) }
-            // Y al final mira al usuario: los ojos vuelven al centro y se quedan un momento.
-            launch { gazeX.animateTo(0f, GazeSpring) }
-        }
+        tilt.animateTo(0f, SettleSpring)
         delay(TIP_LOOK_MS)
     }
 
     /**
-     * Asentarse y dormirse (~900 ms). Lo SOSTENIDO no vive en los canales, vive en la pose: al
-     * asentarse en SLEEPING el cuerpo ya es ancho y bajo, y los canales vuelven a cero sin que se
-     * note. Los parpados se quedan caidos hasta que otra pose o otro gesto los levante.
+     * Asentarse y dormirse (~900 ms): bostezo, el cuerpo se rinde y los parpados caen.
+     *
+     * **No asienta la pose**, igual que la reaccion grande: dormirse lo dice el spec (la pantalla
+     * deriva «sellado → dormida»), no este gesto. Lo sostenido —ancha, baja y con la sombra
+     * quieta— ES esa pose cuando llegue; aqui el hundimiento vuelve a cero con [PoseSpring], que
+     * es lento y sin rebote, para que el relevo no se note. Los parpados si se quedan caidos hasta
+     * que otra pose o otro cue los levante: son el unico rastro que el gesto deja puesto.
      */
     private suspend fun playSealed() {
         onSound(SOUND_SIGH)
@@ -538,7 +553,6 @@ class HabiMotion internal constructor(
             }
         }
         coroutineScope {
-            launch { settleInto(HabiPose.SLEEPING) }
             launch { squash.animateTo(0f, PoseSpring) }
             launch { lift.animateTo(0f, PoseSpring) }
             launch { shadowScale.animateTo(1f, PoseSpring) }
@@ -582,19 +596,16 @@ class HabiMotion internal constructor(
             pokeBlink.animateTo(1f, tween(BLINK_CLOSE_MS, easing = LinearEasing))
             pokeBlink.animateTo(0f, tween(BLINK_OPEN_MS, easing = LinearEasing))
         }
-        launch {
-            val targetX = ((touch.x - 0.5f) * 2f).coerceIn(-1f, 1f)
-            val targetY = ((touch.y - 0.5f) * 2f).coerceIn(-1f, 1f)
-            coroutineScope {
-                launch { gazeX.animateTo(targetX, tween(POKE_GAZE_MS, easing = LinearOutSlowInEasing)) }
-                launch { gazeY.animateTo(targetY, tween(POKE_GAZE_MS, easing = LinearOutSlowInEasing)) }
-            }
-            delay(GAZE_HOLD_MS)
-            coroutineScope {
-                launch { gazeX.animateTo(0f, GazeSpring) }
-                launch { gazeY.animateTo(0f, GazeSpring) }
-            }
-        }
+        // Los ojos se van al dedo por su propio Job: un toque interrumpido no los congela a medio
+        // camino, y el cuerpo no espera al sostenido para darse por asentado.
+        glanceAt(
+            Offset(
+                ((touch.x - 0.5f) * 2f).coerceIn(-1f, 1f),
+                ((touch.y - 0.5f) * 2f).coerceIn(-1f, 1f),
+            ),
+            POKE_GAZE_MS,
+            GAZE_HOLD_MS,
+        )
         launch {
             delay(EYES_LEAD_MS)
             // La compresion escala con lo alto que caiga el dedo (en la cabeza aprieta mas), la
@@ -671,21 +682,25 @@ class HabiMotion internal constructor(
     }
 
     /** Espera a que el gesto asiente; si a quien espera lo cancelan, el gesto muere con el. */
-    private suspend fun awaitGesture(block: suspend CoroutineScope.() -> Unit) {
+    private suspend fun awaitGesture(block: suspend CoroutineScope.() -> Unit): Boolean {
         val job = startGesture(block)
         try {
+            // `join` NO propaga la cancelacion del gesto, solo la de quien espera: por eso un
+            // micro-gesto ocioso preemptado devuelve el control al bucle en vez de matarlo.
             job.join()
         } catch (cancellation: CancellationException) {
             job.cancel()
             throw cancellation
         }
+        return !job.isCancelled
     }
 
     /**
      * El reposo tras un gesto: todo canal transitorio vuelve a 0. Tras una coreografia completa no
      * se nota (ya estaban), y tras una cancelada es lo que impide que un registro a mitad del
      * vuelco deje a Habi tumbada para siempre. Los parpados NO entran: dormirse los deja caidos a
-     * proposito.
+     * proposito. **La mirada tampoco**: vive en su propio `Job` ([glanceAt]), que siempre termina
+     * en el centro; tirar de ella aqui habria cortado el sostenido de una mirada recien lanzada.
      */
     private suspend fun settleAfterGesture() {
         coroutineScope {
@@ -695,11 +710,35 @@ class HabiMotion internal constructor(
             launch { lift.animateTo(0f, SettleSpring) }
             launch { shadowScale.animateTo(1f, SettleSpring) }
             launch { shadowAlphaDelta.animateTo(0f, SettleSpring) }
-            launch { gazeX.animateTo(0f, GazeSpring) }
-            launch { gazeY.animateTo(0f, GazeSpring) }
             launch { mouth.animateTo(0f, SettleSpring) }
             launch { pokeBlink.animateTo(0f, tween(BLINK_OPEN_MS, easing = LinearEasing)) }
         }
+    }
+
+    /**
+     * Una mirada: los ojos salen, aguantan y vuelven al centro. Corre en su propio `Job` —el que
+     * cancela es la mirada SIGUIENTE, no el cuerpo— por dos razones: un gesto interrumpido no
+     * congela los ojos a medio camino, y el cuerpo no tiene que esperar el sostenido para dar el
+     * gesto por asentado. Siempre termina centrada, asi que nadie tiene que recogerla.
+     */
+    private fun glanceAt(
+        target: Offset,
+        inMs: Int,
+        holdMs: Long,
+    ) {
+        gazeJob?.cancel()
+        gazeJob =
+            scope.launch {
+                coroutineScope {
+                    launch { gazeX.animateTo(target.x, tween(inMs, easing = LinearOutSlowInEasing)) }
+                    launch { gazeY.animateTo(target.y, tween(inMs, easing = LinearOutSlowInEasing)) }
+                }
+                delay(holdMs)
+                coroutineScope {
+                    launch { gazeX.animateTo(0f, GazeSpring) }
+                    launch { gazeY.animateTo(0f, GazeSpring) }
+                }
+            }
     }
 
     /** Levanta los parpados que dejo caidos el dormirse. No espera: el gesto que llega manda. */
