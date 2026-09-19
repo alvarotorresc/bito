@@ -37,18 +37,21 @@ class TasksUiStateTest {
         // weekTask(id, TODAY) dues on this week's Sunday (TODAY+2, since TODAY is a Friday): open, not overdue.
         val open = weekTask("open-week", TODAY)
         val postponedToday = weekTask("postponed-week", TODAY)
-        // A WEEK task whose Sunday already passed: still WEEK-kind, but slotOf sees it as OVERDUE, not THIS_WEEK.
+        // Its Sunday is today: dueDay == today is not yet overdue, so it belongs to Esta semana only —
+        // not Hoy, even though slotOf alone would have called it DUE_TODAY.
+        val dueToday = task(id = "due-today-week", dueKind = DueKind.WEEK, dueDay = TODAY, createdOnDay = TODAY - 2)
+        // A WEEK task whose Sunday already passed: still WEEK-kind, but its dueDay < today makes it OVERDUE.
         val overdue = task(id = "overdue-week", dueKind = DueKind.WEEK, dueDay = TODAY - 5, createdOnDay = TODAY - 12)
         val state =
             domainState(
-                tasks = listOf(open, postponedToday, overdue),
+                tasks = listOf(open, postponedToday, dueToday, overdue),
                 taskEvents = listOf(taskEvent("postponed-week", TaskEventKind.POSTPONED, TODAY)),
             )
 
         val ui = buildTasksUiState(state, TODAY)
 
-        assertEquals(setOf("open-week", "postponed-week"), ui.weekTasks.map { it.id }.toSet())
-        assertTrue(ui.todayTasks.none { it.id == "open-week" || it.id == "postponed-week" })
+        assertEquals(setOf("open-week", "postponed-week", "due-today-week"), ui.weekTasks.map { it.id }.toSet())
+        assertTrue(ui.todayTasks.none { it.id in setOf("open-week", "postponed-week", "due-today-week") })
 
         assertEquals(listOf("overdue-week"), ui.todayTasks.map { it.id })
         assertTrue(ui.weekTasks.none { it.id == "overdue-week" })

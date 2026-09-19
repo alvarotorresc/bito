@@ -19,10 +19,8 @@ data class TaskListRowUi(
 )
 
 /**
- * Snapshot the full tasks list screen renders (spec §8.4): sections grouped by due-kind. Hoy,
- * Con plazo, Sin plazo and Hechas never overlap. Esta semana is the one exception (capataz
- * ruling, 2026-09-19): it groups every open WEEK task of the current week regardless of whether
- * it also touches Hoy, so a WEEK task due today can show in both.
+ * Snapshot the full tasks list screen renders (spec §8.4): five sections that never overlap —
+ * a task touching Hoy shows up there and nowhere else.
  */
 data class TasksUiState(
     val today: LogicalDay = 0,
@@ -41,12 +39,11 @@ data class TasksUiState(
  * Derives the full tasks list from [state] as seen on [today]. Pure — no side effects, no
  * storage, no clock reads — same discipline as [com.alvarotc.bito.ui.today.buildTodayUiState].
  *
- * Hoy is [Tasks.todayTasks] minus its `THIS_WEEK` rows: those already have a home in [weekTasks],
- * which groups every open WEEK task whose deadline has not passed ([Task.dueDay] `>= today`) —
- * postponed today or not, whether or not it also happens to sit in Hoy (an overdue WEEK task
- * stays OVERDUE, in Hoy only; one due exactly today stays DUE_TODAY, in both). `inToday` is
- * computed from that trimmed Hoy list and reused only by Con plazo and Sin plazo, which keep
- * excluding it — Esta semana does not (capataz ruling, 2026-09-19).
+ * Hoy is [Tasks.todayTasks] minus every task [isOpenThisWeek] — exactly the set that goes to
+ * [weekTasks] instead, postponed today or not: a WEEK task due exactly today (its Sunday) moves
+ * out of Hoy and shows only in Esta semana; an overdue one ([Task.dueDay] `< today`) still shows
+ * only in Hoy, as `OVERDUE`. `inToday` is computed from that trimmed Hoy list and reused by Con
+ * plazo and Sin plazo, which keep excluding it — Hoy wins there, so no task appears twice.
  */
 fun buildTasksUiState(
     state: DomainState,
@@ -54,13 +51,13 @@ fun buildTasksUiState(
 ): TasksUiState {
     val todayTasks =
         Tasks.todayTasks(state, today)
-            .filter { it.slot != Tasks.TodaySlot.THIS_WEEK }
             .map { it.task }
+            .filterNot { isOpenThisWeek(it, today) }
     val inToday = todayTasks.map { it.id }.toSet()
     val open = state.tasks.filter { it.status == TaskStatus.OPEN }
 
     val weekTasks =
-        open.filter { it.dueKind == DueKind.WEEK && (it.dueDay ?: Int.MIN_VALUE) >= today }
+        open.filter { isOpenThisWeek(it, today) }
             .sortedWith(compareBy({ it.dueDay ?: Int.MAX_VALUE }, { it.createdAtMillis }, { it.id }))
 
     val datedTasks =
@@ -90,6 +87,12 @@ fun buildTasksUiState(
         loading = false,
     )
 }
+
+/** Open, WEEK-kind, not past its Sunday yet — the set Esta semana groups and Hoy gives up to it. */
+private fun isOpenThisWeek(
+    task: Task,
+    today: LogicalDay,
+): Boolean = task.dueKind == DueKind.WEEK && (task.dueDay ?: Int.MIN_VALUE) >= today
 
 /**
  * Mirrors [Tasks.looseOfTheDay]'s private sink key through the public [Tasks.lastPostponedDay]:
