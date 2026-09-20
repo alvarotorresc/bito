@@ -117,7 +117,17 @@ fun FocusScreen(
             Text(state.title, style = MaterialTheme.typography.headlineMedium, color = Tinta)
             state.firstStep?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = TintaSuave) }
 
-            if (state.running) {
+            if (state.running && state.justFinished) {
+                // finish() marks the task done, then holds here — still `running`, session not
+                // cleared yet — before actually closing: Habi's own "hecha" phrase (same as Hoy's)
+                // in place of the countdown and its five buttons.
+                val fallbackName = stringResource(R.string.habi_name_fallback)
+                SpeechBubble(
+                    speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
+                    text = stringResource(HabiVoice.taskDoneRes(state.spec.personality), state.userName.ifBlank { fallbackName }),
+                    modifier = Modifier.fillMaxWidth().testTag("focus-done-bubble"),
+                )
+            } else if (state.running) {
                 if (justStarted) {
                     val fallbackName = stringResource(R.string.habi_name_fallback)
                     SpeechBubble(

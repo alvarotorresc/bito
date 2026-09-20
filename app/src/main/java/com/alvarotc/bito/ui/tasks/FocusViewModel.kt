@@ -43,10 +43,15 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.ZoneId
 
+/** How long "he terminado" holds the screen on the done phrase before the session actually closes. */
+private const val FINISH_HOLD_MS = 1_500L
+
 /**
  * Lo que la pantalla de foco pinta. [busyWith] es el titulo de la sesion ajena que ya estaba en
  * marcha cuando se pidio [FocusViewModel] para otra tarea — no nulo solo en ese conflicto, y la
- * pantalla ofrece entonces la hoja "seguir con la otra / dejarla y empezar esta".
+ * pantalla ofrece entonces la hoja "seguir con la otra / dejarla y empezar esta". [justFinished]
+ * es solo true durante la pausa de [FocusViewModel.finish] (todavia `running`, ya con la tarea
+ * marcada hecha) — la pantalla lo usa para ensenar la frase de Habi en vez de la cuenta atras.
  */
 data class FocusUiState(
     val taskId: String? = null,
@@ -57,6 +62,7 @@ data class FocusUiState(
     val selectedMinutes: Int = FocusViewModel.DEFAULT_MINUTES,
     val running: Boolean = false,
     val remainingMillis: Long = 0L,
+    val justFinished: Boolean = false,
     val gone: Boolean = false,
     val busyWith: String? = null,
     val loading: Boolean = true,
@@ -114,11 +120,12 @@ class FocusViewModel(
         val owned: List<CustomizationItemEntity>,
     )
 
-    /** Lo que solo vive en este ViewModel: la eleccion de minutos y si la sesion ya se cerro. */
-    private data class Extra(val terminated: Boolean, val selectedMinutes: Int)
+    /** Lo que solo vive en este ViewModel: la eleccion de minutos, si la sesion ya se cerro y si esta en la pausa de [finish]. */
+    private data class Extra(val terminated: Boolean, val selectedMinutes: Int, val justFinished: Boolean)
 
     private val terminated = MutableStateFlow(false)
     private val selection = MutableStateFlow(DEFAULT_MINUTES)
+    private val justFinishedFlag = MutableStateFlow(false)
 
     /** Fuerza recalcular [uiState] cada segundo mientras hay sesion — el propio valor no importa. */
     private val tick = MutableStateFlow(0L)
@@ -129,7 +136,7 @@ class FocusViewModel(
     val uiState: StateFlow<FocusUiState> =
         combine(
             combine(focus.session, domainState.observe(), settings.settings, rewards.observeOwnedItems(), ::Snapshot),
-            combine(terminated, selection, ::Extra),
+            combine(terminated, selection, justFinishedFlag, ::Extra),
             tick,
         ) { snapshot, extra, _ -> buildUiState(snapshot, extra) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FocusUiState())
@@ -222,6 +229,7 @@ class FocusViewModel(
             selectedMinutes = extra.selectedMinutes,
             running = true,
             remainingMillis = FocusClock.remainingMillis(session, nowMillis, elapsed()),
+            justFinished = extra.justFinished,
             loading = false,
         )
     }
@@ -284,6 +292,11 @@ class FocusViewModel(
             val nowMillis = now()
             tasks.markDone(session.taskId, today, nowMillis)
             reconciler.reconcile(today, nowMillis)
+            // Habi dice la misma frase que Hoy antes de que la pantalla se cierre — la sesion se
+            // limpia DESPUES de la pausa, no antes, para que uiState siga leyendo running=true
+            // (con la tarea ya hecha) mientras se ve el bocadillo.
+            justFinishedFlag.value = true
+            delay(FINISH_HOLD_MS)
             focus.clear()
             presence.clear()
             terminated.value = true

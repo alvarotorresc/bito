@@ -4,6 +4,7 @@ import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.LogicalDay
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.Task
 import com.alvarotc.bito.domain.model.TaskStatus
 
@@ -30,6 +31,10 @@ data class TasksUiState(
     val looseTasks: List<TaskListRowUi> = emptyList(),
     val doneTasks: List<TaskListRowUi> = emptyList(),
     val loading: Boolean = true,
+    // Only what the "hecha" snackbar's HabiVoice.taskDoneRes call needs — no mood, no spec: this
+    // screen never paints Habi herself.
+    val personality: Personality = Personality.NEUTRA,
+    val userName: String = "",
 ) {
     val isEmpty: Boolean
         get() = todayTasks.isEmpty() && weekTasks.isEmpty() && datedTasks.isEmpty() && looseTasks.isEmpty() && doneTasks.isEmpty()
@@ -52,6 +57,8 @@ data class TasksUiState(
 fun buildTasksUiState(
     state: DomainState,
     today: LogicalDay,
+    personality: Personality = Personality.NEUTRA,
+    userName: String = "",
 ): TasksUiState {
     val todayTasks =
         Tasks.todayTasks(state, today)
@@ -89,6 +96,8 @@ fun buildTasksUiState(
         looseTasks = looseTasks.map { it.toRowUi(inToday) },
         doneTasks = doneTasks.map { it.toRowUi(inToday) },
         loading = false,
+        personality = personality,
+        userName = userName,
     )
 }
 

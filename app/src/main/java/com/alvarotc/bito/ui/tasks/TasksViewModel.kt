@@ -19,8 +19,10 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -42,9 +44,14 @@ class TasksViewModel(
 ) : ViewModel() {
     val uiState: StateFlow<TasksUiState> =
         combine(domainState.observe(), settings.settings) { state, prefs ->
-            buildTasksUiState(state, todayOf(prefs))
+            buildTasksUiState(state, todayOf(prefs), prefs.personality, prefs.userName)
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TasksUiState())
+
+    private val doneTask = MutableStateFlow<String?>(null)
+
+    /** El id de la ultima tarea marcada hecha desde esta lista, para el snackbar de Habi. */
+    val lastTaskDone: StateFlow<String?> = doneTask.asStateFlow()
 
     private fun todayOf(prefs: Settings) = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
 
@@ -59,7 +66,15 @@ class TasksViewModel(
 
     fun bringToToday(id: String) = write { today, nowMillis -> tasks.bringToToday(id, today, nowMillis) }
 
-    fun markDone(id: String) = write { today, nowMillis -> tasks.markDone(id, today, nowMillis) }
+    fun markDone(id: String) =
+        write { today, nowMillis ->
+            tasks.markDone(id, today, nowMillis)
+            doneTask.value = id
+        }
+
+    fun consumeTaskDone() {
+        doneTask.value = null
+    }
 
     fun create(
         title: String,

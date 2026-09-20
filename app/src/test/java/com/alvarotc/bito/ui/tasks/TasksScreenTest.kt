@@ -306,4 +306,19 @@ class TasksScreenTest {
 
         assertEquals("t1", startedId)
     }
+
+    @Test
+    fun `marking a task done from the list says so, same phrase as Hoy`() {
+        // Default settings: NEUTRA and a blank name, same fixture FocusScreenTest relies on for
+        // its own "champ" fallback.
+        runBlocking {
+            tasksRepo.create(taskEntity(id = "t1", title = "Meditar", createdOnDay = today))
+        }
+        renderScreen()
+
+        compose.onNodeWithTag("task-done-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Done, champ.", useUnmergedTree = true).assertExists()
+    }
 }

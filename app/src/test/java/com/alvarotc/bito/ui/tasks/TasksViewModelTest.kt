@@ -155,6 +155,23 @@ class TasksViewModelTest {
         }
 
     @Test
+    fun `marking done records the id for the Habi snackbar, and consuming it clears it`() =
+        runTest {
+            tasksRepo.create(taskEntity(id = "t1"))
+
+            assertNull(vm.lastTaskDone.value)
+
+            vm.markDone("t1")
+            advanceUntilIdle()
+
+            assertEquals("t1", vm.lastTaskDone.value)
+
+            vm.consumeTaskDone()
+
+            assertNull(vm.lastTaskDone.value)
+        }
+
+    @Test
     fun `editing the title does not touch the events`() =
         runTest {
             tasksRepo.create(taskEntity(id = "t1", dueKind = DueKind.DATE, dueDay = today + 10))

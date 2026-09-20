@@ -25,8 +25,12 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,9 +51,11 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.ui.components.BitoCard
+import com.alvarotc.bito.ui.components.DismissableBitoSnackbar
 import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -71,12 +77,30 @@ fun TasksScreen(
     onStartFocus: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val taskDone by viewModel.lastTaskDone.collectAsStateWithLifecycle()
     var doneExpanded by remember { mutableStateOf(false) }
     var menuFor by remember { mutableStateOf<TaskListRowUi?>(null) }
     var editing by remember { mutableStateOf<TaskListRowUi?>(null) }
     var deleting by remember { mutableStateOf<TaskListRowUi?>(null) }
+    val snackbar = remember { SnackbarHostState() }
+    val fallbackName = stringResource(R.string.habi_name_fallback)
+    val taskDoneLabel = stringResource(HabiVoice.taskDoneRes(state.personality), state.userName.ifBlank { fallbackName })
 
-    Scaffold(containerColor = Papel) { padding ->
+    // Same phrase and pattern Hoy already shows after marking a task done — this list had none.
+    LaunchedEffect(taskDone) {
+        if (taskDone != null) {
+            try {
+                snackbar.showSnackbar(taskDoneLabel, duration = SnackbarDuration.Short)
+            } finally {
+                viewModel.consumeTaskDone()
+            }
+        }
+    }
+
+    Scaffold(
+        containerColor = Papel,
+        snackbarHost = { SnackbarHost(snackbar) { DismissableBitoSnackbar(it) } },
+    ) { padding ->
         LazyColumn(
             Modifier.padding(padding).fillMaxWidth().testTag("tasks-list"),
             contentPadding = PaddingValues(20.dp),

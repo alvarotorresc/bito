@@ -42,6 +42,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -344,5 +345,47 @@ class FocusScreenTest {
 
         // Default DEFAULT_MINUTES (10:00) plus the 20 typed in the sheet.
         compose.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `finishing shows the done phrase, same as Hoy, and only then closes`() {
+        runBlocking { tasksRepo.create(taskEntity(id = "t1", createdOnDay = today)) }
+        val vm = newViewModel("t1")
+        var closed = false
+        render(vm, onClose = { closed = true })
+
+        compose.onNodeWithTag("focus-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-done", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        // Up but not gone yet: the phrase is showing and onClose has not fired.
+        compose.onNodeWithTag("focus-done-bubble", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Done, champ.", useUnmergedTree = true).assertExists()
+        assertFalse(closed)
+
+        dispatcher.scheduler.advanceTimeBy(1_500)
+        dispatcher.scheduler.runCurrent()
+        compose.waitForIdle()
+
+        assertTrue(closed)
+    }
+
+    @Test
+    fun `giving up closes in silence, no done phrase`() {
+        runBlocking { tasksRepo.create(taskEntity(id = "t1", createdOnDay = today)) }
+        val vm = newViewModel("t1")
+        var closed = false
+        render(vm, onClose = { closed = true })
+
+        compose.onNodeWithTag("focus-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-give-up", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertTrue(closed)
+        compose.onNodeWithTag("focus-done-bubble", useUnmergedTree = true).assertDoesNotExist()
     }
 }

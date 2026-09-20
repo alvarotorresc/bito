@@ -38,6 +38,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -264,7 +265,10 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `finishing marks the task done, clears the session and the presence`() =
+    fun `finishing marks the task done right away, then holds before clearing the session and the presence`() =
+        // Recalibrado (Habi acompana al terminar): finish() ahora sostiene FINISH_HOLD_MS con la
+        // tarea ya hecha pero la sesion todavia viva -- el hueco donde FocusScreen ensena el
+        // bocadillo de HabiVoice.taskDoneRes -- antes de limpiar sesion y bandeja y marcar gone.
         runFocusTest {
             tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
             val presence = FakeFocusPresence()
@@ -279,10 +283,20 @@ class FocusViewModelTest {
             val task = db.taskDao().byId("t1")!!
             assertEquals(TaskStatus.DONE, task.status)
             assertEquals(today, task.doneOnDay)
+            assertTrue(db.pointsLedgerDao().all().any { it.reason == PointsReason.TASK_DONE && it.refId == "task:t1" })
+            // Todavia en la pausa: la sesion sigue viva y la pantalla sigue "running", con el aviso.
+            assertTrue(vm.uiState.value.running)
+            assertTrue(vm.uiState.value.justFinished)
+            assertFalse(vm.uiState.value.gone)
+            assertEquals(0, presence.clearCalls)
+            assertNotNull(focusStore.session.first())
+
+            dispatcher.scheduler.advanceTimeBy(1_500)
+            dispatcher.scheduler.runCurrent()
+
             assertNull(focusStore.session.first())
             assertEquals(1, presence.clearCalls)
             assertTrue(vm.uiState.value.gone)
-            assertTrue(db.pointsLedgerDao().all().any { it.reason == PointsReason.TASK_DONE && it.refId == "task:t1" })
         }
 
     @Test
