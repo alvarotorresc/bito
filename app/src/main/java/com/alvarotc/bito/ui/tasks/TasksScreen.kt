@@ -34,6 +34,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -329,7 +330,16 @@ private fun TaskRowMenuSheet(
         Column(Modifier.padding(20.dp).testTag("task-row-menu")) {
             TaskMenuRow(BitoIcons.Pencil, stringResource(R.string.task_edit), onEdit, Modifier.testTag("task-menu-edit"))
             Spacer(Modifier.height(4.dp))
-            TaskMenuRow(BitoIcons.Trash, stringResource(R.string.task_delete), onDelete, Modifier.testTag("task-menu-delete"))
+            // Borrar en rojo, calcado de HabitFormScreen's own delete button (Peligro): the sheet
+            // this row opens already confirms in red, so the row that leads there should read the
+            // same way instead of looking identical to "editar" until you tap it.
+            TaskMenuRow(
+                BitoIcons.Trash,
+                stringResource(R.string.task_delete),
+                onDelete,
+                Modifier.testTag("task-menu-delete"),
+                tint = Peligro,
+            )
         }
     }
 }
@@ -340,14 +350,15 @@ private fun TaskMenuRow(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    tint: Color = Tinta,
 ) {
     Row(
         modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = Tinta)
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = Tinta)
+        Icon(icon, contentDescription = null, tint = tint)
+        Text(text, style = MaterialTheme.typography.bodyLarge, color = tint)
     }
 }
 

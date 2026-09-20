@@ -259,6 +259,33 @@ class TasksScreenTest {
     }
 
     @Test
+    fun `the delete row in the row menu still exists and opens the confirm sheet`() {
+        // Coherence fix: the row now tints its icon and text Peligro (like HabitFormScreen's own
+        // delete button) instead of the same Tinta as "editar" — Compose's semantics tree carries
+        // no color, so this only re-proves the row is still there, tagged, and still wired to
+        // onDelete after gaining the tint parameter; the visual half is not screenshot-tested here.
+        runBlocking {
+            tasksRepo.create(taskEntity(id = "t1", title = "Tarea a borrar", createdOnDay = today))
+        }
+        renderScreen()
+
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("task-menu-delete", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Delete", useUnmergedTree = true).assertExists()
+
+        compose.onNodeWithTag("task-menu-delete", useUnmergedTree = true)
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("task-delete-confirm", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
     fun `an empty list says so instead of showing empty sections`() {
         renderScreen()
 
