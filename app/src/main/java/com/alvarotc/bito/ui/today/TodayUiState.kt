@@ -91,6 +91,11 @@ data class TodayUiState(
     val userName: String = "",
     val logHapticEnabled: Boolean = true,
     val tasks: List<TaskRowUi> = emptyList(),
+    // From the global task list, not [tasks] (which is only what touches today, per
+    // Tasks.todayTasks' six doors, spec section 4.1) — a task can exist, even be finished,
+    // without touching today at all, and the section (and with it the only route into "tasks")
+    // must stay up regardless.
+    val hasAnyTasks: Boolean = false,
     val loading: Boolean = true,
 )
 
@@ -153,6 +158,7 @@ fun buildTodayUiState(
         userName = userName,
         logHapticEnabled = logHapticEnabled,
         tasks = taskRows,
+        hasAnyTasks = state.tasks.isNotEmpty(),
         loading = false,
     )
 }

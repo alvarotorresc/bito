@@ -2,6 +2,7 @@
 <resources>
     <string name="tasks_section_title">Tareas</string>
     <string name="tasks_see_all">Ver todas</string>
+    <string name="tasks_today_all_done">Nada pendiente para hoy</string>
     <string name="task_start">Empezar</string>
     <string name="task_not_today">Hoy no</string>
     <string name="task_done">Hecha</string>

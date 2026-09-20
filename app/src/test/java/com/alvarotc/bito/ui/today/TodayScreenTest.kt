@@ -34,6 +34,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -409,6 +410,28 @@ class TodayScreenTest {
 
         compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `all tasks done keeps the tasks section, its door to the list, and shows a status line instead`() {
+        runBlocking {
+            HabitsRepository(db).archive("agua", today, fixedNow)
+            HabitsRepository(db).archive("cama", today, fixedNow)
+            TasksRepository(db).create(
+                taskEntity(
+                    id = "t1",
+                    status = TaskStatus.DONE,
+                    createdOnDay = today,
+                    doneOnDay = today,
+                    doneAtMillis = fixedNow,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("See all", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Nothing pending today", useUnmergedTree = true).assertExists()
     }
 
     @Test

@@ -484,4 +484,32 @@ class TodayUiStateTest {
         assertEquals(1, ui.ringTotal)
         assertEquals(1, ui.tasks.size)
     }
+
+    @Test
+    fun `hasAnyTasks is true from the global list even when nothing touches today`() {
+        // All done: none of the six todayTasks doors picks it up, so ui.tasks is empty — but
+        // the task still exists, and the Today section must know that (Pixel bug: the section,
+        // and with it the only door into "tasks", vanished whenever today's slice was empty).
+        val state =
+            stateOf(habits = emptyList()).copy(
+                tasks =
+                    listOf(
+                        Task("t1", "Llamar", null, DueKind.NONE, null, TaskStatus.DONE, TODAY - 1, 100L),
+                    ),
+            )
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertTrue(ui.hasAnyTasks)
+        assertTrue(ui.tasks.isEmpty())
+    }
+
+    @Test
+    fun `hasAnyTasks is false with no tasks at all`() {
+        val state = stateOf(habits = emptyList())
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertFalse(ui.hasAnyTasks)
+    }
 }

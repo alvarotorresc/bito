@@ -182,7 +182,7 @@ fun TodayScreen(
             // Empty is only true poverty when there is nothing at all — a habit merely paused
             // still has a home in the section below, and an open task still gives the day
             // something to do, so neither must trip "create your first habit".
-            if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty() && state.tasks.isEmpty()) {
+            if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty() && !state.hasAnyTasks) {
                 item { EmptyToday(onCreateHabit) }
             } else {
                 item { RingCard(state.ringDone, state.ringTotal, state.todaySealed, onOpenReview) }
@@ -214,7 +214,12 @@ fun TodayScreen(
                     )
                 }
             }
-            if (state.tasks.isNotEmpty()) {
+            // hasAnyTasks, not state.tasks.isNotEmpty(): the section (and with it the only door
+            // into the "tasks" route) must stay up whenever a task exists anywhere, even if none
+            // of them touches today — all done, or postponed away, or every one of Tasks'
+            // six doors closed. When state.tasks is empty the rows below give way to one status
+            // line instead of just vanishing.
+            if (state.hasAnyTasks) {
                 item {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -226,15 +231,25 @@ fun TodayScreen(
                         GhostPillButton(text = stringResource(R.string.tasks_see_all), onClick = onOpenTasks)
                     }
                 }
-                // Row by row, outside orderedCards: the habits' drag reorder never touches these.
-                items(state.tasks, key = { "task-${it.id}" }) { task ->
-                    TodayTaskRow(
-                        task = task,
-                        today = state.today,
-                        onDone = { viewModel.markTaskDone(task.id) },
-                        onStart = { onStartFocus(task.id) },
-                        onNotToday = { viewModel.postponeTask(task.id) },
-                    )
+                if (state.tasks.isEmpty()) {
+                    item {
+                        Text(
+                            stringResource(R.string.tasks_today_all_done),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = TintaSuave,
+                        )
+                    }
+                } else {
+                    // Row by row, outside orderedCards: the habits' drag reorder never touches these.
+                    items(state.tasks, key = { "task-${it.id}" }) { task ->
+                        TodayTaskRow(
+                            task = task,
+                            today = state.today,
+                            onDone = { viewModel.markTaskDone(task.id) },
+                            onStart = { onStartFocus(task.id) },
+                            onNotToday = { viewModel.postponeTask(task.id) },
+                        )
+                    }
                 }
             }
             if (state.pausedHabits.isNotEmpty()) {
