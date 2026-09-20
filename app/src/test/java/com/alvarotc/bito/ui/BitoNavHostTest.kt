@@ -344,11 +344,17 @@ class BitoNavHostTest {
     }
 
     /**
+     * D12 revoked: choosing "A task" now navigates to [com.alvarotc.bito.ui.tasks.TaskFormScreen]
+     * (a route, "task-form-screen" tag) instead of opening [com.alvarotc.bito.ui.tasks.TaskFormSheet]
+     * as a global sheet — same reason "the bottom bar hides on the habit form but survives on
+     * stats" above already proves for "habit": a route change hides the bar, so this also
+     * re-proves that hasn't regressed for tasks. Recalibrated from the old "task-form-sheet" tag
+     * (the sheet retired once the tasks list's own edit flow moved to this same screen too).
      * Beyond the brief's own two: the model test covers [com.alvarotc.bito.ui.tasks.resolvedDueDay]
-     * but nothing else ever composes [com.alvarotc.bito.ui.tasks.TaskFormSheet] itself — this is
-     * that one compile-and-render safety net, deliberately stopping short of driving the
-     * DatePickerDialog (task-14-brief's own call: that dialog has no logic worth a Robolectric
-     * test).
+     * but nothing else ever composes [com.alvarotc.bito.ui.tasks.TaskFormScreen] itself in this
+     * create path — this is that one compile-and-render safety net, deliberately stopping short of
+     * driving the DatePickerDialog (task-14-brief's own call, still true: that dialog has no logic
+     * worth a Robolectric test).
      */
     @Test
     fun `choosing a task from the choice sheet opens the task form with saving disabled on a blank title`() {
@@ -361,11 +367,12 @@ class BitoNavHostTest {
 
         tapText("A task")
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("task-form-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        compose.onNodeWithTag("task-form-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("task-form-save", useUnmergedTree = true).assertIsNotEnabled()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
