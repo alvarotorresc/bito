@@ -54,7 +54,6 @@ import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.DismissableBitoSnackbar
 import com.alvarotc.bito.ui.components.GhostIconButton
 import com.alvarotc.bito.ui.components.GhostPillButton
-import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Hoja
@@ -75,12 +74,14 @@ fun TasksScreen(
     viewModel: TasksViewModel,
     onBack: () -> Unit,
     onStartFocus: (String) -> Unit = {},
+    // D12 revoked: editing now navigates to TaskFormScreen's own route instead of opening a sheet
+    // inline here — same default-no-op pattern onStartFocus already carries.
+    onEditTask: (String) -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val taskDone by viewModel.lastTaskDone.collectAsStateWithLifecycle()
     var doneExpanded by remember { mutableStateOf(false) }
     var menuFor by remember { mutableStateOf<TaskListRowUi?>(null) }
-    var editing by remember { mutableStateOf<TaskListRowUi?>(null) }
     var deleting by remember { mutableStateOf<TaskListRowUi?>(null) }
     val snackbar = remember { SnackbarHostState() }
     val fallbackName = stringResource(R.string.habi_name_fallback)
@@ -185,29 +186,13 @@ fun TasksScreen(
         TaskRowMenuSheet(
             onEdit = {
                 menuFor = null
-                editing = row
+                onEditTask(row.id)
             },
             onDelete = {
                 menuFor = null
                 deleting = row
             },
             onDismiss = { menuFor = null },
-        )
-    }
-
-    editing?.let { row ->
-        // state.today is safe to read here (unlike BitoNavHost's own TaskFormSheet host, which
-        // warns against it): this sheet only opens from a row the user tapped, and rows only exist
-        // once buildTasksUiState has actually run once, so today is never the ViewModel's
-        // still-loading default of 0.
-        TaskFormSheet(
-            initial = row.toFormState(),
-            today = state.today,
-            onSave = { saved ->
-                viewModel.edit(row.id, saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(state.today))
-                editing = null
-            },
-            onDismiss = { editing = null },
         )
     }
 
@@ -383,32 +368,5 @@ private fun TaskMenuRow(
     ) {
         Icon(icon, contentDescription = null, tint = tint)
         Text(text, style = MaterialTheme.typography.bodyLarge, color = tint)
-    }
-}
-
-/**
- * Calcado de [com.alvarotc.bito.ui.habitform.HabitFormScreen]'s own DeleteConfirmSheet, con su
- * propio copy: sin deshacer, la confirmacion ES el deshacer.
- */
-@Composable
-private fun DeleteTaskConfirmSheet(
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("task-delete-confirm")) {
-            Text(stringResource(R.string.task_delete_confirm_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            Spacer(Modifier.height(8.dp))
-            Text(stringResource(R.string.task_delete_confirm_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
-            Spacer(Modifier.height(16.dp))
-            PillButton(
-                stringResource(R.string.delete_confirm_yes),
-                onClick = onConfirm,
-                modifier = Modifier.fillMaxWidth().testTag("task-delete-confirm-yes"),
-                containerColor = Peligro,
-            )
-            Spacer(Modifier.height(8.dp))
-            GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
-        }
     }
 }

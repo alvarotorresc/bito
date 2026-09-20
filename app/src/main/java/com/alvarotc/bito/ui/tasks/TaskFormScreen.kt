@@ -5,7 +5,9 @@ package com.alvarotc.bito.ui.tasks
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -16,6 +18,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
@@ -39,12 +42,16 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.ui.components.BitoCard
+import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.formatDayMedium
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.theme.Peligro
+import com.alvarotc.bito.ui.theme.PeligroTinte
+import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 import java.time.LocalDate
@@ -60,9 +67,11 @@ private fun Long.toLogicalDay(): LogicalDay = LocalDate.ofEpochDay(this / MILLIS
  * Creates a task, or edits one when [initial] carries a [TaskFormState.editingId] — full-screen
  * now (D12 revoked: a task's own form deserves the same weight as a habit's), calcada
  * estructuralmente de [com.alvarotc.bito.ui.habitform.HabitFormScreen]: same [Scaffold], same
- * header rhythm, same [BitoCard]-wrapped fields, same save button shape. The model and its
- * validation are untouched — [TaskFormState]/[TaskFormState.canSave] are exactly what
- * the old sheet used; only the continent changed.
+ * header rhythm, same [BitoCard]-wrapped fields, same save button shape, and — when [onDelete] is
+ * given, i.e. only ever on the editing route — the same red delete button at the end with the
+ * same confirm-before-delete sheet. The model and its validation are untouched —
+ * [TaskFormState]/[TaskFormState.canSave] are exactly what the old sheet used; only the continent
+ * changed.
  */
 @Composable
 fun TaskFormScreen(
@@ -70,9 +79,11 @@ fun TaskFormScreen(
     today: LogicalDay,
     onSave: (TaskFormState) -> Unit,
     onBack: () -> Unit,
+    onDelete: (() -> Unit)? = null,
 ) {
     var state by remember { mutableStateOf(initial) }
     var showDatePicker by remember { mutableStateOf(false) }
+    var confirmingDelete by remember { mutableStateOf(false) }
 
     Scaffold(containerColor = Papel) { padding ->
         Column(
@@ -103,7 +114,26 @@ fun TaskFormScreen(
                 enabled = state.canSave,
                 modifier = Modifier.fillMaxWidth().testTag("task-form-save"),
             )
+            if (onDelete != null) {
+                GhostPillButton(
+                    text = stringResource(R.string.task_delete),
+                    onClick = { confirmingDelete = true },
+                    modifier = Modifier.fillMaxWidth().testTag("delete"),
+                    color = Peligro,
+                    borderColor = PeligroTinte,
+                )
+            }
         }
+    }
+
+    if (confirmingDelete) {
+        DeleteTaskConfirmSheet(
+            onConfirm = {
+                confirmingDelete = false
+                onDelete?.invoke()
+            },
+            onDismiss = { confirmingDelete = false },
+        )
     }
 
     if (showDatePicker) {
@@ -237,5 +267,34 @@ private fun TaskDueSection(
             fillWidth = true,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+/**
+ * Calcado de [com.alvarotc.bito.ui.habitform.HabitFormScreen]'s own DeleteConfirmSheet, con su
+ * propio copy: sin deshacer, la confirmacion ES el deshacer. Compartida — no privada de este
+ * fichero — porque [TasksScreen]'s own row menu also opens this exact sheet for its own delete
+ * flow; moved here instead of kept in each file so neither duplicates it.
+ */
+@Composable
+internal fun DeleteTaskConfirmSheet(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp).testTag("task-delete-confirm")) {
+            Text(stringResource(R.string.task_delete_confirm_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Spacer(Modifier.height(8.dp))
+            Text(stringResource(R.string.task_delete_confirm_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
+            Spacer(Modifier.height(16.dp))
+            PillButton(
+                stringResource(R.string.delete_confirm_yes),
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth().testTag("task-delete-confirm-yes"),
+                containerColor = Peligro,
+            )
+            Spacer(Modifier.height(8.dp))
+            GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+        }
     }
 }

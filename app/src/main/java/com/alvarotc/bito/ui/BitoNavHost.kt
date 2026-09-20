@@ -65,6 +65,7 @@ import com.alvarotc.bito.ui.tasks.TaskFormState
 import com.alvarotc.bito.ui.tasks.TasksScreen
 import com.alvarotc.bito.ui.tasks.TasksViewModel
 import com.alvarotc.bito.ui.tasks.resolvedDueDay
+import com.alvarotc.bito.ui.tasks.toFormState
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
@@ -313,29 +314,73 @@ fun BitoNavHost(container: AppContainer) {
                     onClose = { nav.popBackStack() },
                 )
             }
-            // D12 revocado: crear una tarea es ahora una pantalla completa, calcada de la ruta
-            // "habit?id={id}" de arriba — sin barra inferior, mismo patron de navegacion (push
-            // simple, sin popUpTo ni launchSingleTop: esos dos solo aparecen en las pestanas de la
-            // barra inferior mas abajo, nunca en las rutas de formulario). El "+" de abajo navega
-            // aqui sin id; el menu de fila de "tasks" navega con id una vez esta la ruta de editar.
-            composable("task") {
-                // El mismo calculo que el sheet global tenia (comentario mas abajo, ahora
-                // retirado con el): today sale de loadedSettings, probadamente no nulo en este
-                // punto, nunca de tasksViewModel.uiState.today, cuyo combine puede seguir a medias
-                // (today = 0 por defecto) cuando esta ruta compone por primera vez.
+            // D12 revocado: crear y editar una tarea son ahora una pantalla completa, calcada de
+            // la ruta "habit?id={id}" de arriba en el mismo sentido — un solo composable, id nulo
+            // para crear — sin barra inferior, mismo patron de navegacion (push simple, sin
+            // popUpTo ni launchSingleTop: esos dos solo aparecen en las pestanas de la barra
+            // inferior mas abajo, nunca en las rutas de formulario). El "+" navega aqui sin id; el
+            // menu de fila de "tasks" navega con id.
+            composable(
+                "task?id={id}",
+                arguments =
+                    listOf(
+                        navArgument("id") {
+                            nullable = true
+                            defaultValue = null
+                        },
+                    ),
+            ) { entry ->
+                // El mismo calculo que el sheet global tenia (comentario que se fue con el): today
+                // sale de loadedSettings, probadamente no nulo en este punto, nunca de
+                // tasksViewModel.uiState.today, cuyo combine puede seguir a medias (today = 0 por
+                // defecto) cuando esta ruta compone por primera vez.
                 val today =
                     remember {
                         LogicalDays.logicalDayOf(System.currentTimeMillis(), loadedSettings.dayCutoffMinutes, ZoneId.systemDefault())
                     }
-                TaskFormScreen(
-                    initial = TaskFormState(),
-                    today = today,
-                    onSave = { saved ->
-                        tasksViewModel.create(saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(today))
-                        nav.popBackStack()
-                    },
-                    onBack = { nav.popBackStack() },
-                )
+                val id = entry.arguments?.getString("id")
+                if (id == null) {
+                    TaskFormScreen(
+                        initial = TaskFormState(),
+                        today = today,
+                        onSave = { saved ->
+                            tasksViewModel.create(saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(today))
+                            nav.popBackStack()
+                        },
+                        onBack = { nav.popBackStack() },
+                    )
+                } else {
+                    // A un solo elemento, el mismo que HabitFormViewModel.init{} hace para
+                    // "habit?id={id}" — a diferencia del viejo sheet de TasksScreen, esta ruta
+                    // puede componer sin que la lista haya corrido nunca (un enlace directo, un
+                    // reinicio a media edicion), asi que el estado inicial no puede salir de una
+                    // fila ya en memoria: hay que cargarlo. Un fotograma en blanco (mismo idioma
+                    // que las puertas de reconciled/settings de arriba) cubre ese hueco de una
+                    // consulta en vez de mostrar el formulario vacio y saltar luego a los campos
+                    // reales.
+                    var loaded by remember(id) { mutableStateOf<TaskFormState?>(null) }
+                    LaunchedEffect(id) {
+                        loaded = container.tasks.task(id)?.toFormState() ?: TaskFormState(editingId = id)
+                    }
+                    val initial = loaded
+                    if (initial == null) {
+                        Box(Modifier.fillMaxSize().background(Papel).testTag("task-form-loading"))
+                    } else {
+                        TaskFormScreen(
+                            initial = initial,
+                            today = today,
+                            onSave = { saved ->
+                                tasksViewModel.edit(id, saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(today))
+                                nav.popBackStack()
+                            },
+                            onBack = { nav.popBackStack() },
+                            onDelete = {
+                                tasksViewModel.delete(id)
+                                nav.popBackStack()
+                            },
+                        )
+                    }
+                }
             }
             // Sin barra inferior: la lista es un destino secundario colgado de Hoy, como review.
             composable("tasks") {
@@ -343,6 +388,7 @@ fun BitoNavHost(container: AppContainer) {
                     viewModel = viewModel(factory = TasksViewModel.factory(container)),
                     onBack = { nav.popBackStack() },
                     onStartFocus = { nav.navigate("focus?taskId=$it") },
+                    onEditTask = { nav.navigate("task?id=$it") },
                 )
             }
             // El argumento es opcional a proposito: sin defaultValue = null, navegar a "focus" a

@@ -3,7 +3,6 @@ package com.alvarotc.bito.ui.tasks
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -71,6 +70,7 @@ class TasksScreenTest {
     private lateinit var tasksRepo: TasksRepository
     private lateinit var vm: TasksViewModel
     private var startedId: String? = null
+    private var editedId: String? = null
 
     private fun settingsStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -113,7 +113,7 @@ class TasksScreenTest {
     private fun renderScreen() {
         compose.setContent {
             BitoTheme {
-                TasksScreen(viewModel = vm, onBack = {}, onStartFocus = { startedId = it })
+                TasksScreen(viewModel = vm, onBack = {}, onStartFocus = { startedId = it }, onEditTask = { editedId = it })
             }
         }
         compose.waitForIdle()
@@ -191,19 +191,18 @@ class TasksScreenTest {
         compose.onNodeWithTag("task-bring-t1", useUnmergedTree = true).assertDoesNotExist()
     }
 
+    /**
+     * D12 revoked: editing no longer opens a sheet inline on this screen — it navigates to
+     * TaskFormScreen's own route instead (BitoNavHostTest's own "editing from the tasks list
+     * reaches the full-screen form with the task preloaded" proves that route actually renders the
+     * preloaded fields). This screen's own responsibility shrinks to the same shape "starting a
+     * task calls onStartFocus with its id" already proves for onStartFocus: the row menu's "editar"
+     * calls [onEditTask] with the right id, nothing about the form itself.
+     */
     @Test
-    fun `the row menu opens edit with the task preloaded`() {
+    fun `the row menu edit calls onEditTask with the row id`() {
         runBlocking {
-            tasksRepo.create(
-                taskEntity(
-                    id = "t1",
-                    title = "Titulo original",
-                    firstStep = "Paso original",
-                    dueKind = DueKind.DATE,
-                    dueDay = today + 5,
-                    createdOnDay = today,
-                ),
-            )
+            tasksRepo.create(taskEntity(id = "t1", title = "Titulo original", createdOnDay = today))
         }
         renderScreen()
 
@@ -219,13 +218,7 @@ class TasksScreenTest {
             ?.invoke()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("task-form-sheet", useUnmergedTree = true).assertExists()
-        // The row itself (behind the sheet) carries the same title, so scope to the sheet's own
-        // fields rather than onNodeWithText, which would match both.
-        compose.onNode(hasText("Titulo original") and hasAnyAncestor(hasTestTag("task-form-sheet")), useUnmergedTree = true)
-            .assertExists()
-        compose.onNode(hasText("Paso original") and hasAnyAncestor(hasTestTag("task-form-sheet")), useUnmergedTree = true)
-            .assertExists()
+        assertEquals("t1", editedId)
     }
 
     @Test

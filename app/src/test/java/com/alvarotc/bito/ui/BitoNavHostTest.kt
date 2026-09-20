@@ -345,11 +345,11 @@ class BitoNavHostTest {
 
     /**
      * D12 revoked: choosing "A task" now navigates to [com.alvarotc.bito.ui.tasks.TaskFormScreen]
-     * (a route, "task-form-screen" tag) instead of opening [com.alvarotc.bito.ui.tasks.TaskFormSheet]
-     * as a global sheet — same reason "the bottom bar hides on the habit form but survives on
-     * stats" above already proves for "habit": a route change hides the bar, so this also
-     * re-proves that hasn't regressed for tasks. Recalibrated from the old "task-form-sheet" tag
-     * (the sheet retired once the tasks list's own edit flow moved to this same screen too).
+     * (a route, "task-form-screen" tag) instead of opening the old TaskFormSheet as a global sheet
+     * — same reason "the bottom bar hides on the habit form but survives on stats" above already
+     * proves for "habit": a route change hides the bar, so this also re-proves that hasn't
+     * regressed for tasks. Recalibrated from the old "task-form-sheet" tag (the sheet itself is
+     * gone now — retired once the tasks list's own edit flow moved to this same screen too).
      * Beyond the brief's own two: the model test covers [com.alvarotc.bito.ui.tasks.resolvedDueDay]
      * but nothing else ever composes [com.alvarotc.bito.ui.tasks.TaskFormScreen] itself in this
      * create path — this is that one compile-and-render safety net, deliberately stopping short of
@@ -891,6 +891,117 @@ class BitoNavHostTest {
         compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * D12 revoked, editing half: [com.alvarotc.bito.ui.tasks.TasksScreen]'s own "editar" now
+     * navigates to "task?id={id}" instead of opening a sheet inline
+     * ([com.alvarotc.bito.ui.tasks.TasksScreenTest]'s own "the row menu edit calls onEditTask with
+     * the row id" proves the callback fires; this proves the route it reaches actually renders the
+     * preloaded fields — the id has to survive a real Room read, not just an in-memory row, since
+     * the new route loads it itself). Same "task-form-screen" tag the create path already proves in
+     * "choosing a task from the choice sheet opens the task form with saving disabled on a blank
+     * title" above.
+     */
+    @Test
+    fun `editing a task from the tasks list reaches the full-screen form with the task preloaded`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Titulo original", firstStep = "Paso original", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-menu-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
+        // touch gestures under this Robolectric harness — invoking the node's own OnClick
+        // semantics action directly is what actually proves the tap wires through.
+        compose.onNodeWithTag("task-menu-edit")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Edit task", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Titulo original", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Paso original", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * D12 revoked, delete half: the red delete button this ola adds to TaskFormScreen's editing
+     * route, wired all the way through its confirm sheet to [com.alvarotc.bito.ui.tasks.TasksViewModel.delete]
+     * and back to the tasks list. Not covered by [com.alvarotc.bito.ui.tasks.TaskFormScreenTest]
+     * (which fakes [onDelete] and never touches Room), so this is the one place proving the whole
+     * chain — button, confirm sheet, actual delete, actual pop — really is connected.
+     */
+    @Test
+    fun `deleting a task from its own edit screen removes it and returns to the tasks list`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Tarea a borrar", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-menu-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("task-menu-edit")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // The screen's own button, not inside a sheet: performClick() works here.
+        compose.onNodeWithTag("delete", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("task-delete-confirm", useUnmergedTree = true).assertExists()
+
+        compose.onNodeWithTag("task-delete-confirm-yes")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("tasks-list", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Tarea a borrar", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(runBlocking { container.tasks.task("t1") })
     }
 
     /**
