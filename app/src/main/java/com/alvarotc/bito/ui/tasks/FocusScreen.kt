@@ -9,9 +9,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
@@ -37,6 +40,14 @@ import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
+
+/**
+ * "Otro" (start) and "+ Otro" (extend) both write through this range — spec §8.5's own liberty on
+ * [FocusViewModel.select]/[FocusViewModel.extend], just fenced to something a bottom sheet's
+ * number field can hand off without a second confirmation.
+ */
+private const val FOCUS_CUSTOM_MIN_MINUTES = 1
+private const val FOCUS_CUSTOM_MAX_MINUTES = 180
 
 /**
  * The full-screen focus session (spec §8.5), reachable from Hoy, from the tasks list and from the
@@ -132,6 +143,7 @@ fun FocusScreen(
                     onClick = viewModel::finish,
                     modifier = Modifier.fillMaxWidth().testTag("focus-done"),
                 )
+                var showExtendSheet by remember { mutableStateOf(false) }
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FocusViewModel.EXTENSIONS.forEach { minutes ->
                         GhostPillButton(
@@ -140,18 +152,53 @@ fun FocusScreen(
                             modifier = Modifier.testTag("focus-plus-$minutes"),
                         )
                     }
+                    GhostPillButton(
+                        text = stringResource(R.string.focus_plus_custom),
+                        onClick = { showExtendSheet = true },
+                        modifier = Modifier.testTag("focus-plus-custom"),
+                    )
                 }
                 GhostPillButton(
                     text = stringResource(R.string.focus_give_up),
                     onClick = viewModel::giveUp,
                     modifier = Modifier.testTag("focus-give-up"),
                 )
+                if (showExtendSheet) {
+                    CustomFocusMinutesSheet(
+                        titleRes = R.string.focus_custom_extend_title,
+                        initialMinutes = FocusViewModel.EXTENSIONS.first(),
+                        onConfirm = { minutes ->
+                            viewModel.extend(minutes)
+                            showExtendSheet = false
+                        },
+                        onDismiss = { showExtendSheet = false },
+                    )
+                }
             } else {
-                val optionLabels = FocusViewModel.OPTIONS.map { stringResource(R.string.focus_minutes, it) }
+                var showCustomSheet by remember { mutableStateOf(false) }
+                // A selection outside the three fixed lengths only ever comes from "Otro" itself
+                // (FocusViewModel.select accepts any int — D6/D14's fixed pills are revoked, not
+                // this screen's own honesty about what is currently chosen), so the pill just
+                // mirrors whatever that is instead of tracking its own separate "is it custom" bit.
+                val customSelected = state.selectedMinutes !in FocusViewModel.OPTIONS
+                val optionLabels =
+                    FocusViewModel.OPTIONS.map { stringResource(R.string.focus_minutes, it) } +
+                        if (customSelected) {
+                            stringResource(R.string.focus_minutes, state.selectedMinutes)
+                        } else {
+                            stringResource(R.string.focus_custom)
+                        }
                 SegmentedPills(
                     options = optionLabels,
-                    selectedIndex = FocusViewModel.OPTIONS.indexOf(state.selectedMinutes),
-                    onSelect = { index -> viewModel.select(FocusViewModel.OPTIONS[index]) },
+                    selectedIndex =
+                        if (customSelected) optionLabels.lastIndex else FocusViewModel.OPTIONS.indexOf(state.selectedMinutes),
+                    onSelect = { index ->
+                        if (index == FocusViewModel.OPTIONS.size) {
+                            showCustomSheet = true
+                        } else {
+                            viewModel.select(FocusViewModel.OPTIONS[index])
+                        }
+                    },
                 )
                 PillButton(
                     text = stringResource(R.string.task_start),
@@ -161,6 +208,17 @@ fun FocusScreen(
                     },
                     modifier = Modifier.fillMaxWidth().testTag("focus-start"),
                 )
+                if (showCustomSheet) {
+                    CustomFocusMinutesSheet(
+                        titleRes = R.string.focus_custom_title,
+                        initialMinutes = if (customSelected) state.selectedMinutes else FocusViewModel.DEFAULT_MINUTES,
+                        onConfirm = { minutes ->
+                            viewModel.select(minutes)
+                            showCustomSheet = false
+                        },
+                        onDismiss = { showCustomSheet = false },
+                    )
+                }
             }
         }
     }
@@ -198,6 +256,47 @@ fun FocusScreen(
                     modifier = Modifier.fillMaxWidth().testTag("focus-busy-switch"),
                 )
             }
+        }
+    }
+}
+
+/**
+ * "Otro"/"+ Otro"'s own number sheet — [com.alvarotc.bito.ui.today.ExactValueSheet]'s exact molde
+ * (title, numeric field, "Guardar" disabled outside range) but built against a plain minute count
+ * instead of a [com.alvarotc.bito.ui.today.HabitCardUi]: that sheet's signature has nothing this
+ * screen could pass it, so this is the "hermana" the brief calls for rather than a bent reuse.
+ * [titleRes] differs by caller ("¿Cuántos minutos?" to start, "...más?" to extend) — the one thing
+ * that isn't shared between the two callers below.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CustomFocusMinutesSheet(
+    titleRes: Int,
+    initialMinutes: Int,
+    onConfirm: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var text by remember { mutableStateOf(initialMinutes.toString()) }
+    val minutes = text.toIntOrNull()
+    val valid = minutes != null && minutes in FOCUS_CUSTOM_MIN_MINUTES..FOCUS_CUSTOM_MAX_MINUTES
+    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
+        Column(Modifier.padding(20.dp).testTag("focus-custom-sheet")) {
+            Text(stringResource(titleRes), style = MaterialTheme.typography.titleMedium, color = Tinta)
+            Spacer(Modifier.height(16.dp))
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.filter(Char::isDigit) },
+                label = { Text(stringResource(R.string.focus_custom_hint)) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth().testTag("focus-custom-input"),
+            )
+            Spacer(Modifier.height(16.dp))
+            PillButton(
+                text = stringResource(R.string.save),
+                onClick = { minutes?.let(onConfirm) },
+                enabled = valid,
+                modifier = Modifier.fillMaxWidth().testTag("focus-custom-save"),
+            )
         }
     }
 }

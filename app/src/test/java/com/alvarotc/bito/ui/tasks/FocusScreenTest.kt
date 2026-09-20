@@ -3,10 +3,13 @@ package com.alvarotc.bito.ui.tasks
 import android.content.Context
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextClearance
+import androidx.compose.ui.test.performTextInput
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -275,5 +278,71 @@ class FocusScreenTest {
         // "Dejarla y empezar esta" DOES start a session from this screen, same as "Empezar" —
         // the entrance line belongs here too, for t2 (not t1's, which never got one).
         compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertExists()
+    }
+
+    /** [SemanticsActions.OnClick] directly — a button inside this sheet's own [tapText] caveat. */
+    private fun tapTag(tag: String) {
+        compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+    }
+
+    @Test
+    fun `Otro opens a minutes sheet and confirming selects it, forty minutes and all`() {
+        runBlocking { tasksRepo.create(taskEntity(id = "t1", createdOnDay = today)) }
+        val vm = newViewModel("t1")
+        render(vm)
+
+        compose.onNodeWithText("Other", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Other", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-custom-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("focus-custom-input", useUnmergedTree = true).performTextClearance()
+        compose.onNodeWithTag("focus-custom-input", useUnmergedTree = true).performTextInput("40")
+        compose.waitForIdle()
+        tapTag("focus-custom-save")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-custom-sheet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("40 min", useUnmergedTree = true).assertExists()
+
+        compose.onNodeWithTag("focus-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("40:00", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a custom value out of range keeps Guardar disabled`() {
+        runBlocking { tasksRepo.create(taskEntity(id = "t1", createdOnDay = today)) }
+        val vm = newViewModel("t1")
+        render(vm)
+
+        compose.onNodeWithText("Other", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("focus-custom-input", useUnmergedTree = true).performTextClearance()
+        compose.onNodeWithTag("focus-custom-input", useUnmergedTree = true).performTextInput("0")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-custom-save", useUnmergedTree = true).assertIsNotEnabled()
+    }
+
+    @Test
+    fun `mas Otro extends the running session by whatever minutes were typed`() {
+        runBlocking { tasksRepo.create(taskEntity(id = "t1", createdOnDay = today)) }
+        val vm = newViewModel("t1")
+        render(vm)
+        compose.onNodeWithTag("focus-start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("+ Other", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("focus-custom-input", useUnmergedTree = true).performTextClearance()
+        compose.onNodeWithTag("focus-custom-input", useUnmergedTree = true).performTextInput("20")
+        compose.waitForIdle()
+        tapTag("focus-custom-save")
+        compose.waitForIdle()
+
+        // Default DEFAULT_MINUTES (10:00) plus the 20 typed in the sheet.
+        compose.onNodeWithText("30:00", useUnmergedTree = true).assertExists()
     }
 }

@@ -198,6 +198,24 @@ class FocusViewModelTest {
         }
 
     @Test
+    fun `selecting a custom number of minutes starts a session that long`() =
+        // "Otro" (D6/D14 revoked): select() already took any int before this task, this only
+        // proves the pill-less path the UI now offers actually reaches it.
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            val vm = newViewModel("t1")
+            activate(vm)
+
+            vm.select(40)
+            vm.start()
+            settle()
+
+            val session = focusStore.session.first()!!
+            assertEquals(currentNow + 40 * 60_000L, session.endsAtMillis)
+            assertEquals(40 * 60_000L, vm.uiState.value.remainingMillis)
+        }
+
+    @Test
     fun `plus five, fifteen and thirty move the end and write nothing in the domain`() =
         runFocusTest {
             tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))

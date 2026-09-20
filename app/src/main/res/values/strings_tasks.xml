@@ -47,6 +47,11 @@
     <string name="focus_minutes">%1$d min</string>
     <string name="focus_done">I\'m done</string>
     <string name="focus_plus">+%1$d</string>
+    <string name="focus_custom">Other</string>
+    <string name="focus_plus_custom">+ Other</string>
+    <string name="focus_custom_title">How many minutes?</string>
+    <string name="focus_custom_extend_title">How many more minutes?</string>
+    <string name="focus_custom_hint">Minutes</string>
     <string name="focus_give_up">Something came up, I\'ll stop</string>
     <string name="focus_busy_title">Something\'s already running</string>
     <string name="focus_busy_keep">Keep going with %1$s</string>
