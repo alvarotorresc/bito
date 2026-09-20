@@ -30,6 +30,7 @@ private const val ELLIPSE_OFFSET_RATIO = 66f / 220f
  * [com.alvarotc.bito.ui.review.SealedDayContent] (E2 "día sellado", GUIA 5b), both at the same
  * 220dp/150dp defaults. [onTap] is optional — E2 shows Habi still, no tap affordance — and the
  * shadow ellipse scales with [stageSize] so a differently sized stage keeps its proportions.
+ * [nudge] passes straight through to [HabiAvatar]'s own parameter of the same name.
  */
 @Composable
 fun HabiStage(
@@ -39,6 +40,7 @@ fun HabiStage(
     stageSize: Dp = 220.dp,
     avatarSize: Dp = 150.dp,
     delighted: Boolean = false,
+    nudge: Int = 0,
 ) {
     Box(modifier, contentAlignment = Alignment.Center) {
         Box(
@@ -56,6 +58,6 @@ fun HabiStage(
                 .clip(RoundedCornerShape(percent = 50))
                 .background(Borde.copy(alpha = 0.6f)),
         )
-        HabiAvatar(spec = spec, modifier = Modifier.size(avatarSize), onTap = onTap, delighted = delighted)
+        HabiAvatar(spec = spec, modifier = Modifier.size(avatarSize), onTap = onTap, delighted = delighted, nudge = nudge)
     }
 }

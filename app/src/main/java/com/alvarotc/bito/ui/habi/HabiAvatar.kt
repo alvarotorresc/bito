@@ -130,6 +130,12 @@ private val FaceMorphSpring = spring<Float>(dampingRatio = 0.8f, stiffness = 260
  * independent Animatable from the idle blink loop so neither interrupts the other), darts the eyes
  * toward the finger, and plays the jelly compression described above. Callers with
  * `animated = false` (the Today corner avatar) keep the plain press squash only.
+ *
+ * [nudge] replays that very same tap response from OUTSIDE, without an actual touch — Focus's own
+ * "Habi acompaña" (spec §8.5 revoked in part): incrementing it plays one pulse, same guard shape
+ * as [com.alvarotc.bito.ui.habi.HabiScreen]'s own `delightPulse` counter (0 means "never fired
+ * yet", so the very first composition never replays one on mount). A no-op when [onTap] is null —
+ * there is then nothing to replay — or [animated] is false.
  */
 @Composable
 fun HabiAvatar(
@@ -138,6 +144,7 @@ fun HabiAvatar(
     animated: Boolean = true,
     onTap: (() -> Unit)? = null,
     delighted: Boolean = false,
+    nudge: Int = 0,
 ) {
     val density = LocalDensity.current
     val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
@@ -342,6 +349,13 @@ fun HabiAvatar(
             blinkValue = maxOf(idleBlink.value, tapBlink.value)
         } else {
             blinkValue = idleBlink.value
+        }
+
+        LaunchedEffect(nudge) {
+            if (nudge > 0) {
+                tapBlinkPulse?.invoke()
+                tapReactionPulse?.invoke()
+            }
         }
     } else {
         blinkValue = 0f

@@ -50,6 +50,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.time.ZoneId
+import kotlin.random.Random
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -107,6 +108,9 @@ class FocusViewModelTest {
     private fun newViewModel(
         taskId: String?,
         presence: FakeFocusPresence = FakeFocusPresence(),
+        // Mirrors the VM's own default range; tests that care about habiNudge's exact timing
+        // override this with a fixed value instead of fighting the real randomness.
+        nudgeInterval: () -> Long = { Random.nextLong(20_000L, 40_001L) },
     ) = FocusViewModel(
         tasksRepo,
         focusStore,
@@ -119,6 +123,7 @@ class FocusViewModelTest {
         now = { currentNow },
         elapsed = { currentElapsed },
         zone = { utc },
+        nudgeInterval = nudgeInterval,
     ).also { liveViewModels += it }
 
     /** Como [runTest], pero cancela el tick de cada VM creado antes de que el drenado implicito lo vea. */
@@ -563,5 +568,41 @@ class FocusViewModelTest {
             assertEquals(0, presence.showCalls)
             assertTrue(vm2.uiState.value.running)
             assertEquals(0L, vm2.uiState.value.remainingMillis)
+        }
+
+    @Test
+    fun `habi nudges itself while the countdown really runs, never at rest or once expired`() =
+        // Habi acompana de verdad (spec Sec8.5 revocado en parte). nudgeInterval fijo en 5s: la
+        // aleatoriedad real (20-40s) no estorba la aritmetica del test.
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            val vm = newViewModel("t1", nudgeInterval = { 5_000L })
+            activate(vm)
+
+            assertEquals(0, vm.habiNudge.value) // en reposo, antes de "Empezar": nada
+
+            vm.select(5)
+            vm.start()
+            settle()
+
+            assertEquals(0, vm.habiNudge.value) // arranca, pero el primer intervalo aun no paso
+
+            dispatcher.scheduler.advanceTimeBy(5_000)
+            dispatcher.scheduler.runCurrent()
+            assertEquals(1, vm.habiNudge.value)
+
+            dispatcher.scheduler.advanceTimeBy(5_000)
+            dispatcher.scheduler.runCurrent()
+            assertEquals(2, vm.habiNudge.value)
+
+            currentNow += 6 * 60_000L // vence la sesion de 5 minutos
+            dispatcher.scheduler.advanceTimeBy(5_000)
+            dispatcher.scheduler.runCurrent()
+            val nudgesAtExpiry = vm.habiNudge.value
+
+            // Vencida (00:00): el bucle ya no reprograma nada, por mucho que el reloj siga andando.
+            dispatcher.scheduler.advanceTimeBy(30_000)
+            dispatcher.scheduler.runCurrent()
+            assertEquals(nudgesAtExpiry, vm.habiNudge.value)
         }
 }

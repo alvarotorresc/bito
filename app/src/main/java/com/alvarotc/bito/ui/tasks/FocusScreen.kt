@@ -88,6 +88,7 @@ fun FocusScreen(
     onKeepOther: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val habiNudge by viewModel.habiNudge.collectAsStateWithLifecycle()
     var justStarted by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.gone) {
@@ -113,7 +114,12 @@ fun FocusScreen(
             // the only way out, so a user can't quietly abandon a live session without either
             // finishing it or writing an ATTEMPT through "lo dejo".
             Text(stringResource(R.string.focus_title), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            HabiStage(spec = state.spec)
+            // Habi now answers a poke here too (spec §8.5 revoked in part) — no navigation, no
+            // sound, just the same jelly poke reaction HabiStage already has; onAvatarTap-style
+            // side effects belong to the Habi screen alone. habiNudge replays that very reaction
+            // by itself every so often while the countdown is genuinely running (never at rest,
+            // never once it hits 00:00 — see FocusViewModel's own nudge loop).
+            HabiStage(spec = state.spec, onTap = {}, nudge = habiNudge)
             Text(state.title, style = MaterialTheme.typography.headlineMedium, color = Tinta)
             state.firstStep?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = TintaSuave) }
 

@@ -34,6 +34,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -42,9 +43,14 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.ZoneId
+import kotlin.random.Random
 
 /** How long "he terminado" holds the screen on the done phrase before the session actually closes. */
 private const val FINISH_HOLD_MS = 1_500L
+
+/** Habi's own idle nudge while a real countdown runs — random within this window, spec §8.5. */
+private const val HABI_NUDGE_MIN_MS = 20_000L
+private const val HABI_NUDGE_MAX_MS = 40_000L
 
 /**
  * Lo que la pantalla de foco pinta. [busyWith] es el titulo de la sesion ajena que ya estaba en
@@ -85,6 +91,9 @@ class FocusViewModel(
     private val now: () -> Long = System::currentTimeMillis,
     private val elapsed: () -> Long = SystemClock::elapsedRealtime,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
+    // Overridable so a test can pin the wait instead of fighting the real randomness (the
+    // interval itself is never a fact worth putting in FocusUiState — see [habiNudge]).
+    private val nudgeInterval: () -> Long = { Random.nextLong(HABI_NUDGE_MIN_MS, HABI_NUDGE_MAX_MS + 1) },
 ) : ViewModel() {
     companion object {
         val OPTIONS = listOf(5, 10, 25)
@@ -133,6 +142,16 @@ class FocusViewModel(
     /** Serializa [extend]: dos "+" seguidos no deben leer la misma sesion antes de que el primero la reescriba. */
     private val extendMutex = Mutex()
 
+    private val nudge = MutableStateFlow(0)
+
+    /**
+     * Cuantas veces le toca a Habi reaccionar por su cuenta — un pulso por incremento, nunca su
+     * valor absoluto. Aparte de [uiState] a proposito (no es un hecho derivado de la sesion, es un
+     * evento propio): [FocusScreen] lo observa por separado y lo pasa a [com.alvarotc.bito.ui.habi.HabiStage]
+     * como el mismo `nudge` que ya replay-ea el toque.
+     */
+    val habiNudge: StateFlow<Int> = nudge.asStateFlow()
+
     val uiState: StateFlow<FocusUiState> =
         combine(
             combine(focus.session, domainState.observe(), settings.settings, rewards.observeOwnedItems(), ::Snapshot),
@@ -165,6 +184,20 @@ class FocusViewModel(
                 while (FocusClock.remainingMillis(session, now(), elapsed()) > 0) {
                     delay(1_000)
                     tick.value++
+                }
+            }
+        }
+        // Habi acompana de verdad (spec §8.5 revocado en parte): mientras la cuenta atras corre
+        // de VERDAD (sesion viva, remaining > 0), un pulso cada [nudgeInterval] — nunca en reposo
+        // (sin sesion) ni vencida (el while sale y no vuelve a programar nada, igual que el tick
+        // de arriba). No distingue "esta pantalla" de "otra tarea en marcha" — el mismo alcance
+        // generico que ya tenia el tick — pero solo importa donde algo lee [habiNudge].
+        viewModelScope.launch {
+            focus.session.collectLatest { session ->
+                if (session == null) return@collectLatest
+                while (FocusClock.remainingMillis(session, now(), elapsed()) > 0) {
+                    delay(nudgeInterval())
+                    nudge.value++
                 }
             }
         }
