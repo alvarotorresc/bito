@@ -33,6 +33,7 @@ SCREENS = [
 ]
 DEEP_LINKS = {"repaso": "review", "tareas": "tasks", "foco": "tasks"}
 BEST_EFFORT = {"widget", "notificacion"}
+CROP_FROM_TOP = {"notificacion"}
 PAPEL_SCREENS = set(SCREENS) - {"widget", "notificacion", "foco", "tienda"}
 ATTEMPTS = 2
 NOTIFICATION_WAIT_S = 240
@@ -63,6 +64,8 @@ def notification_posted() -> bool:
 def before(screen: str, lang: str) -> bool:
     d.shell("cmd statusbar collapse", check=False)
     if screen == "notificacion":
+        d.shell("settings put global adb_notify 0", check=False)
+        d.shell("svc wifi disable", check=False)
         subprocess.run([sys.executable, str(HERE / "prepare.py"), "--lang", lang, "--arm-reminder", "2"], check=True)
         deadline = time.monotonic() + NOTIFICATION_WAIT_S
         while not notification_posted():
@@ -81,6 +84,13 @@ def before(screen: str, lang: str) -> bool:
     return True
 
 
+def after(screen: str) -> None:
+    d.shell("cmd statusbar collapse", check=False)
+    if screen == "notificacion":
+        d.shell("svc wifi enable", check=False)
+        d.shell("settings put global adb_notify 1", check=False)
+
+
 def capture(screen: str, lang: str, labels: dict[str, str], top: int, bottom: int) -> str:
     out = PUBLIC / lang / f"{screen}.png"
     raw = RAW / lang / f"{screen}.png"
@@ -89,14 +99,17 @@ def capture(screen: str, lang: str, labels: dict[str, str], top: int, bottom: in
     for attempt in range(1, ATTEMPTS + 1):
         if before(screen, lang) and run_maestro(screen, labels):
             raw.write_bytes(d.screencap())
-            crop.crop_raw(raw, out, top, bottom)
+            if screen in CROP_FROM_TOP:
+                crop.crop_raw(raw, out, 0, top + bottom)
+            else:
+                crop.crop_raw(raw, out, top, bottom)
             if screen not in PAPEL_SCREENS or crop.top_row_is_papel(out):
-                d.shell("cmd statusbar collapse", check=False)
+                after(screen)
                 return "ok"
             print(f"run_shots: {lang}/{screen} intento {attempt}: la fila superior no es Papel", file=sys.stderr)
         else:
             print(f"run_shots: {lang}/{screen} intento {attempt} fallido", file=sys.stderr)
-    d.shell("cmd statusbar collapse", check=False)
+    after(screen)
     fallback = FALLBACK / lang / f"{screen}.png"
     if screen in BEST_EFFORT and fallback.exists():
         crop.check_final(fallback)
