@@ -102,7 +102,7 @@ def decode(data: bytes) -> dict[str, tuple[str, object]]:
     prefs: dict[str, tuple[str, object]] = {}
     for field, wire, entry in _fields(data):
         if field != 1 or wire != 2:
-            raise ValueError(f"prefs_pb: campo raiz inesperado {field}/{wire}")
+            raise ValueError(f"prefs_pb: campo raíz inesperado {field}/{wire}")
         key, value = None, None
         for sub, _, raw in _fields(entry):
             if sub == 1:

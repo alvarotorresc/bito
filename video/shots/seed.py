@@ -1,4 +1,4 @@
-"""Siembra la base de Room de Bito con los datos de demo de Lucia.
+"""Siembra la base de Room de Bito con los datos de demo de Lucía.
 
 Uso: python3 seed.py RUTA_BITO_DB --lang es|en --today DIA_LOGICO
 """
@@ -27,10 +27,10 @@ HABITS = [
     ("estudiar", "Estudiar", "Study", "DURATION", "DAY", "AT_LEAST", 30, None, None, 5),
 ]
 
-# clave: titulo es, titulo en, primer paso es, primer paso en
+# clave: título es, título en, primer paso es, primer paso en
 TASKS = {
-    "dentista": ("Llamar al dentista", "Call the dentist", "Buscar el numero", "Find the number"),
-    "presentacion": ("Preparar la presentacion", "Prepare the slides", "Abrir el documento", "Open the file"),
+    "dentista": ("Llamar al dentista", "Call the dentist", "Buscar el número", "Find the number"),
+    "presentacion": ("Preparar la presentación", "Prepare the slides", "Abrir el documento", "Open the file"),
     "dni": ("Renovar el DNI", "Renew my ID card", None, None),
     "armario": ("Ordenar el armario", "Tidy the wardrobe", None, None),
 }
