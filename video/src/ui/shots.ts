@@ -17,13 +17,13 @@ export const shotsQueFaltan = (disponibles: readonly string[]): string[] =>
 export type Punto = { x: number; y: number };
 
 export const TOQUES = {
-  hoyRegistro: { x: 0.86, y: 0.31 },
-  widget: { x: 0.5, y: 0.45 },
-  notificacion: { x: 0.78, y: 0.2 },
-  repaso: { x: 0.5, y: 0.86 },
-  hoyADetalle: { x: 0.35, y: 0.31 },
-  detalleAStats: { x: 0.5, y: 0.955 },
-  statsALogros: { x: 0.82, y: 0.955 },
-  hoyATareas: { x: 0.5, y: 0.62 },
-  tareasAFoco: { x: 0.86, y: 0.22 },
+  hoyRegistro: { x: 0.826, y: 0.385 },
+  widget: { x: 0.483, y: 0.283 },
+  notificacion: { x: 0.306, y: 0.427 },
+  repaso: { x: 0.5, y: 0.915 },
+  hoyADetalle: { x: 0.2, y: 0.318 },
+  detalleAStats: { x: 0.107, y: 0.05 },
+  statsALogros: { x: 0.5, y: 0.294 },
+  hoyATareas: { x: 0.5, y: 0.815 },
+  tareasAFoco: { x: 0.226, y: 0.257 },
 } as const satisfies Record<string, Punto>;

@@ -9,9 +9,9 @@ import type { Pantalla } from '../ui/shots';
 export const STORE_SHOTS: readonly { pantalla: Pantalla; titular: CopyKey }[] = [
   { pantalla: 'hoy', titular: 'frase' },
   { pantalla: 'notificacion', titular: 'promesa.notificacion' },
-  { pantalla: 'stats', titular: 'hace.logros' },
+  { pantalla: 'stats', titular: 'hace.rachas' },
   { pantalla: 'widget', titular: 'promesa.widget' },
-  { pantalla: 'logros', titular: 'hace.rachas' },
+  { pantalla: 'logros', titular: 'hace.logros' },
   { pantalla: 'repaso', titular: 'promesa.repaso' },
 ];
 

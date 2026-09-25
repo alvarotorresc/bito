@@ -16,7 +16,8 @@
     "verificar": "bash scripts/verificar-video.sh out/bito-promo-es.mp4 && bash scripts/verificar-video.sh out/bito-promo-en.mp4",
     "render:borrador": "npm run audio && npm run render:es && npm run render:en && npm run verificar",
     "render": "node scripts/comprobar-shots.mjs && npm run render:borrador",
-    "shots": "python3 shots/run_shots.py --lang es,en --screens all && python3 shots/verify_shots.py"
+    "shots": "python3 shots/run_shots.py --lang es,en --screens all && python3 shots/verify_shots.py",
+    "final": "vitest run && npm run render && npm run store"
   },
   "dependencies": {
     "@remotion/cli": "4.0.529",
