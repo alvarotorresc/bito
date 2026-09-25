@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Emulador headless para las capturas de Bito.
-# Uso: emulator.sh setup | up | down
+# Uso: emulator.sh setup | up | down | locale es|en | demo
 set -euo pipefail
 
 SDK="${ANDROID_HOME:-$HOME/Android/Sdk}"
@@ -119,9 +119,73 @@ setup() {
   cat "$HERE/avd.env"
 }
 
+current_locale_is() {
+  a shell am get-config 2>/dev/null | tr -d '\r' | grep -qE "(^|[ -])$1-"
+}
+
+wait_config() {
+  for _ in $(seq 1 60); do
+    if current_locale_is "$1" && a shell pidof com.android.systemui >/dev/null 2>&1; then
+      sleep 5
+      return 0
+    fi
+    sleep 2
+  done
+  return 1
+}
+
+demo() {
+  a shell settings put global sysui_demo_allowed 1
+  d() { a shell am broadcast -a com.android.systemui.demo -e command "$@" >/dev/null; }
+  d enter
+  d clock -e hhmm 0941
+  d battery -e level 100 -e plugged false
+  d network -e wifi show -e level 4 -e fully true
+  d network -e mobile show -e datatype none -e level 4 -e fully true
+  d notifications -e visible false
+}
+
+locale() {
+  local tag want
+  case "${1:-}" in
+    es) tag=es-ES ;;
+    en) tag=en-US ;;
+    *) echo "uso: emulator.sh locale es|en" >&2; exit 2 ;;
+  esac
+  want="${tag/-/-r}"
+  up
+  if current_locale_is "$want"; then
+    echo "locale: $tag ya activo"
+    demo
+    return 0
+  fi
+  if a root 2>&1 | grep -qiE 'restarting|already running as root'; then
+    a wait-for-device
+    a shell setprop persist.sys.locale "$tag"
+    a shell stop
+    a shell start
+    if wait_config "$want"; then
+      echo "locale: $tag por setprop y reinicio del framework"
+      demo
+      return 0
+    fi
+  fi
+  down
+  up -change-locale "$tag"
+  if wait_config "$want"; then
+    echo "locale: $tag por -change-locale"
+    demo
+    return 0
+  fi
+  echo "emulator.sh: no consigo poner $tag" >&2
+  exit 1
+}
+
 case "${1:-}" in
   setup) setup ;;
   up) up ;;
   down) down ;;
-  *) echo "uso: emulator.sh setup|up|down" >&2; exit 2 ;;
+  locale) locale "${2:-}" ;;
+  demo) demo ;;
+  *) echo "uso: emulator.sh setup|up|down|locale es|en|demo" >&2; exit 2 ;;
 esac
