@@ -1,0 +1,8 @@
+appId: com.alvarotc.bito
+---
+- extendedWaitUntil:
+    visible: ".*${T_DENTISTA}.*"
+    timeout: 20000
+- assertVisible: ${L_TASKS_TITLE}
+- assertNotVisible: ${L_CELEBRATION}
+- waitForAnimationToEnd

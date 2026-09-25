@@ -1,0 +1,20 @@
+appId: com.alvarotc.bito
+---
+- extendedWaitUntil:
+    visible: ".*${T_DENTISTA}.*"
+    timeout: 20000
+- tapOn:
+    text: ${L_START}
+    index: 0
+- extendedWaitUntil:
+    visible: "25 min"
+    timeout: 10000
+- tapOn: "25 min"
+- tapOn:
+    text: ${L_START}
+    index: 0
+- extendedWaitUntil:
+    visible: ${L_FOCUS_DONE}
+    timeout: 10000
+- assertVisible: ".*2[45]:[0-9][0-9].*"
+- waitForAnimationToEnd

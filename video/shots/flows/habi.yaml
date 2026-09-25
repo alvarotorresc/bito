@@ -1,0 +1,20 @@
+appId: com.alvarotc.bito
+---
+- launchApp:
+    appId: com.alvarotc.bito
+    stopApp: true
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 20000
+- tapOn: ${L_NAV_HABI}
+- runFlow:
+    when:
+      notVisible: ".*${L_POINTS}.*"
+    commands:
+      - tapOn:
+          point: "67%,93%"
+- extendedWaitUntil:
+    visible: ".*${L_POINTS}.*"
+    timeout: 15000
+- assertNotVisible: ${L_CELEBRATION}
+- waitForAnimationToEnd

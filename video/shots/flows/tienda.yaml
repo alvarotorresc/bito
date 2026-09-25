@@ -1,0 +1,49 @@
+appId: com.alvarotc.bito
+---
+- launchApp:
+    appId: com.alvarotc.bito
+    stopApp: true
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 20000
+- tapOn: ${L_NAV_HABI}
+- runFlow:
+    when:
+      notVisible: ".*${L_POINTS}.*"
+    commands:
+      - tapOn:
+          point: "67%,93%"
+- extendedWaitUntil:
+    visible: ".*${L_POINTS}.*"
+    timeout: 15000
+- repeat:
+    times: 4
+    commands:
+      - swipe:
+          start: "50%,75%"
+          end: "50%,25%"
+          duration: 300
+- waitForAnimationToEnd
+# En es la rejilla es unos 47 px mas alta (Rosa empolvado ocupa dos lineas): se sube menos para
+# que el boton de comprar quepa entero; el borde de arriba de la tarjeta queda justo fuera.
+- runFlow:
+    when:
+      true: ${LANG == 'es'}
+    commands:
+      - swipe:
+          start: "540,1203"
+          end: "540,1311"
+          duration: 1500
+- runFlow:
+    when:
+      true: ${LANG != 'es'}
+    commands:
+      - swipe:
+          start: "50%,50%"
+          end: "50%,54%"
+          duration: 1500
+- waitForAnimationToEnd
+- assertVisible: ${L_STORE}
+- assertVisible: ".*100 pts.*"
+- assertNotVisible: ${L_CELEBRATION}
+- waitForAnimationToEnd
