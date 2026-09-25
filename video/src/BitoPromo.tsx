@@ -7,6 +7,7 @@ import { Escena02 } from './scenes/02-QueEs';
 import { Escena03 } from './scenes/03-Registro';
 import { Escena04 } from './scenes/04-Triptico';
 import { Escena05 } from './scenes/05-Navegacion';
+import { Escena06 } from './scenes/06-Habi';
 import { ESCENAS, momentoGlobal, type NumEscena } from './timing';
 import { Dedo } from './ui/Dedo';
 import { Fondo } from './ui/Fondo';
@@ -31,7 +32,7 @@ const ESCENA: Record<NumEscena, React.FC<PromoProps>> = {
   3: Escena03,
   4: Escena04,
   5: Escena05,
-  6: pendiente(6),
+  6: Escena06,
   7: pendiente(7),
   8: pendiente(8),
   9: pendiente(9),
