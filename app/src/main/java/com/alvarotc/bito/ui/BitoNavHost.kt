@@ -360,7 +360,17 @@ fun BitoNavHost(container: AppContainer) {
                     // reales.
                     var loaded by remember(id) { mutableStateOf<TaskFormState?>(null) }
                     LaunchedEffect(id) {
-                        loaded = container.tasks.task(id)?.toFormState() ?: TaskFormState(editingId = id)
+                        // La tarea pudo desaparecer entre el menu de la fila y que esta ruta
+                        // cargue (borrado desde otra pantalla, reinicio a media edicion): abrir
+                        // un formulario en blanco para ese id dejaria "Guardar" sin escribir nada
+                        // (TasksRepository.update sale por su propio `?: return@withTransaction`),
+                        // asi que se vuelve atras sin enseñar nada en vez de fingir que hay algo que editar.
+                        val entity = container.tasks.task(id)
+                        if (entity == null) {
+                            nav.popBackStack()
+                        } else {
+                            loaded = entity.toFormState()
+                        }
                     }
                     val initial = loaded
                     if (initial == null) {

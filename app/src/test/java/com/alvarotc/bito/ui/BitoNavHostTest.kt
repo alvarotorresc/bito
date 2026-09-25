@@ -1005,6 +1005,50 @@ class BitoNavHostTest {
     }
 
     /**
+     * Ola 4 review (Minor #6): the task can disappear between opening the row menu and this
+     * route actually loading it (borrado desde otra pantalla, reinicio a media edicion) — the
+     * route used to fall back to a blank `TaskFormState(editingId = id)`, so "Guardar" looked
+     * live but `TasksRepository.update` silently did nothing (its own `?: return@withTransaction`
+     * on a missing id). Deleting the task right after opening the menu, before the edit action
+     * actually fires, reproduces that exact window.
+     */
+    @Test
+    fun `editing a task that vanished before the route loads it just goes back`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Tarea fantasma", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-menu-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        val editAction = compose.onNodeWithTag("task-menu-edit").fetchSemanticsNode().config[SemanticsActions.OnClick].action
+        runBlocking { container.tasks.delete("t1") }
+        editAction?.invoke()
+        compose.waitForIdle()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("tasks-list", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("task-form-loading", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
      * M10 review round 1 (Important #1): without `popUpTo`, "seguir con la otra" pushed a SECOND
      * "focus" entry on top of the conflict one instead of replacing it — system back from the
      * live session then landed back on the conflict screen (`busyWith` still non-null), reopening
