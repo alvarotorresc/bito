@@ -10,23 +10,8 @@ import { Escena05 } from './scenes/05-Navegacion';
 import { Escena06 } from './scenes/06-Habi';
 import { Escena07 } from './scenes/07-Tareas';
 import { Escena08 } from './scenes/08-Promesas';
+import { Escena09 } from './scenes/09-Cierre';
 import { ESCENAS, momentoGlobal, type NumEscena } from './timing';
-import { Dedo } from './ui/Dedo';
-import { Fondo } from './ui/Fondo';
-import { Rotulo } from './ui/Rotulo';
-
-const pendiente = (n: NumEscena): React.FC<PromoProps> => {
-  const Pendiente: React.FC<PromoProps> = () => (
-    <AbsoluteFill>
-      <Fondo />
-      <Rotulo tamano={96} alinear="center" style={{ left: 0, right: 0, top: 460 }}>
-        {`Escena ${n}`}
-      </Rotulo>
-      <Dedo x={960} y={760} toque={30} />
-    </AbsoluteFill>
-  );
-  return Pendiente;
-};
 
 const ESCENA: Record<NumEscena, React.FC<PromoProps>> = {
   1: Escena01,
@@ -37,7 +22,7 @@ const ESCENA: Record<NumEscena, React.FC<PromoProps>> = {
   6: Escena06,
   7: Escena07,
   8: Escena08,
-  9: pendiente(9),
+  9: Escena09,
 };
 
 export const BitoPromo: React.FC<PromoProps> = ({ lang }) => (
