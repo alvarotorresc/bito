@@ -9,11 +9,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import time
+from io import BytesIO
 from pathlib import Path
+
+from PIL import Image
 
 import crop
 import device as d
@@ -37,6 +41,11 @@ CROP_FROM_TOP = {"notificacion"}
 PAPEL_SCREENS = set(SCREENS) - {"widget", "notificacion", "foco", "tienda"}
 ATTEMPTS = 2
 NOTIFICATION_WAIT_S = 240
+# Ojos de Habi en foco (coordenadas del PNG recortado): si parpadea no hay pixeles oscuros.
+HABI_EYES = (440, 400, 640, 475)
+HABI_EYES_MIN_DARK = 300
+BLINK_RETRIES = 5
+SNOOZE_MS = 600000
 
 
 def labels_for(lang: str) -> dict[str, str]:
@@ -61,6 +70,13 @@ def notification_posted() -> bool:
     return any("NotificationRecord(" in line and f"pkg={d.PKG}" in line for line in dump.splitlines())
 
 
+def snooze_system_notifications() -> None:
+    dump = d.shell("dumpsys notification --noredact", check=False)
+    for pkg, key in re.findall(r"NotificationRecord\(\S+ pkg=(\S+) .*? key=(\S+): Notification\(", dump):
+        if pkg != d.PKG:
+            d.shell(f"cmd notification snooze --for {SNOOZE_MS} '{key}'", check=False)
+
+
 def before(screen: str, lang: str) -> bool:
     d.shell("cmd statusbar collapse", check=False)
     if screen == "notificacion":
@@ -72,6 +88,7 @@ def before(screen: str, lang: str) -> bool:
             if time.monotonic() > deadline:
                 return False
             time.sleep(5)
+        snooze_system_notifications()
         emulator("demo")
         d.shell("cmd statusbar expand-notifications")
         time.sleep(2)
@@ -82,6 +99,25 @@ def before(screen: str, lang: str) -> bool:
     if screen in DEEP_LINKS:
         d.deep_link(DEEP_LINKS[screen])
     return True
+
+
+def habi_eyes_open(png: bytes, top: int) -> bool:
+    x0, y0, x1, y1 = HABI_EYES
+    with Image.open(BytesIO(png)) as img:
+        eyes = img.convert("L").crop((x0, y0 + top, x1, y1 + top))
+        return sum(eyes.histogram()[:90]) >= HABI_EYES_MIN_DARK
+
+
+def screencap_for(screen: str, top: int) -> bytes | None:
+    png = d.screencap()
+    if screen != "foco":
+        return png
+    for _ in range(BLINK_RETRIES):
+        if habi_eyes_open(png, top):
+            return png
+        time.sleep(0.4)
+        png = d.screencap()
+    return png if habi_eyes_open(png, top) else None
 
 
 def after(screen: str) -> None:
@@ -97,8 +133,9 @@ def capture(screen: str, lang: str, labels: dict[str, str], top: int, bottom: in
     out.parent.mkdir(parents=True, exist_ok=True)
     raw.parent.mkdir(parents=True, exist_ok=True)
     for attempt in range(1, ATTEMPTS + 1):
-        if before(screen, lang) and run_maestro(screen, labels):
-            raw.write_bytes(d.screencap())
+        png = screencap_for(screen, top) if before(screen, lang) and run_maestro(screen, labels) else None
+        if png:
+            raw.write_bytes(png)
             if screen in CROP_FROM_TOP:
                 crop.crop_raw(raw, out, 0, top + bottom)
             else:

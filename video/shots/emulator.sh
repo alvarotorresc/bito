@@ -97,7 +97,7 @@ setup() {
   set_kv hw.lcd.height "$TARGET_H"
   set_kv hw.lcd.density 440
   set_kv hw.mainKeys no
-  set_kv hw.keyboard yes
+  set_kv hw.keyboard no
   set_kv hw.ramSize 4096
   set_kv disk.dataPartition.size 6G
   set_kv hw.gpu.enabled yes

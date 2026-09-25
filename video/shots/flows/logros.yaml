@@ -20,5 +20,11 @@ appId: com.alvarotc.bito
     visible: ${L_BADGES}
     timeout: 10000
 - assertNotVisible: ${L_WEEK}
+- swipe:
+    start: "50%,80%"
+    end: "50%,50%"
+    duration: 1500
+- waitForAnimationToEnd
+- assertVisible: ${L_PERFECT_WEEK}
 - assertNotVisible: ${L_CELEBRATION}
 - waitForAnimationToEnd

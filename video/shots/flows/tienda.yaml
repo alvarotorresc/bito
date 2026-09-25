@@ -16,17 +16,33 @@ appId: com.alvarotc.bito
 - extendedWaitUntil:
     visible: ".*${L_POINTS}.*"
     timeout: 15000
-- scrollUntilVisible:
-    element:
-      text: ${L_STORE}
-    direction: DOWN
-    timeout: 20000
-    centerElement: true
-- scrollUntilVisible:
-    element:
-      text: ".*100 pts.*"
-    direction: DOWN
-    timeout: 20000
+- repeat:
+    times: 4
+    commands:
+      - swipe:
+          start: "50%,75%"
+          end: "50%,25%"
+          duration: 300
+- waitForAnimationToEnd
+# En es la rejilla de colores es mas alta (Rosa empolvado ocupa dos lineas): se baja algo mas.
+- runFlow:
+    when:
+      true: ${LANG == 'es'}
+    commands:
+      - swipe:
+          start: "50%,50%"
+          end: "50%,56%"
+          duration: 1500
+- runFlow:
+    when:
+      true: ${LANG != 'es'}
+    commands:
+      - swipe:
+          start: "50%,50%"
+          end: "50%,54%"
+          duration: 1500
+- waitForAnimationToEnd
 - assertVisible: ${L_STORE}
+- assertVisible: ".*100 pts.*"
 - assertNotVisible: ${L_CELEBRATION}
 - waitForAnimationToEnd

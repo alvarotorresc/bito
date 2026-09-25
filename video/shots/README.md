@@ -41,11 +41,15 @@ bajo la zona de gestos: un recorte inferior la cortaba. Es lo que se ve en un m�
 Excepción: `notificacion` (`CROP_FROM_TOP` en `run_shots.py`) se recorta desde arriba,
 `1080x2340+0+0`. Conserva la cabecera de la persiana (hora, fecha, ajustes rápidos) y pierde los
 66 px de la zona de gestos, que en la persiana no tienen nada. Durante esa captura se apagan el
-wifi y el aviso de depuración USB (`adb_notify 0`) para que no salgan notificaciones del sistema;
-queda una entrada silenciosa de «Sistema Android» que no se puede quitar.
+wifi y el aviso de depuración USB (`adb_notify 0`), y el resto de notificaciones que no son de
+Bito (la de «consola en serie habilitada») se posponen 10 minutos con `cmd notification snooze`.
+El AVD se crea con `hw.keyboard=no` para que no salga «Teclados físicos configurados».
+
+En `foco`, Habi parpadea: `run_shots.py` mira si hay píxeles oscuros en la zona de sus ojos y,
+si no, repite la captura cada 400 ms (hasta 5 veces); si no los encuentra, el intento falla.
 
 Las pantallas `widget`, `notificacion`, `foco` y `tienda` no pasan la comprobación de Papel
-(pantalla de inicio, persiana, foco a pantalla completa y tienda centrada tras el scroll).
+(pantalla de inicio, persiana, foco a pantalla completa y tienda: se baja hasta el final y se sube un poco, así que la tarjeta de la tienda queda arriba del todo).
 
 ## Idioma
 
