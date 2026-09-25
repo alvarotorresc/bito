@@ -1,0 +1,8 @@
+appId: com.alvarotc.bito
+---
+- extendedWaitUntil:
+    visible: ${L_SEAL_DAY}
+    timeout: 20000
+- assertNotVisible: ${L_CELEBRATION}
+- assertNotVisible: ${L_PERFECT}
+- waitForAnimationToEnd

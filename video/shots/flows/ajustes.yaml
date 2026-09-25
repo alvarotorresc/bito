@@ -1,0 +1,15 @@
+appId: com.alvarotc.bito
+---
+- launchApp:
+    appId: com.alvarotc.bito
+    stopApp: true
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 20000
+- tapOn: ${L_NAV_SETTINGS}
+- extendedWaitUntil:
+    visible: ".*${L_NAME_ROW}.*"
+    timeout: 15000
+- assertVisible: ".*${U_NAME}.*"
+- assertNotVisible: ${L_CELEBRATION}
+- waitForAnimationToEnd
