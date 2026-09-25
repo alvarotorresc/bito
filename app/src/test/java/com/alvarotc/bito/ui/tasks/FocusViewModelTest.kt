@@ -662,4 +662,26 @@ class FocusViewModelTest {
             dispatcher.scheduler.runCurrent()
             assertEquals(nudgesAtExpiry, vm.habiNudge.value)
         }
+
+    @Test
+    fun `no nudge fires if the session expires while waiting for the next one`() =
+        // M10 review ola 4 (Minor #4): el incremento tras el delay era incondicional, asi que una
+        // sesion que vence DURANTE la espera disparaba exactamente un pulso de mas justo despues
+        // del 00:00 -- lo que "vencida: nada" excluye. currentNow salta 6 minutos antes de que el
+        // primer intervalo de 5s cumpla, asi que la sesion de 5 minutos ya esta vencida cuando el
+        // delay se resuelve.
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            val vm = newViewModel("t1", nudgeInterval = { 5_000L })
+            activate(vm)
+            vm.select(5)
+            vm.start()
+            settle()
+
+            currentNow += 6 * 60_000L
+            dispatcher.scheduler.advanceTimeBy(5_000)
+            dispatcher.scheduler.runCurrent()
+
+            assertEquals(0, vm.habiNudge.value)
+        }
 }

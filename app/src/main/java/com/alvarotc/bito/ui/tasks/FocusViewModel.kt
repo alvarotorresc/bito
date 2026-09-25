@@ -213,7 +213,9 @@ class FocusViewModel(
                 if (session == null) return@collectLatest
                 while (FocusClock.remainingMillis(session, now(), elapsed()) > 0) {
                     delay(nudgeInterval())
-                    nudge.value++
+                    // Sin este chequeo, una sesion que vence DURANTE la espera dispara un pulso de
+                    // mas justo despues del 00:00 — exactamente lo que "vencida: nada" excluye.
+                    if (FocusClock.remainingMillis(session, now(), elapsed()) > 0) nudge.value++
                 }
             }
         }
