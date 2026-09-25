@@ -38,7 +38,6 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -270,10 +269,13 @@ class FocusViewModelTest {
         }
 
     @Test
-    fun `finishing marks the task done right away, then holds before clearing the session and the presence`() =
-        // Recalibrado (Habi acompana al terminar): finish() ahora sostiene FINISH_HOLD_MS con la
-        // tarea ya hecha pero la sesion todavia viva -- el hueco donde FocusScreen ensena el
-        // bocadillo de HabiVoice.taskDoneRes -- antes de limpiar sesion y bandeja y marcar gone.
+    fun `finishing marks the task done right away, clears session and presence before the hold, then goes gone after it`() =
+        // Recalibrado dos veces. Habi acompana al terminar: finish() sostiene FINISH_HOLD_MS con
+        // el bocadillo de HabiVoice.taskDoneRes antes de marcar gone. M10 review ola 4 (Critical):
+        // la limpieza de sesion y bandeja ya NO espera al hold -- corre justo despues de marcar la
+        // tarea, para que un ViewModel que muere durante la pausa (atras, recientes, proceso) no
+        // deje nada huerfano. El bocadillo se sostiene con lo que finish() guardo (heldDone), no
+        // con la sesion viva.
         runFocusTest {
             tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
             val presence = FakeFocusPresence()
@@ -289,19 +291,74 @@ class FocusViewModelTest {
             assertEquals(TaskStatus.DONE, task.status)
             assertEquals(today, task.doneOnDay)
             assertTrue(db.pointsLedgerDao().all().any { it.reason == PointsReason.TASK_DONE && it.refId == "task:t1" })
-            // Todavia en la pausa: la sesion sigue viva y la pantalla sigue "running", con el aviso.
+            // Todavia en la pausa: la pantalla sigue "running" con el aviso, pero sesion y bandeja
+            // ya estan limpias -- si el ViewModel muriera aqui mismo no quedaria nada por limpiar.
             assertTrue(vm.uiState.value.running)
             assertTrue(vm.uiState.value.justFinished)
             assertFalse(vm.uiState.value.gone)
-            assertEquals(0, presence.clearCalls)
-            assertNotNull(focusStore.session.first())
+            assertEquals(1, presence.clearCalls)
+            assertNull(focusStore.session.first())
 
             dispatcher.scheduler.advanceTimeBy(1_500)
             dispatcher.scheduler.runCurrent()
 
-            assertNull(focusStore.session.first())
             assertEquals(1, presence.clearCalls)
             assertTrue(vm.uiState.value.gone)
+        }
+
+    @Test
+    fun `finishing twice back to back without waiting between them clears only once`() =
+        // Sin el guard de reentrada en finish(), dos toques en el mismo fotograma lanzarian dos
+        // corrutinas -- cada una limpiaria sesion y bandeja por su cuenta, doblando presence.clearCalls.
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            val presence = FakeFocusPresence()
+            val vm = newViewModel("t1", presence)
+            activate(vm)
+            vm.start()
+            settle()
+
+            vm.finish()
+            vm.finish()
+            settle()
+
+            assertEquals(1, presence.clearCalls)
+
+            dispatcher.scheduler.advanceTimeBy(1_500)
+            dispatcher.scheduler.runCurrent()
+
+            assertEquals(1, presence.clearCalls)
+            assertTrue(vm.uiState.value.gone)
+        }
+
+    @Test
+    fun `finishing through the bare focus route still shows the done phrase`() =
+        // La notificacion permanente y onKeepOther entran por "focus" a secas: requestedTaskId es
+        // null, asi que el bocadillo no puede depender de el ni de la sesion (limpia justo despues
+        // de marcar la tarea) -- solo de lo que finish() guardo en heldDone.
+        runFocusTest {
+            tasksRepo.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today))
+            val vm1 = newViewModel("t1")
+            activate(vm1)
+            vm1.start()
+            settle()
+
+            val vm2 = newViewModel(null)
+            activate(vm2)
+            assertTrue(vm2.uiState.value.running)
+
+            vm2.finish()
+            settle()
+
+            assertTrue(vm2.uiState.value.running)
+            assertTrue(vm2.uiState.value.justFinished)
+            assertEquals("Llamar al banco", vm2.uiState.value.title)
+            assertFalse(vm2.uiState.value.gone)
+
+            dispatcher.scheduler.advanceTimeBy(1_500)
+            dispatcher.scheduler.runCurrent()
+
+            assertTrue(vm2.uiState.value.gone)
         }
 
     @Test

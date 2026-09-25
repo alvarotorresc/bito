@@ -129,12 +129,28 @@ class FocusViewModel(
         val owned: List<CustomizationItemEntity>,
     )
 
-    /** Lo que solo vive en este ViewModel: la eleccion de minutos, si la sesion ya se cerro y si esta en la pausa de [finish]. */
-    private data class Extra(val terminated: Boolean, val selectedMinutes: Int, val justFinished: Boolean)
+    /**
+     * Lo que [finish] guarda de la tarea el instante mismo en que limpia sesion y bandeja — antes
+     * de que ninguna de las dos exista ya, [buildUiState] necesita su propio titulo (y primer
+     * paso) para seguir enseñando el bocadillo sin depender de la sesion viva ni de
+     * [requestedTaskId].
+     */
+    private data class HeldDone(val title: String, val firstStep: String?)
+
+    /** Lo que solo vive en este ViewModel: la eleccion de minutos, si la sesion ya se cerro y que guardo [finish] mientras dura su pausa (no nulo exactamente durante ella). */
+    private data class Extra(val terminated: Boolean, val selectedMinutes: Int, val heldDone: HeldDone?)
 
     private val terminated = MutableStateFlow(false)
     private val selection = MutableStateFlow(DEFAULT_MINUTES)
-    private val justFinishedFlag = MutableStateFlow(false)
+    private val heldDone = MutableStateFlow<HeldDone?>(null)
+
+    /**
+     * Cierra la puerta a un segundo [finish] mientras el primero sigue en marcha — comprobado y
+     * marcado ANTES de `launch`, no dentro de la corrutina, porque dos toques en el mismo
+     * fotograma piden ambos antes de que ninguno llegue a suspenderse. Sin esto, dos corrutinas
+     * corren en paralelo y cada una limpia sesion y bandeja por su cuenta.
+     */
+    private var finishing = false
 
     /** Fuerza recalcular [uiState] cada segundo mientras hay sesion — el propio valor no importa. */
     private val tick = MutableStateFlow(0L)
@@ -155,7 +171,7 @@ class FocusViewModel(
     val uiState: StateFlow<FocusUiState> =
         combine(
             combine(focus.session, domainState.observe(), settings.settings, rewards.observeOwnedItems(), ::Snapshot),
-            combine(terminated, selection, justFinishedFlag, ::Extra),
+            combine(terminated, selection, heldDone, ::Extra),
             tick,
         ) { snapshot, extra, _ -> buildUiState(snapshot, extra) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FocusUiState())
@@ -219,6 +235,23 @@ class FocusViewModel(
 
         if (extra.terminated) return gone()
 
+        // La pausa de finish(): sesion y bandeja ya estan limpias en este punto (ver finish()),
+        // asi que el bocadillo no puede depender de ninguna de las dos ni de requestedTaskId (la
+        // ruta desnuda de la notificacion permanente lo trae null). Se sostiene solo con lo que
+        // finish() guardo, hasta que termine el hold y `terminated` lo cierre arriba.
+        val held = extra.heldDone
+        if (held != null) {
+            return FocusUiState(
+                title = held.title,
+                firstStep = held.firstStep,
+                spec = spec,
+                userName = userName,
+                running = true,
+                justFinished = true,
+                loading = false,
+            )
+        }
+
         val session = snapshot.session
         if (session == null) {
             val taskId = requestedTaskId ?: return gone()
@@ -262,7 +295,8 @@ class FocusViewModel(
             selectedMinutes = extra.selectedMinutes,
             running = true,
             remainingMillis = FocusClock.remainingMillis(session, nowMillis, elapsed()),
-            justFinished = extra.justFinished,
+            // justFinished se queda en su default (false): mientras heldDone sea no nulo, el
+            // cortocircuito de arriba ya devolvio el estado con el bocadillo antes de llegar aqui.
             loading = false,
         )
     }
@@ -318,22 +352,37 @@ class FocusViewModel(
             }
         }
 
-    fun finish() =
+    fun finish() {
+        if (finishing) return
+        finishing = true
         viewModelScope.launch {
-            val session = focus.session.first() ?: return@launch
+            val session =
+                focus.session.first() ?: run {
+                    finishing = false
+                    return@launch
+                }
             val today = currentToday()
             val nowMillis = now()
             tasks.markDone(session.taskId, today, nowMillis)
             reconciler.reconcile(today, nowMillis)
-            // Habi dice la misma frase que Hoy antes de que la pantalla se cierre — la sesion se
-            // limpia DESPUES de la pausa, no antes, para que uiState siga leyendo running=true
-            // (con la tarea ya hecha) mientras se ve el bocadillo.
-            justFinishedFlag.value = true
-            delay(FINISH_HOLD_MS)
+            // M10 review ola 4 (Critical): la limpieza va ANTES de la pausa, no despues — si el
+            // ViewModel muere durante el hold (atras sin BackHandler, recientes, muerte de
+            // proceso) nada queda huerfano: ni sesion para que FocusSync la eche en falta, ni
+            // notificacion permanente, ni alarma. `heldDone` guarda el titulo (y el primer paso)
+            // ANTES de limpiar y es el propio disparador del bocadillo — no una bandera aparte
+            // puesta despues de `focus.clear()` — porque poner el valor en dos pasos (limpiar,
+            // luego marcar) deja una emision intermedia donde `buildUiState` puede ver la sesion
+            // ya nula y la bandera todavia sin marcar: en la ruta desnuda eso es un `gone()` de un
+            // fotograma que cierra la pantalla antes de tiempo, y en la ruta con id un fogonazo del
+            // estado "en reposo". Con `heldDone` como unico disparador esa ventana no existe.
+            val doneTask = tasks.task(session.taskId)
+            heldDone.value = HeldDone(title = doneTask?.title.orEmpty(), firstStep = doneTask?.firstStep)
             focus.clear()
             presence.clear()
+            delay(FINISH_HOLD_MS)
             terminated.value = true
         }
+    }
 
     fun giveUp() =
         viewModelScope.launch {
