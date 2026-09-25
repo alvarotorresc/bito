@@ -73,7 +73,7 @@ down() {
   exit 1
 }
 
-# Imprime "TOP BOTTOM HEIGHT" en píxeles a partir de las fuentes de insets de dumpsys window.
+# Imprime "TOP NAV HEIGHT" en píxeles a partir de las fuentes de insets de dumpsys window.
 measure() {
   local dump top nav_top h
   dump="$(a shell dumpsys window | tr -d '\r')"
@@ -104,18 +104,20 @@ setup() {
   set_kv hw.gpu.mode swiftshader_indirect
   down
   up
-  local top bottom h
-  read -r top bottom h <<<"$(measure)"
+  local top nav h
+  # Solo se recorta la barra de estado: la app es edge-to-edge y su cápsula de navegación
+  # llega bajo la zona de gestos, así que esa franja (con el asa) se queda en la captura.
+  read -r top nav h <<<"$(measure)"
   down
-  set_kv hw.lcd.height "$((TARGET_H + top + bottom))"
+  set_kv hw.lcd.height "$((TARGET_H + top))"
   up
-  local top2 bottom2 h2
-  read -r top2 bottom2 h2 <<<"$(measure)"
-  if [ "$top2" != "$top" ] || [ "$bottom2" != "$bottom" ] || [ "$h2" != "$((TARGET_H + top + bottom))" ]; then
-    echo "emulator.sh: las barras cambiaron al crecer la pantalla ($top/$bottom -> $top2/$bottom2, alto $h2)" >&2
+  local top2 nav2 h2
+  read -r top2 nav2 h2 <<<"$(measure)"
+  if [ "$top2" != "$top" ] || [ "$nav2" != "$nav" ] || [ "$h2" != "$((TARGET_H + top))" ]; then
+    echo "emulator.sh: las barras cambiaron al crecer la pantalla ($top/$nav -> $top2/$nav2, alto $h2)" >&2
     exit 1
   fi
-  printf 'TOP=%s\nBOTTOM=%s\nHEIGHT=%s\n' "$top2" "$bottom2" "$h2" > "$HERE/avd.env"
+  printf 'TOP=%s\nBOTTOM=0\nHEIGHT=%s\n' "$top2" "$h2" > "$HERE/avd.env"
   cat "$HERE/avd.env"
 }
 
