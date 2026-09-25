@@ -9,9 +9,11 @@ from __future__ import annotations
 
 import argparse
 import sqlite3
+import subprocess
 import tempfile
 import time
 from pathlib import Path
+from typing import Callable
 
 import device as d
 import prefs_pb
@@ -22,6 +24,8 @@ DB = "databases/bito.db"
 SETTINGS = "files/settings.preferences_pb"
 FAR_FUTURE_MS = 4102444800000
 FIRST_RUN_REMINDERS = "720,1140"
+LAUNCH_ATTEMPTS = 10
+LAUNCH_DELAY_S = 3.0
 
 
 def settings_for(current: dict, lang: str, today: int, now_min: int) -> dict:
@@ -56,8 +60,23 @@ def install_clean() -> None:
     d.shell(f"appops set {d.PKG} SCHEDULE_EXACT_ALARM allow")
 
 
+def launch_with_retry(start: Callable[[], str], attempts: int = LAUNCH_ATTEMPTS,
+                      delay_s: float = LAUNCH_DELAY_S, sleep: Callable[[float], None] = time.sleep) -> None:
+    last = ""
+    for attempt in range(1, attempts + 1):
+        try:
+            last = start()
+            if "Error" not in last:
+                return
+        except subprocess.CalledProcessError as error:
+            last = (error.stdout or b"").decode("utf-8", errors="replace")
+        if attempt < attempts:
+            sleep(delay_s)
+    raise SystemExit(f"prepare: la app no arrancó tras {attempts} intentos: {last.strip()}")
+
+
 def first_launch() -> None:
-    d.launch()
+    launch_with_retry(lambda: d.shell(f"am start -W -n {d.ACTIVITY}"))
     d.wait_for(lambda: d.run_as_exists(DB) and d.run_as_exists(SETTINGS), 60,
                "prepare: la app no creó bito.db ni settings.preferences_pb")
     time.sleep(2)
