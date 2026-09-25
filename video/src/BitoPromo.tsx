@@ -2,6 +2,7 @@ import React from 'react';
 import { AbsoluteFill, Html5Audio, Sequence, staticFile } from 'remotion';
 import { CUES, DURACION_SONIDO, MUSICA, volumenMusica } from './audio/mezcla';
 import type { PromoProps } from './copy';
+import { Escena01 } from './scenes/01-Apertura';
 import { ESCENAS, momentoGlobal, type NumEscena } from './timing';
 import { Dedo } from './ui/Dedo';
 import { Fondo } from './ui/Fondo';
@@ -21,7 +22,7 @@ const pendiente = (n: NumEscena): React.FC<PromoProps> => {
 };
 
 const ESCENA: Record<NumEscena, React.FC<PromoProps>> = {
-  1: pendiente(1),
+  1: Escena01,
   2: pendiente(2),
   3: pendiente(3),
   4: pendiente(4),
