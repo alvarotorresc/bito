@@ -10,5 +10,5 @@ for esperado in codec_name=h264 width=1920 height=1080 r_frame_rate=30/1; do
   grep -qx "$esperado" <<<"$video" || { echo "$f: falta $esperado en: $video" >&2; exit 1; }
 done
 [ "$audio" = "aac" ] || { echo "$f: audio '$audio', se esperaba aac" >&2; exit 1; }
-awk -v d="$duracion" 'BEGIN { exit !(d >= 45 && d <= 60) }' || { echo "$f: dura $duracion s, fuera de 45-60" >&2; exit 1; }
+awk -v d="$duracion" 'BEGIN { exit !(d >= 45 && d <= 70) }' || { echo "$f: dura $duracion s, fuera de 45-70" >&2; exit 1; }
 echo "ok $f: h264 1920x1080 30 fps, aac, $duracion s"

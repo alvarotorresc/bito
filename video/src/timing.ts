@@ -1,7 +1,7 @@
 export const FPS = 30;
 export const ANCHO = 1920;
 export const ALTO = 1080;
-export const DURACION_TOTAL = 1740;
+export const DURACION_TOTAL = 1920;
 
 const s = (segundos: number) => segundos * FPS;
 
@@ -11,10 +11,10 @@ export const ESCENAS = [
   { n: 3, nombre: 'registro', desde: s(10), duracion: s(4) },
   { n: 4, nombre: 'triptico', desde: s(14), duracion: s(6) },
   { n: 5, nombre: 'navegacion', desde: s(20), duracion: s(10) },
-  { n: 6, nombre: 'habi', desde: s(30), duracion: s(10) },
-  { n: 7, nombre: 'tareas', desde: s(40), duracion: s(6) },
-  { n: 8, nombre: 'promesas', desde: s(46), duracion: s(6) },
-  { n: 9, nombre: 'cierre', desde: s(52), duracion: s(6) },
+  { n: 6, nombre: 'habi', desde: s(30), duracion: s(16) },
+  { n: 7, nombre: 'tareas', desde: s(46), duracion: s(6) },
+  { n: 8, nombre: 'promesas', desde: s(52), duracion: s(6) },
+  { n: 9, nombre: 'cierre', desde: s(58), duracion: s(6) },
 ] as const;
 
 export type NumEscena = (typeof ESCENAS)[number]['n'];
@@ -39,12 +39,13 @@ export const MOMENTOS = {
   toqueStats: { escena: 5, local: 130 },
   toqueLogros: { escena: 5, local: 210 },
   celebracion: { escena: 5, local: 228 },
-  toqueHabi: { escena: 6, local: 30 },
-  caraSargento: { escena: 6, local: 90 },
-  caraCheerleader: { escena: 6, local: 160 },
-  caraNeutra: { escena: 6, local: 200 },
-  tiendaEntra: { escena: 6, local: 245 },
-  vestida: { escena: 6, local: 250 },
+  toqueHabi: { escena: 6, local: 24 },
+  vozTitular: { escena: 6, local: 75 },
+  caraSargento: { escena: 6, local: 135 },
+  caraCheerleader: { escena: 6, local: 225 },
+  caraNeutra: { escena: 6, local: 315 },
+  tiendaEntra: { escena: 6, local: 405 },
+  vestida: { escena: 6, local: 410 },
   toqueTareas: { escena: 7, local: 50 },
   toqueFoco: { escena: 7, local: 105 },
   asentarse: { escena: 9, local: 12 },

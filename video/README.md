@@ -1,6 +1,6 @@
 # Vídeo de producto de Bito
 
-Vídeo promocional de 58 s (1920×1080, 30 fps) en español e inglés y el material gráfico de
+Vídeo promocional de 64 s (1920×1080, 30 fps) en español e inglés y el material gráfico de
 Google Play, hechos con Remotion 4.0.529. Todo sale de este directorio; la app no se toca.
 
 ## Requisitos

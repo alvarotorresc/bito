@@ -1,18 +1,18 @@
 import React from 'react';
 import { AbsoluteFill, interpolate, spring, useCurrentFrame } from 'remotion';
-import { texto, type PromoProps } from '../copy';
+import { texto, type CopyKey, type PromoProps } from '../copy';
 import type { LineaHabi } from '../habi/gestos';
 import { MUELLES } from '../habi/habiMotion';
 import { HabiVivo } from '../habi/HabiVivo';
-import { ALTO, ANCHO, FPS, momentoLocal } from '../timing';
+import { ALTO, ANCHO, FPS, momentoLocal, type Momento } from '../timing';
 import { Dedo } from '../ui/Dedo';
 import { COLOR, Fondo } from '../ui/Fondo';
 import { Phone, medidasPhone } from '../ui/Phone';
 import { Rotulo } from '../ui/Rotulo';
 
-const TAM_HABI = 620;
-const HABI_IZQ = 330;
-const HABI_ARRIBA = 330;
+const TAM_HABI = 640;
+const HABI_IZQ = 60;
+const HABI_ARRIBA = 230;
 const PUNTO = { x: 0.7, y: 0.3 };
 const ALTO_MOVIL = 820;
 const m = medidasPhone(ALTO_MOVIL);
@@ -31,34 +31,59 @@ export const LINEA_06: LineaHabi = {
   ],
 };
 
-const BOCADILLOS = [
-  { clave: 'voz.sargento', desde: 'caraSargento', hasta: 'caraCheerleader' },
-  { clave: 'habi_greeting_cheerleader_radiant', desde: 'caraCheerleader', hasta: 'caraNeutra' },
-  { clave: 'habi_sealed_neutra', desde: 'caraNeutra', hasta: 'tiendaEntra' },
-] as const;
+type Voz = { nombre: string; frase: CopyKey; def: CopyKey; desde: Momento; hasta: Momento };
+
+const VOCES: readonly Voz[] = [
+  { nombre: 'Sargento', frase: 'voz.sargento.frase', def: 'voz.sargento.def', desde: 'caraSargento', hasta: 'caraCheerleader' },
+  { nombre: 'Cheerleader', frase: 'voz.cheerleader.frase', def: 'voz.cheerleader.def', desde: 'caraCheerleader', hasta: 'caraNeutra' },
+  { nombre: 'Neutra', frase: 'voz.neutra.frase', def: 'voz.neutra.def', desde: 'caraNeutra', hasta: 'tiendaEntra' },
+];
+
+const COLUMNA: React.CSSProperties = {
+  left: 780,
+  width: 1060,
+  top: 0,
+  height: ALTO,
+  display: 'flex',
+  flexDirection: 'column',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  gap: 36,
+};
+
+const BOCADILLO: React.CSSProperties = {
+  fontSize: 52,
+  fontWeight: 600,
+  padding: '32px 44px',
+  backgroundColor: COLOR.brillo,
+  border: `3px solid ${COLOR.borde}`,
+  borderRadius: 36,
+};
+
+const PIE: React.CSSProperties = { fontSize: 44, fontWeight: 400 };
 
 export const Escena06: React.FC<PromoProps> = ({ lang }) => {
   const frame = useCurrentFrame();
   const llega = spring({ frame: Math.max(0, frame - momentoLocal('tiendaEntra')), fps: FPS, config: MUELLES.asentarse });
   const tiendaX = interpolate(llega, [0, 1], [ANCHO + 40, TIENDA_IZQ]);
+  const voz = momentoLocal('vozTitular');
   return (
     <AbsoluteFill>
       <Fondo />
-      <Rotulo sale={70} tamano={72} style={{ left: 100, top: 110, width: 1000 }}>
-        {texto(lang, 'habi.titular')}
-      </Rotulo>
       <HabiVivo linea={LINEA_06} tamano={TAM_HABI} style={{ position: 'absolute', left: HABI_IZQ, top: HABI_ARRIBA }} />
       <Dedo x={HABI_IZQ + PUNTO.x * TAM_HABI} y={HABI_ARRIBA + PUNTO.y * TAM_HABI} toque={momentoLocal('toqueHabi')} />
-      {BOCADILLOS.map((b) => (
-        <Rotulo
-          key={b.clave}
-          entra={momentoLocal(b.desde) + 6}
-          sale={momentoLocal(b.hasta) - 8}
-          tamano={52}
-          peso={600}
-          style={{ left: 1060, top: 380, maxWidth: 720, padding: '36px 48px', backgroundColor: COLOR.brillo, border: `3px solid ${COLOR.borde}`, borderRadius: 36 }}
-        >
-          {texto(lang, b.clave)}
+      <Rotulo sale={voz - 8} tamano={104} style={COLUMNA}>
+        {texto(lang, 'habi.titular')}
+      </Rotulo>
+      <Rotulo entra={voz} sale={momentoLocal('caraSargento') - 8} tamano={80} style={COLUMNA}>
+        <div>{texto(lang, 'nuevo.habi.voz.titular')}</div>
+        <div style={PIE}>{texto(lang, 'habi.nota')}</div>
+      </Rotulo>
+      {VOCES.map((v) => (
+        <Rotulo key={v.nombre} entra={momentoLocal(v.desde) + 6} sale={momentoLocal(v.hasta) - 8} tamano={120} style={COLUMNA}>
+          <div>{v.nombre}</div>
+          <div style={BOCADILLO}>{texto(lang, v.frase)}</div>
+          <div style={PIE}>{texto(lang, v.def)}</div>
         </Rotulo>
       ))}
       {frame >= momentoLocal('tiendaEntra') ? (
