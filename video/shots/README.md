@@ -23,7 +23,7 @@ python3 to_web.py           # copia a alvarotc-web lo que pide su brief de medio
 ```
 
 Una sola pantalla: `python3 run_shots.py --lang es --screens stats`, y después
-`python3 verify_shots.py`. La pasada completa tarda unos 20 minutos; `notificacion` espera a que
+`python3 verify_shots.py`. La pasada completa tarda unos 11 minutos (678 s medidos); `notificacion` espera a que
 salte un recordatorio real (hasta 4 minutos por idioma).
 
 `verify_shots.py` comprueba que existen las 26, que miden 1080×2340 RGB, que la fila superior es
@@ -79,6 +79,19 @@ pulsación larga en `80%,62%` de la pantalla de inicio para abrir el menú (Widg
 selector de widgets el botón de añadir en `50%,84%` (se repite una vez si no aparece la pantalla
 de configuración). Si cambia la imagen del sistema o la resolución del AVD, hay que revisar esos
 dos puntos con `maestro --device emulator-5554 hierarchy` y una captura cruda de `raw/`.
+
+Otros desplazamientos fijos, calibrados en este AVD (1080×2406, densidad 440):
+
+- `flows/logros.yaml`: un swipe lento de `50%,80%` a `50%,50%` (1500 ms). Deja arriba «Rachas»
+  y enteras las tarjetas de Rachas y Constancia, con «Semana redonda» a la vista. Uno más corto
+  cortaba por arriba la tarjeta «9 de 14» y fallaba la comprobación de Papel.
+- `flows/tienda.yaml`: cuatro swipes rápidos hasta el final de la pantalla de Habi, que siempre
+  dejan la misma posición, y uno lento hacia arriba. En en va de `50%,50%` a `50%,54%` (unos 75 px
+  de desplazamiento). En es va de `540,1203` a `540,1311` (unos 87 px), porque su rejilla es unos
+  47 px más alta: «Rosa empolvado» ocupa dos líneas. En es, el título y las pestañas quedan
+  enteros y el borde de arriba de la tarjeta queda justo fuera. `run_shots.py`
+  (`buy_button_whole`) comprueba en la columna x=300 que debajo del botón de comprar se ven al
+  menos 20 px de su tarjeta; si no, el intento falla.
 
 Fallback con fotos del autor:
 

@@ -46,6 +46,12 @@ HABI_EYES = (440, 400, 640, 475)
 HABI_EYES_MIN_DARK = 300
 BLINK_RETRIES = 5
 SNOOZE_MS = 600000
+# Boton de comprar de la tienda: en la columna x=300 es la ultima franja verde alta (>=100 px);
+# debajo tiene que verse el margen de su tarjeta (>=20 px), si no el boton sale cortado.
+BUY_COLUMN_X = 300
+BUY_MIN_HEIGHT = 100
+BUY_MIN_MARGIN = 20
+CARD = (0xFB, 0xF8, 0xF2)
 
 
 def labels_for(lang: str) -> dict[str, str]:
@@ -120,6 +126,33 @@ def screencap_for(screen: str, top: int) -> bytes | None:
     return png if habi_eyes_open(png, top) else None
 
 
+def is_green(px: tuple[int, int, int]) -> bool:
+    r, g, b = px
+    return g - r > 40 and g - b > 30
+
+
+def buy_button_whole(path: Path) -> bool:
+    with Image.open(path) as img:
+        rgb = img.convert("RGB")
+        column = [rgb.getpixel((BUY_COLUMN_X, y)) for y in range(rgb.height)]
+    runs: list[tuple[int, int]] = []
+    start = None
+    for y, px in enumerate(column + [(0, 0, 0)]):
+        if is_green(px) and start is None:
+            start = y
+        elif not is_green(px) and start is not None:
+            runs.append((start, y))
+            start = None
+    tall = [run for run in runs if run[1] - run[0] >= BUY_MIN_HEIGHT]
+    if not tall:
+        return False
+    end = tall[-1][1]
+    margin = column[end:end + BUY_MIN_MARGIN]
+    return len(margin) == BUY_MIN_MARGIN and all(
+        all(abs(c - k) <= 6 for c, k in zip(px, CARD)) for px in margin
+    )
+
+
 def after(screen: str) -> None:
     d.shell("cmd statusbar collapse", check=False)
     if screen == "notificacion":
@@ -140,10 +173,13 @@ def capture(screen: str, lang: str, labels: dict[str, str], top: int, bottom: in
                 crop.crop_raw(raw, out, 0, top + bottom)
             else:
                 crop.crop_raw(raw, out, top, bottom)
-            if screen not in PAPEL_SCREENS or crop.top_row_is_papel(out):
+            if screen == "tienda" and not buy_button_whole(out):
+                print(f"run_shots: {lang}/{screen} intento {attempt}: el boton de comprar sale cortado", file=sys.stderr)
+            elif screen not in PAPEL_SCREENS or crop.top_row_is_papel(out):
                 after(screen)
                 return "ok"
-            print(f"run_shots: {lang}/{screen} intento {attempt}: la fila superior no es Papel", file=sys.stderr)
+            else:
+                print(f"run_shots: {lang}/{screen} intento {attempt}: la fila superior no es Papel", file=sys.stderr)
         else:
             print(f"run_shots: {lang}/{screen} intento {attempt} fallido", file=sys.stderr)
     after(screen)

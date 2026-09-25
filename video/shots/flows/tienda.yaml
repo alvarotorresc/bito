@@ -24,14 +24,15 @@ appId: com.alvarotc.bito
           end: "50%,25%"
           duration: 300
 - waitForAnimationToEnd
-# En es la rejilla de colores es mas alta (Rosa empolvado ocupa dos lineas): se baja algo mas.
+# En es la rejilla es unos 47 px mas alta (Rosa empolvado ocupa dos lineas): se sube menos para
+# que el boton de comprar quepa entero; el borde de arriba de la tarjeta queda justo fuera.
 - runFlow:
     when:
       true: ${LANG == 'es'}
     commands:
       - swipe:
-          start: "50%,50%"
-          end: "50%,56%"
+          start: "540,1203"
+          end: "540,1311"
           duration: 1500
 - runFlow:
     when:
