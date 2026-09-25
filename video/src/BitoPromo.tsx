@@ -1,7 +1,8 @@
 import React from 'react';
-import { AbsoluteFill, Sequence } from 'remotion';
+import { AbsoluteFill, Html5Audio, Sequence, staticFile } from 'remotion';
+import { CUES, DURACION_SONIDO, MUSICA, volumenMusica } from './audio/mezcla';
 import type { PromoProps } from './copy';
-import { ESCENAS, type NumEscena } from './timing';
+import { ESCENAS, momentoGlobal, type NumEscena } from './timing';
 import { Dedo } from './ui/Dedo';
 import { Fondo } from './ui/Fondo';
 import { Rotulo } from './ui/Rotulo';
@@ -41,5 +42,11 @@ export const BitoPromo: React.FC<PromoProps> = ({ lang }) => (
         </Sequence>
       );
     })}
+    <Html5Audio src={staticFile(MUSICA)} volume={(f) => volumenMusica(f)} name="música" />
+    {CUES.map((c) => (
+      <Sequence key={`${c.momento}-${c.sonido}`} from={momentoGlobal(c.momento)} durationInFrames={DURACION_SONIDO[c.sonido] + 2} name={`sonido ${c.momento}`}>
+        <Html5Audio src={staticFile(`audio/${c.sonido}.wav`)} volume={c.volumen} />
+      </Sequence>
+    ))}
   </AbsoluteFill>
 );
