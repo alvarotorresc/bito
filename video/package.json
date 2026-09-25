@@ -1,0 +1,7 @@
+{
+  "name": "bito-video",
+  "private": true,
+  "scripts": {
+    "shots": "python3 shots/run_shots.py --lang es,en --screens all && python3 shots/verify_shots.py"
+  }
+}
