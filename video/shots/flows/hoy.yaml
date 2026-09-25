@@ -1,0 +1,24 @@
+appId: com.alvarotc.bito
+---
+- launchApp:
+    appId: com.alvarotc.bito
+    stopApp: true
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 20000
+- assertVisible: ${L_TODAY}
+- scrollUntilVisible:
+    element: ".*${T_DENTISTA}.*"
+    direction: DOWN
+    timeout: 20000
+- assertVisible: ".*${T_DENTISTA}.*"
+- launchApp:
+    appId: com.alvarotc.bito
+    stopApp: true
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 20000
+- assertVisible: ${L_TODAY}
+- assertNotVisible: ${L_CELEBRATION}
+- assertNotVisible: ${L_PERFECT}
+- waitForAnimationToEnd
