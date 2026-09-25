@@ -1,0 +1,6 @@
+appId: com.alvarotc.bito
+---
+- extendedWaitUntil:
+    visible: ".*${U_NAME}.*"
+    timeout: 10000
+- waitForAnimationToEnd

@@ -142,8 +142,8 @@ demo() {
   d enter
   d clock -e hhmm 0941
   d battery -e level 100 -e plugged false
-  d network -e wifi show -e level 4 -e fully true
-  d network -e mobile show -e datatype none -e level 4 -e fully true
+  d network -e wifi hide
+  d network -e mobile hide
   d notifications -e visible false
 }
 

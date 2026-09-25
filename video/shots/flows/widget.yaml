@@ -1,0 +1,31 @@
+appId: com.alvarotc.bito
+---
+- pressKey: Home
+- longPressOn:
+    point: "80%,62%"
+- tapOn: ${L_WIDGETS}
+- scrollUntilVisible:
+    element:
+      text: "Bito"
+    direction: DOWN
+    timeout: 20000
+- tapOn: "Bito"
+- tapOn: ${L_WIDGET_DESC}
+- waitForAnimationToEnd
+- tapOn:
+    point: "50%,84%"
+- runFlow:
+    when:
+      notVisible: ${L_WIDGET_SAVE}
+    commands:
+      - tapOn:
+          point: "50%,84%"
+- extendedWaitUntil:
+    visible: ${L_WIDGET_SAVE}
+    timeout: 10000
+- tapOn: ${L_WIDGET_SAVE}
+- pressKey: Home
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 15000
+- waitForAnimationToEnd
