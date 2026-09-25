@@ -4,6 +4,7 @@ import { BitoPromo } from './BitoPromo';
 import { HabiPlayground } from './habi/HabiPlayground';
 import { IconoStill } from './stills/Icono';
 import { Ilustracion } from './stills/Ilustracion';
+import { FeatureGraphic, Promo } from './stills/Promo';
 import { ALTO, ANCHO, DURACION_TOTAL, FPS } from './timing';
 
 export const RemotionRoot: React.FC = () => (
@@ -13,5 +14,7 @@ export const RemotionRoot: React.FC = () => (
     <Composition id="HabiPlayground" component={HabiPlayground} durationInFrames={360} fps={FPS} width={ANCHO} height={ALTO} defaultProps={{ gesto: 'todos' as const }} />
     <Still id="Icon" component={IconoStill} width={1024} height={1024} />
     <Still id="Ilustracion" component={Ilustracion} width={800} height={800} />
+    <Still id="Promo" component={Promo} width={1920} height={1080} defaultProps={{ lang: 'es' as const }} />
+    <Still id="FeatureGraphic" component={FeatureGraphic} width={1024} height={500} defaultProps={{ lang: 'es' as const }} />
   </>
 );
