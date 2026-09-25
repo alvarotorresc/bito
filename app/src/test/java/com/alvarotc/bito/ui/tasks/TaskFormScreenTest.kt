@@ -207,7 +207,7 @@ class TaskFormScreenTest {
     fun `creating shows no delete button`() {
         launchScreen(TaskFormState())
 
-        compose.onNodeWithTag("delete").assertDoesNotExist()
+        compose.onNodeWithTag("task-delete").assertDoesNotExist()
     }
 
     /**
@@ -219,14 +219,14 @@ class TaskFormScreenTest {
     fun `editing without a delete callback still shows no delete button`() {
         launchScreen(TaskFormState(editingId = "t1", title = "Titulo original"))
 
-        compose.onNodeWithTag("delete").assertDoesNotExist()
+        compose.onNodeWithTag("task-delete").assertDoesNotExist()
     }
 
     @Test
     fun `editing with a delete callback asks for confirmation before deleting`() {
         launchScreen(TaskFormState(editingId = "t1", title = "Titulo original"), allowDelete = true)
 
-        compose.onNodeWithTag("delete").performScrollTo().performClick()
+        compose.onNodeWithTag("task-delete").performScrollTo().performClick()
         compose.waitForIdle()
 
         // The confirmation sheet is up and nothing fired yet — same guard HabitFormScreen's own
@@ -251,7 +251,7 @@ class TaskFormScreenTest {
     fun `dismissing the delete confirmation does not delete`() {
         launchScreen(TaskFormState(editingId = "t1", title = "Titulo original"), allowDelete = true)
 
-        compose.onNodeWithTag("delete").performScrollTo().performClick()
+        compose.onNodeWithTag("task-delete").performScrollTo().performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Cancel")
             .fetchSemanticsNode()

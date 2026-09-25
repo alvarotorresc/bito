@@ -46,13 +46,3 @@ fun TaskEntity.toFormState(): TaskFormState =
         dueKind = dueKind,
         dueDay = dueDay,
     )
-
-/** Same recovery as [TaskEntity.toFormState], from the list screen's own row shape instead of storage. */
-fun TaskListRowUi.toFormState(): TaskFormState =
-    TaskFormState(
-        editingId = id,
-        title = title,
-        firstStep = firstStep.orEmpty(),
-        dueKind = dueKind,
-        dueDay = dueDay,
-    )

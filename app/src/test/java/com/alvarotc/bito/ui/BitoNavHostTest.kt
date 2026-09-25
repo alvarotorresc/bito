@@ -986,7 +986,7 @@ class BitoNavHostTest {
         }
 
         // The screen's own button, not inside a sheet: performClick() works here.
-        compose.onNodeWithTag("delete", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("task-delete", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("task-delete-confirm", useUnmergedTree = true).assertExists()
 

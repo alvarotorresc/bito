@@ -119,6 +119,9 @@ fun FocusScreen(
             // side effects belong to the Habi screen alone. habiNudge replays that very reaction
             // by itself every so often while the countdown is genuinely running (never at rest,
             // never once it hits 00:00 — see FocusViewModel's own nudge loop).
+            // M10 review ola 4 (Minor #7): HabiStage/HabiAvatar carry no click-label or
+            // decorative-semantics knob today, so a screen reader still lands on a clickable
+            // element that leads nowhere; not worth widening that shared API for a cosmetic poke.
             HabiStage(spec = state.spec, onTap = {}, nudge = habiNudge)
             Text(state.title, style = MaterialTheme.typography.headlineMedium, color = Tinta)
             state.firstStep?.let { Text(it, style = MaterialTheme.typography.bodyLarge, color = TintaSuave) }

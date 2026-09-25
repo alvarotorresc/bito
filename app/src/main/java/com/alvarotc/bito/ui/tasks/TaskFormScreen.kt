@@ -155,7 +155,7 @@ fun TaskFormScreen(
                 GhostPillButton(
                     text = stringResource(R.string.task_delete),
                     onClick = { confirmingDelete = true },
-                    modifier = Modifier.fillMaxWidth().testTag("delete"),
+                    modifier = Modifier.fillMaxWidth().testTag("task-delete"),
                     color = Peligro,
                     borderColor = PeligroTinte,
                 )
