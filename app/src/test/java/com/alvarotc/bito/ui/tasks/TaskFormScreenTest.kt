@@ -41,6 +41,7 @@ class TaskFormScreenTest {
     private val today = 20_000
 
     private var savedState: TaskFormState? = null
+    private var saveCalls = 0
     private var backCalled = false
     private var deleted = false
 
@@ -49,6 +50,7 @@ class TaskFormScreenTest {
         allowDelete: Boolean = false,
     ) {
         savedState = null
+        saveCalls = 0
         backCalled = false
         deleted = false
         compose.setContent {
@@ -56,7 +58,10 @@ class TaskFormScreenTest {
                 TaskFormScreen(
                     initial = initial,
                     today = today,
-                    onSave = { savedState = it },
+                    onSave = {
+                        savedState = it
+                        saveCalls++
+                    },
                     onBack = { backCalled = true },
                     onDelete = if (allowDelete) ({ deleted = true }) else null,
                 )
@@ -125,6 +130,30 @@ class TaskFormScreenTest {
 
         compose.onNodeWithText("New task").assertExists()
         compose.onNodeWithText("Edit task").assertDoesNotExist()
+    }
+
+    /**
+     * The NavHost's own exit transition keeps the outgoing route composed (and pulsable) while it
+     * animates away, so a second tap landing in that window before the guard existed called
+     * [onSave] again -- two tasks created from one tap-tap. Invokes the button's own OnClick
+     * semantics action twice back to back, not two performClick()s: those would race a
+     * recomposition that disables the button between them, which would pass even without the
+     * guard this test exists to prove.
+     */
+    @Test
+    fun `tapping save twice only calls onSave once`() {
+        launchScreen(TaskFormState())
+
+        compose.onNodeWithTag("task-title-field").performScrollTo().performTextInput("Llamar al banco")
+        compose.waitForIdle()
+
+        val saveAction =
+            compose.onNodeWithTag("task-form-save").fetchSemanticsNode().config[SemanticsActions.OnClick].action
+        saveAction?.invoke()
+        saveAction?.invoke()
+        compose.waitForIdle()
+
+        assertEquals(1, saveCalls)
     }
 
     @Test

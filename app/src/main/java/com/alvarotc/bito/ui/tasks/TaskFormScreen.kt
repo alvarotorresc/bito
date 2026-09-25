@@ -84,6 +84,11 @@ fun TaskFormScreen(
     var state by remember { mutableStateOf(initial) }
     var showDatePicker by remember { mutableStateOf(false) }
     var confirmingDelete by remember { mutableStateOf(false) }
+    // Guarda contra el doble toque en "Guardar": la ruta sale con la transicion por defecto del
+    // NavHost, que mantiene el contenido saliente compuesto (y pulsable) mientras se anima, asi
+    // que un segundo toque durante esa ventana volveria a llamar a onSave. Mismo guard que
+    // com.alvarotc.bito.ui.habitform.HabitFormScreen ya tiene para su propio boton de guardar.
+    var saved by remember { mutableStateOf(false) }
 
     Scaffold(containerColor = Papel) { padding ->
         Column(
@@ -110,8 +115,13 @@ fun TaskFormScreen(
             )
             PillButton(
                 text = stringResource(R.string.save),
-                onClick = { onSave(state) },
-                enabled = state.canSave,
+                onClick = {
+                    if (!saved) {
+                        saved = true
+                        onSave(state)
+                    }
+                },
+                enabled = state.canSave && !saved,
                 modifier = Modifier.fillMaxWidth().testTag("task-form-save"),
             )
             if (onDelete != null) {
