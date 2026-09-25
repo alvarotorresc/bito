@@ -1,8 +1,8 @@
 import React from 'react';
-import { Img, getStaticFiles, staticFile } from 'remotion';
+import { Img, getStaticFiles, interpolate, staticFile } from 'remotion';
 import type { Lang } from '../copy';
 import { COLOR } from './Fondo';
-import { FUENTE } from './Rotulo';
+import { FUENTE, SALIDA } from './Rotulo';
 import { resolverShot, type Pantalla } from './shots';
 
 export const PANTALLA_ANCHO = 1080;
@@ -71,4 +71,24 @@ export const Phone: React.FC<PhoneProps> = ({ lang, pantalla, alto, transicion, 
       </div>
     </div>
   );
+};
+
+export type PasoNavegacion = { pantalla: Pantalla; at: number };
+
+export const pantallaEnFrame = (
+  frame: number,
+  inicial: Pantalla,
+  pasos: readonly PasoNavegacion[],
+): { pantalla: Pantalla; transicion?: Transicion } => {
+  let pantalla = inicial;
+  let transicion: Transicion | undefined;
+  for (const paso of pasos) {
+    if (frame < paso.at) break;
+    transicion = {
+      desde: pantalla,
+      progreso: interpolate(frame, [paso.at, paso.at + 10], [0, 1], { extrapolateLeft: 'clamp', extrapolateRight: 'clamp', easing: SALIDA }),
+    };
+    pantalla = paso.pantalla;
+  }
+  return { pantalla, transicion };
 };
