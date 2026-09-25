@@ -30,6 +30,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +67,30 @@ private fun LogicalDay.toUtcMillis(): Long = toLong() * MILLIS_PER_DAY
 private fun Long.toLogicalDay(): LogicalDay = LocalDate.ofEpochDay(this / MILLIS_PER_DAY).toEpochDay().toInt()
 
 /**
+ * A rotation, a theme change or a language switch recreates the Activity mid-edit — this screen
+ * has no ViewModel of its own to survive that (unlike [com.alvarotc.bito.ui.habitform.HabitFormScreen],
+ * whose state lives in [com.alvarotc.bito.ui.habitform.HabitFormViewModel]), so `remember` alone
+ * would lose whatever was typed. [TaskFormState] carries no Parcelable of its own and this screen
+ * doesn't reach for kotlin-parcelize, so this flattens it to the five primitives a
+ * [androidx.compose.runtime.saveable.rememberSaveable] Bundle already knows how to carry, [DueKind]
+ * as its own [DueKind.name] rather than an ordinal (renumbering the enum would silently corrupt a
+ * saved instance state otherwise).
+ */
+private val TaskFormStateSaver: Saver<TaskFormState, Any> =
+    listSaver(
+        save = { listOf(it.editingId, it.title, it.firstStep, it.dueKind.name, it.dueDay) },
+        restore = {
+            TaskFormState(
+                editingId = it[0] as String?,
+                title = it[1] as String,
+                firstStep = it[2] as String,
+                dueKind = DueKind.valueOf(it[3] as String),
+                dueDay = it[4] as LogicalDay?,
+            )
+        },
+    )
+
+/**
  * Creates a task, or edits one when [initial] carries a [TaskFormState.editingId] — full-screen
  * now (D12 revoked: a task's own form deserves the same weight as a habit's), calcada
  * estructuralmente de [com.alvarotc.bito.ui.habitform.HabitFormScreen]: same [Scaffold], same
@@ -81,7 +108,7 @@ fun TaskFormScreen(
     onBack: () -> Unit,
     onDelete: (() -> Unit)? = null,
 ) {
-    var state by remember { mutableStateOf(initial) }
+    var state by rememberSaveable(stateSaver = TaskFormStateSaver) { mutableStateOf(initial) }
     var showDatePicker by remember { mutableStateOf(false) }
     var confirmingDelete by remember { mutableStateOf(false) }
     // Guarda contra el doble toque en "Guardar": la ruta sale con la transicion por defecto del

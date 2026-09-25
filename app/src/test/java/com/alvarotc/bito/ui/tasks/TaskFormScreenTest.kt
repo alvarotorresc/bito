@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -154,6 +155,41 @@ class TaskFormScreenTest {
         compose.waitForIdle()
 
         assertEquals(1, saveCalls)
+    }
+
+    /**
+     * A rotation, a theme change or a language switch recreates the Activity mid-edit, and this
+     * screen has no ViewModel to survive that on its own -- unlike a real Activity recreation,
+     * [StateRestorationTester] doesn't route through [launchScreen]'s own `compose.setContent`
+     * (it needs to own that call to actually save and restore instance state), so this test builds
+     * its own minimal harness instead.
+     */
+    @Test
+    fun `a typed title and the chosen due kind survive a config change`() {
+        var restoredSave: TaskFormState? = null
+        val restorationTester = StateRestorationTester(compose)
+        restorationTester.setContent {
+            BitoTheme {
+                TaskFormScreen(
+                    initial = TaskFormState(),
+                    today = today,
+                    onSave = { restoredSave = it },
+                    onBack = {},
+                )
+            }
+        }
+        compose.onNodeWithTag("task-title-field").performScrollTo().performTextInput("Llamar al banco")
+        compose.onNodeWithText("This week").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        restorationTester.emulateSavedInstanceStateRestore()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("task-form-save").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        assertEquals("Llamar al banco", restoredSave?.title)
+        assertEquals(DueKind.WEEK, restoredSave?.dueKind)
     }
 
     @Test
