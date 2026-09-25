@@ -63,4 +63,11 @@ class ReminderVoiceTest {
 
         assertEquals(Personality.entries.size * 3, ids.toSet().size)
     }
+
+    @Test
+    fun `tasksTitleRes resolves a distinct resource per personality`() {
+        val ids = Personality.entries.map { ReminderVoice.tasksTitleRes(it) }
+
+        assertEquals(Personality.entries.size, ids.toSet().size)
+    }
 }

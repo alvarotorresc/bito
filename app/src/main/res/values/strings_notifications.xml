@@ -93,4 +93,21 @@
     <string name="notif_review_seal_neutra">Some earlier days are still unsealed. One tap closes them.</string>
 
     <string name="notif_perfect_day_title">Perfect day</string>
+
+    <!-- Focus session tray: the permanent notification while it runs, and the one-shot when time's up. -->
+    <string name="notif_focus_running">In progress</string>
+    <string name="notif_focus_over">Time\'s up</string>
+
+    <!--
+        Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name. The body itself is
+        the named titles joined by the caller, not a resource — this plural is only the "and N
+        more" tail, appended when some notices are left unnamed. No personality variation.
+    -->
+    <string name="notif_tasks_title_sargento">%1$s, something\'s waiting.</string>
+    <string name="notif_tasks_title_cheerleader">Shall we, %1$s?</string>
+    <string name="notif_tasks_title_neutra">You have a task, %1$s.</string>
+    <plurals name="notif_tasks_more">
+        <item quantity="one">and %1$d more</item>
+        <item quantity="other">and %1$d more</item>
+    </plurals>
 </resources>

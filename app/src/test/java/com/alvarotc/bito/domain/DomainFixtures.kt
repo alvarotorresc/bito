@@ -2,6 +2,7 @@ package com.alvarotc.bito.domain
 
 import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.Entry
 import com.alvarotc.bito.domain.model.FreezerUse
 import com.alvarotc.bito.domain.model.Habit
@@ -13,6 +14,10 @@ import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsLedgerEntry
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TargetChange
+import com.alvarotc.bito.domain.model.Task
+import com.alvarotc.bito.domain.model.TaskEvent
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.concurrent.atomic.AtomicInteger
@@ -182,6 +187,41 @@ internal fun ledgerEntry(
 /** The ledger row the data layer would append for a derived grant. */
 internal fun PointsEvent.asLedgerEntry(): PointsLedgerEntry = ledgerEntry(delta, reason, refId, logicalDay)
 
+private val taskSeq = AtomicInteger(0)
+
+internal fun task(
+    id: String = "task-${taskSeq.incrementAndGet()}",
+    title: String = "Llamar al banco",
+    firstStep: String? = null,
+    dueKind: DueKind = DueKind.NONE,
+    dueDay: LogicalDay? = null,
+    status: TaskStatus = TaskStatus.OPEN,
+    createdOnDay: LogicalDay = TODAY,
+    createdAtMillis: Long = 1_000L,
+    doneOnDay: LogicalDay? = null,
+): Task = Task(id, title, firstStep, dueKind, dueDay, status, createdOnDay, createdAtMillis, doneOnDay)
+
+internal fun taskEvent(
+    taskId: String,
+    kind: TaskEventKind,
+    day: LogicalDay,
+    id: String = "ev-${taskSeq.incrementAndGet()}",
+): TaskEvent = TaskEvent(id, taskId, kind, day)
+
+/** Una tarea con plazo exacto en [day] — el caso mas comun de los tests. */
+internal fun datedTask(
+    id: String,
+    day: LogicalDay,
+    createdAtMillis: Long = 1_000L,
+): Task = task(id = id, dueKind = DueKind.DATE, dueDay = day, createdAtMillis = createdAtMillis)
+
+/** Una tarea de «esta semana», anclada al domingo de la semana de [day]. */
+internal fun weekTask(
+    id: String,
+    day: LogicalDay,
+    createdAtMillis: Long = 1_000L,
+): Task = task(id = id, dueKind = DueKind.WEEK, dueDay = Tasks.weekDueOf(day), createdOnDay = day, createdAtMillis = createdAtMillis)
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -194,6 +234,8 @@ internal fun domainState(
     freezerUses: List<FreezerUse> = emptyList(),
     targetChanges: List<TargetChange> = emptyList(),
     ledger: List<PointsLedgerEntry> = emptyList(),
+    tasks: List<Task> = emptyList(),
+    taskEvents: List<TaskEvent> = emptyList(),
 ): DomainState =
     DomainState(
         habits = habits,
@@ -203,6 +245,8 @@ internal fun domainState(
         pauseIntervals = pauses,
         freezerUses = freezerUses,
         pointsLedger = ledger,
+        tasks = tasks,
+        taskEvents = taskEvents,
     )
 
 // ---------------------------------------------------------------------------

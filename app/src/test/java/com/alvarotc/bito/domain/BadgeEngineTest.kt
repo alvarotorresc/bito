@@ -1,5 +1,7 @@
 package com.alvarotc.bito.domain
 
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -112,6 +114,17 @@ class BadgeEngineTest {
     @Test
     fun `every badge id the engine can emit is in the catalog, and every catalog id can be emitted`() {
         assertEquals(com.alvarotc.bito.domain.model.BadgeCatalog.all.map { it.id }.toSet(), BadgeEngine.allEmittableIds)
+    }
+
+    @Test
+    fun `a week of only tasks does not unlock first-week`() {
+        val state =
+            domainState(
+                tasks = (0..6).map { task(id = "t$it", status = TaskStatus.DONE, doneOnDay = TODAY - it) },
+                taskEvents = (0..6).map { taskEvent(taskId = "t$it", kind = TaskEventKind.ATTEMPT, day = TODAY - it) },
+            )
+
+        assertFalse(BadgeEngine.earnedBadges(state, TODAY, emptySet()).contains("first-week"))
     }
 
     @Test

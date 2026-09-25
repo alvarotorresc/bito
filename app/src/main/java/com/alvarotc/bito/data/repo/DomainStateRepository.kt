@@ -8,6 +8,8 @@ import com.alvarotc.bito.data.db.HabitEntity
 import com.alvarotc.bito.data.db.PauseIntervalEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.db.TargetChangeEntity
+import com.alvarotc.bito.data.db.TaskEntity
+import com.alvarotc.bito.data.db.TaskEventEntity
 import com.alvarotc.bito.data.db.toDomain
 import com.alvarotc.bito.domain.model.DomainState
 import kotlinx.coroutines.flow.Flow
@@ -29,6 +31,8 @@ class DomainStateRepository(private val db: BitoDatabase) {
             db.pauseIntervalDao().observeAll(),
             db.freezerUseDao().observeAll(),
             db.pointsLedgerDao().observeAll(),
+            db.taskDao().observeAll(),
+            db.taskEventDao().observeAll(),
         ) { parts ->
             DomainState(
                 habits = (parts[0] as List<HabitEntity>).map { it.toDomain() },
@@ -38,6 +42,8 @@ class DomainStateRepository(private val db: BitoDatabase) {
                 pauseIntervals = (parts[4] as List<PauseIntervalEntity>).map { it.toDomain() },
                 freezerUses = (parts[5] as List<FreezerUseEntity>).map { it.toDomain() },
                 pointsLedger = (parts[6] as List<PointsLedgerEntity>).map { it.toDomain() },
+                tasks = (parts[7] as List<TaskEntity>).map { it.toDomain() },
+                taskEvents = (parts[8] as List<TaskEventEntity>).map { it.toDomain() },
             )
         }
 

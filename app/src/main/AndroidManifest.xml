@@ -87,6 +87,7 @@
         <receiver android:name=".ui.widget.WidgetMidnightReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.ReminderReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.QuickActionReceiver" android:exported="false" />
+        <receiver android:name=".ui.notifications.FocusReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.BootReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

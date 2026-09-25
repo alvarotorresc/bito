@@ -30,11 +30,35 @@ class NavRequestsTest {
     }
 
     @Test
+    fun `open sets tasks as the pending route`() {
+        NavRequests.open("tasks")
+
+        assertEquals("tasks", NavRequests.pending.value)
+    }
+
+    @Test
     fun `open ignores a route outside the allowlist`() {
         // MainActivity is exported (LAUNCHER): any app can send an arbitrary openRoute extra.
         // A non-allowlisted route must never reach the NavHost, which would otherwise crash on
         // NavController.navigate(String) for an unknown destination.
         NavRequests.open("garbage")
+
+        assertNull(NavRequests.pending.value)
+    }
+
+    @Test
+    fun `open sets focus as the pending route`() {
+        NavRequests.open("focus")
+
+        assertEquals("focus", NavRequests.pending.value)
+    }
+
+    @Test
+    fun `open ignores focus with a query string, exact strings only`() {
+        // The allowlist is a set of exact strings, never a pattern — a route carrying an id
+        // (as the notification's Intent extra never does, but a hostile one could try) must be
+        // rejected exactly like any other non-allowlisted string.
+        NavRequests.open("focus?taskId=abc")
 
         assertNull(NavRequests.pending.value)
     }

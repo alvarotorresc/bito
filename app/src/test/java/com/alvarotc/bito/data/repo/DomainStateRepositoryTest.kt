@@ -12,6 +12,9 @@ import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pauseIntervalEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.targetChangeEntity
+import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.data.taskEventEntity
+import com.alvarotc.bito.domain.model.TaskEventKind
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -79,5 +82,26 @@ class DomainStateRepositoryTest {
             assertTrue(repository.observe().first().habits.isEmpty())
             db.habitDao().upsert(habitEntity(id = "h1"))
             assertEquals(1, repository.observe().first().habits.size)
+        }
+
+    @Test
+    fun `the snapshot carries tasks and their events`() =
+        runTest {
+            db.taskDao().upsert(taskEntity(id = "t1", title = "Llamar al banco"))
+            db.taskEventDao().insert(taskEventEntity(id = "e1", taskId = "t1", kind = TaskEventKind.POSTPONED))
+
+            val state = repository.snapshot()
+
+            assertEquals(listOf("t1"), state.tasks.map { it.id })
+            assertEquals(listOf(TaskEventKind.POSTPONED), state.taskEvents.map { it.kind })
+        }
+
+    @Test
+    fun `an empty pair of task tables still lets the snapshot resolve`() =
+        runTest {
+            val state = repository.snapshot()
+
+            assertTrue(state.tasks.isEmpty())
+            assertTrue(state.taskEvents.isEmpty())
         }
 }

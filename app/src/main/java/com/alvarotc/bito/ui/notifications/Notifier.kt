@@ -23,6 +23,8 @@ object Notifier {
     const val REMINDER_ID = 1
     const val REVIEW_ID = 2
     const val CELEBRATION_ID = 3
+    const val TASKS_ID = 4
+    const val FOCUS_ID = 5
 
     /** Extra keys carried by [quickActionIntent] and read back in [QuickActionReceiver]. */
     const val EXTRA_HABIT_ID = "habitId"
@@ -158,6 +160,88 @@ object Notifier {
 
     /** Clears a stale review nudge (e.g. the day just got sealed in-app) — mejoras-qa M7 #3. */
     fun cancelReview(context: Context) = NotificationManagerCompat.from(context).cancel(REVIEW_ID)
+
+    /**
+     * El aviso de tareas de mediodia: una sola notificacion agrupada, con hasta tres titulos y el
+     * recuento. SIN botones de accion — no hay accion honesta de un toque: marcar hecha desde la
+     * bandeja una tarea que no has abierto es lo contrario de «empezar». Al tocarla abre la lista.
+     *
+     * El cuerpo son los titulos nombrados unidos por « · »; la coletilla «y N mas»
+     * (`notif_tasks_more`) solo se añade cuando queda algun aviso sin nombrar — con [titles]
+     * cubriendo todo [pendingCount], «A · B» ya lo dice todo y no hace falta un «y 0 mas».
+     */
+    fun showTasks(
+        context: Context,
+        titles: List<String>,
+        pendingCount: Int,
+        personality: Personality,
+        userName: String,
+    ) {
+        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
+        val title = context.getString(ReminderVoice.tasksTitleRes(personality), name)
+        val named = titles.take(ReminderVoice.MAX_NAMED_PENDING)
+        val remaining = pendingCount - named.size
+        val body =
+            if (remaining > 0) {
+                val more = context.resources.getQuantityString(R.plurals.notif_tasks_more, remaining, remaining)
+                "${named.joinToString(" · ")} $more"
+            } else {
+                named.joinToString(" · ")
+            }
+        val builder =
+            baseBuilder(context, NotificationChannels.REMINDERS)
+                .setContentTitle(title)
+                .setContentText(body)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setContentIntent(contentIntent(context, "tasks", 3))
+        notify(context, TASKS_ID, builder)
+    }
+
+    /**
+     * El temporizador de foco, mientras dura. La cuenta atras la pinta SystemUI, no Bito: el
+     * proceso puede morir y el reloj sigue bajando. setAutoCancel(false) es obligatorio — lo
+     * hereda en true de baseBuilder, y una permanente que se borra al tocarla no es permanente.
+     */
+    fun showFocus(
+        context: Context,
+        taskTitle: String,
+        endsAtMillis: Long,
+    ) {
+        val builder =
+            baseBuilder(context, NotificationChannels.REMINDERS)
+                .setContentTitle(taskTitle)
+                .setContentText(context.getString(R.string.notif_focus_running))
+                .setContentIntent(contentIntent(context, "focus", 4))
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .setSilent(true)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
+                .setShowWhen(true)
+                .setWhen(endsAtMillis)
+        notify(context, FOCUS_ID, builder)
+    }
+
+    /** «Se acabo el tiempo»: ya no es permanente y se va al tocarla. */
+    fun showFocusOver(
+        context: Context,
+        taskTitle: String,
+    ) {
+        val builder =
+            baseBuilder(context, NotificationChannels.REMINDERS)
+                .setContentTitle(taskTitle)
+                .setContentText(context.getString(R.string.notif_focus_over))
+                .setContentIntent(contentIntent(context, "focus", 4))
+                // setOnlyAlertOnce(false) es obligatorio — lo hereda en true de baseBuilder, y esta
+                // notificacion postea bajo el mismo FOCUS_ID que ya ocupa la permanente; sin esto,
+                // sustituye a showFocus en silencio (sin sonido, sin vibracion, sin heads-up), y un
+                // aviso de fin que no avisa no es un aviso de fin.
+                .setOnlyAlertOnce(false)
+        notify(context, FOCUS_ID, builder)
+    }
+
+    /** Clears the focus tray. */
+    fun cancelFocus(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
 
     private fun baseBuilder(
         context: Context,

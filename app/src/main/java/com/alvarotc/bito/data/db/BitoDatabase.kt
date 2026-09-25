@@ -16,8 +16,10 @@ import androidx.room.RoomDatabase
         PointsLedgerEntity::class,
         BadgeEntity::class,
         CustomizationItemEntity::class,
+        TaskEntity::class,
+        TaskEventEntity::class,
     ],
-    version = 1,
+    version = 2,
     exportSchema = true,
 )
 abstract class BitoDatabase : RoomDatabase() {
@@ -39,9 +41,16 @@ abstract class BitoDatabase : RoomDatabase() {
 
     abstract fun customizationItemDao(): CustomizationItemDao
 
+    abstract fun taskDao(): TaskDao
+
+    abstract fun taskEventDao(): TaskEventDao
+
     companion object {
         private const val NAME = "bito.db"
 
-        fun build(context: Context): BitoDatabase = Room.databaseBuilder(context, BitoDatabase::class.java, NAME).build()
+        fun build(context: Context): BitoDatabase =
+            Room.databaseBuilder(context, BitoDatabase::class.java, NAME)
+                .addMigrations(MIGRATION_1_2)
+                .build()
     }
 }

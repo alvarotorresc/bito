@@ -14,12 +14,16 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -68,6 +72,7 @@ class TodayViewModelTest {
     private lateinit var journal: JournalRepository
     private lateinit var settingsRepo: SettingsRepository
     private lateinit var rewardsRepo: RewardsRepository
+    private lateinit var tasksRepo: TasksRepository
     private lateinit var reconciler: PointsReconciler
     private lateinit var vm: TodayViewModel
 
@@ -84,6 +89,7 @@ class TodayViewModelTest {
             settingsRepo,
             reconciler,
             rewardsRepo,
+            tasks = tasksRepo,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
@@ -107,6 +113,7 @@ class TodayViewModelTest {
         journal = JournalRepository(db)
         settingsRepo = SettingsRepository(settingsStore("today-vm"))
         rewardsRepo = RewardsRepository(db)
+        tasksRepo = TasksRepository(db)
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
         vm = newViewModel()
     }
@@ -293,6 +300,61 @@ class TodayViewModelTest {
 
             assertTrue(
                 db.pointsLedgerDao().all().any { it.reason == PointsReason.HABIT_DONE && it.refId == "h1:$today" },
+            )
+        }
+
+    @Test
+    fun `marking a task done grants its points once and offers an undo`() =
+        runTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+
+            vm.markTaskDone("t1")
+            advanceUntilIdle()
+
+            assertEquals(TaskStatus.DONE, tasksRepo.task("t1")!!.status)
+            assertEquals(today, tasksRepo.task("t1")!!.doneOnDay)
+            assertEquals("t1", vm.lastTaskDone.value)
+            assertEquals(
+                1,
+                db.pointsLedgerDao().all().count { it.reason == PointsReason.TASK_DONE && it.refId == "task:t1" },
+            )
+        }
+
+    @Test
+    fun `undoing a task reopens it and keeps the ledger entry`() =
+        runTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            vm.markTaskDone("t1")
+            advanceUntilIdle()
+            assertEquals(TaskStatus.DONE, tasksRepo.task("t1")!!.status)
+
+            vm.undoTaskDone()
+            advanceUntilIdle()
+
+            val reopened = tasksRepo.task("t1")!!
+            assertEquals(TaskStatus.OPEN, reopened.status)
+            assertNull(reopened.doneOnDay)
+            assertNull(vm.lastTaskDone.value)
+            assertEquals(
+                1,
+                db.pointsLedgerDao().all().count { it.reason == PointsReason.TASK_DONE && it.refId == "task:t1" },
+            )
+        }
+
+    @Test
+    fun `postponing writes the event and takes the row out of today`() =
+        runTest {
+            tasksRepo.create(taskEntity(id = "t1", createdOnDay = today))
+            assertTrue(state().tasks.any { it.id == "t1" })
+
+            vm.postponeTask("t1")
+            advanceUntilIdle()
+
+            assertTrue(state().tasks.none { it.id == "t1" })
+            assertTrue(
+                db.taskEventDao().all().any {
+                    it.taskId == "t1" && it.kind == TaskEventKind.POSTPONED && it.logicalDay == today
+                },
             )
         }
 }

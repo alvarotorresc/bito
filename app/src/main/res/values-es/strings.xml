@@ -38,7 +38,7 @@
     <string name="nav_today">Hoy</string>
     <string name="nav_stats">Estadísticas</string>
     <string name="nav_habi">Habi</string>
-    <string name="nav_new_habit">Nuevo hábito</string>
+    <string name="nav_new_habit">Añadir</string>
     <string name="nav_settings">Ajustes</string>
     <string name="edit_habit_hint">Editar %1$s</string>
 
@@ -164,6 +164,8 @@
     <string name="reminder_exact_notice">Las alarmas exactas están desactivadas — los avisos pueden desviarse. Toca para permitirlas.</string>
     <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
     <string name="settings_notifications_section">Notificaciones</string>
+    <string name="settings_task_notices_label">Avisos de tareas</string>
+    <string name="settings_task_notices_hint">A mediodía, cuando se acerca un plazo</string>
     <string name="sheet_done">Listo</string>
 
     <string name="settings_habi_section">Habi</string>

@@ -60,6 +60,9 @@ class BackupRepository(
                     badges = db.badgeDao().all().sortedBy { it.badgeId }.map { it.toBackup() },
                     customizationItems = db.customizationItemDao().all().sortedBy { it.itemId }.map { it.toBackup() },
                     settings = prefs.toBackup(),
+                    // Ordenadas por id para que reexportar el mismo estado de un fichero identico.
+                    tasks = db.taskDao().all().sortedBy { it.id }.map { it.toBackup() },
+                    taskEvents = db.taskEventDao().all().sortedBy { it.id }.map { it.toBackup() },
                 )
             }
         return BackupCodec.encode(file)
@@ -86,7 +89,9 @@ class BackupRepository(
             db.pointsLedgerDao().deleteAll()
             db.badgeDao().deleteAll()
             db.customizationItemDao().deleteAll()
+            db.taskEventDao().deleteAll()
             db.habitDao().deleteAll()
+            db.taskDao().deleteAll()
             file.habits.forEach { db.habitDao().upsert(it.toEntity()) }
             file.targetChanges.forEach { db.targetChangeDao().upsert(it.toEntity()) }
             file.pauseIntervals.forEach { db.pauseIntervalDao().upsert(it.toEntity()) }
@@ -96,6 +101,8 @@ class BackupRepository(
             file.freezerUses.forEach { db.freezerUseDao().insert(it.toEntity()) }
             file.badges.forEach { db.badgeDao().insert(it.toEntity()) }
             file.customizationItems.forEach { db.customizationItemDao().upsert(it.toEntity()) }
+            file.tasks.forEach { db.taskDao().upsert(it.toEntity()) }
+            file.taskEvents.forEach { db.taskEventDao().insert(it.toEntity()) }
         }
         settings.update { file.settings.toSettings() }
     }

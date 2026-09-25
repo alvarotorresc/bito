@@ -1,6 +1,10 @@
 package com.alvarotc.bito.domain
 
+import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.model.TaskEvent
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -207,4 +211,144 @@ class MoodEngineTest {
 
         assertEquals(Mood.WILTED, MoodEngine.moodOf(state, TODAY, lastActivityDay = TODAY - 1))
     }
+
+    // -----------------------------------------------------------------------
+    // Tareas: matizan el animo de los habitos, con dos topes
+    // -----------------------------------------------------------------------
+
+    // MoodEngine no expone el ratio interno, solo el Mood, asi que estos dos primeros casos usan
+    // ventanas calibradas al borde de cada umbral (ver nineDecidedWindow): se fija el SIGNO del
+    // efecto de las tareas (empuja a RADIANT / hunde a WILTED), no un numero interno.
+
+    @Test
+    fun `tasks done and attempted inside the window push the ratio up`() {
+        // 9 decididos, 7 cumplidos -> 7/9 = 0,778, por debajo de RADIANT_RATIO = 0,8 (NORMAL).
+        // Una tarea hecha y un intento (dos tareas distintas, dos unidades, peso 1 porque
+        // cap = 9/2 = 4,5 >= 2) la empujan a 9/11 = 0,818 -> RADIANT.
+        val base = nineDecidedWindow(kept = 7)
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(base, TODAY, lastActivityDay = TODAY - 1))
+
+        val withTasks =
+            base.copy(
+                tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY - 2)),
+                taskEvents = listOf(taskEvent(taskId = "t2", kind = TaskEventKind.ATTEMPT, day = TODAY - 3)),
+            )
+
+        assertEquals(Mood.RADIANT, MoodEngine.moodOf(withTasks, TODAY, lastActivityDay = TODAY - 1))
+    }
+
+    @Test
+    fun `postponing inside the window pushes the ratio down`() {
+        // 9 decididos, 5 cumplidos -> 5/9 = 0,556, por encima de WILTED_RATIO = 0,5 (NORMAL).
+        // Dos tareas distintas pospuestas (dos unidades, mismo peso 1) la hunden a 5/11 = 0,455
+        // -> WILTED.
+        val base = nineDecidedWindow(kept = 5)
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(base, TODAY, lastActivityDay = TODAY - 1))
+
+        val withPostponed =
+            base.copy(
+                taskEvents =
+                    listOf(
+                        taskEvent(taskId = "t1", kind = TaskEventKind.POSTPONED, day = TODAY - 2),
+                        taskEvent(taskId = "t2", kind = TaskEventKind.POSTPONED, day = TODAY - 2),
+                    ),
+            )
+
+        assertEquals(Mood.WILTED, MoodEngine.moodOf(withPostponed, TODAY, lastActivityDay = TODAY - 1))
+    }
+
+    @Test
+    fun `at most one positive and one negative per task and day`() {
+        // Una ventana de 4 decididos con 2 cumplidos (cap 2,0) es vacua aqui: con o sin
+        // deduplicar, 20 intentos del mismo dia dan NORMAL en los dos casos. nineDecidedWindow(7)
+        // (cap=4,5) si distingue: sin deduplicar, el peso capado (4,5/20) aun suma 4,5 puntos ->
+        // 11,5/13,5 = 0,85 -> RADIANT; deduplicado a una unidad, 8/10 = 0,80 -> NORMAL. El `>`
+        // estricto de RADIANT es lo unico que salva la comparacion, asi que se fija tambien el
+        // valor esperado, no solo la igualdad entre los dos casos.
+        val positiveBase = nineDecidedWindow(kept = 7)
+        val once =
+            positiveBase.copy(
+                taskEvents = listOf(taskEvent(taskId = "t1", kind = TaskEventKind.ATTEMPT, day = TODAY - 2)),
+            )
+        val twenty =
+            positiveBase.copy(
+                taskEvents = (1..20).map { taskEvent(taskId = "t1", kind = TaskEventKind.ATTEMPT, day = TODAY - 2) },
+            )
+
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(once, TODAY, TODAY - 1))
+        assertEquals(MoodEngine.moodOf(once, TODAY, TODAY - 1), MoodEngine.moodOf(twenty, TODAY, TODAY - 1))
+
+        // Gemelo negativo: nineDecidedWindow(6) (cap=4,5), 20 pospuestas del mismo (tarea, dia).
+        // Deduplicadas a una unidad: 6/10 = 0,60 -> NORMAL. Sin deduplicar, el bloque capado suma
+        // 4,5 puntos al denominador: 6/13,5 = 0,444 -> WILTED — el signo cambia, asi que el
+        // resultado real distingue si el tope de uno-por-dia esta implementado.
+        val negativeBase = nineDecidedWindow(kept = 6)
+        val twentyPostponedSameDay =
+            negativeBase.copy(
+                taskEvents = (1..20).map { taskEvent(taskId = "t1", kind = TaskEventKind.POSTPONED, day = TODAY - 2) },
+            )
+
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(twentyPostponedSameDay, TODAY, TODAY - 1))
+    }
+
+    @Test
+    fun `tasks never weigh more than a third of the window`() {
+        // Los dos casos que la spec §5.2 deja medidos: 10 habitos cumplidos y 5 o 20 pospuestas.
+        val fivePostponed = allKeptWindow(10).copy(taskEvents = postponedOn(count = 5))
+        val twentyPostponed = allKeptWindow(10).copy(taskEvents = postponedOn(count = 20))
+
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(fivePostponed, TODAY, TODAY - 1))
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(twentyPostponed, TODAY, TODAY - 1))
+    }
+
+    @Test
+    fun `with no decided habits in the window tasks do not move the mood`() {
+        val onlyTasks =
+            domainState(
+                taskEvents = postponedOn(count = 20),
+                tasks = (1..20).map { task(id = "t$it") },
+            )
+
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(onlyTasks, TODAY, TODAY - 1))
+    }
+
+    @Test
+    fun `three days of only tasks do not turn her dramatic`() {
+        // Sin la tarea de hoy, la ultima actividad de habitos es TODAY-3 -> 3 dias de silencio ->
+        // DRAMATIC. La tarea hecha hoy es la unica actividad mas reciente que cuenta, y saca a
+        // Habi de la sequia: ventana de habitos 5/7 = 0,714 -> NORMAL.
+        val state =
+            domainState(
+                habits = listOf(RealHabits.makeBed),
+                entries = entriesOn(RealHabits.makeBed, (TODAY - 7)..(TODAY - 3)),
+                tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY)),
+            )
+
+        assertEquals(Mood.NORMAL, MoodEngine.moodOf(state, TODAY, StatsEngine.lastActivityDay(state)))
+    }
+
+    /**
+     * Ventana de 9 decididos: make-bed vivo toda la ventana de 7 dias ([kept] cumplidos de 7) mas
+     * un segundo habito (meditate) de alta TODAY-2 sin entradas — vivo solo los 2 ultimos dias de
+     * la ventana, siempre fallidos. Decididos = 7 + 2 = 9 siempre; cumplidos = [kept]. Calibra los
+     * dos primeros tests al borde de cada umbral y da un cap (4,5) que distingue deduplicar de no
+     * deduplicar en el tercero.
+     */
+    private fun nineDecidedWindow(kept: Int): DomainState =
+        domainState(
+            habits = listOf(RealHabits.makeBed, RealHabits.meditate.createdOn(TODAY - 2)),
+            entries = entriesOn(RealHabits.makeBed, (TODAY - kept) until TODAY),
+        )
+
+    /** Ventana con [count] habitos-periodo decididos y TODOS cumplidos. */
+    private fun allKeptWindow(count: Int): DomainState {
+        val habits = (1..count).map { RealHabits.makeBed.copy(id = "kept-$it", createdOnDay = TODAY - 1) }
+        return domainState(
+            habits = habits,
+            entries = habits.flatMap { entriesOn(it, listOf(TODAY - 1)) },
+        )
+    }
+
+    private fun postponedOn(count: Int): List<TaskEvent> =
+        (1..count).map { taskEvent(taskId = "t$it", kind = TaskEventKind.POSTPONED, day = TODAY - 2) }
 }

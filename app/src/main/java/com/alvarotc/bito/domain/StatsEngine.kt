@@ -165,10 +165,19 @@ object StatsEngine {
                 Streaks.streaksOf(state, habit, today).current >= 1
         }
 
-    /** The most recent day with any entry or seal — feeds [MoodEngine.moodOf]. Null when history is empty. */
+    /**
+     * El dia mas reciente con actividad de cualquier tipo — alimenta [MoodEngine.moodOf]. Mira
+     * registros, sellos, tareas hechas y sucesos de tareas: sin esto, quien pase tres dias
+     * haciendo solo tareas se encuentra a Habi en DRAMATIC por silencio. Null cuando no hay
+     * historia de ninguna clase.
+     */
     fun lastActivityDay(state: DomainState): LogicalDay? =
-        (state.entries.asSequence().map { it.logicalDay } + state.daySeals.asSequence().map { it.logicalDay })
-            .maxOrNull()
+        (
+            state.entries.asSequence().map { it.logicalDay } +
+                state.daySeals.asSequence().map { it.logicalDay } +
+                state.tasks.asSequence().mapNotNull { it.doneOnDay } +
+                state.taskEvents.asSequence().map { it.logicalDay }
+        ).maxOrNull()
 
     /**
      * [WeekRow.done] and [WeekRow.target] for one habit — see [WeekRow]'s KDoc for what each

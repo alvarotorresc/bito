@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasks_section_title">Tareas</string>
+    <string name="tasks_see_all">Ver todas</string>
+    <string name="tasks_today_all_done">Nada pendiente para hoy</string>
+    <string name="task_start">Empezar</string>
+    <string name="task_not_today">Hoy no</string>
+    <string name="task_done">Hecha</string>
+    <string name="task_due_today">hoy</string>
+    <plurals name="task_due_in">
+        <item quantity="one">en %1$d día</item>
+        <!-- es CLDR's "many" only fires on huge round numbers (millions+); day counts never
+             reach that range, so this mirrors "other" — added to satisfy lint's completeness check. -->
+        <item quantity="many">en %1$d días</item>
+        <item quantity="other">en %1$d días</item>
+    </plurals>
+    <plurals name="task_overdue">
+        <item quantity="one">vencida hace %1$d día</item>
+        <item quantity="many">vencida hace %1$d días</item>
+        <item quantity="other">vencida hace %1$d días</item>
+    </plurals>
+    <string name="task_due_this_week">esta semana</string>
+    <string name="task_due_week_today">se acaba hoy</string>
+    <string name="task_due_last_week">de la semana pasada</string>
+    <string name="create_choice_title">¿Qué añadimos?</string>
+    <string name="create_choice_habit">Un hábito</string>
+    <string name="create_choice_task">Una tarea</string>
+    <string name="task_form_title">Nueva tarea</string>
+    <string name="task_form_edit_title">Editar la tarea</string>
+    <string name="task_form_name_hint">¿Qué tienes pendiente?</string>
+    <string name="task_form_step_hint">El primer paso (opcional)</string>
+    <string name="task_form_due_none">Sin plazo</string>
+    <string name="task_form_due_week">Esta semana</string>
+    <string name="task_form_due_date">Fecha</string>
+    <string name="task_form_date_confirm">Elegir</string>
+    <string name="tasks_screen_title">Tareas</string>
+    <string name="tasks_section_today">Hoy</string>
+    <string name="tasks_section_week">Esta semana</string>
+    <string name="tasks_section_dated">Con plazo</string>
+    <string name="tasks_section_loose">Sin plazo</string>
+    <string name="tasks_section_done">Hechas</string>
+    <string name="tasks_empty">Nada pendiente.</string>
+    <string name="task_bring_today">Traer a hoy</string>
+    <string name="task_no_due">sin plazo</string>
+    <string name="task_edit">Editar</string>
+    <string name="task_delete">Borrar</string>
+    <string name="task_row_menu_cd">Más opciones</string>
+    <string name="task_delete_confirm_title">¿Borrar la tarea?</string>
+    <string name="task_delete_confirm_body">Su historia se va con ella. Los puntos ganados son tuyos.</string>
+    <string name="focus_title">Foco</string>
+    <string name="focus_minutes">%1$d min</string>
+    <string name="focus_done">He terminado</string>
+    <string name="focus_plus">+%1$d</string>
+    <string name="focus_custom">Otro</string>
+    <string name="focus_plus_custom">+ Otro</string>
+    <string name="focus_custom_title">¿Cuántos minutos?</string>
+    <string name="focus_custom_extend_title">¿Cuántos minutos más?</string>
+    <string name="focus_custom_hint">Minutos</string>
+    <string name="focus_give_up">Ha habido un inconveniente, lo dejo</string>
+    <string name="focus_busy_title">Ya tienes algo en marcha</string>
+    <string name="focus_busy_keep">Seguir con %1$s</string>
+    <string name="focus_busy_switch">Dejarla y empezar esta</string>
+</resources>

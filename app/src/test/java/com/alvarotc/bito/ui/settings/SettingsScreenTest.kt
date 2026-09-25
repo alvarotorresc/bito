@@ -496,6 +496,35 @@ class SettingsScreenTest {
         compose.onNodeWithTag("celebration-row").onChildren().assertCountEquals(0)
     }
 
+    @Test
+    fun `the task notices row exists and writes the setting`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-task-notices-toggle"))
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("task-notices-row", useUnmergedTree = true).assertIsOn()
+        compose.onNodeWithTag("task-notices-row", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("task-notices-row", useUnmergedTree = true).assertIsOff()
+        assertFalse(runBlocking { settings.settings.first() }.taskNoticesEnabled)
+    }
+
     /**
      * Covers the import preview's "%1\$s · %2\$s" join of two independent pluralStringResource
      * calls (habits, log entries) — the nit 6 follow-up parameter wiring a format regression could

@@ -1,7 +1,7 @@
 package com.alvarotc.bito.domain.model
 
-/** Why points were granted or spent. */
-enum class PointsReason { HABIT_DONE, PERFECT_DAY, STREAK_MILESTONE, BUY_FREEZER, BUY_ITEM }
+/** Why points were granted or spent. TASK_DONE al final: earnedEvents ordena por ordinal. */
+enum class PointsReason { HABIT_DONE, PERFECT_DAY, STREAK_MILESTONE, BUY_FREEZER, BUY_ITEM, TASK_DONE }
 
 /**
  * One movement in the points ledger. The ledger is the stored truth; the
@@ -23,6 +23,7 @@ data class PointsLedgerEntry(
  * - HABIT_DONE: "habitId:periodKey"
  * - PERFECT_DAY: "day:D" / "week:K" / "month:K"
  * - STREAK_MILESTONE: "habitId:length"
+ * - TASK_DONE: "task:taskId"
  */
 data class PointsEvent(
     val reason: PointsReason,
@@ -42,4 +43,7 @@ data class EconomyConfig(
     /** Streak length (in the habit's period unit) -> points. */
     val streakMilestonePoints: Map<Int, Int> = mapOf(7 to 5, 30 to 20, 100 to 75, 365 to 300),
     val freezerPrice: Int = 100,
+    /** Una tarea hecha vale lo que un dia perfecto; hecha dentro de plazo, lo que una racha de 7. */
+    val taskDonePoints: Int = 3,
+    val taskOnTimePoints: Int = 5,
 )

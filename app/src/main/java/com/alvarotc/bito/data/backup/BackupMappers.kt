@@ -9,6 +9,8 @@ import com.alvarotc.bito.data.db.HabitEntity
 import com.alvarotc.bito.data.db.PauseIntervalEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.db.TargetChangeEntity
+import com.alvarotc.bito.data.db.TaskEntity
+import com.alvarotc.bito.data.db.TaskEventEntity
 import com.alvarotc.bito.data.settings.Settings
 
 /** Entity <-> backup DTO conversions, field-by-field, both directions (tech doc §5.1). */
@@ -108,6 +110,40 @@ fun CustomizationItemEntity.toBackup() =
 fun BackupCustomizationItem.toEntity() =
     CustomizationItemEntity(itemId = itemId, category = category, acquiredAtMillis = acquiredAtMillis, equipped = equipped)
 
+fun TaskEntity.toBackup() =
+    BackupTask(
+        id = id,
+        title = title,
+        firstStep = firstStep,
+        dueKind = dueKind,
+        dueDay = dueDay,
+        status = status,
+        createdAtMillis = createdAtMillis,
+        createdOnDay = createdOnDay,
+        doneAtMillis = doneAtMillis,
+        doneOnDay = doneOnDay,
+    )
+
+fun BackupTask.toEntity() =
+    TaskEntity(
+        id = id,
+        title = title,
+        firstStep = firstStep,
+        dueKind = dueKind,
+        dueDay = dueDay,
+        status = status,
+        createdAtMillis = createdAtMillis,
+        createdOnDay = createdOnDay,
+        doneAtMillis = doneAtMillis,
+        doneOnDay = doneOnDay,
+    )
+
+fun TaskEventEntity.toBackup() =
+    BackupTaskEvent(id = id, taskId = taskId, kind = kind, logicalDay = logicalDay, createdAtMillis = createdAtMillis)
+
+fun BackupTaskEvent.toEntity() =
+    TaskEventEntity(id = id, taskId = taskId, kind = kind, logicalDay = logicalDay, createdAtMillis = createdAtMillis)
+
 fun Settings.toBackup() =
     BackupSettings(
         userName = userName,
@@ -127,6 +163,7 @@ fun Settings.toBackup() =
         badgesSeenUntilMillis = badgesSeenUntilMillis,
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
+        taskNoticesEnabled = taskNoticesEnabled,
     )
 
 fun BackupSettings.toSettings() =
@@ -148,4 +185,5 @@ fun BackupSettings.toSettings() =
         badgesSeenUntilMillis = badgesSeenUntilMillis,
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
+        taskNoticesEnabled = taskNoticesEnabled,
     )

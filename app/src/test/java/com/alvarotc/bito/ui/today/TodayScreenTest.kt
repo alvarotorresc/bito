@@ -26,12 +26,15 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -102,6 +105,7 @@ class TodayScreenTest {
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(settingsStore("today-screen"))
         val rewards = RewardsRepository(db)
+        val tasks = TasksRepository(db)
         val reconciler = PointsReconciler(domainState, rewards)
 
         // Both habits must be created today: an older createdOnDay (the fixture default,
@@ -124,6 +128,7 @@ class TodayScreenTest {
                 settings,
                 reconciler,
                 rewards,
+                tasks = tasks,
                 now = { fixedNow },
                 zone = { utc },
                 defaultDispatcher = dispatcher,
@@ -357,6 +362,76 @@ class TodayScreenTest {
 
         compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Paused", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the section shows the loose task Habi brings today`() {
+        runBlocking {
+            TasksRepository(db).create(taskEntity(id = "t1", createdOnDay = today))
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Tasks", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `not today takes the row off the screen`() {
+        runBlocking {
+            TasksRepository(db).create(taskEntity(id = "t1", createdOnDay = today))
+        }
+        compose.waitForIdle()
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+
+        compose.onNodeWithTag("task-not-today-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the ring still counts only habits when there are tasks`() {
+        runBlocking {
+            TasksRepository(db).create(taskEntity(id = "t1", createdOnDay = today))
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("0 of 2", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `a today with only tasks does not offer to create a first habit`() {
+        runBlocking {
+            HabitsRepository(db).archive("agua", today, fixedNow)
+            HabitsRepository(db).archive("cama", today, fixedNow)
+            TasksRepository(db).create(taskEntity(id = "t1", createdOnDay = today))
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `all tasks done keeps the tasks section, its door to the list, and shows a status line instead`() {
+        runBlocking {
+            HabitsRepository(db).archive("agua", today, fixedNow)
+            HabitsRepository(db).archive("cama", today, fixedNow)
+            TasksRepository(db).create(
+                taskEntity(
+                    id = "t1",
+                    status = TaskStatus.DONE,
+                    createdOnDay = today,
+                    doneOnDay = today,
+                    doneAtMillis = fixedNow,
+                ),
+            )
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("See all", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Nothing pending today", useUnmergedTree = true).assertExists()
     }
 
     @Test

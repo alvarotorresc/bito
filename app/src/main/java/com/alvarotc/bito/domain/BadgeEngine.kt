@@ -52,7 +52,11 @@ object BadgeEngine {
         unlocked: Set<String>,
     ): Set<String> = earned - unlocked
 
-    /** 7 consecutive logical days ≤ today each with an entry or a seal (same activity notion as MoodEngine). */
+    /**
+     * 7 consecutive logical days <= today each with an entry or a seal. Deliberately NOT the same
+     * activity notion as MoodEngine since M10: tasks feed the mood's drought but never unlock a
+     * badge (spec §5.3, regla E6).
+     */
     internal fun activityRunReached(
         state: DomainState,
         today: LogicalDay,

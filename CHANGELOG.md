@@ -2,6 +2,24 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.1.0] - 2026-09-26
+
+Bito ya tiene sitio para eso que llevas tres semanas esquivando y que no es un hábito.
+
+### Added
+
+- **Tareas**: la llamada, el papeleo, el correo. Se crean y se editan en una pantalla propia, como los hábitos. Con o sin plazo — sin plazo, esta semana o un día concreto —, y con un primer paso que escribes tú si te ayuda a arrancar.
+- **Una sección en Hoy** — visible siempre que tengas cualquier tarea — con solo lo que toca hoy: lo vencido, lo de hoy, lo de esta semana, lo que viene en tres días, lo que traes a mano y una suelta que Habi te trae cada día. «Hoy no» la devuelve a la lista y mañana Habi trae otra.
+- **La lista completa**, colgada de esa sección, ordenada por plazo, donde se edita y se borra.
+- **Empezar**: tu primer paso y un temporizador — tres duraciones rápidas (5, 10 y 25 minutos) o cualquiera entre 1 y 180 con «Otro» — con Habi acompañando. Tócalo durante la cuenta atrás para que te mire y se mueva: de vez en cuando lo hace solo. Sigue corriendo con la app cerrada y con la pantalla apagada: una notificación con la cuenta atrás te acompaña mientras dura, un aviso aparte te dice cuándo se acaba, y puedes alargarlo con +5, +15 o +30, o de nuevo con «Otro» entre 1 y 180. «He terminado» cierra con la frase de Habi antes de desaparecer; marcar hecha desde la lista también te la dice. «Ha habido un inconveniente, lo dejo» lo deja sin más.
+- **Avisos de tareas a mediodía** cuando un plazo se acerca, con un único interruptor en Ajustes.
+- **Las tareas dan puntos**: 3 por hacerla, 5 si la haces dentro de plazo. Posponerla no quita puntos, pero a Habi le sienta mal — y hacerlas también anima su semana, aunque nunca más de un tercio de lo que ya dicen tus hábitos.
+
+### Changed
+
+- **El botón +** pregunta qué añades: un hábito o una tarea.
+- **Una copia de seguridad hecha con la 1.1.0 no se puede importar en la 1.0.0.** Al revés sí: la 1.1.0 lee sin problema cualquier copia anterior. Si compartes copias entre dos móviles, actualiza los dos.
+
 ## [1.0.0] - 2026-08-26
 
 La primera versión para compartir. Bito ya se instala en el móvil de cualquiera.

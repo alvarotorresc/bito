@@ -4,12 +4,15 @@ import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.serialization.Serializable
 
 /**
@@ -35,6 +38,13 @@ data class BackupFile(
     val badges: List<BackupBadge>,
     val customizationItems: List<BackupCustomizationItem>,
     val settings: BackupSettings,
+    /**
+     * M10. Van con default para que un fichero v1/v2/v3 escrito antes de que las tareas
+     * existieran siga importandose: json NO lleva ignoreUnknownKeys, pero un campo AUSENTE con
+     * default si se rellena. Por eso SCHEMA_VERSION se queda en 3 — no hay nada que migrar.
+     */
+    val tasks: List<BackupTask> = emptyList(),
+    val taskEvents: List<BackupTaskEvent> = emptyList(),
 )
 
 @Serializable
@@ -121,6 +131,29 @@ data class BackupCustomizationItem(
     val equipped: Boolean,
 )
 
+@Serializable
+data class BackupTask(
+    val id: String,
+    val title: String,
+    val firstStep: String?,
+    val dueKind: DueKind,
+    val dueDay: Int?,
+    val status: TaskStatus,
+    val createdAtMillis: Long,
+    val createdOnDay: Int,
+    val doneAtMillis: Long?,
+    val doneOnDay: Int?,
+)
+
+@Serializable
+data class BackupTaskEvent(
+    val id: String,
+    val taskId: String,
+    val kind: TaskEventKind,
+    val logicalDay: Int,
+    val createdAtMillis: Long,
+)
+
 /**
  * Every [com.alvarotc.bito.data.settings.Settings] field a restore must bring back — import
  * builds a FRESH Settings from this DTO (`toSettings()`), so anything missing here silently
@@ -149,6 +182,7 @@ data class BackupSettings(
     val badgesSeenUntilMillis: Long = 0L,
     val logSoundEnabled: Boolean = true,
     val logHapticEnabled: Boolean = true,
+    val taskNoticesEnabled: Boolean = true,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

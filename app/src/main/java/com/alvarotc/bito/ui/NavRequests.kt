@@ -15,9 +15,10 @@ object NavRequests {
      * (it's the LAUNCHER activity), so its extras are untrusted input from any app on the
      * device: without this allowlist, an arbitrary string would reach
      * `NavController.navigate(String)` in [BitoNavHost] and crash Bito with
-     * `IllegalArgumentException` for any route that isn't a real destination.
+     * `IllegalArgumentException` for any route that isn't a real destination. Both are exact
+     * strings, and neither carries arguments.
      */
-    private val deepLinkable = setOf("review")
+    private val deepLinkable = setOf("review", "tasks", "focus")
 
     private val _pending = MutableStateFlow<String?>(null)
     val pending: StateFlow<String?> = _pending.asStateFlow()

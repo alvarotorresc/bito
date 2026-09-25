@@ -12,6 +12,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
@@ -42,6 +43,7 @@ class TodayViewModel(
     private val rewards: RewardsRepository,
     // Nullable so pre-existing VM tests need no fake SoundPool; the factory always passes the real one.
     private val habiSounds: HabiSounds? = null,
+    private val tasks: TasksRepository,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
@@ -141,6 +143,30 @@ class TodayViewModel(
 
     fun sealPendingDays() = write { _, nowMillis -> uiState.value.pendingSealDays.forEach { journal.sealDay(it, nowMillis) } }
 
+    private val doneTask = MutableStateFlow<String?>(null)
+
+    /** El id de la ultima tarea marcada hecha, para el snackbar de deshacer. */
+    val lastTaskDone: StateFlow<String?> = doneTask.asStateFlow()
+
+    fun markTaskDone(id: String) =
+        write { today, nowMillis ->
+            tasks.markDone(id, today, nowMillis)
+            doneTask.value = id
+        }
+
+    /** Devuelve la tarea a abierta. El apunte de puntos se queda: lo ganado, ganado. */
+    fun undoTaskDone() {
+        val id = doneTask.value ?: return
+        doneTask.value = null
+        write { _, _ -> tasks.reopen(id) }
+    }
+
+    fun consumeTaskDone() {
+        doneTask.value = null
+    }
+
+    fun postponeTask(id: String) = write { today, nowMillis -> tasks.postpone(id, today, nowMillis) }
+
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {
@@ -153,6 +179,7 @@ class TodayViewModel(
                         container.reconciler,
                         container.rewards,
                         habiSounds = container.habiSounds,
+                        tasks = container.tasks,
                     )
                 }
             }

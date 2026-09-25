@@ -42,5 +42,20 @@ class BootReceiver : BroadcastReceiver() {
             System.currentTimeMillis(),
             ZoneId.systemDefault(),
         )
+
+        // Tras reiniciar, las alarmas y las notificaciones se pierden las dos. Una sesion de foco
+        // cuyo fin sigue en el futuro se reprograma y se vuelve a postear; una que ya paso se
+        // limpia SIN notificar: un «se acabo el tiempo» de hace seis horas es exactamente el
+        // ruido que esta app rechaza.
+        val session = container.focus.session.first()
+        if (session != null) {
+            if (session.endsAtMillis > System.currentTimeMillis()) {
+                FocusAlarm.schedule(context, session.endsAtMillis)
+                container.tasks.task(session.taskId)?.let { Notifier.showFocus(context, it.title, session.endsAtMillis) }
+            } else {
+                container.focus.clear()
+                Notifier.cancelFocus(context)
+            }
+        }
     }
 }

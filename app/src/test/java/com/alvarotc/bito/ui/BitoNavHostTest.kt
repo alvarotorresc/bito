@@ -2,8 +2,14 @@ package com.alvarotc.bito.ui
 
 import android.app.Application
 import android.app.NotificationManager
+import android.os.SystemClock
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.OnBackPressedDispatcherOwner
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
@@ -18,6 +24,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
 import androidx.lifecycle.ViewModelStoreOwner
@@ -26,6 +34,9 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
+import com.alvarotc.bito.data.settings.FocusClock
+import com.alvarotc.bito.data.settings.FocusSession
+import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
@@ -73,6 +84,19 @@ class BitoNavHostTest {
      */
     private fun screenTitleNode(text: String) =
         compose.onNode(hasText(text) and hasAnyAncestor(hasTestTag("bottom-bar")).not(), useUnmergedTree = true)
+
+    /**
+     * [performClick] reports success against a button inside a [androidx.compose.material3.ModalBottomSheet]
+     * under this Robolectric harness but never actually runs its callback — the same finding
+     * [com.alvarotc.bito.ui.detail.DetailScreenTest] already documents on its own sheet clicks.
+     * Invoking the node's own OnClick semantics action directly is what actually proves the tap
+     * wires through, for the create-choice and task-form sheets below (T14).
+     */
+    private fun tapText(text: String) {
+        // Merged tree (no useUnmergedTree): the OnClick action lives on the Button ancestor that
+        // merges its Text child's semantics, not on the raw Text node itself.
+        compose.onNodeWithText(text).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+    }
 
     /** The conditional start gates on Settings' first emission (loading -> today/onboarding);
      * wait for that placeholder to clear before any assertion, the same way the settings-reminder
@@ -142,6 +166,26 @@ class BitoNavHostTest {
      */
     private class FakeViewModelStoreOwner : ViewModelStoreOwner {
         override val viewModelStore = ViewModelStore()
+    }
+
+    /**
+     * Same limitation [com.alvarotc.bito.ui.review.ReviewScreenTest]'s own copy documents:
+     * `createComposeRule()` has no exposed `.activity` to read a working
+     * [OnBackPressedDispatcherOwner] back off of, so the only deterministic way to drive a system
+     * back press under this harness is to provide the composition OUR OWN dispatcher instance and
+     * invoke it ourselves from outside. Compose Navigation's own `NavHost` registers its back
+     * handling against whatever [LocalOnBackPressedDispatcherOwner] it finds, so wrapping the
+     * whole [BitoNavHost] in this owner (rather than a single screen, as `ReviewScreenTest` does)
+     * lets a test drive the NAV GRAPH's own back stack, not just one screen's `BackHandler`.
+     */
+    private class FakeBackDispatcherOwner : OnBackPressedDispatcherOwner {
+        private val lifecycleRegistry = LifecycleRegistry(this)
+        override val lifecycle: Lifecycle = lifecycleRegistry
+        override val onBackPressedDispatcher = OnBackPressedDispatcher()
+
+        init {
+            lifecycleRegistry.currentState = Lifecycle.State.RESUMED
+        }
     }
 
     @Test
@@ -242,11 +286,20 @@ class BitoNavHostTest {
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
     }
 
+    /**
+     * T14: the "+" now asks first (create-choice-sheet) instead of navigating straight to the
+     * habit form, so reaching it goes through "A habit" first — the sheet is an overlay, not a
+     * route change, so the bar itself doesn't react until that tap lands on "habit".
+     */
     @Test
     fun `the bottom bar hides on the habit form but survives on stats`() {
         setContent()
 
-        compose.onNodeWithContentDescription("New habit", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        tapText("A habit")
         compose.waitForIdle()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
 
@@ -256,6 +309,70 @@ class BitoNavHostTest {
         compose.onNodeWithContentDescription("Stats", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `tapping create opens the choice sheet with a habit and a task`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("A habit", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("A task", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `choosing a habit from the choice sheet reaches the usual habit form`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        tapText("A habit")
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertDoesNotExist()
+        // The habit form's own back chevron — reusing "the bottom bar hides on the habit form"
+        // above's own proof that this is genuinely the same route, not a new one.
+        compose.onNodeWithContentDescription("Back", useUnmergedTree = true).assertExists()
+    }
+
+    /**
+     * D12 revoked: choosing "A task" now navigates to [com.alvarotc.bito.ui.tasks.TaskFormScreen]
+     * (a route, "task-form-screen" tag) instead of opening the old TaskFormSheet as a global sheet
+     * — same reason "the bottom bar hides on the habit form but survives on stats" above already
+     * proves for "habit": a route change hides the bar, so this also re-proves that hasn't
+     * regressed for tasks. Recalibrated from the old "task-form-sheet" tag (the sheet itself is
+     * gone now — retired once the tasks list's own edit flow moved to this same screen too).
+     * Beyond the brief's own two: the model test covers [com.alvarotc.bito.ui.tasks.resolvedDueDay]
+     * but nothing else ever composes [com.alvarotc.bito.ui.tasks.TaskFormScreen] itself in this
+     * create path — this is that one compile-and-render safety net, deliberately stopping short of
+     * driving the DatePickerDialog (task-14-brief's own call, still true: that dialog has no logic
+     * worth a Robolectric test).
+     */
+    @Test
+    fun `choosing a task from the choice sheet opens the task form with saving disabled on a blank title`() {
+        setContent()
+
+        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        tapText("A task")
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("task-form-save", useUnmergedTree = true).assertIsNotEnabled()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -680,5 +797,328 @@ class BitoNavHostTest {
 
         val created = runBlocking { container.database.habitDao().all().single { it.name == "Beber agua" } }
         assertEquals(Metric.CHECK, created.metric)
+    }
+
+    /**
+     * T19: the permanent notification's own path — "focus" bare, no id — must resolve against
+     * whatever session happens to be live, same guard shape as "a pending review request opens
+     * the review flow and hides the bar" above. Seeding the session BEFORE the FocusViewModel is
+     * ever built is what proves the bare route resolves against it, rather than just proving the
+     * screen doesn't crash on an absent one.
+     */
+    @Test
+    fun `a pending focus request opens the focus screen against the live session`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today))
+            val now = System.currentTimeMillis()
+            val elapsed = android.os.SystemClock.elapsedRealtime()
+            container.focus.start(
+                FocusSession(
+                    taskId = "t1",
+                    startedAtMillis = now,
+                    endsAtMillis = now + 10 * 60_000L,
+                    endsAtElapsed = elapsed + 10 * 60_000L,
+                    bootMillis = FocusClock.bootSignatureOf(now, elapsed),
+                ),
+            )
+        }
+        // Set BEFORE setContent, same reasoning as the review test above: the request must
+        // already be waiting the very first time BitoNavHost composes.
+        NavRequests.open("focus")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+
+        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(NavRequests.pending.value)
+    }
+
+    /** T19: proves the wiring this task adds — Today's own "Empezar" reaching the focus route,
+     * not just [com.alvarotc.bito.ui.today.TodayScreen]'s own `onStartFocus` callback in isolation. */
+    @Test
+    fun `starting a task from Today opens the focus screen`() {
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        setContentSeeded { tasks.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today)) }
+
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Start", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /** T19 (M10 review round 1, minor #2): the same wiring proven from Today above, but through
+     * [com.alvarotc.bito.ui.tasks.TasksScreen]'s own "Empezar" — its `onStartFocus` reaching the
+     * same route with the row's own id, not just [com.alvarotc.bito.ui.tasks.TasksScreen]'s own
+     * callback in isolation ([com.alvarotc.bito.ui.tasks.TasksScreenTest]'s own coverage). */
+    @Test
+    fun `starting a task from the tasks list opens the focus screen`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-start-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-start-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * D12 revoked, editing half: [com.alvarotc.bito.ui.tasks.TasksScreen]'s own "editar" now
+     * navigates to "task?id={id}" instead of opening a sheet inline
+     * ([com.alvarotc.bito.ui.tasks.TasksScreenTest]'s own "the row menu edit calls onEditTask with
+     * the row id" proves the callback fires; this proves the route it reaches actually renders the
+     * preloaded fields — the id has to survive a real Room read, not just an in-memory row, since
+     * the new route loads it itself). Same "task-form-screen" tag the create path already proves in
+     * "choosing a task from the choice sheet opens the task form with saving disabled on a blank
+     * title" above.
+     */
+    @Test
+    fun `editing a task from the tasks list reaches the full-screen form with the task preloaded`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Titulo original", firstStep = "Paso original", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-menu-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
+        // touch gestures under this Robolectric harness — invoking the node's own OnClick
+        // semantics action directly is what actually proves the tap wires through.
+        compose.onNodeWithTag("task-menu-edit")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithText("Edit task", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Titulo original", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Paso original", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * D12 revoked, delete half: the red delete button this ola adds to TaskFormScreen's editing
+     * route, wired all the way through its confirm sheet to [com.alvarotc.bito.ui.tasks.TasksViewModel.delete]
+     * and back to the tasks list. Not covered by [com.alvarotc.bito.ui.tasks.TaskFormScreenTest]
+     * (which fakes [onDelete] and never touches Room), so this is the one place proving the whole
+     * chain — button, confirm sheet, actual delete, actual pop — really is connected.
+     */
+    @Test
+    fun `deleting a task from its own edit screen removes it and returns to the tasks list`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Tarea a borrar", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-menu-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("task-menu-edit")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        // The screen's own button, not inside a sheet: performClick() works here.
+        compose.onNodeWithTag("task-delete", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("task-delete-confirm", useUnmergedTree = true).assertExists()
+
+        compose.onNodeWithTag("task-delete-confirm-yes")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("tasks-list", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("Tarea a borrar", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(runBlocking { container.tasks.task("t1") })
+    }
+
+    /**
+     * Ola 4 review (Minor #6): the task can disappear between opening the row menu and this
+     * route actually loading it (borrado desde otra pantalla, reinicio a media edicion) — the
+     * route used to fall back to a blank `TaskFormState(editingId = id)`, so "Guardar" looked
+     * live but `TasksRepository.update` silently did nothing (its own `?: return@withTransaction`
+     * on a missing id). Deleting the task right after opening the menu, before the edit action
+     * actually fires, reproduces that exact window.
+     */
+    @Test
+    fun `editing a task that vanished before the route loads it just goes back`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Tarea fantasma", createdOnDay = today))
+        }
+        NavRequests.open("tasks")
+
+        compose.setContent {
+            BitoTheme {
+                BitoNavHost(container)
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-menu-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        val editAction = compose.onNodeWithTag("task-menu-edit").fetchSemanticsNode().config[SemanticsActions.OnClick].action
+        runBlocking { container.tasks.delete("t1") }
+        editAction?.invoke()
+        compose.waitForIdle()
+
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("tasks-list", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("task-form-loading", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    /**
+     * M10 review round 1 (Important #1): without `popUpTo`, "seguir con la otra" pushed a SECOND
+     * "focus" entry on top of the conflict one instead of replacing it — system back from the
+     * live session then landed back on the conflict screen (`busyWith` still non-null), reopening
+     * the very same sheet with no way out while the other session stayed alive. Walks the exact
+     * reported path: tasks list -> `focus?taskId=t2` (conflict, t1's session already live) ->
+     * "seguir con la otra" -> `focus` (bare, now watching t1) -> ATRAS -> must land back on the
+     * tasks list, never on the conflict sheet again.
+     */
+    @Test
+    fun `keeping the other session during a conflict does not trap back navigation`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            completeOnboarding(container)
+            container.tasks.create(taskEntity(id = "t1", title = "Tarea uno", createdOnDay = today))
+            container.tasks.create(taskEntity(id = "t2", title = "Tarea dos", createdOnDay = today))
+            val now = System.currentTimeMillis()
+            val elapsed = SystemClock.elapsedRealtime()
+            container.focus.start(
+                FocusSession(
+                    taskId = "t1",
+                    startedAtMillis = now,
+                    endsAtMillis = now + 10 * 60_000L,
+                    endsAtElapsed = elapsed + 10 * 60_000L,
+                    bootMillis = FocusClock.bootSignatureOf(now, elapsed),
+                ),
+            )
+        }
+        NavRequests.open("tasks")
+        val backOwner = FakeBackDispatcherOwner()
+
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides backOwner) {
+                    BitoNavHost(container)
+                }
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("task-start-t2", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
+        compose.onNodeWithTag("task-start-t2", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertExists()
+
+        // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
+        // touch gestures under this Robolectric harness — invoking the node's own OnClick
+        // semantics action directly is what actually proves the tap wires through.
+        compose.onNodeWithTag("focus-busy-keep")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists() // now watching t1's live session
+        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertDoesNotExist()
+
+        compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
+        compose.waitForIdle()
+
+        // Not trapped on the conflict: back from the live session lands on the tasks list, and
+        // the busy sheet — which a stacked (not replaced) conflict entry would have reopened —
+        // never comes back.
+        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("task-start-t2", useUnmergedTree = true).assertExists()
     }
 }

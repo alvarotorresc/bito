@@ -8,6 +8,7 @@ import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsLedgerEntry
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.TaskStatus
 
 /**
  * Points. The ledger is the stored truth; this engine derives which grants
@@ -29,6 +30,7 @@ object PointsEngine {
      *   last day, with refIds "day:D" / "week:K" / "month:K".
      * - STREAK_MILESTONE per habit and reached length (via
      *   [Streaks.reachedMilestones]), granted at most once per habit+length.
+     * - TASK_DONE once per completed task, refId "task:<id>".
      */
     fun earnedEvents(
         state: DomainState,
@@ -39,7 +41,8 @@ object PointsEngine {
         val events =
             habitDoneEvents(state, today, config) +
                 perfectPeriodEvents(state, today, config, perfectDays) +
-                streakMilestoneEvents(state, today, config)
+                streakMilestoneEvents(state, today, config) +
+                taskDoneEvents(state, today, config)
         // Chronological order so appending them keeps the ledger readable as a history.
         return events.sortedWith(compareBy({ it.logicalDay }, { it.reason.ordinal }, { it.refId }))
     }
@@ -186,5 +189,31 @@ object PointsEngine {
                         delta = config.streakMilestonePoints.getValue(length),
                     )
                 }
+        }
+
+    /**
+     * Una tarea hecha, una vez. Los tres grados de plazo caben en una sola comparacion porque
+     * WEEK guarda su domingo: hecha dentro de su semana vale 5, hecha el lunes siguiente 3. Ni
+     * una rama por dueKind.
+     *
+     * Congelado al conceder: si luego se le edita el plazo, no hay ascenso a 5 — el apunte ya
+     * esta en el libro mayor con su refId y los puntos nunca se confiscan (regla E3).
+     */
+    private fun taskDoneEvents(
+        state: DomainState,
+        today: LogicalDay,
+        config: EconomyConfig,
+    ): List<PointsEvent> =
+        state.tasks.mapNotNull { task ->
+            if (task.status != TaskStatus.DONE) return@mapNotNull null
+            val doneOn = task.doneOnDay ?: return@mapNotNull null
+            if (doneOn > today) return@mapNotNull null
+            val due = task.dueDay
+            PointsEvent(
+                reason = PointsReason.TASK_DONE,
+                refId = "task:${task.id}",
+                logicalDay = doneOn,
+                delta = if (due != null && doneOn <= due) config.taskOnTimePoints else config.taskDonePoints,
+            )
         }
 }

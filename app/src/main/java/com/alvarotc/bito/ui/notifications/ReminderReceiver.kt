@@ -65,6 +65,10 @@ class ReminderReceiver : BroadcastReceiver() {
                 reschedule(context, outcome.slot)
             }
             is ReminderUseCase.Outcome.Silent -> reschedule(context, outcome.slot)
+            is ReminderUseCase.Outcome.Tasks -> {
+                Notifier.showTasks(context, outcome.titles, outcome.pendingCount, outcome.personality, outcome.userName)
+                reschedule(context, outcome.slot)
+            }
         }
     }
 

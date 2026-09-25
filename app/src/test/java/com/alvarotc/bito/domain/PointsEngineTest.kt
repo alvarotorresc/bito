@@ -1,10 +1,12 @@
 package com.alvarotc.bito.domain
 
 import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -302,6 +304,126 @@ class PointsEngineTest {
             )
 
         assertEquals(emptySet(), earned(state).withReason(PointsReason.STREAK_MILESTONE))
+    }
+
+    // -----------------------------------------------------------------------
+    // TASK_DONE
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `a loose task done is worth three`() {
+        val state = domainState(tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY)))
+
+        val event = PointsEngine.earnedEvents(state, TODAY, EconomyConfig()).single()
+
+        assertEquals(PointsReason.TASK_DONE, event.reason)
+        assertEquals("task:t1", event.refId)
+        assertEquals(TODAY, event.logicalDay)
+        assertEquals(3, event.delta)
+    }
+
+    @Test
+    fun `a dated task done on time is worth five, and late three`() {
+        val onTime =
+            domainState(
+                tasks =
+                    listOf(
+                        task(id = "t1", dueKind = DueKind.DATE, dueDay = TODAY, status = TaskStatus.DONE, doneOnDay = TODAY),
+                    ),
+            )
+        val late =
+            domainState(
+                tasks =
+                    listOf(
+                        task(id = "t1", dueKind = DueKind.DATE, dueDay = TODAY - 1, status = TaskStatus.DONE, doneOnDay = TODAY),
+                    ),
+            )
+
+        assertEquals(5, PointsEngine.earnedEvents(onTime, TODAY, EconomyConfig()).single().delta)
+        assertEquals(3, PointsEngine.earnedEvents(late, TODAY, EconomyConfig()).single().delta)
+    }
+
+    @Test
+    fun `a week task done inside its week is worth five and the monday after three`() {
+        val sunday = Tasks.weekDueOf(THIS_MONDAY)
+        val inside =
+            domainState(
+                tasks =
+                    listOf(
+                        task(
+                            id = "t1",
+                            dueKind = DueKind.WEEK,
+                            dueDay = sunday,
+                            status = TaskStatus.DONE,
+                            createdOnDay = THIS_MONDAY,
+                            doneOnDay = sunday,
+                        ),
+                    ),
+            )
+        val after =
+            domainState(
+                tasks =
+                    listOf(
+                        task(
+                            id = "t1",
+                            dueKind = DueKind.WEEK,
+                            dueDay = sunday,
+                            status = TaskStatus.DONE,
+                            createdOnDay = THIS_MONDAY,
+                            doneOnDay = sunday + 1,
+                        ),
+                    ),
+            )
+
+        assertEquals(5, PointsEngine.earnedEvents(inside, sunday, EconomyConfig()).single().delta)
+        assertEquals(3, PointsEngine.earnedEvents(after, sunday + 1, EconomyConfig()).single().delta)
+    }
+
+    @Test
+    fun `an open task pays nothing, and one done in the future waits`() {
+        val open = domainState(tasks = listOf(task(id = "t1")))
+        val future = domainState(tasks = listOf(task(id = "t2", status = TaskStatus.DONE, doneOnDay = TODAY + 1)))
+
+        assertTrue(PointsEngine.earnedEvents(open, TODAY, EconomyConfig()).isEmpty())
+        assertTrue(PointsEngine.earnedEvents(future, TODAY, EconomyConfig()).isEmpty())
+    }
+
+    @Test
+    fun `granting the same task twice is a no-op`() {
+        val state = domainState(tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY)))
+        val earned = PointsEngine.earnedEvents(state, TODAY, EconomyConfig())
+        val ledger = earned.map { it.asLedgerEntry() }
+
+        assertTrue(PointsEngine.missingEvents(earned, ledger).isEmpty())
+    }
+
+    @Test
+    fun `marking done, undoing and marking again does not grant twice`() {
+        val done = domainState(tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY)))
+        val ledger = PointsEngine.earnedEvents(done, TODAY, EconomyConfig()).map { it.asLedgerEntry() }
+        // Deshacer devuelve la tarea a OPEN pero el apunte se queda (los puntos no se confiscan).
+        val reopened = domainState(tasks = listOf(task(id = "t1")), ledger = ledger)
+        assertTrue(PointsEngine.earnedEvents(reopened, TODAY, EconomyConfig()).isEmpty())
+
+        val redone = domainState(tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY + 1)), ledger = ledger)
+        assertTrue(PointsEngine.missingEvents(PointsEngine.earnedEvents(redone, TODAY + 1, EconomyConfig()), ledger).isEmpty())
+    }
+
+    @Test
+    fun `tasks do not add or remove any habit, perfect day or streak event`() {
+        val habits = listOf(RealHabits.makeBed.createdOn(TODAY - 2))
+        val entries = listOf(entryOn(RealHabits.makeBed, TODAY - 1))
+        val without = domainState(habits = habits, entries = entries)
+        val with =
+            domainState(
+                habits = habits,
+                entries = entries,
+                tasks = listOf(task(id = "t1", status = TaskStatus.DONE, doneOnDay = TODAY)),
+            )
+
+        val nonTask = PointsEngine.earnedEvents(with, TODAY, EconomyConfig()).filter { it.reason != PointsReason.TASK_DONE }
+
+        assertEquals(PointsEngine.earnedEvents(without, TODAY, EconomyConfig()), nonTask)
     }
 
     // -----------------------------------------------------------------------

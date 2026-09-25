@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tasks_section_title">Tasks</string>
+    <string name="tasks_see_all">See all</string>
+    <string name="tasks_today_all_done">Nothing pending today</string>
+    <string name="task_start">Start</string>
+    <string name="task_not_today">Not today</string>
+    <string name="task_done">Done</string>
+    <string name="task_due_today">today</string>
+    <plurals name="task_due_in">
+        <item quantity="one">in %1$d day</item>
+        <item quantity="other">in %1$d days</item>
+    </plurals>
+    <plurals name="task_overdue">
+        <item quantity="one">%1$d day overdue</item>
+        <item quantity="other">%1$d days overdue</item>
+    </plurals>
+    <string name="task_due_this_week">this week</string>
+    <string name="task_due_week_today">ends today</string>
+    <string name="task_due_last_week">from last week</string>
+    <string name="create_choice_title">What are we adding?</string>
+    <string name="create_choice_habit">A habit</string>
+    <string name="create_choice_task">A task</string>
+    <string name="task_form_title">New task</string>
+    <string name="task_form_edit_title">Edit task</string>
+    <string name="task_form_name_hint">What\'s pending?</string>
+    <string name="task_form_step_hint">The first step (optional)</string>
+    <string name="task_form_due_none">No deadline</string>
+    <string name="task_form_due_week">This week</string>
+    <string name="task_form_due_date">Date</string>
+    <string name="task_form_date_confirm">Choose</string>
+    <string name="tasks_screen_title">Tasks</string>
+    <string name="tasks_section_today">Today</string>
+    <string name="tasks_section_week">This week</string>
+    <string name="tasks_section_dated">With a deadline</string>
+    <string name="tasks_section_loose">No deadline</string>
+    <string name="tasks_section_done">Done</string>
+    <string name="tasks_empty">Nothing pending.</string>
+    <string name="task_bring_today">Bring to today</string>
+    <string name="task_no_due">no deadline</string>
+    <string name="task_edit">Edit</string>
+    <string name="task_delete">Delete</string>
+    <string name="task_row_menu_cd">More options</string>
+    <string name="task_delete_confirm_title">Delete this task?</string>
+    <string name="task_delete_confirm_body">Its history goes with it. The points you earned are yours.</string>
+    <string name="focus_title">Focus</string>
+    <string name="focus_minutes">%1$d min</string>
+    <string name="focus_done">I\'m done</string>
+    <string name="focus_plus">+%1$d</string>
+    <string name="focus_custom">Other</string>
+    <string name="focus_plus_custom">+ Other</string>
+    <string name="focus_custom_title">How many minutes?</string>
+    <string name="focus_custom_extend_title">How many more minutes?</string>
+    <string name="focus_custom_hint">Minutes</string>
+    <string name="focus_give_up">Something came up, I\'ll stop</string>
+    <string name="focus_busy_title">Something\'s already running</string>
+    <string name="focus_busy_keep">Keep going with %1$s</string>
+    <string name="focus_busy_switch">Drop it and start this</string>
+</resources>
