@@ -11,6 +11,7 @@ import com.alvarotc.bito.AppStartup
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.taskEntity
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancelAndJoin
@@ -123,6 +124,40 @@ class FocusSyncTest {
         // WidgetRefresher — uno de los cuatro colectores de AppStartup, que observa exactamente el
         // mismo domainState.observe() sin parar en cualquier BitoApp implicita que ya arrancara en
         // este fork de JVM (ver AppStartup/AppStartupTest).
+        runBlocking { withTimeout(10_000) { container.focus.session.first { it == null } } }
+        eventually { shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID) == null }
+        eventually { shadowOf(alarmManager).scheduledAlarms.isEmpty() }
+    }
+
+    /**
+     * La limpieza de la bandeja y la alarma no puede depender de quien gane la carrera entre la
+     * escritura del propio `focus.clear()` y la nueva emision que esa misma escritura provoca. Con
+     * `collectLatest`, la sesion ya nula llegaba al colector y CANCELABA el bloque que la acababa
+     * de limpiar, antes de `Notifier.cancelFocus`/`FocusAlarm.cancel`: la alarma quedaba
+     * programada para una sesion que ya no existe. [Dispatchers.Unconfined] fuerza justo ese
+     * orden (la emision recorre la cadena entera dentro de la escritura, antes de que la escritura
+     * reanude a quien la pidio), el mismo que un runner cargado o el pool multihilo de produccion
+     * pueden dar por azar.
+     */
+    @Test
+    fun `the cleanup of a vanished task survives its own store write re-emitting the session`() {
+        val container = AppContainer(app)
+        val session =
+            FocusSession(
+                taskId = "ghost",
+                startedAtMillis = System.currentTimeMillis(),
+                endsAtMillis = System.currentTimeMillis() + 5 * 60_000L,
+                endsAtElapsed = 0L,
+                bootMillis = 0L,
+            )
+        runBlocking { container.focus.start(session) }
+        FocusAlarm.schedule(app, session.endsAtMillis)
+        postStandInFocusNotification()
+
+        val job = Job()
+        scopeJob = job
+        FocusSync.start(app, container, CoroutineScope(Dispatchers.Unconfined + job))
+
         runBlocking { withTimeout(10_000) { container.focus.session.first { it == null } } }
         eventually { shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID) == null }
         eventually { shadowOf(alarmManager).scheduledAlarms.isEmpty() }

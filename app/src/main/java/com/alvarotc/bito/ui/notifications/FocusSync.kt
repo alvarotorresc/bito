@@ -4,7 +4,6 @@ import android.content.Context
 import com.alvarotc.bito.AppContainer
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
@@ -36,7 +35,10 @@ object FocusSync {
         }
         scope.launch {
             combine(container.focus.session, container.domainState.observe()) { session, state -> session to state }
-                .collectLatest { (session, state) ->
+                // collect, no collectLatest: el propio focus.clear() de abajo reemite la sesion ya
+                // nula, y collectLatest cancelaria este mismo bloque a mitad de limpieza — segun
+                // quien ganara la carrera, antes de cancelar la bandeja y la alarma.
+                .collect { (session, state) ->
                     if (session != null && state.tasks.none { it.id == session.taskId }) {
                         // Tres efectos independientes, cada uno con su propio guard: si uno falla
                         // (p. ej. una IOException del DataStore), los otros dos igual se intentan —
