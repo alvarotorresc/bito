@@ -4,6 +4,7 @@ import { CUES, DURACION_SONIDO, MUSICA, volumenMusica } from './audio/mezcla';
 import type { PromoProps } from './copy';
 import { Escena01 } from './scenes/01-Apertura';
 import { Escena02 } from './scenes/02-QueEs';
+import { Escena03 } from './scenes/03-Registro';
 import { ESCENAS, momentoGlobal, type NumEscena } from './timing';
 import { Dedo } from './ui/Dedo';
 import { Fondo } from './ui/Fondo';
@@ -25,7 +26,7 @@ const pendiente = (n: NumEscena): React.FC<PromoProps> => {
 const ESCENA: Record<NumEscena, React.FC<PromoProps>> = {
   1: Escena01,
   2: Escena02,
-  3: pendiente(3),
+  3: Escena03,
   4: pendiente(4),
   5: pendiente(5),
   6: pendiente(6),
