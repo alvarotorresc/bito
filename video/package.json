@@ -9,7 +9,8 @@
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
     "audio": "node scripts/audio.mjs",
-    "validar:store": "node scripts/validar-store.mjs"
+    "validar:store": "node scripts/validar-store.mjs",
+    "store": "node scripts/store.mjs"
   },
   "dependencies": {
     "@remotion/cli": "4.0.529",
