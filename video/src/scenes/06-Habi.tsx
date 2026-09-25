@@ -40,8 +40,8 @@ const VOCES: readonly Voz[] = [
 ];
 
 const COLUMNA: React.CSSProperties = {
-  left: 780,
-  width: 1060,
+  left: 740,
+  width: 1120,
   top: 0,
   height: ALTO,
   display: 'flex',
@@ -52,15 +52,15 @@ const COLUMNA: React.CSSProperties = {
 };
 
 const BOCADILLO: React.CSSProperties = {
-  fontSize: 52,
+  fontSize: 46,
   fontWeight: 600,
-  padding: '32px 44px',
+  padding: '30px 40px',
   backgroundColor: COLOR.brillo,
   border: `3px solid ${COLOR.borde}`,
   borderRadius: 36,
 };
 
-const PIE: React.CSSProperties = { fontSize: 44, fontWeight: 400 };
+const PIE: React.CSSProperties = { fontSize: 48, fontWeight: 400, lineHeight: 1.25, marginTop: 8 };
 
 export const Escena06: React.FC<PromoProps> = ({ lang }) => {
   const frame = useCurrentFrame();
@@ -75,7 +75,7 @@ export const Escena06: React.FC<PromoProps> = ({ lang }) => {
       <Rotulo sale={voz - 8} tamano={104} style={COLUMNA}>
         {texto(lang, 'habi.titular')}
       </Rotulo>
-      <Rotulo entra={voz} sale={momentoLocal('caraSargento') - 8} tamano={80} style={COLUMNA}>
+      <Rotulo entra={voz} sale={momentoLocal('caraSargento') - 8} tamano={64} style={COLUMNA}>
         <div>{texto(lang, 'nuevo.habi.voz.titular')}</div>
         <div style={PIE}>{texto(lang, 'habi.nota')}</div>
       </Rotulo>
