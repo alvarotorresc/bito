@@ -29,12 +29,14 @@ export const Escena07: React.FC<PromoProps> = ({ lang }) => {
       {NAVEGA.map((n) => (
         <Dedo key={n.momento} x={IZQ + m.marco + n.toque.x * m.ancho} y={ARRIBA + m.marco + n.toque.y * m.alto} toque={momentoLocal(n.momento)} />
       ))}
-      <Rotulo entra={10} tamano={64} style={{ left: 100, top: 300, width: 900 }}>
-        {texto(lang, 'nuevo.tareas.titular')}
-      </Rotulo>
-      <Rotulo entra={30} tamano={40} peso={400} style={{ left: 100, top: 470, width: 900 }}>
-        {texto(lang, 'nuevo.tareas.pie')}
-      </Rotulo>
+      <div style={{ position: 'absolute', left: 100, top: 300, width: 900, display: 'flex', flexDirection: 'column', gap: 24 }}>
+        <Rotulo entra={10} tamano={64} style={{ position: 'relative' }}>
+          {texto(lang, 'nuevo.tareas.titular')}
+        </Rotulo>
+        <Rotulo entra={30} tamano={40} peso={400} style={{ position: 'relative' }}>
+          {texto(lang, 'nuevo.tareas.pie')}
+        </Rotulo>
+      </div>
     </AbsoluteFill>
   );
 };

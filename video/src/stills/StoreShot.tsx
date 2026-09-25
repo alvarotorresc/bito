@@ -17,7 +17,8 @@ export const STORE_SHOTS: readonly { pantalla: Pantalla; titular: CopyKey }[] = 
 
 export type StoreShotProps = { lang: Lang; indice: number };
 
-const ALTO_MOVIL = 1380;
+const ALTO_MOVIL = 1640;
+const ARRIBA_MOVIL = 240;
 const m = medidasPhone(ALTO_MOVIL);
 
 export const StoreShot: React.FC<StoreShotProps> = ({ lang, indice }) => {
@@ -26,10 +27,10 @@ export const StoreShot: React.FC<StoreShotProps> = ({ lang, indice }) => {
   return (
     <AbsoluteFill>
       <Fondo />
-      <Rotulo tamano={76} alinear="center" style={{ left: 80, width: 920, top: 110 }}>
+      <Rotulo tamano={68} alinear="center" style={{ left: 60, width: 960, top: 52 }}>
         {texto(lang, shot.titular)}
       </Rotulo>
-      <Phone lang={lang} pantalla={shot.pantalla} alto={ALTO_MOVIL} style={{ left: (1080 - m.anchoTotal) / 2, top: 420 }} />
+      <Phone lang={lang} pantalla={shot.pantalla} alto={ALTO_MOVIL} style={{ left: (1080 - m.anchoTotal) / 2, top: ARRIBA_MOVIL }} />
     </AbsoluteFill>
   );
 };

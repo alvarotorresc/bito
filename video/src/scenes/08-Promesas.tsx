@@ -25,7 +25,7 @@ export const Escena08: React.FC<PromoProps> = ({ lang }) => (
     {CIFRAS.map((cifra, i) => (
       <React.Fragment key={cifra.pie}>
         <Rotulo entra={80 + i * 10} tamano={120} color={COLOR.salvia} alinear="center" style={{ left: 160 + i * 540, width: 520, top: 610 }}>
-          {cifra.numero}
+          {lang === 'es' ? cifra.numero.replace('%', '\u202F%') : cifra.numero}
         </Rotulo>
         <Rotulo entra={84 + i * 10} tamano={30} peso={400} color="rgba(242, 236, 225, 0.85)" alinear="center" style={{ left: 140 + i * 540, width: 560, top: 770 }}>
           {texto(lang, cifra.pie)}
