@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build debug de Bito para las capturas. No toca el código de la app.
 set -euo pipefail
-ROOT=/home/alvarotc/Documents/apps/bito-worktrees/video-producto
+ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 export JAVA_HOME="$HOME/.jdks/jdk-21.0.12+8"
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Android/Sdk}"
 APK="$ROOT/app/build/outputs/apk/debug/app-debug.apk"

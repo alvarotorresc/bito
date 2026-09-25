@@ -19,7 +19,7 @@ import device as d
 import prefs_pb
 import seed as seeder
 
-APK = Path("/home/alvarotc/Documents/apps/bito-worktrees/video-producto/app/build/outputs/apk/debug/app-debug.apk")
+APK = Path(__file__).resolve().parents[2] / "app/build/outputs/apk/debug/app-debug.apk"
 DB = "databases/bito.db"
 SETTINGS = "files/settings.preferences_pb"
 FAR_FUTURE_MS = 4102444800000

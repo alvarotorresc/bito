@@ -28,13 +28,20 @@ const yaEsta = async (ruta, esperado) => {
 await mkdir(join(AUDIO, 'musica'), { recursive: true });
 for (const s of SONIDOS) await copyFile(join(RAW, `${s}.wav`), join(AUDIO, `${s}.wav`));
 
-const meta = await (await fetch(`https://archive.org/metadata/${ITEM}`)).json();
-if (meta.metadata?.licenseurl !== CC0) throw new Error(`Licencia inesperada en ${ITEM}: ${meta.metadata?.licenseurl}`);
-const nodos = [meta.d1, meta.d2, meta.server].filter(Boolean);
+const faltan = [];
+for (const p of PISTAS) if (!(await yaEsta(join(AUDIO, 'musica', p.archivo), p.sha1))) faltan.push(p);
 
-for (const p of PISTAS) {
+let meta = null;
+if (faltan.length > 0) {
+  const r = await fetch(`https://archive.org/metadata/${ITEM}`);
+  if (!r.ok) throw new Error(`archive.org respondió ${r.status} al pedir los metadatos de ${ITEM}; hace falta red la primera vez`);
+  meta = await r.json();
+  if (meta.metadata?.licenseurl !== CC0) throw new Error(`Licencia inesperada en ${ITEM}: ${meta.metadata?.licenseurl}`);
+}
+const nodos = meta ? [meta.d1, meta.d2, meta.server].filter(Boolean) : [];
+
+for (const p of faltan) {
   const destino = join(AUDIO, 'musica', p.archivo);
-  if (await yaEsta(destino, p.sha1)) continue;
   let bajada = null;
   for (const nodo of nodos) {
     const r = await fetch(`https://${nodo}${meta.dir}/${encodeURIComponent(p.archivo)}`);
