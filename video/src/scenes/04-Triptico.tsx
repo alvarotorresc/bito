@@ -64,7 +64,7 @@ export const Escena04: React.FC<PromoProps> = ({ lang }) => {
           </React.Fragment>
         );
       })}
-      <HabiVivo linea={LINEA_04} tamano={170} style={{ position: 'absolute', left: 875, top: 890 }} />
+      <HabiVivo linea={LINEA_04} tamano={170} style={{ position: 'absolute', left: 875, top: 860 }} />
     </AbsoluteFill>
   );
 };

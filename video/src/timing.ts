@@ -44,7 +44,7 @@ export const MOMENTOS = {
   caraCheerleader: { escena: 6, local: 160 },
   caraNeutra: { escena: 6, local: 200 },
   tiendaEntra: { escena: 6, local: 245 },
-  vestida: { escena: 6, local: 265 },
+  vestida: { escena: 6, local: 250 },
   toqueTareas: { escena: 7, local: 50 },
   toqueFoco: { escena: 7, local: 105 },
   asentarse: { escena: 9, local: 12 },

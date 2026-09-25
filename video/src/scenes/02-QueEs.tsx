@@ -13,6 +13,11 @@ const ALTO_MOVIL = 860;
 const m = medidasPhone(ALTO_MOVIL);
 const MOVIL_IZQ = 1840 - m.anchoTotal;
 
+export const FINAL_02 = {
+  movil: { izq: MOVIL_IZQ, arriba: (ALTO - m.altoTotal) / 2, altoTotal: m.altoTotal },
+  habi: { tamano: 420, izq: 90, arriba: 520 },
+};
+
 export const LINEA_02: LineaHabi = { semilla: 'escena-02', eventos: [{ at: momentoLocal('miraMovil'), mirada: 'derecha' }] };
 
 export const Escena02: React.FC<PromoProps> = ({ lang }) => {
@@ -23,7 +28,7 @@ export const Escena02: React.FC<PromoProps> = ({ lang }) => {
   return (
     <AbsoluteFill>
       <Fondo />
-      <HabiVivo linea={LINEA_02} tamano={420} style={{ position: 'absolute', left: 90, top: 520 }} />
+      <HabiVivo linea={LINEA_02} tamano={FINAL_02.habi.tamano} style={{ position: 'absolute', left: FINAL_02.habi.izq, top: FINAL_02.habi.arriba }} />
       <Rotulo entra={6} tamano={60} style={{ left: 560, top: 250, width: 680 }}>
         {texto(lang, 'descriptor.1')}
       </Rotulo>
@@ -32,7 +37,7 @@ export const Escena02: React.FC<PromoProps> = ({ lang }) => {
           {frase}
         </Rotulo>
       ))}
-      <Phone lang={lang} pantalla="hoy" alto={ALTO_MOVIL} style={{ left: x, top: (ALTO - m.altoTotal) / 2 }} />
+      <Phone lang={lang} pantalla="hoy" alto={ALTO_MOVIL} style={{ left: x, top: FINAL_02.movil.arriba }} />
     </AbsoluteFill>
   );
 };
