@@ -1,0 +1,53 @@
+import { describe, expect, it } from 'vitest';
+import {
+  DURACION_TOTAL,
+  ESCENAS,
+  FPS,
+  MOMENTOS,
+  escena,
+  momentoGlobal,
+  msAFrames,
+  type Momento,
+} from '../src/timing';
+
+describe('timing', () => {
+  it('las nueve escenas suman 1740 frames', () => {
+    expect(ESCENAS.reduce((suma, e) => suma + e.duracion, 0)).toBe(DURACION_TOTAL);
+    expect(DURACION_TOTAL).toBe(1740);
+  });
+
+  it('la duración cae entre 45 y 60 s', () => {
+    const segundos = DURACION_TOTAL / FPS;
+    expect(segundos).toBeGreaterThanOrEqual(45);
+    expect(segundos).toBeLessThanOrEqual(60);
+  });
+
+  it('cada escena empieza donde acaba la anterior y en el segundo del guion', () => {
+    ESCENAS.forEach((e, i) => {
+      const previa = ESCENAS[i - 1];
+      expect(e.desde).toBe(previa ? previa.desde + previa.duracion : 0);
+    });
+    expect(ESCENAS.map((e) => e.desde / FPS)).toEqual([0, 4, 10, 14, 20, 30, 40, 46, 52]);
+  });
+
+  it.each(Object.keys(MOMENTOS) as Momento[])('%s cae dentro de su escena', (m) => {
+    const { escena: n, local } = MOMENTOS[m];
+    expect(local).toBeGreaterThanOrEqual(0);
+    expect(local).toBeLessThan(escena(n).duracion);
+  });
+
+  it('momentoGlobal suma el inicio de la escena', () => {
+    expect(momentoGlobal('saludo')).toBe(20);
+    expect(momentoGlobal('maullido2')).toBe(1560 + 62);
+  });
+
+  it('msAFrames convierte las duraciones del spec', () => {
+    expect(msAFrames(320)).toBe(10);
+    expect(msAFrames(520)).toBe(16);
+    expect(msAFrames(300)).toBe(9);
+    expect(msAFrames(280)).toBe(8);
+    expect(msAFrames(150)).toBe(5);
+    expect(msAFrames(140)).toBe(4);
+    expect(msAFrames(70)).toBe(2);
+  });
+});

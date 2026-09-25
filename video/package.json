@@ -1,7 +1,34 @@
 {
   "name": "bito-video",
+  "version": "1.1.0",
   "private": true,
+  "license": "GPL-3.0-or-later",
+  "description": "Vídeo de producto y material gráfico de Bito, hechos con Remotion",
   "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "audio": "node scripts/audio.mjs",
+    "validar:store": "node scripts/validar-store.mjs",
+    "store": "node scripts/store.mjs",
+    "render:es": "remotion render src/index.ts BitoPromo-es out/bito-promo-es.mp4 --codec=h264 --crf=18 --audio-codec=aac",
+    "render:en": "remotion render src/index.ts BitoPromo-en out/bito-promo-en.mp4 --codec=h264 --crf=18 --audio-codec=aac",
+    "verificar": "bash scripts/verificar-video.sh out/bito-promo-es.mp4 && bash scripts/verificar-video.sh out/bito-promo-en.mp4",
+    "render:borrador": "npm run audio && npm run render:es && npm run render:en && npm run verificar",
+    "render": "node scripts/comprobar-shots.mjs && npm run render:borrador",
     "shots": "python3 shots/run_shots.py --lang es,en --screens all && python3 shots/verify_shots.py"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.529",
+    "@remotion/google-fonts": "4.0.529",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "@types/react": "19.3.0",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
   }
 }
