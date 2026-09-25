@@ -45,7 +45,11 @@ import kotlinx.coroutines.sync.withLock
 import java.time.ZoneId
 import kotlin.random.Random
 
-/** How long "he terminado" holds the screen on the done phrase before the session actually closes. */
+/**
+ * How long "he terminado" holds the screen on the done phrase before [FocusUiState.gone] closes
+ * it. Session and presence are already cleared by the time this hold starts (M10 review ola 4) —
+ * what it actually holds is [FocusUiState.justFinished] itself, via `heldDone`.
+ */
 private const val FINISH_HOLD_MS = 1_500L
 
 /** Habi's own idle nudge while a real countdown runs — random within this window, spec §8.5. */
