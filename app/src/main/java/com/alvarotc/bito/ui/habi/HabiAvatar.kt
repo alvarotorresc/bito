@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -351,11 +352,18 @@ fun HabiAvatar(
             blinkValue = idleBlink.value
         }
 
+        // Remembers the value already answered, seeded to whatever `nudge` already is on first
+        // composition — not just a `> 0` guard, which only protects the very first mount: an
+        // Activity recreation (rotation) that keeps the ViewModel alive relaunches this effect
+        // with the SAME accumulated `nudge` it had before, and a bare `> 0` would fire a reaction
+        // on mount for that value all over again.
+        var lastAnsweredNudge by remember { mutableIntStateOf(nudge) }
         LaunchedEffect(nudge) {
-            if (nudge > 0) {
+            if (nudge > lastAnsweredNudge) {
                 tapBlinkPulse?.invoke()
                 tapReactionPulse?.invoke()
             }
+            lastAnsweredNudge = nudge
         }
     } else {
         blinkValue = 0f
