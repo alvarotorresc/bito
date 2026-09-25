@@ -30,7 +30,10 @@ set_kv() {
 }
 
 wait_boot() {
-  a wait-for-device
+  if ! timeout 120 "$ADB" -s "$SERIAL" wait-for-device; then
+    echo "emulator.sh: adb no vio el emulador en 120 s (mira $HERE/raw/emulator.log)" >&2
+    exit 1
+  fi
   for _ in $(seq 1 150); do
     if [ "$(a shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ]; then
       return 0
@@ -59,7 +62,11 @@ up() {
 down() {
   a emu kill >/dev/null 2>&1 || true
   for _ in $(seq 1 30); do
-    a get-state >/dev/null 2>&1 || return 0
+    a get-state >/dev/null 2>&1 || break
+    sleep 1
+  done
+  for _ in $(seq 1 30); do
+    pgrep -f -- "-avd $AVD( |$)" >/dev/null || return 0
     sleep 1
   done
   echo "emulator.sh: el emulador no se apagó" >&2
