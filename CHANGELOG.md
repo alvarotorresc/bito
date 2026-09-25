@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
-## [1.1.0] - 2026-09-20
+## [1.1.0] - 2026-09-26
 
 Bito ya tiene sitio para eso que llevas tres semanas esquivando y que no es un hábito.
 
