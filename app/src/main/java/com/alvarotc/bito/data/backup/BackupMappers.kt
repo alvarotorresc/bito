@@ -183,6 +183,10 @@ fun Settings.toBackup() =
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
         taskNoticesEnabled = taskNoticesEnabled,
+        breathingReminderEnabled = breathingReminderEnabled,
+        breathingReminderTimeMinutes = breathingReminderTimeMinutes,
+        breathingMusicEnabled = breathingMusicEnabled,
+        breathingLastMode = breathingLastMode,
     )
 
 fun BackupSettings.toSettings() =
@@ -205,4 +209,8 @@ fun BackupSettings.toSettings() =
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
         taskNoticesEnabled = taskNoticesEnabled,
+        breathingReminderEnabled = breathingReminderEnabled,
+        breathingReminderTimeMinutes = breathingReminderTimeMinutes,
+        breathingMusicEnabled = breathingMusicEnabled,
+        breathingLastMode = breathingLastMode,
     )

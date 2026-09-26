@@ -198,6 +198,10 @@ data class BackupSettings(
     val logSoundEnabled: Boolean = true,
     val logHapticEnabled: Boolean = true,
     val taskNoticesEnabled: Boolean = true,
+    val breathingReminderEnabled: Boolean = false,
+    val breathingReminderTimeMinutes: Int = 22 * 60,
+    val breathingMusicEnabled: Boolean = false,
+    val breathingLastMode: BreathingMode = BreathingMode.CALM,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

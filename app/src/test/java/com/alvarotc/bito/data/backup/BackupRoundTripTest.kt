@@ -86,6 +86,12 @@ class BackupRoundTripTest {
             // Apagado a proposito: su default es true, asi que una semilla en el default dejaria
             // pasar el round-trip aunque el campo no viajara en el fichero.
             taskNoticesEnabled = false,
+            // Los cuatro de respiracion, todos fuera de su default: si alguno no viajara en el
+            // fichero, el round-trip lo delataria.
+            breathingReminderEnabled = true,
+            breathingReminderTimeMinutes = 6 * 60 + 45,
+            breathingMusicEnabled = true,
+            breathingLastMode = BreathingMode.FOCUS,
             perfectDayCelebratedDay = 20679,
             badgesSeenUntilMillis = 4321L,
         )
@@ -501,6 +507,32 @@ class BackupRoundTripTest {
     private fun stripBreathingKey(json: String): String {
         val root = Json.parseToJsonElement(json).jsonObject
         val stripped = JsonObject(root.filterKeys { it != "breathingSessions" })
+        return prettyJson.encodeToString(JsonObject.serializer(), stripped)
+    }
+
+    @Test
+    fun `a file written before breathing settings existed restores them at their defaults`() =
+        runTest {
+            seedEverything()
+            val legacy = backup.exportJson(nowMillis = 9_000L).let(::stripBreathingSettings)
+
+            backup.import(legacy)
+
+            val restored = settingsRepo.settings.first()
+            assertEquals(false, restored.breathingReminderEnabled)
+            assertEquals(22 * 60, restored.breathingReminderTimeMinutes)
+            assertEquals(false, restored.breathingMusicEnabled)
+            assertEquals(BreathingMode.CALM, restored.breathingLastMode)
+            // Y el resto de ajustes sigue viajando: el recorte no se lleva nada mas.
+            assertEquals(seededSettings.userName, restored.userName)
+        }
+
+    /** Un fichero de la 1.1.0: sin la lista de sesiones y sin las cuatro claves nuevas de settings. */
+    private fun stripBreathingSettings(json: String): String {
+        val breathingKeys = setOf("breathingReminderEnabled", "breathingReminderTimeMinutes", "breathingMusicEnabled", "breathingLastMode")
+        val root = Json.parseToJsonElement(json).jsonObject
+        val settings = JsonObject(root.getValue("settings").jsonObject.filterKeys { it !in breathingKeys })
+        val stripped = JsonObject(root.filterKeys { it != "breathingSessions" } + ("settings" to settings))
         return prettyJson.encodeToString(JsonObject.serializer(), stripped)
     }
 }
