@@ -275,14 +275,19 @@ fun HabiAvatar(
         }
 
         // Al pasar de guiado a sin guia (el final del ejercicio, D8) el parpado se levanta desde la
-        // rendija. `wasGuided` recuerda el valor anterior: la PRIMERA composicion sin guia no anima
-        // nada, asi que un avatar que nunca tuvo gancho deja lidRelease en 0 para siempre.
+        // rendija. Mientras dura la guia, lidRelease queda APARCADO en el cierre activo: si no,
+        // la recomposicion donde `breath` pasa a null pintaria un fotograma con los ojos abiertos
+        // (blinkValue leeria lidRelease en 0 antes de que este efecto llegue a correr). Aparcado,
+        // ese mismo fotograma ya sale con el parpado cerrado y la apertura empieza desde ahi.
+        // `wasGuided` recuerda el valor anterior: la PRIMERA composicion sin guia no anima nada,
+        // asi que un avatar que nunca tuvo gancho deja lidRelease en 0 para siempre.
         val lidRelease = remember { Animatable(0f) }
         var wasGuided by remember { mutableStateOf(breath != null) }
         LaunchedEffect(breath != null) {
             val nowGuided = breath != null
-            if (wasGuided && !nowGuided) {
-                lidRelease.snapTo(GUIDED_EYE_CLOSURE)
+            if (nowGuided) {
+                lidRelease.snapTo(breath?.eyeClosure ?: GUIDED_EYE_CLOSURE)
+            } else if (wasGuided) {
                 lidRelease.animateTo(0f, tween(LID_RELEASE_MS, easing = LinearOutSlowInEasing))
             }
             wasGuided = nowGuided

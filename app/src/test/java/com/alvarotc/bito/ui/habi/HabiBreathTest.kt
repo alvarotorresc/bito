@@ -58,4 +58,10 @@ class HabiBreathTest {
         assertEquals(3f, breath.amplitude, delta)
         assertEquals(0.9f, breath.eyeClosure, delta)
     }
+
+    @Test
+    fun `a fill outside 0 to 1 is clamped before it reaches the graphicsLayer`() {
+        assertEquals(1f, guidedBreathValue(HabiBreath(fill = 1.4f), idle = 0f), delta)
+        assertEquals(0f, guidedBreathValue(HabiBreath(fill = -0.3f), idle = 1f), delta)
+    }
 }

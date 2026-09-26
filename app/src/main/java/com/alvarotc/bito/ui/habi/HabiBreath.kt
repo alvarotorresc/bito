@@ -28,7 +28,7 @@ data class HabiBreath(
 internal fun guidedBreathValue(
     breath: HabiBreath?,
     idle: Float,
-): Float = breath?.fill ?: idle
+): Float = breath?.fill?.coerceIn(0f, 1f) ?: idle
 
 /**
  * El parpadeo que pinta el avatar. Con guia manda el cierre sostenido (los parpadeos idle y de
