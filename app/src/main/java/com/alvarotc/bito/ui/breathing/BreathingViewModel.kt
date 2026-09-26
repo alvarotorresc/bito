@@ -147,6 +147,15 @@ class BreathingViewModel(
      */
     private var lastCombinedSessionCount = 0
 
+    /**
+     * `breathingLastMode` en la ULTIMA muestra que [buildUiState] recibio del mismo `combine` que
+     * alimenta [uiState] — no el `prefs` recogido aparte en [init], que puede tardar unos
+     * milisegundos mas en enterarse del mismo cambio de ajustes. [start] lo usa como base de
+     * modo por defecto y de la comparacion «solo si cambio», para que sea siempre el mismo valor
+     * que la pantalla esta mostrando.
+     */
+    private var lastPersistedMode = BreathingMode.CALM
+
     private val phaseCount = MutableStateFlow(0)
 
     /**
@@ -173,7 +182,11 @@ class BreathingViewModel(
     fun start() {
         val current = live.value
         if (current.stage == BreathingStage.RUNNING) return
-        val mode = current.selectedMode ?: prefs.breathingLastMode
+        // El modo por defecto viene de [lastPersistedMode] (mismo combine que uiState), no del
+        // `prefs` recogido aparte: los dos vienen del mismo settings.settings pero por vias
+        // distintas, y en los primeros milisegundos tras abrir la pantalla pueden no coincidir
+        // todavia. La comparacion de abajo usa la misma base, para que sea justo lo que cambio.
+        val mode = current.selectedMode ?: lastPersistedMode
         runningMode = mode
         startedAtMillis = now()
         lastStepIndex = -1
@@ -185,7 +198,7 @@ class BreathingViewModel(
                 anchorElapsed = elapsed(),
             )
         // La unica escritura del modo: al empezar y solo si cambio (cada escritura repinta los widgets).
-        if (prefs.breathingLastMode != mode) {
+        if (lastPersistedMode != mode) {
             viewModelScope.launch { settings.update { it.copy(breathingLastMode = mode) } }
         }
         if (musicOn()) music.start()
@@ -309,6 +322,7 @@ class BreathingViewModel(
         // Room, nunca un segundo suscriptor que pueda ver N+1 en un orden distinto (ver KDoc de
         // [lastCombinedSessionCount]).
         lastCombinedSessionCount = state.breathingSessions.size
+        lastPersistedMode = p.breathingLastMode
         val zoneId = zone()
         val today = LogicalDays.logicalDayOf(now(), p.dayCutoffMinutes, zoneId)
         val mood = MoodEngine.moodOf(state, today, StatsEngine.lastActivityDay(state))
