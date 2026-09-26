@@ -98,8 +98,12 @@ class BreathingViewModel(
      * `prefs.breathingMusicEnabled`, lo cual es coherente porque este mismo ViewModel es quien
      * escribe ese ajuste. [pending] es la sesion que [close] acaba de decidir guardar, todavia sin
      * confirmar por Room: sin ella `uiState` pasaria a FINISHED enseñando el contador de ANTES de
-     * la sesion (Review Focus 5). [pendingSizeAtClose] es cuantas filas habia en Room cuando se
-     * creo [pending]; en cuanto `DomainState` refleja una fila mas, [pending] sobra y se retira.
+     * la sesion (Review Focus 5). [pendingSizeAtClose] es cuantas filas de `breathingSessions` vio
+     * el ULTIMO `combine` de [uiState] al crear [pending] (ver [lastCombinedSessionCount]);
+     * `buildUiState` deja de sumar [pending] en cuanto el `DomainState` que recibe ya trae una fila
+     * mas que esa, asi que no hace falta un segundo suscriptor a Room para retirarlo (evita la
+     * carrera entre dos flujos independientes que verian N+1 en ordenes distintos en un dispositivo
+     * real, donde el executor de Room es un pool).
      */
     private data class Live(
         val stage: BreathingStage = BreathingStage.IDLE,
@@ -121,10 +125,12 @@ class BreathingViewModel(
     private var lastStepIndex = -1
 
     /**
-     * Ultimo tamano de `breathingSessions` visto por [DomainStateRepository.observe], para poder
-     * anotar cuantas filas habia justo antes de guardar una nueva (ver [Live.pendingSizeAtClose]).
+     * Tamano de `state.breathingSessions` en la ULTIMA muestra que [buildUiState] recibio del mismo
+     * `combine` que alimenta [uiState] — nunca de un segundo suscriptor a Room, para no arriesgar
+     * una carrera entre dos flujos que un dispositivo real (executor en pool) puede entregar en
+     * cualquier orden. [close] lo usa como base de [Live.pendingSizeAtClose].
      */
-    private var lastKnownSessionCount = 0
+    private var lastCombinedSessionCount = 0
 
     private val phaseCount = MutableStateFlow(0)
 
@@ -141,18 +147,6 @@ class BreathingViewModel(
 
     init {
         viewModelScope.launch { settings.settings.collect { prefs = it } }
-        // BreathingRepository.save no devuelve el id que genera, asi que [Live.pending] se retira
-        // por tamano: en cuanto Room tiene una fila mas que cuando se creo, ya esta reflejada.
-        viewModelScope.launch {
-            domainState.observe().collect { state ->
-                lastKnownSessionCount = state.breathingSessions.size
-                val current = live.value
-                val target = current.pendingSizeAtClose
-                if (current.pending != null && target != null && state.breathingSessions.size >= target + 1) {
-                    live.update { it.copy(pending = null, pendingSizeAtClose = null) }
-                }
-            }
-        }
     }
 
     /** Solo en memoria: elegir chip no escribe ajustes (§4.6). En el final, vuelve a reposo con ese modo. */
@@ -195,11 +189,12 @@ class BreathingViewModel(
         // Entre que el ritmo llega al final y el siguiente tick lo ve, un "Parar" en ese hueco no
         // debe grabar una sesion incompleta de mas de 2 minutos: si el ritmo ya esta acabado,
         // cuenta como si lo hubiera visto el tick.
-        val point = BreathingRhythm.at(runningMode, elapsed() - current.anchorElapsed)
+        val elapsedNow = elapsed()
+        val point = BreathingRhythm.at(runningMode, elapsedNow - current.anchorElapsed)
         if (point.finished) {
             close(completed = true, seconds = (BreathingRhythm.totalMillis(runningMode) / 1_000L).toInt())
         } else {
-            close(completed = false, seconds = ((elapsed() - current.anchorElapsed) / 1_000L).toInt())
+            close(completed = false, seconds = ((elapsedNow - current.anchorElapsed) / 1_000L).toInt())
         }
     }
 
@@ -281,7 +276,9 @@ class BreathingViewModel(
             )
         // stage y pending cambian en el MISMO update: uiState nunca emite FINISHED con el contador
         // de antes de esta sesion (Review Focus 5).
-        live.update { it.copy(stage = BreathingStage.FINISHED, pending = pendingSession, pendingSizeAtClose = lastKnownSessionCount) }
+        live.update {
+            it.copy(stage = BreathingStage.FINISHED, pending = pendingSession, pendingSizeAtClose = lastCombinedSessionCount)
+        }
         // NonCancellable: la fila tiene que llegar a Room aunque la pantalla se desapile en este
         // mismo fotograma y el viewModelScope muera con ella.
         saveJob = viewModelScope.launch(NonCancellable) { breathing.save(mode, startedAt, seconds, completed) }
@@ -293,6 +290,10 @@ class BreathingViewModel(
         p: Settings,
         owned: List<CustomizationItemEntity>,
     ): BreathingUiState {
+        // Misma muestra que usara [close] como base de Live.pendingSizeAtClose: un solo lector de
+        // Room, nunca un segundo suscriptor que pueda ver N+1 en un orden distinto (ver KDoc de
+        // [lastCombinedSessionCount]).
+        lastCombinedSessionCount = state.breathingSessions.size
         val zoneId = zone()
         val today = LogicalDays.logicalDayOf(now(), p.dayCutoffMinutes, zoneId)
         val mood = MoodEngine.moodOf(state, today, StatsEngine.lastActivityDay(state))
@@ -300,8 +301,15 @@ class BreathingViewModel(
         val mode = l.selectedMode ?: p.breathingLastMode
         val point = l.point ?: BreathingRhythm.at(mode, 0)
         // Con la sesion recien guardada aun sin llegar por Room, el contador la cuenta igual
-        // (Review Focus 5): nunca un fotograma en FINISHED con la tabla de antes de empezar.
-        val sessions = state.breathingSessions + listOfNotNull(l.pending)
+        // (Review Focus 5): nunca un fotograma en FINISHED con la tabla de antes de empezar. En
+        // cuanto ESTA MISMA muestra ya trae una fila mas que cuando se creo pending, la fila real
+        // la sustituye sola y pending deja de sumarse (sin necesidad de limpiarlo aparte).
+        val sessions =
+            if (l.pending != null && state.breathingSessions.size <= (l.pendingSizeAtClose ?: -1)) {
+                state.breathingSessions + l.pending
+            } else {
+                state.breathingSessions
+            }
         return BreathingUiState(
             stage = l.stage,
             mode = mode,
