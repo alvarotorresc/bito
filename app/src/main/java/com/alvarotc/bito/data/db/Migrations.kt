@@ -34,3 +34,23 @@ val MIGRATION_1_2 =
             )
         }
     }
+
+/**
+ * 2 -> 3 (M11): la tabla de sesiones de respiracion. Solo CREA — ninguna fila existente se toca,
+ * ninguna columna cambia.
+ *
+ * El DDL esta copiado LITERAL de app/schemas/.../3.json (sustituyendo `${TABLE_NAME}` por el
+ * nombre real). Si no coincide caracter a caracter, Room aborta al abrir con
+ * IllegalStateException («Migration didn't properly handle...») y la app NO ARRANCA para quien
+ * ya tenga la 1.1.0 instalada. Nada de fallbackToDestructiveMigration: eso borraria sus datos.
+ */
+val MIGRATION_2_3 =
+    object : Migration(2, 3) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `breathing_sessions` (`id` TEXT NOT NULL, `mode` TEXT NOT NULL, " +
+                    "`startedAtMillis` INTEGER NOT NULL, `durationSeconds` INTEGER NOT NULL, " +
+                    "`completed` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+            )
+        }
+    }

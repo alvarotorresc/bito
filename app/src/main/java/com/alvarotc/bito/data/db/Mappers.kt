@@ -1,5 +1,6 @@
 package com.alvarotc.bito.data.db
 
+import com.alvarotc.bito.domain.model.BreathingSession
 import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.Entry
 import com.alvarotc.bito.domain.model.FreezerUse
@@ -55,3 +56,5 @@ fun TaskEntity.toDomain(): Task =
     )
 
 fun TaskEventEntity.toDomain(): TaskEvent = TaskEvent(id, taskId, kind, logicalDay)
+
+fun BreathingSessionEntity.toDomain(): BreathingSession = BreathingSession(id, mode, startedAtMillis, durationSeconds, completed)

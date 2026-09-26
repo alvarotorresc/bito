@@ -135,13 +135,13 @@ class BitoDatabaseMigrationTest {
     }
 
     @Test
-    fun `migrating from one to two keeps habits, entries and the ledger intact`() {
+    fun `migrating a v1 database keeps habits, entries and the ledger intact`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         seedVersionOne(context)
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
         try {
             runBlocking {
@@ -150,20 +150,20 @@ class BitoDatabaseMigrationTest {
                 assertEquals(1, db.pointsLedgerDao().all().size)
                 assertEquals(8, db.habitDao().byId("h1")!!.target)
             }
-            assertEquals(2, db.openHelper.readableDatabase.version)
+            assertEquals(3, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun `the new tables exist and are empty after migrating`() {
+    fun `the task tables exist and are empty after migrating a v1 database`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         seedVersionOne(context)
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
         try {
             runBlocking {

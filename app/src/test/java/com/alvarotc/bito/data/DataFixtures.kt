@@ -1,5 +1,6 @@
 package com.alvarotc.bito.data
 
+import com.alvarotc.bito.data.db.BreathingSessionEntity
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.DaySealEntity
 import com.alvarotc.bito.data.db.EntryEntity
@@ -11,6 +12,7 @@ import com.alvarotc.bito.data.db.TargetChangeEntity
 import com.alvarotc.bito.data.db.TaskEntity
 import com.alvarotc.bito.data.db.TaskEventEntity
 import com.alvarotc.bito.data.db.TimeBucket
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DueKind
@@ -118,3 +120,11 @@ fun taskEventEntity(
     logicalDay: Int = DAY_ZERO,
     createdAtMillis: Long = 1_000L,
 ) = TaskEventEntity(id, taskId, kind, logicalDay, createdAtMillis)
+
+fun breathingSessionEntity(
+    id: String = "b1",
+    mode: BreathingMode = BreathingMode.CALM,
+    startedAtMillis: Long = 1_000L,
+    durationSeconds: Int = 120,
+    completed: Boolean = true,
+) = BreathingSessionEntity(id, mode, startedAtMillis, durationSeconds, completed)

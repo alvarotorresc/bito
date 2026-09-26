@@ -1,11 +1,14 @@
 package com.alvarotc.bito.data.db
 
 import com.alvarotc.bito.data.DAY_ZERO
+import com.alvarotc.bito.data.breathingSessionEntity
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.data.taskEventEntity
+import com.alvarotc.bito.domain.model.BreathingMode
+import com.alvarotc.bito.domain.model.BreathingSession
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -91,5 +94,13 @@ class MappersTest {
         val entity = taskEventEntity(id = "e1", taskId = "t1", kind = TaskEventKind.POSTPONED, logicalDay = DAY_ZERO)
 
         assertEquals(TaskEvent("e1", "t1", TaskEventKind.POSTPONED, DAY_ZERO), entity.toDomain())
+    }
+
+    @Test
+    fun `breathing session entity maps field by field`() {
+        val entity =
+            breathingSessionEntity(id = "b1", mode = BreathingMode.FOCUS, startedAtMillis = 7_000L, durationSeconds = 42, completed = false)
+
+        assertEquals(BreathingSession("b1", BreathingMode.FOCUS, 7_000L, 42, false), entity.toDomain())
     }
 }

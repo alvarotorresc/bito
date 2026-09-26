@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.DAY_ZERO
+import com.alvarotc.bito.data.breathingSessionEntity
 import com.alvarotc.bito.data.daySealEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
@@ -14,6 +15,8 @@ import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.targetChangeEntity
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.data.taskEventEntity
+import com.alvarotc.bito.domain.model.BreathingMode
+import com.alvarotc.bito.domain.model.BreathingSession
 import com.alvarotc.bito.domain.model.TaskEventKind
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -103,5 +106,23 @@ class DomainStateRepositoryTest {
 
             assertTrue(state.tasks.isEmpty())
             assertTrue(state.taskEvents.isEmpty())
+        }
+
+    @Test
+    fun `snapshot carries breathing sessions as domain types`() =
+        runTest {
+            db.breathingSessionDao().insert(
+                breathingSessionEntity(
+                    id = "b1",
+                    mode = BreathingMode.SLEEP,
+                    startedAtMillis = 5_000L,
+                    durationSeconds = 114,
+                    completed = true,
+                ),
+            )
+
+            val state = repository.snapshot()
+
+            assertEquals(listOf(BreathingSession("b1", BreathingMode.SLEEP, 5_000L, 114, true)), state.breathingSessions)
         }
 }
