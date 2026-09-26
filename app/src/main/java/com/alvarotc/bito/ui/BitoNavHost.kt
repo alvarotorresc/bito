@@ -30,9 +30,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.ui.breathing.AndroidBreathingMusic
 import com.alvarotc.bito.ui.breathing.BreathingScreen
 import com.alvarotc.bito.ui.breathing.BreathingViewModel
-import com.alvarotc.bito.ui.breathing.SilentBreathingMusic
 import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
 import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
 import com.alvarotc.bito.ui.celebration.PerfectDaySheet
@@ -450,7 +450,7 @@ fun BitoNavHost(container: AppContainer) {
             // la escritura ya termino.
             composable("breathing") {
                 BreathingScreen(
-                    viewModel = viewModel(factory = BreathingViewModel.factory(container) { SilentBreathingMusic }),
+                    viewModel = viewModel(factory = BreathingViewModel.factory(container) { AndroidBreathingMusic(context) }),
                     onClose = { nav.popBackStack() },
                 )
             }
