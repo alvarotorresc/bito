@@ -268,9 +268,9 @@ private fun GuidedHabi(
 ) {
     val fill =
         if (animated && running) {
-            val frameElapsed by produceState(SystemClock.elapsedRealtime(), anchorElapsed) {
+            val frameElapsed by produceState(SystemClock.elapsedRealtime()) {
                 while (true) {
-                    withFrameMillis { value = SystemClock.elapsedRealtime() }
+                    value = withFrameMillis { SystemClock.elapsedRealtime() }
                 }
             }
             BreathingRhythm.at(mode, frameElapsed - anchorElapsed).fill
