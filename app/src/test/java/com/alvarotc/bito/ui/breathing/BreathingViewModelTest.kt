@@ -401,7 +401,9 @@ class BreathingViewModelTest {
     fun `leaving mid-session saves before gone and survives a cancelled scope`() =
         runBreathingTest {
             val vm = newViewModel()
-            activate(vm)
+            var rowsAtGone: Int? = null
+            vm.uiState.onEach { state -> if (state.gone && rowsAtGone == null) rowsAtGone = rows().size }.launchIn(backgroundScope)
+            settle()
             vm.start()
             settle()
             currentElapsed += 30_000
@@ -410,6 +412,8 @@ class BreathingViewModelTest {
             settle()
 
             assertTrue(vm.uiState.value.gone)
+            // La fila ya estaba escrita en el mismo fotograma en que gone paso a true, no despues.
+            assertEquals(1, rowsAtGone)
             assertEquals(30, rows().single().durationSeconds)
 
             // La pantalla se desapila en el mismo fotograma en que para: el scope muere al instante.
@@ -512,5 +516,48 @@ class BreathingViewModelTest {
             assertEquals(BreathingStats.Tally(sessions = 1, seconds = 30), state.week)
             assertEquals(BreathingStats.Tally(sessions = 1, seconds = 30), state.allTime)
             assertEquals(1, state.week.minutes)
+        }
+
+    @Test
+    fun `the tally never dips to zero on the frame the stage turns finished, and never double counts`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            val states = mutableListOf<BreathingUiState>()
+            vm.uiState.onEach { states += it }.launchIn(backgroundScope)
+            settle()
+            vm.start()
+            settle()
+            currentElapsed += 30_000
+
+            vm.stop()
+            settle()
+
+            assertTrue(states.none { it.stage == BreathingStage.FINISHED && it.week.sessions == 0 })
+            assertEquals(1, vm.uiState.value.week.sessions)
+
+            // Deja que Room emita de sobra: la tabla no debe pasar a contar la misma sesion dos veces.
+            settle()
+            settle()
+            assertEquals(1, vm.uiState.value.week.sessions)
+            assertEquals(1, rows().size)
+        }
+
+    @Test
+    fun `stopping right after the rhythm finishes still saves a complete session`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+
+            // El ritmo ya llego al final pero el siguiente tick (100 ms) aun no ha corrido.
+            currentElapsed += 120_000
+            vm.stop()
+            settle()
+
+            assertEquals(BreathingStage.FINISHED, vm.uiState.value.stage)
+            val saved = rows().single()
+            assertEquals(120, saved.durationSeconds)
+            assertTrue(saved.completed)
         }
 }
