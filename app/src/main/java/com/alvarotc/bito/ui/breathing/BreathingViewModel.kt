@@ -1,0 +1,272 @@
+package com.alvarotc.bito.ui.breathing
+
+import android.os.SystemClock
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.alvarotc.bito.data.db.CustomizationItemEntity
+import com.alvarotc.bito.data.repo.BreathingRepository
+import com.alvarotc.bito.data.repo.DomainStateRepository
+import com.alvarotc.bito.data.repo.RewardsRepository
+import com.alvarotc.bito.data.settings.Settings
+import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.BreathingRhythm
+import com.alvarotc.bito.domain.BreathingStats
+import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.MoodEngine
+import com.alvarotc.bito.domain.StatsEngine
+import com.alvarotc.bito.domain.model.BreathPhase
+import com.alvarotc.bito.domain.model.BreathingMode
+import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.ui.habi.HabiSpec
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
+import java.time.ZoneId
+
+/** Reposo (con Habi despierto y «Empezar»), en marcha (Habi guia) y final (frase y contador). */
+enum class BreathingStage { IDLE, RUNNING, FINISHED }
+
+/**
+ * Lo que pinta la pantalla de respirar. [fill] es el valor grueso del ultimo tick: la pantalla
+ * real lo recalcula por fotograma desde [anchorElapsed] para que Habi no respire a saltos, y los
+ * tests (animated = false) usan este. [gone] se pone a true solo cuando la ultima sesion ya esta
+ * escrita en Room: la pantalla se cierra al verlo, nunca antes (Review Focus 1).
+ */
+data class BreathingUiState(
+    val stage: BreathingStage = BreathingStage.IDLE,
+    val mode: BreathingMode = BreathingMode.CALM,
+    val phase: BreathPhase = BreathPhase.INHALE,
+    val fill: Float = 0f,
+    val cycle: Int = 1,
+    val totalCycles: Int = BreathingRhythm.cycles(BreathingMode.CALM),
+    val remainingSeconds: Int = BreathingRhythm.at(BreathingMode.CALM, 0).remainingSeconds,
+    val anchorElapsed: Long = 0L,
+    val musicEnabled: Boolean = false,
+    val hapticEnabled: Boolean = true,
+    val spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
+    val userName: String = "",
+    val week: BreathingStats.Tally = BreathingStats.Tally(0, 0),
+    val allTime: BreathingStats.Tally = BreathingStats.Tally(0, 0),
+    val gone: Boolean = false,
+    val loading: Boolean = true,
+)
+
+/**
+ * La sesion de respiracion (spec §5.4). Sin Context: [music] es lo unico que toca plataforma, y
+ * los tres relojes son inyectables. El ritmo se temporiza AQUI, en viewModelScope, y no en un
+ * LaunchedEffect: bajo Robolectric un delay() de LaunchedEffect no obedece a advanceTimeBy. Cada
+ * tick recalcula desde el ancla de elapsedRealtime con BreathingRhythm.at, nunca resta a un
+ * contador, asi que cambiar la hora del movil no mueve nada.
+ *
+ * Todas las entradas publicas corren en el hilo principal: los guardias de etapa (`stage`) bastan
+ * para que un doble toque no arranque dos bucles ni guarde dos filas (Review Focus 2 y 3).
+ */
+class BreathingViewModel(
+    private val breathing: BreathingRepository,
+    private val settings: SettingsRepository,
+    private val domainState: DomainStateRepository,
+    private val rewards: RewardsRepository,
+    private val music: BreathingMusic,
+    private val now: () -> Long = System::currentTimeMillis,
+    private val elapsed: () -> Long = SystemClock::elapsedRealtime,
+    private val zone: () -> ZoneId = ZoneId::systemDefault,
+) : ViewModel() {
+    companion object {
+        const val TICK_MS = 100L
+
+        /** Menos de esto no se guarda: no fue una sesion, fue un toque. */
+        const val MIN_SAVED_SECONDS = 10
+    }
+
+    /** Lo que solo vive en este ViewModel. [musicOverride] tapa el ajuste hasta que DataStore lo confirme. */
+    private data class Live(
+        val stage: BreathingStage = BreathingStage.IDLE,
+        val selectedMode: BreathingMode? = null,
+        val point: BreathingRhythm.Point? = null,
+        val anchorElapsed: Long = 0L,
+        val musicOverride: Boolean? = null,
+        val gone: Boolean = false,
+    )
+
+    private val live = MutableStateFlow(Live())
+    private var prefs = Settings()
+    private var loop: Job? = null
+    private var saveJob: Job? = null
+    private var runningMode = BreathingMode.CALM
+    private var startedAtMillis = 0L
+    private var lastStepIndex = -1
+
+    private val phaseCount = MutableStateFlow(0)
+
+    /**
+     * Sube una vez por cambio de paso (incluido el primer «Inhala»). La pantalla lo observa con el
+     * mismo guardia que `nudge` en HabiAvatar y vibra una vez por subida si la vibracion esta activa.
+     */
+    val phaseChanges: StateFlow<Int> = phaseCount.asStateFlow()
+
+    val uiState: StateFlow<BreathingUiState> =
+        combine(live, domainState.observe(), settings.settings, rewards.observeOwnedItems()) { l, state, p, owned ->
+            buildUiState(l, state, p, owned)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), BreathingUiState())
+
+    init {
+        viewModelScope.launch { settings.settings.collect { prefs = it } }
+    }
+
+    /** Solo en memoria: elegir chip no escribe ajustes (§4.6). En el final, vuelve a reposo con ese modo. */
+    fun selectMode(mode: BreathingMode) {
+        if (live.value.stage == BreathingStage.RUNNING) return
+        live.update { it.copy(selectedMode = mode, stage = BreathingStage.IDLE, point = null) }
+    }
+
+    fun start() {
+        val current = live.value
+        if (current.stage == BreathingStage.RUNNING) return
+        val mode = current.selectedMode ?: prefs.breathingLastMode
+        runningMode = mode
+        startedAtMillis = now()
+        lastStepIndex = -1
+        live.value =
+            current.copy(
+                stage = BreathingStage.RUNNING,
+                selectedMode = mode,
+                point = BreathingRhythm.at(mode, 0),
+                anchorElapsed = elapsed(),
+            )
+        // La unica escritura del modo: al empezar y solo si cambio (cada escritura repinta los widgets).
+        if (prefs.breathingLastMode != mode) {
+            viewModelScope.launch { settings.update { it.copy(breathingLastMode = mode) } }
+        }
+        if (musicOn()) music.start()
+        loop =
+            viewModelScope.launch {
+                while (isActive) {
+                    tick()
+                    delay(TICK_MS)
+                }
+            }
+    }
+
+    fun stop() {
+        val current = live.value
+        if (current.stage != BreathingStage.RUNNING) return
+        close(completed = false, seconds = ((elapsed() - current.anchorElapsed) / 1_000L).toInt())
+    }
+
+    /** La pantalla deja de verse (segundo plano, pantalla apagada): lo mismo que «Parar». */
+    fun onBackgrounded() = stop()
+
+    /** «Otra vez»: sesion nueva e independiente del mismo modo, sin pasar por reposo. */
+    fun again() {
+        if (live.value.stage != BreathingStage.FINISHED) return
+        start()
+    }
+
+    /**
+     * Salir (flecha, atras del sistema, «Listo»): para si hacia falta y marca [BreathingUiState.gone]
+     * solo cuando la escritura pendiente ya ha terminado.
+     */
+    fun leave() {
+        stop()
+        viewModelScope.launch {
+            saveJob?.join()
+            live.update { it.copy(gone = true) }
+        }
+    }
+
+    fun toggleMusic() {
+        val on = !musicOn()
+        live.update { it.copy(musicOverride = on) }
+        viewModelScope.launch { settings.update { it.copy(breathingMusicEnabled = on) } }
+        if (live.value.stage == BreathingStage.RUNNING) {
+            if (on) music.start() else music.stop()
+        }
+    }
+
+    /** No guarda: a esta altura ya lo hizo stop() u onBackgrounded(). */
+    override fun onCleared() {
+        loop?.cancel()
+        music.stop()
+    }
+
+    private fun musicOn(): Boolean = live.value.musicOverride ?: prefs.breathingMusicEnabled
+
+    private fun tick() {
+        val current = live.value
+        if (current.stage != BreathingStage.RUNNING) return
+        val point = BreathingRhythm.at(runningMode, elapsed() - current.anchorElapsed)
+        if (!point.finished && point.stepIndex != lastStepIndex) {
+            lastStepIndex = point.stepIndex
+            phaseCount.value++
+        }
+        live.value = current.copy(point = point)
+        if (point.finished) {
+            close(completed = true, seconds = (BreathingRhythm.totalMillis(runningMode) / 1_000L).toInt())
+        }
+    }
+
+    private fun close(
+        completed: Boolean,
+        seconds: Int,
+    ) {
+        loop?.cancel()
+        loop = null
+        music.stop()
+        if (!completed && seconds < MIN_SAVED_SECONDS) {
+            // Nada guardado, el contador no se ha movido: una frase de cierre seria mentira (§5.3).
+            live.update { it.copy(stage = BreathingStage.IDLE, point = null) }
+            return
+        }
+        live.update { it.copy(stage = BreathingStage.FINISHED) }
+        val mode = runningMode
+        val startedAt = startedAtMillis
+        // NonCancellable: la fila tiene que llegar a Room aunque la pantalla se desapile en este
+        // mismo fotograma y el viewModelScope muera con ella.
+        saveJob = viewModelScope.launch(NonCancellable) { breathing.save(mode, startedAt, seconds, completed) }
+    }
+
+    private fun buildUiState(
+        l: Live,
+        state: DomainState,
+        p: Settings,
+        owned: List<CustomizationItemEntity>,
+    ): BreathingUiState {
+        val zoneId = zone()
+        val today = LogicalDays.logicalDayOf(now(), p.dayCutoffMinutes, zoneId)
+        val mood = MoodEngine.moodOf(state, today, StatsEngine.lastActivityDay(state))
+        val spec = HabiSpec(mood, p.personality, equippedSetOf(owned.filter { it.equipped }.map { it.itemId }))
+        val mode = l.selectedMode ?: p.breathingLastMode
+        val point = l.point ?: BreathingRhythm.at(mode, 0)
+        return BreathingUiState(
+            stage = l.stage,
+            mode = mode,
+            phase = point.phase,
+            fill = point.fill,
+            cycle = point.cycle,
+            totalCycles = point.totalCycles,
+            remainingSeconds = point.remainingSeconds,
+            anchorElapsed = l.anchorElapsed,
+            musicEnabled = l.musicOverride ?: p.breathingMusicEnabled,
+            hapticEnabled = p.logHapticEnabled,
+            spec = spec,
+            userName = p.userName,
+            week = BreathingStats.thisWeek(state.breathingSessions, today, p.dayCutoffMinutes, zoneId),
+            allTime = BreathingStats.allTime(state.breathingSessions),
+            gone = l.gone,
+            loading = false,
+        )
+    }
+}
