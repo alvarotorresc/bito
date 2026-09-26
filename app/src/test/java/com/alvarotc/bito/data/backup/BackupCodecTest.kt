@@ -2,6 +2,7 @@ package com.alvarotc.bito.data.backup
 
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -201,5 +202,24 @@ class BackupCodecTest {
     fun `preview counts what the confirmation sheet shows`() {
         val preview = BackupCodec.decode(BackupCodec.encode(sampleFile())).toPreview()
         assertEquals(BackupPreview("2026-08-15T10:00:00Z", "0.3.0", 1, 1), preview)
+    }
+
+    @Test
+    fun `the schema version stays at 3 through v1_2_0`() {
+        assertEquals(3, BackupCodec.SCHEMA_VERSION)
+    }
+
+    @Test
+    fun `a file with breathing sessions decodes to the same file`() {
+        val file =
+            sampleFile().copy(
+                breathingSessions =
+                    listOf(
+                        BackupBreathingSession("b1", BreathingMode.FOCUS, 5L, 128, true),
+                        BackupBreathingSession("b2", BreathingMode.CALM, 6L, 12, false),
+                    ),
+            )
+
+        assertEquals(file, BackupCodec.decode(BackupCodec.encode(file)))
     }
 }
