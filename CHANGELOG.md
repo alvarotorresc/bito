@@ -2,6 +2,22 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.2.0] - 2026-09-XX
+
+Bito ya tiene algo para cuando el día se te echa encima: un par de minutos respirando con Habi.
+
+### Added
+
+- **Respirar con Habi**: un botón junto a Habi en la cabecera de Hoy abre el ejercicio. Tres modos fijos — Calmarme (4 dentro, 6 fuera), Dormir (4-7-8) y Centrarme (la caja de 4) —, unos dos minutos cada uno y sin nada más que elegir. Habi respira grande, con los ojos cerrados, y tú la sigues; debajo, la palabra de cada fase y lo que queda. Se para cuando quieras.
+- **Un contador honesto** al terminar: sesiones y minutos de esta semana y desde el principio. Respirar no da puntos ni cuenta para rachas, días perfectos ni el ánimo de Habi.
+- **Recordatorio diario** opcional en Ajustes › Respiración, apagado de serie, a la hora que elijas y en la voz de tu personalidad. Al tocarlo se abre el ejercicio.
+- **Música de fondo** opcional durante el ejercicio: «Angelic Pad Loop», de PhonZz, en dominio público.
+
+### Changed
+
+- **La vibración de Ajustes** también marca cada cambio de fase al respirar.
+- **Una copia de seguridad hecha con la 1.2.0 no se puede importar en la 1.1.0.** Al revés sí: la 1.2.0 lee sin problema cualquier copia anterior. Si compartes copias entre dos móviles, actualiza los dos.
+
 ## [1.1.0] - 2026-09-26
 
 Bito ya tiene sitio para eso que llevas tres semanas esquivando y que no es un hábito.
