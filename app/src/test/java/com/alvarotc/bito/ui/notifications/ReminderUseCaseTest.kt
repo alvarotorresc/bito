@@ -463,4 +463,31 @@ class ReminderUseCaseTest {
             assertEquals("Álvaro", tasks.userName)
             assertEquals(SlotKind.TASKS, tasks.slot.kind)
         }
+
+    @Test
+    fun `with the breathing switch off a fired breathing alarm is stale`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(breathingReminderEnabled = false) }
+
+            val outcome = useCase.evaluate("BREATHING", "")
+
+            assertEquals(ReminderUseCase.Outcome.Stale, outcome)
+        }
+
+    @Test
+    fun `with the switch on the breathing slot always reminds, in the user's voice`() =
+        runTest(dispatcher) {
+            // Nada pendiente en ningun sitio: aun asi avisa, es un ritual diario (D3).
+            settingsRepo.update {
+                it.copy(breathingReminderEnabled = true, personality = Personality.CHEERLEADER, userName = "Álvaro")
+            }
+
+            val outcome = useCase.evaluate("BREATHING", "")
+
+            assertTrue(outcome is ReminderUseCase.Outcome.Breathing)
+            val breathing = outcome as ReminderUseCase.Outcome.Breathing
+            assertEquals(SlotKind.BREATHING, breathing.slot.kind)
+            assertEquals(Personality.CHEERLEADER, breathing.personality)
+            assertEquals("Álvaro", breathing.userName)
+        }
 }

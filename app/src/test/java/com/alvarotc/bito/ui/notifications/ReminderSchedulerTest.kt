@@ -81,4 +81,30 @@ class ReminderSchedulerTest {
             ReminderScheduler.slotsOf(settings, habits).map(ReminderScheduler::requestCodeOf),
         )
     }
+
+    @Test
+    fun `the breathing slot exists only while its switch is on, at its own hour`() {
+        val on = ReminderScheduler.slotsOf(Settings(breathingReminderEnabled = true, breathingReminderTimeMinutes = 7 * 60), emptyList())
+        val off = ReminderScheduler.slotsOf(Settings(breathingReminderEnabled = false), emptyList())
+
+        val breathing = on.single { it.kind == SlotKind.BREATHING }
+        assertEquals("", breathing.key)
+        assertEquals(7 * 60, breathing.minutesOfDay)
+        assertTrue(off.none { it.kind == SlotKind.BREATHING })
+    }
+
+    @Test
+    fun `the breathing slot does not collide with the review or a global hour at the same minute`() {
+        val settings =
+            Settings(
+                globalReminderMinutes = listOf(22 * 60),
+                reviewTimeMinutes = 22 * 60,
+                breathingReminderEnabled = true,
+                breathingReminderTimeMinutes = 22 * 60,
+            )
+
+        val codes = ReminderScheduler.slotsOf(settings, emptyList()).map(ReminderScheduler::requestCodeOf)
+
+        assertEquals(codes.size, codes.toSet().size)
+    }
 }

@@ -14,6 +14,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 /**
  * [Notifier.showTasks]'s body assembly: named titles joined by " · ", with the "and N more" tail
@@ -60,5 +61,28 @@ class NotifierTest {
 
         val more = context.resources.getQuantityString(R.plurals.notif_tasks_more, 2, 2)
         assertEquals("Renovar el DNI · Pagar el alquiler · Dentista $more", postedText())
+    }
+
+    @Test
+    fun `the breathing reminder speaks in Habi's voice and opens the exercise`() {
+        Notifier.showBreathing(context, Personality.NEUTRA, "Álvaro")
+
+        val notification = shadowOf(notificationManager).getNotification(Notifier.BREATHING_ID)!!
+        assertEquals("Time to breathe, Álvaro.", notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertEquals("Whenever you can.", notification.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        assertEquals(NotificationChannels.REMINDERS, notification.channelId)
+        assertTrue(notification.actions.isNullOrEmpty())
+        val tap = shadowOf(notification.contentIntent)
+        assertEquals(5, tap.requestCode)
+        assertEquals("breathing", tap.savedIntent.getStringExtra(Notifier.EXTRA_OPEN_ROUTE))
+    }
+
+    @Test
+    fun `a blank name falls back to Habi's word for the user`() {
+        Notifier.showBreathing(context, Personality.SARGENTO, "")
+
+        val notification = shadowOf(notificationManager).getNotification(Notifier.BREATHING_ID)!!
+        val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString()
+        assertEquals("champ, two minutes.", title)
     }
 }

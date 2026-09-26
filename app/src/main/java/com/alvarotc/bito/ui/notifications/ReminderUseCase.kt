@@ -75,6 +75,17 @@ class ReminderUseCase(
             val personality: Personality,
             val userName: String,
         ) : Outcome
+
+        /**
+         * M11: el recordatorio diario de respirar. Sale siempre que el slot exista — es un ritual
+         * diario, no un aviso de algo pendiente (D3) —; un interruptor apagado ya lo dejo en Stale
+         * arriba. [personality] y [userName] ponen la voz.
+         */
+        data class Breathing(
+            val slot: Slot,
+            val personality: Personality,
+            val userName: String,
+        ) : Outcome
     }
 
     suspend fun evaluate(
@@ -126,6 +137,7 @@ class ReminderUseCase(
                     )
                 }
             }
+            SlotKind.BREATHING -> Outcome.Breathing(slot, prefs.personality, prefs.userName)
         }
     }
 }

@@ -11,8 +11,8 @@ import com.alvarotc.bito.domain.ClockTimes
 import com.alvarotc.bito.domain.model.HabitStatus
 import java.time.ZoneId
 
-/** What a scheduled reminder slot is for. TASKS al final: el nombre viaja en el Intent. */
-enum class SlotKind { GLOBAL, HABIT, REVIEW, TASKS }
+/** What a scheduled reminder slot is for. TASKS y BREATHING al final: el nombre viaja en el Intent. */
+enum class SlotKind { GLOBAL, HABIT, REVIEW, TASKS, BREATHING }
 
 /**
  * A single reminder to fire at [minutesOfDay]. [key] disambiguates slots of the same [kind]:
@@ -39,7 +39,8 @@ object ReminderScheduler {
     /**
      * The reminder slots implied by current settings and habits: one GLOBAL slot per configured
      * hour, one HABIT slot per `ACTIVE` habit with a reminder set, always one REVIEW slot, and
-     * one TASKS slot at noon while [Settings.taskNoticesEnabled] is on.
+     * one TASKS slot at noon while [Settings.taskNoticesEnabled] is on, and one BREATHING slot at
+     * [Settings.breathingReminderTimeMinutes] while [Settings.breathingReminderEnabled] is on.
      */
     fun slotsOf(
         settings: Settings,
@@ -53,7 +54,13 @@ object ReminderScheduler {
         val review = Slot(SlotKind.REVIEW, "", settings.reviewTimeMinutes)
         val tasks =
             if (settings.taskNoticesEnabled) listOf(Slot(SlotKind.TASKS, "", TASKS_NOTICE_MINUTES)) else emptyList()
-        return global + habit + listOf(review) + tasks
+        val breathing =
+            if (settings.breathingReminderEnabled) {
+                listOf(Slot(SlotKind.BREATHING, "", settings.breathingReminderTimeMinutes))
+            } else {
+                emptyList()
+            }
+        return global + habit + listOf(review) + tasks + breathing
     }
 
     fun scheduleAll(
