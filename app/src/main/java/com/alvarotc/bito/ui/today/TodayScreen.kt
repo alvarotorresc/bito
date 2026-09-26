@@ -1,10 +1,5 @@
 package com.alvarotc.bito.ui.today
 
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,7 +38,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -62,6 +56,7 @@ import com.alvarotc.bito.ui.components.DismissableBitoSnackbar
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.formatDayWithPattern
+import com.alvarotc.bito.ui.components.rememberSoftBuzz
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
@@ -142,30 +137,13 @@ fun TodayScreen(
             }
         }
     val haptics = LocalHapticFeedback.current
-    val context = LocalContext.current
     // Registro feedback (QA 2026-08-23/24): a real Vibrator buzz on every log tap, gated ONLY by
     // the app's own Ajustes switch — performHapticFeedback obeyed the system touch-feedback
     // toggle, which most people keep off, so it read as "vibration doesn't work". The tick sound
     // half lives in the ViewModel (HabiSound.LOG).
-    val vibrator =
-        remember {
-            if (Build.VERSION.SDK_INT >= 31) {
-                (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            }
-        }
+    val softBuzz = rememberSoftBuzz()
     val logHaptic = {
-        if (state.logHapticEnabled) {
-            val effect =
-                if (Build.VERSION.SDK_INT >= 29) {
-                    VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
-                } else {
-                    VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
-                }
-            vibrator.vibrate(effect)
-        }
+        if (state.logHapticEnabled) softBuzz()
     }
 
     Scaffold(
