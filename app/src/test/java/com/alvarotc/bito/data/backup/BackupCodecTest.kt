@@ -222,4 +222,16 @@ class BackupCodecTest {
 
         assertEquals(file, BackupCodec.decode(BackupCodec.encode(file)))
     }
+
+    @Test
+    fun `a breathing session with an unknown mode rejects the whole file as corrupted`() {
+        val file =
+            sampleFile().copy(
+                breathingSessions = listOf(BackupBreathingSession("b1", BreathingMode.FOCUS, 5L, 128, true)),
+            )
+        val json = BackupCodec.encode(file).replace("\"FOCUS\"", "\"ZEN\"")
+
+        val error = assertFailsWith<BackupFormatException> { BackupCodec.decode(json) }
+        assertEquals("Corrupted backup file", error.message)
+    }
 }
