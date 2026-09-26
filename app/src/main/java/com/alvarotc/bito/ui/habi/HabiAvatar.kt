@@ -31,6 +31,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -85,6 +86,29 @@ private const val BREATH_LIFT_DP = 1.2f
 private const val BREATH_PERIOD_RADIANT_MS = 2000
 private const val BREATH_PERIOD_NORMAL_MS = 2700
 private const val BREATH_PERIOD_LOW_MS = 3500
+
+// Al acabar la guia el parpado sube como el BLINK_OPEN_MS del parpadeo, cuatro veces mas lento:
+// la apertura de alguien que despierta, no un pestaneo.
+private const val LID_RELEASE_MS = 450
+
+/** Lo que la respiracion aplica al graphicsLayer: escala desde los pies y elevacion (en unidades de BREATH_LIFT_DP). */
+internal data class BreathScales(val scaleX: Float, val scaleY: Float, val liftFactor: Float)
+
+/**
+ * La formula de siempre con [amplitude] multiplicando el efecto: con 1 reproduce exactamente la
+ * respiracion idle; con [GUIDED_BREATH_AMPLITUDE] queda en +6,6 % de alto, -3,3 % de ancho y
+ * 3,6 dp de elevacion.
+ */
+internal fun breathScales(
+    breathValue: Float,
+    amplitude: Float,
+): BreathScales =
+    BreathScales(
+        scaleX = 1f - BREATH_SCALE * 0.5f * amplitude * breathValue,
+        scaleY = 1f + BREATH_SCALE * amplitude * breathValue,
+        liftFactor = amplitude * breathValue,
+    )
+
 private const val IDLE_GESTURE_MIN_DELAY_MS = 5000L
 private const val IDLE_GESTURE_MAX_DELAY_MS = 11000L
 private const val SQUASH_SCALE_X = 0.10f
@@ -137,6 +161,10 @@ private val FaceMorphSpring = spring<Float>(dampingRatio = 0.8f, stiffness = 260
  * as [com.alvarotc.bito.ui.habi.HabiScreen]'s own `delightPulse` counter (0 means "never fired
  * yet", so the very first composition never replays one on mount). A no-op when [onTap] is null —
  * there is then nothing to replay — or [animated] is false.
+ *
+ * [breath], cuando no es null, sustituye la respiracion idle por la guiada (ver [HabiBreath]),
+ * sostiene el parpado en rendija y calla los gestos y parpadeos idle; funciona tambien con
+ * animated = false. Al volver a null, el parpado se abre en LID_RELEASE_MS.
  */
 @Composable
 fun HabiAvatar(
@@ -146,6 +174,7 @@ fun HabiAvatar(
     onTap: (() -> Unit)? = null,
     delighted: Boolean = false,
     nudge: Int = 0,
+    breath: HabiBreath? = null,
 ) {
     val density = LocalDensity.current
     val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
@@ -168,6 +197,10 @@ fun HabiAvatar(
     // Normalized (0..1) position of the last finger-down inside the canvas, observed passively so
     // clickable still owns the click; the poke reaction reads it to compress toward the touch.
     var lastTouch by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
+    // Los bucles idle de abajo son LaunchedEffect(Unit): leen la guia en vivo a traves de esto, sin
+    // relanzarse, y se saltan su turno mientras dure — inclinacion y estiramiento compartirian
+    // scaleY con la respiracion guiada, y un parpadeo sobre ojos cerrados no tiene sentido.
+    val guided by rememberUpdatedState(breath != null)
     if (animated) {
         val breathPeriod =
             when (spec.mood) {
@@ -187,7 +220,7 @@ fun HabiAvatar(
                     ),
                 label = "habi-breath-phase",
             )
-        breathValue = breathPhase
+        breathValue = guidedBreathValue(breath, breathPhase)
 
         // The face MORPHS between moods: each continuous channel eases toward its resting value on
         // the shared spring, so lids, brow, curve and smirk bloom into the next expression instead
@@ -231,6 +264,7 @@ fun HabiAvatar(
         LaunchedEffect(Unit) {
             while (true) {
                 delay(Random.nextLong(BLINK_MIN_DELAY_MS, BLINK_MAX_DELAY_MS))
+                if (guided) continue
                 val blinks = if (Random.nextInt(DOUBLE_BLINK_CHANCE) == 0) 2 else 1
                 repeat(blinks) { index ->
                     if (index > 0) delay(DOUBLE_BLINK_GAP_MS)
@@ -238,6 +272,20 @@ fun HabiAvatar(
                     idleBlink.animateTo(0f, tween(BLINK_OPEN_MS, easing = LinearEasing))
                 }
             }
+        }
+
+        // Al pasar de guiado a sin guia (el final del ejercicio, D8) el parpado se levanta desde la
+        // rendija. `wasGuided` recuerda el valor anterior: la PRIMERA composicion sin guia no anima
+        // nada, asi que un avatar que nunca tuvo gancho deja lidRelease en 0 para siempre.
+        val lidRelease = remember { Animatable(0f) }
+        var wasGuided by remember { mutableStateOf(breath != null) }
+        LaunchedEffect(breath != null) {
+            val nowGuided = breath != null
+            if (wasGuided && !nowGuided) {
+                lidRelease.snapTo(GUIDED_EYE_CLOSURE)
+                lidRelease.animateTo(0f, tween(LID_RELEASE_MS, easing = LinearOutSlowInEasing))
+            }
+            wasGuided = nowGuided
         }
 
         val squash = remember { Animatable(0f) }
@@ -255,6 +303,7 @@ fun HabiAvatar(
         LaunchedEffect(Unit) {
             while (true) {
                 delay(Random.nextLong(IDLE_GESTURE_MIN_DELAY_MS, IDLE_GESTURE_MAX_DELAY_MS))
+                if (guided) continue
                 when (Random.nextInt(3)) {
                     0 -> {
                         tilt.animateTo(-5f, tween(240, easing = EaseInOut))
@@ -347,9 +396,9 @@ fun HabiAvatar(
                         }
                     }
             }
-            blinkValue = maxOf(idleBlink.value, tapBlink.value)
+            blinkValue = guidedBlinkValue(breath, idleBlink.value, tapBlink.value, lidRelease.value)
         } else {
-            blinkValue = idleBlink.value
+            blinkValue = guidedBlinkValue(breath, idleBlink.value, 0f, lidRelease.value)
         }
 
         // Remembers the value already answered, seeded to whatever `nudge` already is on first
@@ -366,7 +415,8 @@ fun HabiAvatar(
             lastAnsweredNudge = nudge
         }
     } else {
-        blinkValue = 0f
+        breathValue = guidedBreathValue(breath, 0f)
+        blinkValue = guidedBlinkValue(breath, 0f, 0f, 0f)
     }
 
     val expressiveTap = tapBlinkPulse != null
@@ -411,6 +461,8 @@ fun HabiAvatar(
             stringResource(HabiVoice.moodLabelRes(spec.mood)),
         )
 
+    val breathing = breathScales(breathValue, breath?.amplitude ?: 1f)
+
     val canvasModifier =
         modifier
             .semantics { this.contentDescription = contentDescription }
@@ -446,10 +498,10 @@ fun HabiAvatar(
                 // Anchored at the feet: a creature with weight, not a balloon scaling around
                 // its middle.
                 transformOrigin = TransformOrigin(0.5f, 1f)
-                translationY = -breathLiftPx * breathValue - hopPx * hopValue
+                translationY = -breathLiftPx * breathing.liftFactor - hopPx * hopValue
                 rotationZ = tiltValue
-                this.scaleX = scaleX * (1f + SQUASH_SCALE_X * squashValue) * (1f - BREATH_SCALE * 0.5f * breathValue)
-                this.scaleY = scaleY * (1f - SQUASH_SCALE_Y * squashValue) * (1f + BREATH_SCALE * breathValue)
+                this.scaleX = scaleX * (1f + SQUASH_SCALE_X * squashValue) * breathing.scaleX
+                this.scaleY = scaleY * (1f - SQUASH_SCALE_Y * squashValue) * breathing.scaleY
             }
 
     Canvas(canvasModifier) {

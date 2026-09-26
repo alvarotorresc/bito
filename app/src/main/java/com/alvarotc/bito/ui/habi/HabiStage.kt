@@ -31,6 +31,8 @@ private const val ELLIPSE_OFFSET_RATIO = 66f / 220f
  * 220dp/150dp defaults. [onTap] is optional — E2 shows Habi still, no tap affordance — and the
  * shadow ellipse scales with [stageSize] so a differently sized stage keeps its proportions.
  * [nudge] passes straight through to [HabiAvatar]'s own parameter of the same name.
+ * [animated] y [breath] pasan tal cual a [HabiAvatar]; la pantalla de respiracion los usa, el
+ * resto de llamadas deja los defaults.
  */
 @Composable
 fun HabiStage(
@@ -41,6 +43,8 @@ fun HabiStage(
     avatarSize: Dp = 150.dp,
     delighted: Boolean = false,
     nudge: Int = 0,
+    animated: Boolean = true,
+    breath: HabiBreath? = null,
 ) {
     Box(modifier, contentAlignment = Alignment.Center) {
         Box(
@@ -58,6 +62,14 @@ fun HabiStage(
                 .clip(RoundedCornerShape(percent = 50))
                 .background(Borde.copy(alpha = 0.6f)),
         )
-        HabiAvatar(spec = spec, modifier = Modifier.size(avatarSize), onTap = onTap, delighted = delighted, nudge = nudge)
+        HabiAvatar(
+            spec = spec,
+            modifier = Modifier.size(avatarSize),
+            animated = animated,
+            onTap = onTap,
+            delighted = delighted,
+            nudge = nudge,
+            breath = breath,
+        )
     }
 }
