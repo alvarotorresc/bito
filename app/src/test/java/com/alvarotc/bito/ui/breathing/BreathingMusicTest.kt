@@ -118,6 +118,24 @@ class BreathingMusicTest {
     }
 
     @Test
+    fun `an error on the player survives a later focus loss and gain`() {
+        val music = AndroidBreathingMusic(context)
+        music.start()
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(FADE_IN_MS + 100))
+        val player = currentPlayer(music)
+        assertNotNull(player)
+
+        shadowOf(player).invokeErrorListener(MediaPlayer.MEDIA_ERROR_SERVER_DIED, 0)
+        music.onFocusChange(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT)
+        music.onFocusChange(AudioManager.AUDIOFOCUS_GAIN)
+        shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(FADE_IN_MS + 100))
+
+        assertFalse(music.wantsToPlay)
+        assertNull(currentPlayer(music))
+        assertNotNull(shadowOf(audioManager).lastAbandonedAudioFocusRequest)
+    }
+
+    @Test
     fun `a fade out falls to silence`() {
         val ramp = volumeRamp(MUSIC_VOLUME, 0f, FADE_OUT_MS)
 

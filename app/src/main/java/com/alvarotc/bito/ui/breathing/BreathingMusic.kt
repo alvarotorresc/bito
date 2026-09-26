@@ -136,6 +136,20 @@ class AndroidBreathingMusic(
                     fadeIn(prepared)
                 }
             }
+            // Un error (server_died, decode) deja el reproductor en estado Error: sin esto,
+            // el siguiente cambio de foco llama start() o pause() sobre el y tumba la app.
+            setOnErrorListener { mp, _, _ ->
+                if (mp === player) {
+                    ramp?.cancel()
+                    player = null
+                    if (wantsToPlay) {
+                        wantsToPlay = false
+                        abandonFocus()
+                    }
+                }
+                runCatching { mp.release() }
+                true
+            }
             prepareAsync()
         }
 
@@ -158,19 +172,25 @@ class AndroidBreathingMusic(
         }
     }
 
-    private fun onFocusChange(focusChange: Int) {
+    /** internal solo para el test de regresion: el SDK publico no expone el listener del foco concedido. */
+    internal fun onFocusChange(focusChange: Int) {
         when (focusActionFor(focusChange)) {
             FocusAction.PAUSE -> {
                 ramp?.cancel()
-                player?.let { current -> if (current.isPlaying) current.pause() }
+                player?.let { current -> runCatching { if (current.isPlaying) current.pause() } }
             }
             FocusAction.RESUME ->
                 player?.let { current ->
-                    if (wantsToPlay && !current.isPlaying) {
-                        volume = 0f
-                        current.setVolume(0f, 0f)
-                        current.start()
-                        fadeIn(current)
+                    // Un reproductor en Error o todavia Preparing lanza IllegalStateException aqui;
+                    // ese estado se resuelve solo (por el oyente de error o por onPrepared), asi que
+                    // tragarselo es correcto: no hay nada mas que hacer en este cambio de foco.
+                    runCatching {
+                        if (wantsToPlay && !current.isPlaying) {
+                            volume = 0f
+                            current.setVolume(0f, 0f)
+                            current.start()
+                            fadeIn(current)
+                        }
                     }
                 }
             FocusAction.STOP -> stop()
