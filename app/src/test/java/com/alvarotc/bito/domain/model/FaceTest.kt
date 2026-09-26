@@ -49,6 +49,20 @@ class FaceTest {
     }
 
     @Test
+    fun `dramatic sargento brows and mouth are softened to not clash with war paint`() {
+        val sargento = faceParamsOf(Mood.DRAMATIC, Personality.SARGENTO)
+        assertEquals(-24f, sargento.browAngleDeg)
+        assertEquals(-0.175f, sargento.mouthCurve, 0f)
+
+        val cheerleader = faceParamsOf(Mood.DRAMATIC, Personality.CHEERLEADER)
+        assertEquals(-0.8f, cheerleader.mouthCurve, 0f)
+        assertEquals(0.8f, cheerleader.mouthOpen, 0f)
+
+        val neutra = faceParamsOf(Mood.DRAMATIC, Personality.NEUTRA)
+        assertEquals(-0.25f, neutra.mouthCurve, 0f)
+    }
+
+    @Test
     fun `delighted face smiles hugely for every personality`() {
         Personality.entries.forEach { personality ->
             val face = delightedParamsOf(personality)

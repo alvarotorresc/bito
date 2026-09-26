@@ -342,7 +342,14 @@ fun restingFaceMotion(
         face = face,
         smirkProgress = if (face.smirk) 1f else 0f,
         eyelidDroop = if (!delighted && spec.mood == Mood.WILTED) WILTED_EYELID_DROOP else 0f,
-        mouthWobble = if (!delighted && spec.mood == Mood.DRAMATIC) 1f else 0f,
+        mouthWobble =
+            if (!delighted && spec.mood == Mood.DRAMATIC) {
+                // Sargento's war-paint marks sit low on the cheek; a full wobble drags the
+                // mouth's peaks up into them, so his dramatic wobble is halved (variant 03).
+                if (spec.personality == Personality.SARGENTO) 0.5f else 1f
+            } else {
+                0f
+            },
     )
 }
 
