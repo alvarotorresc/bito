@@ -359,4 +359,15 @@ class HabiDrawingTest {
 
         assertEquals(bareBitmap.getPixel(x, y), unknownBitmap.getPixel(x, y))
     }
+
+    @Test
+    fun `dramatic mouth wobble is halved for sargento so it clears the war paint`() {
+        val sargentoDramatic = HabiSpec(Mood.DRAMATIC, Personality.SARGENTO, EquippedSet())
+        val neutraDramatic = HabiSpec(Mood.DRAMATIC, Personality.NEUTRA, EquippedSet())
+        val sargentoNormal = HabiSpec(Mood.NORMAL, Personality.SARGENTO, EquippedSet())
+
+        assertEquals(0.5f, restingFaceMotion(sargentoDramatic).mouthWobble, 0f)
+        assertEquals(1f, restingFaceMotion(neutraDramatic).mouthWobble, 0f)
+        assertEquals(0f, restingFaceMotion(sargentoNormal).mouthWobble, 0f)
+    }
 }
