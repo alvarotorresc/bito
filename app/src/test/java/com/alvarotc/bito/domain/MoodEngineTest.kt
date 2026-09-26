@@ -69,6 +69,21 @@ class MoodEngineTest {
         assertNotEquals(Mood.DRAMATIC, MoodEngine.moodOf(state, TODAY, lastActivityDay = null))
     }
 
+    @Test
+    fun `three days of only breathing still leave Habi dramatic`() {
+        val withoutBreathing = windowWith(TODAY - 7, TODAY - 6, TODAY - 5, TODAY - 4, TODAY - 3)
+        val withBreathing =
+            withoutBreathing.copy(
+                breathingSessions = listOf(breathingSession(TODAY - 2), breathingSession(TODAY - 1), breathingSession(TODAY)),
+            )
+
+        val moodWithout = MoodEngine.moodOf(withoutBreathing, TODAY, StatsEngine.lastActivityDay(withoutBreathing))
+        val moodWith = MoodEngine.moodOf(withBreathing, TODAY, StatsEngine.lastActivityDay(withBreathing))
+
+        assertEquals(Mood.DRAMATIC, moodWith)
+        assertEquals(moodWithout, moodWith)
+    }
+
     // -----------------------------------------------------------------------
     // Ratio de la ventana
     // -----------------------------------------------------------------------

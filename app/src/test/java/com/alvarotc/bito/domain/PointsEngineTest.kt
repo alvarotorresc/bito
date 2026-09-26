@@ -44,6 +44,19 @@ class PointsEngineTest {
     }
 
     @Test
+    fun `breathing sessions grant nothing and change no grant`() {
+        val base =
+            domainState(
+                habits = listOf(RealHabits.water),
+                entries = listOf(entryOn(RealHabits.water, TODAY - 1, value = 8)),
+            )
+        val withBreathing = base.copy(breathingSessions = listOf(breathingSession(TODAY - 1), breathingSession(TODAY)))
+
+        assertEquals(earned(base), earned(withBreathing))
+        assertEquals(emptyList(), earned(domainState(breathingSessions = listOf(breathingSession(TODAY)))))
+    }
+
+    @Test
     fun `a fulfilled daily goal grants a point on that day`() {
         val state =
             domainState(
