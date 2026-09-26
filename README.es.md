@@ -173,6 +173,7 @@ Licencias de terceros:
 
 - Tipografía [Outfit](https://github.com/Outfitio/Outfit-Fonts), bajo [OFL](./THIRD_PARTY_LICENSES/outfit-OFL.txt).
 - Iconos [Lucide](https://lucide.dev), bajo [ISC](./THIRD_PARTY_LICENSES/lucide-ISC.txt).
+- «Angelic Pad Loop» de [PhonZz](https://freesound.org/people/PhonZz/sounds/242773/) en Freesound, la música de fondo del ejercicio de respiración, bajo [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 El nombre «Bito» y la identidad de Habi son la marca de este proyecto: los forks son bienvenidos —es la gracia del software libre—, pero deben usar otro nombre y otra mascota para no confundir a los usuarios.
 

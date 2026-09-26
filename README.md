@@ -175,6 +175,7 @@ Third-party licenses:
 
 - [Outfit](https://github.com/Outfitio/Outfit-Fonts) typeface, under [OFL](./THIRD_PARTY_LICENSES/outfit-OFL.txt).
 - [Lucide](https://lucide.dev) icons, under [ISC](./THIRD_PARTY_LICENSES/lucide-ISC.txt).
+- "Angelic Pad Loop" by [PhonZz](https://freesound.org/people/PhonZz/sounds/242773/) on Freesound, the breathing exercise's background track, under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 
 "Bito" and Habi's identity are this project's brand: forks are welcome — that's the whole point of free software — but they need a different name and a different mascot, so nobody confuses them for this one.
 
