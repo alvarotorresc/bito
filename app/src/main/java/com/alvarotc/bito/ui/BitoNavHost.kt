@@ -30,6 +30,9 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.ui.breathing.BreathingScreen
+import com.alvarotc.bito.ui.breathing.BreathingViewModel
+import com.alvarotc.bito.ui.breathing.SilentBreathingMusic
 import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
 import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
 import com.alvarotc.bito.ui.celebration.PerfectDaySheet
@@ -223,6 +226,7 @@ fun BitoNavHost(container: AppContainer) {
                     onOpenReview = { nav.navigate("review") },
                     onOpenTasks = { nav.navigate("tasks") },
                     onStartFocus = { nav.navigate("focus?taskId=$it") },
+                    onOpenBreathing = { nav.navigate("breathing") { launchSingleTop = true } },
                 )
             }
             composable(
@@ -436,6 +440,18 @@ fun BitoNavHost(container: AppContainer) {
                             launchSingleTop = true
                         }
                     },
+                )
+            }
+            // M11: sin argumentos — el modo inicial sale de breathingLastMode. Fuera de la barra
+            // inferior como review, tasks y focus: respirar no es una pestana. En la lista blanca de
+            // NavRequests para que la notificacion del recordatorio la abra (en reposo: el sonido
+            // y la vibracion no arrancan sin que el usuario lo pida). ViewModel por entrada: su
+            // guardado no depende de este scope (va en NonCancellable) y onClose solo llega cuando
+            // la escritura ya termino.
+            composable("breathing") {
+                BreathingScreen(
+                    viewModel = viewModel(factory = BreathingViewModel.factory(container) { SilentBreathingMusic }),
+                    onClose = { nav.popBackStack() },
                 )
             }
         }

@@ -2,7 +2,11 @@ package com.alvarotc.bito.ui.breathing
 
 import android.os.SystemClock
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.repo.BreathingRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
@@ -90,6 +94,17 @@ class BreathingViewModel(
 
         /** Menos de esto no se guarda: no fue una sesion, fue un toque. */
         const val MIN_SAVED_SECONDS = 10
+
+        /** [music] se llama una vez por ViewModel: cada pantalla tiene su propio reproductor. */
+        fun factory(
+            container: AppContainer,
+            music: () -> BreathingMusic,
+        ): ViewModelProvider.Factory =
+            viewModelFactory {
+                initializer {
+                    BreathingViewModel(container.breathing, container.settings, container.domainState, container.rewards, music())
+                }
+            }
     }
 
     /**

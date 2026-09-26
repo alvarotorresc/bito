@@ -11,3 +11,13 @@ interface BreathingMusic {
 
     fun stop()
 }
+
+/**
+ * Provisional: la ruta necesita un reproductor para construir el ViewModel antes de que la pista
+ * entre en el APK. No suena nada. Se borra en cuanto existe AndroidBreathingMusic.
+ */
+object SilentBreathingMusic : BreathingMusic {
+    override fun start() = Unit
+
+    override fun stop() = Unit
+}

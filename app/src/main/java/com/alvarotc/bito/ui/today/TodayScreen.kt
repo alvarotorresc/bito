@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -85,6 +86,7 @@ fun TodayScreen(
     // normal mid-branch state of a sequential milestone.
     onOpenTasks: () -> Unit = {},
     onStartFocus: (String) -> Unit = {},
+    onOpenBreathing: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -156,7 +158,7 @@ fun TodayScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi) }
+            item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi, onOpenBreathing) }
             // Empty is only true poverty when there is nothing at all — a habit merely paused
             // still has a home in the section below, and an open task still gives the day
             // something to do, so neither must trip "create your first habit".
@@ -262,6 +264,7 @@ private fun TodayHeader(
     spec: HabiSpec,
     userName: String,
     onOpenHabi: () -> Unit,
+    onOpenBreathing: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -276,6 +279,15 @@ private fun TodayHeader(
                 color = TintaSuave,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+        // D2: dos toques desde Hoy hasta respirar — este icono y «Empezar».
+        IconButton(onClick = onOpenBreathing, modifier = Modifier.size(48.dp).testTag("today-breathing")) {
+            Icon(
+                BitoIcons.Wind,
+                contentDescription = stringResource(R.string.breathing_open_cd),
+                tint = TintaSuave,
+                modifier = Modifier.size(22.dp),
             )
         }
         // Static in the corner (T9's `animated` gate off): an infinite bob/blink here would
