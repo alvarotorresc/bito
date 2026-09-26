@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- M11 Breathing (spec §10). Draft copy until the architect signs it off in the PR. -->
+    <string name="breathing_title">Breathe</string>
+    <string name="breathing_open_cd">Breathe with Habi</string>
+    <string name="breathing_mode_calm">Calm down</string>
+    <string name="breathing_mode_sleep">Sleep</string>
+    <string name="breathing_mode_focus">Focus</string>
+    <string name="breathing_rhythm_calm">4 in · 6 out · 2 min</string>
+    <string name="breathing_rhythm_sleep">4 in · 7 hold · 8 out · 6 cycles</string>
+    <string name="breathing_rhythm_focus">4 in · 4 hold · 4 out · 4 hold · 2 min</string>
+    <string name="breathing_phase_inhale">Breathe in</string>
+    <string name="breathing_phase_hold">Hold</string>
+    <string name="breathing_phase_exhale">Breathe out</string>
+    <string name="breathing_cycle_of">Cycle %1$d of %2$d</string>
+    <string name="breathing_start">Start</string>
+    <string name="breathing_stop">Stop</string>
+    <string name="breathing_again">Again</string>
+    <string name="breathing_done">Done</string>
+    <!-- The music button describes what tapping it DOES: on_cd while music plays, off_cd while silent. -->
+    <string name="breathing_music_on_cd">Turn music off</string>
+    <string name="breathing_music_off_cd">Play background music</string>
+    <!-- %1$s is the breathing_sessions plural, already formatted. -->
+    <string name="breathing_week">This week: %1$s · %2$d min</string>
+    <string name="breathing_all_time">Since the start: %1$s · %2$d min</string>
+    <plurals name="breathing_sessions">
+        <item quantity="one">%1$d session</item>
+        <item quantity="other">%1$d sessions</item>
+    </plurals>
+    <string name="settings_breathing_section">Breathing</string>
+    <string name="settings_breathing_reminder">Daily reminder</string>
+    <string name="settings_breathing_reminder_hint">Habi reminds you to breathe for a bit</string>
+    <string name="settings_breathing_time">Time</string>
+</resources>

@@ -85,6 +85,13 @@ class HabiVoiceTest {
     }
 
     @Test
+    fun `breathingDoneRes resolves a distinct resource per personality`() {
+        val ids = Personality.entries.map { HabiVoice.breathingDoneRes(it) }
+
+        assertEquals(Personality.entries.size, ids.toSet().size)
+    }
+
+    @Test
     fun `labelRes maps each personality to its label`() {
         assertEquals(R.string.personality_sargento, HabiVoice.labelRes(Personality.SARGENTO))
         assertEquals(R.string.personality_cheerleader, HabiVoice.labelRes(Personality.CHEERLEADER))
