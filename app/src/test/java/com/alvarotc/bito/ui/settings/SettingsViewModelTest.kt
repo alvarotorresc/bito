@@ -240,6 +240,20 @@ class SettingsViewModelTest {
         }
 
     @Test
+    fun `the breathing reminder switch and hour write through`() =
+        runTest {
+            advanceUntilIdle()
+            assertEquals(false, vm.state.value?.breathingReminderEnabled)
+
+            vm.setBreathingReminder(true)
+            vm.setBreathingReminderTime(7 * 60 + 30)
+            advanceUntilIdle()
+
+            assertEquals(true, vm.state.value?.breathingReminderEnabled)
+            assertEquals(7 * 60 + 30, vm.state.value?.breathingReminderTimeMinutes)
+        }
+
+    @Test
     fun `settings lets the user rename themselves`() =
         runTest {
             advanceUntilIdle()

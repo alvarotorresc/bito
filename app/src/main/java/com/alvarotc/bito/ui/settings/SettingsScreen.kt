@@ -299,6 +299,16 @@ fun SettingsScreen(
                         onOpenNotificationSettings = { openAppNotificationSettings(context) },
                     )
                 }
+                SettingsSection(stringResource(R.string.settings_breathing_section)) {
+                    BreathingSectionCard(
+                        enabled = current.breathingReminderEnabled,
+                        minutes = current.breathingReminderTimeMinutes,
+                        notificationsBlocked = notificationsBlocked,
+                        onSetEnabled = settingsViewModel::setBreathingReminder,
+                        onSetTime = settingsViewModel::setBreathingReminderTime,
+                        onOpenNotificationSettings = { openAppNotificationSettings(context) },
+                    )
+                }
                 SettingsSection(stringResource(R.string.settings_habi_section)) {
                     HabiSectionCard(soundsEnabled = current.habiSoundsEnabled, onSetHabiSounds = settingsViewModel::setHabiSounds)
                 }
@@ -490,6 +500,66 @@ private fun NotificationsSectionCard(
                 showReviewSheet = false
             },
             onDismiss = { showReviewSheet = false },
+        )
+    }
+}
+
+/**
+ * M11 (spec §5.5): el recordatorio diario de respirar. La fila de hora solo existe con el
+ * interruptor encendido. Sin permiso de notificaciones repite el mismo aviso que la tarjeta de
+ * notificaciones, con el mismo destino: un recordatorio que nunca se ve sigue sin verse.
+ */
+@Composable
+private fun BreathingSectionCard(
+    enabled: Boolean,
+    minutes: Int,
+    notificationsBlocked: Boolean,
+    onSetEnabled: (Boolean) -> Unit,
+    onSetTime: (Int) -> Unit,
+    onOpenNotificationSettings: () -> Unit,
+) {
+    var showTimeSheet by remember { mutableStateOf(false) }
+
+    BitoCard(modifier = Modifier.fillMaxWidth()) {
+        ToggleSettingsRow(
+            icon = BitoIcons.Wind,
+            label = stringResource(R.string.settings_breathing_reminder),
+            hint = stringResource(R.string.settings_breathing_reminder_hint),
+            tag = "breathing-reminder",
+            checked = enabled,
+            onChange = onSetEnabled,
+        )
+        if (enabled) {
+            SettingsDivider()
+            Box(Modifier.testTag("breathing-time-row")) {
+                SettingsRow(
+                    icon = BitoIcons.Clock,
+                    label = stringResource(R.string.settings_breathing_time),
+                    value = formatClock(minutes),
+                    valueEmphasis = true,
+                    onClick = { showTimeSheet = true },
+                )
+            }
+        }
+        if (enabled && notificationsBlocked) {
+            SettingsDivider()
+            SettingsRow(
+                icon = BitoIcons.Info,
+                label = stringResource(R.string.notif_permission_hint),
+                onClick = onOpenNotificationSettings,
+            )
+        }
+    }
+
+    if (showTimeSheet) {
+        TimePickerSheet(
+            title = stringResource(R.string.settings_breathing_time),
+            initialMinutes = minutes,
+            onConfirm = {
+                onSetTime(it)
+                showTimeSheet = false
+            },
+            onDismiss = { showTimeSheet = false },
         )
     }
 }

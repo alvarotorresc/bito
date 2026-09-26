@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -523,6 +524,72 @@ class SettingsScreenTest {
 
         compose.onNodeWithTag("task-notices-row", useUnmergedTree = true).assertIsOff()
         assertFalse(runBlocking { settings.settings.first() }.taskNoticesEnabled)
+    }
+
+    private fun renderSettings(settings: SettingsRepository) {
+        val keyStore = BackupKeyStore(tmp.root)
+        val backupVm =
+            BackupViewModel(
+                BackupRepository(db, settings, keyStore, "test"),
+                settings,
+                keyStore,
+                backupNow = {},
+                ioDispatcher = dispatcher,
+                cryptoDispatcher = dispatcher,
+            )
+        val settingsVm = SettingsViewModel(settings, HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                SettingsScreen(backupViewModel = backupVm, settingsViewModel = settingsVm, onBack = {}, onOpenArchived = {})
+            }
+        }
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun `the breathing section starts off, with no hour row`() {
+        renderSettings(SettingsRepository(settingsStore("settings-screen-breathing-default")))
+
+        compose.onNodeWithText("Breathing", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithTag("breathing-reminder-row", useUnmergedTree = true).assertIsOff()
+        compose.onNodeWithTag("breathing-time-row", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `switching the breathing reminder on writes it and shows the hour`() {
+        val settings = SettingsRepository(settingsStore("settings-screen-breathing-on"))
+        renderSettings(settings)
+
+        compose.onNodeWithTag("breathing-reminder-row", useUnmergedTree = true).performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("breathing-reminder-row", useUnmergedTree = true).assertIsOn()
+        assertTrue(runBlocking { settings.settings.first() }.breathingReminderEnabled)
+        compose.onNodeWithTag("breathing-time-row", useUnmergedTree = true).performScrollTo().assertIsDisplayed()
+        compose.onNodeWithText("22:00", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `with notifications off, the breathing card repeats the permission notice while its switch is on`() {
+        shadowOf(ApplicationProvider.getApplicationContext<Application>().getSystemService(NotificationManager::class.java))
+            .setNotificationsEnabled(false)
+        val settings = SettingsRepository(settingsStore("settings-screen-breathing-notif-off"))
+        runBlocking { settings.update { it.copy(breathingReminderEnabled = true) } }
+
+        renderSettings(settings)
+
+        // Uno en la tarjeta de notificaciones (ya existia) y otro en la de respiracion.
+        compose.onAllNodesWithText("Allow notifications to hear reminders", useUnmergedTree = true).assertCountEquals(2)
+    }
+
+    @Test
+    fun `with notifications off and the switch off, only the usual notice shows`() {
+        shadowOf(ApplicationProvider.getApplicationContext<Application>().getSystemService(NotificationManager::class.java))
+            .setNotificationsEnabled(false)
+
+        renderSettings(SettingsRepository(settingsStore("settings-screen-breathing-notif-off-switch-off")))
+
+        compose.onAllNodesWithText("Allow notifications to hear reminders", useUnmergedTree = true).assertCountEquals(1)
     }
 
     /**
