@@ -20,7 +20,7 @@ Bito ya tiene algo para cuando el día se te echa encima: un par de minutos resp
 
 ### Added
 
-- **Respirar con Habi**: un botón junto a Habi en la cabecera de Hoy abre el ejercicio. Tres modos fijos — Calmarme (4 dentro, 6 fuera), Dormir (4-7-8) y Centrarme (la caja de 4) —, unos dos minutos cada uno y sin nada más que elegir. Habi respira grande, con los ojos cerrados, y tú la sigues; debajo, la palabra de cada fase y lo que queda. Se para cuando quieras.
+- **Respirar con Habi**: un botón junto a Habi en la cabecera de Hoy abre el ejercicio. Tres modos fijos — Calmarme (4 dentro, 6 fuera), Dormir (4-7-8) y Centrarme (la caja de 4) —, unos dos minutos cada uno y sin nada más que elegir. Habi respira grande, con los ojos cerrados, y tú sigues su respiración; debajo, la palabra de cada fase y lo que queda. Se para cuando quieras.
 - **Un contador honesto** al terminar: sesiones y minutos de esta semana y desde el principio. Respirar no da puntos ni cuenta para rachas, días perfectos ni el ánimo de Habi.
 - **Recordatorio diario** opcional en Ajustes › Respiración, apagado de serie, a la hora que elijas y en la voz de tu personalidad. Al tocarlo se abre el ejercicio.
 - **Música de fondo** opcional durante el ejercicio: «Angelic Pad Loop», de PhonZz, en dominio público.
@@ -43,7 +43,7 @@ Bito ya tiene sitio para eso que llevas tres semanas esquivando y que no es un h
 - **Tareas**: la llamada, el papeleo, el correo. Se crean y se editan en una pantalla propia, como los hábitos. Con o sin plazo — sin plazo, esta semana o un día concreto —, y con un primer paso que escribes tú si te ayuda a arrancar.
 - **Una sección en Hoy** — visible siempre que tengas cualquier tarea — con solo lo que toca hoy: lo vencido, lo de hoy, lo de esta semana, lo que viene en tres días, lo que traes a mano y una suelta que Habi te trae cada día. «Hoy no» la devuelve a la lista y mañana Habi trae otra.
 - **La lista completa**, colgada de esa sección, ordenada por plazo, donde se edita y se borra.
-- **Empezar**: tu primer paso y un temporizador — tres duraciones rápidas (5, 10 y 25 minutos) o cualquiera entre 1 y 180 con «Otro» — con Habi acompañando. Tócalo durante la cuenta atrás para que te mire y se mueva: de vez en cuando lo hace solo. Sigue corriendo con la app cerrada y con la pantalla apagada: una notificación con la cuenta atrás te acompaña mientras dura, un aviso aparte te dice cuándo se acaba, y puedes alargarlo con +5, +15 o +30, o de nuevo con «Otro» entre 1 y 180. «He terminado» cierra con la frase de Habi antes de desaparecer; marcar hecha desde la lista también te la dice. «Ha habido un inconveniente, lo dejo» lo deja sin más.
+- **Empezar**: tu primer paso y un temporizador — tres duraciones rápidas (5, 10 y 25 minutos) o cualquiera entre 1 y 180 con «Otro» — con Habi acompañando. Toca a Habi durante la cuenta atrás para que te mire y se mueva: de vez en cuando lo hace por su cuenta. Sigue corriendo con la app cerrada y con la pantalla apagada: una notificación con la cuenta atrás te acompaña mientras dura, un aviso aparte te dice cuándo se acaba, y puedes alargarlo con +5, +15 o +30, o de nuevo con «Otro» entre 1 y 180. «He terminado» cierra con la frase de Habi antes de desaparecer; marcar hecha desde la lista también te la dice. «Ha habido un inconveniente, lo dejo» lo deja sin más.
 - **Avisos de tareas a mediodía** cuando un plazo se acerca, con un único interruptor en Ajustes.
 - **Las tareas dan puntos**: 3 por hacerla, 5 si la haces dentro de plazo. Posponerla no quita puntos, pero a Habi le sienta mal — y hacerlas también anima su semana, aunque nunca más de un tercio de lo que ya dicen tus hábitos.
 
@@ -69,8 +69,8 @@ La primera versión para compartir. Bito ya se instala en el móvil de cualquier
 
 ### Changed
 
-- **Habi está vivo**: se hunde como gelatina justo donde lo tocas, te sigue con la mirada, respira al ritmo de su ánimo y nunca reacciona dos veces igual. Su voz sale toda de un maullido de verdad, y los estampados de la tienda se curvan sobre su cuerpo en vez de quedarse pegados encima.
-- **El mismo Habi en todas las pantallas**, con lo que lleve puesto.
+- **Habi tiene vida propia**: se hunde como gelatina al tacto, te sigue con la mirada, respira al ritmo de su ánimo y nunca reacciona dos veces igual. Su voz sale toda de un maullido de verdad, y los estampados de la tienda se curvan sobre su cuerpo en vez de quedarse pegados encima.
+- **Habi, igual en todas las pantallas**, con lo que lleve puesto.
 - **Ajustes**, ordenado por secciones con su título, sus iconos y sus separadores; el fin del día se muda a General y los recordatorios se gestionan en su propia hoja.
 - **Esa jerarquía de texto se extiende a toda la app**: lo importante en negrita, lo secundario en un tono más suave.
 - **Crear un hábito**: cada tipo estrena icono, las opciones se ordenan en rejilla y Habi te acompaña desde su bocadillo.
@@ -170,7 +170,7 @@ La primera versión para compartir. Bito ya se instala en el móvil de cualquier
 - Habi cobra vida: pantalla propia con pestaña en la barra inferior, escenario dinámico que refleja su estado de ánimo, selector de personalidad (Sargento, Animadora o Neutra) que cambia cómo habla, y tienda de accesorios con prueba en vivo antes de comprar. Colores, patrones y accesorios se ganan con puntos; cuatro artículos exclusivos se desbloquean por alcanzar rachas.
 - Habi te saluda con un mensaje cuando abres la app desde la pantalla Hoy y comenta tu progreso en Estadísticas con su voz según su personalidad.
 - Habi aparece en el widget con su estado de ánimo actual.
-- Sonidos suaves de Habi para cada momento: saludo al tocarlo en su pantalla, celebración por éxito, sonido de compra al acceder a accesorios, y sonido de recaída. Un interruptor en Ajustes silencia todos los sonidos de Habi.
+- Sonidos suaves de Habi para cada momento: saludo al tocar a Habi en su pantalla, celebración por éxito, sonido de compra al acceder a accesorios, y sonido de recaída. Un interruptor en Ajustes silencia todos los sonidos de Habi.
 
 ### Changed
 

@@ -77,7 +77,7 @@ El detalle de un hábito, racha de 130 días con el calendario lleno:
 
 ## Habi y sus tres personalidades
 
-Habi no es un adorno. Su cara refleja cómo llevas la semana, se hunde como gelatina justo donde lo tocas y te sigue con la mirada. Lo vistes con los puntos que te gana tu constancia, y te habla con la voz que tú elijas.
+Habi no es un adorno. Su cara refleja cómo llevas la semana, se hunde como gelatina al tacto y te sigue con la mirada. Vistes a Habi con los puntos que te gana tu constancia, y te habla con la voz que tú elijas.
 
 | Sargento | Cheerleader | Neutra |
 |---|---|---|
