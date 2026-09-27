@@ -3,11 +3,13 @@ package com.alvarotc.bito.ui.widget
 import android.appwidget.AppWidgetManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -15,6 +17,8 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.glance.GlanceModifier
+import androidx.glance.Image
+import androidx.glance.ImageProvider
 import androidx.glance.LocalContext
 import androidx.glance.LocalSize
 import androidx.glance.action.Action
@@ -49,6 +53,7 @@ import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.ui.habi.renderHabiBitmap
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -56,6 +61,7 @@ import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 import com.alvarotc.bito.ui.today.CardKind
+import com.alvarotc.bito.ui.today.TodayUiState
 import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.combine
@@ -65,6 +71,18 @@ import kotlinx.coroutines.flow.flowOn
 import java.time.ZoneId
 
 /**
+ * Below this width the mini Habi eats the habit name: at the 110 dp minimum, a 28 dp Habi left
+ * about 16 dp for the name and the Missing line did not fit at all.
+ */
+internal val HABI_MIN_WIDTH = 150.dp
+
+/** Whether the one-line layouts (compact Active, Missing, Paused) have room for the mini Habi. */
+internal fun showsHabi(width: Dp): Boolean = width >= HABI_MIN_WIDTH
+
+/** Offscreen render size (px) for the mini Habi beside the habit name — same technique as [TodayWidget]. */
+private const val HABI_BITMAP_SIZE_PX = 96
+
+/**
  * One habit, one tap (compact 2x1/2x2 sibling of [TodayWidget]). The chosen habit id lives in
  * this instance's Glance state ([SingleHabitWidgetKeys.habitId], written by
  * [SingleHabitConfigActivity]); the content collects the same four sources [WidgetRefresher]
@@ -72,7 +90,7 @@ import java.time.ZoneId
  * [LogHabitAction] path the list widget uses.
  */
 class SingleHabitWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, TALL))
+    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, COMPACT_WIDE, TALL, TALL_WIDE))
 
     override suspend fun provideGlance(
         context: Context,
@@ -82,7 +100,7 @@ class SingleHabitWidget : GlanceAppWidget() {
         // The "choose another habit" fallback reopens this instance's configure activity, which
         // needs the host-side widget id — resolved once here, not in composition.
         val appWidgetId = GlanceAppWidgetManager(context).getAppWidgetId(id)
-        val stateFlow =
+        val dataFlow =
             combine(
                 container.settings.settings,
                 container.domainState.observe(),
@@ -90,28 +108,43 @@ class SingleHabitWidget : GlanceAppWidget() {
                 container.rewards.observeOwnedItems(),
             ) { prefs, domain, entities, owned ->
                 val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
-                buildTodayUiState(
-                    domain,
-                    entities.associate { it.id to it.sortOrder },
-                    today,
-                    prefs.personality,
-                    owned,
-                )
+                val state =
+                    buildTodayUiState(
+                        domain,
+                        entities.associate { it.id to it.sortOrder },
+                        today,
+                        prefs.personality,
+                        owned,
+                    )
+                SingleHabitData(state, renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX))
             }.conflate().flowOn(Dispatchers.Default)
-        val initial = stateFlow.first()
+        val initial = dataFlow.first()
         provideContent {
-            val state by stateFlow.collectAsState(initial = initial)
+            val data by dataFlow.collectAsState(initial = initial)
             val widgetPrefs = currentState<Preferences>()
-            SingleHabitContent(buildSingleHabitModel(state, widgetPrefs[SingleHabitWidgetKeys.habitId]), appWidgetId)
+            val model = buildSingleHabitModel(data.state, widgetPrefs[SingleHabitWidgetKeys.habitId])
+            SingleHabitContent(model, appWidgetId, data.habiBitmap)
         }
     }
+
+    private data class SingleHabitData(val state: TodayUiState, val habiBitmap: Bitmap)
 
     companion object {
         /** 2x1: a one-line strip. */
         val COMPACT = DpSize(110.dp, 48.dp)
 
+        /**
+         * 2x1 wide enough for Habi. With [SizeMode.Responsive], `LocalSize` is always one of the
+         * declared sizes, never the real one — without a wide sibling the width check in
+         * [showsHabi] would only ever see 110 dp.
+         */
+        val COMPACT_WIDE = DpSize(HABI_MIN_WIDTH, 48.dp)
+
         /** 2x2 and up: centered, with a bigger progress readout. */
         val TALL = DpSize(110.dp, 110.dp)
+
+        /** 2x2 wide enough for Habi in the message states (see [COMPACT_WIDE]). */
+        val TALL_WIDE = DpSize(HABI_MIN_WIDTH, 110.dp)
     }
 }
 
@@ -127,6 +160,7 @@ object SingleHabitWidgetKeys {
 private fun SingleHabitContent(
     model: SingleHabitModel,
     appWidgetId: Int,
+    habiBitmap: Bitmap,
 ) {
     val context = LocalContext.current
     when (model) {
@@ -134,40 +168,59 @@ private fun SingleHabitContent(
             MessageContent(
                 context.getString(R.string.widget_single_missing),
                 reconfigureAction(context, appWidgetId),
+                habiBitmap,
             )
         is SingleHabitModel.Paused ->
             MessageContent(
                 context.getString(R.string.widget_single_paused, model.name),
                 actionStartActivity<MainActivity>(),
+                habiBitmap,
             )
-        is SingleHabitModel.Active -> ActiveContent(model)
+        is SingleHabitModel.Active -> ActiveContent(model, habiBitmap)
     }
 }
 
-/** The archived-or-gone and paused fallbacks: one friendly line, whole surface tappable. */
+/** The archived-or-gone and paused fallbacks: mini Habi (when [showsHabi]) beside one friendly line, whole surface tappable. */
 @Composable
 private fun MessageContent(
     message: String,
     action: Action,
+    habiBitmap: Bitmap,
 ) {
-    Box(
+    Row(
         modifier =
             GlanceModifier
                 .fillMaxSize()
                 .background(ColorProvider(Papel))
                 .clickable(action)
                 .padding(12.dp),
-        contentAlignment = Alignment.Center,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            text = message,
-            style = TextStyle(color = ColorProvider(TintaSuave), fontSize = 13.sp, textAlign = TextAlign.Center),
-        )
+        val withHabi = showsHabi(LocalSize.current.width)
+        if (withHabi) {
+            Image(
+                provider = ImageProvider(habiBitmap),
+                contentDescription = null,
+                modifier = GlanceModifier.size(28.dp),
+            )
+        }
+        Box(
+            modifier = GlanceModifier.defaultWeight().padding(start = if (withHabi) 8.dp else 0.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                text = message,
+                style = TextStyle(color = ColorProvider(TintaSuave), fontSize = 13.sp, textAlign = TextAlign.Center),
+            )
+        }
     }
 }
 
 @Composable
-private fun ActiveContent(model: SingleHabitModel.Active) {
+private fun ActiveContent(
+    model: SingleHabitModel.Active,
+    habiBitmap: Bitmap,
+) {
     val context = LocalContext.current
     val action =
         if (model.tapLogs) {
@@ -199,17 +252,25 @@ private fun ActiveContent(model: SingleHabitModel.Active) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                text = model.name,
-                maxLines = 2,
-                style =
-                    TextStyle(
-                        color = ColorProvider(Tinta),
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
-                        textAlign = TextAlign.Center,
-                    ),
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    provider = ImageProvider(habiBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(32.dp),
+                )
+                Text(
+                    text = model.name,
+                    maxLines = 2,
+                    style =
+                        TextStyle(
+                            color = ColorProvider(Tinta),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            textAlign = TextAlign.Center,
+                        ),
+                    modifier = GlanceModifier.padding(start = 6.dp),
+                )
+            }
             captionOf(model)?.let { (caption, color) ->
                 Box(modifier = GlanceModifier.padding(top = 4.dp)) {
                     Text(text = caption, style = TextStyle(color = ColorProvider(color), fontSize = 12.sp))
@@ -222,7 +283,15 @@ private fun ActiveContent(model: SingleHabitModel.Active) {
             modifier = root,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Column(modifier = GlanceModifier.defaultWeight()) {
+            val withHabi = showsHabi(LocalSize.current.width)
+            if (withHabi) {
+                Image(
+                    provider = ImageProvider(habiBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(28.dp),
+                )
+            }
+            Column(modifier = GlanceModifier.defaultWeight().padding(start = if (withHabi) 8.dp else 0.dp)) {
                 Text(
                     text = model.name,
                     maxLines = 1,

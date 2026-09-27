@@ -63,16 +63,16 @@ object BreathingRhythm {
         mode: BreathingMode,
         elapsedMillis: Long,
     ): Point {
-        val steps = steps(mode)
-        val cycles = cycles(mode)
+        val stepList = steps(mode)
+        val cycleCount = cycles(mode)
         val total = totalMillis(mode)
         val t = elapsedMillis.coerceAtLeast(0L)
         if (t >= total) {
             return Point(
-                phase = steps.last().phase,
-                stepIndex = steps.size * cycles - 1,
-                cycle = cycles,
-                totalCycles = cycles,
+                phase = stepList.last().phase,
+                stepIndex = stepList.size * cycleCount - 1,
+                cycle = cycleCount,
+                totalCycles = cycleCount,
                 fill = 0f,
                 remainingMillis = 0L,
                 finished = true,
@@ -82,24 +82,24 @@ object BreathingRhythm {
         val cycleIndex = (t / cycleMillis).toInt()
         var inCycle = t - cycleIndex * cycleMillis
         var index = 0
-        while (inCycle >= steps[index].seconds * MILLIS_PER_SECOND) {
-            inCycle -= steps[index].seconds * MILLIS_PER_SECOND
+        while (inCycle >= stepList[index].seconds * MILLIS_PER_SECOND) {
+            inCycle -= stepList[index].seconds * MILLIS_PER_SECOND
             index++
         }
-        val step = steps[index]
+        val step = stepList[index]
         val progress = inCycle.toFloat() / (step.seconds * MILLIS_PER_SECOND)
         val fill =
             when (step.phase) {
                 INHALE -> ease(progress)
                 EXHALE -> 1f - ease(progress)
                 // El paso anterior decide: tras dentro se retiene lleno, tras fuera (solo la caja) vacio.
-                HOLD -> if (steps[(index - 1 + steps.size) % steps.size].phase == INHALE) 1f else 0f
+                HOLD -> if (stepList[(index - 1 + stepList.size) % stepList.size].phase == INHALE) 1f else 0f
             }
         return Point(
             phase = step.phase,
-            stepIndex = cycleIndex * steps.size + index,
+            stepIndex = cycleIndex * stepList.size + index,
             cycle = cycleIndex + 1,
-            totalCycles = cycles,
+            totalCycles = cycleCount,
             fill = fill,
             remainingMillis = total - t,
             finished = false,

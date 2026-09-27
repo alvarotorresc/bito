@@ -126,6 +126,17 @@ class BreathingViewModelTest {
         db.close()
     }
 
+    /** true si Live.pending sigue vivo: hueco para comprobar que no sobrevive mas de lo necesario (T10). */
+    private fun hasPending(vm: BreathingViewModel): Boolean {
+        val liveField = BreathingViewModel::class.java.getDeclaredField("live")
+        liveField.isAccessible = true
+        val live = liveField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<*>
+        val current = live.value!!
+        val pendingField = current::class.java.getDeclaredField("pending")
+        pendingField.isAccessible = true
+        return pendingField.get(current) != null
+    }
+
     private fun TestScope.activate(vm: BreathingViewModel) {
         vm.uiState.onEach {}.launchIn(backgroundScope)
         settle()
@@ -430,6 +441,87 @@ class BreathingViewModelTest {
         }
 
     @Test
+    fun `leaving mid-session never emits the finished stage, even when the session gets saved`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            val seenStages = mutableListOf<BreathingStage>()
+            vm.uiState.onEach { seenStages += it.stage }.launchIn(backgroundScope)
+            settle()
+            vm.start()
+            settle()
+            currentElapsed += 30_000 // por encima de MIN_SAVED_SECONDS: si hubiera flash, aqui se veria.
+
+            vm.leave()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertEquals(1, rows().size)
+            assertFalse(seenStages.contains(BreathingStage.FINISHED))
+        }
+
+    @Test
+    fun `leaving twice mid-session saves exactly one row`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 40_000
+
+            // Doble atras o doble toque en la flecha antes de que la pantalla se desapile.
+            vm.leave()
+            currentElapsed += 1_000
+            vm.leave()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertEquals(40, rows().single().durationSeconds)
+        }
+
+    @Test
+    fun `leaving then going to the background saves exactly one row and never shows finished`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            val seenStages = mutableListOf<BreathingStage>()
+            vm.uiState.onEach { seenStages += it.stage }.launchIn(backgroundScope)
+            settle()
+            vm.start()
+            settle()
+            currentElapsed += 40_000
+
+            // El ON_STOP del desapilado llega mientras el guardado de leave() sigue en vuelo.
+            vm.leave()
+            currentElapsed += 1_000
+            vm.onBackgrounded()
+            vm.stop()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertEquals(40, rows().single().durationSeconds)
+            assertFalse(seenStages.contains(BreathingStage.FINISHED))
+        }
+
+    @Test
+    fun `leaving under ten seconds and then again or backgrounding saves nothing`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 5_000
+
+            vm.leave()
+            // Sin el corte, esta segunda salida veria 11 s y guardaria una sesion fantasma.
+            currentElapsed += 6_000
+            vm.leave()
+            vm.onBackgrounded()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertTrue(rows().isEmpty())
+        }
+
+    @Test
     fun `a double start runs one loop and saves one row`() =
         runBreathingTest {
             val music = FakeMusic()
@@ -540,6 +632,45 @@ class BreathingViewModelTest {
             settle()
             assertEquals(1, vm.uiState.value.week.sessions)
             assertEquals(1, rows().size)
+        }
+
+    @Test
+    fun `pending is cleared once the real row lands, so a later restore never sees a stale one`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 30_000
+
+            vm.stop()
+            // Sin settle() todavia: close() pone pending en el mismo update sincrono que FINISHED,
+            // antes de que el saveJob (una corrutina aparte) llegue a correr.
+            assertTrue(hasPending(vm))
+
+            // Deja correr el guardado y que Room emita la fila real.
+            settle()
+            settle()
+
+            assertFalse(hasPending(vm))
+        }
+
+    @Test
+    fun `starting a new session clears any pending left over from a previous one`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 30_000
+            vm.stop()
+            assertTrue(hasPending(vm))
+
+            // again() vuelve a arrancar antes de que el guardado anterior llegue a Room: si start()
+            // no limpiara pending, un restore posterior arrancaria con el de la sesion ya cerrada.
+            vm.again()
+
+            assertFalse(hasPending(vm))
         }
 
     @Test

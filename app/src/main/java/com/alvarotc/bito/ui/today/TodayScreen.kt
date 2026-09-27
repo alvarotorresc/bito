@@ -161,9 +161,14 @@ fun TodayScreen(
             item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi, onOpenBreathing) }
             // Empty is only true poverty when there is nothing at all — a habit merely paused
             // still has a home in the section below, and an open task still gives the day
-            // something to do, so neither must trip "create your first habit".
-            if (state.cards.isEmpty() && !state.loading && state.pausedHabits.isEmpty() && !state.hasAnyTasks) {
-                item { EmptyToday(onCreateHabit) }
+            // something to do, so neither must trip "create your first habit". And the ring
+            // itself has nothing to count whenever cards is empty — no habit due today, none
+            // active at all, or every one of them paused — so it must not draw a bare "0 of 0"
+            // in any of those cases either.
+            if (state.cards.isEmpty()) {
+                if (!state.loading && state.pausedHabits.isEmpty() && !state.hasAnyTasks) {
+                    item { EmptyToday(onCreateHabit) }
+                }
             } else {
                 item { RingCard(state.ringDone, state.ringTotal, state.todaySealed, onOpenReview) }
             }
@@ -266,7 +271,9 @@ private fun TodayHeader(
     onOpenHabi: () -> Unit,
     onOpenBreathing: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // spacedBy separa el icono de respirar de Habi (M12 #15): sin ella quedaban pegados porque
+    // ninguno de los dos trae su propio margen.
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.today_title), style = MaterialTheme.typography.headlineLarge, color = Tinta)
             val pattern = stringResource(R.string.today_date_pattern)

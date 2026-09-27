@@ -8,6 +8,7 @@ import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.coroutines.runBlocking
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -15,6 +16,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
 
 /**
  * R1, el riesgo numero uno de M10: si el DDL escrito a mano no coincide con el que genera Room,
@@ -32,11 +34,44 @@ class BitoDatabaseMigrationTest {
     private val name = "migration-test.db"
 
     /**
+     * Ejecuta, contra [db], el DDL de las entidades y sus indices tal como los declara
+     * `app/schemas/com.alvarotc.bito.data.db.BitoDatabase/$schemaVersion.json` (el `createSql` de
+     * cada `entities[]`, con `${'$'}{TABLE_NAME}` resuelto al nombre real) mas los `setupQueries`
+     * del propio esquema (el `room_master_table` que Room usa para su identity hash). Leer el DDL
+     * del esquema en vez de tenerlo copiado a mano en el test es lo que garantiza que esta base v1
+     * de partida es byte a byte la que Room generaria — sin esto, un DDL copiado a mano podria
+     * desincronizarse del esquema real sin que ningun test lo notase.
+     */
+    private fun runSchemaSetup(
+        db: SQLiteDatabase,
+        schemaVersion: Int,
+    ) {
+        val schemaFile = File("schemas/com.alvarotc.bito.data.db.BitoDatabase/$schemaVersion.json")
+        val database = JSONObject(schemaFile.readText()).getJSONObject("database")
+        val entities = database.getJSONArray("entities")
+        for (i in 0 until entities.length()) {
+            val entity = entities.getJSONObject(i)
+            val tableName = entity.getString("tableName")
+            db.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}", tableName))
+            if (entity.has("indices")) {
+                val indices = entity.getJSONArray("indices")
+                for (j in 0 until indices.length()) {
+                    db.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}", tableName))
+                }
+            }
+        }
+        val setupQueries = database.getJSONArray("setupQueries")
+        for (i in 0 until setupQueries.length()) {
+            db.execSQL(setupQueries.getString(i))
+        }
+    }
+
+    /**
      * `onValidateSchema` de Room comprueba TODAS las entidades tras migrar, no solo las que este
      * test lee. Sembrar de menos (p. ej. solo `habits`, `entries` y `points_ledger`) haria fallar
      * el test por tabla ausente con o sin `MIGRATION_1_2` enganchada, y la prueba nunca llegaria
-     * a comprobar el DDL de la migracion. Por eso las nueve tablas de la v1 se crean aqui, con el
-     * DDL EXACTO (tablas e indices) del `1.json` que genera Room.
+     * a comprobar el DDL de la migracion. Por eso las nueve tablas de la v1 se crean aqui, va
+     * [runSchemaSetup] contra el `1.json` real.
      */
     private fun seedVersionOne(context: Context) {
         val file = context.getDatabasePath(name)
@@ -44,85 +79,7 @@ class BitoDatabaseMigrationTest {
         if (file.exists()) file.delete()
         val db = SQLiteDatabase.openOrCreateDatabase(file, null)
 
-        // habits
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `habits` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `metric` TEXT NOT NULL, " +
-                "`period` TEXT NOT NULL, `direction` TEXT NOT NULL, `target` INTEGER NOT NULL, `unit` TEXT, `logMode` " +
-                "TEXT NOT NULL, `step` INTEGER NOT NULL, `timeBucket` TEXT, `timeOfDayMinutes` INTEGER, " +
-                "`reminderMinutes` INTEGER, `status` TEXT NOT NULL, `createdAtMillis` INTEGER NOT NULL, " +
-                "`createdOnDay` INTEGER NOT NULL, `archivedAtMillis` INTEGER, `archivedOnDay` INTEGER, `sortOrder` " +
-                "INTEGER NOT NULL, PRIMARY KEY(`id`))",
-        )
-
-        // target_changes
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `target_changes` (`habitId` TEXT NOT NULL, `effectiveFromDay` INTEGER NOT " +
-                "NULL, `target` INTEGER NOT NULL, PRIMARY KEY(`habitId`, `effectiveFromDay`), FOREIGN KEY(`habitId`) " +
-                "REFERENCES `habits`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        )
-        db.execSQL(
-            "CREATE INDEX IF NOT EXISTS `index_target_changes_habitId` ON `target_changes` (`habitId`)",
-        )
-
-        // pause_intervals
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `pause_intervals` (`habitId` TEXT NOT NULL, `startDay` INTEGER NOT NULL, " +
-                "`endDay` INTEGER, `note` TEXT, PRIMARY KEY(`habitId`, `startDay`), FOREIGN KEY(`habitId`) REFERENCES " +
-                "`habits`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        )
-        db.execSQL(
-            "CREATE INDEX IF NOT EXISTS `index_pause_intervals_habitId` ON `pause_intervals` (`habitId`)",
-        )
-
-        // entries
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `entries` (`id` TEXT NOT NULL, `habitId` TEXT NOT NULL, `logicalDay` INTEGER " +
-                "NOT NULL, `value` INTEGER NOT NULL, `createdAtMillis` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN " +
-                "KEY(`habitId`) REFERENCES `habits`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        )
-        db.execSQL(
-            "CREATE INDEX IF NOT EXISTS `index_entries_habitId_logicalDay` ON `entries` (`habitId`, `logicalDay`)",
-        )
-
-        // day_seals
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `day_seals` (`logicalDay` INTEGER NOT NULL, `sealedAtMillis` INTEGER NOT " +
-                "NULL, PRIMARY KEY(`logicalDay`))",
-        )
-
-        // freezer_uses
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `freezer_uses` (`id` TEXT NOT NULL, `habitId` TEXT NOT NULL, `protectedDay` " +
-                "INTEGER NOT NULL, `usedAtMillis` INTEGER NOT NULL, PRIMARY KEY(`id`), FOREIGN KEY(`habitId`) " +
-                "REFERENCES `habits`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        )
-        db.execSQL(
-            "CREATE UNIQUE INDEX IF NOT EXISTS `index_freezer_uses_habitId_protectedDay` ON `freezer_uses` " +
-                "(`habitId`, `protectedDay`)",
-        )
-
-        // points_ledger
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `points_ledger` (`id` TEXT NOT NULL, `delta` INTEGER NOT NULL, `reason` TEXT " +
-                "NOT NULL, `refId` TEXT, `logicalDay` INTEGER NOT NULL, `createdAtMillis` INTEGER NOT NULL, PRIMARY " +
-                "KEY(`id`))",
-        )
-        db.execSQL(
-            "CREATE UNIQUE INDEX IF NOT EXISTS `index_points_ledger_reason_refId` ON `points_ledger` (`reason`, " +
-                "`refId`)",
-        )
-
-        // badges
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `badges` (`badgeId` TEXT NOT NULL, `unlockedAtMillis` INTEGER NOT NULL, " +
-                "PRIMARY KEY(`badgeId`))",
-        )
-
-        // customization_items
-        db.execSQL(
-            "CREATE TABLE IF NOT EXISTS `customization_items` (`itemId` TEXT NOT NULL, `category` TEXT NOT NULL, " +
-                "`acquiredAtMillis` INTEGER NOT NULL, `equipped` INTEGER NOT NULL, PRIMARY KEY(`itemId`))",
-        )
+        runSchemaSetup(db, schemaVersion = 1)
 
         db.execSQL(
             "INSERT INTO habits VALUES ('h1', 'Agua', 'COUNT', 'DAY', 'AT_LEAST', 8, 'vasos', " +
@@ -132,6 +89,7 @@ class BitoDatabaseMigrationTest {
         db.execSQL("INSERT INTO points_ledger VALUES ('p1', 1, 'HABIT_DONE', 'h1:20000', 20000, 1000)")
         // Sin esto, Room llama a onCreate y la migracion no se ejecuta nunca.
         db.execSQL("PRAGMA user_version = 1")
+        assertEquals("el PRAGMA deja la base sembrada en la version 1 antes de abrirla con Room", 1, db.version)
         db.close()
     }
 

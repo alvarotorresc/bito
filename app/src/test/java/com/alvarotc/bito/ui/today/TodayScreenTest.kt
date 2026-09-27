@@ -378,6 +378,9 @@ class TodayScreenTest {
 
         compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Paused", useUnmergedTree = true).assertExists()
+        // Same reasoning as the tasks-only case: with every habit paused there is nothing left
+        // for the ring to count, so it must not sit there reading "0 of 0" either (Pixel bug).
+        compose.onNodeWithTag("ring", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -426,6 +429,9 @@ class TodayScreenTest {
 
         compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        // Nothing left to ring: a tasks-only Hoy has no habits practice for it to count, so the
+        // ring itself must go, not just sit there reading "0 of 0" (Pixel bug).
+        compose.onNodeWithTag("ring", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

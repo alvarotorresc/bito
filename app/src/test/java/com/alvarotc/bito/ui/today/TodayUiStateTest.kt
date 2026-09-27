@@ -512,4 +512,17 @@ class TodayUiStateTest {
 
         assertFalse(ui.hasAnyTasks)
     }
+
+    @Test
+    fun `cards is empty for a tasks-only installation, even one that once had habits`() {
+        // Archived, not merely absent: an installation that started with habits and dropped
+        // them all must read the same as one that never had any (Pixel bug: an all-tasks Hoy
+        // still drew the ring as a bare "0 of 0" — the screen hides the ring off cards.isEmpty()).
+        val state = stateOf(habits = listOf(habit("h1", status = HabitStatus.ARCHIVED)))
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertTrue(ui.cards.isEmpty())
+        assertEquals(0, ui.ringTotal)
+    }
 }

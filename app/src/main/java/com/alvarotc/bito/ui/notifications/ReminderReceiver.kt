@@ -6,6 +6,7 @@ import android.content.Intent
 import com.alvarotc.bito.BitoApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.time.ZoneId
 
@@ -21,7 +22,7 @@ class ReminderReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 // DataStore IO reading live state or a TOCTOU SecurityException rescheduling the
                 // next occurrence must not crash the process — finish() below still has to run so

@@ -75,13 +75,15 @@ class TaskDaosTest {
         }
 
     @Test
-    fun `observeAll and all see every stored task`() =
+    fun `observeAll and all order by createdAtMillis then id`() =
         runTest {
             db.taskDao().upsert(taskEntity(id = "a", createdAtMillis = 200L))
             db.taskDao().upsert(taskEntity(id = "b", createdAtMillis = 100L))
 
-            assertEquals(setOf("a", "b"), db.taskDao().observeAll().first().map { it.id }.toSet())
-            assertEquals(setOf("a", "b"), db.taskDao().all().map { it.id }.toSet())
+            // El @Query de ambos metodos es "ORDER BY createdAtMillis, id" — "b" (100) va antes
+            // que "a" (200) pese a haberse insertado despues.
+            assertEquals(listOf("b", "a"), db.taskDao().observeAll().first().map { it.id })
+            assertEquals(listOf("b", "a"), db.taskDao().all().map { it.id })
         }
 
     @Test

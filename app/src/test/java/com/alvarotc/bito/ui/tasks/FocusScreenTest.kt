@@ -5,6 +5,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -284,6 +285,47 @@ class FocusScreenTest {
     /** [SemanticsActions.OnClick] directly — a button inside this sheet's own [tapText] caveat. */
     private fun tapTag(tag: String) {
         compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+    }
+
+    @Test
+    fun `dismissing the busy sheet by its scrim closes the screen and writes nothing`() {
+        runBlocking {
+            tasksRepo.create(taskEntity(id = "t1", title = "Tarea uno", createdOnDay = today))
+            tasksRepo.create(taskEntity(id = "t2", title = "Tarea dos", createdOnDay = today))
+            focusStore.start(
+                FocusSession(
+                    taskId = "t1",
+                    startedAtMillis = fixedNow,
+                    endsAtMillis = fixedNow + 10 * 60_000L,
+                    endsAtElapsed = 10 * 60_000L,
+                    bootMillis = FocusClock.bootSignatureOf(fixedNow, 0L),
+                ),
+            )
+        }
+        val vm = newViewModel("t2")
+        var closed = false
+        var keptOther = false
+        render(vm, onClose = { closed = true }, onKeepOther = { keptOther = true })
+
+        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertExists()
+
+        // El scrim del ModalBottomSheet de Material3 no expone un click semantico normal (no hay
+        // performClick posible bajo este harness, ni tampoco un pointerInput sintetizable) — su
+        // unica pista accesible es su propia descripcion de accesibilidad, "Close sheet", con su
+        // OnClick semantica detras. Descartar por ahi es la misma salida que el boton atras del
+        // sistema: onDismissRequest = onClose (ver FocusScreen.kt).
+        compose
+            .onNodeWithContentDescription("Close sheet")
+            .fetchSemanticsNode()
+            .config[SemanticsActions.OnClick]
+            .action
+            ?.invoke()
+        compose.waitForIdle()
+
+        assertTrue(closed)
+        assertFalse(keptOther)
+        // Descartar no es "seguir con la otra": no escribe nada, t1 sigue siendo quien corre.
+        assertEquals("t1", runBlocking { focusStore.session.first() }?.taskId)
     }
 
     @Test

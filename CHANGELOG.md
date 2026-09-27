@@ -18,6 +18,10 @@ Bito ya tiene algo para cuando el día se te echa encima: un par de minutos resp
 - **La vibración de Ajustes** también marca cada cambio de fase al respirar.
 - **Una copia de seguridad hecha con la 1.2.0 no se puede importar en la 1.1.0.** Al revés sí: la 1.2.0 lee sin problema cualquier copia anterior. Si compartes copias entre dos móviles, actualiza los dos.
 
+### Fixed
+
+- **La cara dramática del Sargento** ya no se pisa la boca con las marcas de guerra.
+
 ## [1.1.0] - 2026-09-26
 
 Bito ya tiene sitio para eso que llevas tres semanas esquivando y que no es un hábito.

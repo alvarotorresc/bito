@@ -129,6 +129,13 @@ class BreathingViewModel(
         val gone: Boolean = false,
         val pending: BreathingSession? = null,
         val pendingSizeAtClose: Int? = null,
+        /**
+         * Salida en curso ([leave]): la etapa se queda donde estaba (nada de FINISHED, ni un
+         * fotograma de la burbuja de cierre), pero ningun cierre, arranque ni otra salida vuelve a
+         * actuar. Sin esto, con la etapa aun en RUNNING, un doble atras o el ON_STOP del
+         * desapilado volvian a entrar en [finishRunning] y guardaban la misma sesion dos veces.
+         */
+        val leaving: Boolean = false,
     )
 
     private val live = MutableStateFlow(Live())
@@ -175,13 +182,16 @@ class BreathingViewModel(
 
     /** Solo en memoria: elegir chip no escribe ajustes (§4.6). En el final, vuelve a reposo con ese modo. */
     fun selectMode(mode: BreathingMode) {
-        if (live.value.stage == BreathingStage.RUNNING) return
-        live.update { it.copy(selectedMode = mode, stage = BreathingStage.IDLE, point = null) }
+        if (live.value.stage == BreathingStage.RUNNING || live.value.leaving) return
+        // Ver un pending de la sesion anterior aqui tampoco tiene sentido: mismo motivo que en start().
+        live.update {
+            it.copy(selectedMode = mode, stage = BreathingStage.IDLE, point = null, pending = null, pendingSizeAtClose = null)
+        }
     }
 
     fun start() {
         val current = live.value
-        if (current.stage == BreathingStage.RUNNING) return
+        if (current.stage == BreathingStage.RUNNING || current.leaving) return
         // El modo por defecto viene de [lastPersistedMode] (mismo combine que uiState), no del
         // `prefs` recogido aparte: los dos vienen del mismo settings.settings pero por vias
         // distintas, y en los primeros milisegundos tras abrir la pantalla pueden no coincidir
@@ -196,6 +206,10 @@ class BreathingViewModel(
                 selectedMode = mode,
                 point = BreathingRhythm.at(mode, 0),
                 anchorElapsed = elapsed(),
+                // Un pending de la sesion anterior ya no tiene sentido al empezar otra: sin esto,
+                // un restore que reviviera este ViewModel arrancaria con un pending viejo (T10).
+                pending = null,
+                pendingSizeAtClose = null,
             )
         // La unica escritura del modo: al empezar y solo si cambio (cada escritura repinta los widgets).
         if (lastPersistedMode != mode) {
@@ -211,18 +225,33 @@ class BreathingViewModel(
             }
     }
 
-    fun stop() {
+    fun stop() = finishRunning(showFinished = true)
+
+    /**
+     * Calcula lo mismo que veria el siguiente tick (completada o no, y cuantos segundos) y cierra
+     * la sesion. [showFinished] decide si la pantalla pasa a FINISHED (parada manual) o se queda
+     * donde estaba (abandono via [leave], que no debe ensenar nunca la burbuja de cierre).
+     */
+    private fun finishRunning(showFinished: Boolean) {
         val current = live.value
-        if (current.stage != BreathingStage.RUNNING) return
-        // Entre que el ritmo llega al final y el siguiente tick lo ve, un "Parar" en ese hueco no
+        if (current.stage != BreathingStage.RUNNING || current.leaving) return
+        // Entre que el ritmo llega al final y el siguiente tick lo ve, un cierre en ese hueco no
         // debe grabar una sesion incompleta de mas de 2 minutos: si el ritmo ya esta acabado,
         // cuenta como si lo hubiera visto el tick.
         val elapsedNow = elapsed()
         val point = BreathingRhythm.at(runningMode, elapsedNow - current.anchorElapsed)
         if (point.finished) {
-            close(completed = true, seconds = (BreathingRhythm.totalMillis(runningMode) / 1_000L).toInt())
+            close(
+                completed = true,
+                seconds = (BreathingRhythm.totalMillis(runningMode) / 1_000L).toInt(),
+                showFinished = showFinished,
+            )
         } else {
-            close(completed = false, seconds = ((elapsedNow - current.anchorElapsed) / 1_000L).toInt())
+            close(
+                completed = false,
+                seconds = ((elapsedNow - current.anchorElapsed) / 1_000L).toInt(),
+                showFinished = showFinished,
+            )
         }
     }
 
@@ -236,11 +265,15 @@ class BreathingViewModel(
     }
 
     /**
-     * Salir (flecha, atras del sistema, «Listo»): para si hacia falta y marca [BreathingUiState.gone]
-     * solo cuando la escritura pendiente ya ha terminado.
+     * Salir (flecha, atras del sistema, «Listo»): para si hacia falta sin pasar por FINISHED (Review
+     * Final M11, Minor 3: abandonar a mitad de sesion no debe ensenar ni un fotograma de la burbuja
+     * «Terminado»), guarda si toca, y solo entonces marca [BreathingUiState.gone]. Idempotente: tras
+     * la primera llamada, [Live.leaving] corta cualquier otra salida, parada u [onBackgrounded].
      */
     fun leave() {
-        stop()
+        if (live.value.leaving) return
+        finishRunning(showFinished = false)
+        live.update { it.copy(leaving = true) }
         viewModelScope.launch {
             saveJob?.join()
             live.update { it.copy(gone = true) }
@@ -251,7 +284,7 @@ class BreathingViewModel(
         val on = !musicOn()
         live.update { it.copy(musicOverride = on) }
         viewModelScope.launch { settings.update { it.copy(breathingMusicEnabled = on) } }
-        if (live.value.stage == BreathingStage.RUNNING) {
+        if (live.value.stage == BreathingStage.RUNNING && !live.value.leaving) {
             if (on) music.start() else music.stop()
         }
     }
@@ -263,6 +296,10 @@ class BreathingViewModel(
     }
 
     private fun musicOn(): Boolean = live.value.musicOverride ?: prefs.breathingMusicEnabled
+
+    private fun clearPending() {
+        viewModelScope.launch { live.update { it.copy(pending = null, pendingSizeAtClose = null) } }
+    }
 
     private fun tick() {
         val current = live.value
@@ -278,16 +315,22 @@ class BreathingViewModel(
         }
     }
 
+    /**
+     * [showFinished] = false es lo que usa [leave] para abandonar a mitad de sesion sin pasar nunca
+     * por BreathingStage.FINISHED (Review Final M11, Minor 3): se guarda igual si toca, pero la
+     * pantalla no llega a ensenar la burbuja de cierre porque [leave] la desapila justo despues.
+     */
     private fun close(
         completed: Boolean,
         seconds: Int,
+        showFinished: Boolean = true,
     ) {
         loop?.cancel()
         loop = null
         music.stop()
         if (!completed && seconds < MIN_SAVED_SECONDS) {
             // Nada guardado, el contador no se ha movido: una frase de cierre seria mentira (§5.3).
-            live.update { it.copy(stage = BreathingStage.IDLE, point = null) }
+            if (showFinished) live.update { it.copy(stage = BreathingStage.IDLE, point = null) }
             return
         }
         val mode = runningMode
@@ -305,7 +348,8 @@ class BreathingViewModel(
         // stage y pending cambian en el MISMO update: uiState nunca emite FINISHED con el contador
         // de antes de esta sesion (Review Focus 5).
         live.update {
-            it.copy(stage = BreathingStage.FINISHED, pending = pendingSession, pendingSizeAtClose = lastCombinedSessionCount)
+            val withPending = it.copy(pending = pendingSession, pendingSizeAtClose = lastCombinedSessionCount)
+            if (showFinished) withPending.copy(stage = BreathingStage.FINISHED) else withPending
         }
         // NonCancellable: la fila tiene que llegar a Room aunque la pantalla se desapile en este
         // mismo fotograma y el viewModelScope muera con ella.
@@ -337,6 +381,10 @@ class BreathingViewModel(
             if (l.pending != null && state.breathingSessions.size <= (l.pendingSizeAtClose ?: -1)) {
                 state.breathingSessions + l.pending
             } else {
+                // La fila real ya llego (o no habia pending): se limpia para que un pending
+                // consumido no siga vivo el resto de la vida del ViewModel (T10, edge case de
+                // restore). No cambia lo que ve esta emision: [sessions] es igual con o sin el.
+                if (l.pending != null) clearPending()
                 state.breathingSessions
             }
         return BreathingUiState(

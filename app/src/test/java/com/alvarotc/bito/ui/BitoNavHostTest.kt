@@ -32,6 +32,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.R
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.settings.FocusClock
@@ -294,8 +295,9 @@ class BitoNavHostTest {
     @Test
     fun `the bottom bar hides on the habit form but survives on stats`() {
         setContent()
+        val addLabel = ApplicationProvider.getApplicationContext<Application>().getString(R.string.nav_new_habit)
 
-        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription(addLabel, useUnmergedTree = true).performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
@@ -314,8 +316,9 @@ class BitoNavHostTest {
     @Test
     fun `tapping create opens the choice sheet with a habit and a task`() {
         setContent()
+        val addLabel = ApplicationProvider.getApplicationContext<Application>().getString(R.string.nav_new_habit)
 
-        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription(addLabel, useUnmergedTree = true).performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -328,8 +331,9 @@ class BitoNavHostTest {
     @Test
     fun `choosing a habit from the choice sheet reaches the usual habit form`() {
         setContent()
+        val addLabel = ApplicationProvider.getApplicationContext<Application>().getString(R.string.nav_new_habit)
 
-        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription(addLabel, useUnmergedTree = true).performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
@@ -359,8 +363,9 @@ class BitoNavHostTest {
     @Test
     fun `choosing a task from the choice sheet opens the task form with saving disabled on a blank title`() {
         setContent()
+        val addLabel = ApplicationProvider.getApplicationContext<Application>().getString(R.string.nav_new_habit)
 
-        compose.onNodeWithContentDescription("Add", useUnmergedTree = true).performClick()
+        compose.onNodeWithContentDescription(addLabel, useUnmergedTree = true).performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }

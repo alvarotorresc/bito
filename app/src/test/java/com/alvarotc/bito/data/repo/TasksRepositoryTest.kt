@@ -9,6 +9,7 @@ import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -147,6 +148,18 @@ class TasksRepositoryTest {
             repo.postpone("t1", DAY_ZERO, nowMillis = 2_000L)
 
             assertEquals(2, db.taskEventDao().all().size)
+        }
+
+    @Test
+    fun `observeTasks starts empty and reacts to an insert and an update`() =
+        runTest {
+            assertTrue(repo.observeTasks().first().isEmpty())
+
+            repo.create(taskEntity(id = "t1", title = "Llamar al banco"))
+            assertEquals(listOf("Llamar al banco"), repo.observeTasks().first().map { it.title })
+
+            repo.update("t1", title = "Llamar al banco ya", firstStep = null, dueKind = DueKind.NONE, dueDay = null)
+            assertEquals(listOf("Llamar al banco ya"), repo.observeTasks().first().map { it.title })
         }
 
     @Test

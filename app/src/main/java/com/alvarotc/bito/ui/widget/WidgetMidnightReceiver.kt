@@ -7,6 +7,7 @@ import androidx.glance.appwidget.updateAll
 import com.alvarotc.bito.BitoApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -17,7 +18,7 @@ class WidgetMidnightReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         val result = goAsync()
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 // A DataStore IO failure at rotation time (e.g. a corrupted preferences file) must not
                 // crash the process — finish() below still has to run so the system doesn't ANR us.

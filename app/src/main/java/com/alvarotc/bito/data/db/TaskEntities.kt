@@ -10,8 +10,10 @@ import com.alvarotc.bito.domain.model.TaskStatus
 
 /**
  * Fila de una tarea puntual (spec §7.1). Las nueve tablas del doc tecnico §3 pasan a once con esta
- * y con [TaskEventEntity]. Los dias logicos se guardan como hechos capturados en su momento, nunca
- * recalculados desde millis (regla E7, misma disciplina que [HabitEntity]).
+ * y con [TaskEventEntity] (v1 -> v2, M10); la posterior [BreathingSessionEntity] (v2 -> v3, M11)
+ * las deja en doce, las que hoy lista `entities` en [BitoDatabase]. Los dias logicos se guardan
+ * como hechos capturados en su momento, nunca recalculados desde millis (regla E7, misma
+ * disciplina que [HabitEntity]).
  *
  * El ORDEN de estos campos es el orden de las columnas del DDL que genera Room y que copia
  * MIGRATION_1_2. Reordenarlos rompe la migracion.

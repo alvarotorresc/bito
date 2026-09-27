@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -395,6 +396,22 @@ private fun SettingsDivider() {
 }
 
 /**
+ * Shared by [NotificationsSectionCard] and [BreathingSectionCard]: notifications disabled at the
+ * system level outranks anything the switches above set — a reminder that can never be shown is
+ * never shown regardless. Tapping it opens the app's notification settings, the only place left
+ * to grant them once Android has stopped showing the permission dialog.
+ */
+@Composable
+private fun NotificationPermissionNoticeRow(onOpenNotificationSettings: () -> Unit) {
+    SettingsDivider()
+    SettingsRow(
+        icon = BitoIcons.Info,
+        label = stringResource(R.string.notif_permission_hint),
+        onClick = onOpenNotificationSettings,
+    )
+}
+
+/**
  * Reminders collapsed to one row (mockup 8a): the configured hours read as a single bold value and
  * management moves to [RemindersSheet]. `ReminderSync` (a different lane) observes the repository
  * and reprograms alarms; this screen only ever writes through [SettingsViewModel].
@@ -465,12 +482,7 @@ private fun NotificationsSectionCard(
         // is still never shown. Tapping it opens the app's notification settings, the only place
         // left to grant them once Android has stopped showing the permission dialog.
         if (notificationsBlocked) {
-            SettingsDivider()
-            SettingsRow(
-                icon = BitoIcons.Info,
-                label = stringResource(R.string.notif_permission_hint),
-                onClick = onOpenNotificationSettings,
-            )
+            NotificationPermissionNoticeRow(onOpenNotificationSettings)
         }
         if (exactAlarmsBlocked) {
             SettingsDivider()
@@ -542,12 +554,7 @@ private fun BreathingSectionCard(
             }
         }
         if (enabled && notificationsBlocked) {
-            SettingsDivider()
-            SettingsRow(
-                icon = BitoIcons.Info,
-                label = stringResource(R.string.notif_permission_hint),
-                onClick = onOpenNotificationSettings,
-            )
+            NotificationPermissionNoticeRow(onOpenNotificationSettings)
         }
     }
 
@@ -1454,8 +1461,16 @@ private fun SettingsRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 56.dp)
-            .clickable(onClickLabel = onClickLabel, onClick = onClick),
+            // defaultMinSize + padding, not heightIn(min = 56.dp): heightIn alone gives a
+            // one-line row its breathing room by centering it inside a 56dp box, but once the
+            // hint wraps to 2-3 lines the content already exceeds 56dp and heightIn does
+            // nothing — the text ends up glued to the dividers above/below (seen on the Pixel:
+            // "Recordatorios", "Celebración de día perfecto"). This keeps the same 8dp gap for
+            // every row regardless of how many lines the hint takes, while one-line rows still
+            // land at exactly 56dp total (56 - 2*8 = 40dp min content height, unchanged).
+            .defaultMinSize(minHeight = 56.dp)
+            .clickable(onClickLabel = onClickLabel, onClick = onClick)
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -1509,8 +1524,12 @@ private fun ToggleSettingsRow(
     Row(
         Modifier
             .testTag("$tag-row")
+            // Same fix as SettingsRow: defaultMinSize + padding instead of heightIn(min = 56.dp)
+            // so multi-line hints ("Avisos de tareas") get the same 8dp breathing room as
+            // one-line ones instead of colliding with the dividers.
+            .defaultMinSize(minHeight = 56.dp)
             .toggleable(value = checked, onValueChange = onChange, role = Role.Switch)
-            .heightIn(min = 56.dp),
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

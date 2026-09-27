@@ -72,6 +72,8 @@ import com.alvarotc.bito.ui.tasks.toFormState
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.time.ZoneId
 
 @Composable
@@ -87,8 +89,15 @@ fun BitoNavHost(container: AppContainer) {
     // further down against the new container's own reconcile, the exact race this fix removes.
     var reconciled by remember(container) { mutableStateOf(false) }
     LaunchedEffect(container) {
-        OnboardingReconciler.reconcile(container.settings, container.habits)
-        reconciled = true
+        // Main.immediate: no hace nada en la app (el efecto ya corre en el hilo principal), pero
+        // fija que la escritura de `reconciled` vuelva al principal tras la espera de Room y
+        // DataStore. El dispatcher de efectos de los tests de Compose reanuda en el hilo que
+        // termino la espera (arch_disk_io) si cae fuera de un fotograma, y desde ahi recomponia
+        // (CalledFromWrongThreadException en BitoNavHostTest).
+        withContext(Dispatchers.Main.immediate) {
+            OnboardingReconciler.reconcile(container.settings, container.habits)
+            reconciled = true
+        }
     }
     if (!reconciled) {
         Box(Modifier.fillMaxSize().background(Papel).testTag("app-loading"))
@@ -369,11 +378,15 @@ fun BitoNavHost(container: AppContainer) {
                         // un formulario en blanco para ese id dejaria "Guardar" sin escribir nada
                         // (TasksRepository.update sale por su propio `?: return@withTransaction`),
                         // asi que se vuelve atras sin enseñar nada en vez de fingir que hay algo que editar.
-                        val entity = container.tasks.task(id)
-                        if (entity == null) {
-                            nav.popBackStack()
-                        } else {
-                            loaded = entity.toFormState()
+                        // Main.immediate por lo mismo que el `reconciled` de arriba: popBackStack
+                        // toca el LifecycleRegistry de la entrada y exige el hilo principal.
+                        withContext(Dispatchers.Main.immediate) {
+                            val entity = container.tasks.task(id)
+                            if (entity == null) {
+                                nav.popBackStack()
+                            } else {
+                                loaded = entity.toFormState()
+                            }
                         }
                     }
                     val initial = loaded

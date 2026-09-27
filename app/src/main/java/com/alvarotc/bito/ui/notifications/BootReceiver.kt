@@ -6,6 +6,7 @@ import android.content.Intent
 import com.alvarotc.bito.BitoApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -21,7 +22,7 @@ class BootReceiver : BroadcastReceiver() {
     ) {
         if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
         val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 // A DataStore IO failure reading settings/habits fresh off boot must not crash the
                 // process — finish() below still has to run so the system doesn't ANR us.

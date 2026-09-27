@@ -1,5 +1,6 @@
 package com.alvarotc.bito
 
+import android.app.AlarmManager
 import android.app.Application
 import android.app.NotificationManager
 import androidx.core.app.NotificationCompat
@@ -9,16 +10,22 @@ import androidx.work.WorkManager
 import androidx.work.testing.WorkManagerTestInitHelper
 import com.alvarotc.bito.data.backup.BackupWorker
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.data.settings.FocusSession
+import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.ui.notifications.FocusReceiver
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.Notifier
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -164,6 +171,112 @@ class AppStartupTest {
         // Still DAILY: the cancelled collector never saw the WEEKLY write, so it never reached
         // WorkManager with it.
         assertEquals(TimeUnit.DAYS.toMillis(1), workInfos().single().periodicityInfo?.repeatIntervalMillis)
+    }
+
+    // ReminderSync/BackupSync/WidgetRefresher, los otros tres colectores que AppStartup.start
+    // lanza a la vez, programan sus propias alarmas ajenas al foco — filtrar por el componente
+    // del PendingIntent es lo unico que distingue "hay una alarma de foco" de "hay CUALQUIER
+    // alarma", igual que FocusAlarmTest.
+    private fun focusAlarmScheduled(alarmManager: AlarmManager) = focusAlarmCount(alarmManager) > 0
+
+    @Suppress("DEPRECATION") // ShadowAlarmManager.ScheduledAlarm#operation has no replacement accessor.
+    private fun focusAlarmCount(alarmManager: AlarmManager) =
+        shadowOf(alarmManager).scheduledAlarms.count {
+            shadowOf(it.operation).savedIntent.component?.className == FocusReceiver::class.java.name
+        }
+
+    @Test
+    fun `start rearms the alarm and the tray for a live session a forced stop already killed both of`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val alarmManager = app.getSystemService(AlarmManager::class.java)
+        val notificationManager = app.getSystemService(NotificationManager::class.java)
+        NotificationChannels.ensure(app)
+        shadowOf(notificationManager).setNotificationsEnabled(true)
+        runBlocking { container.tasks.create(taskEntity(id = "t1", title = "Leer")) }
+        val endsAtMillis = System.currentTimeMillis() + 5 * 60_000L
+        val session =
+            FocusSession(
+                taskId = "t1",
+                startedAtMillis = System.currentTimeMillis(),
+                endsAtMillis = endsAtMillis,
+                endsAtElapsed = 0L,
+                bootMillis = 0L,
+            )
+        runBlocking { container.focus.start(session) }
+        // Simula lo que un "forzar detencion" del sistema deja: la sesion sigue en el store, pero
+        // ni la alarma ni la bandeja existen — nada las programo en este proceso nuevo.
+
+        AppStartup.start(app, container, testScope())
+
+        eventually { focusAlarmScheduled(alarmManager) }
+        eventually { shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID) != null }
+        assertEquals(session, runBlocking { container.focus.session.first() })
+    }
+
+    @Test
+    fun `start leaves a session that expired while the app was dead alone, with no notification and no alarm`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val alarmManager = app.getSystemService(AlarmManager::class.java)
+        val notificationManager = app.getSystemService(NotificationManager::class.java)
+        NotificationChannels.ensure(app)
+        shadowOf(notificationManager).setNotificationsEnabled(true)
+        runBlocking { container.tasks.create(taskEntity(id = "t1", title = "Leer")) }
+        val session =
+            FocusSession(
+                taskId = "t1",
+                startedAtMillis = System.currentTimeMillis() - 10 * 60_000L,
+                endsAtMillis = System.currentTimeMillis() - 60_000L,
+                endsAtElapsed = 0L,
+                bootMillis = 0L,
+            )
+        runBlocking { container.focus.start(session) }
+
+        AppStartup.start(app, container, testScope())
+        // Afirmacion negativa sobre una corrutina lanzada: se da margen de sobra para que corra.
+        // La version determinista (llamando a recoverOnStart directamente) vive en FocusSyncTest.
+        Thread.sleep(500)
+
+        // Cada arranque de proceso pasa por aqui (recordatorio, widget, medianoche...): el aviso
+        // de fin ya lo dio FocusReceiver cuando la alarma disparo, repetirlo seria ruido.
+        assertNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+        assertTrue(!focusAlarmScheduled(alarmManager))
+        // La sesion sigue: terminarla o dejarla es decision del usuario.
+        assertEquals(session, runBlocking { container.focus.session.first() })
+    }
+
+    @Test
+    fun `a second process start with a live session duplicates nothing`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val alarmManager = app.getSystemService(AlarmManager::class.java)
+        val notificationManager = app.getSystemService(NotificationManager::class.java)
+        NotificationChannels.ensure(app)
+        shadowOf(notificationManager).setNotificationsEnabled(true)
+        runBlocking { container.tasks.create(taskEntity(id = "t1", title = "Leer")) }
+        val session =
+            FocusSession(
+                taskId = "t1",
+                startedAtMillis = System.currentTimeMillis(),
+                endsAtMillis = System.currentTimeMillis() + 5 * 60_000L,
+                endsAtElapsed = 0L,
+                bootMillis = 0L,
+            )
+        runBlocking { container.focus.start(session) }
+        val scope = testScope()
+
+        AppStartup.start(app, container, scope)
+        eventually { focusAlarmScheduled(alarmManager) }
+        // Un segundo arranque de proceso sobre la misma sesion viva.
+        AppStartup.resetForTests()
+        AppStartup.start(app, container, scope)
+        assertEquals(1, AppStartup.startInvocations.get())
+        Thread.sleep(500)
+
+        assertEquals(1, focusAlarmCount(alarmManager))
+        assertNotNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+        assertEquals(session, runBlocking { container.focus.session.first() })
     }
 
     private fun eventually(

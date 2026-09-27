@@ -38,6 +38,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -190,7 +193,13 @@ fun BreathingScreen(
                         stringResource(phaseRes(state.phase)),
                         style = MaterialTheme.typography.headlineLarge,
                         color = Tinta,
-                        modifier = Modifier.testTag("breathing-phase"),
+                        // TalkBack anuncia cada cambio de fase solo (Review Final M11, T11 deferred):
+                        // sin esto la palabra cambia en silencio. El contador de abajo no lleva esto,
+                        // anunciaria cada segundo.
+                        modifier =
+                            Modifier
+                                .testTag("breathing-phase")
+                                .semantics { liveRegion = LiveRegionMode.Polite },
                     )
                     Text(
                         if (state.mode == BreathingMode.SLEEP) {

@@ -6,9 +6,9 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 
 /**
- * Resolves which string resource Habi speaks in each of its eleven voiced contexts, by
- * [Personality] and (for three of the eleven) [Mood]. `res/values{,-es}/strings_habi.xml` holds
- * the 60 mapped strings plus [R.string.habi_name_fallback] — M9 draft copy, pending architect
+ * Resolves which string resource Habi speaks in each of its thirteen voiced contexts, by
+ * [Personality] and (for three of the thirteen) [Mood]. `res/values{,-es}/strings_habi.xml` holds
+ * the 66 mapped strings plus [R.string.habi_name_fallback] — M9 draft copy, pending architect
  * validation (docs/07-textos-personalidades.md).
  *
  * - [bubbleRes] — the Stats commentator's card AND the Habi screen's own bubble (T11) both used
@@ -30,6 +30,8 @@ import com.alvarotc.bito.domain.model.Personality
  *   `%2$s` = the badge name.
  * - [taskDoneRes] — the Today task row's undo-snackbar text (T13), personality-only, `%1$s` =
  *   the user's name — except `habi_task_done_sargento`, which deliberately carries no name.
+ * - [breathingDoneRes] — the closing line after breathing (M11), personality-only, `%1$s` = the
+ *   user's name, the same line for a completed session as for a stopped one.
  * - [taskFocusRes] — [com.alvarotc.bito.ui.tasks.FocusScreen]'s entrance line, spoken once a
  *   session starts (T19), personality-only, `%1$s` = the user's name and `%2$d` = the chosen
  *   minutes — only `habi_task_focus_sargento` uses the second placeholder; the other two ignore it.
