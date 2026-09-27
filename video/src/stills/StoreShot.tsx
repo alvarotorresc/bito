@@ -1,19 +1,12 @@
 import React from 'react';
 import { AbsoluteFill } from 'remotion';
-import { texto, type CopyKey, type Lang } from '../copy';
+import { texto, type Lang } from '../copy';
 import { Fondo } from '../ui/Fondo';
 import { Phone, medidasPhone } from '../ui/Phone';
 import { Rotulo } from '../ui/Rotulo';
-import type { Pantalla } from '../ui/shots';
+import { STORE_SHOTS } from './storeShots';
 
-export const STORE_SHOTS: readonly { pantalla: Pantalla; titular: CopyKey }[] = [
-  { pantalla: 'hoy', titular: 'frase' },
-  { pantalla: 'detalle', titular: 'hace.rachas' },
-  { pantalla: 'notificacion', titular: 'promesa.notificacion' },
-  { pantalla: 'widget', titular: 'promesa.widget' },
-  { pantalla: 'logros', titular: 'hace.logros' },
-  { pantalla: 'repaso', titular: 'promesa.repaso' },
-];
+export { STORE_SHOTS };
 
 export type StoreShotProps = { lang: Lang; indice: number };
 

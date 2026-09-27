@@ -2,9 +2,9 @@ import { execFileSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { CAPTURAS } from './validar-store.mjs';
 
 const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
-const NUM_CAPTURAS = 6;
 
 const ejecutar = (cmd, args) => execFileSync(cmd, args, { cwd: raiz, stdio: 'inherit' });
 const still = (comp, salida, props) =>
@@ -28,7 +28,7 @@ for (const lang of ['es', 'en']) {
   convertir(`out/tmp/promo-${lang}.png`, `out/stills/promo-${lang}.png`, 'rgb24');
   still('FeatureGraphic', `out/tmp/fg-${lang}.png`, { lang });
   convertir(`out/tmp/fg-${lang}.png`, `out/store/${lang}/feature-graphic.png`, 'rgb24');
-  for (let i = 0; i < NUM_CAPTURAS; i++) {
+  for (let i = 0; i < CAPTURAS; i++) {
     const n = String(i + 1).padStart(2, '0');
     still('StoreShot', `out/tmp/shot-${lang}-${n}.png`, { lang, indice: i });
     convertir(`out/tmp/shot-${lang}-${n}.png`, `out/store/${lang}/shot-${n}.png`, 'rgb24');
