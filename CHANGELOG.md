@@ -2,7 +2,7 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
-## [1.2.0] - 2026-09-XX
+## [1.2.0] - 2026-09-27
 
 Bito ya tiene algo para cuando el día se te echa encima: un par de minutos respirando con Habi.
 
