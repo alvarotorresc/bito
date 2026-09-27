@@ -1,10 +1,13 @@
 package com.alvarotc.bito.ui.notifications
 
 import android.content.Context
+import android.os.SystemClock
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.settings.FocusClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -18,6 +21,11 @@ import kotlinx.coroutines.launch
  * pantalla y la sesion sigue en el store aunque nadie la mire — el limpiador tiene que vivir donde
  * vive la sesion, no donde vive la pantalla. Sin escribir DONE ni ATTEMPT: la tarea ya no esta, no
  * hubo un "termino" ni un "lo dejo".
+ *
+ * [recoverOnStart] corre una vez por arranque, antes de los dos colectores: un forzar detencion
+ * del sistema mata la alarma y la notificacion en el acto, pero la sesion sigue en el store —
+ * `FocusViewModel.init` la rearma, pero solo si la pantalla de foco llega a construirse. Esto
+ * cubre el resto: abrir la app por cualquier otra pantalla con una sesion viva de por medio.
  */
 object FocusSync {
     fun start(
@@ -25,6 +33,7 @@ object FocusSync {
         container: AppContainer,
         scope: CoroutineScope,
     ) {
+        scope.launch { recoverOnStart(context, container) }
         scope.launch {
             container.focus.session.collect { session ->
                 if (session == null) {
@@ -50,5 +59,30 @@ object FocusSync {
                     }
                 }
         }
+    }
+
+    /**
+     * Vencida mientras la app estaba muerta se resuelve igual que [FocusReceiver] la resuelve
+     * cuando la app esta viva: solo el aviso de "se acabo el tiempo", sin tocar la sesion ni
+     * reprogramar una alarma para un instante que ya paso — terminarla o dejarla sigue siendo
+     * decision del usuario. Una tarea borrada mientras tanto la deja para el segundo colector de
+     * arriba, que ya sabe limpiarla; aqui no hay nada seguro que postear sin su titulo.
+     */
+    private suspend fun recoverOnStart(
+        context: Context,
+        container: AppContainer,
+    ) {
+        runCatching {
+            val session = container.focus.session.first() ?: return@runCatching
+            val task = container.tasks.task(session.taskId) ?: return@runCatching
+            val remaining = FocusClock.remainingMillis(session, System.currentTimeMillis(), SystemClock.elapsedRealtime())
+            NotificationChannels.ensure(context)
+            if (remaining > 0) {
+                Notifier.showFocus(context, task.title, session.endsAtMillis)
+                FocusAlarm.schedule(context, session.endsAtMillis)
+            } else {
+                Notifier.showFocusOver(context, task.title)
+            }
+        }.onFailure { if (it is CancellationException) throw it }
     }
 }
