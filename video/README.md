@@ -24,7 +24,7 @@ npm run final      # tests → comprobación de capturas → render es/en → ve
 `npm run final` encadena:
 
 1. `vitest run`: tiempos, parpadeos, toques, mezcla de audio, copia y validador de PNG.
-2. `scripts/comprobar-shots.mjs`: corta el render si falta alguna de las 28 capturas en
+2. `scripts/comprobar-shots.mjs`: corta el render si falta alguna de las 32 capturas en
    `public/shots/{es,en}/`. Nunca sale un MP4 con placeholders grises.
 3. `render:es` y `render:en`: H.264 CRF 18 con audio AAC.
 4. `verificar`: `scripts/verificar-video.sh` mide resolución, fps, duración y pista de audio.

@@ -6,7 +6,7 @@ import { Dedo } from '../ui/Dedo';
 import { Fondo } from '../ui/Fondo';
 import { Phone, medidasPhone, pantallaEnFrame } from '../ui/Phone';
 import { Rotulo } from '../ui/Rotulo';
-import { TOQUES } from '../ui/shots';
+import { punto, TOQUES } from '../ui/shots';
 
 const ALTO_MOVIL = 900;
 const m = medidasPhone(ALTO_MOVIL);
@@ -26,9 +26,10 @@ export const Escena07: React.FC<PromoProps> = ({ lang }) => {
     <AbsoluteFill>
       <Fondo />
       <Phone lang={lang} pantalla={pantalla} transicion={transicion} alto={ALTO_MOVIL} style={{ left: IZQ, top: ARRIBA }} />
-      {NAVEGA.map((n) => (
-        <Dedo key={n.momento} x={IZQ + m.marco + n.toque.x * m.ancho} y={ARRIBA + m.marco + n.toque.y * m.alto} toque={momentoLocal(n.momento)} />
-      ))}
+      {NAVEGA.map((n) => {
+        const p = punto(lang, n.toque);
+        return <Dedo key={n.momento} x={IZQ + m.marco + p.x * m.ancho} y={ARRIBA + m.marco + p.y * m.alto} toque={momentoLocal(n.momento)} />;
+      })}
       <div style={{ position: 'absolute', left: 100, top: 300, width: 900, display: 'flex', flexDirection: 'column', gap: 24 }}>
         <Rotulo entra={10} tamano={64} style={{ position: 'relative' }}>
           {texto(lang, 'nuevo.tareas.titular')}
