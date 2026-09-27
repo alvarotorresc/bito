@@ -2,6 +2,18 @@
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/). Versionado [SemVer](https://semver.org/lang/es/).
 
+## [1.3.0] - 2026-09-27
+
+Nada nuevo que aprender: esta versión pule lo que ya estaba, pantalla a pantalla.
+
+### Fixed
+
+- **Hoy**: el anillo de progreso ya no aparece cuando solo tienes tareas ni cuando todos tus hábitos están en pausa. El botón de respirar y Habi ya no van pegados en la cabecera.
+- **Widget de un hábito**: Habi aparece en el widget de un solo hábito, y se oculta cuando el widget es demasiado pequeño para que quepa del todo.
+- **Temporizador de una tarea**: el aviso de fin ya no se repite cada vez que vuelves a abrir la app. La alarma y la notificación de la cuenta atrás se recuperan al abrir la app, no solo al abrir el temporizador.
+- **Respirar**: salir a mitad de sesión ya no enseña la burbuja de terminado, y guarda una sola sesión. TalkBack anuncia cada fase.
+- **Ajustes**: un solo aviso de permiso de notificaciones para tareas y respiración, en vez de uno por sección. Las filas con subtítulo largo quedan alineadas con las demás.
+
 ## [1.2.0] - 2026-09-27
 
 Bito ya tiene algo para cuando el día se te echa encima: un par de minutos respirando con Habi.
