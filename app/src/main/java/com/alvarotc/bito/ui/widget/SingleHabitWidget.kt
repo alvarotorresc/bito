@@ -9,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,6 +70,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
 import java.time.ZoneId
 
+/**
+ * Below this width the mini Habi eats the habit name: at the 110 dp minimum, a 28 dp Habi left
+ * about 16 dp for the name and the Missing line did not fit at all.
+ */
+internal val HABI_MIN_WIDTH = 150.dp
+
+/** Whether the one-line layouts (compact Active, Missing, Paused) have room for the mini Habi. */
+internal fun showsHabi(width: Dp): Boolean = width >= HABI_MIN_WIDTH
+
 /** Offscreen render size (px) for the mini Habi beside the habit name — same technique as [TodayWidget]. */
 private const val HABI_BITMAP_SIZE_PX = 96
 
@@ -80,7 +90,7 @@ private const val HABI_BITMAP_SIZE_PX = 96
  * [LogHabitAction] path the list widget uses.
  */
 class SingleHabitWidget : GlanceAppWidget() {
-    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, TALL))
+    override val sizeMode = SizeMode.Responsive(setOf(COMPACT, COMPACT_WIDE, TALL, TALL_WIDE))
 
     override suspend fun provideGlance(
         context: Context,
@@ -123,8 +133,18 @@ class SingleHabitWidget : GlanceAppWidget() {
         /** 2x1: a one-line strip. */
         val COMPACT = DpSize(110.dp, 48.dp)
 
+        /**
+         * 2x1 wide enough for Habi. With [SizeMode.Responsive], `LocalSize` is always one of the
+         * declared sizes, never the real one — without a wide sibling the width check in
+         * [showsHabi] would only ever see 110 dp.
+         */
+        val COMPACT_WIDE = DpSize(HABI_MIN_WIDTH, 48.dp)
+
         /** 2x2 and up: centered, with a bigger progress readout. */
         val TALL = DpSize(110.dp, 110.dp)
+
+        /** 2x2 wide enough for Habi in the message states (see [COMPACT_WIDE]). */
+        val TALL_WIDE = DpSize(HABI_MIN_WIDTH, 110.dp)
     }
 }
 
@@ -160,7 +180,7 @@ private fun SingleHabitContent(
     }
 }
 
-/** The archived-or-gone and paused fallbacks: mini Habi beside one friendly line, whole surface tappable. */
+/** The archived-or-gone and paused fallbacks: mini Habi (when [showsHabi]) beside one friendly line, whole surface tappable. */
 @Composable
 private fun MessageContent(
     message: String,
@@ -176,13 +196,16 @@ private fun MessageContent(
                 .padding(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            provider = ImageProvider(habiBitmap),
-            contentDescription = null,
-            modifier = GlanceModifier.size(28.dp),
-        )
+        val withHabi = showsHabi(LocalSize.current.width)
+        if (withHabi) {
+            Image(
+                provider = ImageProvider(habiBitmap),
+                contentDescription = null,
+                modifier = GlanceModifier.size(28.dp),
+            )
+        }
         Box(
-            modifier = GlanceModifier.defaultWeight().padding(start = 8.dp),
+            modifier = GlanceModifier.defaultWeight().padding(start = if (withHabi) 8.dp else 0.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -260,12 +283,15 @@ private fun ActiveContent(
             modifier = root,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Image(
-                provider = ImageProvider(habiBitmap),
-                contentDescription = null,
-                modifier = GlanceModifier.size(28.dp),
-            )
-            Column(modifier = GlanceModifier.defaultWeight().padding(start = 8.dp)) {
+            val withHabi = showsHabi(LocalSize.current.width)
+            if (withHabi) {
+                Image(
+                    provider = ImageProvider(habiBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(28.dp),
+                )
+            }
+            Column(modifier = GlanceModifier.defaultWeight().padding(start = if (withHabi) 8.dp else 0.dp)) {
                 Text(
                     text = model.name,
                     maxLines = 1,

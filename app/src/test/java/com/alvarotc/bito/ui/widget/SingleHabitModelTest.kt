@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.widget
 
+import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
@@ -111,5 +112,14 @@ class SingleHabitModelTest {
             assertEquals(Personality.CHEERLEADER, model.spec.personality)
             assertEquals("body-dorado", model.spec.equipped.bodyColor)
         }
+    }
+
+    @Test
+    fun `habi only shows in the one-line layouts from 150 dp wide`() {
+        assertFalse(showsHabi(SingleHabitWidget.COMPACT.width))
+        assertFalse(showsHabi(149.dp))
+        assertTrue(showsHabi(150.dp))
+        assertTrue(showsHabi(SingleHabitWidget.COMPACT_WIDE.width))
+        assertTrue(showsHabi(SingleHabitWidget.TALL_WIDE.width))
     }
 }
