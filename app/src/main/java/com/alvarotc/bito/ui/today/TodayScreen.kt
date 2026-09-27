@@ -162,11 +162,11 @@ fun TodayScreen(
             // Empty is only true poverty when there is nothing at all — a habit merely paused
             // still has a home in the section below, and an open task still gives the day
             // something to do, so neither must trip "create your first habit". And the ring
-            // itself only belongs to an installation that has a habits practice at all: a
-            // tasks-only Hoy has nothing for it to count, so a bare "0 of 0" would just read as
-            // broken rather than as an invitation.
-            if (!state.hasAnyHabits) {
-                if (!state.loading && !state.hasAnyTasks) {
+            // itself has nothing to count whenever cards is empty — no habit due today, none
+            // active at all, or every one of them paused — so it must not draw a bare "0 of 0"
+            // in any of those cases either.
+            if (state.cards.isEmpty()) {
+                if (!state.loading && state.pausedHabits.isEmpty() && !state.hasAnyTasks) {
                     item { EmptyToday(onCreateHabit) }
                 }
             } else {

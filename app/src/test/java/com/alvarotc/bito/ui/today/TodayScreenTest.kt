@@ -378,6 +378,9 @@ class TodayScreenTest {
 
         compose.onNodeWithText("Nothing here yet", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithText("Paused", useUnmergedTree = true).assertExists()
+        // Same reasoning as the tasks-only case: with every habit paused there is nothing left
+        // for the ring to count, so it must not sit there reading "0 of 0" either (Pixel bug).
+        compose.onNodeWithTag("ring", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
