@@ -512,4 +512,25 @@ class TodayUiStateTest {
 
         assertFalse(ui.hasAnyTasks)
     }
+
+    @Test
+    fun `hasAnyHabits is false for a tasks-only installation, even one that once had habits`() {
+        // Archived, not merely absent: an installation that started with habits and dropped
+        // them all must read the same as one that never had any (Pixel bug: an all-tasks Hoy
+        // still drew the ring as a bare "0 of 0").
+        val state = stateOf(habits = listOf(habit("h1", status = HabitStatus.ARCHIVED)))
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertFalse(ui.hasAnyHabits)
+    }
+
+    @Test
+    fun `hasAnyHabits is true for a paused habit`() {
+        val state = stateOf(habits = listOf(habit("h1", status = HabitStatus.PAUSED)))
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertTrue(ui.hasAnyHabits)
+    }
 }

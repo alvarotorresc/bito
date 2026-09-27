@@ -96,6 +96,10 @@ data class TodayUiState(
     // without touching today at all, and the section (and with it the only route into "tasks")
     // must stay up regardless.
     val hasAnyTasks: Boolean = false,
+    // Not cards.isNotEmpty(): a habit that simply isn't due today (or is paused) still counts
+    // as "there is a habits practice here" — the ring only goes away for an installation that
+    // never had one, tasks-only, never for one where today happens to ask nothing of it.
+    val hasAnyHabits: Boolean = false,
     val loading: Boolean = true,
 )
 
@@ -159,6 +163,7 @@ fun buildTodayUiState(
         logHapticEnabled = logHapticEnabled,
         tasks = taskRows,
         hasAnyTasks = state.tasks.isNotEmpty(),
+        hasAnyHabits = state.habits.any { it.status != HabitStatus.ARCHIVED },
         loading = false,
     )
 }
