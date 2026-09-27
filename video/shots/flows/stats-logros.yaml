@@ -1,0 +1,24 @@
+appId: com.alvarotc.bito
+---
+# Solo para el video: Estadisticas desplazado hasta que la entrada a Logros/Badges quede
+# visible, sin llegar a tocarla. No se usa en to_web.py, to_landing.py ni la tienda: stats.png
+# sigue siendo la captura sin desplazar.
+- launchApp:
+    appId: com.alvarotc.bito
+    stopApp: true
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 20000
+- tapOn: ${L_NAV_STATS}
+- extendedWaitUntil:
+    visible: ${L_WEEK}
+    timeout: 15000
+- scrollUntilVisible:
+    element:
+      text: ".*${L_BADGES}.*"
+    direction: DOWN
+    timeout: 20000
+- assertVisible: ".*${L_BADGES}.*"
+- assertNotVisible: ${L_CELEBRATION}
+- assertNotVisible: ${L_PERFECT}
+- waitForAnimationToEnd

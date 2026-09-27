@@ -1,0 +1,22 @@
+appId: com.alvarotc.bito
+---
+# Solo para el video: Hoy desplazado hasta que la seccion de tareas quede visible, con al
+# menos una tarea y su boton "Empezar"/"Start". No se usa en to_web.py, to_landing.py ni la
+# tienda: hoy.png sigue siendo la captura sin desplazar.
+- launchApp:
+    appId: com.alvarotc.bito
+    stopApp: true
+- extendedWaitUntil:
+    visible: ".*${H_AGUA}.*"
+    timeout: 20000
+- assertVisible: ${L_TODAY}
+- scrollUntilVisible:
+    element: ".*${T_DENTISTA}.*"
+    direction: DOWN
+    timeout: 20000
+- assertVisible: ${L_TASKS_TITLE}
+- assertVisible: ".*${T_DENTISTA}.*"
+- assertVisible: ${L_START}
+- assertNotVisible: ${L_CELEBRATION}
+- assertNotVisible: ${L_PERFECT}
+- waitForAnimationToEnd

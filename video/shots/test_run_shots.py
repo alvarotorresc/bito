@@ -20,8 +20,18 @@ def app_strings(folder: str) -> dict[str, str]:
 
 class RunShotsTest(unittest.TestCase):
     def test_fourteen_screens_ending_in_respiracion(self):
-        self.assertEqual(len(run_shots.SCREENS), 14)
-        self.assertEqual(run_shots.SCREENS[-1], "respiracion")
+        self.assertEqual(len(run_shots.SCREENS), 16)
+        self.assertIn("respiracion", run_shots.SCREENS)
+
+    def test_video_only_screens_scroll_past_the_fold(self):
+        # hoy-tareas y stats-logros son solo para el video (Tarea 8b): no las usan to_web.py,
+        # to_landing.py ni la tienda, asi que no llevan deep link propio.
+        self.assertIn("hoy-tareas", run_shots.SCREENS)
+        self.assertIn("stats-logros", run_shots.SCREENS)
+        self.assertNotIn("hoy-tareas", run_shots.DEEP_LINKS)
+        self.assertNotIn("stats-logros", run_shots.DEEP_LINKS)
+        self.assertNotIn("hoy-tareas", run_shots.BEST_EFFORT)
+        self.assertNotIn("stats-logros", run_shots.BEST_EFFORT)
 
     def test_respiracion_opens_by_deep_link_on_papel(self):
         self.assertEqual(run_shots.DEEP_LINKS["respiracion"], "breathing")

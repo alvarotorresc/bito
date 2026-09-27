@@ -38,10 +38,15 @@ MAESTRO_SHOT_PATH = RAW / "respiracion-maestro.png"
 SCREENS = [
     "hoy", "detalle", "stats", "records", "logros", "habi", "tienda",
     "repaso", "ajustes", "tareas", "widget", "notificacion", "foco", "respiracion",
+    "hoy-tareas", "stats-logros",
 ]
 DEEP_LINKS = {"repaso": "review", "tareas": "tasks", "foco": "tasks", "respiracion": "breathing"}
 BEST_EFFORT = {"widget", "notificacion"}
 CROP_FROM_TOP = {"notificacion"}
+# hoy-tareas y stats-logros son pantallas solo del video (Tarea 8b): Hoy y Estadisticas
+# desplazados con scrollUntilVisible hasta que su objetivo de toque quede visible. No entran
+# en to_web.py, to_landing.py ni en la tienda; hoy.png y stats.png (sin desplazar) siguen
+# siendo las que usan esas superficies.
 PAPEL_SCREENS = set(SCREENS) - {"widget", "notificacion", "foco", "tienda"}
 ATTEMPTS = 2
 NOTIFICATION_WAIT_S = 240

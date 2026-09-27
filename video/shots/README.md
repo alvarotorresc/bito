@@ -1,10 +1,16 @@
 # Capturas de la app para el vídeo
 
-Pasada reproducible de 28 capturas (14 pantallas × es/en) de Bito 1.3.0 real en un emulador
+Pasada reproducible de 32 capturas (16 pantallas × es/en) de Bito 1.3.0 real en un emulador
 headless. Salida en `../public/shots/{es,en}/*.png`, 1080×2340 RGB, sin barra de estado.
 
 Pantallas: `hoy, detalle, stats, records, logros, habi, tienda, repaso, ajustes, tareas,
-widget, notificacion, foco, respiracion`.
+widget, notificacion, foco, respiracion, hoy-tareas, stats-logros`.
+
+`hoy-tareas` y `stats-logros` son solo para el vídeo: `hoy` y `stats` desplazados con
+`scrollUntilVisible` hasta que quede visible el objetivo del toque que las escenas 07 y 05 pintan
+sobre ellas (la sección de tareas de Hoy, la entrada a Logros de Estadísticas). No las usa
+`to_web.py` ni la tienda; `hoy.png` y `stats.png`, sin desplazar, siguen siendo las capturas que
+usan la portada, la landing y la tienda.
 
 ## Requisitos
 
@@ -26,7 +32,7 @@ Una sola pantalla: `python3 run_shots.py --lang es --screens stats`, y después
 `python3 verify_shots.py`. La pasada completa tarda unos 11 minutos (678 s medidos); `notificacion` espera a que
 salte un recordatorio real (hasta 4 minutos por idioma).
 
-`verify_shots.py` comprueba que existen las 28, que miden 1080×2340 RGB, que la fila superior es
+`verify_shots.py` comprueba que existen las 32, que miden 1080×2340 RGB, que la fila superior es
 Papel (`#F2ECE1`) en las pantallas de `PAPEL_SCREENS` y que cada par es/en no es idéntico. Sale
 con 1 si hay algún problema.
 
