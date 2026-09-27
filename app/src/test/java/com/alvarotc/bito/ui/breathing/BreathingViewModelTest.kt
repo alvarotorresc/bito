@@ -126,6 +126,17 @@ class BreathingViewModelTest {
         db.close()
     }
 
+    /** true si Live.pending sigue vivo: hueco para comprobar que no sobrevive mas de lo necesario (T10). */
+    private fun hasPending(vm: BreathingViewModel): Boolean {
+        val liveField = BreathingViewModel::class.java.getDeclaredField("live")
+        liveField.isAccessible = true
+        val live = liveField.get(vm) as kotlinx.coroutines.flow.MutableStateFlow<*>
+        val current = live.value!!
+        val pendingField = current::class.java.getDeclaredField("pending")
+        pendingField.isAccessible = true
+        return pendingField.get(current) != null
+    }
+
     private fun TestScope.activate(vm: BreathingViewModel) {
         vm.uiState.onEach {}.launchIn(backgroundScope)
         settle()
@@ -559,6 +570,45 @@ class BreathingViewModelTest {
             settle()
             assertEquals(1, vm.uiState.value.week.sessions)
             assertEquals(1, rows().size)
+        }
+
+    @Test
+    fun `pending is cleared once the real row lands, so a later restore never sees a stale one`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 30_000
+
+            vm.stop()
+            // Sin settle() todavia: close() pone pending en el mismo update sincrono que FINISHED,
+            // antes de que el saveJob (una corrutina aparte) llegue a correr.
+            assertTrue(hasPending(vm))
+
+            // Deja correr el guardado y que Room emita la fila real.
+            settle()
+            settle()
+
+            assertFalse(hasPending(vm))
+        }
+
+    @Test
+    fun `starting a new session clears any pending left over from a previous one`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 30_000
+            vm.stop()
+            assertTrue(hasPending(vm))
+
+            // again() vuelve a arrancar antes de que el guardado anterior llegue a Room: si start()
+            // no limpiara pending, un restore posterior arrancaria con el de la sesion ya cerrada.
+            vm.again()
+
+            assertFalse(hasPending(vm))
         }
 
     @Test

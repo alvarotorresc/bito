@@ -176,7 +176,10 @@ class BreathingViewModel(
     /** Solo en memoria: elegir chip no escribe ajustes (§4.6). En el final, vuelve a reposo con ese modo. */
     fun selectMode(mode: BreathingMode) {
         if (live.value.stage == BreathingStage.RUNNING) return
-        live.update { it.copy(selectedMode = mode, stage = BreathingStage.IDLE, point = null) }
+        // Ver un pending de la sesion anterior aqui tampoco tiene sentido: mismo motivo que en start().
+        live.update {
+            it.copy(selectedMode = mode, stage = BreathingStage.IDLE, point = null, pending = null, pendingSizeAtClose = null)
+        }
     }
 
     fun start() {
@@ -196,6 +199,10 @@ class BreathingViewModel(
                 selectedMode = mode,
                 point = BreathingRhythm.at(mode, 0),
                 anchorElapsed = elapsed(),
+                // Un pending de la sesion anterior ya no tiene sentido al empezar otra: sin esto,
+                // un restore que reviviera este ViewModel arrancaria con un pending viejo (T10).
+                pending = null,
+                pendingSizeAtClose = null,
             )
         // La unica escritura del modo: al empezar y solo si cambio (cada escritura repinta los widgets).
         if (lastPersistedMode != mode) {
@@ -280,6 +287,10 @@ class BreathingViewModel(
 
     private fun musicOn(): Boolean = live.value.musicOverride ?: prefs.breathingMusicEnabled
 
+    private fun clearPending() {
+        viewModelScope.launch { live.update { it.copy(pending = null, pendingSizeAtClose = null) } }
+    }
+
     private fun tick() {
         val current = live.value
         if (current.stage != BreathingStage.RUNNING) return
@@ -360,6 +371,10 @@ class BreathingViewModel(
             if (l.pending != null && state.breathingSessions.size <= (l.pendingSizeAtClose ?: -1)) {
                 state.breathingSessions + l.pending
             } else {
+                // La fila real ya llego (o no habia pending): se limpia para que un pending
+                // consumido no siga vivo el resto de la vida del ViewModel (T10, edge case de
+                // restore). No cambia lo que ve esta emision: [sessions] es igual con o sin el.
+                if (l.pending != null) clearPending()
                 state.breathingSessions
             }
         return BreathingUiState(
