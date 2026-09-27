@@ -66,7 +66,7 @@
             <span>View the code</span>
           </a>
         </div>
-        <p class="hero-pie">Version 1.0.0 · Android 8.0 or later · 100% free, GPL-3.0-or-later</p>
+        <p class="hero-pie">Version 1.3.0 · Android 8.0 or later · 100% free, GPL-3.0-or-later</p>
       </div>
 
       <div class="hero-habi">
@@ -322,7 +322,7 @@
 
       <div class="cifras">
         <div class="cifra">
-          <span class="cifra-dato">962</span>
+          <span class="cifra-dato">1297</span>
           <span class="cifra-pie">tests passing on every change</span>
         </div>
         <div class="cifra">
@@ -331,7 +331,7 @@
         </div>
         <div class="cifra">
           <span class="cifra-dato">4</span>
-          <span class="cifra-pie">permissions, none for internet</span>
+          <span class="cifra-pie">permissions of its own, no internet</span>
         </div>
         <div class="cifra">
           <span class="cifra-dato">100%</span>
@@ -345,7 +345,7 @@
           <p class="dentro-cuerpo">The app can't send your data anywhere, because it doesn't declare the permission to. Clone the repository and run this:</p>
           <pre class="codigo"><code>grep -o 'android:name="android.permission[^"]*"' \
   app/src/main/AndroidManifest.xml</code></pre>
-          <p class="dentro-pie">Four show up: notifications, exact alarm, boot, and vibration. INTERNET isn't there — without it, no network works.</p>
+          <p class="dentro-pie">Four show up: notifications, exact alarm, boot, and vibration. INTERNET isn't there — without it, no network works. Libraries add four more to the APK, none of them internet: the full list is on the <a href="/privacy/">privacy page</a>.</p>
         </div>
 
         <div class="dentro-columna">
@@ -354,7 +354,7 @@
             <dt>Language</dt><dd>Kotlin 2.1</dd>
             <dt>UI</dt><dd>Jetpack Compose</dd>
             <dt>Widgets</dt><dd>Glance 1.1</dd>
-            <dt>Data</dt><dd>Room · 9 tables, schema v1</dd>
+            <dt>Data</dt><dd>Room · 12 tables, schema v3</dd>
             <dt>Min</dt><dd>Android 8.0 (API 26)</dd>
             <dt>Mascot</dt><dd>Vector, hand-drawn in Canvas</dd>
           </dl>
@@ -385,7 +385,7 @@
         <div class="futuro-texto">
           <h2 class="futuro-titular" id="titular-futuro">The road ahead</h2>
           <p class="futuro-parrafo">Bito starts with habits because that's where friction shows the most. But the idea underneath is wider: a calm place for everything that's hard to start, with Habi along for it.</p>
-          <p class="futuro-parrafo">A habit that won't start and a task you've dodged for three weeks fail for the exact same reason. Bito already handles the first. The second comes next.</p>
+          <p class="futuro-parrafo">A habit that won't start and a task you've dodged for three weeks fail for the exact same reason. That's why Bito handles both.</p>
           <p class="futuro-advertencia">It's a direction, not a calendar. None of this has a date on it.</p>
         </div>
         <div class="futuro-lista">
@@ -393,10 +393,6 @@
           <div class="futuro-item">
             <h3>Store publishing</h3>
             <p>F-Droid, Google Play, and whatever else it takes. So nobody has to explain what an APK is.</p>
-          </div>
-          <div class="futuro-item">
-            <h3>Procrastination, tasks</h3>
-            <p>The thing that's been on your list for a month and isn't a habit. The problem's other half.</p>
           </div>
           <div class="futuro-item">
             <h3>More surprises ahead…</h3>
@@ -418,7 +414,7 @@
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Download Bito 1.0.0</span>
+          <span>Download Bito 1.3.0</span>
         </a>
       </div>
     </section>
@@ -432,6 +428,7 @@
       <a href="https://github.com/alvarotorresc/bito">Code</a>
       <a href="https://github.com/alvarotorresc/bito/blob/main/LICENSE">License</a>
       <a href="https://tally.so/r/dWe65r">Report a bug</a>
+      <a href="/privacy/">Privacy</a>
     </nav>
   </footer>
 
