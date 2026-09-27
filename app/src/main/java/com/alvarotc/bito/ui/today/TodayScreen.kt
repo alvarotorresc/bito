@@ -271,7 +271,9 @@ private fun TodayHeader(
     onOpenHabi: () -> Unit,
     onOpenBreathing: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+    // spacedBy separa el icono de respirar de Habi (M12 #15): sin ella quedaban pegados porque
+    // ninguno de los dos trae su propio margen.
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         Column(Modifier.weight(1f)) {
             Text(stringResource(R.string.today_title), style = MaterialTheme.typography.headlineLarge, color = Tinta)
             val pattern = stringResource(R.string.today_date_pattern)
