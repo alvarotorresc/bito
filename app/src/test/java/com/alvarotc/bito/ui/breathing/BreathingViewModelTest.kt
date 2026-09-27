@@ -430,6 +430,25 @@ class BreathingViewModelTest {
         }
 
     @Test
+    fun `leaving mid-session never emits the finished stage, even when the session gets saved`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            val seenStages = mutableListOf<BreathingStage>()
+            vm.uiState.onEach { seenStages += it.stage }.launchIn(backgroundScope)
+            settle()
+            vm.start()
+            settle()
+            currentElapsed += 30_000 // por encima de MIN_SAVED_SECONDS: si hubiera flash, aqui se veria.
+
+            vm.leave()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertEquals(1, rows().size)
+            assertFalse(seenStages.contains(BreathingStage.FINISHED))
+        }
+
+    @Test
     fun `a double start runs one loop and saves one row`() =
         runBreathingTest {
             val music = FakeMusic()

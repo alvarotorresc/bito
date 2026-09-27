@@ -211,18 +211,33 @@ class BreathingViewModel(
             }
     }
 
-    fun stop() {
+    fun stop() = finishRunning(showFinished = true)
+
+    /**
+     * Calcula lo mismo que veria el siguiente tick (completada o no, y cuantos segundos) y cierra
+     * la sesion. [showFinished] decide si la pantalla pasa a FINISHED (parada manual) o se queda
+     * donde estaba (abandono via [leave], que no debe ensenar nunca la burbuja de cierre).
+     */
+    private fun finishRunning(showFinished: Boolean) {
         val current = live.value
         if (current.stage != BreathingStage.RUNNING) return
-        // Entre que el ritmo llega al final y el siguiente tick lo ve, un "Parar" en ese hueco no
+        // Entre que el ritmo llega al final y el siguiente tick lo ve, un cierre en ese hueco no
         // debe grabar una sesion incompleta de mas de 2 minutos: si el ritmo ya esta acabado,
         // cuenta como si lo hubiera visto el tick.
         val elapsedNow = elapsed()
         val point = BreathingRhythm.at(runningMode, elapsedNow - current.anchorElapsed)
         if (point.finished) {
-            close(completed = true, seconds = (BreathingRhythm.totalMillis(runningMode) / 1_000L).toInt())
+            close(
+                completed = true,
+                seconds = (BreathingRhythm.totalMillis(runningMode) / 1_000L).toInt(),
+                showFinished = showFinished,
+            )
         } else {
-            close(completed = false, seconds = ((elapsedNow - current.anchorElapsed) / 1_000L).toInt())
+            close(
+                completed = false,
+                seconds = ((elapsedNow - current.anchorElapsed) / 1_000L).toInt(),
+                showFinished = showFinished,
+            )
         }
     }
 
@@ -236,11 +251,12 @@ class BreathingViewModel(
     }
 
     /**
-     * Salir (flecha, atras del sistema, «Listo»): para si hacia falta y marca [BreathingUiState.gone]
-     * solo cuando la escritura pendiente ya ha terminado.
+     * Salir (flecha, atras del sistema, «Listo»): para si hacia falta sin pasar por FINISHED (Review
+     * Final M11, Minor 3: abandonar a mitad de sesion no debe ensenar ni un fotograma de la burbuja
+     * «Terminado»), guarda si toca, y solo entonces marca [BreathingUiState.gone].
      */
     fun leave() {
-        stop()
+        finishRunning(showFinished = false)
         viewModelScope.launch {
             saveJob?.join()
             live.update { it.copy(gone = true) }
@@ -278,16 +294,22 @@ class BreathingViewModel(
         }
     }
 
+    /**
+     * [showFinished] = false es lo que usa [leave] para abandonar a mitad de sesion sin pasar nunca
+     * por BreathingStage.FINISHED (Review Final M11, Minor 3): se guarda igual si toca, pero la
+     * pantalla no llega a ensenar la burbuja de cierre porque [leave] la desapila justo despues.
+     */
     private fun close(
         completed: Boolean,
         seconds: Int,
+        showFinished: Boolean = true,
     ) {
         loop?.cancel()
         loop = null
         music.stop()
         if (!completed && seconds < MIN_SAVED_SECONDS) {
             // Nada guardado, el contador no se ha movido: una frase de cierre seria mentira (§5.3).
-            live.update { it.copy(stage = BreathingStage.IDLE, point = null) }
+            if (showFinished) live.update { it.copy(stage = BreathingStage.IDLE, point = null) }
             return
         }
         val mode = runningMode
@@ -305,7 +327,8 @@ class BreathingViewModel(
         // stage y pending cambian en el MISMO update: uiState nunca emite FINISHED con el contador
         // de antes de esta sesion (Review Focus 5).
         live.update {
-            it.copy(stage = BreathingStage.FINISHED, pending = pendingSession, pendingSizeAtClose = lastCombinedSessionCount)
+            val withPending = it.copy(pending = pendingSession, pendingSizeAtClose = lastCombinedSessionCount)
+            if (showFinished) withPending.copy(stage = BreathingStage.FINISHED) else withPending
         }
         // NonCancellable: la fila tiene que llegar a Room aunque la pantalla se desapile en este
         // mismo fotograma y el viewModelScope muera con ella.
