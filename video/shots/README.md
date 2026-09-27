@@ -26,6 +26,7 @@ bash emulator.sh setup      # una vez: instala, crea el AVD bito-shots y mide la
 bash build_apk.sh           # en cada release: assembleDebug 1.3.0
 npm run shots               # desde video/: pasada completa es+en y verificación
 python3 to_web.py           # copia a alvarotc-web lo que pide su brief de medios
+python3 to_landing.py       # genera las 22 capturas de la landing y los README
 ```
 
 Una sola pantalla: `python3 run_shots.py --lang es --screens stats`, y después
