@@ -22,10 +22,11 @@ import kotlinx.coroutines.launch
  * vive la sesion, no donde vive la pantalla. Sin escribir DONE ni ATTEMPT: la tarea ya no esta, no
  * hubo un "termino" ni un "lo dejo".
  *
- * [recoverOnStart] corre una vez por arranque, antes de los dos colectores: un forzar detencion
- * del sistema mata la alarma y la notificacion en el acto, pero la sesion sigue en el store —
- * `FocusViewModel.init` la rearma, pero solo si la pantalla de foco llega a construirse. Esto
- * cubre el resto: abrir la app por cualquier otra pantalla con una sesion viva de por medio.
+ * [recoverOnStart] corre en cada arranque de proceso, en paralelo con los dos colectores — no solo
+ * cuando el usuario abre la app: tambien cuando el proceso nace por un recordatorio, un widget, la
+ * medianoche o una accion rapida. Un forzar detencion del sistema mata la alarma y la notificacion
+ * en el acto, pero la sesion sigue en el store — `FocusViewModel.init` la rearma, pero solo si la
+ * pantalla de foco llega a construirse. Esto cubre el resto, en silencio y solo para una sesion viva.
  */
 object FocusSync {
     /**
@@ -69,13 +70,16 @@ object FocusSync {
     }
 
     /**
-     * Vencida mientras la app estaba muerta se resuelve igual que [FocusReceiver] la resuelve
-     * cuando la app esta viva: solo el aviso de "se acabo el tiempo", sin tocar la sesion ni
-     * reprogramar una alarma para un instante que ya paso — terminarla o dejarla sigue siendo
-     * decision del usuario. Una tarea borrada mientras tanto la deja para el segundo colector de
-     * arriba, que ya sabe limpiarla; aqui no hay nada seguro que postear sin su titulo.
+     * Solo una sesion VIVA se rearma (alarma + bandeja, las dos silenciosas e idempotentes con
+     * `FocusViewModel.init`). Una sesion vencida no produce nada: el aviso de "se acabo el tiempo"
+     * ya lo dio [FocusReceiver] cuando la alarma disparo, y como esto corre en cada arranque de
+     * proceso, repetirlo aqui lo haria sonar con cada recordatorio, widget o medianoche que
+     * despierte el proceso — y pelearia con [BootReceiver], que limpia sin avisar una sesion
+     * vencida al reiniciar. La pantalla de foco ya pinta el 00:00 con sus botones cuando el usuario
+     * entra. Una tarea borrada mientras tanto la deja para el segundo colector de arriba, que ya
+     * sabe limpiarla; aqui no hay nada seguro que postear sin su titulo.
      */
-    private suspend fun recoverOnStart(
+    internal suspend fun recoverOnStart(
         context: Context,
         container: AppContainer,
     ) {
@@ -83,13 +87,10 @@ object FocusSync {
             val session = container.focus.session.first() ?: return@runCatching
             val task = container.tasks.task(session.taskId) ?: return@runCatching
             val remaining = FocusClock.remainingMillis(session, System.currentTimeMillis(), SystemClock.elapsedRealtime())
+            if (remaining <= 0) return@runCatching
             NotificationChannels.ensure(context)
-            if (remaining > 0) {
-                Notifier.showFocus(context, task.title, session.endsAtMillis)
-                FocusAlarm.schedule(context, session.endsAtMillis)
-            } else {
-                Notifier.showFocusOver(context, task.title)
-            }
+            Notifier.showFocus(context, task.title, session.endsAtMillis)
+            FocusAlarm.schedule(context, session.endsAtMillis)
         }.onFailure { if (it is CancellationException) throw it }
     }
 }

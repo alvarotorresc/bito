@@ -181,8 +181,8 @@ class FocusViewModel(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), FocusUiState())
 
     init {
-        // FocusSync.recoverOnStart ya rearma la alarma y la bandeja al abrir la app, pero eso
-        // corre una vez por arranque de PROCESO — un ViewModel que se reconstruye sin que el
+        // FocusSync.recoverOnStart ya rearma la alarma y la bandeja en cada arranque de proceso,
+        // pero solo una vez por PROCESO — un ViewModel que se reconstruye sin que el
         // proceso muriera (config change, volver de otra pantalla) no pasa por ahi otra vez.
         // Cualquier pantalla de foco que se construya con la sesion todavia viva la repostea aqui
         // tambien — tambien si pide otra tarea y sale la hoja de conflicto: esa sesion sigue

@@ -180,4 +180,49 @@ class FocusSyncTest {
         assertNotNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
         assertEquals(1, shadowOf(alarmManager).scheduledAlarms.size)
     }
+
+    @Test
+    fun `recoverOnStart posts nothing and schedules nothing for an expired session, however many times the process starts`() {
+        val container = AppContainer(app)
+        runBlocking { container.tasks.create(taskEntity(id = "t1", title = "Leer")) }
+        val session =
+            FocusSession(
+                taskId = "t1",
+                startedAtMillis = System.currentTimeMillis() - 10 * 60_000L,
+                endsAtMillis = System.currentTimeMillis() - 60_000L,
+                endsAtElapsed = 0L,
+                bootMillis = 0L,
+            )
+        runBlocking { container.focus.start(session) }
+
+        // Tres arranques de proceso (recordatorio, widget, medianoche...): ni uno solo avisa.
+        repeat(3) { runBlocking { FocusSync.recoverOnStart(app, container) } }
+
+        assertNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+        assertTrue(shadowOf(alarmManager).scheduledAlarms.isEmpty())
+        assertEquals(session, runBlocking { container.focus.session.first() })
+    }
+
+    @Test
+    fun `recoverOnStart rearms a live session once, and a second process start duplicates nothing`() {
+        val container = AppContainer(app)
+        runBlocking { container.tasks.create(taskEntity(id = "t1", title = "Leer")) }
+        val session =
+            FocusSession(
+                taskId = "t1",
+                startedAtMillis = System.currentTimeMillis(),
+                endsAtMillis = System.currentTimeMillis() + 5 * 60_000L,
+                endsAtElapsed = 0L,
+                bootMillis = 0L,
+            )
+        runBlocking { container.focus.start(session) }
+
+        runBlocking { FocusSync.recoverOnStart(app, container) }
+        runBlocking { FocusSync.recoverOnStart(app, container) }
+
+        assertNotNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+        assertEquals(1, shadowOf(notificationManager).allNotifications.size)
+        assertEquals(1, shadowOf(alarmManager).scheduledAlarms.size)
+        assertEquals(session, runBlocking { container.focus.session.first() })
+    }
 }
