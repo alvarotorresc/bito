@@ -2,7 +2,9 @@ import json
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
+from io import BytesIO
 from pathlib import Path
+from unittest import mock
 
 from PIL import Image
 
@@ -98,6 +100,130 @@ class RunShotsTest(unittest.TestCase):
             self.assertIsNone(run_shots.screencap_for("respiracion", 66))
         finally:
             run_shots.MAESTRO_SHOT_PATH = original
+
+    def test_notificacion_snoozes_system_notifications_before_arming_and_before_the_shot(self):
+        # Notificaciones del sistema (pkg=android: consola serie, teclado) pueden estar en la
+        # persiana en cualquier momento antes de la foto. before() las pospone al principio, para
+        # partir de una persiana limpia antes de armar el aviso de Bito, y otra vez justo antes
+        # de disparar, por si sale alguna entre medias.
+        calls: list[str] = []
+
+        def fake_shell(cmd, check=True):
+            if "expand-notifications" in cmd:
+                calls.append("expand")
+            return ""
+
+        with (
+            mock.patch.object(run_shots.d, "shell", side_effect=fake_shell),
+            mock.patch.object(run_shots, "snooze_system_notifications", side_effect=lambda: calls.append("snooze")),
+            mock.patch.object(run_shots, "notification_posted", return_value=True),
+            mock.patch.object(run_shots, "emulator"),
+            mock.patch.object(run_shots.subprocess, "run"),
+            mock.patch.object(run_shots.time, "sleep"),
+        ):
+            self.assertTrue(run_shots.before("notificacion", "en"))
+
+        self.assertEqual(calls, ["snooze", "snooze", "expand", "snooze"])
+
+
+class ShadeCleanTest(unittest.TestCase):
+    # Extracto real de `dumpsys notification --noredact` tras arrancar en frio el AVD
+    # bito-shots con -wipe-data: "Serial console enabled" (id=55) y "AT Translated Set 2
+    # keyboard configured" (id=19), las dos notificaciones de la regresion. Las dos son
+    # pkg=android, no de Bito.
+    DIRTY_DUMP = (
+        "Current Notification Manager state:\n"
+        "  Notification List:\n"
+        "    NotificationRecord(0x02ebc189: pkg=android user=UserHandle{-1} id=55 tag=null"
+        " importance=2 key=-1|android|55|null|1000: Notification(channel=DEVELOPER"
+        " shortcut=null contentView=null vibrate=null sound=null tick defaults=0"
+        " flags=ONGOING_EVENT|CAN_COLORIZE color=0x00000000 vis=PUBLIC))\n"
+        "    NotificationRecord(0x0c4f558e: pkg=android user=UserHandle{-1} id=19 tag=null"
+        " importance=2 key=-1|android|19|null|1000: Notification(channel=PHYSICAL_KEYBOARD"
+        " shortcut=null contentView=null vibrate=null sound=null defaults=0"
+        " flags=AUTO_CANCEL|CAN_COLORIZE color=0x00000000 vis=PRIVATE))\n"
+    )
+    CLEAN_DUMP = (
+        "Current Notification Manager state:\n"
+        "  Notification List:\n"
+        "    NotificationRecord(0x1a2b3c4d: pkg=com.alvarotc.bito user=UserHandle{0} id=1"
+        " tag=null importance=3 key=0|com.alvarotc.bito|1|null|10234:"
+        " Notification(channel=reminders shortcut=null contentView=null vibrate=null"
+        " sound=null defaults=0 flags=AUTO_CANCEL color=0xffab4433 vis=PRIVATE))\n"
+    )
+    EMPTY_DUMP = "Current Notification Manager state:\n  Notification List:\n"
+
+    def test_notification_records_parses_the_real_system_notifications(self):
+        self.assertEqual(
+            run_shots.notification_records(self.DIRTY_DUMP),
+            [("android", "-1|android|55|null|1000"), ("android", "-1|android|19|null|1000")],
+        )
+
+    def test_shade_is_clean_is_false_with_system_notifications_present(self):
+        with mock.patch.object(run_shots.d, "shell", return_value=self.DIRTY_DUMP):
+            self.assertFalse(run_shots.shade_is_clean())
+
+    def test_shade_is_clean_is_true_with_only_bitos_own_notification(self):
+        with mock.patch.object(run_shots.d, "shell", return_value=self.CLEAN_DUMP):
+            self.assertTrue(run_shots.shade_is_clean())
+
+    def test_shade_is_clean_is_true_with_no_notifications(self):
+        with mock.patch.object(run_shots.d, "shell", return_value=self.EMPTY_DUMP):
+            self.assertTrue(run_shots.shade_is_clean())
+
+
+class CaptureNotificacionShadeTest(unittest.TestCase):
+    def test_capture_retries_notificacion_when_the_shade_is_not_clean(self):
+        # No basta con posponer y confiar: si la persiana sigue sucia en la foto, capture()
+        # tiene que descartar el intento y repetir antes de aceptarla.
+        top, bottom = crop.load_geometry(HERE / "avd.env")
+        buf = BytesIO()
+        Image.new("RGB", (crop.WIDTH, crop.HEIGHT + top + bottom), (0xF2, 0xEC, 0xE1)).save(buf, "PNG")
+        raw_png = buf.getvalue()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            with (
+                mock.patch.object(run_shots, "PUBLIC", tmp_path / "public"),
+                mock.patch.object(run_shots, "RAW", tmp_path / "raw"),
+                mock.patch.object(run_shots, "before", return_value=True),
+                mock.patch.object(run_shots, "run_maestro", return_value=True),
+                mock.patch.object(run_shots, "after"),
+                mock.patch.object(run_shots.d, "screencap", return_value=raw_png),
+                mock.patch.object(run_shots, "shade_is_clean") as shade_mock,
+            ):
+                shade_mock.side_effect = [False, True]
+                status = run_shots.capture("notificacion", "en", {}, top, bottom)
+                self.assertEqual(shade_mock.call_count, 2)
+
+        self.assertEqual(status, "ok")
+
+    def test_capture_leaves_no_dirty_png_when_every_attempt_stays_dirty(self):
+        # Si los dos intentos salen sucios y no hay fallback, capture() devuelve "missing":
+        # no puede dejar en disco el PNG sucio del ultimo intento, o verify_shots.py lo daria
+        # por bueno sin mirar la persiana.
+        top, bottom = crop.load_geometry(HERE / "avd.env")
+        buf = BytesIO()
+        Image.new("RGB", (crop.WIDTH, crop.HEIGHT + top + bottom), (0xF2, 0xEC, 0xE1)).save(buf, "PNG")
+        raw_png = buf.getvalue()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            out = tmp_path / "public" / "en" / "notificacion.png"
+            with (
+                mock.patch.object(run_shots, "PUBLIC", tmp_path / "public"),
+                mock.patch.object(run_shots, "RAW", tmp_path / "raw"),
+                mock.patch.object(run_shots, "FALLBACK", tmp_path / "no-fallback"),
+                mock.patch.object(run_shots, "before", return_value=True),
+                mock.patch.object(run_shots, "run_maestro", return_value=True),
+                mock.patch.object(run_shots, "after"),
+                mock.patch.object(run_shots.d, "screencap", return_value=raw_png),
+                mock.patch.object(run_shots, "shade_is_clean", return_value=False),
+            ):
+                status = run_shots.capture("notificacion", "en", {}, top, bottom)
+                self.assertFalse(out.exists())
+
+        self.assertEqual(status, "missing")
 
 
 if __name__ == "__main__":
