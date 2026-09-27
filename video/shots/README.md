@@ -49,8 +49,14 @@ Excepción: `notificacion` (`CROP_FROM_TOP` en `run_shots.py`) se recorta desde 
 `1080x2340+0+0`. Conserva la cabecera de la persiana (hora, fecha, ajustes rápidos) y pierde los
 66 px de la zona de gestos, que en la persiana no tienen nada. Durante esa captura se apagan el
 wifi y el aviso de depuración USB (`adb_notify 0`), y el resto de notificaciones que no son de
-Bito (la de «consola en serie habilitada») se posponen 10 minutos con `cmd notification snooze`.
-El AVD se crea con `hw.keyboard=no` para que no salga «Teclados físicos configurados».
+Bito (pkg=android, como «consola en serie habilitada» o «teclado AT Translated Set 2
+configurado») se posponen una hora con `cmd notification snooze`: una vez antes de armar el
+recordatorio de Bito, para partir de una persiana limpia, y otra vez justo antes de la foto, por
+si sale alguna entre medias. `capture()` además comprueba la persiana tras la foto
+(`shade_is_clean`) y descarta el intento si queda alguna notificación ajena, en vez de confiar
+solo en el posponer. `hw.keyboard=no` en el AVD no evita la del teclado: esa notificación la
+posta el dispositivo de entrada virtual del emulador, no depende de si Android trata el teclado
+como físico.
 
 En `foco`, Habi parpadea: `run_shots.py` mira si hay píxeles oscuros en la zona de sus ojos y,
 si no, repite la captura cada 400 ms (hasta 5 veces); si no los encuentra, el intento falla.

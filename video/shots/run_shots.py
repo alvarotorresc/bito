@@ -54,7 +54,8 @@ NOTIFICATION_WAIT_S = 240
 HABI_EYES = (440, 400, 640, 475)
 HABI_EYES_MIN_DARK = 300
 BLINK_RETRIES = 5
-SNOOZE_MS = 600000
+SNOOZE_MS = 3600000
+NOTIFICATION_RECORD_RE = re.compile(r"NotificationRecord\(\S+ pkg=(\S+) .*? key=(\S+): Notification\(")
 # Boton de comprar de la tienda: en la columna x=300 es la ultima franja verde alta (>=100 px);
 # debajo tiene que verse el margen de su tarjeta (>=20 px), si no el boton sale cortado.
 BUY_COLUMN_X = 300
@@ -89,11 +90,22 @@ def notification_posted() -> bool:
     return any("NotificationRecord(" in line and f"pkg={d.PKG}" in line for line in dump.splitlines())
 
 
+def notification_records(dump: str) -> list[tuple[str, str]]:
+    """(pkg, key) de cada NotificationRecord activo en un volcado de `dumpsys notification`."""
+    return NOTIFICATION_RECORD_RE.findall(dump)
+
+
 def snooze_system_notifications() -> None:
     dump = d.shell("dumpsys notification --noredact", check=False)
-    for pkg, key in re.findall(r"NotificationRecord\(\S+ pkg=(\S+) .*? key=(\S+): Notification\(", dump):
+    for pkg, key in notification_records(dump):
         if pkg != d.PKG:
             d.shell(f"cmd notification snooze --for {SNOOZE_MS} '{key}'", check=False)
+
+
+def shade_is_clean() -> bool:
+    """True si en la persiana no hay ninguna notificacion activa que no sea de Bito."""
+    dump = d.shell("dumpsys notification --noredact", check=False)
+    return all(pkg == d.PKG for pkg, _key in notification_records(dump))
 
 
 def before(screen: str, lang: str) -> bool:
@@ -101,6 +113,12 @@ def before(screen: str, lang: str) -> bool:
     if screen == "notificacion":
         d.shell("settings put global adb_notify 0", check=False)
         d.shell("svc wifi disable", check=False)
+        # Notificaciones del sistema como "Serial console enabled" o "AT Translated Set 2
+        # keyboard configured" (pkg=android) pueden estar en la persiana cuando se dispara la
+        # de Bito. Se posponen aqui, para partir de una persiana limpia, y otra vez justo antes
+        # de la foto por si sale alguna entre medias; capture() ademas comprueba la persiana
+        # tras la foto y descarta el intento si queda alguna, para no depender solo del aviso.
+        snooze_system_notifications()
         subprocess.run([sys.executable, str(HERE / "prepare.py"), "--lang", lang, "--arm-reminder", "2"], check=True)
         deadline = time.monotonic() + NOTIFICATION_WAIT_S
         while not notification_posted():
@@ -111,6 +129,8 @@ def before(screen: str, lang: str) -> bool:
         emulator("demo")
         d.shell("cmd statusbar expand-notifications")
         time.sleep(2)
+        snooze_system_notifications()
+        time.sleep(1)
         return True
     d.force_stop()
     if screen == "widget":
@@ -190,6 +210,8 @@ def capture(screen: str, lang: str, labels: dict[str, str], top: int, bottom: in
                 crop.crop_raw(raw, out, top, bottom)
             if screen == "tienda" and not buy_button_whole(out):
                 print(f"run_shots: {lang}/{screen} intento {attempt}: el boton de comprar sale cortado", file=sys.stderr)
+            elif screen == "notificacion" and not shade_is_clean():
+                print(f"run_shots: {lang}/{screen} intento {attempt}: la persiana tiene notificaciones del sistema", file=sys.stderr)
             elif screen not in PAPEL_SCREENS or crop.top_row_is_papel(out):
                 after(screen)
                 return "ok"
