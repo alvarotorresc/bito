@@ -122,36 +122,46 @@ class AndroidBreathingMusic(
         }
     }
 
-    private fun newPlayer(): MediaPlayer =
-        MediaPlayer().apply {
-            setAudioAttributes(attributes)
-            appContext.resources.openRawResourceFd(R.raw.breathing_pad).use { fd ->
-                setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
-            }
-            isLooping = true
-            setVolume(0f, 0f)
-            setOnPreparedListener { prepared ->
-                if (prepared === player && wantsToPlay) {
-                    prepared.start()
-                    fadeIn(prepared)
+    private fun newPlayer(): MediaPlayer {
+        val mp = MediaPlayer()
+        try {
+            mp.apply {
+                setAudioAttributes(attributes)
+                appContext.resources.openRawResourceFd(R.raw.breathing_pad).use { fd ->
+                    setDataSource(fd.fileDescriptor, fd.startOffset, fd.length)
                 }
-            }
-            // Un error (server_died, decode) deja el reproductor en estado Error: sin esto,
-            // el siguiente cambio de foco llama start() o pause() sobre el y tumba la app.
-            setOnErrorListener { mp, _, _ ->
-                if (mp === player) {
-                    ramp?.cancel()
-                    player = null
-                    if (wantsToPlay) {
-                        wantsToPlay = false
-                        abandonFocus()
+                isLooping = true
+                setVolume(0f, 0f)
+                setOnPreparedListener { prepared ->
+                    if (prepared === player && wantsToPlay) {
+                        prepared.start()
+                        fadeIn(prepared)
                     }
                 }
-                runCatching { mp.release() }
-                true
+                // Un error (server_died, decode) deja el reproductor en estado Error: sin esto,
+                // el siguiente cambio de foco llama start() o pause() sobre el y tumba la app.
+                setOnErrorListener { errored, _, _ ->
+                    if (errored === player) {
+                        ramp?.cancel()
+                        player = null
+                        if (wantsToPlay) {
+                            wantsToPlay = false
+                            abandonFocus()
+                        }
+                    }
+                    runCatching { errored.release() }
+                    true
+                }
+                prepareAsync()
             }
-            prepareAsync()
+        } catch (e: Exception) {
+            // setDataSource (u otra llamada de configuracion) puede lanzar antes de que el
+            // reproductor quede asignado a ningun lado: sin esto se fuga un MediaPlayer nativo.
+            runCatching { mp.release() }
+            throw e
         }
+        return mp
+    }
 
     private fun fadeIn(target: MediaPlayer) {
         ramp?.cancel()

@@ -18,6 +18,9 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowMediaPlayer
+import org.robolectric.shadows.util.DataSource
+import java.io.FileDescriptor
+import java.io.IOException
 import java.time.Duration
 
 @RunWith(RobolectricTestRunner::class)
@@ -141,5 +144,23 @@ class BreathingMusicTest {
 
         assertEquals(0f, ramp.last(), 1e-6f)
         assertTrue(ramp.zipWithNext().all { (a, b) -> b < a })
+    }
+
+    @Test
+    fun `a setDataSource that throws releases the player instead of leaking it`() {
+        // Con una transformacion constante, cualquier FileDescriptor cae en la misma DataSource,
+        // asi que no hace falta adivinar el descriptor real del recurso crudo.
+        DataSource.setFileDescriptorTransform { _, _ -> "boom" }
+        ShadowMediaPlayer.addException(
+            DataSource.toDataSource(FileDescriptor(), 0, 0),
+            IOException("no se pudo abrir la pista"),
+        )
+        val music = AndroidBreathingMusic(context)
+
+        music.start()
+
+        assertFalse(music.wantsToPlay)
+        assertNull(currentPlayer(music))
+        assertNotNull(shadowOf(audioManager).lastAbandonedAudioFocusRequest)
     }
 }
