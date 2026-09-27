@@ -463,11 +463,18 @@ section[id] { scroll-margin-top: 24px; }
   line-height: 1.02;
 }
 
+/* La fila de capturas se desplaza en horizontal: en escritorio caben tres y asoma la
+   cuarta, que avisa de que hay más; en móvil, una y un trozo de la siguiente. */
 .capturas {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - 2 * 28px) / 3.3);
   gap: 28px;
   margin-bottom: var(--aire-64);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  padding-bottom: 12px;
 }
 
 .captura {
@@ -476,6 +483,7 @@ section[id] { scroll-margin-top: 24px; }
   display: flex;
   align-items: center;
   justify-content: center;
+  scroll-snap-align: start;
 }
 .captura img {
   max-height: 100%;
@@ -1038,7 +1046,6 @@ input[type="radio"]:focus-visible + .voz-pildora {
 @media (max-width: 768px) {
   .hero,
   .promesa-rejilla,
-  .capturas,
   .hace-rejilla,
   .habi-rejilla,
   .copias-rejilla,
@@ -1049,6 +1056,9 @@ input[type="radio"]:focus-visible + .voz-pildora {
   .futuro-rejilla {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .capturas { grid-auto-columns: 78%; }
+  .captura { height: 480px; }
 
   .nunca-lista li:last-child { grid-column: auto; }
 
