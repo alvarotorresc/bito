@@ -1,7 +1,11 @@
 package com.alvarotc.bito.ui.widget
 
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.PausedHabitUi
@@ -30,7 +34,8 @@ class SingleHabitModelTest {
     private fun state(
         vararg cards: HabitCardUi,
         paused: List<PausedHabitUi> = emptyList(),
-    ) = TodayUiState(today = 20679, cards = cards.toList(), pausedHabits = paused, loading = false)
+        spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, equippedSetOf(emptyList())),
+    ) = TodayUiState(today = 20679, cards = cards.toList(), pausedHabits = paused, spec = spec, loading = false)
 
     @Test
     fun `a pending counter maps its fraction, step and a logging tap`() {
@@ -91,5 +96,20 @@ class SingleHabitModelTest {
         val model = buildSingleHabitModel(state(paused = listOf(PausedHabitUi("yoga", "Yoga"))), "yoga")
 
         assertEquals("Yoga", assertIs<SingleHabitModel.Paused>(model).name)
+    }
+
+    @Test
+    fun `the widget's Habi mirrors the live mood, personality and equipped look`() {
+        val spec = HabiSpec(Mood.RADIANT, Personality.CHEERLEADER, equippedSetOf(listOf("body-dorado")))
+
+        val active = buildSingleHabitModel(state(card("agua"), spec = spec), "agua")
+        val missing = buildSingleHabitModel(state(card("agua"), spec = spec), null)
+        val paused = buildSingleHabitModel(state(paused = listOf(PausedHabitUi("yoga", "Yoga")), spec = spec), "yoga")
+
+        for (model in listOf(active, missing, paused)) {
+            assertEquals(Mood.RADIANT, model.spec.mood)
+            assertEquals(Personality.CHEERLEADER, model.spec.personality)
+            assertEquals("body-dorado", model.spec.equipped.bodyColor)
+        }
     }
 }
