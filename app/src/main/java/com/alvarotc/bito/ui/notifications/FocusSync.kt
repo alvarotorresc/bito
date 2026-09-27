@@ -28,10 +28,16 @@ import kotlinx.coroutines.launch
  * cubre el resto: abrir la app por cualquier otra pantalla con una sesion viva de por medio.
  */
 object FocusSync {
+    /**
+     * [onCycle] no es parte del comportamiento: es el gancho de sincronizacion para tests, que se
+     * dispara al final de cada evaluacion del tercer colector (haya limpiado o no). En produccion
+     * se queda en su valor por defecto, un no-op.
+     */
     fun start(
         context: Context,
         container: AppContainer,
         scope: CoroutineScope,
+        onCycle: () -> Unit = {},
     ) {
         scope.launch { recoverOnStart(context, container) }
         scope.launch {
@@ -57,6 +63,7 @@ object FocusSync {
                         runCatching { Notifier.cancelFocus(context) }.onFailure { if (it is CancellationException) throw it }
                         runCatching { FocusAlarm.cancel(context) }.onFailure { if (it is CancellationException) throw it }
                     }
+                    onCycle()
                 }
         }
     }

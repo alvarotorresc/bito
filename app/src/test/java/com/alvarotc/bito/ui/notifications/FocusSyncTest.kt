@@ -10,6 +10,7 @@ import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.AppStartup
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.taskEntity
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -21,6 +22,8 @@ import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -87,20 +90,6 @@ class FocusSyncTest {
         NotificationManagerCompat.from(app).notify(Notifier.FOCUS_ID, notification)
     }
 
-    // Un poco mas que los 2s de siempre: las dos siguientes lineas de FocusSync tras el store
-    // (Notifier.cancelFocus, FocusAlarm.cancel) son sincronas, pero corren en el hilo propio de
-    // [testScope], no en el de este test.
-    private fun eventually(
-        timeoutMs: Long = 5_000,
-        check: () -> Boolean,
-    ) {
-        val deadline = System.currentTimeMillis() + timeoutMs
-        while (!check()) {
-            if (System.currentTimeMillis() > deadline) error("condition not met within ${timeoutMs}ms")
-            Thread.sleep(5)
-        }
-    }
-
     @Test
     fun `a live session of a task that no longer exists clears the store, the tray and the alarm`() {
         val container = AppContainer(app)
@@ -116,17 +105,16 @@ class FocusSyncTest {
         FocusAlarm.schedule(app, session.endsAtMillis)
         postStandInFocusNotification()
 
-        FocusSync.start(app, container, testScope())
+        // Gancho deterministico: se dispara cuando el tercer colector termina de evaluar el
+        // primer ciclo (aqui, el de limpieza), ya con clear()/cancelFocus()/cancel() resueltos —
+        // nada que sondear con Thread.sleep ni con un timeout corto.
+        val done = CompletableDeferred<Unit>()
+        FocusSync.start(app, container, testScope(), onCycle = { done.complete(Unit) })
+        runBlocking { withTimeout(10_000) { done.await() } }
 
-        // Espera SUSPENDIDA sobre el propio Flow, no un sondeo por Thread.sleep: este colector
-        // combina NUEVE Flow de Room (DomainStateRepository.observe()) sobre un [AppContainer] con
-        // base de datos real, y en la suite completa comparte el executor global de Room con
-        // WidgetRefresher — uno de los cuatro colectores de AppStartup, que observa exactamente el
-        // mismo domainState.observe() sin parar en cualquier BitoApp implicita que ya arrancara en
-        // este fork de JVM (ver AppStartup/AppStartupTest).
-        runBlocking { withTimeout(10_000) { container.focus.session.first { it == null } } }
-        eventually { shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID) == null }
-        eventually { shadowOf(alarmManager).scheduledAlarms.isEmpty() }
+        assertEquals(null, runBlocking { container.focus.session.first() })
+        assertNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+        assertTrue(shadowOf(alarmManager).scheduledAlarms.isEmpty())
     }
 
     /**
@@ -156,11 +144,13 @@ class FocusSyncTest {
 
         val job = Job()
         scopeJob = job
-        FocusSync.start(app, container, CoroutineScope(Dispatchers.Unconfined + job))
+        val done = CompletableDeferred<Unit>()
+        FocusSync.start(app, container, CoroutineScope(Dispatchers.Unconfined + job), onCycle = { done.complete(Unit) })
 
-        runBlocking { withTimeout(10_000) { container.focus.session.first { it == null } } }
-        eventually { shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID) == null }
-        eventually { shadowOf(alarmManager).scheduledAlarms.isEmpty() }
+        runBlocking { withTimeout(10_000) { done.await() } }
+        assertEquals(null, runBlocking { container.focus.session.first() })
+        assertNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+        assertTrue(shadowOf(alarmManager).scheduledAlarms.isEmpty())
     }
 
     @Test
@@ -179,10 +169,12 @@ class FocusSyncTest {
         FocusAlarm.schedule(app, session.endsAtMillis)
         Notifier.showFocus(app, "Leer", session.endsAtMillis)
 
-        FocusSync.start(app, container, testScope())
-        // Da tiempo a que el colector, si fuera a limpiar algo, ya lo hubiera hecho — no hay una
-        // condicion positiva que esperar aqui, la ausencia de cambio es la propia aserción.
-        Thread.sleep(1_000)
+        // Mismo gancho que arriba: espera a que el tercer colector evalue su primer ciclo (aqui,
+        // sin limpiar nada, porque la tarea sigue existiendo) en vez de dar por hecho un tiempo
+        // fijo con Thread.sleep.
+        val done = CompletableDeferred<Unit>()
+        FocusSync.start(app, container, testScope(), onCycle = { done.complete(Unit) })
+        runBlocking { withTimeout(10_000) { done.await() } }
 
         assertEquals(session, runBlocking { container.focus.session.first() })
         assertNotNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
