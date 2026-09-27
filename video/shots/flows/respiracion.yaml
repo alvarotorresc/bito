@@ -2,7 +2,9 @@ appId: com.alvarotc.bito
 ---
 # La pantalla anima sin parar: no se espera a que las animaciones terminen. El estado
 # se ancla a la primera aparicion de la palabra de exhalar (Habi en su tamano maximo,
-# ojos cerrados).
+# ojos cerrados). La captura la toma el propio flujo con takeScreenshot justo tras comprobar
+# la fase y el restante: un adb screencap posterior, ya con Maestro cerrando el proceso, llega
+# tarde y se sale de la ventana de 6 s del "Exhala".
 - extendedWaitUntil:
     visible: ${L_BREATH_CALM}
     timeout: 20000
@@ -11,3 +13,4 @@ appId: com.alvarotc.bito
     visible: ${L_BREATH_EXHALE}
     timeout: 15000
 - assertVisible: ".*1:5[0-9].*"
+- takeScreenshot: ${MAESTRO_SHOT}

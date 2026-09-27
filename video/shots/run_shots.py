@@ -30,6 +30,10 @@ FLOWS = HERE / "flows"
 EMULATOR = HERE / "emulator.sh"
 MAESTRO = Path.home() / ".maestro" / "bin" / "maestro"
 JAVA_HOME = Path.home() / ".jdks" / "jdk-21.0.12+8"
+# respiracion anima sin parar: un adb screencap posterior a que Maestro termine de salir (8-12 s)
+# se sale de la ventana de 6 s del "Exhala". En su lugar, el propio flujo toma la captura con
+# takeScreenshot justo tras comprobar la fase y el restante, mientras Maestro sigue vivo.
+MAESTRO_SHOT_PATH = RAW / "respiracion-maestro.png"
 
 SCREENS = [
     "hoy", "detalle", "stats", "records", "logros", "habi", "tienda",
@@ -66,6 +70,10 @@ def run_maestro(screen: str, labels: dict[str, str]) -> bool:
     cmd = [str(MAESTRO), "--device", d.SERIAL, "test"]
     for key, value in labels.items():
         cmd += ["-e", f"{key}={value}"]
+    if screen == "respiracion":
+        MAESTRO_SHOT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        MAESTRO_SHOT_PATH.unlink(missing_ok=True)
+        cmd += ["-e", f"MAESTRO_SHOT={MAESTRO_SHOT_PATH.with_suffix('')}"]
     cmd.append(str(FLOWS / f"{screen}.yaml"))
     env = {**os.environ, "JAVA_HOME": str(JAVA_HOME), "MAESTRO_CLI_NO_ANALYTICS": "1"}
     return subprocess.run(cmd, env=env).returncode == 0
@@ -115,6 +123,8 @@ def habi_eyes_open(png: bytes, top: int) -> bool:
 
 
 def screencap_for(screen: str, top: int) -> bytes | None:
+    if screen == "respiracion":
+        return MAESTRO_SHOT_PATH.read_bytes() if MAESTRO_SHOT_PATH.exists() else None
     png = d.screencap()
     if screen != "foco":
         return png
