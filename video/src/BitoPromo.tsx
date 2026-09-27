@@ -9,8 +9,9 @@ import { Escena04 } from './scenes/04-Triptico';
 import { Escena05 } from './scenes/05-Navegacion';
 import { Escena06 } from './scenes/06-Habi';
 import { Escena07 } from './scenes/07-Tareas';
-import { Escena08 } from './scenes/08-Promesas';
-import { Escena09 } from './scenes/09-Cierre';
+import { Escena08 } from './scenes/08-Respiracion';
+import { Escena09 } from './scenes/09-Promesas';
+import { Escena10 } from './scenes/10-Cierre';
 import { ESCENAS, momentoGlobal, type NumEscena } from './timing';
 
 const ESCENA: Record<NumEscena, React.FC<PromoProps>> = {
@@ -23,6 +24,7 @@ const ESCENA: Record<NumEscena, React.FC<PromoProps>> = {
   7: Escena07,
   8: Escena08,
   9: Escena09,
+  10: Escena10,
 };
 
 export const BitoPromo: React.FC<PromoProps> = ({ lang }) => (

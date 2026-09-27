@@ -24,9 +24,10 @@ describe('mezcla', () => {
     for (let f = inicio; f < inicio + DURACION_SONIDO[c.sonido]; f++) expect(volumenMusica(f)).toBeLessThanOrEqual(0.3);
   });
 
-  it('baja en la sección oscura', () => {
-    const e8 = ESCENAS[7];
-    for (let f = e8.desde + 20; f < e8.desde + e8.duracion - 20; f++) {
+  it('baja en la sección oscura, que es la de promesas', () => {
+    const promesas = ESCENAS.find((e) => e.nombre === 'promesas')!;
+    expect(promesas.n).toBe(9);
+    for (let f = promesas.desde + 20; f < promesas.desde + promesas.duracion - 20; f++) {
       expect(volumenMusica(f)).toBeLessThanOrEqual(0.35);
       expect(volumenMusica(f)).toBeGreaterThan(0.1);
     }
