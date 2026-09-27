@@ -20,10 +20,14 @@ import java.util.concurrent.atomic.AtomicInteger
  * Robolectric shares this `object` across every test in the same JVM, and [defaultScope] used to
  * never get cancelled: a test that reached [start] (directly or via `BitoApp.onCreate`) leaked its
  * four collectors into whatever test ran next — [com.alvarotc.bito.data.backup.BackupSync]'s
- * WorkManager write and [com.alvarotc.bito.ui.widget.WidgetRefresher]'s tray refresh included. This
- * is the root cause ledgered against `TrayRefresherTest`'s full-suite-only flake since M8. [start]
- * is now idempotent ([started] guards a second call) and takes an injectable [scope] parameter so a
- * test can supply a scope it fully controls and cancels — production keeps using [defaultScope].
+ * WorkManager write and [com.alvarotc.bito.ui.widget.WidgetRefresher]'s tray refresh included. That
+ * was the root cause of `TrayRefresherTest`'s full-suite-only flake from M8 (a leaked
+ * `WidgetRefresher` emission running `TrayRefresher.refresh` against another test's empty
+ * container and cancelling REVIEW_ID in Robolectric's static notification map — CI failed on
+ * "a refresh with review pending leaves the review notification alone" twice, both on commits
+ * before this fix). FIXED in 5e97a1c (M9.5): [start] is idempotent ([started] guards a second call)
+ * and takes an injectable [scope] parameter so a test can supply a scope it fully controls and
+ * cancels — production keeps using [defaultScope]. No failure of that test since.
  *
  * The manifest declares `BitoApp` as the app's `Application`, so any Robolectric test that doesn't
  * override `@Config(application = ...)` boots a real `BitoApp.onCreate()` — and with it a real
