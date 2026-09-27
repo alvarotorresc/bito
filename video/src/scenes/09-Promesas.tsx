@@ -11,7 +11,7 @@ const CIFRAS = [
   { numero: '100%', pie: 'cifra.licencia' },
 ] as const;
 
-export const Escena08: React.FC<PromoProps> = ({ lang }) => (
+export const Escena09: React.FC<PromoProps> = ({ lang }) => (
   <AbsoluteFill>
     <Fondo tono="oscuro" />
     <Rotulo tamano={68} color={COLOR.papel} alinear="center" style={{ left: 0, right: 0, top: 110 }}>

@@ -1,7 +1,7 @@
 export const FPS = 30;
 export const ANCHO = 1920;
 export const ALTO = 1080;
-export const DURACION_TOTAL = 1920;
+export const DURACION_TOTAL = 2070;
 
 const s = (segundos: number) => segundos * FPS;
 
@@ -13,8 +13,9 @@ export const ESCENAS = [
   { n: 5, nombre: 'navegacion', desde: s(20), duracion: s(10) },
   { n: 6, nombre: 'habi', desde: s(30), duracion: s(16) },
   { n: 7, nombre: 'tareas', desde: s(46), duracion: s(6) },
-  { n: 8, nombre: 'promesas', desde: s(52), duracion: s(6) },
-  { n: 9, nombre: 'cierre', desde: s(58), duracion: s(6) },
+  { n: 8, nombre: 'respiracion', desde: s(52), duracion: s(5) },
+  { n: 9, nombre: 'promesas', desde: s(57), duracion: s(6) },
+  { n: 10, nombre: 'cierre', desde: s(63), duracion: s(6) },
 ] as const;
 
 export type NumEscena = (typeof ESCENAS)[number]['n'];
@@ -48,9 +49,10 @@ export const MOMENTOS = {
   vestida: { escena: 6, local: 410 },
   toqueTareas: { escena: 7, local: 50 },
   toqueFoco: { escena: 7, local: 105 },
-  asentarse: { escena: 9, local: 12 },
-  maullido1: { escena: 9, local: 40 },
-  maullido2: { escena: 9, local: 62 },
+  toqueRespiracion: { escena: 8, local: 45 },
+  asentarse: { escena: 10, local: 12 },
+  maullido1: { escena: 10, local: 40 },
+  maullido2: { escena: 10, local: 62 },
 } as const satisfies Record<string, { escena: NumEscena; local: number }>;
 
 export type Momento = keyof typeof MOMENTOS;

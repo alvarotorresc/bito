@@ -66,7 +66,7 @@
             <span>Ver el código</span>
           </a>
         </div>
-        <p class="hero-pie">Versión 1.0.0 · Android 8.0 o superior · 100% libre, GPL-3.0-or-later</p>
+        <p class="hero-pie">Versión 1.3.0 · Android 8.0 o superior · 100% libre, GPL-3.0-or-later</p>
       </div>
 
       <div class="hero-habi">
@@ -160,18 +160,26 @@
     <section class="hace" id="lo-que-hace" aria-labelledby="titular-hace">
       <h2 class="hace-titular" id="titular-hace">Lo que hace</h2>
 
-      <div class="capturas">
+      <div class="capturas" tabindex="0" role="region" aria-label="Capturas de Bito">
         <div class="tarjeta captura">
-          <img src="../img/capturas/hoy.png" width="540" height="1212" loading="lazy" decoding="async"
-               alt="La pantalla Hoy: la fecha del día, un mensaje de Habi, el anillo de progreso «2 de 7» y los hábitos pendientes, cada uno con su registro rápido.">
+          <img src="../img/capturas/es/hoy.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="La pantalla Hoy: la fecha, Habi con su mensaje y el botón para respirar, el anillo de progreso «4 de 6» y los hábitos pendientes, cada uno con su registro rápido.">
         </div>
         <div class="tarjeta captura">
-          <img src="../img/capturas/detalle.png" width="540" height="1212" loading="lazy" decoding="async"
-               alt="Las estadísticas de un hábito: una racha de 130 días con su récord al lado, los congeladores disponibles y el calendario del mes con los días cumplidos.">
+          <img src="../img/capturas/es/detalle.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="Las estadísticas de un hábito: una racha de 130 días con su récord al lado, la fila «0 congeladores» y el calendario del mes con los días cumplidos.">
         </div>
         <div class="tarjeta captura">
-          <img src="../img/capturas/habi.png" width="540" height="1212" loading="lazy" decoding="async"
-               alt="La pantalla de Habi: la mascota con la cara del Sargento, su mensaje del día, el selector de personalidad, los puntos ganados y la tienda donde se gastan.">
+          <img src="../img/capturas/es/habi.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="La pantalla de Habi: la mascota con la cara de Neutra, su mensaje del día, el selector de personalidad, los puntos ganados y la tienda donde se gastan.">
+        </div>
+        <div class="tarjeta captura">
+          <img src="../img/capturas/es/foco.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="El temporizador de la tarea «Preparar la presentación» en marcha: Habi con los ojos abiertos, la cuenta atrás y el botón «He terminado».">
+        </div>
+        <div class="tarjeta captura">
+          <img src="../img/capturas/es/respiracion.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="Respirar con Habi en marcha: Habi grande y con los ojos cerrados, la palabra «Exhala», el tiempo que queda y el botón «Parar».">
         </div>
       </div>
 
@@ -191,6 +199,14 @@
         <div class="hace-item">
           <h3>Logros y estadísticas de verdad</h3>
           <p>Mapas de calor, récords y logros que se ganan solos. Los números están para que veas cómo vas, no para presumir en ningún sitio.</p>
+        </div>
+        <div class="hace-item">
+          <h3>Tareas y un temporizador para empezar</h3>
+          <p>La llamada, el papeleo, el correo. Cada tarea con su plazo, un primer paso si te ayuda a arrancar y un temporizador con Habi al lado que sigue corriendo con la pantalla apagada.</p>
+        </div>
+        <div class="hace-item">
+          <h3>Respirar con Habi</h3>
+          <p>Unos dos minutos siguiendo su respiración cuando el día se te echa encima. Tres modos y nada más que elegir. No da puntos ni cuenta para rachas.</p>
         </div>
       </div>
     </section>
@@ -306,7 +322,7 @@
 
       <div class="cifras">
         <div class="cifra">
-          <span class="cifra-dato">962</span>
+          <span class="cifra-dato">1297</span>
           <span class="cifra-pie">tests que pasan en cada cambio</span>
         </div>
         <div class="cifra">
@@ -315,7 +331,7 @@
         </div>
         <div class="cifra">
           <span class="cifra-dato">4</span>
-          <span class="cifra-pie">permisos, y ninguno es internet</span>
+          <span class="cifra-pie">permisos propios, y ninguno es internet</span>
         </div>
         <div class="cifra">
           <span class="cifra-dato">100%</span>
@@ -329,7 +345,7 @@
           <p class="dentro-cuerpo">La app no puede mandar tus datos a ninguna parte porque no declara el permiso para hacerlo. Clona el repositorio y ejecuta esto:</p>
           <pre class="codigo"><code>grep -o 'android:name="android.permission[^"]*"' \
   app/src/main/AndroidManifest.xml</code></pre>
-          <p class="dentro-pie">Salen cuatro: notificaciones, alarma exacta, arranque del sistema y vibración. INTERNET no está, y sin él no hay red que valga.</p>
+          <p class="dentro-pie">Salen cuatro: notificaciones, alarma exacta, arranque del sistema y vibración. INTERNET no está, y sin él no hay red que valga. Las bibliotecas añaden otros cuatro al APK, y tampoco hay internet entre ellos: la lista completa está en la <a href="/es/privacidad/">página de privacidad</a>.</p>
         </div>
 
         <div class="dentro-columna">
@@ -338,7 +354,7 @@
             <dt>Lenguaje</dt><dd>Kotlin 2.1</dd>
             <dt>Interfaz</dt><dd>Jetpack Compose</dd>
             <dt>Widgets</dt><dd>Glance 1.1</dd>
-            <dt>Datos</dt><dd>Room · 9 tablas, esquema v1</dd>
+            <dt>Datos</dt><dd>Room · 12 tablas, esquema v3</dd>
             <dt>Mínimo</dt><dd>Android 8.0 (API 26)</dd>
             <dt>Mascota</dt><dd>Vectorial, dibujada a mano en Canvas</dd>
           </dl>
@@ -369,7 +385,7 @@
         <div class="futuro-texto">
           <h2 class="futuro-titular" id="titular-futuro">Hacia dónde va</h2>
           <p class="futuro-parrafo">Bito empieza por los hábitos porque es donde la fricción se nota más. Pero la idea de fondo es más ancha: un sitio tranquilo para todo lo que cuesta empezar, con Habi de por medio.</p>
-          <p class="futuro-parrafo">Un hábito que no arranca y una tarea que llevas tres semanas esquivando fallan exactamente por lo mismo. Bito ya sabe tratar el primero. El segundo viene detrás.</p>
+          <p class="futuro-parrafo">Un hábito que no arranca y una tarea que llevas tres semanas esquivando fallan exactamente por lo mismo. Por eso Bito ya se ocupa de los dos.</p>
           <p class="futuro-advertencia">Es una dirección, no un calendario. Nada de esto lleva fecha puesta.</p>
         </div>
         <div class="futuro-lista">
@@ -377,10 +393,6 @@
           <div class="futuro-item">
             <h3>Publicación en tiendas</h3>
             <p>F-Droid, Google Play y las que hagan falta. Para no tener que explicarle a nadie qué es un APK.</p>
-          </div>
-          <div class="futuro-item">
-            <h3>Procrastinación y tareas</h3>
-            <p>Eso que sigue en la lista desde hace un mes y que no es un hábito. La otra mitad del problema.</p>
           </div>
           <div class="futuro-item">
             <h3>Muchas sorpresas más…</h3>
@@ -402,7 +414,7 @@
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Descargar Bito 1.0.0</span>
+          <span>Descargar Bito 1.3.0</span>
         </a>
       </div>
     </section>
@@ -416,6 +428,7 @@
       <a href="https://github.com/alvarotorresc/bito">Código</a>
       <a href="https://github.com/alvarotorresc/bito/blob/main/LICENSE">Licencia</a>
       <a href="https://tally.so/r/dWe65r">Contar un fallo</a>
+      <a href="/es/privacidad/">Privacidad</a>
     </nav>
   </footer>
 

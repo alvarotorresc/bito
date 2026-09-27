@@ -10,7 +10,7 @@ import { Rotulo } from '../ui/Rotulo';
 
 const TAM_ICONO = 340;
 
-export const LINEA_09: LineaHabi = {
+export const LINEA_10: LineaHabi = {
   semilla: 'escena-09',
   eventos: [
     { at: momentoLocal('asentarse'), gesto: { tipo: 'settle' } },
@@ -19,9 +19,9 @@ export const LINEA_09: LineaHabi = {
   ],
 };
 
-export const Escena09: React.FC<PromoProps> = ({ lang }) => {
+export const Escena10: React.FC<PromoProps> = ({ lang }) => {
   const frame = useCurrentFrame();
-  const pose = poseEnFrame(frame, FPS, LINEA_09);
+  const pose = poseEnFrame(frame, FPS, LINEA_10);
   const aparece = spring({ frame, fps: FPS, config: MUELLES.asentarse });
   return (
     <AbsoluteFill>

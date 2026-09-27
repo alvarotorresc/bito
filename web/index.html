@@ -66,7 +66,7 @@
             <span>View the code</span>
           </a>
         </div>
-        <p class="hero-pie">Version 1.0.0 · Android 8.0 or later · 100% free, GPL-3.0-or-later</p>
+        <p class="hero-pie">Version 1.3.0 · Android 8.0 or later · 100% free, GPL-3.0-or-later</p>
       </div>
 
       <div class="hero-habi">
@@ -160,21 +160,28 @@
     <section class="hace" id="lo-que-hace" aria-labelledby="titular-hace">
       <h2 class="hace-titular" id="titular-hace">What it does</h2>
 
-      <div class="capturas" style="margin-bottom: 14px">
+      <div class="capturas" tabindex="0" role="region" aria-label="Bito screenshots">
         <div class="tarjeta captura">
-          <img src="img/capturas/hoy.png" width="540" height="1212" loading="lazy" decoding="async"
-               alt="The Today screen: the date, a message from Habi, the &quot;2 of 7&quot; progress ring, and the pending habits, each with its quick-log control.">
+          <img src="img/capturas/en/hoy.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="The Today screen: the date, Habi with a message and the breathe button, the &quot;4 of 6&quot; progress ring, and the pending habits, each with its quick-log control.">
         </div>
         <div class="tarjeta captura">
-          <img src="img/capturas/detalle.png" width="540" height="1212" loading="lazy" decoding="async"
-               alt="A habit's stats: a 130-day streak next to its record, the available freezers, and the month's calendar with completed days marked.">
+          <img src="img/capturas/en/detalle.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="A habit's stats: a 130-day streak next to its record, the &quot;0 freezers&quot; row, and the month's calendar with completed days marked.">
         </div>
         <div class="tarjeta captura">
-          <img src="img/capturas/habi.png" width="540" height="1212" loading="lazy" decoding="async"
-               alt="The Habi screen: the mascot wearing the Sargento face, its message of the day, the personality selector, the points earned, and the store where they're spent.">
+          <img src="img/capturas/en/habi.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="The Habi screen: the mascot with the Neutra face, its daily message, the personality selector, the points earned, and the store where they're spent.">
+        </div>
+        <div class="tarjeta captura">
+          <img src="img/capturas/en/foco.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="The timer for the task &quot;Prepare the slides&quot; running: Habi with open eyes, the countdown, and the &quot;I'm done&quot; button.">
+        </div>
+        <div class="tarjeta captura">
+          <img src="img/capturas/en/respiracion.png" width="540" height="1170" loading="lazy" decoding="async"
+               alt="Breathe with Habi, running: Habi large with closed eyes, the words &quot;Breathe out&quot;, the time left, and the &quot;Stop&quot; button.">
         </div>
       </div>
-      <p class="hero-pie" style="margin-bottom: var(--aire-64)">Screenshots show the Spanish build; the app is fully translated.</p>
 
       <div class="hace-rejilla">
         <div class="hace-item">
@@ -192,6 +199,14 @@
         <div class="hace-item">
           <h3>Real badges, real stats</h3>
           <p>Heatmaps, records, and badges that earn themselves. The numbers are there to show how you're doing, not to show off anywhere.</p>
+        </div>
+        <div class="hace-item">
+          <h3>Tasks, and a timer to get going</h3>
+          <p>The call, the paperwork, the email. Each task gets a deadline, a first step if it helps, and a timer with Habi beside you that keeps running with the screen off.</p>
+        </div>
+        <div class="hace-item">
+          <h3>Breathe with Habi</h3>
+          <p>About two minutes following Habi's breath when the day piles up. Three modes, nothing else to pick. No points, no streaks.</p>
         </div>
       </div>
     </section>
@@ -307,7 +322,7 @@
 
       <div class="cifras">
         <div class="cifra">
-          <span class="cifra-dato">962</span>
+          <span class="cifra-dato">1297</span>
           <span class="cifra-pie">tests passing on every change</span>
         </div>
         <div class="cifra">
@@ -316,7 +331,7 @@
         </div>
         <div class="cifra">
           <span class="cifra-dato">4</span>
-          <span class="cifra-pie">permissions, none for internet</span>
+          <span class="cifra-pie">permissions of its own, no internet</span>
         </div>
         <div class="cifra">
           <span class="cifra-dato">100%</span>
@@ -330,7 +345,7 @@
           <p class="dentro-cuerpo">The app can't send your data anywhere, because it doesn't declare the permission to. Clone the repository and run this:</p>
           <pre class="codigo"><code>grep -o 'android:name="android.permission[^"]*"' \
   app/src/main/AndroidManifest.xml</code></pre>
-          <p class="dentro-pie">Four show up: notifications, exact alarm, boot, and vibration. INTERNET isn't there — without it, no network works.</p>
+          <p class="dentro-pie">Four show up: notifications, exact alarm, boot, and vibration. INTERNET isn't there — without it, no network works. Libraries add four more to the APK, none of them internet: the full list is on the <a href="/privacy/">privacy page</a>.</p>
         </div>
 
         <div class="dentro-columna">
@@ -339,7 +354,7 @@
             <dt>Language</dt><dd>Kotlin 2.1</dd>
             <dt>UI</dt><dd>Jetpack Compose</dd>
             <dt>Widgets</dt><dd>Glance 1.1</dd>
-            <dt>Data</dt><dd>Room · 9 tables, schema v1</dd>
+            <dt>Data</dt><dd>Room · 12 tables, schema v3</dd>
             <dt>Min</dt><dd>Android 8.0 (API 26)</dd>
             <dt>Mascot</dt><dd>Vector, hand-drawn in Canvas</dd>
           </dl>
@@ -370,7 +385,7 @@
         <div class="futuro-texto">
           <h2 class="futuro-titular" id="titular-futuro">The road ahead</h2>
           <p class="futuro-parrafo">Bito starts with habits because that's where friction shows the most. But the idea underneath is wider: a calm place for everything that's hard to start, with Habi along for it.</p>
-          <p class="futuro-parrafo">A habit that won't start and a task you've dodged for three weeks fail for the exact same reason. Bito already handles the first. The second comes next.</p>
+          <p class="futuro-parrafo">A habit that won't start and a task you've dodged for three weeks fail for the exact same reason. That's why Bito handles both.</p>
           <p class="futuro-advertencia">It's a direction, not a calendar. None of this has a date on it.</p>
         </div>
         <div class="futuro-lista">
@@ -378,10 +393,6 @@
           <div class="futuro-item">
             <h3>Store publishing</h3>
             <p>F-Droid, Google Play, and whatever else it takes. So nobody has to explain what an APK is.</p>
-          </div>
-          <div class="futuro-item">
-            <h3>Procrastination, tasks</h3>
-            <p>The thing that's been on your list for a month and isn't a habit. The problem's other half.</p>
           </div>
           <div class="futuro-item">
             <h3>More surprises ahead…</h3>
@@ -403,7 +414,7 @@
             <polyline points="7 10 12 15 17 10"></polyline>
             <line x1="12" y1="15" x2="12" y2="3"></line>
           </svg>
-          <span>Download Bito 1.0.0</span>
+          <span>Download Bito 1.3.0</span>
         </a>
       </div>
     </section>
@@ -417,6 +428,7 @@
       <a href="https://github.com/alvarotorresc/bito">Code</a>
       <a href="https://github.com/alvarotorresc/bito/blob/main/LICENSE">License</a>
       <a href="https://tally.so/r/dWe65r">Report a bug</a>
+      <a href="/privacy/">Privacy</a>
     </nav>
   </footer>
 

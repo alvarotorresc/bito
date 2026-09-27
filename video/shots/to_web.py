@@ -13,7 +13,7 @@ from PIL import Image
 PUBLIC = Path(__file__).resolve().parent.parent / "public" / "shots"
 WEB_ASSETS = Path("/home/alvarotc/Documents/apps/alvarotc-web/src/assets/projects/bito")
 LANGS = ("es", "en")
-SIZE_WARNING = 400 * 1024
+SIZE_LIMIT = 400 * 1024
 WEB_NAMES = {
     "cover": "hoy",
     "shot-01-habitos": "detalle",
@@ -22,6 +22,8 @@ WEB_NAMES = {
     "shot-04-widget": "widget",
     "shot-05-insignias": "logros",
     "shot-06-revision": "repaso",
+    "feat-tareas": "foco",
+    "feat-respiracion": "respiracion",
 }
 
 
@@ -31,6 +33,17 @@ def plan_copies(public: Path, web: Path) -> list[tuple[Path, Path]]:
         for lang in LANGS
         for name, screen in WEB_NAMES.items()
     ]
+
+
+def save_under(img: Image.Image, dst: Path, max_bytes: int) -> int:
+    img.save(dst, "PNG", optimize=True)
+    if dst.stat().st_size <= max_bytes:
+        return dst.stat().st_size
+    img.quantize(colors=256, method=Image.Quantize.FASTOCTREE).save(dst, "PNG", optimize=True)
+    size = dst.stat().st_size
+    if size > max_bytes:
+        raise ValueError(f"to_web: {dst} pesa {size} bytes incluso con paleta, el máximo es {max_bytes}")
+    return size
 
 
 def copy_all(public: Path, web: Path) -> list[tuple[Path, int]]:
@@ -46,8 +59,7 @@ def copy_all(public: Path, web: Path) -> list[tuple[Path, int]]:
     written: list[tuple[Path, int]] = []
     for src, dst in pairs:
         with Image.open(src) as img:
-            img.convert("RGB").save(dst, "PNG", optimize=True)
-        written.append((dst, dst.stat().st_size))
+            written.append((dst, save_under(img.convert("RGB"), dst, SIZE_LIMIT)))
     return written
 
 
@@ -57,8 +69,7 @@ def main() -> None:
     parser.add_argument("--web", default=str(WEB_ASSETS))
     args = parser.parse_args()
     for dst, size in copy_all(Path(args.public), Path(args.web)):
-        warning = "  AVISO: más de 400 KB, lo resuelve el plan de la ficha web" if size > SIZE_WARNING else ""
-        print(f"{size // 1024:5d} KB  {dst}{warning}")
+        print(f"{size // 1024:5d} KB  {dst}")
 
 
 if __name__ == "__main__":

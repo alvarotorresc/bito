@@ -11,9 +11,9 @@ import {
 } from '../src/timing';
 
 describe('timing', () => {
-  it('las nueve escenas suman 1920 frames', () => {
+  it('las diez escenas suman 2070 frames', () => {
     expect(ESCENAS.reduce((suma, e) => suma + e.duracion, 0)).toBe(DURACION_TOTAL);
-    expect(DURACION_TOTAL).toBe(1920);
+    expect(DURACION_TOTAL).toBe(2070);
   });
 
   it('la duración cae entre 45 y 70 s', () => {
@@ -27,9 +27,9 @@ describe('timing', () => {
       const previa = ESCENAS[i - 1];
       expect(e.desde).toBe(previa ? previa.desde + previa.duracion : 0);
     });
-    expect(ESCENAS.map((e) => e.desde / FPS)).toEqual([0, 4, 10, 14, 20, 30, 46, 52, 58]);
+    expect(ESCENAS.map((e) => e.desde / FPS)).toEqual([0, 4, 10, 14, 20, 30, 46, 52, 57, 63]);
     const ultima = ESCENAS[ESCENAS.length - 1]!;
-    expect((ultima.desde + ultima.duracion) / FPS).toBe(64);
+    expect((ultima.desde + ultima.duracion) / FPS).toBe(69);
   });
 
   it.each(Object.keys(MOMENTOS) as Momento[])('%s cae dentro de su escena', (m) => {
@@ -40,7 +40,9 @@ describe('timing', () => {
 
   it('momentoGlobal suma el inicio de la escena', () => {
     expect(momentoGlobal('saludo')).toBe(20);
-    expect(momentoGlobal('maullido2')).toBe(1740 + 62);
+    expect(momentoGlobal('maullido2')).toBe(1890 + 62);
+    expect(momentoGlobal('toqueRespiracion')).toBe(1605);
+    expect(ESCENAS.map((e) => e.nombre).slice(6)).toEqual(['tareas', 'respiracion', 'promesas', 'cierre']);
   });
 
   it('msAFrames convierte las duraciones del spec', () => {

@@ -1,4 +1,4 @@
-"""Comprueba public/shots/{es,en}: 13 pantallas por idioma, 1080x2340 RGB, fila superior y pares distintos.
+"""Comprueba public/shots/{es,en}: 16 pantallas por idioma, 1080x2340 RGB, fila superior y pares distintos.
 
 Uso: python3 verify_shots.py
 """

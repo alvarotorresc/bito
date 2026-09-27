@@ -8,7 +8,7 @@ import { Dedo } from '../ui/Dedo';
 import { Fondo } from '../ui/Fondo';
 import { Phone, medidasPhone, pantallaEnFrame } from '../ui/Phone';
 import { Rotulo } from '../ui/Rotulo';
-import { TOQUES } from '../ui/shots';
+import { punto, TOQUES } from '../ui/shots';
 
 const ALTO_MOVIL = 900;
 const m = medidasPhone(ALTO_MOVIL);
@@ -17,7 +17,7 @@ const ARRIBA = (ALTO - m.altoTotal) / 2;
 
 const NAVEGA = [
   { pantalla: 'detalle', momento: 'toqueDetalle', toque: TOQUES.hoyADetalle },
-  { pantalla: 'stats', momento: 'toqueStats', toque: TOQUES.detalleAStats },
+  { pantalla: 'stats-logros', momento: 'toqueStats', toque: TOQUES.detalleAStats },
   { pantalla: 'logros', momento: 'toqueLogros', toque: TOQUES.statsALogros },
 ] as const;
 const PASOS = NAVEGA.map((n) => ({ pantalla: n.pantalla, at: momentoLocal(n.momento) + 4 }));
@@ -39,9 +39,10 @@ export const Escena05: React.FC<PromoProps> = ({ lang }) => {
     <AbsoluteFill>
       <Fondo />
       <Phone lang={lang} pantalla={pantalla} transicion={transicion} alto={ALTO_MOVIL} style={{ left: IZQ, top: ARRIBA }} />
-      {NAVEGA.map((n) => (
-        <Dedo key={n.momento} x={IZQ + m.marco + n.toque.x * m.ancho} y={ARRIBA + m.marco + n.toque.y * m.alto} toque={momentoLocal(n.momento)} />
-      ))}
+      {NAVEGA.map((n) => {
+        const p = punto(lang, n.toque);
+        return <Dedo key={n.momento} x={IZQ + m.marco + p.x * m.ancho} y={ARRIBA + m.marco + p.y * m.alto} toque={momentoLocal(n.momento)} />;
+      })}
       <HabiVivo linea={LINEA_05} tamano={400} style={{ position: 'absolute', left: 250, top: 560 }} />
       <Rotulo entra={momentoLocal('toqueDetalle') + 5} sale={momentoLocal('toqueStats') - 5} tamano={72} style={{ left: 100, top: 200, width: 900 }}>
         {texto(lang, 'hace.rachas')}

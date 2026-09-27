@@ -13,11 +13,11 @@ The habit app that won't steal your time. Lives entirely on your phone: no accou
 [![License: GPL-3.0-or-later](https://img.shields.io/github/license/alvarotorresc/bito)](./LICENSE)
 [![Android 8.0+](https://img.shields.io/badge/Android-8.0%2B-57A06B)](https://github.com/alvarotorresc/bito/releases/latest)
 
-Version 1.0.0 · Android 8.0 or later · 100% free, GPL-3.0-or-later
+Version 1.3.0 · Android 8.0 or later · 100% free, GPL-3.0-or-later
 
 ## Download
 
-[**Download Bito 1.0.0**](https://github.com/alvarotorresc/bito/releases/download/v1.0.0/app-release.apk) — 4.7 MB, straight from GitHub Releases.
+[**Download Bito 1.3.0**](https://github.com/alvarotorresc/bito/releases/download/v1.3.0/app-release.apk) — 6.4 MB, straight from GitHub Releases.
 
 Android will warn that this app comes from an unknown source — that's expected outside Google Play, not a red flag specific to Bito. Open the downloaded file, and if you're asked, allow installs from your browser or file manager just this once, then tap **Install**. No account, no setup wizard, nothing to sign in to.
 
@@ -37,6 +37,8 @@ And once you're in:
 - **Amounts, durations, and things to quit** — eight glasses of water, twenty minutes of reading, or one more day without smoking. Each type logs its own way.
 - **Reminders in the voice you pick** — the nudge changes tone by time of day and by which voice you picked. Mornings, it sets up the day; nights, it helps close it.
 - **Real badges, real stats** — heatmaps, records, and badges that earn themselves. The numbers are there to show how you're doing, not to show off anywhere.
+- **Tasks, and a timer to get going** — the call, the paperwork, the email. Each task gets a deadline, a first step if it helps, and a timer with Habi beside you that keeps running with the screen off.
+- **Breathe with Habi** — about two minutes following Habi's breath when the day piles up. Three modes, nothing else to pick. No points, no streaks.
 
 ## Backups: the crown jewel
 
@@ -53,23 +55,25 @@ That's why backups aren't a setting buried in Bito: they're part of the engine. 
 
 A habit's detail, 130 days into a streak, calendar filled in:
 
-<img src="web/img/capturas/detalle.png" width="220" alt="Habit detail screen showing a 130-day streak and a full calendar">
+<img src="web/img/capturas/en/detalle.png" width="220" alt="Habit detail screen showing a 130-day streak and a full calendar">
 
-| Today | Habi and the store | Stats |
+| Today | A task's timer | Breathe |
 |---|---|---|
-| <img src="web/img/capturas/hoy.png" width="200" alt="Today screen listing the day's habits"> | <img src="web/img/capturas/habi.png" width="200" alt="Habi screen with the customization store"> | <img src="web/img/capturas/stats.png" width="200" alt="Stats screen with heatmap and numbers"> |
+| <img src="web/img/capturas/en/hoy.png" width="200" alt="Today screen with Habi, the breathe button and the day's habits"> | <img src="web/img/capturas/en/foco.png" width="200" alt="A task's timer running, with Habi and the countdown"> | <img src="web/img/capturas/en/respiracion.png" width="200" alt="Breathe with Habi running, Habi with closed eyes and the words Breathe out"> |
 
 <details>
 <summary>More screens</summary>
 <br>
 
-| Records | Badges | Daily review | Settings |
+| Habi and the store | Stats | Records | Badges |
 |---|---|---|---|
-| <img src="web/img/capturas/records.png" width="180" alt="Records screen with each habit's best streak"> | <img src="web/img/capturas/logros.png" width="180" alt="Badges screen"> | <img src="web/img/capturas/repaso.png" width="180" alt="Daily review screen"> | <img src="web/img/capturas/ajustes.png" width="180" alt="Settings screen"> |
+| <img src="web/img/capturas/en/habi.png" width="180" alt="Habi screen with the customization store"> | <img src="web/img/capturas/en/stats.png" width="180" alt="Stats screen with heatmap and numbers"> | <img src="web/img/capturas/en/records.png" width="180" alt="Records screen with each habit's best streak"> | <img src="web/img/capturas/en/logros.png" width="180" alt="Badges screen"> |
+
+| Tasks | Daily review | Settings |
+|---|---|---|
+| <img src="web/img/capturas/en/tareas.png" width="180" alt="Tasks list with deadlines"> | <img src="web/img/capturas/en/repaso.png" width="180" alt="Daily review screen"> | <img src="web/img/capturas/en/ajustes.png" width="180" alt="Settings screen"> |
 
 </details>
-
-_Screenshots show the Spanish build; the app is fully translated._
 
 ## Habi and its three personalities
 
@@ -104,9 +108,9 @@ Bito doesn't ask you to take its word for it. The code is all out there, and the
 
 | | |
 |---|---|
-| **962** | tests passing on every change |
+| **1297** | tests passing on every change |
 | **0** | Google Play Services dependencies |
-| **4** | permissions, none for internet |
+| **4** | permissions of its own, no internet |
 | **100%** | of the code, GPL-3.0-or-later |
 
 ### Verify it
@@ -129,6 +133,8 @@ android:name="android.permission.VIBRATE"
 
 `INTERNET` isn't there — without it, no network works. Don't take that on faith either; run the command yourself.
 
+Those four are Bito's own. The built APK also carries four more that its libraries add, and none of them is internet either: the [privacy page](https://bito.alvarotc.com/privacy/) lists all eight and how to check them with `aapt2`.
+
 ### How it's built
 
 Works the same on GrapheneOS. Streak, point, and mood logic lives apart from Android and tests itself.
@@ -138,12 +144,12 @@ Works the same on GrapheneOS. Streak, point, and mood logic lives apart from And
 | Language | Kotlin 2.1.0 |
 | UI | Jetpack Compose (BOM 2024.12.01) |
 | Widgets | Glance 1.1.1 |
-| Data | Room 2.7.2 · 9 tables, schema v1, no migrations yet |
+| Data | Room 2.7.2 · 12 tables, schema v3 |
 | Min / target | Android 8.0 (API 26) / Android 15 (API 35) |
 | Build | AGP 8.7.2 · JDK 21 |
-| Release | versionName 1.0.0 · versionCode 11 |
+| Release | versionName 1.3.0 · versionCode 14 |
 | Mascot | Vector, hand-drawn in Canvas |
-| Tests | 962 `@Test` functions across 107 files, run on every push to main and every pull request |
+| Tests | 1297 `@Test` functions across 129 files, run on every push to main and every pull request |
 
 ### How backups are encrypted
 
@@ -181,4 +187,4 @@ Third-party licenses:
 
 ---
 
-Bito · free software under GPL-3.0-or-later · [Code](https://github.com/alvarotorresc/bito) · [License](./LICENSE) · [Report a bug](https://tally.so/r/dWe65r)
+Bito · free software under GPL-3.0-or-later · [Code](https://github.com/alvarotorresc/bito) · [License](./LICENSE) · [Report a bug](https://tally.so/r/dWe65r) · [Privacy](https://bito.alvarotc.com/privacy/)

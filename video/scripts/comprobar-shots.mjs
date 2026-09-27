@@ -6,7 +6,7 @@ const raiz = join(dirname(fileURLToPath(import.meta.url)), '..');
 const fuente = readFileSync(join(raiz, 'src', 'ui', 'shots.ts'), 'utf8');
 const bloque = fuente.match(/export const PANTALLAS = \[([^\]]+)\]/);
 if (!bloque) throw new Error('No encuentro PANTALLAS en src/ui/shots.ts');
-const pantallas = [...bloque[1].matchAll(/'([a-z]+)'/g)].map((m) => m[1]);
+const pantallas = [...bloque[1].matchAll(/'([a-z-]+)'/g)].map((m) => m[1]);
 
 const faltan = ['es', 'en']
   .flatMap((lang) => pantallas.map((p) => `public/shots/${lang}/${p}.png`))

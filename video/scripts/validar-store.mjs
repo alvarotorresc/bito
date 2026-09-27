@@ -5,6 +5,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const FIRMA = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const MB = 1024 * 1024;
 
+export const CAPTURAS = 8;
+
 export const REGLAS = {
   icono: { ancho: 512, alto: 512, tipoColor: 6, maxBytes: 1 * MB },
   feature: { ancho: 1024, alto: 500, tipoColor: 2, maxBytes: 15 * MB },
@@ -64,7 +66,7 @@ export const validarStore = async (dir) => {
     } catch {
       capturas = [];
     }
-    if (capturas.length !== 6) informe.push(`${join(dir, lang)}: ${capturas.length} capturas, se esperaban 6`);
+    if (capturas.length !== CAPTURAS) informe.push(`${join(dir, lang)}: ${capturas.length} capturas, se esperaban ${CAPTURAS}`);
     for (const c of capturas) await revisar(join(dir, lang, c), REGLAS.captura);
   }
   return informe;

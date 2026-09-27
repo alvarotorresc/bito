@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy · Bito</title>
+  <meta name="description" content="What Bito stores, where, and every permission its APK declares. Bito doesn't declare INTERNET: the app never sends your data off the phone.">
+  <meta name="theme-color" content="#F2ECE1">
+  <link rel="canonical" href="https://bito.alvarotc.com/privacy/">
+  <link rel="alternate" hreflang="en" href="https://bito.alvarotc.com/privacy/">
+  <link rel="alternate" hreflang="es" href="https://bito.alvarotc.com/es/privacidad/">
+  <link rel="alternate" hreflang="x-default" href="https://bito.alvarotc.com/privacy/">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" type="image/svg+xml" href="../img/habi/neutra.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap">
+  <link rel="stylesheet" href="../estilo.css">
+</head>
+<body>
+<div class="lienzo">
+
+  <header class="cabecera">
+    <a class="marca" href="/">
+      <svg width="34" height="34" viewBox="0 0 1 1" aria-hidden="true">
+        <path d="M 0.5 0.13 C 0.687776815 0.13 0.84 0.340426168 0.84 0.6 C 0.84 0.804345357 0.687776815 0.97 0.5 0.97 C 0.312223185 0.97 0.16 0.804345357 0.16 0.6 C 0.16 0.340426168 0.312223185 0.13 0.5 0.13 Z" fill="#A9C9A1"></path>
+        <circle cx="0.36" cy="0.5" r="0.048" fill="#3C352B"></circle>
+        <circle cx="0.64" cy="0.5" r="0.048" fill="#3C352B"></circle>
+        <path d="M 0.428 0.66 Q 0.5 0.68975 0.572 0.66" fill="none" stroke="#3C352B" stroke-width="0.028" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <span>Bito</span>
+    </a>
+    <nav class="nav" aria-label="Language">
+      <a href="/es/privacidad/" lang="es">ES</a>
+      <a class="nav-activo" href="/privacy/" aria-current="page" lang="en">EN</a>
+    </nav>
+  </header>
+
+  <main class="legal" aria-labelledby="titular-privacidad">
+    <h1 id="titular-privacidad">Privacy</h1>
+    <p class="legal-fecha">Bito 1.3.0 · Reviewed 27 September 2026</p>
+
+    <h2>In short</h2>
+    <p>Bito doesn't declare the <code>INTERNET</code> permission. Without it, the app can't connect anywhere: what you log stays on your phone. No accounts, no Bito servers, nothing to sync.</p>
+
+    <h2>What it stores</h2>
+    <p>Your habits and their entries, your tasks, your breathing sessions, points, badges, whatever Habi is wearing, your settings and the name you type. It all lives in the app's private storage, which other apps can't reach.</p>
+    <p>Bito has Android's cloud backup turned off (<code>allowBackup="false"</code>): your data stays out of the system backup. Uninstall the app and it goes with it. To keep it, use Bito's own backups, below.</p>
+
+    <h2>What it avoids</h2>
+    <p>No accounts, no analytics, no ads, no automatic crash reports. It uses no Google service: zero Google Play Services dependencies.</p>
+
+    <h2>Each permission</h2>
+    <p>The 1.3.0 APK declares eight permissions. Four are Bito's own; the other four come from Android libraries Bito uses and land in the APK at build time.</p>
+
+    <h3>Its own</h3>
+    <table class="legal-tabla">
+      <thead><tr><th scope="col">Permission</th><th scope="col">Bito uses it for</th></tr></thead>
+      <tbody>
+        <tr><td><code>android.permission.POST_NOTIFICATIONS</code></td><td>Showing your habit reminders, task alerts, the breathing reminder and the timer countdown.</td></tr>
+        <tr><td><code>android.permission.SCHEDULE_EXACT_ALARM</code></td><td>Getting each reminder and the end of the timer there on time.</td></tr>
+        <tr><td><code>android.permission.RECEIVE_BOOT_COMPLETED</code></td><td>Scheduling the alerts again after the phone restarts.</td></tr>
+        <tr><td><code>android.permission.VIBRATE</code></td><td>Vibrating when you log and at each breathing phase, if it's on in Settings.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Added by libraries</h3>
+    <table class="legal-tabla">
+      <thead><tr><th scope="col">Permission</th><th scope="col">Comes from</th></tr></thead>
+      <tbody>
+        <tr><td><code>android.permission.WAKE_LOCK</code></td><td>WorkManager (<code>androidx.work</code>), Android's library for background work; in Bito, automatic backups. It lets the processor stay awake until a job finishes.</td></tr>
+        <tr><td><code>android.permission.ACCESS_NETWORK_STATE</code></td><td>WorkManager. It checks for a network but can't connect: without <code>INTERNET</code>, nothing can.</td></tr>
+        <tr><td><code>android.permission.FOREGROUND_SERVICE</code></td><td>WorkManager. It lets a long job keep running with a visible notification.</td></tr>
+        <tr><td><code>com.alvarotc.bito.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION</code></td><td>AndroidX Core (<code>androidx.core</code>). An internal permission only the app itself can hold: it stops other apps from sending Bito the signals Bito sends itself.</td></tr>
+      </tbody>
+    </table>
+
+    <p>Check it yourself: download the APK and run <code>aapt2 dump permissions app-release.apk</code> (<code>aapt2</code> ships with Android's build tools). For 1.3.0 it prints:</p>
+    <pre class="codigo"><code>package: com.alvarotc.bito
+uses-permission: name='android.permission.POST_NOTIFICATIONS'
+uses-permission: name='android.permission.SCHEDULE_EXACT_ALARM'
+uses-permission: name='android.permission.RECEIVE_BOOT_COMPLETED'
+uses-permission: name='android.permission.VIBRATE'
+uses-permission: name='android.permission.WAKE_LOCK'
+uses-permission: name='android.permission.ACCESS_NETWORK_STATE'
+uses-permission: name='android.permission.FOREGROUND_SERVICE'
+permission: com.alvarotc.bito.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION
+uses-permission: name='com.alvarotc.bito.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION'</code></pre>
+
+    <h2>Backups</h2>
+    <p>Backups go to the folder you pick in Android's file picker. That gives Bito access to that folder and nothing else: it isn't a system permission. Make them by hand or let them run on their own.</p>
+    <p>A plain backup is JSON any text editor can read. Add a password and it's encrypted with Argon2id and AES-256-GCM, and Bito doesn't store that password anywhere: without it, the backup won't open.</p>
+    <p>If another app or a cloud service syncs that folder, what happens to the file from there is up to that service, not Bito.</p>
+
+    <h2>Only if you tap it</h2>
+    <p>“Something not right?”, in Settings › About, opens a Tally form in your browser, no account needed. The other About links, like the source code and the license, open their page in the browser. Either way, you open the page and that site serves it, not Bito. The app sends nothing on its own.</p>
+
+    <h2>Website</h2>
+    <p>bito.alvarotc.com is served by Vercel and loads its typeface from Google Fonts. It sets no cookies and runs no analytics. Like any server, Vercel and Google Fonts see the IP address that asks for the page.</p>
+
+    <h2>Contact, changes</h2>
+    <p>Any questions about this page, same form: <a href="https://tally.so/r/dWe65r">Report a bug</a>. If the page changes, so does the date at the top.</p>
+    <p><a href="/">Back to Bito</a> · <a href="/es/privacidad/" lang="es" hreflang="es">Español</a></p>
+  </main>
+
+  <footer class="pie">
+    <span>Bito · free software under GPL-3.0-or-later</span>
+    <nav class="pie-enlaces" aria-label="Project links">
+      <a href="https://github.com/alvarotorresc/bito">Code</a>
+      <a href="https://github.com/alvarotorresc/bito/blob/main/LICENSE">License</a>
+      <a href="https://tally.so/r/dWe65r">Report a bug</a>
+      <a href="/privacy/" aria-current="page">Privacy</a>
+    </nav>
+  </footer>
+
+</div>
+</body>
+</html>

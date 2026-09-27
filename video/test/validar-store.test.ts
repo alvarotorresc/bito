@@ -47,10 +47,10 @@ describe('validarStore', () => {
     for (const lang of ['es', 'en']) {
       mkdirSync(join(dir, lang), { recursive: true });
       writeFileSync(join(dir, lang, 'feature-graphic.png'), png(1024, 500, 2));
-      for (let i = 1; i <= 6; i++) writeFileSync(join(dir, lang, `shot-0${i}.png`), png(1080, 1920, 2));
+      for (let i = 1; i <= 8; i++) writeFileSync(join(dir, lang, `shot-0${i}.png`), png(1080, 1920, 2));
     }
     expect(await validarStore(dir)).toEqual([]);
-    rmSync(join(dir, 'en', 'shot-06.png'));
-    expect((await validarStore(dir)).join()).toMatch(/5 capturas, se esperaban 6/);
+    rmSync(join(dir, 'en', 'shot-08.png'));
+    expect((await validarStore(dir)).join()).toMatch(/7 capturas, se esperaban 8/);
   });
 });

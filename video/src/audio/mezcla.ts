@@ -28,11 +28,18 @@ const VOL_OSCURA = 0.3;
 const RAMPA = 4;
 const CLAMP = { extrapolateLeft: 'clamp', extrapolateRight: 'clamp' } as const;
 
+const escenaPorNombre = (nombre: string) => {
+  const e = ESCENAS.find((x) => x.nombre === nombre);
+  if (!e) throw new Error(`mezcla: no hay escena ${nombre}`);
+  return e;
+};
+
+const PROMESAS = escenaPorNombre('promesas');
+
 export const volumenMusica = (frame: number): number => {
-  const e8 = ESCENAS[7];
   const base = interpolate(
     frame,
-    [e8.desde - 15, e8.desde, e8.desde + e8.duracion, e8.desde + e8.duracion + 15],
+    [PROMESAS.desde - 15, PROMESAS.desde, PROMESAS.desde + PROMESAS.duracion, PROMESAS.desde + PROMESAS.duracion + 15],
     [VOL_BASE, VOL_OSCURA, VOL_OSCURA, VOL_BASE],
     CLAMP,
   );
