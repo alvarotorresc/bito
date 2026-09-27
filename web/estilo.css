@@ -1038,6 +1038,61 @@ input[type="radio"]:focus-visible + .voz-pildora {
 .pie a:hover { color: var(--tinta); }
 
 /* --------------------------------------------------------------------------
+   14b · Paginas de texto (privacidad)
+   -------------------------------------------------------------------------- */
+
+.legal {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: var(--pv-56) var(--px) var(--pv-96) var(--px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.legal h1 {
+  font-size: var(--t-h2-m);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+.legal h2 {
+  margin-top: 28px;
+  font-size: var(--t-lead-l);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+.legal h3 {
+  margin-top: 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.legal p,
+.legal td,
+.legal th {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.legal a { text-decoration: underline; text-underline-offset: 3px; }
+.legal-fecha { font-size: 15px; }
+.legal-tabla {
+  width: 100%;
+  border-collapse: collapse;
+}
+.legal-tabla th,
+.legal-tabla td {
+  text-align: left;
+  vertical-align: top;
+  padding: 10px 12px 10px 0;
+  border-top: 1px solid var(--borde);
+}
+.legal code {
+  font-family: var(--mono);
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+.legal .codigo code { overflow-wrap: normal; }
+
+/* --------------------------------------------------------------------------
    15 · Movil
    Todas las rejillas a una columna, las filas flexibles envuelven y las dos
    filas del pie se apilan.
