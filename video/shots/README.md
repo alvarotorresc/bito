@@ -60,7 +60,9 @@ apagada, espera a «Exhala» / «Breathe out» (Habi en su tamaño máximo, ojos
 restante `1:5x`. No pasa por el reintento de ojos abiertos de `foco`.
 
 Las pantallas `widget`, `notificacion`, `foco` y `tienda` no pasan la comprobación de Papel
-(pantalla de inicio, persiana, foco a pantalla completa y tienda: se baja hasta el final y se sube un poco, así que la tarjeta de la tienda queda arriba del todo).
+(pantalla de inicio, persiana, foco a pantalla completa y tienda: se baja hasta el final y se sube un poco, así que la tarjeta de la tienda queda arriba del todo). `hoy-tareas` y
+`stats-logros` tampoco: al ir desplazadas, la fila superior es el borde de la tarjeta anterior
+(el hábito o la tarjeta que queda justo por encima del objetivo), no el fondo Papel liso.
 
 ## Idioma
 

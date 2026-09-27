@@ -47,7 +47,7 @@ CROP_FROM_TOP = {"notificacion"}
 # desplazados con scrollUntilVisible hasta que su objetivo de toque quede visible. No entran
 # en to_web.py, to_landing.py ni en la tienda; hoy.png y stats.png (sin desplazar) siguen
 # siendo las que usan esas superficies.
-PAPEL_SCREENS = set(SCREENS) - {"widget", "notificacion", "foco", "tienda"}
+PAPEL_SCREENS = set(SCREENS) - {"widget", "notificacion", "foco", "tienda", "hoy-tareas", "stats-logros"}
 ATTEMPTS = 2
 NOTIFICATION_WAIT_S = 240
 # Ojos de Habi en foco (coordenadas del PNG recortado): si parpadea no hay pixeles oscuros.
