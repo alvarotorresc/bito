@@ -102,8 +102,11 @@ fun buildTasksUiState(
 }
 
 /**
- * Open, WEEK-kind, its Sunday still strictly ahead of today — the set Hoy gives up to Esta semana.
- * A Sunday that IS today (`==`, not `>=`) already belongs to Hoy, same as the Hoy screen.
+ * True iff [Task.dueKind] is WEEK and [Task.dueDay] is strictly after [today] (a null [Task.dueDay]
+ * gives false). Despite the name, it never checks [Task.status] — its only caller,
+ * [buildTasksUiState], feeds it [Tasks.todayTasks]'s output, already OPEN and already stripped of
+ * tasks postponed today, so this only has to decide the WEEK/Sunday half. A WEEK task whose Sunday
+ * IS today falls out of this (`>`, not `>=`) and so stays in Hoy, same as the Hoy screen.
  */
 private fun isOpenThisWeek(
     task: Task,
