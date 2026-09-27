@@ -8,6 +8,7 @@ import com.alvarotc.bito.BitoApp
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /**
@@ -25,7 +26,7 @@ class QuickActionReceiver : BroadcastReceiver() {
         intent: Intent,
     ) {
         val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 // A journal write or DataStore read failing mid-tap must not crash the process —
                 // finish() below still has to run so the system doesn't ANR us.

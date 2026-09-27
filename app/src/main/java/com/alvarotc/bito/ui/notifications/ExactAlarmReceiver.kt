@@ -10,6 +10,7 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.ZoneId
@@ -32,7 +33,7 @@ class ExactAlarmReceiver : BroadcastReceiver() {
         if (Build.VERSION.SDK_INT < 31) return
         if (intent.action != AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED) return
         val pendingResult = goAsync()
-        CoroutineScope(Dispatchers.Default).launch {
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
             try {
                 // A DataStore/Room IO failure reading settings/habits fresh off this callback must
                 // not crash the process — finish() below still has to run so the system doesn't ANR us.
