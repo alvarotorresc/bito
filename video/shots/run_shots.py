@@ -212,6 +212,10 @@ def capture(screen: str, lang: str, labels: dict[str, str], top: int, bottom: in
                 print(f"run_shots: {lang}/{screen} intento {attempt}: el boton de comprar sale cortado", file=sys.stderr)
             elif screen == "notificacion" and not shade_is_clean():
                 print(f"run_shots: {lang}/{screen} intento {attempt}: la persiana tiene notificaciones del sistema", file=sys.stderr)
+                # Sin esto, si el intento siguiente tambien sale sucio y no hay fallback,
+                # capture() devuelve "missing" pero deja en disco el PNG sucio de este
+                # intento: verify_shots.py lo daria por bueno sin comprobar la persiana.
+                out.unlink(missing_ok=True)
             elif screen not in PAPEL_SCREENS or crop.top_row_is_papel(out):
                 after(screen)
                 return "ok"

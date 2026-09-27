@@ -54,7 +54,10 @@ configurado») se posponen una hora con `cmd notification snooze`: una vez antes
 recordatorio de Bito, para partir de una persiana limpia, y otra vez justo antes de la foto, por
 si sale alguna entre medias. `capture()` además comprueba la persiana tras la foto
 (`shade_is_clean`) y descarta el intento si queda alguna notificación ajena, en vez de confiar
-solo en el posponer. `hw.keyboard=no` en el AVD no evita la del teclado: esa notificación la
+solo en el posponer; si los dos intentos quedan sucios, borra el PNG del último y la pantalla
+sigue el contrato normal de mejor esfuerzo («Widget y notificación» más abajo): fallback o
+`missing`, nunca un PNG con notificaciones ajenas. `hw.keyboard=no` en el AVD no evita la del
+teclado: esa notificación la
 posta el dispositivo de entrada virtual del emulador, no depende de si Android trata el teclado
 como físico.
 

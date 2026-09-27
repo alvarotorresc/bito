@@ -198,6 +198,33 @@ class CaptureNotificacionShadeTest(unittest.TestCase):
 
         self.assertEqual(status, "ok")
 
+    def test_capture_leaves_no_dirty_png_when_every_attempt_stays_dirty(self):
+        # Si los dos intentos salen sucios y no hay fallback, capture() devuelve "missing":
+        # no puede dejar en disco el PNG sucio del ultimo intento, o verify_shots.py lo daria
+        # por bueno sin mirar la persiana.
+        top, bottom = crop.load_geometry(HERE / "avd.env")
+        buf = BytesIO()
+        Image.new("RGB", (crop.WIDTH, crop.HEIGHT + top + bottom), (0xF2, 0xEC, 0xE1)).save(buf, "PNG")
+        raw_png = buf.getvalue()
+
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            out = tmp_path / "public" / "en" / "notificacion.png"
+            with (
+                mock.patch.object(run_shots, "PUBLIC", tmp_path / "public"),
+                mock.patch.object(run_shots, "RAW", tmp_path / "raw"),
+                mock.patch.object(run_shots, "FALLBACK", tmp_path / "no-fallback"),
+                mock.patch.object(run_shots, "before", return_value=True),
+                mock.patch.object(run_shots, "run_maestro", return_value=True),
+                mock.patch.object(run_shots, "after"),
+                mock.patch.object(run_shots.d, "screencap", return_value=raw_png),
+                mock.patch.object(run_shots, "shade_is_clean", return_value=False),
+            ):
+                status = run_shots.capture("notificacion", "en", {}, top, bottom)
+                self.assertFalse(out.exists())
+
+        self.assertEqual(status, "missing")
+
 
 if __name__ == "__main__":
     unittest.main()
