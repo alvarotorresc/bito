@@ -395,6 +395,22 @@ private fun SettingsDivider() {
 }
 
 /**
+ * Shared by [NotificationsSectionCard] and [BreathingSectionCard]: notifications disabled at the
+ * system level outranks anything the switches above set — a reminder that can never be shown is
+ * never shown regardless. Tapping it opens the app's notification settings, the only place left
+ * to grant them once Android has stopped showing the permission dialog.
+ */
+@Composable
+private fun NotificationPermissionNoticeRow(onOpenNotificationSettings: () -> Unit) {
+    SettingsDivider()
+    SettingsRow(
+        icon = BitoIcons.Info,
+        label = stringResource(R.string.notif_permission_hint),
+        onClick = onOpenNotificationSettings,
+    )
+}
+
+/**
  * Reminders collapsed to one row (mockup 8a): the configured hours read as a single bold value and
  * management moves to [RemindersSheet]. `ReminderSync` (a different lane) observes the repository
  * and reprograms alarms; this screen only ever writes through [SettingsViewModel].
@@ -465,12 +481,7 @@ private fun NotificationsSectionCard(
         // is still never shown. Tapping it opens the app's notification settings, the only place
         // left to grant them once Android has stopped showing the permission dialog.
         if (notificationsBlocked) {
-            SettingsDivider()
-            SettingsRow(
-                icon = BitoIcons.Info,
-                label = stringResource(R.string.notif_permission_hint),
-                onClick = onOpenNotificationSettings,
-            )
+            NotificationPermissionNoticeRow(onOpenNotificationSettings)
         }
         if (exactAlarmsBlocked) {
             SettingsDivider()
@@ -542,12 +553,7 @@ private fun BreathingSectionCard(
             }
         }
         if (enabled && notificationsBlocked) {
-            SettingsDivider()
-            SettingsRow(
-                icon = BitoIcons.Info,
-                label = stringResource(R.string.notif_permission_hint),
-                onClick = onOpenNotificationSettings,
-            )
+            NotificationPermissionNoticeRow(onOpenNotificationSettings)
         }
     }
 
