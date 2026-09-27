@@ -24,8 +24,8 @@ export const TOQUES = {
   repaso: { x: 0.5, y: 0.915 },
   hoyADetalle: { x: 0.2, y: 0.318 },
   detalleAStats: { x: 0.107, y: 0.05 },
-  statsALogros: { x: 0.5, y: 0.294 },
-  hoyATareas: { x: 0.5, y: 0.815 },
+  statsALogros: { x: 0.464, y: 0.599 },
+  hoyATareas: { x: 0.469, y: 0.303 },
   tareasAFoco: { x: 0.215, y: 0.454 },
   hoyARespiracion: { x: 0.715, y: 0.062 },
 } as const satisfies Record<string, Punto>;

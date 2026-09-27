@@ -17,7 +17,7 @@ const ARRIBA = (ALTO - m.altoTotal) / 2;
 
 const NAVEGA = [
   { pantalla: 'detalle', momento: 'toqueDetalle', toque: TOQUES.hoyADetalle },
-  { pantalla: 'stats', momento: 'toqueStats', toque: TOQUES.detalleAStats },
+  { pantalla: 'stats-logros', momento: 'toqueStats', toque: TOQUES.detalleAStats },
   { pantalla: 'logros', momento: 'toqueLogros', toque: TOQUES.statsALogros },
 ] as const;
 const PASOS = NAVEGA.map((n) => ({ pantalla: n.pantalla, at: momentoLocal(n.momento) + 4 }));

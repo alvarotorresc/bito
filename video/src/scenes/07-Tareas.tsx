@@ -21,7 +21,7 @@ const PASOS = NAVEGA.map((n) => ({ pantalla: n.pantalla, at: momentoLocal(n.mome
 
 export const Escena07: React.FC<PromoProps> = ({ lang }) => {
   const frame = useCurrentFrame();
-  const { pantalla, transicion } = pantallaEnFrame(frame, 'hoy', PASOS);
+  const { pantalla, transicion } = pantallaEnFrame(frame, 'hoy-tareas', PASOS);
   return (
     <AbsoluteFill>
       <Fondo />
