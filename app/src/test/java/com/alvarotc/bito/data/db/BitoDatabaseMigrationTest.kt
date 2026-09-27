@@ -4,6 +4,7 @@ import android.content.Context
 import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.coroutines.runBlocking
@@ -134,14 +135,50 @@ class BitoDatabaseMigrationTest {
         db.close()
     }
 
+    /**
+     * Una base v2 de verdad, la que tiene quien usa la 1.1.0: las nueve tablas de la v1 (via
+     * [seedVersionOne]) mas las dos de tareas con el DDL EXACTO del `2.json`, una tarea con su
+     * evento, y `PRAGMA user_version = 2` — sin el, Room tomaria el camino de onCreate y el test
+     * pasaria sin ejecutar MIGRATION_2_3 ni una vez.
+     */
+    private fun seedVersionTwo(context: Context) {
+        seedVersionOne(context)
+        val db = SQLiteDatabase.openDatabase(context.getDatabasePath(name).path, null, SQLiteDatabase.OPEN_READWRITE)
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `tasks` (`id` TEXT NOT NULL, `title` TEXT NOT NULL, " +
+                "`firstStep` TEXT, `dueKind` TEXT NOT NULL, `dueDay` INTEGER, `status` TEXT NOT NULL, " +
+                "`createdAtMillis` INTEGER NOT NULL, `createdOnDay` INTEGER NOT NULL, " +
+                "`doneAtMillis` INTEGER, `doneOnDay` INTEGER, PRIMARY KEY(`id`))",
+        )
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `task_events` (`id` TEXT NOT NULL, `taskId` TEXT NOT NULL, " +
+                "`kind` TEXT NOT NULL, `logicalDay` INTEGER NOT NULL, `createdAtMillis` INTEGER NOT NULL, " +
+                "PRIMARY KEY(`id`), FOREIGN KEY(`taskId`) REFERENCES `tasks`(`id`) " +
+                "ON UPDATE NO ACTION ON DELETE CASCADE )",
+        )
+        db.execSQL(
+            "CREATE INDEX IF NOT EXISTS `index_task_events_taskId_logicalDay` " +
+                "ON `task_events` (`taskId`, `logicalDay`)",
+        )
+        db.execSQL("INSERT INTO tasks VALUES ('t1', 'Llamar al banco', NULL, 'NONE', NULL, 'OPEN', 1000, 20000, NULL, NULL)")
+        db.execSQL("INSERT INTO task_events VALUES ('ev1', 't1', 'POSTPONED', 20000, 1000)")
+        db.execSQL("PRAGMA user_version = 2")
+        db.close()
+    }
+
+    private fun openMigrated(context: Context): BitoDatabase =
+        Room.databaseBuilder(context, BitoDatabase::class.java, name)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .build()
+
     @Test
-    fun `migrating from one to two keeps habits, entries and the ledger intact`() {
+    fun `migrating a v1 database keeps habits, entries and the ledger intact`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         seedVersionOne(context)
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
         try {
             runBlocking {
@@ -150,20 +187,20 @@ class BitoDatabaseMigrationTest {
                 assertEquals(1, db.pointsLedgerDao().all().size)
                 assertEquals(8, db.habitDao().byId("h1")!!.target)
             }
-            assertEquals(2, db.openHelper.readableDatabase.version)
+            assertEquals(3, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
     }
 
     @Test
-    fun `the new tables exist and are empty after migrating`() {
+    fun `the task tables exist and are empty after migrating a v1 database`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         seedVersionOne(context)
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                 .build()
         try {
             runBlocking {
@@ -186,6 +223,62 @@ class BitoDatabaseMigrationTest {
                 )
                 assertEquals(1, db.taskDao().all().size)
             }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `migrating from two to three keeps habits, tasks and the ledger intact`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        seedVersionTwo(context)
+
+        val db = openMigrated(context)
+        try {
+            runBlocking {
+                assertEquals(8, db.habitDao().byId("h1")!!.target)
+                assertEquals(1, db.entryDao().all().size)
+                assertEquals(1, db.pointsLedgerDao().all().size)
+                assertEquals("Llamar al banco", db.taskDao().byId("t1")!!.title)
+                assertEquals(listOf("ev1"), db.taskEventDao().all().map { it.id })
+            }
+            assertEquals(3, db.openHelper.readableDatabase.version)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `the breathing table exists, is empty and writable after migrating from two`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        seedVersionTwo(context)
+
+        val db = openMigrated(context)
+        try {
+            runBlocking {
+                assertTrue(db.breathingSessionDao().all().isEmpty())
+                val session = BreathingSessionEntity("b1", BreathingMode.SLEEP, 5_000L, 114, true)
+                db.breathingSessionDao().insert(session)
+                assertEquals(listOf(session), db.breathingSessionDao().all())
+            }
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `a v1 database reaches three in one go`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        seedVersionOne(context)
+
+        val db = openMigrated(context)
+        try {
+            runBlocking {
+                assertNotNull(db.habitDao().byId("h1"))
+                assertTrue(db.taskDao().all().isEmpty())
+                assertTrue(db.breathingSessionDao().all().isEmpty())
+            }
+            assertEquals(3, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }

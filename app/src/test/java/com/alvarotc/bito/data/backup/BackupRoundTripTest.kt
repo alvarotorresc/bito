@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.DAY_ZERO
+import com.alvarotc.bito.data.breathingSessionEntity
 import com.alvarotc.bito.data.customizationItemEntity
 import com.alvarotc.bito.data.daySealEntity
 import com.alvarotc.bito.data.db.BadgeEntity
@@ -21,6 +22,7 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.data.targetChangeEntity
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.data.taskEventEntity
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -84,6 +86,12 @@ class BackupRoundTripTest {
             // Apagado a proposito: su default es true, asi que una semilla en el default dejaria
             // pasar el round-trip aunque el campo no viajara en el fichero.
             taskNoticesEnabled = false,
+            // Los cuatro de respiracion, todos fuera de su default: si alguno no viajara en el
+            // fichero, el round-trip lo delataria.
+            breathingReminderEnabled = true,
+            breathingReminderTimeMinutes = 6 * 60 + 45,
+            breathingMusicEnabled = true,
+            breathingLastMode = BreathingMode.FOCUS,
             perfectDayCelebratedDay = 20679,
             badgesSeenUntilMillis = 4321L,
         )
@@ -167,6 +175,25 @@ class BackupRoundTripTest {
             customizationItemEntity(itemId = "hat-basic", category = CustomizationCategory.UPPER, equipped = true),
         )
 
+        db.breathingSessionDao().insert(
+            breathingSessionEntity(
+                id = "b2",
+                mode = BreathingMode.FOCUS,
+                startedAtMillis = 8_000L,
+                durationSeconds = 37,
+                completed = false,
+            ),
+        )
+        db.breathingSessionDao().insert(
+            breathingSessionEntity(
+                id = "b1",
+                mode = BreathingMode.SLEEP,
+                startedAtMillis = 3_000L,
+                durationSeconds = 114,
+                completed = true,
+            ),
+        )
+
         settingsRepo.update { seededSettings }
     }
 
@@ -181,6 +208,7 @@ class BackupRoundTripTest {
             db.freezerUseDao().all().sortedBy { it.toString() },
             db.badgeDao().all().sortedBy { it.toString() },
             db.customizationItemDao().all().sortedBy { it.toString() },
+            db.breathingSessionDao().all().sortedBy { it.toString() },
         )
 
     @Test
@@ -399,6 +427,112 @@ class BackupRoundTripTest {
     private fun stripTaskKeys(json: String): String {
         val root = Json.parseToJsonElement(json).jsonObject
         val stripped = JsonObject(root.filterKeys { it != "tasks" && it != "taskEvents" })
+        return prettyJson.encodeToString(JsonObject.serializer(), stripped)
+    }
+
+    @Test
+    fun `breathing sessions survive a full round trip`() =
+        runTest {
+            val sessions =
+                listOf(
+                    breathingSessionEntity(
+                        id = "b1",
+                        mode = BreathingMode.CALM,
+                        startedAtMillis = 1_000L,
+                        durationSeconds = 120,
+                        completed = true,
+                    ),
+                    breathingSessionEntity(
+                        id = "b2",
+                        mode = BreathingMode.FOCUS,
+                        startedAtMillis = 2_000L,
+                        durationSeconds = 12,
+                        completed = false,
+                    ),
+                )
+            sessions.forEach { db.breathingSessionDao().insert(it) }
+
+            val json = backup.exportJson(nowMillis = 9_000L)
+            db.breathingSessionDao().deleteAll()
+            backup.import(json)
+
+            assertEquals(sessions, db.breathingSessionDao().all())
+        }
+
+    // Un test que solo compara exportJson() contra si mismo no puede fallar por un mapeador o un
+    // orden mal hechos: siempre exporta lo mismo del mismo estado. Aqui el segundo export sale de
+    // una base de datos DISTINTA, poblada por import() a partir del primer export — si el mapeador
+    // de ida y vuelta o el orden de export cambiaran algo, este test lo detecta.
+    @Test
+    fun `re-exporting breathing sessions is byte-identical`() =
+        runTest {
+            db.breathingSessionDao().insert(breathingSessionEntity(id = "z", startedAtMillis = 1_000L))
+            db.breathingSessionDao().insert(breathingSessionEntity(id = "a", startedAtMillis = 1_000L))
+
+            val exported = backup.exportJson(nowMillis = 9_000L)
+
+            val context = ApplicationProvider.getApplicationContext<Context>()
+            val freshDb = Room.inMemoryDatabaseBuilder(context, BitoDatabase::class.java).build()
+            try {
+                val freshStore =
+                    PreferenceDataStoreFactory.create(
+                        scope = CoroutineScope(UnconfinedTestDispatcher() + Job()),
+                    ) { context.filesDir.resolve("t-${UUID.randomUUID()}.preferences_pb") }
+                val freshSettings = SettingsRepository(freshStore)
+                val freshKeyStore = BackupKeyStore(context.filesDir.resolve("keystore-${UUID.randomUUID()}").apply { mkdirs() })
+                val freshBackup = BackupRepository(freshDb, freshSettings, freshKeyStore, "0.3.0-test")
+
+                freshBackup.import(exported)
+                val reExported = freshBackup.exportJson(nowMillis = 9_000L)
+
+                assertEquals(exported, reExported)
+            } finally {
+                freshDb.close()
+            }
+        }
+
+    @Test
+    fun `a v3 file written before breathing existed still imports, with an empty list`() =
+        runTest {
+            // Un fichero de la 1.1.0: mismo schemaVersion 3, sin la clave breathingSessions.
+            db.breathingSessionDao().insert(breathingSessionEntity(id = "b1"))
+            val legacy = backup.exportJson(nowMillis = 9_000L).let(::stripBreathingKey)
+
+            backup.import(legacy)
+
+            assertTrue(db.breathingSessionDao().all().isEmpty())
+        }
+
+    /** Quita `breathingSessions` del objeto raiz sobre el arbol JSON, como [stripTaskKeys]. */
+    private fun stripBreathingKey(json: String): String {
+        val root = Json.parseToJsonElement(json).jsonObject
+        val stripped = JsonObject(root.filterKeys { it != "breathingSessions" })
+        return prettyJson.encodeToString(JsonObject.serializer(), stripped)
+    }
+
+    @Test
+    fun `a file written before breathing settings existed restores them at their defaults`() =
+        runTest {
+            seedEverything()
+            val legacy = backup.exportJson(nowMillis = 9_000L).let(::stripBreathingSettings)
+
+            backup.import(legacy)
+
+            val restored = settingsRepo.settings.first()
+            assertEquals(false, restored.breathingReminderEnabled)
+            assertEquals(22 * 60, restored.breathingReminderTimeMinutes)
+            assertEquals(false, restored.breathingMusicEnabled)
+            assertEquals(BreathingMode.CALM, restored.breathingLastMode)
+            // Y el resto de ajustes sigue viajando: el recorte no se lleva nada mas.
+            assertEquals(seededSettings.userName, restored.userName)
+        }
+
+    /** Un fichero de la 1.1.0: sin la lista de sesiones y sin las cuatro claves nuevas de settings. */
+    private fun stripBreathingSettings(json: String): String {
+        val breathingKeys = setOf("breathingReminderEnabled", "breathingReminderTimeMinutes", "breathingMusicEnabled", "breathingLastMode")
+        val root = Json.parseToJsonElement(json).jsonObject
+        val settings = JsonObject(root.getValue("settings").jsonObject.filterKeys { it !in breathingKeys })
+        val stripped = JsonObject(root.filterKeys { it != "breathingSessions" } + ("settings" to settings))
         return prettyJson.encodeToString(JsonObject.serializer(), stripped)
     }
 }

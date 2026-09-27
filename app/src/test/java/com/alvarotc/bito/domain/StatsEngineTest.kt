@@ -215,6 +215,20 @@ class StatsEngineTest {
     }
 
     @Test
+    fun `lastActivityDay ignores breathing sessions`() {
+        val onlyBreathing = domainState(breathingSessions = listOf(breathingSession(TODAY)))
+        val olderLogPlusBreathing =
+            domainState(
+                habits = listOf(RealHabits.makeBed),
+                entries = entriesOn(RealHabits.makeBed, listOf(TODAY - 3)),
+                breathingSessions = listOf(breathingSession(TODAY - 1), breathingSession(TODAY)),
+            )
+
+        assertNull(StatsEngine.lastActivityDay(onlyBreathing))
+        assertEquals(TODAY - 3, StatsEngine.lastActivityDay(olderLogPlusBreathing))
+    }
+
+    @Test
     fun `streaksAdvancedToday counts fulfilled-today habits with a live streak`() {
         val done = RealHabits.makeBed
         val notYet = RealHabits.meditate

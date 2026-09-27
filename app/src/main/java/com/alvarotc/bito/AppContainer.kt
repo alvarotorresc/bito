@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.repo.BreathingRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -23,6 +24,7 @@ class AppContainer(context: Context) {
     val rewards = RewardsRepository(database)
     val domainState = DomainStateRepository(database)
     val tasks = TasksRepository(database)
+    val breathing = BreathingRepository(database)
     val settings =
         SettingsRepository(
             PreferenceDataStoreFactory.create {

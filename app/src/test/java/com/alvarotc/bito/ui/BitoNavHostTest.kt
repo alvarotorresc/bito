@@ -843,6 +843,31 @@ class BitoNavHostTest {
         assertNull(NavRequests.pending.value)
     }
 
+    /** M11: la notificacion del recordatorio abre el ejercicio EN REPOSO, sin barra inferior. */
+    @Test
+    fun `a pending breathing request opens the exercise at rest`() {
+        NavRequests.open("breathing")
+
+        setContent()
+
+        compose.onNodeWithTag("breathing-start", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("breathing-phase", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+        assertNull(NavRequests.pending.value)
+    }
+
+    /** D2: toque 1, el icono de Hoy; toque 2, «Empezar». */
+    @Test
+    fun `the wind button on Today opens the exercise`() {
+        setContent()
+
+        compose.onNodeWithTag("today-breathing", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithTag("breathing-screen", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
+    }
+
     /** T19: proves the wiring this task adds — Today's own "Empezar" reaching the focus route,
      * not just [com.alvarotc.bito.ui.today.TodayScreen]'s own `onStartFocus` callback in isolation. */
     @Test

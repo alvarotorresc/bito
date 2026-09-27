@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -40,6 +41,11 @@ data class Settings(
     val lastAutoBackupAtMillis: Long? = null,
     val lastAutoBackupError: AutoBackupError? = null,
     val taskNoticesEnabled: Boolean = true,
+    /** M11 (§4.6). Las 22:00 quedan a media hora del repaso y apuntan al modo Dormir. */
+    val breathingReminderEnabled: Boolean = false,
+    val breathingReminderTimeMinutes: Int = 22 * 60,
+    val breathingMusicEnabled: Boolean = false,
+    val breathingLastMode: BreathingMode = BreathingMode.CALM,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -69,6 +75,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val lastAutoBackupAtMillis = longPreferencesKey("last_auto_backup_at_millis")
         val lastAutoBackupError = stringPreferencesKey("last_auto_backup_error")
         val taskNoticesEnabled = booleanPreferencesKey("task_notices_enabled")
+        val breathingReminderEnabled = booleanPreferencesKey("breathing_reminder_enabled")
+        val breathingReminderTimeMinutes = intPreferencesKey("breathing_reminder_time_minutes")
+        val breathingMusicEnabled = booleanPreferencesKey("breathing_music_enabled")
+        val breathingLastMode = stringPreferencesKey("breathing_last_mode")
 
         /**
          * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
@@ -176,6 +186,14 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             lastAutoBackupAtMillis = this[Keys.lastAutoBackupAtMillis],
             lastAutoBackupError = this[Keys.lastAutoBackupError]?.let(AutoBackupError::valueOf),
             taskNoticesEnabled = this[Keys.taskNoticesEnabled] ?: defaults.taskNoticesEnabled,
+            breathingReminderEnabled = this[Keys.breathingReminderEnabled] ?: defaults.breathingReminderEnabled,
+            breathingReminderTimeMinutes = this[Keys.breathingReminderTimeMinutes] ?: defaults.breathingReminderTimeMinutes,
+            breathingMusicEnabled = this[Keys.breathingMusicEnabled] ?: defaults.breathingMusicEnabled,
+            // Por nombre: un modo que esta version no conoce (una copia de una version futura, un
+            // fichero tocado a mano) cae a CALM en vez de tumbar la lectura de todos los ajustes.
+            breathingLastMode =
+                this[Keys.breathingLastMode]?.let { name -> runCatching { BreathingMode.valueOf(name) }.getOrNull() }
+                    ?: defaults.breathingLastMode,
         )
     }
 
@@ -200,5 +218,9 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         lastAutoBackupAtMillis?.let { prefs[Keys.lastAutoBackupAtMillis] = it } ?: prefs.remove(Keys.lastAutoBackupAtMillis)
         lastAutoBackupError?.let { prefs[Keys.lastAutoBackupError] = it.name } ?: prefs.remove(Keys.lastAutoBackupError)
         prefs[Keys.taskNoticesEnabled] = taskNoticesEnabled
+        prefs[Keys.breathingReminderEnabled] = breathingReminderEnabled
+        prefs[Keys.breathingReminderTimeMinutes] = breathingReminderTimeMinutes
+        prefs[Keys.breathingMusicEnabled] = breathingMusicEnabled
+        prefs[Keys.breathingLastMode] = breathingLastMode.name
     }
 }

@@ -1,5 +1,7 @@
 package com.alvarotc.bito.domain
 
+import com.alvarotc.bito.domain.model.BreathingMode
+import com.alvarotc.bito.domain.model.BreathingSession
 import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.DueKind
@@ -222,6 +224,19 @@ internal fun weekTask(
     createdAtMillis: Long = 1_000L,
 ): Task = task(id = id, dueKind = DueKind.WEEK, dueDay = Tasks.weekDueOf(day), createdOnDay = day, createdAtMillis = createdAtMillis)
 
+private val breathingSeq = AtomicInteger(0)
+
+/** Una sesion de respiracion que empezo en [day] a [hour]:[minute] (hora local de [testZone]). */
+internal fun breathingSession(
+    day: LogicalDay,
+    hour: Int = 12,
+    minute: Int = 0,
+    durationSeconds: Int = 120,
+    completed: Boolean = true,
+    mode: BreathingMode = BreathingMode.CALM,
+    id: String = "breath-${breathingSeq.incrementAndGet()}",
+): BreathingSession = BreathingSession(id, mode, millisOn(day, hour, minute), durationSeconds, completed)
+
 // ---------------------------------------------------------------------------
 // State
 // ---------------------------------------------------------------------------
@@ -236,6 +251,7 @@ internal fun domainState(
     ledger: List<PointsLedgerEntry> = emptyList(),
     tasks: List<Task> = emptyList(),
     taskEvents: List<TaskEvent> = emptyList(),
+    breathingSessions: List<BreathingSession> = emptyList(),
 ): DomainState =
     DomainState(
         habits = habits,
@@ -247,6 +263,7 @@ internal fun domainState(
         pointsLedger = ledger,
         tasks = tasks,
         taskEvents = taskEvents,
+        breathingSessions = breathingSessions,
     )
 
 // ---------------------------------------------------------------------------

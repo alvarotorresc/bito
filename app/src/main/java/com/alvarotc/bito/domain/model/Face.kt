@@ -55,7 +55,9 @@ fun faceParamsOf(
             )
         Mood.DRAMATIC ->
             when (personality) {
-                Personality.SARGENTO -> base.copy(browAngleDeg = -30f, mouthCurve = -0.6f)
+                // Softened so the wobbly mouth curve doesn't climb into the war-paint cheek
+                // marks (variant 03, architect's call): -30/-0.6 clashed, -24/-0.175 doesn't.
+                Personality.SARGENTO -> base.copy(browAngleDeg = -24f, mouthCurve = -0.175f)
                 Personality.CHEERLEADER -> base.copy(mouthCurve = -0.8f, mouthOpen = 0.8f)
                 Personality.NEUTRA -> base.copy(mouthCurve = -0.25f, eyeScale = 0.9f, sparkles = 0)
             }

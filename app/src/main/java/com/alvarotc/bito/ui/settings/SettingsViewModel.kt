@@ -77,6 +77,10 @@ class SettingsViewModel(
 
     fun setTaskNotices(enabled: Boolean) = write { it.copy(taskNoticesEnabled = enabled) }
 
+    fun setBreathingReminder(enabled: Boolean) = write { it.copy(breathingReminderEnabled = enabled) }
+
+    fun setBreathingReminderTime(minutes: Int) = write { it.copy(breathingReminderTimeMinutes = minutes) }
+
     /** null → follow the system. DataStore stays the source of truth (and what travels in backups); AppLocale only applies it. */
     fun setLanguage(tag: String?) {
         write { it.copy(languageTag = tag) }

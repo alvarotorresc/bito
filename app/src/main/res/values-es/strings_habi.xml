@@ -100,6 +100,11 @@
     <string name="habi_task_done_sargento">Hecha. La siguiente.</string>
     <string name="habi_task_done_cheerleader">¡Fuera! Qué gusto, %1$s.</string>
     <string name="habi_task_done_neutra">Hecha, %1$s.</string>
+    <!-- habi_breathing_done_* — M11, la frase de cierre tras respirar, completa o parada. Ninguna
+         felicita por «haberlo conseguido», ninguna reprocha haber parado, ninguna promete calma. -->
+    <string name="habi_breathing_done_sargento">Bien respirado, %1$s. A lo tuyo.</string>
+    <string name="habi_breathing_done_cheerleader">¡Qué bien sienta esto, %1$s!</string>
+    <string name="habi_breathing_done_neutra">Ya está, %1$s.</string>
 
     <!-- habi_task_focus_* — T19, la frase de entrada de FocusScreen, dicha una vez al empezar la
          sesion. %1$s = el nombre del usuario, %2$d = los minutos elegidos; solo el sargento usa %2$d. -->

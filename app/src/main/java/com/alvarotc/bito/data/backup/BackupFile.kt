@@ -2,6 +2,7 @@ package com.alvarotc.bito.data.backup
 
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DueKind
@@ -45,6 +46,11 @@ data class BackupFile(
      */
     val tasks: List<BackupTask> = emptyList(),
     val taskEvents: List<BackupTaskEvent> = emptyList(),
+    /**
+     * M11. Con default por la misma razon que tasks/taskEvents: un fichero escrito antes de que
+     * existiera la respiracion se sigue importando con la lista vacia, sin subir SCHEMA_VERSION.
+     */
+    val breathingSessions: List<BackupBreathingSession> = emptyList(),
 )
 
 @Serializable
@@ -154,6 +160,15 @@ data class BackupTaskEvent(
     val createdAtMillis: Long,
 )
 
+@Serializable
+data class BackupBreathingSession(
+    val id: String,
+    val mode: BreathingMode,
+    val startedAtMillis: Long,
+    val durationSeconds: Int,
+    val completed: Boolean,
+)
+
 /**
  * Every [com.alvarotc.bito.data.settings.Settings] field a restore must bring back — import
  * builds a FRESH Settings from this DTO (`toSettings()`), so anything missing here silently
@@ -183,6 +198,10 @@ data class BackupSettings(
     val logSoundEnabled: Boolean = true,
     val logHapticEnabled: Boolean = true,
     val taskNoticesEnabled: Boolean = true,
+    val breathingReminderEnabled: Boolean = false,
+    val breathingReminderTimeMinutes: Int = 22 * 60,
+    val breathingMusicEnabled: Boolean = false,
+    val breathingLastMode: BreathingMode = BreathingMode.CALM,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

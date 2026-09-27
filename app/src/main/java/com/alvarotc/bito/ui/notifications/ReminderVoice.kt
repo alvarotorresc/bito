@@ -131,4 +131,22 @@ object ReminderVoice {
             Personality.CHEERLEADER -> R.string.notif_tasks_title_cheerleader
             Personality.NEUTRA -> R.string.notif_tasks_title_neutra
         }
+
+    /** M11: el titulo del recordatorio diario de respirar. */
+    @StringRes
+    fun breathingTitleRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.notif_breathing_title_sargento
+            Personality.CHEERLEADER -> R.string.notif_breathing_title_cheerleader
+            Personality.NEUTRA -> R.string.notif_breathing_title_neutra
+        }
+
+    /** M11: el cuerpo del recordatorio diario de respirar. */
+    @StringRes
+    fun breathingBodyRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.notif_breathing_body_sargento
+            Personality.CHEERLEADER -> R.string.notif_breathing_body_cheerleader
+            Personality.NEUTRA -> R.string.notif_breathing_body_neutra
+        }
 }

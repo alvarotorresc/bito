@@ -98,4 +98,17 @@ class ExactAlarmReceiverTest {
             assertTrue(expectedCodes.isNotEmpty())
             assertTrue(scheduledCodes.containsAll(expectedCodes))
         }
+
+    @Suppress("DEPRECATION") // ShadowAlarmManager.ScheduledAlarm#operation has no replacement accessor.
+    @Test
+    fun `the permission grant also reschedules the breathing slot while it is on`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(breathingReminderEnabled = true, breathingReminderTimeMinutes = 22 * 60) }
+
+            ExactAlarmReceiver.reschedule(context, settingsRepo, habitsRepo)
+
+            val breathingCode = ReminderScheduler.requestCodeOf(Slot(SlotKind.BREATHING, "", 22 * 60))
+            val scheduledCodes = shadowOf(alarmManager).scheduledAlarms.map { shadowOf(it.operation).requestCode }
+            assertTrue(scheduledCodes.contains(breathingCode))
+        }
 }

@@ -159,6 +159,36 @@ class HabiDrawingTest {
         assertEquals(HabiSalvia.toArgb(), closed)
     }
 
+    @Test
+    fun `the guided closure leaves a thin slit instead of erasing the eyes`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
+        val sizePx = 480
+        val shut = renderWithBlink(spec, sizePx, blink = 1f)
+        val slit = renderWithBlink(spec, sizePx, blink = GUIDED_EYE_CLOSURE)
+        val open = renderWithBlink(spec, sizePx, blink = 0f)
+        val cx = ((0.5f - 0.14f) * sizePx).toInt()
+        val cy = (0.5f * sizePx).toInt()
+        val half = (0.08f * sizePx).toInt()
+
+        fun differing(
+            a: Bitmap,
+            b: Bitmap,
+        ): Int {
+            var count = 0
+            for (x in cx - half..cx + half) {
+                for (y in cy - half..cy + half) {
+                    if (a.getPixel(x, y) != b.getPixel(x, y)) count++
+                }
+            }
+            return count
+        }
+
+        val slitInk = differing(slit, shut)
+        val openInk = differing(open, shut)
+        assertTrue("the 0.9 slit must still paint the eye", slitInk > 0)
+        assertTrue("a slit, not an open eye: $slitInk vs $openInk", slitInk * 4 < openInk)
+    }
+
     // --- Scene opts (mockup 7b): body tone override + closed-lid eyes --------------------------
 
     /** Onboarding 7b's muted sage, the override's one real consumer — any tone would exercise the axis. */
@@ -358,5 +388,16 @@ class HabiDrawingTest {
         val (x, y) = bodyCenterPixel(size)
 
         assertEquals(bareBitmap.getPixel(x, y), unknownBitmap.getPixel(x, y))
+    }
+
+    @Test
+    fun `dramatic mouth wobble is halved for sargento so it clears the war paint`() {
+        val sargentoDramatic = HabiSpec(Mood.DRAMATIC, Personality.SARGENTO, EquippedSet())
+        val neutraDramatic = HabiSpec(Mood.DRAMATIC, Personality.NEUTRA, EquippedSet())
+        val sargentoNormal = HabiSpec(Mood.NORMAL, Personality.SARGENTO, EquippedSet())
+
+        assertEquals(0.5f, restingFaceMotion(sargentoDramatic).mouthWobble, 0f)
+        assertEquals(1f, restingFaceMotion(neutraDramatic).mouthWobble, 0f)
+        assertEquals(0f, restingFaceMotion(sargentoNormal).mouthWobble, 0f)
     }
 }

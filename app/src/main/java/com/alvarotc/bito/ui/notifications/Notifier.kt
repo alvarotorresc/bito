@@ -25,6 +25,7 @@ object Notifier {
     const val CELEBRATION_ID = 3
     const val TASKS_ID = 4
     const val FOCUS_ID = 5
+    const val BREATHING_ID = 6
 
     /** Extra keys carried by [quickActionIntent] and read back in [QuickActionReceiver]. */
     const val EXTRA_HABIT_ID = "habitId"
@@ -195,6 +196,27 @@ object Notifier {
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
                 .setContentIntent(contentIntent(context, "tasks", 3))
         notify(context, TASKS_ID, builder)
+    }
+
+    /**
+     * M11: el recordatorio diario de respirar, en la voz de [personality]. Canal REMINDERS, sin
+     * canal propio: el control es el interruptor de Ajustes. Sin botones de accion. Al tocarla abre
+     * el ejercicio EN REPOSO con el ultimo modo: el sonido y la vibracion no arrancan sin que el
+     * usuario lo pida. requestCode 5, distinto de review (2), tasks (3) y focus (4): filterEquals
+     * ignora los extras.
+     */
+    fun showBreathing(
+        context: Context,
+        personality: Personality,
+        userName: String,
+    ) {
+        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
+        val builder =
+            baseBuilder(context, NotificationChannels.REMINDERS)
+                .setContentTitle(context.getString(ReminderVoice.breathingTitleRes(personality), name))
+                .setContentText(context.getString(ReminderVoice.breathingBodyRes(personality)))
+                .setContentIntent(contentIntent(context, "breathing", 5))
+        notify(context, BREATHING_ID, builder)
     }
 
     /**

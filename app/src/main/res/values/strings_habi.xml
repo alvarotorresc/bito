@@ -100,6 +100,11 @@
     <string name="habi_task_done_sargento">Done. Next.</string>
     <string name="habi_task_done_cheerleader">Gone! That feels good, %1$s.</string>
     <string name="habi_task_done_neutra">Done, %1$s.</string>
+    <!-- habi_breathing_done_* — M11, the closing line after a breathing session, complete or stopped.
+         None congratulates on "making it", none scolds for stopping, none promises calm or sleep. -->
+    <string name="habi_breathing_done_sargento">Well breathed, %1$s. Back to it.</string>
+    <string name="habi_breathing_done_cheerleader">That felt good, %1$s!</string>
+    <string name="habi_breathing_done_neutra">There, %1$s.</string>
 
     <!-- habi_task_focus_* — T19, FocusScreen's entrance line, spoken once when a session starts.
          %1$s = the user's name, %2$d = the chosen minutes; only sargento uses %2$d. -->

@@ -62,4 +62,18 @@ class NavRequestsTest {
 
         assertNull(NavRequests.pending.value)
     }
+
+    @Test
+    fun `open sets breathing as the pending route`() {
+        NavRequests.open("breathing")
+
+        assertEquals("breathing", NavRequests.pending.value)
+    }
+
+    @Test
+    fun `open ignores breathing with a suffix, exact strings only`() {
+        NavRequests.open("breathing?mode=SLEEP")
+
+        assertNull(NavRequests.pending.value)
+    }
 }

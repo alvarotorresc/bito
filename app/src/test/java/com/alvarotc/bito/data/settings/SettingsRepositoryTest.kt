@@ -3,6 +3,9 @@ package com.alvarotc.bito.data.settings
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +54,10 @@ class SettingsRepositoryTest {
             assertNull(settings.lastAutoBackupAtMillis)
             assertNull(settings.lastAutoBackupError)
             assertEquals(true, settings.taskNoticesEnabled)
+            assertFalse(settings.breathingReminderEnabled)
+            assertEquals(22 * 60, settings.breathingReminderTimeMinutes)
+            assertFalse(settings.breathingMusicEnabled)
+            assertEquals(BreathingMode.CALM, settings.breathingLastMode)
         }
 
     @Test
@@ -82,6 +89,10 @@ class SettingsRepositoryTest {
                     backupEncryption = true,
                     onboardingDone = true,
                     habiSoundsEnabled = false,
+                    breathingReminderEnabled = true,
+                    breathingReminderTimeMinutes = 7 * 60 + 15,
+                    breathingMusicEnabled = true,
+                    breathingLastMode = BreathingMode.SLEEP,
                 )
             repository.update { written }
             assertEquals(written, repository.settings.first())
@@ -227,5 +238,14 @@ class SettingsRepositoryTest {
             repo.update { it.copy(taskNoticesEnabled = false) }
 
             assertFalse(repo.settings.first().taskNoticesEnabled)
+        }
+
+    @Test
+    fun `an unknown breathing mode name falls back to CALM`() =
+        runTest {
+            val dataStore = store("unknown-mode")
+            dataStore.edit { it[stringPreferencesKey("breathing_last_mode")] = "YOGA" }
+
+            assertEquals(BreathingMode.CALM, SettingsRepository(dataStore).settings.first().breathingLastMode)
         }
 }

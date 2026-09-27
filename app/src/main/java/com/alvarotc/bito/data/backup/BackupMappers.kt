@@ -1,6 +1,7 @@
 package com.alvarotc.bito.data.backup
 
 import com.alvarotc.bito.data.db.BadgeEntity
+import com.alvarotc.bito.data.db.BreathingSessionEntity
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.DaySealEntity
 import com.alvarotc.bito.data.db.EntryEntity
@@ -144,6 +145,24 @@ fun TaskEventEntity.toBackup() =
 fun BackupTaskEvent.toEntity() =
     TaskEventEntity(id = id, taskId = taskId, kind = kind, logicalDay = logicalDay, createdAtMillis = createdAtMillis)
 
+fun BreathingSessionEntity.toBackup() =
+    BackupBreathingSession(
+        id = id,
+        mode = mode,
+        startedAtMillis = startedAtMillis,
+        durationSeconds = durationSeconds,
+        completed = completed,
+    )
+
+fun BackupBreathingSession.toEntity() =
+    BreathingSessionEntity(
+        id = id,
+        mode = mode,
+        startedAtMillis = startedAtMillis,
+        durationSeconds = durationSeconds,
+        completed = completed,
+    )
+
 fun Settings.toBackup() =
     BackupSettings(
         userName = userName,
@@ -164,6 +183,10 @@ fun Settings.toBackup() =
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
         taskNoticesEnabled = taskNoticesEnabled,
+        breathingReminderEnabled = breathingReminderEnabled,
+        breathingReminderTimeMinutes = breathingReminderTimeMinutes,
+        breathingMusicEnabled = breathingMusicEnabled,
+        breathingLastMode = breathingLastMode,
     )
 
 fun BackupSettings.toSettings() =
@@ -186,4 +209,8 @@ fun BackupSettings.toSettings() =
         logSoundEnabled = logSoundEnabled,
         logHapticEnabled = logHapticEnabled,
         taskNoticesEnabled = taskNoticesEnabled,
+        breathingReminderEnabled = breathingReminderEnabled,
+        breathingReminderTimeMinutes = breathingReminderTimeMinutes,
+        breathingMusicEnabled = breathingMusicEnabled,
+        breathingLastMode = breathingLastMode,
     )

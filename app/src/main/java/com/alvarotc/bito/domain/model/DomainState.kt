@@ -16,4 +16,5 @@ data class DomainState(
     val pointsLedger: List<PointsLedgerEntry> = emptyList(),
     val tasks: List<Task> = emptyList(),
     val taskEvents: List<TaskEvent> = emptyList(),
+    val breathingSessions: List<BreathingSession> = emptyList(),
 )

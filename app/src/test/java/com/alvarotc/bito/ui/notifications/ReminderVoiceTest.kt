@@ -70,4 +70,11 @@ class ReminderVoiceTest {
 
         assertEquals(Personality.entries.size, ids.toSet().size)
     }
+
+    @Test
+    fun `breathing title and body resolve a distinct resource per personality`() {
+        val ids = Personality.entries.flatMap { listOf(ReminderVoice.breathingTitleRes(it), ReminderVoice.breathingBodyRes(it)) }
+
+        assertEquals(Personality.entries.size * 2, ids.toSet().size)
+    }
 }

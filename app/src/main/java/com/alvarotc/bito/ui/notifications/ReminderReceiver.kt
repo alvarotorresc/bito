@@ -69,6 +69,10 @@ class ReminderReceiver : BroadcastReceiver() {
                 Notifier.showTasks(context, outcome.titles, outcome.pendingCount, outcome.personality, outcome.userName)
                 reschedule(context, outcome.slot)
             }
+            is ReminderUseCase.Outcome.Breathing -> {
+                Notifier.showBreathing(context, outcome.personality, outcome.userName)
+                reschedule(context, outcome.slot)
+            }
         }
     }
 

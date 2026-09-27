@@ -1,6 +1,7 @@
 package com.alvarotc.bito.data.repo
 
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.db.BreathingSessionEntity
 import com.alvarotc.bito.data.db.DaySealEntity
 import com.alvarotc.bito.data.db.EntryEntity
 import com.alvarotc.bito.data.db.FreezerUseEntity
@@ -33,6 +34,7 @@ class DomainStateRepository(private val db: BitoDatabase) {
             db.pointsLedgerDao().observeAll(),
             db.taskDao().observeAll(),
             db.taskEventDao().observeAll(),
+            db.breathingSessionDao().observeAll(),
         ) { parts ->
             DomainState(
                 habits = (parts[0] as List<HabitEntity>).map { it.toDomain() },
@@ -44,6 +46,7 @@ class DomainStateRepository(private val db: BitoDatabase) {
                 pointsLedger = (parts[6] as List<PointsLedgerEntity>).map { it.toDomain() },
                 tasks = (parts[7] as List<TaskEntity>).map { it.toDomain() },
                 taskEvents = (parts[8] as List<TaskEventEntity>).map { it.toDomain() },
+                breathingSessions = (parts[9] as List<BreathingSessionEntity>).map { it.toDomain() },
             )
         }
 

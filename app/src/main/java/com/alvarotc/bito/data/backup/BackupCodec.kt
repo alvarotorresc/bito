@@ -18,6 +18,10 @@ object BackupCodec {
     // default to true when absent, which is exactly what an older file means (the switches did not
     // exist, so they were on), so there is nothing for decode to migrate. Bumping would only make
     // every 1.0.0 export unreadable to earlier builds for no gain.
+    // v1.2.0: + breathingSessions y cuatro ajustes de respiracion en settings, sin bump — todo con
+    // default, que es justo lo que significa un fichero anterior. La direccion contraria se rompe:
+    // json no lleva ignoreUnknownKeys, asi que una 1.1.0 leyendo un fichero de la 1.2.0 falla
+    // entera como "Corrupted backup file" (aceptado, como en M10; va en el CHANGELOG).
     const val SCHEMA_VERSION = 3
 
     private val json =

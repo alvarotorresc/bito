@@ -9,6 +9,7 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.hasStateDescription
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -84,6 +85,7 @@ class TodayScreenTest {
     private lateinit var db: BitoDatabase
     private var openedId: String? = null
     private var reviewOpened = false
+    private var breathingOpened = false
 
     private fun settingsStore(name: String): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -142,6 +144,7 @@ class TodayScreenTest {
                     onOpenHabit = { openedId = it },
                     onOpenHabi = {},
                     onOpenReview = { reviewOpened = true },
+                    onOpenBreathing = { breathingOpened = true },
                 )
             }
         }
@@ -160,6 +163,19 @@ class TodayScreenTest {
         compose.waitForIdle()
 
         assertTrue(reviewOpened)
+    }
+
+    @Test
+    fun `the header's wind button opens breathing`() {
+        compose.onNodeWithTag("today-breathing", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+
+        assertTrue(breathingOpened)
+    }
+
+    @Test
+    fun `the wind button says what it does`() {
+        compose.onNodeWithContentDescription("Breathe with Habi").assertExists()
     }
 
     @Test

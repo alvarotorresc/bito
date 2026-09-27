@@ -1,10 +1,5 @@
 package com.alvarotc.bito.ui.today
 
-import android.content.Context
-import android.os.Build
-import android.os.VibrationEffect
-import android.os.Vibrator
-import android.os.VibratorManager
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -24,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -43,7 +39,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -62,6 +57,7 @@ import com.alvarotc.bito.ui.components.DismissableBitoSnackbar
 import com.alvarotc.bito.ui.components.GhostPillButton
 import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.formatDayWithPattern
+import com.alvarotc.bito.ui.components.rememberSoftBuzz
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
@@ -90,6 +86,7 @@ fun TodayScreen(
     // normal mid-branch state of a sequential milestone.
     onOpenTasks: () -> Unit = {},
     onStartFocus: (String) -> Unit = {},
+    onOpenBreathing: () -> Unit = {},
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -142,30 +139,13 @@ fun TodayScreen(
             }
         }
     val haptics = LocalHapticFeedback.current
-    val context = LocalContext.current
     // Registro feedback (QA 2026-08-23/24): a real Vibrator buzz on every log tap, gated ONLY by
     // the app's own Ajustes switch — performHapticFeedback obeyed the system touch-feedback
     // toggle, which most people keep off, so it read as "vibration doesn't work". The tick sound
     // half lives in the ViewModel (HabiSound.LOG).
-    val vibrator =
-        remember {
-            if (Build.VERSION.SDK_INT >= 31) {
-                (context.getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as VibratorManager).defaultVibrator
-            } else {
-                @Suppress("DEPRECATION")
-                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            }
-        }
+    val softBuzz = rememberSoftBuzz()
     val logHaptic = {
-        if (state.logHapticEnabled) {
-            val effect =
-                if (Build.VERSION.SDK_INT >= 29) {
-                    VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK)
-                } else {
-                    VibrationEffect.createOneShot(20, VibrationEffect.DEFAULT_AMPLITUDE)
-                }
-            vibrator.vibrate(effect)
-        }
+        if (state.logHapticEnabled) softBuzz()
     }
 
     Scaffold(
@@ -178,7 +158,7 @@ fun TodayScreen(
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi) }
+            item { TodayHeader(state.today, state.spec, state.userName, onOpenHabi, onOpenBreathing) }
             // Empty is only true poverty when there is nothing at all — a habit merely paused
             // still has a home in the section below, and an open task still gives the day
             // something to do, so neither must trip "create your first habit".
@@ -284,6 +264,7 @@ private fun TodayHeader(
     spec: HabiSpec,
     userName: String,
     onOpenHabi: () -> Unit,
+    onOpenBreathing: () -> Unit,
 ) {
     Row(verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
@@ -298,6 +279,15 @@ private fun TodayHeader(
                 color = TintaSuave,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+            )
+        }
+        // D2: dos toques desde Hoy hasta respirar — este icono y «Empezar».
+        IconButton(onClick = onOpenBreathing, modifier = Modifier.size(48.dp).testTag("today-breathing")) {
+            Icon(
+                BitoIcons.Wind,
+                contentDescription = stringResource(R.string.breathing_open_cd),
+                tint = TintaSuave,
+                modifier = Modifier.size(22.dp),
             )
         }
         // Static in the corner (T9's `animated` gate off): an infinite bob/blink here would

@@ -106,6 +106,13 @@
     <string name="notif_tasks_title_sargento">%1$s, something\'s waiting.</string>
     <string name="notif_tasks_title_cheerleader">Shall we, %1$s?</string>
     <string name="notif_tasks_title_neutra">You have a task, %1$s.</string>
+    <!-- notif_breathing_* — M11, the optional daily breathing reminder. %1$s = user name. -->
+    <string name="notif_breathing_title_sargento">%1$s, two minutes.</string>
+    <string name="notif_breathing_title_cheerleader">Shall we breathe for a bit, %1$s?</string>
+    <string name="notif_breathing_title_neutra">Time to breathe, %1$s.</string>
+    <string name="notif_breathing_body_sargento">Breathe with me. Then carry on.</string>
+    <string name="notif_breathing_body_cheerleader">I\'ll be waiting with my eyes closed.</string>
+    <string name="notif_breathing_body_neutra">Whenever you can.</string>
     <plurals name="notif_tasks_more">
         <item quantity="one">and %1$d more</item>
         <item quantity="other">and %1$d more</item>

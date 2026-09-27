@@ -50,4 +50,19 @@ class HabiAvatarTest {
 
         compose.onNodeWithContentDescription("Habi, feeling low").assertExists()
     }
+
+    @Test
+    fun `a guided avatar renders frozen and still describes its mood`() {
+        compose.setContent {
+            BitoTheme {
+                HabiAvatar(
+                    spec = HabiSpec(Mood.RADIANT, Personality.NEUTRA, EquippedSet()),
+                    animated = false,
+                    breath = HabiBreath(fill = 1f),
+                )
+            }
+        }
+
+        compose.onNodeWithContentDescription("Habi, feeling great").assertExists()
+    }
 }

@@ -63,6 +63,7 @@ class BackupRepository(
                     // Ordenadas por id para que reexportar el mismo estado de un fichero identico.
                     tasks = db.taskDao().all().sortedBy { it.id }.map { it.toBackup() },
                     taskEvents = db.taskEventDao().all().sortedBy { it.id }.map { it.toBackup() },
+                    breathingSessions = db.breathingSessionDao().all().sortedBy { it.id }.map { it.toBackup() },
                 )
             }
         return BackupCodec.encode(file)
@@ -92,6 +93,7 @@ class BackupRepository(
             db.taskEventDao().deleteAll()
             db.habitDao().deleteAll()
             db.taskDao().deleteAll()
+            db.breathingSessionDao().deleteAll()
             file.habits.forEach { db.habitDao().upsert(it.toEntity()) }
             file.targetChanges.forEach { db.targetChangeDao().upsert(it.toEntity()) }
             file.pauseIntervals.forEach { db.pauseIntervalDao().upsert(it.toEntity()) }
@@ -103,6 +105,7 @@ class BackupRepository(
             file.customizationItems.forEach { db.customizationItemDao().upsert(it.toEntity()) }
             file.tasks.forEach { db.taskDao().upsert(it.toEntity()) }
             file.taskEvents.forEach { db.taskEventDao().insert(it.toEntity()) }
+            file.breathingSessions.forEach { db.breathingSessionDao().insert(it.toEntity()) }
         }
         settings.update { file.settings.toSettings() }
     }

@@ -190,6 +190,15 @@ object HabiVoice {
             Personality.NEUTRA -> R.string.habi_task_done_neutra
         }
 
+    /** M11: la frase de cierre tras respirar, igual para una sesion completa que para una parada. */
+    @StringRes
+    fun breathingDoneRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.habi_breathing_done_sargento
+            Personality.CHEERLEADER -> R.string.habi_breathing_done_cheerleader
+            Personality.NEUTRA -> R.string.habi_breathing_done_neutra
+        }
+
     @StringRes
     fun taskFocusRes(personality: Personality): Int =
         when (personality) {
