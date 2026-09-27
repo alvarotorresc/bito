@@ -460,6 +460,68 @@ class BreathingViewModelTest {
         }
 
     @Test
+    fun `leaving twice mid-session saves exactly one row`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 40_000
+
+            // Doble atras o doble toque en la flecha antes de que la pantalla se desapile.
+            vm.leave()
+            currentElapsed += 1_000
+            vm.leave()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertEquals(40, rows().single().durationSeconds)
+        }
+
+    @Test
+    fun `leaving then going to the background saves exactly one row and never shows finished`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            val seenStages = mutableListOf<BreathingStage>()
+            vm.uiState.onEach { seenStages += it.stage }.launchIn(backgroundScope)
+            settle()
+            vm.start()
+            settle()
+            currentElapsed += 40_000
+
+            // El ON_STOP del desapilado llega mientras el guardado de leave() sigue en vuelo.
+            vm.leave()
+            currentElapsed += 1_000
+            vm.onBackgrounded()
+            vm.stop()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertEquals(40, rows().single().durationSeconds)
+            assertFalse(seenStages.contains(BreathingStage.FINISHED))
+        }
+
+    @Test
+    fun `leaving under ten seconds and then again or backgrounding saves nothing`() =
+        runBreathingTest {
+            val vm = newViewModel()
+            activate(vm)
+            vm.start()
+            settle()
+            currentElapsed += 5_000
+
+            vm.leave()
+            // Sin el corte, esta segunda salida veria 11 s y guardaria una sesion fantasma.
+            currentElapsed += 6_000
+            vm.leave()
+            vm.onBackgrounded()
+            settle()
+
+            assertTrue(vm.uiState.value.gone)
+            assertTrue(rows().isEmpty())
+        }
+
+    @Test
     fun `a double start runs one loop and saves one row`() =
         runBreathingTest {
             val music = FakeMusic()

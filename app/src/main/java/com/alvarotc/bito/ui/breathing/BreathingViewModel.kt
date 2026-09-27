@@ -129,6 +129,13 @@ class BreathingViewModel(
         val gone: Boolean = false,
         val pending: BreathingSession? = null,
         val pendingSizeAtClose: Int? = null,
+        /**
+         * Salida en curso ([leave]): la etapa se queda donde estaba (nada de FINISHED, ni un
+         * fotograma de la burbuja de cierre), pero ningun cierre, arranque ni otra salida vuelve a
+         * actuar. Sin esto, con la etapa aun en RUNNING, un doble atras o el ON_STOP del
+         * desapilado volvian a entrar en [finishRunning] y guardaban la misma sesion dos veces.
+         */
+        val leaving: Boolean = false,
     )
 
     private val live = MutableStateFlow(Live())
@@ -175,7 +182,7 @@ class BreathingViewModel(
 
     /** Solo en memoria: elegir chip no escribe ajustes (§4.6). En el final, vuelve a reposo con ese modo. */
     fun selectMode(mode: BreathingMode) {
-        if (live.value.stage == BreathingStage.RUNNING) return
+        if (live.value.stage == BreathingStage.RUNNING || live.value.leaving) return
         // Ver un pending de la sesion anterior aqui tampoco tiene sentido: mismo motivo que en start().
         live.update {
             it.copy(selectedMode = mode, stage = BreathingStage.IDLE, point = null, pending = null, pendingSizeAtClose = null)
@@ -184,7 +191,7 @@ class BreathingViewModel(
 
     fun start() {
         val current = live.value
-        if (current.stage == BreathingStage.RUNNING) return
+        if (current.stage == BreathingStage.RUNNING || current.leaving) return
         // El modo por defecto viene de [lastPersistedMode] (mismo combine que uiState), no del
         // `prefs` recogido aparte: los dos vienen del mismo settings.settings pero por vias
         // distintas, y en los primeros milisegundos tras abrir la pantalla pueden no coincidir
@@ -227,7 +234,7 @@ class BreathingViewModel(
      */
     private fun finishRunning(showFinished: Boolean) {
         val current = live.value
-        if (current.stage != BreathingStage.RUNNING) return
+        if (current.stage != BreathingStage.RUNNING || current.leaving) return
         // Entre que el ritmo llega al final y el siguiente tick lo ve, un cierre en ese hueco no
         // debe grabar una sesion incompleta de mas de 2 minutos: si el ritmo ya esta acabado,
         // cuenta como si lo hubiera visto el tick.
@@ -260,10 +267,13 @@ class BreathingViewModel(
     /**
      * Salir (flecha, atras del sistema, «Listo»): para si hacia falta sin pasar por FINISHED (Review
      * Final M11, Minor 3: abandonar a mitad de sesion no debe ensenar ni un fotograma de la burbuja
-     * «Terminado»), guarda si toca, y solo entonces marca [BreathingUiState.gone].
+     * «Terminado»), guarda si toca, y solo entonces marca [BreathingUiState.gone]. Idempotente: tras
+     * la primera llamada, [Live.leaving] corta cualquier otra salida, parada u [onBackgrounded].
      */
     fun leave() {
+        if (live.value.leaving) return
         finishRunning(showFinished = false)
+        live.update { it.copy(leaving = true) }
         viewModelScope.launch {
             saveJob?.join()
             live.update { it.copy(gone = true) }
@@ -274,7 +284,7 @@ class BreathingViewModel(
         val on = !musicOn()
         live.update { it.copy(musicOverride = on) }
         viewModelScope.launch { settings.update { it.copy(breathingMusicEnabled = on) } }
-        if (live.value.stage == BreathingStage.RUNNING) {
+        if (live.value.stage == BreathingStage.RUNNING && !live.value.leaving) {
             if (on) music.start() else music.stop()
         }
     }
