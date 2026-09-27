@@ -61,4 +61,11 @@ describe('copy', () => {
     expect('pasear').not.toMatch(patron('pase'));
     expect('Neutra').not.toMatch(patron('neutral'));
   });
+
+  it('el cierre anuncia la 1.3.0 y la cifra de permisos dice que son propios', () => {
+    expect(es['nuevo.cierre.pie']).toContain('1.3.0');
+    expect(en['nuevo.cierre.pie']).toContain('1.3.0');
+    expect(es['cifra.permisos']).toContain('propios');
+    expect(en['cifra.permisos']).toContain('of its own');
+  });
 });

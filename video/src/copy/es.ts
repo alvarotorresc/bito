@@ -20,16 +20,20 @@ export const es = {
   'voz.neutra.def': 'Constata con precisión, cálida en voz baja.',
   'nuevo.tareas.titular': 'Y lo que no es un hábito, también cabe.',
   'nuevo.tareas.pie': 'Tareas, plazos y un temporizador para empezar.',
+  'nuevo.respiracion.titular': 'Cuando el día se te echa encima, respira.',
+  'nuevo.respiracion.pie': 'Dos minutos respirando con Habi. Sin puntos ni rachas.',
   'nunca.titular': 'Lo que Bito no va a hacer nunca',
   'nunca.palabra': 'Nunca',
   'nunca.1': 'te pedirá una cuenta.',
   'nunca.2': 'subirá tus datos a una nube.',
   'nunca.3': 'tendrá anuncios.',
   'cifra.gms': 'dependencias de Google Play Services',
-  'cifra.permisos': 'permisos, y ninguno es internet',
+  'cifra.permisos': 'permisos propios, y ninguno es internet',
   'cifra.licencia': 'del código bajo GPL-3.0-or-later',
   'cierre.titular': 'Empieza por uno.',
-  'nuevo.cierre.pie': 'Bito 1.1.0 · Android 8.0+ · Software libre',
+  'nuevo.cierre.pie': 'Bito 1.3.0 · Android 8.0+ · Software libre',
+  'store.foco': 'Tareas, plazos y un temporizador para empezar.',
+  'store.respiracion': 'Dos minutos respirando con Habi.',
 } as const;
 
 export type CopyKey = keyof typeof es;
