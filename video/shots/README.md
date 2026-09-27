@@ -1,10 +1,10 @@
 # Capturas de la app para el vídeo
 
-Pasada reproducible de 26 capturas (13 pantallas × es/en) de Bito 1.1.0 real en un emulador
+Pasada reproducible de 28 capturas (14 pantallas × es/en) de Bito 1.3.0 real en un emulador
 headless. Salida en `../public/shots/{es,en}/*.png`, 1080×2340 RGB, sin barra de estado.
 
 Pantallas: `hoy, detalle, stats, records, logros, habi, tienda, repaso, ajustes, tareas,
-widget, notificacion, foco`.
+widget, notificacion, foco, respiracion`.
 
 ## Requisitos
 
@@ -17,7 +17,7 @@ widget, notificacion, foco`.
 
 ```bash
 bash emulator.sh setup      # una vez: instala, crea el AVD bito-shots y mide las barras
-bash build_apk.sh           # en cada release: assembleDebug 1.1.0
+bash build_apk.sh           # en cada release: assembleDebug 1.3.0
 npm run shots               # desde video/: pasada completa es+en y verificación
 python3 to_web.py           # copia a alvarotc-web lo que pide su brief de medios
 ```
@@ -26,7 +26,7 @@ Una sola pantalla: `python3 run_shots.py --lang es --screens stats`, y después
 `python3 verify_shots.py`. La pasada completa tarda unos 11 minutos (678 s medidos); `notificacion` espera a que
 salte un recordatorio real (hasta 4 minutos por idioma).
 
-`verify_shots.py` comprueba que existen las 26, que miden 1080×2340 RGB, que la fila superior es
+`verify_shots.py` comprueba que existen las 28, que miden 1080×2340 RGB, que la fila superior es
 Papel (`#F2ECE1`) en las pantallas de `PAPEL_SCREENS` y que cada par es/en no es idéntico. Sale
 con 1 si hay algún problema.
 
@@ -47,6 +47,11 @@ El AVD se crea con `hw.keyboard=no` para que no salga «Teclados físicos config
 
 En `foco`, Habi parpadea: `run_shots.py` mira si hay píxeles oscuros en la zona de sus ojos y,
 si no, repite la captura cada 400 ms (hasta 5 veces); si no los encuentra, el intento falla.
+
+En `respiracion`, la pantalla anima sin parar: el flujo no usa `waitForAnimationToEnd`. Abre con
+el deep link `breathing`, toca «Empezar» / «Start» con el modo de serie (Calmarme) y la música
+apagada, espera a «Exhala» / «Breathe out» (Habi en su tamaño máximo, ojos cerrados) y exige un
+restante `1:5x`. No pasa por el reintento de ojos abiertos de `foco`.
 
 Las pantallas `widget`, `notificacion`, `foco` y `tienda` no pasan la comprobación de Papel
 (pantalla de inicio, persiana, foco a pantalla completa y tienda: se baja hasta el final y se sube un poco, así que la tarjeta de la tienda queda arriba del todo).
@@ -95,7 +100,7 @@ Otros desplazamientos fijos, calibrados en este AVD (1080×2406, densidad 440):
 
 Fallback con fotos del autor:
 
-1. En el móvil del autor, con Bito 1.1.0, el idioma del sistema correspondiente y los datos de
+1. En el móvil del autor, con Bito 1.3.0, el idioma del sistema correspondiente y los datos de
    demo, hacer una captura de pantalla nativa del widget en la pantalla de inicio y otra de la
    notificación con la persiana abierta.
 2. Normalizar a 1080×2340 RGB y guardarla en `fallback/es/` o `fallback/en/` con el nombre de la

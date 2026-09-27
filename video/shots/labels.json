@@ -26,7 +26,10 @@
     "H_AGUA": "Beber agua",
     "T_DENTISTA": "Llamar al dentista",
     "L_OPEN_AGUA": "Abrir Beber agua",
-    "U_NAME": "Lucía"
+    "U_NAME": "Lucía",
+    "L_BREATH_CALM": "Calmarme",
+    "L_BREATH_START": "Empezar",
+    "L_BREATH_EXHALE": "Exhala"
   },
   "en": {
     "L_TODAY": "Today",
@@ -55,6 +58,9 @@
     "H_AGUA": "Drink water",
     "T_DENTISTA": "Call the dentist",
     "L_OPEN_AGUA": "Open Drink water",
-    "U_NAME": "Lucía"
+    "U_NAME": "Lucía",
+    "L_BREATH_CALM": "Calm down",
+    "L_BREATH_START": "Start",
+    "L_BREATH_EXHALE": "Breathe out"
   }
 }

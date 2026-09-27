@@ -33,9 +33,9 @@ JAVA_HOME = Path.home() / ".jdks" / "jdk-21.0.12+8"
 
 SCREENS = [
     "hoy", "detalle", "stats", "records", "logros", "habi", "tienda",
-    "repaso", "ajustes", "tareas", "widget", "notificacion", "foco",
+    "repaso", "ajustes", "tareas", "widget", "notificacion", "foco", "respiracion",
 ]
-DEEP_LINKS = {"repaso": "review", "tareas": "tasks", "foco": "tasks"}
+DEEP_LINKS = {"repaso": "review", "tareas": "tasks", "foco": "tasks", "respiracion": "breathing"}
 BEST_EFFORT = {"widget", "notificacion"}
 CROP_FROM_TOP = {"notificacion"}
 PAPEL_SCREENS = set(SCREENS) - {"widget", "notificacion", "foco", "tienda"}

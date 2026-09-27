@@ -2,7 +2,7 @@ import type { Lang } from '../copy';
 
 export const PANTALLAS = [
   'hoy', 'detalle', 'stats', 'records', 'logros', 'habi', 'tienda',
-  'repaso', 'ajustes', 'tareas', 'foco', 'widget', 'notificacion',
+  'repaso', 'ajustes', 'tareas', 'foco', 'widget', 'notificacion', 'respiracion',
 ] as const;
 export type Pantalla = (typeof PANTALLAS)[number];
 

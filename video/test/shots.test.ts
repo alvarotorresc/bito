@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { PANTALLAS, TOQUES, resolverShot, rutaShot, shotsQueFaltan } from '../src/ui/shots';
 
 describe('shots', () => {
-  it('son las 13 pantallas que entrega el plan de capturas', () => {
+  it('son las 14 pantallas que entrega la pasada de capturas', () => {
     expect(PANTALLAS).toEqual([
       'hoy', 'detalle', 'stats', 'records', 'logros', 'habi', 'tienda',
-      'repaso', 'ajustes', 'tareas', 'foco', 'widget', 'notificacion',
+      'repaso', 'ajustes', 'tareas', 'foco', 'widget', 'notificacion', 'respiracion',
     ]);
   });
 
@@ -15,8 +15,8 @@ describe('shots', () => {
     expect(resolverShot(['shots/es/hoy.png'], 'en', 'hoy')).toBeNull();
   });
 
-  it('lista las 26 que faltan cuando no hay ninguna', () => {
-    expect(shotsQueFaltan([])).toHaveLength(26);
+  it('lista las 28 que faltan cuando no hay ninguna', () => {
+    expect(shotsQueFaltan([])).toHaveLength(28);
     expect(shotsQueFaltan(PANTALLAS.flatMap((p) => [rutaShot('es', p), rutaShot('en', p)]))).toEqual([]);
   });
 
