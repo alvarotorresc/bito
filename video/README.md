@@ -1,6 +1,6 @@
 # Vídeo de producto de Bito
 
-Vídeo promocional de 64 s (1920×1080, 30 fps) en español e inglés y el material gráfico de
+Vídeo promocional de 69 s (1920×1080, 30 fps) en español e inglés y el material gráfico de
 Google Play, hechos con Remotion 4.0.529. Todo sale de este directorio; la app no se toca.
 
 ## Requisitos
@@ -24,7 +24,7 @@ npm run final      # tests → comprobación de capturas → render es/en → ve
 `npm run final` encadena:
 
 1. `vitest run`: tiempos, parpadeos, toques, mezcla de audio, copia y validador de PNG.
-2. `scripts/comprobar-shots.mjs`: corta el render si falta alguna de las 26 capturas en
+2. `scripts/comprobar-shots.mjs`: corta el render si falta alguna de las 28 capturas en
    `public/shots/{es,en}/`. Nunca sale un MP4 con placeholders grises.
 3. `render:es` y `render:en`: H.264 CRF 18 con audio AAC.
 4. `verificar`: `scripts/verificar-video.sh` mide resolución, fps, duración y pista de audio.
@@ -37,7 +37,7 @@ Para iterar sin capturas reales: `npm run studio` o `npm run render:borrador`.
 
 - `bito-promo-es.mp4` y `bito-promo-en.mp4`.
 - `stills/`: icono de 1024, ilustración y fotograma promocional por idioma.
-- `store/icon-512.png` y `store/{es,en}/`: feature graphic (1024×500) y seis capturas de
+- `store/icon-512.png` y `store/{es,en}/`: feature graphic (1024×500) y ocho capturas de
   1080×1920 por idioma, listas para subir a Play.
 - `bundle/` y `tmp/`: intermedios.
 
