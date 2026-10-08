@@ -30,18 +30,20 @@ jobs:
           BITO_KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           BITO_KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           BITO_KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew assembleRelease --stacktrace
+        run: ./gradlew assembleRelease bundleRelease --stacktrace
 
       - name: Extract changelog notes
         run: awk "/^## \\[?${GITHUB_REF_NAME#v}/{flag=1;next}/^## /{flag=0}flag" CHANGELOG.md > "$RUNNER_TEMP/notes.md"
 
       # mapping.txt viaja con el APK: sin él, un stack trace ofuscado que reporte
       # alguien no hay forma de leerlo, y R8 lo regenera distinto en cada build.
+      # El AAB es lo que se sube a Google Play; el APK sigue para instalarlo a mano.
       - name: Create GitHub release
         uses: softprops/action-gh-release@v2
         with:
           body_path: ${{ runner.temp }}/notes.md
           files: |
             app/build/outputs/apk/release/app-release.apk
+            app/build/outputs/bundle/release/app-release.aab
             app/build/outputs/mapping/release/mapping.txt
           fail_on_unmatched_files: true
