@@ -33,6 +33,7 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.HabiTintTable
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
@@ -54,10 +55,9 @@ private val NoteLine = Color(0xFFC6C0B1) // pencil lines on 7c's crossed-out not
 private val PotClay = Color(0xFFC98D6B) // 7d's flower pot (warmer/lighter than Brasa on purpose)
 private val LeafLite = Color(0xFF6FB183) // 7d's second sprout leaf — a lighter Hoja
 
-// 7b's slumped Habi is the one body the mockups mute: desaturated sage, not the canon HabiSalvia
-// that design/habi/habi-moods.html keeps for every mood — so it rides HabiSpec.bodyToneOverride
-// (scene-only by design) instead of a mood or a catalog color.
-private val HabiMustio = Color(0xFFA3AF9C)
+// El sofá de 7b es la única escena con el cuerpo de Habi apagado: el tinte «apagado» de tools/arte/tintes.json,
+// por HabiSpec.bodyToneOverride (solo para escenas), en vez de un ánimo o un color del catálogo.
+private val HabiMustio = HabiTintTable.muted
 
 // Every scene sits on the same soft floor ellipse: Tinta at 6% reproduces the sampled shadow on
 // BOTH card tints (#DCD6C9 over Borde, #DAE2D6 over HojaTinte) with one paint.

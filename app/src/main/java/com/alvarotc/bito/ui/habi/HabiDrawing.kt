@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import com.alvarotc.bito.domain.model.CheekStyle
-import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.FaceParams
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
@@ -35,27 +34,6 @@ import com.alvarotc.bito.ui.theme.Tinta
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-
-/**
- * What Habi looks like right now: mood x personality resolves the face, [equipped] tints/dresses
- * the body.
- *
- * [bodyToneOverride] and [closedEyes] are SCENE-ONLY opts, both null/false everywhere in the app
- * proper: the canon (design/habi/habi-moods.html) keeps the body at the same full-saturation fill
- * in every mood ("la cara ES el mood") and renders WILTED with heavy but open lids
- * ([WILTED_EYELID_DROOP]) — so no mood ever maps to either. A static illustration that needs the
- * desaturated body or the closed-lid face of its mockup (onboarding 7b's slumped sofa Habi) opts
- * in explicitly, keeping its sampled tone as a scene-local constant.
- */
-data class HabiSpec(
-    val mood: Mood,
-    val personality: Personality,
-    val equipped: EquippedSet,
-    /** Replaces the equipped catalog body color (pattern tint and shading follow it); null = catalog color. */
-    val bodyToneOverride: Color? = null,
-    /** Draws each eye as a sagging closed arc with a faint lash mark below, instead of the open oval. */
-    val closedEyes: Boolean = false,
-)
 
 // Body — egg/bean path, center (0.5, 0.55), slightly wider at the bottom (BODY_BULGE shifts the
 // widest point below center). Numbers are art-phase-tunable against design/mockups/m6/4-habi-pantalla.png.
@@ -376,7 +354,8 @@ fun DrawScope.drawHabi(
     // One resolved tone feeds body, pattern tint and shading, so a scene override mutes all three
     // together — a desaturated body under a full-saturation pattern would give the sticker look
     // right back.
-    val bodyTone = spec.bodyToneOverride ?: HabiPalette.bodyColor(spec.equipped.bodyColor)
+    // El pintor vectorial ignora bodyToneOverride: desaparece en cuanto HabiAvatar pinta por capas.
+    val bodyTone = HabiPalette.bodyColor(spec.equipped.bodyColor)
 
     drawBody(vp, bodyTone, spec.equipped.bodyColor)
     drawBodyShading(vp, bodyTone)
