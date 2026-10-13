@@ -134,6 +134,34 @@ class GaleriaTest(unittest.TestCase):
         for clave in incrustado["claves"]:
             self.assertTrue(os.path.exists(os.path.join(salida, incrustado["minis"][clave])), clave)
 
+    def test_el_orden_de_capas_de_la_cara_es_el_de_habilayers(self):
+        # habiLayers: ojos (con su iris), boca, marcas, cejas, gafas, gorro; cuerpo antes y sombra primero.
+        d, habi, jardin, tintes, _ = montar()
+        html = open(generar(d, habi, jardin, tintes)[1], encoding="utf-8").read()
+        cuerpo = html[html.index("function capas("):html.index("function habi(")]
+        marcas = {
+            "sombra": "const out = [['sombra']]",
+            "cuerpo": "out.push(['cuerpo'",
+            "pies": "if (feet) out.push",
+            "cuello": "if (neck) out.push",
+            "cara": "out.push(['#cara'])",
+            "ojos": "cara.push([lado(o, s)]); if (tOjos) cara.push([lado(o, s), tOjos, true])",
+            "boca": "if (b) cara.push([b])",
+            "marcas": "D.caras.marcas[pers]",
+            "cejas": "if (c) for",
+            "gafas": "if (face) out.push([face])",
+            "gorro": "if (head) out.push([head])",
+        }
+        posiciones = {n: cuerpo.index(t) for n, t in marcas.items()}
+        orden = sorted(posiciones, key=posiciones.get)
+        self.assertEqual(orden, ["sombra", "cuerpo", "pies", "cuello", "cara", "ojos", "boca", "marcas", "cejas", "gafas", "gorro"])
+
+    def test_la_inclinacion_del_mustio_es_un_giro_no_un_sesgo(self):
+        d, habi, jardin, tintes, _ = montar()
+        html = open(generar(d, habi, jardin, tintes)[1], encoding="utf-8").read()
+        self.assertIn("rotate(${-mp.inclina * mustio}deg)", html)
+        self.assertNotIn("skewX", html)
+
 
 INDICE = {
     "secciones": [

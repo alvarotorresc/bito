@@ -356,6 +356,8 @@ const J = D.tintes.jardin || {};
 // La tabla de caras es la de caras.json: ánimo -> personalidad -> [ojos, boca, cejas].
 const ANIMOS = Object.keys(D.caras.tabla);
 const PERSONALIDADES = Object.keys(D.caras.marcas);
+// Por nombre, no por posición en caras.json.
+const ANIMO_NORMAL = 'NORMAL', PERSONALIDAD_BASE = 'NEUTRA';
 const lado = (clave, s) => `${clave}-${s}`;
 
 // Como habiLayers: [clave, tinte, esIris] en orden de pintado. Con disfraz no hay accesorios ni color de cuerpo.
@@ -374,12 +376,12 @@ function capas({pers, animo, cuerpo = null, ojos = null, head = null, face = nul
   }
   out.push(['#cara']);
   const cara = [];
-  (D.caras.marcas[pers] || []).forEach(m => cara.push([m]));
   if (o) for (const s of ['i', 'd']) { cara.push([lado(o, s)]); if (tOjos) cara.push([lado(o, s), tOjos, true]); }
   if (b) cara.push([b]);
+  (D.caras.marcas[pers] || []).forEach(m => cara.push([m]));
   if (c) for (const s of ['i', 'd']) cara.push([lado(c, s)]);
   out.push(...cara.map(x => ['>' + x[0], x[1], x[2]]));
-  if (!costume) { if (head) out.push([head]); if (face) out.push([face]); }
+  if (!costume) { if (face) out.push([face]); if (head) out.push([head]); }
   return out;
 }
 
@@ -463,16 +465,16 @@ function escena({etapa = 5, abiertas = 6, mustio = 0, luz = 'DIA', estacion = nu
     if (it.planta && (mustio || tEstacion)) {
       const m = mustio && mp ? `saturate(${1 - mp.saturacion * mustio}) sepia(${mp.sepia * mustio}) brightness(${1 - mp.brillo * mustio})` : '';
       img.style.filter = unir(m, tEstacion);
-      if (mustio && mp) img.style.transform = `translateX(-50%) scaleY(${1 - mp.encoge * mustio}) skewX(${-mp.inclina * mustio}deg)`;
+      if (mustio && mp) img.style.transform = `translateX(-50%) rotate(${-mp.inclina * mustio}deg) scaleY(${1 - mp.encoge * mustio})`;
     }
     s.appendChild(img);
   });
-  const hb = E.habi, previo = habi({pers: PERSONALIDADES[0], animo: ANIMOS[1]}, 1);
+  const hb = E.habi, base = {pers: PERSONALIDAD_BASE, animo: ANIMO_NORMAL}, previo = habi(base, 1);
   s.appendChild(previo);
   requestAnimationFrame(() => {
     // El pie del cuerpo (centro, abajo) va en (x %, y %); su alto es hb[2] % de la escena.
     const alto = s.clientHeight * hb[2] / 100 * D.lienzo[3] / D.cuerpo.alto, k = alto / D.lienzo[3];
-    const rig = habi({pers: PERSONALIDADES[0], animo: ANIMOS[1]}, alto);
+    const rig = habi(base, alto);
     Object.assign(rig.style, {position: 'absolute', zIndex: 2, left: `calc(${hb[0]}% + ${(D.lienzo[0] - D.cuerpo.ancho / 2) * k}px)`, top: `calc(${hb[1]}% + ${(D.lienzo[1] - D.cuerpo.alto) * k}px)`});
     s.replaceChild(rig, previo);
   });
@@ -509,13 +511,13 @@ document.getElementById('importar').onchange = e => {
 const ALTO = 150;
 const ACC = Object.keys(D.piezas).filter(k => /^(head|face|neck|feet)-/.test(k));
 const ejeDe = k => k.split('-')[0];
-const normal = ANIMOS.includes('NORMAL') ? 'NORMAL' : ANIMOS[0];
+const normal = ANIMO_NORMAL;
 seccion('Personalidad × ánimo', PERSONALIDADES.flatMap(p => ANIMOS.map(a => celda(`${p.toLowerCase()} · ${a.toLowerCase()}`, habi({pers: p, animo: a}, ALTO)))));
 seccion('Ojos cerrados y alegría', PERSONALIDADES.flatMap(p => [celda(`${p.toLowerCase()} · cerrados`, habi({pers: p, animo: normal, cerrados: true}, ALTO)), celda(`${p.toLowerCase()} · alegría`, habi({pers: p, animo: normal, feliz: true}, ALTO))]));
 seccion('Accesorios con cada personalidad', ACC.flatMap(k => PERSONALIDADES.map(p => celda(`${k} · ${p.toLowerCase()}`, habi({pers: p, animo: normal, [ejeDe(k)]: k}, ALTO)))));
 seccion('Disfraces con cada personalidad (la cara, recortada por el hueco)', Object.keys(D.piezas).filter(k => k.startsWith('costume-')).flatMap(k => PERSONALIDADES.map(p => celda(`${k} · ${p.toLowerCase()}`, habi({pers: p, animo: normal, costume: k}, ALTO)))));
-seccion('Colores de cuerpo (y el apagado del onboarding)', ['', ...Object.keys(D.tintes.cuerpo), 'apagado'].map(k => celda(k || 'salvia', habi({pers: PERSONALIDADES[0], animo: normal, cuerpo: k || null}, ALTO))));
-seccion('Colores de ojos', ['', ...Object.keys(D.tintes.ojos)].map(k => celda(k || 'tinta', habi({pers: PERSONALIDADES[0], animo: normal, ojos: k || null}, ALTO))));
+seccion('Colores de cuerpo (y el apagado del onboarding)', ['', ...Object.keys(D.tintes.cuerpo), 'apagado'].map(k => celda(k || 'salvia', habi({pers: PERSONALIDAD_BASE, animo: normal, cuerpo: k || null}, ALTO))));
+seccion('Colores de ojos', ['', ...Object.keys(D.tintes.ojos)].map(k => celda(k || 'tinta', habi({pers: PERSONALIDAD_BASE, animo: normal, ojos: k || null}, ALTO))));
 seccion('Jardín · etapas', [1, 2, 3, 4, 5].map(e => celda(`etapa ${e}`, escena({etapa: e, abiertas: 1, especiales: []}), null, false)));
 seccion('Jardín · mustio', [0, 1, 2, 3].map(m => celda(`mustio ${m}`, escena({mustio: m}), null, false)));
 seccion('Jardín · luz', Object.keys(J.luz || {DIA: 1}).map(l => celda(l.toLowerCase(), escena({luz: l}), null, false)));
