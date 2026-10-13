@@ -4,8 +4,8 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import kotlin.math.min
 
-/** Las capas de Habi en el orden en que se pintan (spec §3.2). IRIS va pegado a EYES. */
-enum class HabiPart { SHADOW, BODY, FEET, NECK, EYES, IRIS, MOUTH, MARKS, BROWS, GLASSES, HEAD }
+/** Las capas de Habi en el orden en que se pintan (spec §3.2). IRIS va pegado a EYES; el cuello va sobre la cara. */
+enum class HabiPart { SHADOW, BODY, FEET, EYES, IRIS, MOUTH, MARKS, BROWS, NECK, GLASSES, HEAD }
 
 /** Las partes de la expresión: cambian con ánimo y personalidad y se funden entre caras (§3.5). */
 val FACE_PARTS: Set<HabiPart> = setOf(HabiPart.EYES, HabiPart.IRIS, HabiPart.MOUTH, HabiPart.MARKS, HabiPart.BROWS)
@@ -134,7 +134,6 @@ internal fun habiLayers(
     } else {
         layers += HabiLayer("cuerpo", HabiPart.BODY, tint = spec.bodyToneOverride ?: HabiTintTable.body[equipped.bodyColor])
         equipped.feet?.let { layers += HabiLayer(it, HabiPart.FEET) }
-        equipped.neck?.let { layers += HabiLayer(it, HabiPart.NECK) }
     }
 
     fun eyes(
@@ -154,6 +153,8 @@ internal fun habiLayers(
     face.brows?.let { brows -> SIDES.forEach { layers += HabiLayer("${brows.key}-$it", HabiPart.BROWS, dx, dy, masked = masked) } }
 
     if (costume == null) {
+        // El cuello va sobre boca, marcas y cejas: la bufanda tapa lo que asome por debajo.
+        equipped.neck?.let { layers += HabiLayer(it, HabiPart.NECK) }
         // Las gafas siguen la mirada como la cara, pero no van enmascaradas (sin disfraz no hay máscara).
         equipped.face?.let { layers += HabiLayer(it, HabiPart.GLASSES, dx, dy) }
         equipped.head?.let { layers += HabiLayer(it, HabiPart.HEAD) }

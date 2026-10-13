@@ -32,12 +32,27 @@ class HabiLayersTest {
         val parts = habiLayers(spec()).map { it.part }
         assertEquals(
             listOf(
-                HabiPart.SHADOW, HabiPart.BODY, HabiPart.FEET, HabiPart.NECK, HabiPart.EYES, HabiPart.IRIS,
-                HabiPart.MOUTH, HabiPart.MARKS, HabiPart.BROWS, HabiPart.GLASSES, HabiPart.HEAD,
+                HabiPart.SHADOW, HabiPart.BODY, HabiPart.FEET, HabiPart.EYES, HabiPart.IRIS,
+                HabiPart.MOUTH, HabiPart.MARKS, HabiPart.BROWS, HabiPart.NECK, HabiPart.GLASSES, HabiPart.HEAD,
             ),
             parts.distinct(),
         )
         assertEquals(parts.sortedBy { it.ordinal }, parts)
+    }
+
+    @Test
+    fun `the neck is painted over mouth, marks and brows, also halfway through a crossfade`() {
+        fun List<HabiLayer>.neckAbove() {
+            val neck = indexOfFirst { it.part == HabiPart.NECK }
+            assertTrue(neck >= 0)
+            for (part in listOf(HabiPart.MOUTH, HabiPart.MARKS, HabiPart.BROWS)) {
+                assertTrue("$part", neck > indexOfLast { it.part == part })
+            }
+        }
+        val from = habiLayers(spec(Mood.NORMAL))
+        val to = habiLayers(spec(Mood.DRAMATIC))
+        from.neckAbove()
+        crossfadeFace(from, to, 0.5f).neckAbove()
     }
 
     @Test
@@ -152,9 +167,9 @@ class HabiLayersTest {
         assertEquals(0.6f, mid.first { it.key == "boca-neutra" }.alpha, delta)
         assertEquals(0.4f, mid.first { it.key == "boca-mueca" }.alpha, delta)
         assertEquals(1, mid.count { it.part == HabiPart.BODY })
-        // El cuerpo y lo puesto debajo, las dos caras en medio y las gafas y la cabeza encima.
-        assertEquals(listOf(HabiPart.SHADOW, HabiPart.BODY, HabiPart.FEET, HabiPart.NECK), mid.take(4).map { it.part })
-        assertEquals(listOf(HabiPart.GLASSES, HabiPart.HEAD), mid.takeLast(2).map { it.part })
+        // El cuerpo y los pies debajo, las dos caras en medio y el cuello, las gafas y la cabeza encima.
+        assertEquals(listOf(HabiPart.SHADOW, HabiPart.BODY, HabiPart.FEET), mid.take(3).map { it.part })
+        assertEquals(listOf(HabiPart.NECK, HabiPart.GLASSES, HabiPart.HEAD), mid.takeLast(3).map { it.part })
         assertEquals(to, crossfadeFace(from, to, 1f))
     }
 
