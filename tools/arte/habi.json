@@ -1,5 +1,5 @@
 {
-  "_nota": "Piezas de Habi. Las de cara toman centro y escala de caras.json. Accesorios: lote-c/capa-*.png en el marco de 1532 x 1804 (el cuerpo en 200, 300) y las tres de la prueba en 1132 x 1704 (300 px de margen arriba). Disfraces: extraídos de lote-b/disfraz-*.jpg con accesorio.py --modo disfraz (salida del tamaño de prueba-piezas/cuerpo.jpg, el cuerpo en 478, 366); cara = desplazamiento aprobado en el prototipo vivo; provisionales hasta su visto bueno en la galería.",
+  "_nota": "Piezas de Habi. Las de cara toman centro y escala de caras.json. Accesorios: lote-c/capa-*.png en el marco de 1532 x 1804 (el cuerpo en 200, 300) y las tres de la prueba en 1132 x 1704 (300 px de margen arriba). Disfraces: extraídos de lote-b/disfraz-*.jpg a lote-b/extraidos/ con accesorio.py --modo disfraz (salida del tamaño de prueba-piezas/cuerpo.jpg, el cuerpo en 478, 366); cara = desplazamiento aprobado en el prototipo vivo.",
   "fuentes": "~/Pictures/bito-habi/prueba-piezas/piezas",
   "cuerpo": {"ancho": 1132, "alto": 1404},
   "alto_salida": 800,
@@ -52,8 +52,8 @@
     {"clave": "feet-calcetines", "archivo": "~/Pictures/bito-habi/lote-c/capa-calcetines.png", "origen": [-200, -300]},
     {"clave": "feet-botas-agua", "archivo": "~/Pictures/bito-habi/lote-c/capa-botas-agua.png", "origen": [-200, -300]},
     {"clave": "feet-zapatillas", "archivo": "~/Pictures/bito-habi/lote-c/capa-zapatillas.png", "origen": [-200, -300]},
-    {"clave": "costume-calabaza", "archivo": "~/Documents/apps/bito-arte/disfraces/costume-calabaza.png", "origen": [-478, -366], "cara": [-10, -14], "provisional": true},
-    {"clave": "costume-reno", "archivo": "~/Documents/apps/bito-arte/disfraces/costume-reno.png", "origen": [-478, -366], "cara": [-19, -71], "provisional": true},
-    {"clave": "costume-dinosaurio", "archivo": "~/Documents/apps/bito-arte/disfraces/costume-dinosaurio.png", "origen": [-478, -366], "cara": [9, 13], "provisional": true}
+    {"clave": "costume-calabaza", "archivo": "~/Pictures/bito-habi/lote-b/extraidos/costume-calabaza.png", "origen": [-478, -366], "cara": [-10, -14]},
+    {"clave": "costume-reno", "archivo": "~/Pictures/bito-habi/lote-b/extraidos/costume-reno.png", "origen": [-478, -366], "cara": [-19, -71]},
+    {"clave": "costume-dinosaurio", "archivo": "~/Pictures/bito-habi/lote-b/extraidos/costume-dinosaurio.png", "origen": [-478, -366], "cara": [9, 13]}
   ]
 }

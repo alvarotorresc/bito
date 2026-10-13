@@ -106,4 +106,32 @@ class HabiArtResourcesTest {
             assertTrue("$key mask size", face.mask.width > 0f && face.mask.height > 0f)
         }
     }
+
+    @Test
+    fun `the approved face offsets of the three costumes stay pinned`() {
+        val expected =
+            mapOf(
+                "costume-calabaza" to (-10.0f to -14.0f),
+                "costume-reno" to (-19.0f to -71.0f),
+                "costume-dinosaurio" to (9.0f to 13.0f),
+            )
+        assertEquals(expected.keys, HabiAtlas.costumeFaces.keys)
+        for ((key, offset) in expected) {
+            val face = HabiAtlas.costumeFaces.getValue(key)
+            assertEquals("$key dx", offset.first, face.dx, 0f)
+            assertEquals("$key dy", offset.second, face.dy, 0f)
+        }
+    }
+
+    @Test
+    fun `every costume hole mask lies inside the rig canvas`() {
+        val canvas = HabiAtlas.canvas
+        for ((key, face) in HabiAtlas.costumeFaces) {
+            val m = face.mask
+            assertTrue("$key left", m.left >= canvas.left)
+            assertTrue("$key top", m.top >= canvas.top)
+            assertTrue("$key right", m.left + m.width <= canvas.left + canvas.width)
+            assertTrue("$key bottom", m.top + m.height <= canvas.top + canvas.height)
+        }
+    }
 }
