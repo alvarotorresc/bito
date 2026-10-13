@@ -14,6 +14,7 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.flow.Flow
+import java.time.LocalDate
 import java.util.UUID
 
 /** Points ledger, badges and Habi customization inventory. */
@@ -82,7 +83,7 @@ class RewardsRepository(private val db: BitoDatabase) {
     /**
      * Buys [item] atomically: ledger spend + acquired row, equipped on the spot
      * (docs/05 §4). Returns false — writing nothing — when the item is not
-     * purchasable, is already owned, or the balance does not cover it.
+     * purchasable, is already owned, is out of season, or the balance does not cover it.
      */
     suspend fun purchase(
         item: CatalogItem,
@@ -91,6 +92,8 @@ class RewardsRepository(private val db: BitoDatabase) {
     ): Boolean =
         db.withTransaction {
             val price = item.price ?: return@withTransaction false
+            // Un disfraz solo se compra en su temporada (D5); el día lógico decide, igual que en la tienda.
+            if (!HabiCatalog.isOnSale(item, LocalDate.ofEpochDay(day.toLong()))) return@withTransaction false
             if (db.customizationItemDao().byId(item.id) != null) return@withTransaction false
             val ledger = db.pointsLedgerDao().all().map { it.toDomain() }
             if (!PointsEngine.canSpend(ledger, price)) return@withTransaction false

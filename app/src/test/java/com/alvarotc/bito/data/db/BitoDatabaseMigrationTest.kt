@@ -124,9 +124,28 @@ class BitoDatabaseMigrationTest {
         db.close()
     }
 
+    /**
+     * Una base v3 de verdad, la de la 1.3.0: la v2 de [seedVersionTwo], la tabla de respiración con
+     * el DDL exacto de MIGRATION_2_3 y una fila del catálogo viejo con un eje que ya no existe
+     * (PATTERN): si sobreviviera, Room no podría leerla.
+     */
+    private fun seedVersionThree(context: Context) {
+        seedVersionTwo(context)
+        val db = SQLiteDatabase.openDatabase(context.getDatabasePath(name).path, null, SQLiteDatabase.OPEN_READWRITE)
+        db.execSQL(
+            "CREATE TABLE IF NOT EXISTS `breathing_sessions` (`id` TEXT NOT NULL, `mode` TEXT NOT NULL, " +
+                "`startedAtMillis` INTEGER NOT NULL, `durationSeconds` INTEGER NOT NULL, " +
+                "`completed` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        )
+        db.execSQL("INSERT INTO customization_items VALUES ('pattern-motas', 'PATTERN', 1000, 1)")
+        db.execSQL("INSERT INTO badges VALUES ('streak-7', 1000)")
+        db.execSQL("PRAGMA user_version = 3")
+        db.close()
+    }
+
     private fun openMigrated(context: Context): BitoDatabase =
         Room.databaseBuilder(context, BitoDatabase::class.java, name)
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
             .build()
 
     @Test
@@ -136,7 +155,7 @@ class BitoDatabaseMigrationTest {
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
         try {
             runBlocking {
@@ -145,7 +164,7 @@ class BitoDatabaseMigrationTest {
                 assertEquals(1, db.pointsLedgerDao().all().size)
                 assertEquals(8, db.habitDao().byId("h1")!!.target)
             }
-            assertEquals(3, db.openHelper.readableDatabase.version)
+            assertEquals(4, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
@@ -158,7 +177,7 @@ class BitoDatabaseMigrationTest {
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
         try {
             runBlocking {
@@ -200,7 +219,7 @@ class BitoDatabaseMigrationTest {
                 assertEquals("Llamar al banco", db.taskDao().byId("t1")!!.title)
                 assertEquals(listOf("ev1"), db.taskEventDao().all().map { it.id })
             }
-            assertEquals(3, db.openHelper.readableDatabase.version)
+            assertEquals(4, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
@@ -225,7 +244,7 @@ class BitoDatabaseMigrationTest {
     }
 
     @Test
-    fun `a v1 database reaches three in one go`() {
+    fun `a v1 database reaches four in one go`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         seedVersionOne(context)
 
@@ -236,7 +255,28 @@ class BitoDatabaseMigrationTest {
                 assertTrue(db.taskDao().all().isEmpty())
                 assertTrue(db.breathingSessionDao().all().isEmpty())
             }
-            assertEquals(3, db.openHelper.readableDatabase.version)
+            assertEquals(4, db.openHelper.readableDatabase.version)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `migrating from three to four empties only the old catalog`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        seedVersionThree(context)
+
+        val db = openMigrated(context)
+        try {
+            runBlocking {
+                assertTrue(db.customizationItemDao().all().isEmpty())
+                assertEquals(8, db.habitDao().byId("h1")!!.target)
+                assertEquals(1, db.entryDao().all().size)
+                assertEquals(1, db.pointsLedgerDao().all().size)
+                assertEquals(listOf("streak-7"), db.badgeDao().all().map { it.badgeId })
+                assertEquals("Llamar al banco", db.taskDao().byId("t1")!!.title)
+            }
+            assertEquals(4, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
