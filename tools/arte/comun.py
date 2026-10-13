@@ -96,6 +96,15 @@ def _etiquetar(m):
     return etiquetas, tamanos
 
 
+def rellenar_huecos(mascara):
+    """La máscara con sus huecos interiores rellenos: solo queda fuera lo que llega al borde."""
+    m = np.asarray(mascara, bool)
+    etiquetas, _ = _etiquetar(~m)
+    borde = np.concatenate([etiquetas[0], etiquetas[-1], etiquetas[:, 0], etiquetas[:, -1]])
+    fuera = set(np.unique(borde).tolist()) - {0}
+    return m | ((etiquetas > 0) & ~np.isin(etiquetas, list(fuera)))
+
+
 def quitar_fondo_magenta(rgb):
     """Máscara del fondo: magenta conectado al borde más los huecos interiores grandes."""
     m = magentez(rgb)

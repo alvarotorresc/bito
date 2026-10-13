@@ -154,6 +154,14 @@ class HaloYHuecoTest(unittest.TestCase):
         img[5:15, 5:10] = SALVIA
         self.assertAlmostEqual(comun.fraccion_verde(img, (5, 5, 15, 15)), 0.5, places=6)
 
+    def test_rellenar_huecos_cierra_lo_interior_y_respeta_lo_que_toca_el_borde(self):
+        m = np.ones((10, 10), bool)
+        m[4:6, 4:6] = False  # hueco interior
+        m[0:3, 0] = False  # mordisco que toca el borde
+        r = comun.rellenar_huecos(m)
+        self.assertTrue(r[4:6, 4:6].all())
+        self.assertFalse(r[0:3, 0].any())
+
 
 if __name__ == "__main__":
     unittest.main()
