@@ -154,7 +154,7 @@ class GaleriaTest(unittest.TestCase):
         }
         posiciones = {n: cuerpo.index(t) for n, t in marcas.items()}
         orden = sorted(posiciones, key=posiciones.get)
-        self.assertEqual(orden, ["sombra", "cuerpo", "pies", "cuello", "cara", "ojos", "boca", "marcas", "cejas", "gafas", "gorro"])
+        self.assertEqual(orden, ["sombra", "cuerpo", "pies", "cara", "ojos", "boca", "marcas", "cejas", "cuello", "gafas", "gorro"])
 
     def test_la_inclinacion_del_mustio_es_un_sesgo_como_en_el_vivo(self):
         d, habi, jardin, tintes, _ = montar()
