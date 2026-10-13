@@ -15,6 +15,10 @@ import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.sistema.Tacto
+import com.alvarotc.bito.ui.sistema.crearTacto
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
+import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
 
 /** Hand-built DI (tech doc §1.4: no framework — constructors). */
 class AppContainer(context: Context) {
@@ -37,7 +41,9 @@ class AppContainer(context: Context) {
                 context.filesDir.resolve("focus.preferences_pb")
             },
         )
-    val habiSounds = HabiSounds(context, settings)
+    val sonido: MotorSonido = crearMotorSonido(context.applicationContext, settings)
+    val tacto: Tacto = crearTacto(context.applicationContext, settings)
+    val habiSounds = HabiSounds(sonido)
     val keyStore = BackupKeyStore(context.filesDir)
     val backup = BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME)
     val reconciler = PointsReconciler(domainState, rewards, settings = settings)

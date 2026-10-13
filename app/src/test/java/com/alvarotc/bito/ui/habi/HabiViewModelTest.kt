@@ -20,6 +20,7 @@ import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -115,7 +116,7 @@ class HabiViewModelTest {
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore())
         reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
-        habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
+        habiSounds = HabiSounds(MotorSonidoMudo)
     }
 
     @After

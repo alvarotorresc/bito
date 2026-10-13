@@ -6,6 +6,12 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.platform.LocalView
+import com.alvarotc.bito.ui.sistema.sonido.LocalSonido
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.theme.BitoTypography
 
 /** Acceso a los tokens, al estilo de `MaterialTheme`. */
@@ -59,17 +65,45 @@ fun esquemaDe(c: BitoColores): ColorScheme =
         scrim = c.velo.copy(alpha = 1f),
     )
 
-/** El sistema de la Bito 2: provee los tokens, el movimiento reducido y el `MaterialTheme` mapeado. La Tarea 9 le añade sonido y tacto. */
+/** Sonido y háptica en el mismo fotograma (GUIA §4). Para lo que ningún componente cubre ya. */
+class Gesto(
+    private val sonido: MotorSonido,
+    private val tacto: Tacto,
+) {
+    operator fun invoke(
+        snd: Snd? = null,
+        h: Haptica? = null,
+        intensidad: Float = 1f,
+    ) {
+        snd?.let { sonido.play(it, intensidad) }
+        h?.let(tacto::haptica)
+    }
+}
+
+@Composable
+fun rememberGesto(): Gesto {
+    val sonido = LocalSonido.current
+    val tacto = LocalTacto.current
+    return remember(sonido, tacto) { Gesto(sonido, tacto) }
+}
+
+/** El sistema de la Bito 2: provee los tokens, el movimiento reducido, el sonido, el tacto y el `MaterialTheme` mapeado. */
 @Composable
 fun BitoSistema(
     reducirAnimaciones: Boolean = false,
+    sonido: MotorSonido = MotorSonidoMudo,
+    tacto: Tacto = TactoMudo,
     content: @Composable () -> Unit,
 ) {
     val reducido = rememberReducido(reducirAnimaciones)
+    val vista = LocalView.current
+    val tactoConVista = remember(tacto, vista) { tacto.conVista(vista) }
     CompositionLocalProvider(
         LocalBitoColores provides BitoClaro,
         LocalBitoTipos provides BitoTiposBase,
         LocalReducido provides reducido,
+        LocalSonido provides sonido,
+        LocalTacto provides tactoConVista,
     ) {
         MaterialTheme(colorScheme = esquemaDe(BitoClaro), typography = BitoTypography, content = content)
     }

@@ -36,7 +36,11 @@ class MainActivity : AppCompatActivity() {
         setContent {
             val container = (application as BitoApp).container
             val ajustes by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
-            BitoTheme(reducirAnimaciones = ajustes?.reduceMotion == true) {
+            BitoTheme(
+                reducirAnimaciones = ajustes?.reduceMotion == true,
+                sonido = container.sonido,
+                tacto = container.tacto,
+            ) {
                 BitoNavHost(container)
             }
         }
@@ -59,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         AppVisibility.visible = false
+        (application as BitoApp).container.sonido.segundoPlano()
         super.onStop()
     }
 

@@ -15,6 +15,7 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -80,7 +81,7 @@ class CelebrationsViewModelTest {
         domainStateRepo = DomainStateRepository(db)
         settingsRepo = SettingsRepository(settingsStore("celebrations-vm"))
         rewardsRepo = RewardsRepository(db)
-        habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
+        habiSounds = HabiSounds(MotorSonidoMudo)
         vm =
             CelebrationsViewModel(
                 domainStateRepo,
