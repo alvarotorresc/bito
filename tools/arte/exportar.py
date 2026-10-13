@@ -61,8 +61,6 @@ def cargar_json(ruta):
 
 
 def ruta_fuente(manifiesto, ruta_manifiesto, archivo):
-    if archivo.startswith("./"):
-        return os.path.join(os.path.dirname(os.path.abspath(ruta_manifiesto)), archivo[2:])
     archivo = os.path.expanduser(archivo)
     if os.path.isabs(archivo):
         return archivo

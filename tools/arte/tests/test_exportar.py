@@ -156,13 +156,6 @@ class ExportarHabiTest(unittest.TestCase):
         self.assertGreaterEqual(lienzo[1] + lienzo[3], botas_e["top"] + botas_e["alto"])
         self.assertEqual(botas_e["top"] + botas_e["alto"], 120.0)
 
-    def test_una_ruta_que_empieza_por_punto_es_relativa_al_manifiesto(self):
-        ruta = os.path.join(self.dir, "sub", "habi.json")
-        self.assertEqual(
-            exportar.ruta_fuente({"fuentes": "/otra"}, ruta, "./fuentes/capa.png"),
-            os.path.join(self.dir, "sub", "fuentes", "capa.png"),
-        )
-
 
 class CaraDelDisfrazTest(unittest.TestCase):
     """C3: con disfraz, la cara se desplaza a su hueco y se recorta con la máscara del hueco."""
