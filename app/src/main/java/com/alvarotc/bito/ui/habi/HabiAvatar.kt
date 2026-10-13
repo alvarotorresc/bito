@@ -147,7 +147,8 @@ private data class FaceKey(
  * presenta: [spec] ya trae ánimo, personalidad y lo puesto.
  *
  * [animated] congela todo en el fotograma de reposo cuando es false (los tests de Compose y la
- * esquina de Hoy). [nudge] repite la reacción al toque desde fuera (el foco). [breath], si no es
+ * esquina de Hoy). [nudge] repite la reacción al toque desde fuera (el foco, el jardín), con la
+ * mirada hacia [nudgeTouch] (0..1 en el lienzo) si viene; si no, hacia el último toque. [breath], si no es
  * null, sustituye la respiración de reposo por la guiada y cierra los ojos con la pieza pintada; al
  * volver a null se abren con un fundido de LID_RELEASE_MS.
  */
@@ -160,6 +161,7 @@ fun HabiAvatar(
     delighted: Boolean = false,
     nudge: Int = 0,
     breath: HabiBreath? = null,
+    nudgeTouch: Offset? = null,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -374,6 +376,7 @@ fun HabiAvatar(
         var lastAnsweredNudge by remember { mutableIntStateOf(nudge) }
         LaunchedEffect(nudge) {
             if (nudge > lastAnsweredNudge) {
+                nudgeTouch?.let { lastTouch = it }
                 tapBlinkPulse?.invoke()
                 tapReactionPulse?.invoke()
             }

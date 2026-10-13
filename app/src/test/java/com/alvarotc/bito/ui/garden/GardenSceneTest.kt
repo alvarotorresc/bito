@@ -37,7 +37,10 @@ class GardenSceneTest {
     private val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
     private val garden = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.MUSHROOMS))
 
-    private fun setContent(onHabiTap: () -> Unit = {}) {
+    private fun setContent(
+        garden: GardenState = this.garden,
+        onHabiTap: () -> Unit = {},
+    ) {
         compose.setContent {
             BitoTheme {
                 GardenScene(garden = garden, spec = spec, animated = false, onHabiTap = onHabiTap, modifier = Modifier.width(400.dp))
@@ -48,7 +51,7 @@ class GardenSceneTest {
     @Test
     fun `tapping Habi in the garden reaches the callback`() {
         var taps = 0
-        setContent { taps++ }
+        setContent(onHabiTap = { taps++ })
 
         compose.onNodeWithContentDescription("Habi, doing okay").performClick()
 
@@ -85,5 +88,22 @@ class GardenSceneTest {
         compose.waitForIdle()
 
         compose.onNodeWithTag("garden-bubble-setas").assertDoesNotExist()
+    }
+
+    @Test
+    fun `tapping the lantern beside Habi opens its bubble instead of petting Habi`() {
+        var taps = 0
+        val withLantern = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN))
+        setContent(withLantern) { taps++ }
+        val widthPx = with(compose.density) { 400.dp.toPx() }
+        val heightPx = widthPx / GardenArt.SCENE_ASPECT
+        val lantern = sceneItems(withLantern, widthPx, heightPx).first { it is SceneItem.Special }.rect
+
+        compose.onNodeWithTag("garden-scene").performTouchInput {
+            click(Offset(lantern.left + lantern.width / 2f, lantern.top + lantern.height / 2f))
+        }
+
+        compose.onNodeWithText("First flame").assertExists()
+        assertEquals(0, taps)
     }
 }

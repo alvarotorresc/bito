@@ -25,6 +25,7 @@ import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -66,11 +67,13 @@ import kotlin.math.roundToInt
 private const val BUBBLE_MS = 2500L
 private const val SWAY_KICK_DEGREES = 7f
 
-// El brillo del farolillo de noche, como el de la galería: una elipse del 22 % del ancho y el 30 % del
-// alto, centrada a tres cuartos del alto del farolillo, en modo pantalla. Es luz, no arte.
+// El brillo del farolillo de noche, como el del prototipo: una elipse del 22 % del ancho y el 30 % del
+// alto, centrada 1,5 puntos a la derecha y 15 por encima del pie del farolillo, en modo pantalla. Es
+// luz, no arte.
 private const val GLOW_RADIUS_X = 0.22f
 private const val GLOW_RADIUS_Y = 0.30f
-private const val GLOW_CENTER_FROM_FOOT = 0.75f
+private const val GLOW_SHIFT_X_PCT = 1.5f
+private const val GLOW_RISE_PCT = 15f
 private const val GLOW_MID_STOP = 0.45f
 private val GlowCore = Color(0xBFFFBE6E)
 private val GlowMid = Color(0x38FFA050)
@@ -78,11 +81,12 @@ private val GlowMid = Color(0x38FFA050)
 /**
  * El jardín de Habi (pieza 1 §6.3), de atrás adelante: fondo, parcelas, plantas y especiales por
  * profundidad, Habi (con su sombra, que es capa suya), lo que queda delante de Habi, la luz en modo
- * multiplicar y, de noche, el brillo del farolillo en modo pantalla. Mustio y estación son tintes
- * y transformaciones sobre el mismo arte pintado ([GardenLook]). Tocar a Habi hace lo de siempre
- * ([onHabiTap]); tocar una planta la mece; tocar un especial abre un globito con el nombre de su
- * logro ([onSceneTap]). La composición va a una capa propia para que los modos de fusión solo
- * mezclen con la escena.
+ * multiplicar y, de noche, el farolillo encima de la luz ([itemsOverLight]) con su brillo en modo
+ * pantalla. Mustio y estación son tintes y transformaciones sobre el mismo arte pintado
+ * ([GardenLook]). Todos los toques los decide [onSceneTap]: el cuerpo de Habi hace lo de siempre
+ * ([onHabiTap], con la reacción de [HabiAvatar] hacia el dedo); una planta se mece; un especial abre
+ * un globito con el nombre de su logro. La composición va a una capa propia para que los modos de
+ * fusión solo mezclen con la escena.
  */
 @Composable
 fun GardenScene(
@@ -100,6 +104,8 @@ fun GardenScene(
     var bubble by remember { mutableStateOf<SceneItem.Special?>(null) }
     // Cada toque en un especial vuelve a contar los 2,5 s, aunque sea el mismo.
     var bubbleTick by remember { mutableIntStateOf(0) }
+    var habiNudge by remember { mutableIntStateOf(0) }
+    var habiTouch by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
     LaunchedEffect(bubble, bubbleTick) {
         if (bubble != null) {
             delay(BUBBLE_MS)
@@ -120,13 +126,49 @@ fun GardenScene(
         val habiDepth = GardenArt.habiSpot.yPct
         val plantTints = GardenLook.plantTints(garden.wilt, garden.season)
         val grassTints = GardenLook.grassTints(garden.wilt, garden.season)
+        val overLight = itemsOverLight(items, garden.light)
+        val habi = habiRect(sceneW, sceneH)
+        val habiBody = if (onHabiTap != null) habiBodyRect(sceneW, sceneH) else null
+        val currentOnHabiTap by rememberUpdatedState(onHabiTap)
 
+        Canvas(Modifier.fillMaxSize()) {
+            art.image(GardenArt.background)?.let { drawFill(it, if (grassTints.isEmpty()) null else art.filter(grassTints)) }
+            items.filter { it.depth <= habiDepth && it !in overLight }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
+        }
+
+        val density = LocalDensity.current
+        HabiAvatar(
+            spec = spec,
+            modifier =
+                Modifier
+                    .offset { IntOffset(habi.left.roundToInt(), habi.top.roundToInt()) }
+                    .size(with(density) { habi.width.toDp() }, with(density) { habi.height.toDp() }),
+            animated = animated,
+            // Los toques de verdad los recoge la capa de delante; esto deja la reacción preparada
+            // (y el toque de accesibilidad, que no pasa por la capa).
+            onTap = onHabiTap,
+            delighted = delighted,
+            nudge = habiNudge,
+            nudgeTouch = habiTouch,
+        )
+
+        // La capa de delante recoge todos los toques: la caja del lienzo de Habi es mucho mayor que su
+        // cuerpo y, si los recogiera Habi, taparía el farolillo.
         Canvas(
             Modifier
                 .fillMaxSize()
-                .pointerInput(items) {
+                .pointerInput(items, habiBody) {
                     detectTapGestures { tap ->
-                        when (val action = onSceneTap(items, tap.x, tap.y)) {
+                        when (val action = onSceneTap(items, tap.x, tap.y, habiBody)) {
+                            is SceneTap.Habi -> {
+                                habiTouch =
+                                    Offset(
+                                        ((action.x - habi.left) / habi.width).coerceIn(0f, 1f),
+                                        ((action.y - habi.top) / habi.height).coerceIn(0f, 1f),
+                                    )
+                                habiNudge++
+                                currentOnHabiTap?.invoke()
+                            }
                             is SceneTap.Sway -> {
                                 val anim = sway.getOrPut(action.plot) { Animatable(0f) }
                                 scope.launch {
@@ -143,28 +185,10 @@ fun GardenScene(
                     }
                 },
         ) {
-            art.image(GardenArt.background)?.let { drawFill(it, if (grassTints.isEmpty()) null else art.filter(grassTints)) }
-            items.filter { it.depth <= habiDepth }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
-        }
-
-        val habi = habiRect(sceneW, sceneH)
-        val density = LocalDensity.current
-        HabiAvatar(
-            spec = spec,
-            modifier =
-                Modifier
-                    .offset { IntOffset(habi.left.roundToInt(), habi.top.roundToInt()) }
-                    .size(with(density) { habi.width.toDp() }, with(density) { habi.height.toDp() }),
-            animated = animated,
-            onTap = onHabiTap,
-            delighted = delighted,
-        )
-
-        // Sin modificadores de entrada: los toques pasan a Habi y al lienzo de atrás.
-        Canvas(Modifier.fillMaxSize()) {
-            items.filter { it.depth > habiDepth }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
+            items.filter { it.depth > habiDepth && it !in overLight }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
             val (top, bottom) = GardenLook.lightGradient(garden.light)
             drawRect(Brush.verticalGradient(listOf(Color(top), Color(bottom))), blendMode = BlendMode.Multiply)
+            overLight.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
             val night = GardenLook.nightness(garden.light)
             val lantern = GardenArt.specialSpots[GardenSpecial.LANTERN.key]
             if (GardenSpecial.LANTERN in garden.specials && lantern != null && night > 0f) drawLanternGlow(lantern, night)
@@ -180,8 +204,8 @@ private fun DrawScope.drawLanternGlow(
 ) {
     val center =
         Offset(
-            size.width * lantern.xPct / 100f,
-            size.height * (lantern.yPct - lantern.heightPct * GLOW_CENTER_FROM_FOOT) / 100f,
+            size.width * (lantern.xPct + GLOW_SHIFT_X_PCT) / 100f,
+            size.height * (lantern.yPct - GLOW_RISE_PCT) / 100f,
         )
     val radiusX = size.width * GLOW_RADIUS_X
     val radiusY = size.height * GLOW_RADIUS_Y

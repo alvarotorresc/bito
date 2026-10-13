@@ -1,8 +1,10 @@
 package com.alvarotc.bito.ui.garden
 
+import com.alvarotc.bito.domain.model.GardenLight
 import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.GrowthStage
+import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.ui.habi.RigCanvas
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -109,5 +111,52 @@ class GardenGeometryTest {
     fun `plotsWith opens trees before the last plot`() {
         val plots = plotsWith(3, GrowthStage.SPROUT)
         assertEquals(listOf(GrowthStage.TREE, GrowthStage.TREE, GrowthStage.SPROUT), plots.map { it.stage })
+    }
+
+    @Test
+    fun `habi's body box is the body alone, feet on the spot`() {
+        val r = habiBodyRect(200f, 100f, GardenSpot(50f, 90f, 40f), bodyWidth = 100f, bodyHeight = 100f)
+        assertEquals(SceneRect(80f, 50f, 40f, 40f), r)
+    }
+
+    @Test
+    fun `tapping the lantern next to habi opens its bubble, not habi`() {
+        val garden = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN))
+        val items = sceneItems(garden, w, h)
+        val lantern = items.filterIsInstance<SceneItem.Special>().single()
+        val body = habiBodyRect(w, h)
+        val x = lantern.rect.left + lantern.rect.width / 2f
+        val y = lantern.rect.top + lantern.rect.height / 2f
+        // El centro del farolillo cae dentro de la caja del lienzo de Habi, pero fuera de su cuerpo.
+        assertTrue(habiRect(w, h).contains(x, y))
+        assertEquals(SceneTap.Bubble(lantern), onSceneTap(items, x, y, body))
+    }
+
+    @Test
+    fun `inside the body habi wins over what is behind, and what is in front wins over habi`() {
+        val body = habiBodyRect(w, h)
+        val cx = body.left + body.width / 2f
+        val cy = body.top + body.height / 2f
+        val over = SceneRect(cx - 10f, cy - 10f, 20f, 20f)
+        val behind = SceneItem.Special(GardenSpecial.LANTERN, 0, over, GardenArt.habiSpot.yPct - 10f)
+        val front = SceneItem.Special(GardenSpecial.MUSHROOMS, 0, over, GardenArt.habiSpot.yPct + 5f)
+        assertEquals(SceneTap.Habi(cx, cy), onSceneTap(listOf(behind), cx, cy, body))
+        assertEquals(SceneTap.Bubble(front), onSceneTap(listOf(behind, front), cx, cy, body))
+        // Sin Habi que tocar, el toque pasa a lo de detrás.
+        assertEquals(SceneTap.Bubble(behind), onSceneTap(listOf(behind), cx, cy, habiBody = null))
+    }
+
+    @Test
+    fun `at night the lantern goes over the light, never by day nor the other specials`() {
+        val night = GardenLight(LightPhase.NOCHE, LightPhase.NOCHE, LightPhase.NOCHE, 0f)
+        val day = GardenLight(LightPhase.DIA, LightPhase.DIA, LightPhase.DIA, 0f)
+        val garden = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN, GardenSpecial.MUSHROOMS))
+        val items = sceneItems(garden, w, h)
+        val over = itemsOverLight(items, night)
+        assertEquals(listOf(GardenSpecial.LANTERN), over.map { (it as SceneItem.Special).special })
+        assertTrue(itemsOverLight(items, day).isEmpty())
+        // Sin fundido, como el prototipo: cuenta la fase, no la transición.
+        assertTrue(itemsOverLight(items, GardenLight(LightPhase.TARDE, LightPhase.TARDE, LightPhase.NOCHE, 0.9f)).isEmpty())
+        assertEquals(1, itemsOverLight(items, GardenLight(LightPhase.NOCHE, LightPhase.TARDE, LightPhase.NOCHE, 0.1f)).size)
     }
 }
