@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.habi
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -63,6 +64,32 @@ class HabiAvatarTest {
             }
         }
 
+        compose.onNodeWithContentDescription("Habi, feeling great").assertExists()
+    }
+
+    @Test
+    fun `a fully dressed avatar and a costumed one compose and keep their description`() {
+        compose.setContent {
+            BitoTheme {
+                Column {
+                    HabiAvatar(
+                        spec =
+                            HabiSpec(
+                                Mood.DRAMATIC,
+                                Personality.SARGENTO,
+                                EquippedSet(head = "head-copa", face = "face-gafas-sol", neck = "neck-bufanda", feet = "feet-botas-agua"),
+                            ),
+                        animated = false,
+                    )
+                    HabiAvatar(
+                        spec = HabiSpec(Mood.RADIANT, Personality.CHEERLEADER, EquippedSet(costume = "costume-dinosaurio")),
+                        animated = false,
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithContentDescription("Habi, having a hard time").assertExists()
         compose.onNodeWithContentDescription("Habi, feeling great").assertExists()
     }
 }
