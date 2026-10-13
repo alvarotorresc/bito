@@ -97,7 +97,7 @@ class TodayWidget : GlanceAppWidget() {
                         prefs.personality,
                         owned,
                     )
-                WidgetData(state, renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX))
+                WidgetData(state, renderHabiBitmap(context, state.spec, HABI_BITMAP_SIZE_PX))
             }.conflate().flowOn(Dispatchers.Default)
         // First paint stays synchronous-ish: seed with a real emission so the widget never shows
         // an empty frame while the flow warms up.

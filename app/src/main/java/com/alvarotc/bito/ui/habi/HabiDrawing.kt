@@ -1,25 +1,18 @@
 package com.alvarotc.bito.ui.habi
 
-import android.graphics.Bitmap
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Canvas
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.lerp
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.LayoutDirection
 import com.alvarotc.bito.domain.model.CheekStyle
 import com.alvarotc.bito.domain.model.FaceParams
 import com.alvarotc.bito.domain.model.Mood
@@ -371,31 +364,6 @@ fun DrawScope.drawHabi(
     drawMouth(vp, face, resolved.smirkProgress, resolved.mouthWobble)
     drawUpper(vp, spec.equipped.head)
     drawLower(vp, spec.equipped.feet)
-}
-
-/**
- * Offscreen render for consumers that need a plain bitmap (the widget, T15). Transparent background.
- *
- * Real Android handles the internal `Bitmap.createBitmap(DisplayMetrics, ...)` overload Compose's
- * `ImageBitmap(w, h)` calls just fine. Robolectric does not, under its default LEGACY graphics mode:
- * that overload isn't shadowed there and falls through to a real native call that fails. Any
- * Robolectric test that pixel-checks this function's output needs
- * `@GraphicsMode(GraphicsMode.Mode.NATIVE)` (see HabiDrawingTest) — without it, this call crashes.
- */
-fun renderHabiBitmap(
-    spec: HabiSpec,
-    sizePx: Int,
-): Bitmap {
-    val imageBitmap = ImageBitmap(sizePx, sizePx)
-    CanvasDrawScope().draw(
-        Density(1f),
-        LayoutDirection.Ltr,
-        Canvas(imageBitmap),
-        Size(sizePx.toFloat(), sizePx.toFloat()),
-    ) {
-        drawHabi(spec)
-    }
-    return imageBitmap.asAndroidBitmap()
 }
 
 /** The body/pattern silhouette — extracted so drawBody and drawPattern can't drift apart. */

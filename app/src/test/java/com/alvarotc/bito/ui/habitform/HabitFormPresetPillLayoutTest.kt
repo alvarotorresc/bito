@@ -48,7 +48,7 @@ import java.io.File
  * screen. Split from [HabitFormScreenTest] because honest answers need
  * [GraphicsMode.Mode.NATIVE]: the suite's default LEGACY mode stubs glyph advances to ~1px
  * (verified empirically — "Daily" measured 5px wide), which would green-light any overflow.
- * Same opt-in, same reason, as HabiDrawingTest.
+ * Same opt-in, same reason, as HabiPaintingTest.
  */
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)

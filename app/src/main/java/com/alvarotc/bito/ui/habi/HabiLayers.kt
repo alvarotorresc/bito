@@ -104,14 +104,15 @@ fun marksOf(personality: Personality): List<String> = HabiFaceTable.marks.getVal
  * Habi como lista de capas en orden de pintado (§3.2). Con disfraz, la pieza del disfraz sustituye
  * al cuerpo sin tinte y se omiten pies, cuello, gafas y cabeza; el color de ojos se mantiene. La
  * cara se desplaza el [CostumeFace] del disfraz y sus capas van `masked`.
- * Las claves que no estén en el atlas se las salta el pintor.
+ * Las claves que no estén en el atlas se las salta el pintor; un disfraz sin pieza se ignora entero,
+ * para que Habi no se quede sin cuerpo.
  */
 internal fun habiLayers(
     spec: HabiSpec,
     look: HabiLook = HabiLook(),
 ): List<HabiLayer> {
     val equipped = spec.equipped
-    val costume = equipped.costume
+    val costume = equipped.costume?.takeIf { it in HabiAtlas.pieces }
     val costumeFace = costume?.let { HabiAtlas.costumeFaces[it] }
     val masked = costumeFace != null
     val face = faceOf(spec.mood, spec.personality, look.delighted, spec.closedEyes)
