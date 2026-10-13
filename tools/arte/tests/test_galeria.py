@@ -156,11 +156,11 @@ class GaleriaTest(unittest.TestCase):
         orden = sorted(posiciones, key=posiciones.get)
         self.assertEqual(orden, ["sombra", "cuerpo", "pies", "cuello", "cara", "ojos", "boca", "marcas", "cejas", "gafas", "gorro"])
 
-    def test_la_inclinacion_del_mustio_es_un_giro_no_un_sesgo(self):
+    def test_la_inclinacion_del_mustio_es_un_sesgo_como_en_el_vivo(self):
         d, habi, jardin, tintes, _ = montar()
         html = open(generar(d, habi, jardin, tintes)[1], encoding="utf-8").read()
-        self.assertIn("rotate(${-mp.inclina * mustio}deg)", html)
-        self.assertNotIn("skewX", html)
+        self.assertIn("scaleY(${1 - mp.encoge * mustio}) skewX(${-mp.inclina * mustio}deg)", html)
+        self.assertNotIn("rotate(${-mp.inclina", html)
 
 
 INDICE = {

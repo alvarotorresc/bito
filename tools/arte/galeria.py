@@ -465,7 +465,7 @@ function escena({etapa = 5, abiertas = 6, mustio = 0, luz = 'DIA', estacion = nu
     if (it.planta && (mustio || tEstacion)) {
       const m = mustio && mp ? `saturate(${1 - mp.saturacion * mustio}) sepia(${mp.sepia * mustio}) brightness(${1 - mp.brillo * mustio})` : '';
       img.style.filter = unir(m, tEstacion);
-      if (mustio && mp) img.style.transform = `translateX(-50%) rotate(${-mp.inclina * mustio}deg) scaleY(${1 - mp.encoge * mustio})`;
+      if (mustio && mp) img.style.transform = `translateX(-50%) scaleY(${1 - mp.encoge * mustio}) skewX(${-mp.inclina * mustio}deg)`;
     }
     s.appendChild(img);
   });
