@@ -9,6 +9,7 @@ import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.ui.sistema.Gabarito
 
 @OptIn(ExperimentalTextApi::class)
 private fun outfitFont(weight: FontWeight) =
@@ -18,6 +19,7 @@ private fun outfitFont(weight: FontWeight) =
         variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
     )
 
+@Suppress("unused")
 val Outfit =
     FontFamily(
         outfitFont(FontWeight.Normal),
@@ -32,35 +34,35 @@ val BitoTypography =
         // Número héroe (36-40 bold)
         displayLarge =
             TextStyle(
-                fontFamily = Outfit,
+                fontFamily = Gabarito,
                 fontWeight = FontWeight.Bold,
                 fontSize = 40.sp,
             ),
         // Título de pantalla (26 semibold)
         headlineLarge =
             TextStyle(
-                fontFamily = Outfit,
+                fontFamily = Gabarito,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 26.sp,
             ),
         // Título de tarjeta (18 semibold)
         titleMedium =
             TextStyle(
-                fontFamily = Outfit,
+                fontFamily = Gabarito,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 18.sp,
             ),
         // Cuerpo (15 regular)
         bodyLarge =
             TextStyle(
-                fontFamily = Outfit,
+                fontFamily = Gabarito,
                 fontWeight = FontWeight.Normal,
                 fontSize = 15.sp,
             ),
         // Meta/unidades (13-14 medium, tinta-suave)
         labelMedium =
             TextStyle(
-                fontFamily = Outfit,
+                fontFamily = Gabarito,
                 fontWeight = FontWeight.Medium,
                 fontSize = 13.sp,
             ),
