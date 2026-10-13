@@ -9,13 +9,13 @@ internal object HabiAtlas {
     const val BODY_HEIGHT = 1404.0f
 
     /** Alto del lienzo a la resolución exportada: la referencia del submuestreo. */
-    const val SOURCE_CANVAS_PX = 989.2f
+    const val SOURCE_CANVAS_PX = 1017.7f
 
     /**
      * El cuerpo ocupa (0, 0)-(BODY_WIDTH, BODY_HEIGHT); el resto es el margen calculado, simétrico en
      * horizontal para que centrar el lienzo centre a Habi.
      */
-    val canvas = RigCanvas(left = -212.0f, top = -232.0f, width = 1556.0f, height = 1736.0f)
+    val canvas = RigCanvas(left = -212.0f, top = -232.0f, width = 1556.0f, height = 1786.0f)
 
     val pieces: Map<String, AtlasPiece> =
         mapOf(
@@ -122,15 +122,15 @@ internal object HabiAtlas {
             "head-copa" to AtlasPiece(R.drawable.habi_head_copa, 326.0f, -232.0f, 411.0f, 329.0f),
             "head-flor" to AtlasPiece(R.drawable.habi_head_flor, 650.0f, -24.0f, 272.0f, 269.0f),
             "head-corona" to AtlasPiece(R.drawable.habi_head_corona, 282.0f, -226.0f, 494.0f, 322.0f),
-            "face-gafas-redondas" to AtlasPiece(R.drawable.habi_face_gafas_redondas, 0.0f, 1.0f, 1127.0f, 1396.0f),
+            "face-gafas-redondas" to AtlasPiece(R.drawable.habi_face_gafas_redondas, -10.0f, 1.0f, 1137.0f, 1396.0f),
             "face-gafas-sol" to AtlasPiece(R.drawable.habi_face_gafas_sol, -8.0f, 432.0f, 1074.0f, 315.0f),
-            "neck-bufanda" to AtlasPiece(R.drawable.habi_neck_bufanda, 0.0f, 1.0f, 1124.0f, 1394.0f),
+            "neck-bufanda" to AtlasPiece(R.drawable.habi_neck_bufanda, -30.0f, 1.0f, 1154.0f, 1394.0f),
             "neck-panuelo" to AtlasPiece(R.drawable.habi_neck_panuelo, -120.0f, 480.0f, 1203.0f, 547.0f),
             "neck-collar-flores" to AtlasPiece(R.drawable.habi_neck_collar_flores, -72.0f, 472.0f, 1212.0f, 514.0f),
             "neck-panuelo-brasa" to AtlasPiece(R.drawable.habi_neck_panuelo_brasa, -152.0f, 520.0f, 1242.0f, 587.0f),
             "feet-calcetines" to AtlasPiece(R.drawable.habi_feet_calcetines, 258.0f, 1270.0f, 604.0f, 209.0f),
-            "feet-botas-agua" to AtlasPiece(R.drawable.habi_feet_botas_agua, 262.0f, 1296.0f, 642.0f, 208.0f),
-            "feet-zapatillas" to AtlasPiece(R.drawable.habi_feet_zapatillas, 270.0f, 1280.0f, 638.0f, 224.0f),
+            "feet-botas-agua" to AtlasPiece(R.drawable.habi_feet_botas_agua, 262.0f, 1296.0f, 642.0f, 258.0f),
+            "feet-zapatillas" to AtlasPiece(R.drawable.habi_feet_zapatillas, 270.0f, 1280.0f, 638.0f, 230.0f),
             "costume-calabaza" to AtlasPiece(R.drawable.costume_calabaza, -1.0f, -131.0f, 1130.0f, 1525.0f),
             "costume-reno" to AtlasPiece(R.drawable.costume_reno, 0.0f, -219.0f, 1128.0f, 1613.0f),
             "costume-dinosaurio" to AtlasPiece(R.drawable.costume_dinosaurio, -212.0f, -117.0f, 1340.0f, 1512.0f),

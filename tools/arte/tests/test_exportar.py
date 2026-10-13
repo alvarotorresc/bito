@@ -42,7 +42,7 @@ class ExportarHabiTest(unittest.TestCase):
         ojo[4, 4] = (255, 255, 255, 255)
         png(os.path.join(self.dir, "ojo.png"), ojo)
         gorro = np.zeros((150, 100, 4))
-        gorro[0:20, 30:70] = (220, 160, 40, 255)
+        gorro[2:22, 30:70] = (220, 160, 40, 255)
         png(os.path.join(self.dir, "gorro.png"), gorro)
         self.habi = {
             "fuentes": self.dir,
@@ -52,7 +52,7 @@ class ExportarHabiTest(unittest.TestCase):
                 {"clave": "cuerpo", "archivo": "cuerpo.png", "origen": [0, 0]},
                 {"clave": "sombra", "generada": "sombra", "caja": [-5, 110, 110, 20]},
                 {"clave": "ojo-abierto-i", "archivo": "ojo.png", "centro": [30, 40], "escala": 2, "iris": True},
-                {"clave": "head-gorro-lana", "archivo": "gorro.png", "origen": [0, -30]},
+                {"clave": "head-gorro-lana", "archivo": "gorro.png", "origen": [0, -32]},
                 {"clave": "costume-calabaza", "archivo": "cuerpo.png", "origen": [0, 0], "provisional": True},
             ],
         }
@@ -133,6 +133,35 @@ class ExportarHabiTest(unittest.TestCase):
         self.habi["piezas"][2] = {"clave": "ojo-abierto-i", "archivo": "ojo.png"}
         with self.assertRaises(SystemExit):
             exportar.exportar_habi(self.habi, self.ruta, self.res, 90, {"piezas": {}})
+
+    # Un accesorio que llega al borde de su capa quedó cortado por el marco al extraerlo (las botas
+    # de agua perdían la suela): el lienzo no puede recuperar lo que la capa ya no tiene.
+    def test_un_accesorio_que_toca_el_borde_de_su_capa_es_un_error(self):
+        botas = np.zeros((150, 100, 4))
+        botas[130:150, 30:70] = (240, 200, 40, 255)
+        png(os.path.join(self.dir, "botas.png"), botas)
+        self.habi["piezas"].append({"clave": "feet-botas-agua", "archivo": "botas.png", "origen": [0, -30]})
+        with self.assertRaises(SystemExit) as error:
+            exportar.exportar_habi(self.habi, self.ruta, self.res, 90)
+        self.assertIn("feet-botas-agua", str(error.exception))
+        self.assertIn("abajo", str(error.exception))
+
+    def test_un_accesorio_con_margen_en_su_capa_cabe_en_el_lienzo(self):
+        botas = np.zeros((160, 100, 4))
+        botas[130:150, 30:70] = (240, 200, 40, 255)
+        png(os.path.join(self.dir, "botas.png"), botas)
+        self.habi["piezas"].append({"clave": "feet-botas-agua", "archivo": "botas.png", "origen": [0, -30]})
+        entradas, lienzo, _ = exportar.exportar_habi(self.habi, self.ruta, self.res, 90)
+        botas_e = next(e for e in entradas if e["clave"] == "feet-botas-agua")
+        self.assertGreaterEqual(lienzo[1] + lienzo[3], botas_e["top"] + botas_e["alto"])
+        self.assertEqual(botas_e["top"] + botas_e["alto"], 120.0)
+
+    def test_una_ruta_que_empieza_por_punto_es_relativa_al_manifiesto(self):
+        ruta = os.path.join(self.dir, "sub", "habi.json")
+        self.assertEqual(
+            exportar.ruta_fuente({"fuentes": "/otra"}, ruta, "./fuentes/capa.png"),
+            os.path.join(self.dir, "sub", "fuentes", "capa.png"),
+        )
 
 
 class CaraDelDisfrazTest(unittest.TestCase):

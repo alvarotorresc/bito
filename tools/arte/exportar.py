@@ -45,6 +45,7 @@ KT_JARDIN = os.path.join(RAIZ, "app", "src", "main", "java", "com", "alvarotc", 
 PREFIJOS = ("habi_", "costume_", "garden_")
 LIMITE_BYTES = 6 * 1024 * 1024
 UMBRAL_ALFA = 8
+ACCESORIOS = ("head-", "face-", "neck-", "feet-")
 CABECERA = "// Generado por tools/arte/exportar.py. No editar a mano.\n"
 MAX_LINEA = 120
 # Centro de la cara en coordenadas del cuerpo: un hueco centrado aquí no desplaza la cara.
@@ -60,6 +61,8 @@ def cargar_json(ruta):
 
 
 def ruta_fuente(manifiesto, ruta_manifiesto, archivo):
+    if archivo.startswith("./"):
+        return os.path.join(os.path.dirname(os.path.abspath(ruta_manifiesto)), archivo[2:])
     archivo = os.path.expanduser(archivo)
     if os.path.isabs(archivo):
         return archivo
@@ -82,6 +85,13 @@ def caja_alfa(img):
     if len(xs) == 0:
         return None
     return int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1
+
+
+def bordes_tocados(img):
+    """Bordes (arriba, abajo, izquierda, derecha) de la imagen a los que llega el contenido."""
+    alfa = np.asarray(img)[..., 3] > UMBRAL_ALFA
+    bordes = {"arriba": alfa[0], "abajo": alfa[-1], "izquierda": alfa[:, 0], "derecha": alfa[:, -1]}
+    return [nombre for nombre, linea in bordes.items() if linea.any()]
 
 
 def mascara_iris(img):
@@ -197,6 +207,12 @@ def exportar_habi(manifiesto, ruta_manifiesto, dir_res, calidad, caras=None):
             caja = caja_alfa(original)
             if caja is None:
                 raise SystemExit(f"{clave}: la pieza está vacía")
+            if clave.startswith(ACCESORIOS):
+                # La capa de un accesorio va en un marco con margen: si llega al borde, el marco la cortó
+                # al extraerla y el lienzo no puede recuperar lo que falta.
+                tocados = bordes_tocados(original)
+                if tocados:
+                    raise SystemExit(f"{clave}: la capa llega al borde ({', '.join(tocados)}); está cortada")
             sitio, e = _posicion(pieza, caras)
             if "centro" in sitio:
                 x0, y0 = sitio["centro"][0] - original.width * e / 2, sitio["centro"][1] - original.height * e / 2

@@ -238,4 +238,44 @@ class HabiPaintingTest {
         val sampled = HabiArt.get(context).image(body.res, sampleSizeFor(96f, drawHeightDp = 0f))!!
         assertTrue(sampled.height < full.height)
     }
+
+    /** Mayor alfa de las filas y columnas del borde de [bitmap]. */
+    private fun edgeAlpha(bitmap: Bitmap): Map<String, Int> {
+        val w = bitmap.width
+        val h = bitmap.height
+        return mapOf(
+            "top" to (0 until w).maxOf { Color.alpha(bitmap.getPixel(it, 0)) },
+            "bottom" to (0 until w).maxOf { Color.alpha(bitmap.getPixel(it, h - 1)) },
+            "left" to (0 until h).maxOf { Color.alpha(bitmap.getPixel(0, it)) },
+            "right" to (0 until h).maxOf { Color.alpha(bitmap.getPixel(w - 1, it)) },
+        )
+    }
+
+    // Una capa que el marco cortó al extraerla llega al borde de su pieza con pintura opaca (las
+    // botas de agua sin suela); un borde de verdad se desvanece.
+    @Test
+    fun `no accessory or costume piece arrives cut at its edge`() {
+        val prefixes = listOf("head-", "face-", "neck-", "feet-", "costume-")
+        val pieces = HabiAtlas.pieces.filterKeys { key -> prefixes.any { key.startsWith(it) } }
+        assertTrue(pieces.isNotEmpty())
+        val cut =
+            pieces.mapNotNull { (key, piece) ->
+                val image = HabiArt.get(context).image(piece.res, 1)!!.asAndroidBitmap()
+                val edges = edgeAlpha(image).filterValues { it >= OPAQUE_EDGE }
+                if (edges.isEmpty()) null else "$key ${edges.keys}"
+            }
+        assertEquals(emptyList<String>(), cut)
+    }
+
+    @Test
+    fun `the soles of every shoe fit inside the rendered Habi`() {
+        for (feet in listOf("feet-calcetines", "feet-botas-agua", "feet-zapatillas")) {
+            val shod = render(plain.copy(equipped = EquippedSet(feet = feet)))
+            assertTrue("$feet llega cortado al borde de abajo", edgeAlpha(shod).getValue("bottom") < OPAQUE_EDGE)
+        }
+    }
+
+    private companion object {
+        const val OPAQUE_EDGE = 128
+    }
 }
