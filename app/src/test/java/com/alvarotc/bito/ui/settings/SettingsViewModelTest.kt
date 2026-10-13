@@ -9,6 +9,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.model.HabitStatus
 import kotlinx.coroutines.CoroutineScope
@@ -288,4 +289,49 @@ class SettingsViewModelTest {
             assertEquals("Fumar", vm.archivedHabits.value.single().name)
             assertEquals(20_010, vm.archivedHabits.value.single().archivedOnDay)
         }
+
+    @Test
+    fun `piece 2 setters clamp and write`() =
+        runTest {
+            advanceUntilIdle()
+            vm.setVolHabi(12)
+            vm.setHabiNight(18 * 60)
+            vm.setHabiMorning(12 * 60)
+            vm.setPomodoro(focus = 52, short = 0, long = 50, rounds = 9, autoBreak = false)
+            vm.setDndFrom(23 * 60 + 10)
+            vm.setSessionBackground(SessionBackground.BROWN)
+            vm.setReduceMotion(true)
+            advanceUntilIdle()
+            val s = vm.state.value!!
+            assertEquals(10, s.volHabi)
+            assertEquals(19 * 60, s.reviewTimeMinutes)
+            assertEquals(11 * 60, s.habiMorningMinutes)
+            assertEquals(listOf(50, 1, 45, 8), listOf(s.pomoFocus, s.pomoShort, s.pomoLong, s.pomoRounds))
+            assertEquals(false, s.pomoAutoBreak)
+            assertEquals(23 * 60, s.dndFromMinutes)
+            assertEquals(SessionBackground.BROWN, s.sessionBackground)
+            assertEquals(true, s.reduceMotion)
+        }
+
+    @Test
+    fun `reactivate brings an archived habit back and rearchive undoes it on the same day`() =
+        runTest {
+            val id = seedArchivedHabit(archivedOnDay = 20_000)
+            advanceUntilIdle()
+            val archived = vm.archivedHabits.value.single { it.id == id }
+            vm.reactivate(archived)
+            advanceUntilIdle()
+            assertTrue(vm.archivedHabits.value.none { it.id == id })
+            vm.rearchive(archived)
+            advanceUntilIdle()
+            assertEquals(20_000, vm.archivedHabits.value.single { it.id == id }.archivedOnDay)
+        }
+
+    /** Crea un hábito activo y lo archiva en [archivedOnDay]; devuelve su id. */
+    private suspend fun seedArchivedHabit(archivedOnDay: Int): String {
+        val habits = HabitsRepository(db)
+        habits.create(habitEntity(id = "archived-$archivedOnDay", name = "Leer"))
+        habits.archive("archived-$archivedOnDay", archivedOnDay, 0L)
+        return "archived-$archivedOnDay"
+    }
 }

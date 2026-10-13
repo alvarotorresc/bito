@@ -17,6 +17,7 @@ import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pauseIntervalEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.data.targetChangeEntity
@@ -245,12 +246,46 @@ class BackupRoundTripTest {
         runTest {
             seedEverything()
             val before = snapshotAllTables()
-            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 4", "\"schemaVersion\": 3")
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 5", "\"schemaVersion\": 3")
 
             assertFailsWith<BackupFormatException> { backup.import(older) }
 
             assertEquals(before, snapshotAllTables())
             assertEquals(seededSettings, settingsRepo.settings.first())
+        }
+
+    @Test
+    fun `a version 4 backup is rejected before anything is wiped`() =
+        runTest {
+            seedEverything()
+            val before = snapshotAllTables()
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 5", "\"schemaVersion\": 4")
+
+            assertFailsWith<BackupFormatException> { backup.import(older) }
+
+            assertEquals(before, snapshotAllTables())
+            assertEquals(seededSettings, settingsRepo.settings.first())
+        }
+
+    @Test
+    fun `the piece 2 settings travel in the backup`() =
+        runTest {
+            val custom =
+                Settings(
+                    habiMorningMinutes = 7 * 60, dndEnabled = true, dndFromMinutes = 22 * 60, dndToMinutes = 8 * 60,
+                    pomoFocus = 50, pomoShort = 10, pomoLong = 30, pomoRounds = 3, pomoAutoBreak = false,
+                    soundEnabled = false, volHabi = 2, volEffects = 3, volAmbient = 4, vibStrength = 5,
+                    sessionBackground = SessionBackground.CAFE, reduceMotion = true,
+                )
+            settingsRepo.update { custom }
+            val json = backup.exportJson(nowMillis = 1_000L)
+            settingsRepo.update { Settings() }
+            backup.import(json)
+            val back = settingsRepo.settings.first()
+            assertEquals(
+                custom.copy(lastAutoBackupAtMillis = back.lastAutoBackupAtMillis, lastAutoBackupError = back.lastAutoBackupError),
+                back,
+            )
         }
 
     @Test
