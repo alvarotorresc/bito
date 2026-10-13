@@ -253,4 +253,25 @@ class HabiLayersTest {
         val fit = rigFit(canvas.width, canvas.height)
         assertEquals(-canvas.left, fit.originX, delta)
     }
+
+    @Test
+    fun `sleep cap is not painted by default`() {
+        val layers = habiLayers(HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()), HabiLook())
+        assertTrue(layers.none { it.key == SLEEP_CAP_KEY })
+    }
+
+    @Test
+    fun `sleep cap goes last, over whatever the head wears`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(head = "head-corona"), sleepCap = true)
+        val layers = habiLayers(spec, HabiLook())
+        assertEquals(SLEEP_CAP_KEY, layers.last().key)
+        assertEquals(HabiPart.HEAD, layers.last().part)
+        assertTrue(layers.any { it.key == "head-corona" })
+    }
+
+    @Test
+    fun `sleep cap is skipped under a costume`() {
+        val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(costume = "costume-calabaza"), sleepCap = true)
+        assertTrue(habiLayers(spec, HabiLook()).none { it.key == SLEEP_CAP_KEY })
+    }
 }

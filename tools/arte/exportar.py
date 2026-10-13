@@ -264,6 +264,27 @@ def _pieza_jardin(manifiesto, ruta_manifiesto, archivo, recurso, dir_res, escala
     return {"recurso": recurso, "aspecto": img.width / img.height, "alto_fuente": alto_fuente}
 
 
+def exportar_moneda(manifiesto, dir_res, calidad):
+    """La monedita (spec pieza 2, §7.1): recorta al alfa, centra en un cuadrado y exporta cada tamaño.
+
+    No lleva prefijo de PREFIJOS: no la borra la limpieza de piezas de Habi y del jardín.
+    """
+    fuente = Image.open(os.path.expanduser(manifiesto["fuente"])).convert("RGBA")
+    pieza = fuente.crop(fuente.getchannel("A").point(lambda a: 255 if a > 8 else 0).getbbox())
+    lado = max(pieza.size)
+    cuadrado = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+    cuadrado.paste(pieza, ((lado - pieza.width) // 2, (lado - pieza.height) // 2))
+    salidas = []
+    for s in manifiesto["salidas"]:
+        img = cuadrado.resize((s["px"], s["px"]), Image.LANCZOS)
+        if s.get("nitidez"):
+            img = img.filter(ImageFilter.UnsharpMask(radius=1, percent=60, threshold=2))
+        ruta = os.path.join(dir_res, s["archivo"])
+        img.save(ruta, "WEBP", quality=calidad, method=6)
+        salidas.append(ruta)
+    return salidas
+
+
 def exportar_jardin(manifiesto, ruta_manifiesto, dir_res, calidad):
     escala = float(manifiesto["escala_piezas"])
     fondo = Image.open(ruta_fuente(manifiesto, ruta_manifiesto, manifiesto["fondo"]["archivo"])).convert("RGB")
@@ -583,6 +604,7 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="Exporta el arte de Habi y del jardín al proyecto Android.")
     p.add_argument("--habi", default=os.path.join(AQUI, "habi.json"))
     p.add_argument("--jardin", default=os.path.join(AQUI, "jardin.json"))
+    p.add_argument("--moneda", default=os.path.join(AQUI, "moneda.json"))
     p.add_argument("--tintes", default=os.path.join(AQUI, "tintes.json"))
     p.add_argument("--caras", default=os.path.join(AQUI, "caras.json"))
     p.add_argument("--res", default=RES)
@@ -608,6 +630,7 @@ def main(argv=None):
             os.remove(viejo)
     entradas, lienzo, fuente_px = exportar_habi(habi, args.habi, args.res, args.calidad, caras)
     datos = exportar_jardin(jardin, args.jardin, args.res, args.calidad)
+    exportar_moneda(cargar_json(args.moneda), args.res, args.calidad)
     escribir(os.path.join(KT_HABI, "HabiAtlas.kt"), kotlin_atlas(entradas, lienzo, habi["cuerpo"], fuente_px))
     escribir(os.path.join(KT_HABI, "HabiTintTable.kt"), kotlin_tintes(tintes))
     escribir(os.path.join(KT_HABI, "HabiFaceTable.kt"), kotlin_caras(caras))
