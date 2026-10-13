@@ -400,12 +400,12 @@ class HabitFormViewModelTest {
     @Test
     fun `the real equipped set reaches the form's avatar state`() =
         runTest {
-            rewardsRepo.acquire(CustomizationItemEntity("upper-lazo", CustomizationCategory.UPPER, fixedNow, equipped = true))
+            rewardsRepo.acquire(CustomizationItemEntity("neck-collar-flores", CustomizationCategory.NECK, fixedNow, equipped = true))
             val vm = newViewModel()
 
             backgroundScope.launch { vm.equipped.collect() }
             advanceUntilIdle()
 
-            assertEquals("upper-lazo", vm.equipped.value.upper)
+            assertEquals("neck-collar-flores", vm.equipped.value.neck)
         }
 }

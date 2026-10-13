@@ -1,13 +1,17 @@
 package com.alvarotc.bito.data.repo
 
+import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.BadgeEngine
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.HabiEngine
 import com.alvarotc.bito.domain.PerfectDays
 import com.alvarotc.bito.domain.PointsEngine
+import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsReason
+import kotlinx.coroutines.flow.first
 
 /**
  * What a [PointsReconciler.reconcile] pass granted: nothing here was owned
@@ -34,6 +38,8 @@ class PointsReconciler(
     private val domainState: DomainStateRepository,
     private val rewards: RewardsRepository,
     private val economy: EconomyConfig = EconomyConfig(),
+    // Opcional para no tocar los tests que no miran el jardín; AppContainer siempre lo pasa.
+    private val settings: SettingsRepository? = null,
 ) {
     suspend fun reconcile(
         today: LogicalDay,
@@ -51,6 +57,23 @@ class PointsReconciler(
         val missingBadges = BadgeEngine.missingBadges(BadgeEngine.earnedBadges(state, today, perfectDays), rewards.unlockedBadgeIds())
         if (missingBadges.isNotEmpty()) rewards.unlockBadges(missingBadges, nowMillis)
 
+        settings?.let { recordGardenWater(it, state, today) }
+
         return ReconcileResult(newEvents = missing, newItems = missingItems, newBadges = missingBadges)
+    }
+
+    /**
+     * La marca de agua máxima del jardín (D11). Corre tras cada escritura, igual que los puntos:
+     * así, corregir un día pasado (desmarcar, borrar un hábito, bajar un objetivo) nunca baja una
+     * etapa que ya se vio, abra o no la pantalla de Habi. Solo escribe si la marca sube.
+     */
+    private suspend fun recordGardenWater(
+        settings: SettingsRepository,
+        state: DomainState,
+        today: LogicalDay,
+    ) {
+        val water = GardenEngine.totalWater(state, today)
+        if (water <= settings.settings.first().gardenWaterHighMark) return
+        settings.update { if (water > it.gardenWaterHighMark) it.copy(gardenWaterHighMark = water) else it }
     }
 }

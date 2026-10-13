@@ -5,6 +5,7 @@ import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
+import java.time.LocalDate
 
 /** Store item ladder: the first matching state wins (equipped > owned > buyable > locked). */
 sealed interface StoreItemState {
@@ -17,6 +18,9 @@ sealed interface StoreItemState {
     data class MissingPoints(val missing: Int) : StoreItemState
 
     data class Locked(val requiredStreak: Int) : StoreItemState
+
+    /** Un artículo de temporada que no se tiene y hoy no está a la venta (§7). */
+    data object OutOfSeason : StoreItemState
 }
 
 /**
@@ -41,17 +45,19 @@ object HabiEngine {
         ownedIds: Set<String>,
     ): Set<String> = earned - ownedIds
 
+    /** La escalera de la tienda: puesto > tenido > fuera de temporada > a la venta > bloqueado. */
     fun storeStateOf(
         item: CatalogItem,
         ownedIds: Set<String>,
         equipped: EquippedSet,
         balance: Int,
+        date: LocalDate,
     ): StoreItemState {
-        val worn = item.id in setOf(equipped.bodyColor, equipped.pattern, equipped.eyeColor, equipped.upper, equipped.lower)
         val owned = item.default || item.id in ownedIds
         return when {
-            worn -> StoreItemState.Equipped
+            item.id in equipped.worn -> StoreItemState.Equipped
             owned -> StoreItemState.Owned
+            !HabiCatalog.isOnSale(item, date) -> StoreItemState.OutOfSeason
             item.price != null ->
                 if (balance >= item.price) StoreItemState.Affordable else StoreItemState.MissingPoints(item.price - balance)
             else -> StoreItemState.Locked(item.requiredStreak!!)

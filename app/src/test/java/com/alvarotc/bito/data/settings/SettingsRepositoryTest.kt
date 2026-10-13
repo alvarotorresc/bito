@@ -58,6 +58,7 @@ class SettingsRepositoryTest {
             assertEquals(22 * 60, settings.breathingReminderTimeMinutes)
             assertFalse(settings.breathingMusicEnabled)
             assertEquals(BreathingMode.CALM, settings.breathingLastMode)
+            assertEquals(0.0, settings.gardenWaterHighMark, 0.0)
         }
 
     @Test
@@ -93,6 +94,7 @@ class SettingsRepositoryTest {
                     breathingReminderTimeMinutes = 7 * 60 + 15,
                     breathingMusicEnabled = true,
                     breathingLastMode = BreathingMode.SLEEP,
+                    gardenWaterHighMark = 12.75,
                 )
             repository.update { written }
             assertEquals(written, repository.settings.first())

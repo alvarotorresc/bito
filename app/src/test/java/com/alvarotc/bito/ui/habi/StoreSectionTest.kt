@@ -64,12 +64,12 @@ class StoreSectionTest {
         setContent(fixture())
 
         compose.onNodeWithTag("store-item-body-salvia", useUnmergedTree = true).assertExists()
-        compose.onNodeWithTag("store-item-pattern-motas", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("store-item-head-gorro-lana", useUnmergedTree = true).assertDoesNotExist()
 
-        compose.onNodeWithTag("store-axis-PATTERN", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("store-axis-HEAD", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("store-item-pattern-motas", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("store-item-head-gorro-lana", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("store-item-body-salvia", useUnmergedTree = true).assertDoesNotExist()
     }
 
@@ -128,6 +128,6 @@ class StoreSectionTest {
         setContent(fixture())
 
         compose.onNodeWithTag("store-axis-BODY_COLOR", useUnmergedTree = true).assertIsSelected()
-        compose.onNodeWithTag("store-axis-PATTERN", useUnmergedTree = true).assertIsNotSelected()
+        compose.onNodeWithTag("store-axis-EYE_COLOR", useUnmergedTree = true).assertIsNotSelected()
     }
 }

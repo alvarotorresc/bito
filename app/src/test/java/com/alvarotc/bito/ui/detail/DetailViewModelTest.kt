@@ -208,12 +208,12 @@ class DetailViewModelTest {
     fun `the real equipped set reaches the detail state`() =
         runTest {
             habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
-            rewardsRepo.acquire(CustomizationItemEntity("upper-lazo", CustomizationCategory.UPPER, fixedNow, equipped = true))
+            rewardsRepo.acquire(CustomizationItemEntity("neck-collar-flores", CustomizationCategory.NECK, fixedNow, equipped = true))
             val vm = newViewModel()
 
             backgroundScope.launch { vm.uiState.collect() }
             advanceUntilIdle()
 
-            assertEquals("upper-lazo", vm.uiState.value?.equipped?.upper)
+            assertEquals("neck-collar-flores", vm.uiState.value?.equipped?.neck)
         }
 }

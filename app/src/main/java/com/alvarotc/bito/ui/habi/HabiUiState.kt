@@ -16,6 +16,7 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.equippedSetOf
+import java.time.LocalDate
 
 /** One store card: a catalog entry paired with its derived purchase/equip state. */
 data class StoreEntry(val item: CatalogItem, val state: StoreItemState)
@@ -43,14 +44,16 @@ data class HabiUiState(
     val loading: Boolean = true,
 )
 
-/** Axis order the store's pill row follows (GUIA: Colores · Patrones · Ojos · Arriba · Abajo). */
+/** Orden de las pestañas de la tienda (pieza 1 §4.1 y §7). */
 private val StoreAxisOrder =
     listOf(
         CustomizationCategory.BODY_COLOR,
-        CustomizationCategory.PATTERN,
         CustomizationCategory.EYE_COLOR,
-        CustomizationCategory.UPPER,
-        CustomizationCategory.LOWER,
+        CustomizationCategory.HEAD,
+        CustomizationCategory.FACE,
+        CustomizationCategory.NECK,
+        CustomizationCategory.FEET,
+        CustomizationCategory.COSTUME,
     )
 
 /**
@@ -77,6 +80,7 @@ fun buildHabiUiState(
     val equipped = equippedSetOf(equippedIds)
     val ownedIds = owned.mapTo(mutableSetOf()) { it.itemId }
 
+    val date = LocalDate.ofEpochDay(today.toLong())
     val itemsByCategory = HabiCatalog.all.groupBy { it.category }
     val store =
         StoreAxisOrder.associateWith { category ->
@@ -86,7 +90,7 @@ fun buildHabiUiState(
             // grid must never claim an item is "equipped" just because it's being tried on.
             (itemsByCategory[category] ?: emptyList())
                 .sortedByDescending { it.default }
-                .map { item -> StoreEntry(item, HabiEngine.storeStateOf(item, ownedIds, equipped, balance)) }
+                .map { item -> StoreEntry(item, HabiEngine.storeStateOf(item, ownedIds, equipped, balance, date)) }
         }
 
     // The avatar wears the preview on top of what's really equipped; appending it last means it

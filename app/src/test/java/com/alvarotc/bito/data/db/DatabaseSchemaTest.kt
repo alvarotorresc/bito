@@ -46,7 +46,7 @@ class DatabaseSchemaTest {
     }
 
     @Test
-    fun `schema is version 3`() {
-        assertEquals(3, db.openHelper.readableDatabase.version)
+    fun `schema is version 4`() {
+        assertEquals(4, db.openHelper.readableDatabase.version)
     }
 }

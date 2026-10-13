@@ -227,25 +227,6 @@ class HabiDrawingTest {
     }
 
     @Test
-    fun `body tone override drives the pattern tint`() {
-        val spec =
-            HabiSpec(
-                Mood.NORMAL,
-                Personality.NEUTRA,
-                EquippedSet(pattern = "pattern-motas"),
-                bodyToneOverride = mutedTone,
-            )
-        // Mirrors the pattern tint rule: the resolved body tone darkened by PATTERN_TINT_FACTOR
-        // 0.82 — if the tint still derived from the catalog color, no pixel would match this.
-        val expectedTint =
-            Color(red = mutedTone.red * 0.82f, green = mutedTone.green * 0.82f, blue = mutedTone.blue * 0.82f).toArgb()
-
-        val bitmap = renderHabiBitmap(spec, size)
-
-        assertTrue(bodyBoundingBoxPixels(size).any { (x, y) -> bitmap.getPixel(x, y) == expectedTint })
-    }
-
-    @Test
     fun `closed eyes swap the drooped open eye for the sagging lid arc`() {
         val open = HabiSpec(Mood.WILTED, Personality.NEUTRA, EquippedSet())
         val closed = open.copy(closedEyes = true)
@@ -311,42 +292,9 @@ class HabiDrawingTest {
     ) = points.any { (x, y) -> a.getPixel(x, y) != b.getPixel(x, y) }
 
     @Test
-    fun `each pattern renders distinct pixels`() {
-        // All 7 catalog patterns, not just motas/rayitas — a pairwise scan catches a swapped
-        // positions-list or glyph-function between any two (e.g. corazones/estrellas), which
-        // compiles cleanly either way and would otherwise go unverified.
-        val patternIds =
-            listOf(
-                "pattern-motas",
-                "pattern-rayitas",
-                "pattern-corazones",
-                "pattern-estrellas",
-                "pattern-flores",
-                "pattern-chispas",
-                "pattern-llamas",
-            )
-        val points = bodyBoundingBoxPixels(size)
-        val bareBitmap = renderHabiBitmap(HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()), size)
-        val bitmaps =
-            patternIds.associateWith { id ->
-                renderHabiBitmap(HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = id)), size)
-            }
-
-        for (id in patternIds) {
-            assertTrue("$id should differ from no pattern", anyPixelDiffers(bareBitmap, bitmaps.getValue(id), points))
-        }
-        for (i in patternIds.indices) {
-            for (j in i + 1 until patternIds.size) {
-                val (a, b) = patternIds[i] to patternIds[j]
-                assertTrue("$a should differ from $b", anyPixelDiffers(bitmaps.getValue(a), bitmaps.getValue(b), points))
-            }
-        }
-    }
-
-    @Test
     fun `upper items draw above the body apex`() {
         // Apex is BODY_CY - BODY_RY = 0.55 - 0.42 = 0.13; probe just above it, inside the beanie dome.
-        val withUpper = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(upper = "upper-gorro-lana"))
+        val withUpper = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(head = "head-gorro-lana"))
         val withoutUpper = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
         val (x, y) = px(0.5f, accessorySize) to px(0.10f, accessorySize)
 
@@ -362,7 +310,7 @@ class HabiDrawingTest {
         // LOWER_DX = 0.20 (both lower items' shared anchor); probe at 0.22 clears the bare egg's
         // antialiased edge at this y (measured: alpha 11 at 0.20, 0 at 0.22) while staying inside
         // both the sock (half-width 0.05) and sneaker (half-width 0.065) shapes drawn at the anchor.
-        val withLower = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(lower = "lower-calcetines"))
+        val withLower = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(feet = "feet-calcetines"))
         val withoutLower = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
         val (x, y) = px(0.5f + 0.22f, accessorySize) to px(0.90f, accessorySize)
 
@@ -379,7 +327,7 @@ class HabiDrawingTest {
             HabiSpec(
                 Mood.NORMAL,
                 Personality.NEUTRA,
-                EquippedSet(pattern = "pattern-nope", upper = "upper-nope", lower = "lower-nope"),
+                EquippedSet(head = "head-nope", feet = "feet-nope"),
             )
         val bare = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
 

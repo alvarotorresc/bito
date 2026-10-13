@@ -19,10 +19,8 @@ import kotlinx.serialization.Serializable
 /**
  * The backup wire format (tech doc §5.1) — versioned independently of Room.
  * DTOs are deliberately separate from entities: storage may be refactored,
- * this file may not. A change that older files cannot express correctly on
- * their own bumps SCHEMA_VERSION and gets a migration in BackupCodec.decode;
- * a new field whose default already means the right thing for files written
- * before it existed needs neither.
+ * this file may not. Desde la v4 no se leen versiones anteriores: un cambio de formato sube
+ * SCHEMA_VERSION y nada más.
  */
 @Serializable
 data class BackupFile(
@@ -40,15 +38,12 @@ data class BackupFile(
     val customizationItems: List<BackupCustomizationItem>,
     val settings: BackupSettings,
     /**
-     * M10. Van con default para que un fichero v1/v2/v3 escrito antes de que las tareas
-     * existieran siga importandose: json NO lleva ignoreUnknownKeys, pero un campo AUSENTE con
-     * default si se rellena. Por eso SCHEMA_VERSION se queda en 3 — no hay nada que migrar.
+     * M10. Con default: un campo ausente se rellena con la lista vacia.
      */
     val tasks: List<BackupTask> = emptyList(),
     val taskEvents: List<BackupTaskEvent> = emptyList(),
     /**
-     * M11. Con default por la misma razon que tasks/taskEvents: un fichero escrito antes de que
-     * existiera la respiracion se sigue importando con la lista vacia, sin subir SCHEMA_VERSION.
+     * M11. Con default por la misma razon que tasks/taskEvents.
      */
     val breathingSessions: List<BackupBreathingSession> = emptyList(),
 )
@@ -175,8 +170,8 @@ data class BackupBreathingSession(
  * reverts to its default on every restore. The only deliberate absentees are
  * `lastAutoBackupAtMillis` / `lastAutoBackupError`: device-local status about THIS install's
  * auto-backup, meaningless on the phone the file is restored to (pinned by BackupRoundTripTest's
- * "local auto backup state does not travel in exports"). Adding a field here needs no schema bump
- * as long as it carries a default that is right for files written before it existed.
+ * "local auto backup state does not travel in exports"). gardenWaterHighMark (pieza 1) viaja
+ * siempre: sin ella, restaurar haría bajar etapas del jardín ya vistas.
  */
 @Serializable
 data class BackupSettings(
@@ -202,6 +197,7 @@ data class BackupSettings(
     val breathingReminderTimeMinutes: Int = 22 * 60,
     val breathingMusicEnabled: Boolean = false,
     val breathingLastMode: BreathingMode = BreathingMode.CALM,
+    val gardenWaterHighMark: Double,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */
