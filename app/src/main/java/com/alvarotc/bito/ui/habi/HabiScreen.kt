@@ -41,9 +41,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.alvarotc.bito.BuildConfig
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.SpeechBubble
+import com.alvarotc.bito.ui.garden.GardenDebugPanel
+import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
@@ -54,10 +57,11 @@ import com.alvarotc.bito.ui.theme.TintaSuave
 import kotlinx.coroutines.delay
 
 /**
- * Habi's home: mood stage, points balance, the personality selector, and the store. No screen
- * title (mockup 4a): the balance chip in the top-right corner carries the header instead. Buying
- * something in [StoreSection] previews live here too — the trying-on chip sits right under the
- * stage, and the avatar itself already wears the preview via `state.spec` (see [buildHabiUiState]).
+ * Habi's home: Habi's garden (piece 1), the points balance, the personality selector, and the
+ * store. No screen title (mockup 4a): the balance chip in the top-right corner carries the header
+ * instead. Buying something in [StoreSection] previews live here too — the trying-on chip sits
+ * right under the garden, and Habi in it already wears the preview via `state.spec` (see
+ * [buildHabiUiState]). Debug builds add the garden debug panel under the scene.
  */
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
@@ -76,7 +80,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
         }
     }
     val scrollState = rememberScrollState()
-    // Opening a store preview (a grid tap) scrolls back to the stage, so the dressed bean, the
+    // Opening a store preview (a grid tap) scrolls back to the garden, so the dressed bean, the
     // "probando" chip and the purchase sheet are all visible at once — mockup 4b (QA 2026-08-23).
     LaunchedEffect(state.previewItemId) {
         if (state.previewItemId != null) scrollState.animateScrollTo(0)
@@ -97,10 +101,11 @@ fun HabiScreen(viewModel: HabiViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             BalanceChip(state.balance, onClick = { showPointsSheet = true }, modifier = Modifier.align(Alignment.End))
-            HabiStage(
+            GardenScene(
+                garden = state.garden,
                 spec = state.spec,
                 delighted = delighted,
-                onTap = {
+                onHabiTap = {
                     // Taps are ignored for the whole delight: the else branch below would
                     // otherwise fire a GREETING meow on top of the HAPPY one still playing.
                     if (!delighted) {
@@ -118,6 +123,9 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
+            if (BuildConfig.DEBUG) {
+                GardenDebugPanel(current = state.garden, onForce = viewModel::forceGarden)
+            }
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }
@@ -125,7 +133,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
                 // The Habi screen's OWN playful, name-addressed voice — distinct from the Stats
                 // commentator's mood-only bubble (HabiVoice.bubbleRes). No avatar slot here: the
-                // big Stage above already IS Habi, so a second mini-face would be redundant.
+                // garden above already shows Habi, so a second mini-face would be redundant.
                 text =
                     stringResource(
                         HabiVoice.homeRes(state.spec.mood, state.spec.personality),
@@ -155,7 +163,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
     }
 }
 
-/** "probando: <ítem>" (mockup 4b), under the stage while Habi is trying something on. */
+/** "probando: <ítem>" (mockup 4b), under the garden while Habi is trying something on. */
 @Composable
 private fun TryingChip(
     nameRes: Int,
