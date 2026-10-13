@@ -20,6 +20,9 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
 
+// La capa aparte de la cara con disfraz: solo se lee, así que una para todos los fotogramas.
+private val MaskLayerPaint = Paint()
+
 /**
  * Pinta [layers] en este DrawScope: el lienzo del rig encajado con [rigFit] (centrado y apoyado
  * abajo), cada pieza en su rectángulo del atlas más su desplazamiento, con su tinte y su opacidad.
@@ -55,7 +58,7 @@ internal fun DrawScope.drawHabiLayers(
                 fit.originY + (hole.top + hole.height) * fit.scale,
             )
         val canvas = drawContext.canvas
-        canvas.saveLayer(holeRect, Paint())
+        canvas.saveLayer(holeRect, MaskLayerPaint)
         canvas.clipRect(holeRect)
         while (i < layers.size && layers[i].masked) {
             drawLayer(art, fit, layers[i], sample)
