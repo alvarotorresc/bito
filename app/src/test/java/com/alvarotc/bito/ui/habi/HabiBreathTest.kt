@@ -52,11 +52,11 @@ class HabiBreathTest {
     }
 
     @Test
-    fun `the hook defaults to triple amplitude and a nine-tenths slit`() {
+    fun `the hook defaults to triple amplitude and fully closed eyes`() {
         val breath = HabiBreath(fill = 0f)
 
         assertEquals(3f, breath.amplitude, delta)
-        assertEquals(0.9f, breath.eyeClosure, delta)
+        assertEquals(1f, breath.eyeClosure, delta)
     }
 
     @Test
