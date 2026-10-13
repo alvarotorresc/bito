@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
@@ -15,21 +16,29 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.model.CatalogItem
 import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
+import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
 
@@ -54,23 +63,63 @@ class HabiViewModel(
     // Overridable so tests can swap in their TestDispatcher — buildHabiUiState off Main (perf)
     // must not race a runTest's virtual scheduler the way the real Dispatchers.Default would.
     defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    // Un tick por minuto para que la luz del jardín siga a la hora sin cambios en los datos. Por
+    // defecto un solo tick: los tests con advanceUntilIdle no pueden convivir con un bucle infinito.
+    // La fábrica de abajo pasa minuteTicks().
+    clockTicks: Flow<Unit> = flowOf(Unit),
 ) : ViewModel() {
     // Ephemeral, UI-only: the item Habi is trying on before buying it. Combined into `uiState`
     // purely so the builder can render it live on the spec — it never reaches the DB.
     private val previewItemId = MutableStateFlow<String?>(null)
 
+    private val gardenOverride = MutableStateFlow<GardenState?>(null)
+
+    private data class HabiInputs(
+        val state: DomainState,
+        val owned: List<CustomizationItemEntity>,
+        val balance: Int,
+        val prefs: Settings,
+        val preview: String?,
+    )
+
     val uiState: StateFlow<HabiUiState> =
         combine(
-            domainState.observe(),
-            rewards.observeOwnedItems(),
-            rewards.observeBalance(),
-            settings.settings,
-            previewItemId,
-        ) { state, owned, balance, prefs, preview ->
-            val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
-            buildHabiUiState(state, owned, balance, prefs.personality, today, preview, prefs.userName, economy.freezerPrice, economy)
+            combine(
+                domainState.observe(),
+                rewards.observeOwnedItems(),
+                rewards.observeBalance(),
+                settings.settings,
+                previewItemId,
+            ) { state, owned, balance, prefs, preview -> HabiInputs(state, owned, balance, prefs, preview) },
+            rewards.observeBadges(),
+            gardenOverride,
+            clockTicks,
+        ) { inputs, badges, override, _ ->
+            val nowMillis = now()
+            val zoneId = zone()
+            val today = LogicalDays.logicalDayOf(nowMillis, inputs.prefs.dayCutoffMinutes, zoneId)
+            buildHabiUiState(
+                inputs.state,
+                inputs.owned,
+                inputs.balance,
+                inputs.prefs.personality,
+                today,
+                inputs.preview,
+                inputs.prefs.userName,
+                economy.freezerPrice,
+                economy,
+                now = LocalDateTime.ofInstant(Instant.ofEpochMilli(nowMillis), zoneId),
+                unlockedBadges = badges.mapTo(mutableSetOf()) { it.badgeId },
+                waterHighMark = inputs.prefs.gardenWaterHighMark,
+                gardenOverride = override,
+            )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HabiUiState())
+
+    /** Solo para el panel de depuración (§6.3): fuerza lo que pinta el jardín; null vuelve al motor. */
+    fun forceGarden(garden: GardenState?) {
+        gardenOverride.value = garden
+    }
 
     private fun todayOf(prefs: Settings) = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone())
 
@@ -162,8 +211,18 @@ class HabiViewModel(
                         container.settings,
                         container.reconciler,
                         container.habiSounds,
+                        clockTicks = minuteTicks(),
                     )
                 }
             }
     }
 }
+
+/** Un tick por minuto mientras alguien mire la pantalla de Habi (el `stateIn` corta al dejar de mirar). */
+internal fun minuteTicks(): Flow<Unit> =
+    flow {
+        while (true) {
+            emit(Unit)
+            delay(60_000L)
+        }
+    }

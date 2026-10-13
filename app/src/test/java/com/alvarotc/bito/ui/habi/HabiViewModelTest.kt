@@ -16,6 +16,8 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.EconomyConfig
+import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineScope
@@ -263,5 +265,36 @@ class HabiViewModelTest {
             advanceUntilIdle()
 
             assertNull(vm.uiState.value.spec.equipped.neck)
+        }
+
+    @Test
+    fun `the garden shows the unlocked specials and the stored high mark`() =
+        runTest {
+            rewardsRepo.unlockBadges(setOf("resurrection"), 1L)
+            settingsRepo.update { it.copy(gardenWaterHighMark = 26.0) }
+            val vm = newViewModel()
+            backgroundScope.launch { vm.uiState.collect {} }
+            advanceUntilIdle()
+
+            val garden = vm.uiState.value.garden
+            assertEquals(2, garden.plots.size)
+            assertEquals(setOf(GardenSpecial.MUSHROOMS), garden.specials)
+        }
+
+    @Test
+    fun `forceGarden overrides the engine until it is cleared`() =
+        runTest {
+            val vm = newViewModel()
+            backgroundScope.launch { vm.uiState.collect {} }
+            advanceUntilIdle()
+            val real = vm.uiState.value.garden
+
+            vm.forceGarden(GardenState.INITIAL.copy(wilt = 2))
+            advanceUntilIdle()
+            assertEquals(2, vm.uiState.value.garden.wilt)
+
+            vm.forceGarden(null)
+            advanceUntilIdle()
+            assertEquals(real, vm.uiState.value.garden)
         }
 }

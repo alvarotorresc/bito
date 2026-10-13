@@ -4,13 +4,18 @@ import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.RealHabits
 import com.alvarotc.bito.domain.StoreItemState
 import com.alvarotc.bito.domain.TODAY
+import com.alvarotc.bito.domain.createdOn
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
 import com.alvarotc.bito.domain.ledgerEntry
 import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.model.GardenState
+import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -232,5 +237,44 @@ class HabiUiStateTest {
         // The screens' first-frame gates (QA 2026-08-23) rely on this default: if it ever flips,
         // both gates die silently while every other test keeps passing.
         assertTrue(HabiUiState().loading)
+    }
+
+    @Test
+    fun `the garden derives from history, unlocked badges, the clock and the high mark`() {
+        val habit = RealHabits.makeBed.createdOn(TODAY - 3)
+        val state = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(TODAY - 1, TODAY)))
+
+        val result =
+            buildHabiUiState(
+                state,
+                owned = emptyList(),
+                balance = 0,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                now = LocalDateTime.of(2026, 8, 14, 22, 0),
+                unlockedBadges = setOf("streak-7", "first-habit"),
+                waterHighMark = 30.0,
+            )
+
+        assertEquals(30.0, result.garden.water, 1e-9)
+        assertEquals(2, result.garden.plots.size)
+        assertEquals(setOf(GardenSpecial.LANTERN), result.garden.specials)
+        assertEquals(LightPhase.NOCHE, result.garden.light.phase)
+        assertEquals(0, result.garden.wilt)
+    }
+
+    @Test
+    fun `a forced garden wins over the engine`() {
+        val forced = GardenState.INITIAL.copy(wilt = 3)
+        val result =
+            buildHabiUiState(
+                domainState(),
+                owned = emptyList(),
+                balance = 0,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                gardenOverride = forced,
+            )
+        assertEquals(forced, result.garden)
     }
 }
