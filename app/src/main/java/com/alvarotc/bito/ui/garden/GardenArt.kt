@@ -41,43 +41,43 @@ internal object GardenArt {
                 GardenPiece(R.drawable.garden_girasoles_5, aspect = 0.5988f, heightRatio = 1.0000f),
             ),
             listOf(
-                GardenPiece(R.drawable.garden_lavanda_1, aspect = 2.7609f, heightRatio = 0.1533f),
-                GardenPiece(R.drawable.garden_lavanda_2, aspect = 1.3908f, heightRatio = 0.2907f),
-                GardenPiece(R.drawable.garden_lavanda_3, aspect = 0.7791f, heightRatio = 0.5427f),
-                GardenPiece(R.drawable.garden_lavanda_4, aspect = 0.9218f, heightRatio = 0.5973f),
-                GardenPiece(R.drawable.garden_lavanda_5, aspect = 0.6233f, heightRatio = 1.0000f),
+                GardenPiece(R.drawable.garden_lavanda_1, aspect = 2.7609f, heightRatio = 0.1716f),
+                GardenPiece(R.drawable.garden_lavanda_2, aspect = 1.3011f, heightRatio = 0.3463f),
+                GardenPiece(R.drawable.garden_lavanda_3, aspect = 0.8141f, heightRatio = 0.5821f),
+                GardenPiece(R.drawable.garden_lavanda_4, aspect = 0.6388f, heightRatio = 0.8463f),
+                GardenPiece(R.drawable.garden_lavanda_5, aspect = 0.7463f, heightRatio = 1.0000f),
             ),
             listOf(
                 GardenPiece(R.drawable.garden_manzano_1, aspect = 2.7609f, heightRatio = 0.1531f),
                 GardenPiece(R.drawable.garden_manzano_2, aspect = 1.3908f, heightRatio = 0.2903f),
                 GardenPiece(R.drawable.garden_manzano_3, aspect = 0.7791f, heightRatio = 0.5419f),
                 GardenPiece(R.drawable.garden_manzano_4, aspect = 0.9388f, heightRatio = 0.6258f),
-                GardenPiece(R.drawable.garden_manzano_5, aspect = 0.6223f, heightRatio = 1.0000f),
+                GardenPiece(R.drawable.garden_manzano_5, aspect = 0.6190f, heightRatio = 1.0000f),
             ),
             listOf(
                 GardenPiece(R.drawable.garden_helechos_1, aspect = 2.7609f, heightRatio = 0.1434f),
                 GardenPiece(R.drawable.garden_helechos_2, aspect = 1.2804f, heightRatio = 0.2943f),
-                GardenPiece(R.drawable.garden_helechos_3, aspect = 0.7825f, heightRatio = 0.5162f),
-                GardenPiece(R.drawable.garden_helechos_4, aspect = 0.9447f, heightRatio = 0.6209f),
-                GardenPiece(R.drawable.garden_helechos_5, aspect = 0.7399f, heightRatio = 1.0000f),
+                GardenPiece(R.drawable.garden_helechos_3, aspect = 0.7674f, heightRatio = 0.5162f),
+                GardenPiece(R.drawable.garden_helechos_4, aspect = 0.9342f, heightRatio = 0.6160f),
+                GardenPiece(R.drawable.garden_helechos_5, aspect = 0.7352f, heightRatio = 1.0000f),
             ),
             listOf(
-                GardenPiece(R.drawable.garden_cerezo_1, aspect = 2.7609f, heightRatio = 0.1533f),
-                GardenPiece(R.drawable.garden_cerezo_2, aspect = 1.3908f, heightRatio = 0.2907f),
-                GardenPiece(R.drawable.garden_cerezo_3, aspect = 0.7791f, heightRatio = 0.5427f),
-                GardenPiece(R.drawable.garden_cerezo_4, aspect = 0.9218f, heightRatio = 0.5973f),
-                GardenPiece(R.drawable.garden_cerezo_5, aspect = 0.6233f, heightRatio = 1.0000f),
+                GardenPiece(R.drawable.garden_cerezo_1, aspect = 2.7609f, heightRatio = 0.1531f),
+                GardenPiece(R.drawable.garden_cerezo_2, aspect = 1.3908f, heightRatio = 0.2903f),
+                GardenPiece(R.drawable.garden_cerezo_3, aspect = 0.7791f, heightRatio = 0.5419f),
+                GardenPiece(R.drawable.garden_cerezo_4, aspect = 0.6458f, heightRatio = 0.7710f),
+                GardenPiece(R.drawable.garden_cerezo_5, aspect = 0.6190f, heightRatio = 1.0000f),
             ),
         )
 
     val specials: Map<String, GardenPiece> =
         mapOf(
             "farolillo" to GardenPiece(R.drawable.garden_farolillo, aspect = 0.6009f, heightRatio = 1.0000f),
-            "caminito" to GardenPiece(R.drawable.garden_caminito, aspect = 1.3194f, heightRatio = 1.0000f),
-            "estanque" to GardenPiece(R.drawable.garden_estanque, aspect = 0.9789f, heightRatio = 1.0000f),
+            "caminito" to GardenPiece(R.drawable.garden_caminito, aspect = 0.7464f, heightRatio = 1.0000f),
+            "estanque" to GardenPiece(R.drawable.garden_estanque, aspect = 1.6528f, heightRatio = 1.0000f),
             "setas" to GardenPiece(R.drawable.garden_setas, aspect = 0.9981f, heightRatio = 1.0000f),
-            "cerezo-grande" to GardenPiece(R.drawable.garden_cerezo_grande, aspect = 0.6223f, heightRatio = 1.0000f),
-            "arbol-dorado" to GardenPiece(R.drawable.garden_arbol_dorado, aspect = 0.6223f, heightRatio = 1.0000f),
+            "cerezo-grande" to GardenPiece(R.drawable.garden_cerezo_grande, aspect = 0.5696f, heightRatio = 1.0000f),
+            "arbol-dorado" to GardenPiece(R.drawable.garden_arbol_dorado, aspect = 0.4943f, heightRatio = 1.0000f),
         )
 
     val habiSpot = GardenSpot(50.0f, 88.0f, 40.0f)
@@ -95,10 +95,10 @@ internal object GardenArt {
     val specialSpots: Map<String, GardenSpot> =
         mapOf(
             "farolillo" to GardenSpot(36.0f, 58.0f, 21.7f),
-            "caminito" to GardenSpot(50.0f, 99.0f, 8.0f),
+            "caminito" to GardenSpot(34.0f, 99.0f, 22.0f),
             "estanque" to GardenSpot(68.0f, 84.0f, 12.0f),
             "setas" to GardenSpot(86.0f, 95.0f, 13.2f),
-            "cerezo-grande" to GardenSpot(62.0f, 40.0f, 44.0f),
-            "arbol-dorado" to GardenSpot(33.0f, 40.0f, 44.0f),
+            "cerezo-grande" to GardenSpot(60.0f, 43.0f, 21.0f),
+            "arbol-dorado" to GardenSpot(44.0f, 41.0f, 20.0f),
         )
 }
