@@ -372,7 +372,6 @@ function capas({pers, animo, cuerpo = null, ojos = null, head = null, face = nul
   else {
     out.push(['cuerpo', cuerpo === 'apagado' ? D.tintes.apagado : (cuerpo ? D.tintes.cuerpo[cuerpo] : null)]);
     if (feet) out.push([feet]);
-    if (neck) out.push([neck]);
   }
   out.push(['#cara']);
   const cara = [];
@@ -381,7 +380,8 @@ function capas({pers, animo, cuerpo = null, ojos = null, head = null, face = nul
   (D.caras.marcas[pers] || []).forEach(m => cara.push([m]));
   if (c) for (const s of ['i', 'd']) cara.push([lado(c, s)]);
   out.push(...cara.map(x => ['>' + x[0], x[1], x[2]]));
-  if (!costume) { if (face) out.push([face]); if (head) out.push([head]); }
+  // El cuello va sobre la cara (boca, marcas y cejas), como en habiLayers.
+  if (!costume) { if (neck) out.push([neck]); if (face) out.push([face]); if (head) out.push([head]); }
   return out;
 }
 
