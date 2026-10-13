@@ -1,0 +1,37 @@
+{
+  "_nota": "Tintes como filtros CSS (hue-rotate, saturate, sepia, brightness, en ese orden). Valores de partida del prototipo vivo (vivo/index.html, BODY y EYE); se afinan en la galería. body-salvia y eyes-tinta no tiñen.",
+  "cuerpo": {
+    "body-vainilla": {"hue": -50, "saturacion": 0.8, "brillo": 1.12},
+    "body-melocoton": {"hue": -95, "saturacion": 1.3, "brillo": 1.06},
+    "body-cielo": {"hue": 75, "saturacion": 1.2},
+    "body-lavanda": {"hue": 140, "saturacion": 1.1},
+    "body-rosa": {"hue": -140, "saturacion": 1.2, "brillo": 1.05},
+    "body-terracota": {"hue": -105, "saturacion": 1.7, "brillo": 0.86},
+    "body-carbon": {"saturacion": 0.15, "brillo": 0.55},
+    "body-dorado": {"hue": -48, "saturacion": 2.1, "brillo": 1.15}
+  },
+  "ojos": {
+    "eyes-avellana": {"hue": 8, "saturacion": 1.4, "brillo": 1.25},
+    "eyes-verde": {"hue": 75, "saturacion": 1.6, "brillo": 1.1},
+    "eyes-azul": {"hue": 185, "saturacion": 1.6, "brillo": 1.1},
+    "eyes-ambar": {"hue": 12, "saturacion": 2.2, "brillo": 1.45},
+    "eyes-violeta": {"hue": 245, "saturacion": 1.4, "brillo": 1.1}
+  },
+  "apagado": {"saturacion": 0.55, "brillo": 0.95},
+  "jardin": {
+    "mustio_planta": {"saturacion": 0.2, "sepia": 0.15, "brillo": 0.033333, "encoge": 0.04, "inclina": 1.7},
+    "mustio_cesped": {"saturacion": 0.133333, "sepia": 0.083333, "brillo": 0.01},
+    "estaciones": {
+      "SPRING": {"saturacion": 1.08},
+      "AUTUMN": {"hue": -14, "saturacion": 1.05, "sepia": 0.18},
+      "WINTER": {"hue": 8, "saturacion": 0.75, "brillo": 1.04}
+    },
+    "luz": {
+      "MANANA": ["#F3F7FF", "#FFFAF0"],
+      "DIA": ["#FFFFFF", "#FFFFFF"],
+      "TARDE": ["#FFCF9A", "#FFDDB8"],
+      "NOCHE": ["#31406E", "#4B5A8A"]
+    },
+    "hundido_tierra": 0.35
+  }
+}

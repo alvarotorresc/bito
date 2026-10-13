@@ -1,0 +1,44 @@
+{
+  "_nota": "Posiciones del prototipo vivo (vivo/index.html) en [x, y, alto] (% de la escena; x centro, y base). Parcelas: alto del árbol = 34 x depth(y) x alto de la etapa 5 / 760, con depth(y) = 0.55 + (y - 50) / 70; alto_parcela = media de tierra / árbol (el vivo fija el ancho de la tierra, aquí se fija su alto: unos pocos % de diferencia entre especies). Especiales: ancho del vivo pasado a alto con el aspecto 2400/1792. Caminito, estanque, cerezo grande y árbol dorado van en sitios libres provisionales.",
+  "fuentes": "~/Pictures/bito-habi/lote-d/piezas",
+  "fondo": {"archivo": "~/Pictures/bito-habi/lote-d/fondo.jpg"},
+  "ancho_fondo": 1600,
+  "escala_piezas": 0.8,
+  "alto_parcela": 0.255,
+  "parcelas": [
+    {"archivo": "plana-00.png"},
+    {"archivo": "plana-01.png"},
+    {"archivo": "plana-02.png"},
+    {"archivo": "plana-03.png"},
+    {"archivo": "plana-04.png"},
+    {"archivo": "plana-05.png"}
+  ],
+  "especies": [
+    {"clave": "hojas-redondas", "etapas": ["~/Pictures/bito-habi/prueba-piezas/piezas/planta-1.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-2.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-3.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-4.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-5.png"]},
+    {"clave": "girasoles", "etapas": ["girasoles-1.png", "girasoles-2.png", "girasoles-3.png", "girasoles-4.png", "girasoles-5.png"]},
+    {"clave": "lavanda", "etapas": ["~/Pictures/bito-habi/prueba-piezas/piezas/planta-1.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-2.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-3.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-4.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-5.png"], "provisional": true},
+    {"clave": "manzano", "etapas": ["manzano-1.png", "manzano-2.png", "manzano-3.png", "manzano-4.png", "manzano-5.png"]},
+    {"clave": "helechos", "etapas": ["helechos-1.png", "helechos-2.png", "helechos-3.png", "helechos-4.png", "helechos-5.png"]},
+    {"clave": "cerezo", "etapas": ["~/Pictures/bito-habi/prueba-piezas/piezas/planta-1.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-2.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-3.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-4.png", "~/Pictures/bito-habi/prueba-piezas/piezas/planta-5.png"], "provisional": true}
+  ],
+  "especiales": [
+    {"clave": "farolillo", "archivo": "~/Pictures/bito-habi/prueba-piezas/piezas/farolillo.png"},
+    {"clave": "caminito", "archivo": "~/Pictures/bito-habi/prueba-piezas/piezas/banco.png", "provisional": true},
+    {"clave": "estanque", "archivo": "~/Pictures/bito-habi/prueba-piezas/piezas/regadera.png", "provisional": true},
+    {"clave": "setas", "archivo": "~/Pictures/bito-habi/prueba-piezas/piezas/setas.png"},
+    {"clave": "cerezo-grande", "archivo": "manzano-5.png", "provisional": true},
+    {"clave": "arbol-dorado", "archivo": "manzano-5.png", "provisional": true}
+  ],
+  "escena": {
+    "habi": [50, 88, 40],
+    "parcelas": [[14, 70, 28.0], [84, 68, 29.7], [27, 55, 20.9], [72, 53, 19.9], [19, 88, 39.2], [83, 87, 36.2]],
+    "especiales": {
+      "farolillo": [36, 58, 21.7],
+      "caminito": [50, 99, 8.0],
+      "estanque": [68, 84, 12.0],
+      "setas": [86, 95, 13.2],
+      "cerezo-grande": [62, 40, 44.0],
+      "arbol-dorado": [33, 40, 44.0]
+    }
+  }
+}
