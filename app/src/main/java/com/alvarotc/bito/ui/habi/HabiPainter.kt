@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.min
 import androidx.compose.foundation.Canvas as ComposeCanvas
 
@@ -55,13 +57,15 @@ internal fun DrawScope.drawHabiLayers(
             i++
             continue
         }
-        // DstIn solo actúa donde se pinta el hueco: fuera de su rectángulo lo recorta el clip.
+        // DstIn solo actúa donde se pinta el hueco: fuera de su rectángulo lo recorta el clip. El clip
+        // va a píxeles enteros hacia dentro: en un píxel que el hueco cubre solo en parte, DstIn deja
+        // ver la cara en la parte sin cubrir.
         val holeRect =
             Rect(
-                fit.originX + hole.left * fit.scale,
-                fit.originY + hole.top * fit.scale,
-                fit.originX + (hole.left + hole.width) * fit.scale,
-                fit.originY + (hole.top + hole.height) * fit.scale,
+                ceil(fit.originX + hole.left * fit.scale),
+                ceil(fit.originY + hole.top * fit.scale),
+                floor(fit.originX + (hole.left + hole.width) * fit.scale),
+                floor(fit.originY + (hole.top + hole.height) * fit.scale),
             )
         val canvas = drawContext.canvas
         canvas.saveLayer(holeRect, MaskLayerPaint)
