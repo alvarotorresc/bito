@@ -113,10 +113,10 @@ class GardenEngineTest {
     }
 
     @Test
-    fun `nine thirds reach a sprout despite floating point`() {
+    fun `the stage epsilon absorbs sums that fall just short of a threshold`() {
         val nineThirds = (1..9).sumOf { 1.0 / 3.0 }
         assertEquals(GrowthStage.SPROUT, GardenEngine.stageFor(nineThirds))
-        // Y una suma que sí se queda un pelo por debajo del umbral también cuenta.
+        // Y una suma que sí se queda un pelo por debajo del umbral cuenta como alcanzada.
         assertEquals(GrowthStage.SPROUT, GardenEngine.stageFor(3.0 - 1e-9))
     }
 
@@ -152,5 +152,26 @@ class GardenEngineTest {
         val state = domainState(habits = listOf(bed), entries = entriesOn(bed, (TODAY - 11)..TODAY))
 
         assertEquals(12.0, GardenEngine.gardenOf(state, TODAY, noon, TODAY, emptySet(), waterHighMark = 9.0).water, delta)
+    }
+
+    @Test
+    fun `a weekly limit habit waters only the last day of its week and only if still fulfilled`() {
+        val limit = RealHabits.foodDelivery.createdOn(TODAY - 30)
+        val week = LAST_MONDAY..LAST_SUNDAY
+        val withinLimit = domainState(habits = listOf(limit), entries = listOf(entryOn(limit, LAST_WEDNESDAY)), sealedDays = week.toList())
+
+        assertEquals(0, GardenEngine.weeklyCompletionsOn(withinLimit, LAST_FRIDAY))
+        assertEquals(1, GardenEngine.weeklyCompletionsOn(withinLimit, LAST_SUNDAY))
+        assertEquals(1.0, GardenEngine.dayWater(withinLimit, LAST_SUNDAY, TODAY)!!, delta)
+        assertNull(GardenEngine.dayWater(withinLimit, LAST_FRIDAY, TODAY))
+
+        // Pasarse del límite durante la semana: ya no se cumple ese último día.
+        val over = withinLimit.copy(entries = withinLimit.entries + entryOn(limit, LAST_FRIDAY))
+        assertEquals(0, GardenEngine.weeklyCompletionsOn(over, LAST_SUNDAY))
+        assertNull(GardenEngine.dayWater(over, LAST_SUNDAY, TODAY))
+
+        // Sin sellar los días de la semana, tampoco se cumple.
+        val unsealed = withinLimit.copy(daySeals = emptyList())
+        assertEquals(0, GardenEngine.weeklyCompletionsOn(unsealed, LAST_SUNDAY))
     }
 }

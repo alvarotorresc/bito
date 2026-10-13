@@ -27,7 +27,7 @@ object GardenEngine {
     const val TREE_WATER = 25.0
     const val MAX_WILT = 3
 
-    // Las sumas de tercios no llegan nunca al entero exacto (9 × 1/3 = 2,999…).
+    // Guarda contra el error de redondeo acumulado al sumar fracciones (tercios, mitades...).
     private const val EPSILON = 1e-6
 
     fun gardenOf(
