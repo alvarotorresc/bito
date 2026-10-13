@@ -14,6 +14,12 @@ val FACE_PARTS: Set<HabiPart> = setOf(HabiPart.EYES, HabiPart.IRIS, HabiPart.MOU
 const val GAZE_MAX_X = 22f
 const val GAZE_MAX_Y = 12f
 
+/**
+ * Con disfraz la mirada mueve la cara la mitad: el hueco no se mueve, y a mirada entera las cejas
+ * duras se salían por el borde (hasta un 4,7 % de la pieza con el dinosaurio); a la mitad, nada visible.
+ */
+const val COSTUME_GAZE_SCALE = 0.5f
+
 /** Por debajo de este alto se decodifica con submuestreo (§3.3). */
 internal const val SUBSAMPLE_BELOW_DP = 100f
 
@@ -103,7 +109,7 @@ fun marksOf(personality: Personality): List<String> = HabiFaceTable.marks.getVal
 /**
  * Habi como lista de capas en orden de pintado (§3.2). Con disfraz, la pieza del disfraz sustituye
  * al cuerpo sin tinte y se omiten pies, cuello, gafas y cabeza; el color de ojos se mantiene. La
- * cara se desplaza el [CostumeFace] del disfraz y sus capas van `masked`.
+ * cara se desplaza el [CostumeFace] del disfraz (la mirada, a [COSTUME_GAZE_SCALE]) y sus capas van `masked`.
  * Las claves que no estén en el atlas se las salta el pintor; un disfraz sin pieza se ignora entero,
  * para que Habi no se quede sin cuerpo.
  */
@@ -116,8 +122,9 @@ internal fun habiLayers(
     val costumeFace = costume?.let { HabiAtlas.costumeFaces[it] }
     val masked = costumeFace != null
     val face = faceOf(spec.mood, spec.personality, look.delighted, spec.closedEyes)
-    val dx = look.gazeX.coerceIn(-1f, 1f) * GAZE_MAX_X + (costumeFace?.dx ?: 0f)
-    val dy = look.gazeY.coerceIn(-1f, 1f) * GAZE_MAX_Y + (costumeFace?.dy ?: 0f)
+    val gaze = if (costumeFace != null) COSTUME_GAZE_SCALE else 1f
+    val dx = look.gazeX.coerceIn(-1f, 1f) * GAZE_MAX_X * gaze + (costumeFace?.dx ?: 0f)
+    val dy = look.gazeY.coerceIn(-1f, 1f) * GAZE_MAX_Y * gaze + (costumeFace?.dy ?: 0f)
     val eyeTint = HabiTintTable.eyes[equipped.eyeColor]
     val closure = if (face.eyes == Eyes.CLOSED) 0f else look.eyeClosure.coerceIn(0f, 1f)
     val layers = mutableListOf(HabiLayer("sombra", HabiPart.SHADOW))

@@ -185,7 +185,7 @@ class HabiLayersTest {
         for (layer in layers) {
             if (layer.part in FACE_PARTS) {
                 assertTrue(layer.key, layer.masked)
-                assertEquals(layer.key, GAZE_MAX_X + reno.dx, layer.dx, delta)
+                assertEquals(layer.key, GAZE_MAX_X * COSTUME_GAZE_SCALE + reno.dx, layer.dx, delta)
                 assertEquals(layer.key, reno.dy, layer.dy, delta)
             } else {
                 assertEquals(layer.key, false, layer.masked)
@@ -195,6 +195,24 @@ class HabiLayersTest {
         }
         assertTrue(layers.any { it.part == HabiPart.MARKS && it.masked })
         assertTrue(layers.any { it.part == HabiPart.BROWS && it.masked })
+    }
+
+    @Test
+    fun `with a costume the gaze moves the face less so it never slips under the hole edge`() {
+        val dino = HabiAtlas.costumeFaces.getValue("costume-dinosaurio")
+        val look = HabiLook(gazeX = 1f, gazeY = -1f)
+        val costumed = habiLayers(spec(equipped = EquippedSet(costume = "costume-dinosaurio")), look)
+        val plain = habiLayers(spec(equipped = EquippedSet()), look)
+
+        assertEquals(0.5f, COSTUME_GAZE_SCALE, delta)
+        for (layer in costumed.filter { it.part in FACE_PARTS }) {
+            assertEquals(layer.key, dino.dx + GAZE_MAX_X * COSTUME_GAZE_SCALE, layer.dx, delta)
+            assertEquals(layer.key, dino.dy - GAZE_MAX_Y * COSTUME_GAZE_SCALE, layer.dy, delta)
+        }
+        for (layer in plain.filter { it.part in FACE_PARTS }) {
+            assertEquals(layer.key, GAZE_MAX_X, layer.dx, delta)
+            assertEquals(layer.key, -GAZE_MAX_Y, layer.dy, delta)
+        }
     }
 
     @Test
