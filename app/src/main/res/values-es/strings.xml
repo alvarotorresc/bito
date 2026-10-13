@@ -227,7 +227,7 @@
     <string name="onb_personality_title">Elige la personalidad de Habi</string>
     <string name="onb_personality_hint">puedes cambiarla cuando quieras</string>
     <string name="onb_personality_preview_sargento">Exigiré mucho de ti, %1$s. Porque puedes darlo.</string>
-    <string name="onb_personality_preview_cheerleader">¡Juntos vamos a poder con todo, %1$s!</string>
+    <string name="onb_personality_preview_cheerleader">¡Tú y yo vamos a poder con todo, %1$s!</string>
     <string name="onb_personality_preview_neutra">Lo justo y necesario, %1$s: tus hábitos, claros, cada día.</string>
     <string name="onb_habit_title">Crea tu primer hábito</string>
     <string name="onb_habit_name_hint">ej. Beber agua</string>
