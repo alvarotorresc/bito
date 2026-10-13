@@ -16,6 +16,9 @@ object BitoTema {
     val tipos: BitoTipos
         @Composable @ReadOnlyComposable
         get() = LocalBitoTipos.current
+    val reducido: Boolean
+        @Composable @ReadOnlyComposable
+        get() = LocalReducido.current
 }
 
 /** Material mapeado a la paleta (spec §4.2.5): las pantallas de otras piezas cambian de color sin tocarlas. */
@@ -56,12 +59,17 @@ fun esquemaDe(c: BitoColores): ColorScheme =
         scrim = c.velo.copy(alpha = 1f),
     )
 
-/** El sistema de la Bito 2: provee los tokens y el `MaterialTheme` mapeado. Las Tareas 8 y 9 le añaden reducido, sonido y tacto. */
+/** El sistema de la Bito 2: provee los tokens, el movimiento reducido y el `MaterialTheme` mapeado. La Tarea 9 le añade sonido y tacto. */
 @Composable
-fun BitoSistema(content: @Composable () -> Unit) {
+fun BitoSistema(
+    reducirAnimaciones: Boolean = false,
+    content: @Composable () -> Unit,
+) {
+    val reducido = rememberReducido(reducirAnimaciones)
     CompositionLocalProvider(
         LocalBitoColores provides BitoClaro,
         LocalBitoTipos provides BitoTiposBase,
+        LocalReducido provides reducido,
     ) {
         MaterialTheme(colorScheme = esquemaDe(BitoClaro), typography = BitoTypography, content = content)
     }
