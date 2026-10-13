@@ -102,6 +102,13 @@ class ExportarHabiTest(unittest.TestCase):
         self.assertTrue(any("head-gorro-lana" in p for p in problemas))
         self.assertFalse(any("sombra" in p for p in problemas))
 
+    def test_definitivo_exige_el_desplazamiento_de_cara_aprobado_en_cada_disfraz(self):
+        self.habi["piezas"][4] = {"clave": "costume-calabaza", "archivo": "cuerpo.png", "origen": [0, 0]}
+        self.habi["piezas"].append({"clave": "costume-reno", "archivo": "cuerpo.png", "origen": [0, 0], "cara": [-19, -71]})
+        estado = {"piezas": {p["clave"]: "aprobada" for p in self.habi["piezas"]}}
+        problemas = exportar.comprobar_definitivo(self.habi, {"especies": [], "parcelas": [], "especiales": []}, estado)
+        self.assertEqual(problemas, ["costume-calabaza: sin desplazamiento de cara aprobado"])
+
     # C11: rigFit centra el lienzo, así que el lienzo tiene que estar centrado en el cuerpo.
     def test_una_pieza_que_sobresale_solo_por_la_izquierda_ensancha_el_lienzo_por_los_dos_lados(self):
         cola = np.zeros((20, 40, 4))

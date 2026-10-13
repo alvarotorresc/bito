@@ -543,7 +543,7 @@ def claves_jardin(jardin):
 
 def comprobar_definitivo(habi, jardin, estado):
     """Problemas que impiden la exportación definitiva. La sombra y las máscaras (iris, hueco) se derivan
-    de piezas aprobadas y no se aprueban aparte."""
+    de piezas aprobadas y no se aprueban aparte. Todo disfraz no provisional necesita su "cara"."""
     piezas = estado.get("piezas", {})
     problemas = []
     claves = [(p["clave"], bool(p.get("provisional"))) for p in habi["piezas"] if p.get("generada") != "sombra"]
@@ -552,6 +552,10 @@ def comprobar_definitivo(habi, jardin, estado):
             problemas.append(f"{clave}: provisional")
         elif piezas.get(clave) != "aprobada":
             problemas.append(f"{clave}: {piezas.get(clave, 'pendiente')}")
+    # El desplazamiento calculado no reproduce el aprobado: en la definitiva cada disfraz lleva el suyo.
+    for p in habi["piezas"]:
+        if p["clave"].startswith("costume-") and not p.get("provisional") and "cara" not in p:
+            problemas.append(f"{p['clave']}: sin desplazamiento de cara aprobado")
     return problemas
 
 
