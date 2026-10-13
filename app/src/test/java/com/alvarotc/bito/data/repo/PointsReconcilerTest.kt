@@ -16,8 +16,10 @@ import com.alvarotc.bito.domain.model.GrowthStage
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -34,6 +36,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.time.LocalDateTime
+import java.util.concurrent.Executors
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -201,5 +204,32 @@ class PointsReconcilerTest {
             assertEquals(8.0, mark, 1e-9)
             val noon = LocalDateTime.of(2024, 10, 11, 12, 0)
             assertEquals(GrowthStage.PLANT, GardenEngine.gardenOf(state, today, noon, today, emptySet(), mark).plots.single().stage)
+        }
+
+    @Test
+    fun `with a dispatcher, the garden water is computed on that dispatcher, not the caller's thread`() =
+        runTest {
+            val pool = Executors.newSingleThreadExecutor { Thread(it, "reconcile-test") }
+            val settings =
+                SettingsRepository(
+                    PreferenceDataStoreFactory.create(scope = CoroutineScope(Dispatchers.Unconfined + Job())) {
+                        File(tmp.root, "garden-hilo.preferences_pb")
+                    },
+                )
+            var hilo: String? = null
+            val reconcilerEnHilo =
+                PointsReconciler(
+                    DomainStateRepository(db),
+                    rewards,
+                    settings = settings,
+                    despachador = pool.asCoroutineDispatcher(),
+                    calcularAgua = { state, today ->
+                        hilo = Thread.currentThread().name
+                        GardenEngine.totalWater(state, today)
+                    },
+                )
+            reconcilerEnHilo.reconcile(today = DAY_ZERO, nowMillis = 0L)
+            assertEquals("reconcile-test", hilo)
+            pool.shutdown()
         }
 }
