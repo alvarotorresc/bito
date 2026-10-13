@@ -2,6 +2,9 @@ package com.alvarotc.bito.ui.habi
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
@@ -15,10 +18,13 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.LayoutDirection
+import kotlin.math.min
+import androidx.compose.foundation.Canvas as ComposeCanvas
 
 /**
  * Pinta [layers] en este DrawScope: el lienzo del rig encajado con [rigFit] (centrado y apoyado
@@ -133,4 +139,37 @@ fun renderHabiBitmap(
         drawHabiLayers(art, habiLayers(spec), sampleSizeFor(sizePx.toFloat(), drawHeightDp = 0f))
     }
     return imageBitmap.asAndroidBitmap()
+}
+
+/**
+ * Una pieza del atlas sola, encajada y centrada en su caja: la miniatura de la tienda (pieza 1 §7).
+ * Se decodifica con el submuestreo que pide su tamaño, como Habi.
+ */
+@Composable
+fun HabiPieceImage(
+    key: String,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    val art = remember(context) { HabiArt.get(context) }
+    val piece = HabiAtlas.pieces[key] ?: return
+    val sourceHeightPx = piece.height * HabiAtlas.SOURCE_CANVAS_PX / HabiAtlas.canvas.height
+    ComposeCanvas(modifier) {
+        val sample = sampleSizeFor(size.height, size.height / density, sourceHeightPx)
+        val image = art.image(piece.res, sample) ?: return@ComposeCanvas
+        val scale = min(size.width / image.width, size.height / image.height)
+        withTransform({
+            translate((size.width - image.width * scale) / 2f, (size.height - image.height * scale) / 2f)
+            scale(scale, scale, pivot = Offset.Zero)
+        }) {
+            drawImage(
+                image = image,
+                srcOffset = IntOffset.Zero,
+                srcSize = IntSize(image.width, image.height),
+                dstOffset = IntOffset.Zero,
+                dstSize = IntSize(image.width, image.height),
+                filterQuality = FilterQuality.Medium,
+            )
+        }
+    }
 }
