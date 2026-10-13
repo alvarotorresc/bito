@@ -129,15 +129,66 @@ object GardenEngine {
             }
         }
 
-    // Provisionales hasta la Tarea 6, que las sustituye con sus tests.
+    private const val MINUTES_PER_HOUR = 60
+    private const val HALF_TRANSITION_MINUTES = 15f
+
+    // Fronteras del día en minutos, con la fase que termina y la que empieza.
+    private val BORDERS =
+        listOf(
+            6 * MINUTES_PER_HOUR to (LightPhase.NOCHE to LightPhase.MANANA),
+            12 * MINUTES_PER_HOUR to (LightPhase.MANANA to LightPhase.DIA),
+            17 * MINUTES_PER_HOUR to (LightPhase.DIA to LightPhase.TARDE),
+            21 * MINUTES_PER_HOUR to (LightPhase.TARDE to LightPhase.NOCHE),
+        )
+
+    /**
+     * Mustio de 0 a [MAX_WILT] por días naturales (decisión del arquitecto, 2026-10-13): 0 si hubo
+     * actividad ayer o hoy y un nivel más por cada día natural sin actividad, hasta 3. Usa la misma
+     * actividad ([StatsEngine.lastActivityDay]) y el mismo conteo que [MoodEngine] para DRAMATIC
+     * (hoy − última ≥ 3), así que el mustio llega a 2 justo cuando el ánimo pasa a dramático. Los
+     * días sin nada programado cuentan. Sin historia ninguna, 0: un jardín nuevo no está mustio.
+     */
     fun wiltOf(
         today: LogicalDay,
         lastActivityDay: LogicalDay?,
-    ): Int = 0
+    ): Int {
+        val last = lastActivityDay ?: return 0
+        return (today - last - 1).coerceIn(0, MAX_WILT)
+    }
 
-    fun lightAt(time: LocalTime): GardenLight = GardenLight(LightPhase.DIA, LightPhase.DIA, LightPhase.DIA, 0f)
+    fun lightAt(time: LocalTime): GardenLight {
+        val minute = time.toSecondOfDay() / 60f
+        val phase = phaseAt(minute)
+        for ((border, change) in BORDERS) {
+            val offset = minute - border
+            if (offset >= -HALF_TRANSITION_MINUTES && offset < HALF_TRANSITION_MINUTES) {
+                val progress = (offset + HALF_TRANSITION_MINUTES) / (2 * HALF_TRANSITION_MINUTES)
+                return GardenLight(phase, change.first, change.second, progress)
+            }
+        }
+        return GardenLight(phase, phase, phase, 0f)
+    }
 
-    fun seasonOf(date: LocalDate): GardenSeason = GardenSeason.SUMMER
+    private fun phaseAt(minute: Float): LightPhase =
+        when {
+            minute < 6 * MINUTES_PER_HOUR -> LightPhase.NOCHE
+            minute < 12 * MINUTES_PER_HOUR -> LightPhase.MANANA
+            minute < 17 * MINUTES_PER_HOUR -> LightPhase.DIA
+            minute < 21 * MINUTES_PER_HOUR -> LightPhase.TARDE
+            else -> LightPhase.NOCHE
+        }
 
-    fun specialsOf(unlockedBadges: Set<String>): Set<GardenSpecial> = emptySet()
+    /** Fechas astronómicas aproximadas: 21 de marzo, 21 de junio, 23 de septiembre y 21 de diciembre. */
+    fun seasonOf(date: LocalDate): GardenSeason {
+        val day = date.monthValue * 100 + date.dayOfMonth
+        return when {
+            day >= 1221 || day < 321 -> GardenSeason.WINTER
+            day < 621 -> GardenSeason.SPRING
+            day < 923 -> GardenSeason.SUMMER
+            else -> GardenSeason.AUTUMN
+        }
+    }
+
+    fun specialsOf(unlockedBadges: Set<String>): Set<GardenSpecial> =
+        GardenSpecial.entries.filterTo(mutableSetOf()) { it.badgeId in unlockedBadges }
 }
