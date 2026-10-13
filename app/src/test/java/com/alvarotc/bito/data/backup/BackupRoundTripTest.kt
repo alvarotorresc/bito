@@ -94,6 +94,8 @@ class BackupRoundTripTest {
             breathingLastMode = BreathingMode.FOCUS,
             perfectDayCelebratedDay = 20679,
             badgesSeenUntilMillis = 4321L,
+            // Fuera de su default (0.0): si no viajara en el fichero, el ida y vuelta lo delataria.
+            gardenWaterHighMark = 37.5,
         )
 
     @Before
@@ -239,6 +241,19 @@ class BackupRoundTripTest {
         }
 
     @Test
+    fun `a version 3 backup is rejected before anything is wiped`() =
+        runTest {
+            seedEverything()
+            val before = snapshotAllTables()
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 4", "\"schemaVersion\": 3")
+
+            assertFailsWith<BackupFormatException> { backup.import(older) }
+
+            assertEquals(before, snapshotAllTables())
+            assertEquals(seededSettings, settingsRepo.settings.first())
+        }
+
+    @Test
     fun `preview reports the file's own counts`() =
         runTest {
             seedEverything()
@@ -303,67 +318,6 @@ class BackupRoundTripTest {
             assertFailsWith<MissingKeyException> { backup.exportBytes(nowMillis = 1_000L) }
         }
 
-    // BackupCodecTest proves the v1/v2 -> v3 marker migration at the codec level (decode alone).
-    // These two prove the M8 story end to end through the real repository: BackupRepository.import
-    // must actually WRITE the codec's migrated markers into the persisted SettingsRepository, not
-    // just decode them and drop them on the floor. seedEverything()'s day seals (DAY_ZERO,
-    // DAY_ZERO + 1) and its pre-existing seededSettings markers (perfectDayCelebratedDay = 20679,
-    // badgesSeenUntilMillis = 4321L) are both far from the migrated values asserted below, so a
-    // repository that silently persisted the FILE's own stale/stripped fields instead of the
-    // decoded migration result would fail these assertions, not pass them by coincidence.
-    @Test
-    fun `importing a v1 backup persists the sealed migration markers into Settings`() =
-        runTest {
-            seedEverything()
-            val exported = backup.exportJson(nowMillis = 5_000L)
-            val v1Json =
-                exported
-                    .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
-                    .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
-                    .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                    .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-                    .replace(Regex(",?\\s*\"logSoundEnabled\":\\s*(true|false)"), "")
-                    .replace(Regex(",?\\s*\"logHapticEnabled\":\\s*(true|false)"), "")
-
-            backup.import(v1Json)
-
-            val persisted = settingsRepo.settings.first()
-            assertEquals(5_000L, persisted.badgesSeenUntilMillis) // sealed to the export moment
-            assertEquals(DAY_ZERO + 1, persisted.perfectDayCelebratedDay) // sealed to the last day seal
-            assertTrue(persisted.habiSoundsEnabled) // v1 default: sounds always on
-            // The "Al registrar" switches postdate every stored backup: absent means the switches
-            // did not exist yet, i.e. on. seededSettings has both OFF, so a decoder that carried
-            // the file's own (stripped) values over would land on false here, not true.
-            assertTrue(persisted.logSoundEnabled)
-            assertTrue(persisted.logHapticEnabled)
-        }
-
-    @Test
-    fun `importing a v2 backup persists the sealed markers while keeping v2's own sounds field`() =
-        runTest {
-            seedEverything() // seededSettings has habiSoundsEnabled = false
-            val exported = backup.exportJson(nowMillis = 6_000L)
-            val v2Json =
-                exported
-                    .replace("\"schemaVersion\": 3", "\"schemaVersion\": 2")
-                    .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                    .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-                    .replace(Regex(",?\\s*\"logSoundEnabled\":\\s*(true|false)"), "")
-                    .replace(Regex(",?\\s*\"logHapticEnabled\":\\s*(true|false)"), "")
-
-            backup.import(v2Json)
-
-            val persisted = settingsRepo.settings.first()
-            assertEquals(6_000L, persisted.badgesSeenUntilMillis)
-            assertEquals(DAY_ZERO + 1, persisted.perfectDayCelebratedDay)
-            // v2 already carries its own sounds field (unlike v1) — it must survive untouched,
-            // not get swept into the "always on" v1 default.
-            assertEquals(false, persisted.habiSoundsEnabled)
-            // v2 predates the "Al registrar" switches just as v1 does: absent, so both come back on.
-            assertTrue(persisted.logSoundEnabled)
-            assertTrue(persisted.logHapticEnabled)
-        }
-
     @Test
     fun `tasks and their events survive a full round trip`() =
         runTest {
@@ -403,32 +357,6 @@ class BackupRoundTripTest {
 
             assertEquals(backup.exportJson(nowMillis = 9_000L), backup.exportJson(nowMillis = 9_000L))
         }
-
-    @Test
-    fun `a v3 file written before tasks existed still imports, with empty lists`() =
-        runTest {
-            // Un fichero de la 1.0.0: mismo schemaVersion 3, sin las dos claves nuevas.
-            db.taskDao().upsert(taskEntity(id = "t1"))
-            val legacy = backup.exportJson(nowMillis = 9_000L).let(::stripTaskKeys)
-
-            backup.import(legacy)
-
-            assertTrue(db.taskDao().all().isEmpty())
-            assertTrue(db.taskEventDao().all().isEmpty())
-        }
-
-    /**
-     * Simula un fichero escrito antes de que `tasks`/`taskEvents` existieran: quita esas dos
-     * claves del objeto raiz operando sobre el arbol de kotlinx.serialization.json, nunca con
-     * manipulacion de texto (a diferencia de los `.replace` de version que ya usan los tests de
-     * v1/v2 mas arriba, que solo tachan campos SUELTOS de `settings`, no una clave de lista entera
-     * del objeto raiz).
-     */
-    private fun stripTaskKeys(json: String): String {
-        val root = Json.parseToJsonElement(json).jsonObject
-        val stripped = JsonObject(root.filterKeys { it != "tasks" && it != "taskEvents" })
-        return prettyJson.encodeToString(JsonObject.serializer(), stripped)
-    }
 
     @Test
     fun `breathing sessions survive a full round trip`() =
@@ -490,25 +418,6 @@ class BackupRoundTripTest {
                 freshDb.close()
             }
         }
-
-    @Test
-    fun `a v3 file written before breathing existed still imports, with an empty list`() =
-        runTest {
-            // Un fichero de la 1.1.0: mismo schemaVersion 3, sin la clave breathingSessions.
-            db.breathingSessionDao().insert(breathingSessionEntity(id = "b1"))
-            val legacy = backup.exportJson(nowMillis = 9_000L).let(::stripBreathingKey)
-
-            backup.import(legacy)
-
-            assertTrue(db.breathingSessionDao().all().isEmpty())
-        }
-
-    /** Quita `breathingSessions` del objeto raiz sobre el arbol JSON, como [stripTaskKeys]. */
-    private fun stripBreathingKey(json: String): String {
-        val root = Json.parseToJsonElement(json).jsonObject
-        val stripped = JsonObject(root.filterKeys { it != "breathingSessions" })
-        return prettyJson.encodeToString(JsonObject.serializer(), stripped)
-    }
 
     @Test
     fun `a file written before breathing settings existed restores them at their defaults`() =

@@ -11,7 +11,6 @@ import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
-import java.time.Instant
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -48,6 +47,7 @@ class BackupCodecTest {
                     perfectDayCelebration = false, personality = Personality.SARGENTO,
                     backupFolderUri = null, backupFrequency = BackupFrequency.WEEKLY,
                     backupCopies = 3, backupEncryption = false, onboardingDone = true,
+                    gardenWaterHighMark = 12.5,
                 ),
         )
 
@@ -61,7 +61,7 @@ class BackupCodecTest {
     fun `encoded backup is human readable json`() {
         val text = BackupCodec.encode(sampleFile())
         assertTrue(text.contains("\n")) // pretty-printed (§5.1 data sovereignty)
-        assertTrue(text.contains("\"schemaVersion\": 3"))
+        assertTrue(text.contains("\"schemaVersion\": 4"))
         assertTrue(text.contains("\"Beber agua\""))
     }
 
@@ -78,135 +78,9 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `a v1 backup without the sounds field imports with sounds on`() {
-        // Seed sounds off and the v2/v3 markers to non-default values so a leftover field
-        // (regex failing to strip it) would fail these assertions instead of passing vacuously
-        // against each field's own default — a v1 fixture should carry only v1 fields.
-        val fileWithSoundsOff =
-            sampleFile().copy(
-                settings =
-                    sampleFile().settings.copy(
-                        habiSoundsEnabled = false,
-                        perfectDayCelebratedDay = 20679,
-                        badgesSeenUntilMillis = 77L,
-                    ),
-            )
-        val v1Json =
-            BackupCodec.encode(fileWithSoundsOff)
-                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
-                .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
-                .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-
-        val decoded = BackupCodec.decode(v1Json)
-
-        // Legacy imports (version < 3) always seal the markers to the export moment (mejoras-qa
-        // «Pendientes M7» #4) — never to the field's own type default — so even a leftover,
-        // un-stripped field (which the seeded non-default values above would catch) can't slip
-        // through as -1/0L by coincidence.
-        assertTrue(decoded.settings.habiSoundsEnabled)
-        assertEquals(fileWithSoundsOff.daySeals.maxOf { it.logicalDay }, decoded.settings.perfectDayCelebratedDay)
-        assertEquals(Instant.parse(fileWithSoundsOff.exportedAt).toEpochMilli(), decoded.settings.badgesSeenUntilMillis)
-    }
-
-    @Test
-    fun `a v2 backup without the celebration markers seals them to the export moment`() {
-        val seeded = sampleFile().copy(settings = sampleFile().settings.copy(perfectDayCelebratedDay = 20679, badgesSeenUntilMillis = 77L))
-        val v2Json =
-            BackupCodec.encode(seeded)
-                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 2")
-                .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-        val decoded = BackupCodec.decode(v2Json)
-        assertEquals(seeded.daySeals.maxOf { it.logicalDay }, decoded.settings.perfectDayCelebratedDay)
-        assertEquals(Instant.parse(seeded.exportedAt).toEpochMilli(), decoded.settings.badgesSeenUntilMillis)
-    }
-
-    @Test
-    fun `a v1 import seals badgesSeenUntilMillis to the export moment`() {
-        val file = sampleFile().copy(exportedAt = "2026-08-20T09:30:00Z")
-        val v1Json =
-            BackupCodec.encode(file)
-                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
-                .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
-                .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-
-        val decoded = BackupCodec.decode(v1Json)
-
-        assertEquals(Instant.parse("2026-08-20T09:30:00Z").toEpochMilli(), decoded.settings.badgesSeenUntilMillis)
-    }
-
-    @Test
-    fun `a v1 import with an unparseable exportedAt seals badgesSeenUntilMillis to 0`() {
-        val file = sampleFile().copy(exportedAt = "not-a-real-instant")
-        val v1Json =
-            BackupCodec.encode(file)
-                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
-                .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
-                .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-
-        val decoded = BackupCodec.decode(v1Json)
-
-        assertEquals(0L, decoded.settings.badgesSeenUntilMillis)
-    }
-
-    @Test
-    fun `a v1 import seals perfectDayCelebratedDay to the last sealed day`() {
-        val file = sampleFile().copy(daySeals = listOf(BackupDaySeal(5, 1L), BackupDaySeal(12, 2L), BackupDaySeal(9, 3L)))
-        val v1Json =
-            BackupCodec.encode(file)
-                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
-                .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
-                .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-
-        val decoded = BackupCodec.decode(v1Json)
-
-        assertEquals(12, decoded.settings.perfectDayCelebratedDay)
-    }
-
-    @Test
-    fun `a v1 import with no day seals leaves perfectDayCelebratedDay at -1`() {
-        val file = sampleFile().copy(daySeals = emptyList())
-        val v1Json =
-            BackupCodec.encode(file)
-                .replace("\"schemaVersion\": 3", "\"schemaVersion\": 1")
-                .replace(Regex(",?\\s*\"habiSoundsEnabled\":\\s*(true|false)"), "")
-                .replace(Regex(",?\\s*\"perfectDayCelebratedDay\":\\s*-?\\d+"), "")
-                .replace(Regex(",?\\s*\"badgesSeenUntilMillis\":\\s*\\d+"), "")
-
-        val decoded = BackupCodec.decode(v1Json)
-
-        assertEquals(-1, decoded.settings.perfectDayCelebratedDay)
-    }
-
-    @Test
-    fun `a v3 import keeps its own markers untouched`() {
-        // daySeals' max (1) and exportedAt's epoch millis both differ from the seeded markers
-        // below, so an accidental migration on a v3 file would fail this test, not pass it vacuously.
-        val file =
-            sampleFile().copy(
-                daySeals = listOf(BackupDaySeal(1, 1L)),
-                settings = sampleFile().settings.copy(perfectDayCelebratedDay = 42, badgesSeenUntilMillis = 999L),
-            )
-
-        val decoded = BackupCodec.decode(BackupCodec.encode(file))
-
-        assertEquals(42, decoded.settings.perfectDayCelebratedDay)
-        assertEquals(999L, decoded.settings.badgesSeenUntilMillis)
-    }
-
-    @Test
     fun `preview counts what the confirmation sheet shows`() {
         val preview = BackupCodec.decode(BackupCodec.encode(sampleFile())).toPreview()
         assertEquals(BackupPreview("2026-08-15T10:00:00Z", "0.3.0", 1, 1), preview)
-    }
-
-    @Test
-    fun `the schema version stays at 3 through v1_2_0`() {
-        assertEquals(3, BackupCodec.SCHEMA_VERSION)
     }
 
     @Test
@@ -233,5 +107,22 @@ class BackupCodecTest {
 
         val error = assertFailsWith<BackupFormatException> { BackupCodec.decode(json) }
         assertEquals("Corrupted backup file", error.message)
+    }
+
+    @Test
+    fun `the schema version is 4 since the garden`() {
+        assertEquals(4, BackupCodec.SCHEMA_VERSION)
+    }
+
+    @Test
+    fun `a version 3 file is rejected as older, not imported`() {
+        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 4", "\"schemaVersion\": 3")
+        val error = assertFailsWith<BackupFormatException> { BackupCodec.decode(older) }
+        assertTrue(error.message!!.contains("older"))
+    }
+
+    @Test
+    fun `the garden high mark travels in the settings`() {
+        assertEquals(12.5, BackupCodec.decode(BackupCodec.encode(sampleFile())).settings.gardenWaterHighMark, 0.0)
     }
 }

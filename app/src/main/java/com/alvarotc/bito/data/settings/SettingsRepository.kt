@@ -3,6 +3,7 @@ package com.alvarotc.bito.data.settings
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
@@ -46,6 +47,8 @@ data class Settings(
     val breathingReminderTimeMinutes: Int = 22 * 60,
     val breathingMusicEnabled: Boolean = false,
     val breathingLastMode: BreathingMode = BreathingMode.CALM,
+    /** Pieza 1 (D11): el máximo de agua que ha tenido el jardín. Las etapas no bajan aunque se corrija el pasado. */
+    val gardenWaterHighMark: Double = 0.0,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -79,6 +82,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val breathingReminderTimeMinutes = intPreferencesKey("breathing_reminder_time_minutes")
         val breathingMusicEnabled = booleanPreferencesKey("breathing_music_enabled")
         val breathingLastMode = stringPreferencesKey("breathing_last_mode")
+        val gardenWaterHighMark = doublePreferencesKey("garden_water_high_mark")
 
         /**
          * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
@@ -194,6 +198,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
             breathingLastMode =
                 this[Keys.breathingLastMode]?.let { name -> runCatching { BreathingMode.valueOf(name) }.getOrNull() }
                     ?: defaults.breathingLastMode,
+            gardenWaterHighMark = this[Keys.gardenWaterHighMark] ?: defaults.gardenWaterHighMark,
         )
     }
 
@@ -222,5 +227,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.breathingReminderTimeMinutes] = breathingReminderTimeMinutes
         prefs[Keys.breathingMusicEnabled] = breathingMusicEnabled
         prefs[Keys.breathingLastMode] = breathingLastMode.name
+        prefs[Keys.gardenWaterHighMark] = gardenWaterHighMark
     }
 }
