@@ -27,7 +27,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
@@ -104,7 +106,9 @@ class HabitFormScreenTest {
     /** Builds the form VM and renders the screen. Each test calls this exactly once. */
     private fun launchScreen(habitId: String?): HabitFormViewModel {
         val settings = SettingsRepository(settingsStore("habit-form-screen"))
-        val vm = HabitFormViewModel(habits, settings, RewardsRepository(db), habitId, now = { fixedNow }, zone = { utc })
+        val rewards = RewardsRepository(db)
+        val reconciler = PointsReconciler(DomainStateRepository(db), rewards, settings = settings)
+        val vm = HabitFormViewModel(habits, settings, rewards, reconciler, habitId, now = { fixedNow }, zone = { utc })
         compose.setContent {
             BitoTheme {
                 HabitFormScreen(vm, onBack = { backCalled = true })
