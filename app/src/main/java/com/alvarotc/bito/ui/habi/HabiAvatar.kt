@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -61,43 +62,43 @@ import kotlin.math.PI
 import kotlin.math.sin
 import kotlin.random.Random
 
-// Real lids close faster than they open — that asymmetry is what reads as a blink instead of a
-// camera shutter. An occasional double blink keeps the idle loop from feeling metronomic.
-private const val BLINK_CLOSE_MS = 60
-private const val BLINK_OPEN_MS = 110
+// Parpadeo por pieza (pieza 1 §3.5): los ojos cerrados pintados durante unos 130 ms. Un doble
+// parpadeo de vez en cuando evita que el reposo parezca un metrónomo.
+private const val BLINK_HOLD_MS = 130L
 private const val BLINK_MIN_DELAY_MS = 3000L
 private const val BLINK_MAX_DELAY_MS = 5000L
-private const val DOUBLE_BLINK_CHANCE = 4 // 1 in N idle blinks doubles up.
+private const val DOUBLE_BLINK_CHANCE = 4 // 1 de cada N parpadeos es doble.
 private const val DOUBLE_BLINK_GAP_MS = 90L
+
+// Fundido entre la cara anterior y la nueva (§3.5), en lugar de deformar parámetros.
+private const val EXPRESSION_FADE_MS = 150
+
 private const val TAP_SCALE_X = 1.06f
 private const val TAP_SCALE_Y = 0.94f
 
-// Expressive mode (animated && onTap != null) presses a touch deeper than the corner avatar — the
-// finger-down preload of the poke reaction below. Toned down from 1.10/0.90 now that the release
-// carries the real response; the press is just the matter giving way under the finger.
+// En modo expresivo (animated && onTap != null) el dedo hunde un poco más que en la esquina de Hoy:
+// es la precarga del toque; la reacción de verdad llega al soltar.
 private const val EXPRESSIVE_TAP_SCALE_X = 1.07f
 private const val EXPRESSIVE_TAP_SCALE_Y = 0.93f
 
-// QA 2026-08-23 bis («mascota, no robot»): everything anchors at the FEET (bottom-center
-// transform origin) so squash, stretch and landings read as weight; breathing is visible and
-// mood-paced; idle micro-gestures fire every few seconds.
+// Todo se ancla en los PIES (origen abajo en el centro) para que aplastar, estirar y aterrizar
+// tengan peso; la respiración se ve y va al ritmo del ánimo.
 private const val BREATH_SCALE = 0.022f
 private const val BREATH_LIFT_DP = 1.2f
 private const val BREATH_PERIOD_RADIANT_MS = 2000
 private const val BREATH_PERIOD_NORMAL_MS = 2700
 private const val BREATH_PERIOD_LOW_MS = 3500
 
-// Al acabar la guia el parpado sube como el BLINK_OPEN_MS del parpadeo, cuatro veces mas lento:
-// la apertura de alguien que despierta, no un pestaneo.
+// Al acabar la guía, los ojos cerrados se funden con los abiertos en este tiempo: alguien que
+// despierta, no un pestañeo.
 private const val LID_RELEASE_MS = 450
 
-/** Lo que la respiracion aplica al graphicsLayer: escala desde los pies y elevacion (en unidades de BREATH_LIFT_DP). */
+/** Lo que la respiración aplica al graphicsLayer: escala desde los pies y elevación (en unidades de BREATH_LIFT_DP). */
 internal data class BreathScales(val scaleX: Float, val scaleY: Float, val liftFactor: Float)
 
 /**
- * La formula de siempre con [amplitude] multiplicando el efecto: con 1 reproduce exactamente la
- * respiracion idle; con [GUIDED_BREATH_AMPLITUDE] queda en +6,6 % de alto, -3,3 % de ancho y
- * 3,6 dp de elevacion.
+ * La fórmula de siempre con [amplitude] multiplicando el efecto: con 1 reproduce la respiración en
+ * reposo; con [GUIDED_BREATH_AMPLITUDE] queda en +6,6 % de alto, -3,3 % de ancho y 3,6 dp de elevación.
  */
 internal fun breathScales(
     breathValue: Float,
@@ -115,56 +116,41 @@ private const val SQUASH_SCALE_X = 0.10f
 private const val SQUASH_SCALE_Y = 0.14f
 private const val TAP_HOP_DP = 8f
 
-// Art pass 2026-08-25 («Pou, no un robot»): a tap is answered with soft MATTER, not a canned
-// choreography. The body compresses under the finger — harder for a poke on the head than on the
-// belly — leans AWAY from the touch point, and releases through ONE under-damped spring whose
-// wobble is the gelatin. Amplitudes jitter per poke so no two reactions are ever identical, and
-// an occasional small hop (never twice in a row) is the only flourish left.
+// Un toque se contesta con materia blanda, no con una coreografía: el cuerpo se comprime bajo el
+// dedo (más si el toque es en la cabeza), se inclina en contra y vuelve con un muelle poco
+// amortiguado. Las amplitudes varían en cada toque y de vez en cuando hay un saltito.
 private const val POKE_PRESS_MS = 70
 private const val POKE_SQUASH_BASE = 0.4f
 private const val POKE_SQUASH_HEAD_GAIN = 0.35f
 private const val POKE_TILT_MAX_DEG = 10f
 private const val POKE_JITTER = 0.3f
-private const val HOP_CHANCE = 3 // 1 in N pokes hops, unless the previous poke already did.
+private const val HOP_CHANCE = 3 // 1 de cada N toques salta, salvo si el anterior ya saltó.
 private const val GAZE_HOLD_MS = 420L
 private const val IDLE_GLANCE_HOLD_MS = 600L
 
-// One shared physics so every gesture reads as the same creature: JellySpring is the wobbly
-// release of poked matter, SettleSpring the calm return of idle gestures and landings, GazeSpring
-// the eyes easing back from a glance, FaceMorphSpring the expression morph between moods — a
-// barely-bouncy bloom over ~a third of a second instead of a frame-to-frame snap.
 private val JellySpring = spring<Float>(dampingRatio = 0.32f, stiffness = 380f)
 private val SettleSpring = spring<Float>(dampingRatio = 0.6f, stiffness = Spring.StiffnessMediumLow)
 private val GazeSpring = spring<Float>(dampingRatio = 0.85f, stiffness = 300f)
-private val FaceMorphSpring = spring<Float>(dampingRatio = 0.8f, stiffness = 260f)
+
+/** Lo que decide la cara: si cambia, la cara vieja se funde con la nueva. */
+private data class FaceKey(
+    val mood: Mood,
+    val personality: Personality,
+    val delighted: Boolean,
+    val closedEyes: Boolean,
+)
 
 /**
- * The living Habi bean: breathing idle (mood-paced), periodic blink, idle micro-gestures (a
- * curious tilt, a tall stretch, a sideways glance), mood morphs (the face interpolates between
- * expressions instead of snapping) and (when [onTap] is given) a soft-body poke response at the
- * touch point. Purely presentational — [spec] already carries mood, personality and the equipped
- * set; this composable owns no state about what Habi wears or feels.
+ * Habi con vida, en piezas pintadas (pieza 1 §3): respiración al ritmo del ánimo, parpadeo con la pieza
+ * de ojos cerrados, gestos en reposo (inclinarse, estirarse, mirar a un lado), fundido de 150 ms al
+ * cambiar de cara y, con [onTap], la reacción blanda al toque con la mirada hacia el dedo. Solo
+ * presenta: [spec] ya trae ánimo, personalidad y lo puesto.
  *
- * [animated] gates every loop and morph at once, frozen to the resting frame when false — a
- * constant per call site (never toggled mid-lifetime here), so branching composable calls on it is
- * safe. Exists for compose tests: `captureToImage`/`waitUntil` never settle against an infinite
- * transition, so a test that needs a stable frame passes `animated = false` instead of fighting
- * the clock. Every real screen keeps the default `true`.
- *
- * When both [animated] and [onTap] apply, a tap also pulses a full blink (open -> closed -> open,
- * independent Animatable from the idle blink loop so neither interrupts the other), darts the eyes
- * toward the finger, and plays the jelly compression described above. Callers with
- * `animated = false` (the Today corner avatar) keep the plain press squash only.
- *
- * [nudge] replays that very same tap response from OUTSIDE, without an actual touch — Focus's own
- * "Habi acompaña" (spec §8.5 revoked in part): incrementing it plays one pulse, same guard shape
- * as [com.alvarotc.bito.ui.habi.HabiScreen]'s own `delightPulse` counter (0 means "never fired
- * yet", so the very first composition never replays one on mount). A no-op when [onTap] is null —
- * there is then nothing to replay — or [animated] is false.
- *
- * [breath], cuando no es null, sustituye la respiracion idle por la guiada (ver [HabiBreath]),
- * sostiene el parpado en rendija y calla los gestos y parpadeos idle; funciona tambien con
- * animated = false. Al volver a null, el parpado se abre en LID_RELEASE_MS.
+ * [animated] congela todo en el fotograma de reposo cuando es false (los tests de Compose y la
+ * esquina de Hoy). [nudge] repite la reacción al toque desde fuera (el foco, el jardín), con la
+ * mirada hacia [nudgeTouch] (0..1 en el lienzo) si viene; si no, hacia el último toque. [breath], si no es
+ * null, sustituye la respiración de reposo por la guiada y cierra los ojos con la pieza pintada; al
+ * volver a null se abren con un fundido de LID_RELEASE_MS.
  */
 @Composable
 fun HabiAvatar(
@@ -175,31 +161,31 @@ fun HabiAvatar(
     delighted: Boolean = false,
     nudge: Int = 0,
     breath: HabiBreath? = null,
+    nudgeTouch: Offset? = null,
 ) {
+    val context = LocalContext.current
+    val art = remember(context) { HabiArt.get(context) }
     val density = LocalDensity.current
     val hopPx = with(density) { TAP_HOP_DP.dp.toPx() }
     val breathLiftPx = with(density) { BREATH_LIFT_DP.dp.toPx() }
-    val restingMotion = restingFaceMotion(spec, delighted)
+    val faceKey = FaceKey(spec.mood, spec.personality, delighted, spec.closedEyes)
     val blinkValue: Float
     var tapBlinkPulse: (() -> Unit)? = null
     var tapReactionPulse: (() -> Unit)? = null
     var breathValue = 0f
-    // Response channels, all resting at 0: squash >0 flattens / <0 stretches (from the feet), hop
-    // lifts, tilt rocks on the feet, gaze darts the eyes. Idle gestures and poke reactions share
-    // them — the newest animateTo wins, which is exactly the interruption behavior a pet should
-    // have.
+    // Canales de respuesta, en reposo a 0: squash >0 aplasta / <0 estira (desde los pies), hop
+    // eleva, tilt balancea sobre los pies, gaze mueve la cara. Gestos y toques los comparten: el
+    // último animateTo gana, que es como debe interrumpirse una mascota.
     var squashValue = 0f
     var hopValue = 0f
     var tiltValue = 0f
     var gazeValue = Offset.Zero
     var heartsPhaseValue = 0f
-    var motion = restingMotion
-    // Normalized (0..1) position of the last finger-down inside the canvas, observed passively so
-    // clickable still owns the click; the poke reaction reads it to compress toward the touch.
+    var fadeFrom: FaceKey? = null
+    var fadeProgress = 1f
+    // Dónde cayó el último dedo (0..1 dentro del lienzo), observado sin consumir el toque.
     var lastTouch by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
-    // Los bucles idle de abajo son LaunchedEffect(Unit): leen la guia en vivo a traves de esto, sin
-    // relanzarse, y se saltan su turno mientras dure — inclinacion y estiramiento compartirian
-    // scaleY con la respiracion guiada, y un parpadeo sobre ojos cerrados no tiene sentido.
+    // Los bucles de reposo leen la guía en vivo a través de esto y se saltan su turno mientras dure.
     val guided by rememberUpdatedState(breath != null)
     if (animated) {
         val breathPeriod =
@@ -213,40 +199,32 @@ fun HabiAvatar(
             infiniteTransition.animateFloat(
                 initialValue = 0f,
                 targetValue = 1f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(breathPeriod, easing = EaseInOut),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
+                animationSpec = infiniteRepeatable(animation = tween(breathPeriod, easing = EaseInOut), repeatMode = RepeatMode.Reverse),
                 label = "habi-breath-phase",
             )
         breathValue = guidedBreathValue(breath, breathPhase)
 
-        // The face MORPHS between moods: each continuous channel eases toward its resting value on
-        // the shared spring, so lids, brow, curve and smirk bloom into the next expression instead
-        // of snapping frame to frame. Discrete traits (cheek style, sparkle count) still switch —
-        // they are small enough that the surrounding morph carries them.
-        val face = restingMotion.face
-        val mouthCurve by animateFloatAsState(face.mouthCurve, FaceMorphSpring, label = "habi-mouth-curve")
-        val mouthOpen by animateFloatAsState(face.mouthOpen, FaceMorphSpring, label = "habi-mouth-open")
-        val eyeScale by animateFloatAsState(face.eyeScale, FaceMorphSpring, label = "habi-eye-scale")
-        val browAngle by animateFloatAsState(face.browAngleDeg ?: 0f, FaceMorphSpring, label = "habi-brow-angle")
-        val smirk by animateFloatAsState(restingMotion.smirkProgress, FaceMorphSpring, label = "habi-smirk")
-        val droop by animateFloatAsState(restingMotion.eyelidDroop, FaceMorphSpring, label = "habi-droop")
-        val wobble by animateFloatAsState(restingMotion.mouthWobble, FaceMorphSpring, label = "habi-wobble")
-        motion =
-            HabiFaceMotion(
-                face =
-                    face.copy(
-                        mouthCurve = mouthCurve,
-                        mouthOpen = mouthOpen,
-                        eyeScale = eyeScale,
-                        browAngleDeg = face.browAngleDeg?.let { browAngle },
-                    ),
-                smirkProgress = smirk,
-                eyelidDroop = droop,
-                mouthWobble = wobble,
-            )
+        // Fundido de expresión. `shownFace` es la cara que ya se está enseñando; hasta que el efecto
+        // corre, el fotograma de la recomposición sigue pintando la vieja entera (progreso 0), así
+        // que nunca hay un fotograma con la cara nueva de golpe.
+        var shownFace by remember { mutableStateOf(faceKey) }
+        var previousFace by remember { mutableStateOf(faceKey) }
+        val fade = remember { Animatable(1f) }
+        LaunchedEffect(faceKey) {
+            if (faceKey != shownFace) {
+                previousFace = shownFace
+                shownFace = faceKey
+                fade.snapTo(0f)
+                fade.animateTo(1f, tween(EXPRESSION_FADE_MS, easing = LinearEasing))
+            }
+        }
+        if (faceKey != shownFace) {
+            fadeFrom = shownFace
+            fadeProgress = 0f
+        } else {
+            fadeFrom = previousFace
+            fadeProgress = fade.value
+        }
 
         if (delighted) {
             val heartsTransition = rememberInfiniteTransition(label = "habi-hearts")
@@ -268,19 +246,17 @@ fun HabiAvatar(
                 val blinks = if (Random.nextInt(DOUBLE_BLINK_CHANCE) == 0) 2 else 1
                 repeat(blinks) { index ->
                     if (index > 0) delay(DOUBLE_BLINK_GAP_MS)
-                    idleBlink.animateTo(1f, tween(BLINK_CLOSE_MS, easing = LinearEasing))
-                    idleBlink.animateTo(0f, tween(BLINK_OPEN_MS, easing = LinearEasing))
+                    idleBlink.snapTo(1f)
+                    delay(BLINK_HOLD_MS)
+                    idleBlink.snapTo(0f)
                 }
             }
         }
 
-        // Al pasar de guiado a sin guia (el final del ejercicio, D8) el parpado se levanta desde la
-        // rendija. Mientras dura la guia, lidRelease queda APARCADO en el cierre activo: si no,
-        // la recomposicion donde `breath` pasa a null pintaria un fotograma con los ojos abiertos
-        // (blinkValue leeria lidRelease en 0 antes de que este efecto llegue a correr). Aparcado,
-        // ese mismo fotograma ya sale con el parpado cerrado y la apertura empieza desde ahi.
-        // `wasGuided` recuerda el valor anterior: la PRIMERA composicion sin guia no anima nada,
-        // asi que un avatar que nunca tuvo gancho deja lidRelease en 0 para siempre.
+        // Al pasar de guiado a sin guía, los ojos cerrados se funden con los abiertos. Mientras dura
+        // la guía, lidRelease queda aparcado en el cierre: así el fotograma en que `breath` pasa a
+        // null ya sale con los ojos cerrados y el fundido empieza desde ahí. `wasGuided` evita que
+        // un avatar que nunca tuvo guía anime nada al aparecer.
         val lidRelease = remember { Animatable(0f) }
         var wasGuided by remember { mutableStateOf(breath != null) }
         LaunchedEffect(breath != null) {
@@ -303,8 +279,6 @@ fun HabiAvatar(
         tiltValue = tilt.value
         gazeValue = Offset(gazeX.value, gazeY.value)
 
-        // Idle micro-gestures: a curious tilt, a tall stretch or a sideways glance, every few
-        // seconds — all returning on the same calm settle spring.
         LaunchedEffect(Unit) {
             while (true) {
                 delay(Random.nextLong(IDLE_GESTURE_MIN_DELAY_MS, IDLE_GESTURE_MAX_DELAY_MS))
@@ -338,14 +312,13 @@ fun HabiAvatar(
             val lastPokeHopped = remember { booleanArrayOf(false) }
             tapBlinkPulse = {
                 tapScope.launch {
-                    tapBlink.animateTo(1f, tween(BLINK_CLOSE_MS, easing = LinearEasing))
-                    tapBlink.animateTo(0f, tween(BLINK_OPEN_MS, easing = LinearEasing))
+                    tapBlink.snapTo(1f)
+                    delay(BLINK_HOLD_MS)
+                    tapBlink.snapTo(0f)
                 }
             }
             tapReactionPulse = {
                 val touch = lastTouch
-                // Eyes dart to the finger, hold a beat, ease back — a glance, run independently of
-                // the body so an interrupted poke never freezes the gaze mid-dart.
                 gazeJob[0]?.cancel()
                 gazeJob[0] =
                     tapScope.launch {
@@ -364,9 +337,6 @@ fun HabiAvatar(
                 tapJob[0]?.cancel()
                 tapJob[0] =
                     tapScope.launch {
-                        // Soft matter under the finger: compression scales with how high the poke
-                        // lands (head pokes press down harder), the lean tips AWAY from the touch,
-                        // and both carry a per-poke jitter so no two reactions repeat.
                         val jitter = 1f + POKE_JITTER * (Random.nextFloat() * 2f - 1f)
                         val squashTarget = (POKE_SQUASH_BASE + POKE_SQUASH_HEAD_GAIN * (1f - touch.y)) * jitter
                         val tiltTarget = -(touch.x - 0.5f) * 2f * POKE_TILT_MAX_DEG * jitter
@@ -377,9 +347,6 @@ fun HabiAvatar(
                         val hops = !lastPokeHopped[0] && Random.nextInt(HOP_CHANCE) == 0
                         lastPokeHopped[0] = hops
                         if (hops) {
-                            // The happy exception: the compression powers a small jump — stretch on
-                            // the way up (decelerating), drop back (accelerating), land with a
-                            // squish and let the jelly spring shake the rest out.
                             val height = 0.6f + Random.nextFloat() * 0.3f
                             coroutineScope {
                                 launch { squash.animateTo(-0.45f * height, tween(150, easing = LinearOutSlowInEasing)) }
@@ -392,8 +359,6 @@ fun HabiAvatar(
                             }
                             squash.animateTo(0f, JellySpring)
                         } else {
-                            // The usual answer: release everything through the one under-damped
-                            // spring — the decaying wobble IS the gelatin.
                             coroutineScope {
                                 launch { squash.animateTo(0f, JellySpring) }
                                 launch { tilt.animateTo(0f, JellySpring) }
@@ -406,14 +371,12 @@ fun HabiAvatar(
             blinkValue = guidedBlinkValue(breath, idleBlink.value, 0f, lidRelease.value)
         }
 
-        // Remembers the value already answered, seeded to whatever `nudge` already is on first
-        // composition — not just a `> 0` guard, which only protects the very first mount: an
-        // Activity recreation (rotation) that keeps the ViewModel alive relaunches this effect
-        // with the SAME accumulated `nudge` it had before, and a bare `> 0` would fire a reaction
-        // on mount for that value all over again.
+        // Recuerda el valor ya contestado, sembrado con el que traiga `nudge` al componer: una
+        // recreación de la actividad (rotación) que conserve el ViewModel no repite la reacción.
         var lastAnsweredNudge by remember { mutableIntStateOf(nudge) }
         LaunchedEffect(nudge) {
             if (nudge > lastAnsweredNudge) {
+                nudgeTouch?.let { lastTouch = it }
                 tapBlinkPulse?.invoke()
                 tapReactionPulse?.invoke()
             }
@@ -454,11 +417,7 @@ fun HabiAvatar(
             label = "habi-scale-y",
         )
 
-    // [D]/[E]: was a single static "Habi" regardless of mood/personality/equipped — now folds in
-    // the mood, the one enrichment that's cheap AND honest (see HabiVoice.moodLabelRes' kdoc for
-    // why personality-flavored copy stays out of scope here). Still ONE aggregated description on
-    // the Canvas container, never per drawn path — drawHabi()'s ~30 private drawX helpers below
-    // correctly carry zero semantics of their own.
+    // Una sola descripción para todo el lienzo, con el ánimo; las piezas no llevan semántica propia.
     val contentDescription =
         stringResource(
             R.string.habi_avatar_cd_mood,
@@ -467,6 +426,16 @@ fun HabiAvatar(
         )
 
     val breathing = breathScales(breathValue, breath?.amplitude ?: 1f)
+    val look = HabiLook(delighted = delighted, eyeClosure = blinkValue, gazeX = gazeValue.x, gazeY = gazeValue.y)
+    val current = habiLayers(spec, look)
+    val from = fadeFrom
+    val layers =
+        if (from != null && fadeProgress < 1f) {
+            val previous = spec.copy(mood = from.mood, personality = from.personality, closedEyes = from.closedEyes)
+            crossfadeFace(habiLayers(previous, look.copy(delighted = from.delighted)), current, fadeProgress)
+        } else {
+            current
+        }
 
     val canvasModifier =
         modifier
@@ -475,8 +444,6 @@ fun HabiAvatar(
                 if (onTap != null) {
                     base
                         .pointerInput(Unit) {
-                            // Passive observer: records where the finger lands without consuming,
-                            // so clickable below still owns the click (and its a11y action).
                             awaitEachGesture {
                                 val down = awaitFirstDown(requireUnconsumed = false)
                                 lastTouch =
@@ -500,8 +467,7 @@ fun HabiAvatar(
                 }
             }
             .graphicsLayer {
-                // Anchored at the feet: a creature with weight, not a balloon scaling around
-                // its middle.
+                // Anclado en los pies: una criatura con peso, no un globo que escala desde el centro.
                 transformOrigin = TransformOrigin(0.5f, 1f)
                 translationY = -breathLiftPx * breathing.liftFactor - hopPx * hopValue
                 rotationZ = tiltValue
@@ -510,7 +476,7 @@ fun HabiAvatar(
             }
 
     Canvas(canvasModifier) {
-        drawHabi(spec, blink = blinkValue, delighted = delighted, motion = motion, gaze = gazeValue)
+        drawHabiLayers(art, layers, sampleSizeFor(size.height, size.height / this.density))
         if (delighted) drawHearts(heartsPhaseValue)
     }
 }
@@ -545,62 +511,29 @@ private fun HabiAvatarDoradoPreview() {
     }
 }
 
-/** T10 catalog: every pattern, human-checked here — fidelity against the mockup is a visual call, not a test. */
+/** El catálogo puesto, para revisarlo a ojo: un artículo de cada eje y los disfraces. */
 @Preview(showBackground = true, backgroundColor = 0xFFF2ECE1)
 @Composable
-private fun HabiAvatarPatternsPreview() {
-    val patterns =
+private fun HabiAvatarCatalogPreview() {
+    val sets =
         listOf(
-            "pattern-motas",
-            "pattern-rayitas",
-            "pattern-corazones",
-            "pattern-estrellas",
-            "pattern-flores",
-            "pattern-chispas",
-            "pattern-llamas",
+            EquippedSet(head = "head-copa"),
+            EquippedSet(face = "face-gafas-redondas"),
+            EquippedSet(neck = "neck-bufanda"),
+            EquippedSet(feet = "feet-botas-agua"),
+            EquippedSet(costume = "costume-calabaza"),
+            EquippedSet(costume = "costume-reno"),
         )
     BitoTheme {
         Row(modifier = Modifier.padding(16.dp)) {
-            for (pattern in patterns) {
-                HabiAvatar(
-                    spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = pattern)),
-                    modifier = Modifier.size(72.dp).padding(4.dp),
-                )
+            for (set in sets) {
+                HabiAvatar(spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, set), modifier = Modifier.size(72.dp).padding(4.dp))
             }
         }
     }
 }
 
-/** T10 catalog: every upper + lower item. */
-@Preview(showBackground = true, backgroundColor = 0xFFF2ECE1)
-@Composable
-private fun HabiAvatarAccessoriesPreview() {
-    val uppers = listOf("upper-gorro-lana", "upper-lazo", "upper-copa", "upper-corona")
-    val lowers = listOf("lower-calcetines", "lower-zapatillas")
-    BitoTheme {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row {
-                for (upper in uppers) {
-                    HabiAvatar(
-                        spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(upper = upper)),
-                        modifier = Modifier.size(72.dp).padding(4.dp),
-                    )
-                }
-            }
-            Row {
-                for (lower in lowers) {
-                    HabiAvatar(
-                        spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(lower = lower)),
-                        modifier = Modifier.size(72.dp).padding(4.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-// Hearts (pet-streak delight): three lanes as (x offset, phase offset, tilt degrees) — hand-placed
-// tilts so they read as scattered by hand, not stamped.
+// Corazones (racha de caricias): tres carriles (x, desfase de fase, inclinación) puestos a mano.
 private val HEART_LANES = listOf(Triple(-0.26f, 0f, -12f), Triple(0.05f, 0.38f, 6f), Triple(0.28f, 0.72f, 14f))
 private const val HEART_RISE_START_Y = 0.42f
 private const val HEART_RISE_TRAVEL = 0.3f
@@ -610,12 +543,7 @@ private const val HEART_SWAY = 0.015f
 private const val HEART_FADE_IN_END = 0.12f
 private const val HEART_PEAK_ALPHA = 0.85f
 
-/**
- * Three blush-pink hearts drifting up from the face while the pet-streak delight lasts
- * (QA 2026-08-24, «que saque corazones»). Refined 2026-08-25: smaller and lighter, rising on an
- * ease-out (they decelerate like bubbles), swaying gently sideways, fading IN at birth — the old
- * linear rise popped fully-opaque at the loop seam — and tilted per lane.
- */
+/** Tres corazones que suben desde la cara mientras dura `delighted`. Son un efecto, no arte de Habi. */
 private fun DrawScope.drawHearts(phase: Float) {
     for ((xFactor, offset, tiltDeg) in HEART_LANES) {
         val p = (phase + offset) % 1f
@@ -632,7 +560,7 @@ private fun DrawScope.drawHearts(phase: Float) {
                 cubicTo(cx - 1.6f * half, cy, cx - 0.9f * half, cy - 1.2f * half, cx, cy - 0.4f * half)
                 cubicTo(cx + 0.9f * half, cy - 1.2f * half, cx + 1.6f * half, cy, cx, cy + half)
             }
-        rotate(degrees = tiltDeg.toFloat(), pivot = Offset(cx, cy)) {
+        rotate(degrees = tiltDeg, pivot = Offset(cx, cy)) {
             drawPath(heart, color = Mofletes, alpha = alpha)
         }
     }

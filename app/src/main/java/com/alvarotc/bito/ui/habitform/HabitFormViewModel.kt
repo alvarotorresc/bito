@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
@@ -44,6 +45,7 @@ class HabitFormViewModel(
     private val habits: HabitsRepository,
     private val settings: SettingsRepository,
     rewards: RewardsRepository,
+    private val reconciler: PointsReconciler,
     habitId: String?,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
@@ -149,6 +151,9 @@ class HabitFormViewModel(
                     today,
                 )
             }
+            // Como cualquier escritura: la marca de agua del jardín (D11) recoge lo que sube al
+            // bajar un objetivo, y los puntos pendientes se conceden al momento.
+            reconciler.reconcile(today, now())
             onSaved()
         }
     }
@@ -157,6 +162,8 @@ class HabitFormViewModel(
         viewModelScope.launch {
             val id = formState.value.editingId ?: return@launch
             habits.delete(id)
+            val today = LogicalDays.logicalDayOf(now(), settings.settings.first().dayCutoffMinutes, zone())
+            reconciler.reconcile(today, now())
             onDeleted()
         }
 
@@ -167,7 +174,7 @@ class HabitFormViewModel(
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    HabitFormViewModel(container.habits, container.settings, container.rewards, habitId)
+                    HabitFormViewModel(container.habits, container.settings, container.rewards, container.reconciler, habitId)
                 }
             }
     }

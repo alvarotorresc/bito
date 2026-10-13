@@ -4,13 +4,18 @@ import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.RealHabits
 import com.alvarotc.bito.domain.StoreItemState
 import com.alvarotc.bito.domain.TODAY
+import com.alvarotc.bito.domain.createdOn
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
 import com.alvarotc.bito.domain.ledgerEntry
 import com.alvarotc.bito.domain.model.CustomizationCategory
+import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.model.GardenState
+import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import java.time.LocalDateTime
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -65,13 +70,13 @@ class HabiUiStateTest {
                 ownedItem("body-terracota", CustomizationCategory.BODY_COLOR, equipped = true),
                 // Owned but NOT equipped — must not leak into the worn set.
                 ownedItem("body-carbon", CustomizationCategory.BODY_COLOR, equipped = false),
-                ownedItem("upper-lazo", CustomizationCategory.UPPER, equipped = true),
+                ownedItem("neck-collar-flores", CustomizationCategory.NECK, equipped = true),
             )
 
         val result = buildHabiUiState(state, owned = owned, balance = 0, personality = Personality.NEUTRA, today = TODAY)
 
         assertEquals("body-terracota", result.spec.equipped.bodyColor)
-        assertEquals("upper-lazo", result.spec.equipped.upper)
+        assertEquals("neck-collar-flores", result.spec.equipped.neck)
         // Eyes untouched -> still the axis default.
         assertEquals("eyes-tinta", result.spec.equipped.eyeColor)
     }
@@ -85,10 +90,12 @@ class HabiUiStateTest {
         assertEquals(
             listOf(
                 CustomizationCategory.BODY_COLOR,
-                CustomizationCategory.PATTERN,
                 CustomizationCategory.EYE_COLOR,
-                CustomizationCategory.UPPER,
-                CustomizationCategory.LOWER,
+                CustomizationCategory.HEAD,
+                CustomizationCategory.FACE,
+                CustomizationCategory.NECK,
+                CustomizationCategory.FEET,
+                CustomizationCategory.COSTUME,
             ),
             result.store.keys.toList(),
         )
@@ -116,17 +123,18 @@ class HabiUiStateTest {
 
         // Affordable, including the exact-balance boundary (>=).
         assertEquals(StoreItemState.Affordable, stateOf("body-vainilla")) // price 15
-        assertEquals(StoreItemState.Affordable, stateOf("pattern-corazones")) // price 50 == balance
+        assertEquals(StoreItemState.Affordable, stateOf("face-gafas-redondas")) // price 50 == balance
 
         // Priced but out of reach.
-        val missing = assertIs<StoreItemState.MissingPoints>(stateOf("upper-gorro-lana")) // price 80
+        val missing = assertIs<StoreItemState.MissingPoints>(stateOf("head-paja")) // price 80
         assertEquals(30, missing.missing)
 
         // Achievement-only exclusives.
-        val lockedUpper = assertIs<StoreItemState.Locked>(stateOf("upper-corona"))
-        assertEquals(100, lockedUpper.requiredStreak)
-        val lockedPattern = assertIs<StoreItemState.Locked>(stateOf("pattern-chispas"))
-        assertEquals(7, lockedPattern.requiredStreak)
+        val lockedCrown = assertIs<StoreItemState.Locked>(stateOf("head-corona"))
+        assertEquals(100, lockedCrown.requiredStreak)
+        val lockedFlower = assertIs<StoreItemState.Locked>(stateOf("head-flor"))
+        assertEquals(7, lockedFlower.requiredStreak)
+        assertEquals(StoreItemState.OutOfSeason, stateOf("costume-calabaza")) // TODAY es 14 de agosto
     }
 
     @Test
@@ -148,7 +156,7 @@ class HabiUiStateTest {
         val state = domainState()
         val owned = listOf(ownedItem("body-terracota", CustomizationCategory.BODY_COLOR, equipped = true))
 
-        // 90 is upper-lazo's exact price — Affordable, not MissingPoints.
+        // 90 is neck-collar-flores's exact price — Affordable, not MissingPoints.
         val previewing =
             buildHabiUiState(
                 state,
@@ -156,22 +164,22 @@ class HabiUiStateTest {
                 balance = 90,
                 personality = Personality.NEUTRA,
                 today = TODAY,
-                previewItemId = "upper-lazo",
+                previewItemId = "neck-collar-flores",
             )
 
         // The avatar wears the preview on top of what's really equipped...
         assertEquals("body-terracota", previewing.spec.equipped.bodyColor)
-        assertEquals("upper-lazo", previewing.spec.equipped.upper)
-        assertEquals("upper-lazo", previewing.previewItemId)
+        assertEquals("neck-collar-flores", previewing.spec.equipped.neck)
+        assertEquals("neck-collar-flores", previewing.previewItemId)
         // ...but the store grid never lies: the previewed item is still just Affordable/Owned/etc,
         // derived from the real DB-backed equipped set, not "Equipped" because it's on screen.
-        val previewedEntry = previewing.store.getValue(CustomizationCategory.UPPER).first { it.item.id == "upper-lazo" }
+        val previewedEntry = previewing.store.getValue(CustomizationCategory.NECK).first { it.item.id == "neck-collar-flores" }
         assertEquals(StoreItemState.Affordable, previewedEntry.state)
 
         val notPreviewing =
             buildHabiUiState(state, owned = owned, balance = 0, personality = Personality.NEUTRA, today = TODAY)
 
-        assertEquals(null, notPreviewing.spec.equipped.upper)
+        assertEquals(null, notPreviewing.spec.equipped.neck)
         assertEquals(null, notPreviewing.previewItemId)
     }
 
@@ -229,5 +237,44 @@ class HabiUiStateTest {
         // The screens' first-frame gates (QA 2026-08-23) rely on this default: if it ever flips,
         // both gates die silently while every other test keeps passing.
         assertTrue(HabiUiState().loading)
+    }
+
+    @Test
+    fun `the garden derives from history, unlocked badges, the clock and the high mark`() {
+        val habit = RealHabits.makeBed.createdOn(TODAY - 3)
+        val state = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(TODAY - 1, TODAY)))
+
+        val result =
+            buildHabiUiState(
+                state,
+                owned = emptyList(),
+                balance = 0,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                now = LocalDateTime.of(2026, 8, 14, 22, 0),
+                unlockedBadges = setOf("streak-7", "first-habit"),
+                waterHighMark = 30.0,
+            )
+
+        assertEquals(30.0, result.garden.water, 1e-9)
+        assertEquals(2, result.garden.plots.size)
+        assertEquals(setOf(GardenSpecial.LANTERN), result.garden.specials)
+        assertEquals(LightPhase.NOCHE, result.garden.light.phase)
+        assertEquals(0, result.garden.wilt)
+    }
+
+    @Test
+    fun `a forced garden wins over the engine`() {
+        val forced = GardenState.INITIAL.copy(wilt = 3)
+        val result =
+            buildHabiUiState(
+                domainState(),
+                owned = emptyList(),
+                balance = 0,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                gardenOverride = forced,
+            )
+        assertEquals(forced, result.garden)
     }
 }

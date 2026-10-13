@@ -2,19 +2,68 @@ package com.alvarotc.bito.domain.model
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CustomizationTest {
+    private fun ids(category: CustomizationCategory) = HabiCatalog.all.filter { it.category == category }.map { it.id }
+
     @Test
-    fun `catalog matches the economy session deliverable`() {
-        val purchasable = HabiCatalog.all.filter { it.price != null }
-        assertEquals(24, purchasable.size)
-        assertEquals(975, purchasable.sumOf { it.price!! })
-        assertEquals(4, HabiCatalog.exclusives.size)
+    fun `the catalog has exactly the axes and items of the spec`() {
         assertEquals(
-            setOf(7, 30, 100, 365),
-            HabiCatalog.exclusives.mapNotNull { it.requiredStreak }.toSet(),
+            listOf(
+                "body-salvia", "body-vainilla", "body-melocoton", "body-cielo", "body-lavanda",
+                "body-rosa", "body-terracota", "body-carbon", "body-dorado",
+            ),
+            ids(CustomizationCategory.BODY_COLOR),
         )
+        assertEquals(
+            listOf("eyes-tinta", "eyes-avellana", "eyes-verde", "eyes-azul", "eyes-ambar", "eyes-violeta"),
+            ids(CustomizationCategory.EYE_COLOR),
+        )
+        assertEquals(
+            listOf("head-gorro-lana", "head-boina", "head-paja", "head-auriculares", "head-copa", "head-flor", "head-corona"),
+            ids(CustomizationCategory.HEAD),
+        )
+        assertEquals(listOf("face-gafas-redondas", "face-gafas-sol"), ids(CustomizationCategory.FACE))
+        assertEquals(
+            listOf("neck-bufanda", "neck-panuelo", "neck-collar-flores", "neck-panuelo-brasa"),
+            ids(CustomizationCategory.NECK),
+        )
+        assertEquals(listOf("feet-calcetines", "feet-botas-agua", "feet-zapatillas"), ids(CustomizationCategory.FEET))
+        assertEquals(listOf("costume-calabaza", "costume-reno", "costume-dinosaurio"), ids(CustomizationCategory.COSTUME))
+    }
+
+    @Test
+    fun `every price stays inside its axis range`() {
+        val ranges =
+            mapOf(
+                CustomizationCategory.BODY_COLOR to 15..25,
+                CustomizationCategory.EYE_COLOR to 10..20,
+                CustomizationCategory.HEAD to 60..120,
+                CustomizationCategory.FACE to 50..80,
+                CustomizationCategory.NECK to 50..90,
+                CustomizationCategory.FEET to 60..120,
+                CustomizationCategory.COSTUME to 150..150,
+            )
+        HabiCatalog.all.filter { it.price != null }.forEach {
+            assertTrue("${it.id} costs ${it.price}", it.price!! in ranges.getValue(it.category))
+        }
+    }
+
+    @Test
+    fun `the four exclusives are the streak rewards of the spec`() {
+        assertEquals(
+            mapOf(7 to "head-flor", 30 to "neck-panuelo-brasa", 100 to "head-corona", 365 to "body-dorado"),
+            HabiCatalog.exclusives.associate { it.requiredStreak!! to it.id },
+        )
+    }
+
+    @Test
+    fun `only costumes have a season and every costume has one`() {
+        HabiCatalog.all.forEach {
+            assertEquals(it.id, it.category == CustomizationCategory.COSTUME, it.season != null)
+        }
     }
 
     @Test
@@ -29,19 +78,41 @@ class CustomizationTest {
     @Test
     fun `defaults exist only for body and eyes`() {
         assertEquals(
-            listOf(CustomizationCategory.BODY_COLOR, CustomizationCategory.EYE_COLOR),
-            HabiCatalog.all.filter { it.default }.map { it.category },
+            listOf(HabiCatalog.DEFAULT_BODY, HabiCatalog.DEFAULT_EYES),
+            HabiCatalog.all.filter { it.default }.map { it.id },
         )
     }
 
     @Test
-    fun `equipped set falls back to defaults and resolves categories from the catalog`() {
+    fun `the equipped set takes one item per axis, the last one wins and unknown ids are ignored`() {
         assertEquals(EquippedSet(), equippedSetOf(emptyList()))
-        val set = equippedSetOf(listOf("body-lavanda", "pattern-motas", "upper-corona", "unknown-id"))
+        val set =
+            equippedSetOf(
+                listOf(
+                    "body-lavanda",
+                    "head-boina",
+                    "head-copa",
+                    "face-gafas-sol",
+                    "neck-bufanda",
+                    "feet-calcetines",
+                    "costume-reno",
+                    "unknown-id",
+                ),
+            )
         assertEquals("body-lavanda", set.bodyColor)
-        assertEquals("pattern-motas", set.pattern)
         assertEquals("eyes-tinta", set.eyeColor)
-        assertEquals("upper-corona", set.upper)
-        assertNull(set.lower)
+        assertEquals("head-copa", set.head)
+        assertEquals("face-gafas-sol", set.face)
+        assertEquals("neck-bufanda", set.neck)
+        assertEquals("feet-calcetines", set.feet)
+        assertEquals("costume-reno", set.costume)
+        assertNull(equippedSetOf(listOf("body-cielo")).costume)
+    }
+
+    @Test
+    fun `what a costume hides is still worn, so it comes back when the costume goes`() {
+        val set = EquippedSet(head = "head-boina", neck = "neck-bufanda", costume = "costume-reno")
+        assertTrue(set.worn.containsAll(listOf("head-boina", "neck-bufanda", "costume-reno", "body-salvia", "eyes-tinta")))
+        assertEquals("head-boina", set.copy(costume = null).head)
     }
 }

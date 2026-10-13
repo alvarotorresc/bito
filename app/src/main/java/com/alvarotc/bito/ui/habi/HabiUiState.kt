@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.habi
 
 import com.alvarotc.bito.data.db.CustomizationItemEntity
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.HabiEngine
 import com.alvarotc.bito.domain.MoodEngine
 import com.alvarotc.bito.domain.PointsEngine
@@ -11,11 +12,14 @@ import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.equippedSetOf
+import java.time.LocalDate
+import java.time.LocalDateTime
 
 /** One store card: a catalog entry paired with its derived purchase/equip state. */
 data class StoreEntry(val item: CatalogItem, val state: StoreItemState)
@@ -40,17 +44,21 @@ data class HabiUiState(
     // Settings.userName, may be blank until M9's onboarding writes it — callers fall back to
     // R.string.habi_name_fallback when interpolating a HabiVoice %1$s.
     val userName: String = "",
+    // Pieza 1: el jardín de Habi, deducido del historial (o forzado desde el panel de depuración).
+    val garden: GardenState = GardenState.INITIAL,
     val loading: Boolean = true,
 )
 
-/** Axis order the store's pill row follows (GUIA: Colores · Patrones · Ojos · Arriba · Abajo). */
+/** Orden de las pestañas de la tienda (pieza 1 §4.1 y §7). */
 private val StoreAxisOrder =
     listOf(
         CustomizationCategory.BODY_COLOR,
-        CustomizationCategory.PATTERN,
         CustomizationCategory.EYE_COLOR,
-        CustomizationCategory.UPPER,
-        CustomizationCategory.LOWER,
+        CustomizationCategory.HEAD,
+        CustomizationCategory.FACE,
+        CustomizationCategory.NECK,
+        CustomizationCategory.FEET,
+        CustomizationCategory.COSTUME,
     )
 
 /**
@@ -70,13 +78,21 @@ fun buildHabiUiState(
     // economy.freezerPrice so the store card and buyFreezer() can never disagree on the price.
     freezerPrice: Int = EconomyConfig().freezerPrice,
     economy: EconomyConfig = EconomyConfig(),
+    // Pieza 1. Por defecto, mediodía del día lógico, sin logros ni marca: los tests que no miran el
+    // jardín no cambian. HabiViewModel pasa el reloj, los logros y la marca de DataStore.
+    now: LocalDateTime = LocalDate.ofEpochDay(today.toLong()).atTime(12, 0),
+    unlockedBadges: Set<String> = emptySet(),
+    waterHighMark: Double = 0.0,
+    gardenOverride: GardenState? = null,
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
+    val garden = gardenOverride ?: GardenEngine.gardenOf(state, today, now, lastActivityDay, unlockedBadges, waterHighMark)
     val equippedIds = owned.filter { it.equipped }.map { it.itemId }
     val equipped = equippedSetOf(equippedIds)
     val ownedIds = owned.mapTo(mutableSetOf()) { it.itemId }
 
+    val date = LocalDate.ofEpochDay(today.toLong())
     val itemsByCategory = HabiCatalog.all.groupBy { it.category }
     val store =
         StoreAxisOrder.associateWith { category ->
@@ -86,7 +102,7 @@ fun buildHabiUiState(
             // grid must never claim an item is "equipped" just because it's being tried on.
             (itemsByCategory[category] ?: emptyList())
                 .sortedByDescending { it.default }
-                .map { item -> StoreEntry(item, HabiEngine.storeStateOf(item, ownedIds, equipped, balance)) }
+                .map { item -> StoreEntry(item, HabiEngine.storeStateOf(item, ownedIds, equipped, balance, date)) }
         }
 
     // The avatar wears the preview on top of what's really equipped; appending it last means it
@@ -102,6 +118,7 @@ fun buildHabiUiState(
         store = store,
         previewItemId = previewItemId,
         userName = userName,
+        garden = garden,
         loading = false,
     )
 }

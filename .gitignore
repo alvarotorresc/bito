@@ -25,3 +25,6 @@ captures/
 
 # Scratch de proceso local
 .superpowers/
+
+# Python (herramientas de arte)
+__pycache__/

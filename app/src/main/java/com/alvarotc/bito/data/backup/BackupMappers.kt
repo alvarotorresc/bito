@@ -187,6 +187,7 @@ fun Settings.toBackup() =
         breathingReminderTimeMinutes = breathingReminderTimeMinutes,
         breathingMusicEnabled = breathingMusicEnabled,
         breathingLastMode = breathingLastMode,
+        gardenWaterHighMark = gardenWaterHighMark,
     )
 
 fun BackupSettings.toSettings() =
@@ -213,4 +214,5 @@ fun BackupSettings.toSettings() =
         breathingReminderTimeMinutes = breathingReminderTimeMinutes,
         breathingMusicEnabled = breathingMusicEnabled,
         breathingLastMode = breathingLastMode,
+        gardenWaterHighMark = gardenWaterHighMark,
     )

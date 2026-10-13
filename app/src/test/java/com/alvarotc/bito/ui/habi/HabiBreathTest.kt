@@ -6,7 +6,7 @@ import org.junit.Test
 
 /**
  * El contrato del gancho externo (spec §6), fijado con funciones puras: lo que llega al
- * graphicsLayer (escala y elevacion) y a drawHabi (respiracion y parpadeo).
+ * graphicsLayer (escala y elevacion) y a las capas de Habi (respiracion y ojos cerrados).
  */
 class HabiBreathTest {
     private val delta = 1e-5f
@@ -52,11 +52,11 @@ class HabiBreathTest {
     }
 
     @Test
-    fun `the hook defaults to triple amplitude and a nine-tenths slit`() {
+    fun `the hook defaults to triple amplitude and the painted closed eyes`() {
         val breath = HabiBreath(fill = 0f)
 
         assertEquals(3f, breath.amplitude, delta)
-        assertEquals(0.9f, breath.eyeClosure, delta)
+        assertEquals(1f, breath.eyeClosure, delta)
     }
 
     @Test

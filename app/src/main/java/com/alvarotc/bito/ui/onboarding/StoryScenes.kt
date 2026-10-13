@@ -33,6 +33,7 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.HabiTintTable
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Brasa
 import com.alvarotc.bito.ui.theme.Hoja
@@ -41,8 +42,7 @@ import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 
-// No token for these — sampled straight off the 7b-7d mockups, same precedent as HabiStage's own
-// HabiStageColor (art-phase-tunable). Everything that DOES land on a token keeps the token:
+// No token for these — sampled straight off the 7b-7d mockups (art-phase-tunable). Everything that DOES land on a token keeps the token:
 // the 7b card is Borde, calendars/notes/ring-card are Tarjeta with Borde chrome, X's and strikes
 // are Brasa (the mockup's #D9704F is Brasa exactly — NOT Peligro), squiggle is TintaSuave.
 private val SofaBack = Color(0xFFBFB49C)
@@ -54,10 +54,9 @@ private val NoteLine = Color(0xFFC6C0B1) // pencil lines on 7c's crossed-out not
 private val PotClay = Color(0xFFC98D6B) // 7d's flower pot (warmer/lighter than Brasa on purpose)
 private val LeafLite = Color(0xFF6FB183) // 7d's second sprout leaf — a lighter Hoja
 
-// 7b's slumped Habi is the one body the mockups mute: desaturated sage, not the canon HabiSalvia
-// that design/habi/habi-moods.html keeps for every mood — so it rides HabiSpec.bodyToneOverride
-// (scene-only by design) instead of a mood or a catalog color.
-private val HabiMustio = Color(0xFFA3AF9C)
+// El sofá de 7b es la única escena con el cuerpo de Habi apagado: el tinte «apagado» de tools/arte/tintes.json,
+// por HabiSpec.bodyToneOverride (solo para escenas), en vez de un ánimo o un color del catálogo.
+private val HabiMustio = HabiTintTable.muted
 
 // Every scene sits on the same soft floor ellipse: Tinta at 6% reproduces the sampled shadow on
 // BOTH card tints (#DCD6C9 over Borde, #DAE2D6 over HojaTinte) with one paint.
@@ -75,16 +74,10 @@ private val SceneCardShape = RoundedCornerShape(20.dp)
  * the scene composes at 363x259dp on the reference 411dp phone (24dp gutters, aspect 1.4), so
  * every size below is mockup px x 363/417 and every position is a center-anchored offset (element
  * center minus card center, converted the same way) — center anchoring keeps the composition
- * intact across device widths. Habi's own box sizes derive from the egg filling 0.68x0.84 of the
- * avatar box with its center at (0.5, 0.55) (HabiDrawing's BODY_* constants), which is also why
- * each avatar offset carries a small extra -0.05*box on y.
- *
- * Personality stays [Personality.NEUTRA] across all three — the lore is Habi's own history, told
- * before the user picks a personality (docs/07 §4), so one consistent face reads as the same
- * character. 7c's angry brows (mockup-explicit, and NEUTRA never gets `browAngleDeg` from
- * [com.alvarotc.bito.domain.model.faceParamsOf] — only SARGENTO does, dragging war paint and a
- * smirk along) are therefore drawn HERE as a scene prop overlaid on the avatar ([AngryBrows]),
- * not by switching personality.
+ * intact across device widths. Las figuras de Habi de las escenas se encajan con rigFit (centradas
+ * y apoyadas abajo en su caja); sus posiciones se revisan contra los mockups en el Pixel tras la
+ * pieza 1. La personalidad es siempre NEUTRA: la historia es de Habi, antes de elegir personalidad
+ * (docs/07 §4).
  */
 @Composable
 fun StoryScene(
@@ -199,9 +192,9 @@ private fun BoxScope.RemoteButton(
 }
 
 /**
- * 7c: Habi stuck and cross, mood DRAMATIC (worry-wave mouth) plus the [AngryBrows] overlay — a
- * calendar of missed days top-right, two crossed-out attempt notes scattered bottom-left, and two
- * frustration ticks radiating off the head toward the top-left corner.
+ * 7c: Habi ante un atasco, con frustración, ánimo DRAMATIC (ojos llorosos y mueca de la tabla de
+ * caras): un calendario de días perdidos arriba a la derecha, dos notas tachadas abajo a la
+ * izquierda y dos rayitas de frustración junto a la cabeza.
  */
 @Composable
 private fun BlockedScene(modifier: Modifier) {
@@ -216,7 +209,6 @@ private fun BlockedScene(modifier: Modifier) {
                 modifier = Modifier.matchParentSize(),
                 animated = false,
             )
-            AngryBrows(Modifier.matchParentSize())
         }
         MissedCalendar(Modifier.align(Alignment.Center).offset(89.dp, (-44).dp))
         CrossedNote(x = (-95).dp, y = 58.dp, width = 42.dp, height = 32.dp, rotation = -12f, struck = true)
@@ -240,33 +232,6 @@ private fun FrustrationTicks(modifier: Modifier) {
             PropGrey,
             Offset(6.3.dp.toPx(), 17.3.dp.toPx()),
             Offset(15.7.dp.toPx(), 20.7.dp.toPx()),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round,
-        )
-    }
-}
-
-/**
- * The mockup's furrowed brows, drawn over the avatar box. Anchored to HabiDrawing's published eye
- * geometry (eyes at x = 0.5 +- 0.14, y = 0.5 of the box — EYE_Y/EYE_DX), sitting just above each
- * eye and descending toward the center. Static-scene-only: the avatar underneath renders its
- * resting frame (`animated = false`), so the anchor cannot drift mid-life.
- */
-@Composable
-private fun AngryBrows(modifier: Modifier) {
-    Canvas(modifier) {
-        val stroke = 3.5.dp.toPx()
-        drawLine(
-            Tinta,
-            Offset(size.width * 0.30f, size.height * 0.395f),
-            Offset(size.width * 0.455f, size.height * 0.458f),
-            strokeWidth = stroke,
-            cap = StrokeCap.Round,
-        )
-        drawLine(
-            Tinta,
-            Offset(size.width * 0.70f, size.height * 0.395f),
-            Offset(size.width * 0.545f, size.height * 0.458f),
             strokeWidth = stroke,
             cap = StrokeCap.Round,
         )

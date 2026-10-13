@@ -16,7 +16,9 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.ui.theme.BitoTheme
@@ -48,7 +50,7 @@ import java.io.File
  * screen. Split from [HabitFormScreenTest] because honest answers need
  * [GraphicsMode.Mode.NATIVE]: the suite's default LEGACY mode stubs glyph advances to ~1px
  * (verified empirically — "Daily" measured 5px wide), which would green-light any overflow.
- * Same opt-in, same reason, as HabiDrawingTest.
+ * Same opt-in, same reason, as HabiPaintingTest.
  */
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -91,7 +93,10 @@ class HabitFormPresetPillLayoutTest {
     /** [HabitFormScreenTest]'s harness with only the font scaled up — the pixel density stays on
      * the qualifiers, mirroring a user raising the system font size, not display zoom. */
     private fun launchScreenAtFontScale(fontScale: Float) {
-        val vm = HabitFormViewModel(HabitsRepository(db), SettingsRepository(settingsStore()), RewardsRepository(db), null)
+        val settings = SettingsRepository(settingsStore())
+        val rewards = RewardsRepository(db)
+        val reconciler = PointsReconciler(DomainStateRepository(db), rewards, settings = settings)
+        val vm = HabitFormViewModel(HabitsRepository(db), settings, rewards, reconciler, null)
         compose.setContent {
             val base = LocalDensity.current
             CompositionLocalProvider(LocalDensity provides Density(base.density, fontScale)) {

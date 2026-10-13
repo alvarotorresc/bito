@@ -5,10 +5,12 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.DAY_ZERO
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.model.equippedSetOf
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -21,6 +23,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
@@ -94,7 +97,7 @@ class RewardsRepositoryTest {
         runTest {
             db.pointsLedgerDao().insert(pointsLedgerEntity(id = "seed", delta = 1_000, refId = "seed"))
 
-            assertFalse(rewards.purchase(HabiCatalog.byId("upper-corona")!!, DAY_ZERO, 10L))
+            assertFalse(rewards.purchase(HabiCatalog.byId("head-corona")!!, DAY_ZERO, 10L))
             assertFalse(rewards.purchase(HabiCatalog.byId("body-salvia")!!, DAY_ZERO, 10L))
         }
 
@@ -120,5 +123,38 @@ class RewardsRepositoryTest {
                 rewards.observeOwnedItems().first()
                     .filter { it.category == CustomizationCategory.BODY_COLOR && it.equipped }
             assertTrue(equippedInCategory.isEmpty())
+        }
+
+    @Test
+    fun `purchase refuses a costume out of season even with enough balance`() =
+        runTest {
+            db.pointsLedgerDao().insert(pointsLedgerEntity(id = "seed", delta = 1_000, refId = "seed"))
+            val pumpkin = HabiCatalog.byId("costume-calabaza")!!
+            val august = LocalDate.of(2026, 8, 14).toEpochDay().toInt()
+            val october = LocalDate.of(2026, 10, 20).toEpochDay().toInt()
+
+            assertFalse(rewards.purchase(pumpkin, august, 10L))
+            assertEquals(1_000, db.pointsLedgerDao().observeBalance().first())
+            assertNull(db.customizationItemDao().byId("costume-calabaza"))
+
+            assertTrue(rewards.purchase(pumpkin, october, 20L))
+            assertEquals(850, db.pointsLedgerDao().observeBalance().first())
+        }
+
+    @Test
+    fun `an owned costume equips out of season and keeps the other axes equipped underneath`() =
+        runTest {
+            rewards.acquire(CustomizationItemEntity("costume-calabaza", CustomizationCategory.COSTUME, 1L, equipped = false))
+            rewards.acquire(CustomizationItemEntity("head-boina", CustomizationCategory.HEAD, 1L, equipped = true))
+
+            rewards.equip("costume-calabaza")
+            val dressed = equippedSetOf(db.customizationItemDao().all().filter { it.equipped }.map { it.itemId })
+            assertEquals("costume-calabaza", dressed.costume)
+            assertEquals("head-boina", dressed.head)
+
+            rewards.unequip(CustomizationCategory.COSTUME)
+            val undressed = equippedSetOf(db.customizationItemDao().all().filter { it.equipped }.map { it.itemId })
+            assertNull(undressed.costume)
+            assertEquals("head-boina", undressed.head)
         }
 }

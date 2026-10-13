@@ -20,7 +20,7 @@ import androidx.room.RoomDatabase
         TaskEventEntity::class,
         BreathingSessionEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
 )
 abstract class BitoDatabase : RoomDatabase() {
@@ -53,7 +53,7 @@ abstract class BitoDatabase : RoomDatabase() {
 
         fun build(context: Context): BitoDatabase =
             Room.databaseBuilder(context, BitoDatabase::class.java, NAME)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
                 .build()
     }
 }

@@ -89,9 +89,9 @@ class RewardDaosTest {
             db.customizationItemDao().upsert(customizationItemEntity(itemId = "hat-a", equipped = true))
             db.customizationItemDao().upsert(customizationItemEntity(itemId = "hat-b", equipped = false))
             db.customizationItemDao().upsert(
-                customizationItemEntity(itemId = "boots", category = CustomizationCategory.LOWER, equipped = true),
+                customizationItemEntity(itemId = "boots", category = CustomizationCategory.FEET, equipped = true),
             )
-            db.customizationItemDao().unequipCategory(CustomizationCategory.UPPER)
+            db.customizationItemDao().unequipCategory(CustomizationCategory.HEAD)
             val equipped = db.customizationItemDao().observeAll().first().filter { it.equipped }.map { it.itemId }
             assertEquals(listOf("boots"), equipped)
         }

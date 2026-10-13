@@ -10,9 +10,12 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
@@ -23,6 +26,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -61,6 +65,7 @@ class HabitFormViewModelTest {
     private lateinit var habitsRepo: HabitsRepository
     private lateinit var rewardsRepo: RewardsRepository
     private lateinit var settingsRepo: SettingsRepository
+    private lateinit var reconciler: PointsReconciler
 
     private fun settingsStore(name: String): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -68,7 +73,7 @@ class HabitFormViewModelTest {
         ) { File(tmp.root, "$name.preferences_pb") }
 
     private fun newViewModel(habitId: String? = null) =
-        HabitFormViewModel(habitsRepo, settingsRepo, rewardsRepo, habitId, now = { fixedNow }, zone = { utc })
+        HabitFormViewModel(habitsRepo, settingsRepo, rewardsRepo, reconciler, habitId, now = { fixedNow }, zone = { utc })
 
     @Before
     fun setUp() {
@@ -83,6 +88,7 @@ class HabitFormViewModelTest {
         habitsRepo = HabitsRepository(db)
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore("habit-form-vm"))
+        reconciler = PointsReconciler(DomainStateRepository(db), rewardsRepo, settings = settingsRepo)
     }
 
     @After
@@ -228,6 +234,42 @@ class HabitFormViewModelTest {
             assertTrue(deleted)
             assertNull(db.habitDao().byId("h1"))
             assertTrue(db.entryDao().all().none { it.habitId == "h1" })
+        }
+
+    @Test
+    fun `lowering a target from the form records the water it raises in the garden high mark`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", target = 8, createdOnDay = today - 3))
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 6))
+            val vm = newViewModel(habitId = "h1")
+            advanceUntilIdle()
+            assertEquals(0.0, settingsRepo.settings.first().gardenWaterHighMark, 1e-9)
+
+            vm.setTarget(6)
+            vm.save {}
+            advanceUntilIdle()
+
+            val water = GardenEngine.totalWater(DomainStateRepository(db).snapshot(), today)
+            assertTrue(water > 0.0)
+            assertEquals(water, settingsRepo.settings.first().gardenWaterHighMark, 1e-9)
+        }
+
+    @Test
+    fun `deleting an unmet habit records the water it raises in the garden high mark`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", name = "Agua", target = 8, createdOnDay = today - 3, sortOrder = 0))
+            habitsRepo.create(habitEntity(id = "h2", name = "Leer", target = 8, createdOnDay = today - 3, sortOrder = 1))
+            db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 8))
+            val vm = newViewModel(habitId = "h2")
+            advanceUntilIdle()
+            assertEquals(0.0, settingsRepo.settings.first().gardenWaterHighMark, 1e-9)
+
+            vm.delete {}
+            advanceUntilIdle()
+
+            val water = GardenEngine.totalWater(DomainStateRepository(db).snapshot(), today)
+            assertTrue(water > 0.0)
+            assertEquals(water, settingsRepo.settings.first().gardenWaterHighMark, 1e-9)
         }
 
     @Test
@@ -400,12 +442,12 @@ class HabitFormViewModelTest {
     @Test
     fun `the real equipped set reaches the form's avatar state`() =
         runTest {
-            rewardsRepo.acquire(CustomizationItemEntity("upper-lazo", CustomizationCategory.UPPER, fixedNow, equipped = true))
+            rewardsRepo.acquire(CustomizationItemEntity("neck-collar-flores", CustomizationCategory.NECK, fixedNow, equipped = true))
             val vm = newViewModel()
 
             backgroundScope.launch { vm.equipped.collect() }
             advanceUntilIdle()
 
-            assertEquals("upper-lazo", vm.equipped.value.upper)
+            assertEquals("neck-collar-flores", vm.equipped.value.neck)
         }
 }

@@ -6,16 +6,15 @@ import androidx.compose.runtime.Immutable
 const val GUIDED_BREATH_AMPLITUDE = 3f
 
 /**
- * ⚑CALL 1, cerrada el 2026-09-26: rendija. El mismo parpadeo de siempre sostenido casi cerrado.
- * Sostenido en 1.0 no pinta parpados cerrados: BORRA los ojos (drawEyes solo dibuja el ovalo si
- * queda altura), y durante dos minutos Habi se quedaria sin cara.
+ * Los ojos de la respiración guiada: la pieza de ojos cerrados entera (pieza 1 §3.5). La rendija de
+ * 0,9 era cosa del párpado vectorial; al terminar, el fundido de vuelta lo hace el avatar.
  */
-const val GUIDED_EYE_CLOSURE = 0.9f
+const val GUIDED_EYE_CLOSURE = 1f
 
 /**
  * El gancho externo de [HabiAvatar] (D6): con el, Habi deja de respirar a su ritmo de animo y
  * sigue [fill] (0 = vacio, 1 = lleno, de BreathingRhythm) con [amplitude] veces su amplitud idle y
- * el parpado sostenido en [eyeClosure]. Sin el (null), nada cambia.
+ * los ojos cerrados con [eyeClosure] (1 = la pieza de ojos cerrados). Sin el (null), nada cambia.
  */
 @Immutable
 data class HabiBreath(

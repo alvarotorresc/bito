@@ -1,0 +1,62 @@
+{
+  "_nota": "Tabla de caras de Habi (spec pieza 1, §5.2), la aprobada en el prototipo vivo. La leen exportar.py (genera HabiFaceTable.kt y coloca las piezas de cara) y la galería. tabla: ánimo -> personalidad -> [ojos, boca, cejas] (claves de pieza sin el lado -i/-d; cejas null = sin cejas). piezas: centro y escala en coordenadas del cuerpo (1132 x 1404).",
+  "tabla": {
+    "RADIANT": {
+      "NEUTRA": ["ojo-feliz", "boca-feliz", null],
+      "CHEERLEADER": ["ojo-feliz", "boca-feliz", "ceja-alegre"],
+      "SARGENTO": ["ojo-feliz", "boca-sonrisa", "ceja-dura"]
+    },
+    "NORMAL": {
+      "NEUTRA": ["ojo-abierto", "boca-sonrisa", null],
+      "CHEERLEADER": ["ojo-abierto", "boca-sonrisa", "ceja-alegre"],
+      "SARGENTO": ["ojo-abierto", "boca-neutra", "ceja-dura"]
+    },
+    "WILTED": {
+      "NEUTRA": ["ojo-triste", "boca-triste", null],
+      "CHEERLEADER": ["ojo-triste", "boca-triste", "ceja-preocupada"],
+      "SARGENTO": ["ojo-abierto", "boca-triste", "ceja-preocupada"]
+    },
+    "DRAMATIC": {
+      "NEUTRA": ["ojo-lloroso", "boca-mueca", null],
+      "CHEERLEADER": ["ojo-lloroso", "boca-o", null],
+      "SARGENTO": ["ojo-enfadado", "boca-mueca", null]
+    }
+  },
+  "marcas": {
+    "NEUTRA": [],
+    "CHEERLEADER": ["mofletes-i", "mofletes-d"],
+    "SARGENTO": ["pintura-i-a", "pintura-i-b", "pintura-d-a", "pintura-d-b"]
+  },
+  "piezas": {
+    "ojo-abierto-i": {"centro": [436, 533], "escala": 2.25},
+    "ojo-abierto-d": {"centro": [822, 533], "escala": 2.25},
+    "ojo-cerrado-i": {"centro": [436, 533], "escala": 2.25},
+    "ojo-cerrado-d": {"centro": [822, 533], "escala": 2.25},
+    "ojo-feliz-i": {"centro": [436, 533], "escala": 2.25},
+    "ojo-feliz-d": {"centro": [822, 533], "escala": 2.25},
+    "ojo-triste-i": {"centro": [436, 533], "escala": 2.25},
+    "ojo-triste-d": {"centro": [822, 533], "escala": 2.25},
+    "ojo-enfadado-i": {"centro": [436, 533], "escala": 2.25},
+    "ojo-enfadado-d": {"centro": [822, 533], "escala": 2.25},
+    "ojo-lloroso-i": {"centro": [436, 533], "escala": 2.25},
+    "ojo-lloroso-d": {"centro": [822, 533], "escala": 2.25},
+    "boca-sonrisa": {"centro": [648, 690], "escala": 1.7},
+    "boca-feliz": {"centro": [648, 690], "escala": 1.7},
+    "boca-neutra": {"centro": [648, 690], "escala": 1.7},
+    "boca-triste": {"centro": [648, 690], "escala": 1.7},
+    "boca-o": {"centro": [648, 690], "escala": 1.7},
+    "boca-mueca": {"centro": [648, 690], "escala": 1.7},
+    "pintura-i-a": {"centro": [345, 640], "escala": 1.3},
+    "pintura-i-b": {"centro": [330, 690], "escala": 1.3},
+    "pintura-d-a": {"centro": [925, 640], "escala": 1.3},
+    "pintura-d-b": {"centro": [940, 690], "escala": 1.3},
+    "mofletes-i": {"centro": [340, 670], "escala": 1.2},
+    "mofletes-d": {"centro": [930, 670], "escala": 1.2},
+    "ceja-dura-i": {"centro": [436, 425], "escala": 0.42},
+    "ceja-dura-d": {"centro": [822, 425], "escala": 0.42},
+    "ceja-alegre-i": {"centro": [436, 425], "escala": 1.5},
+    "ceja-alegre-d": {"centro": [822, 425], "escala": 1.5},
+    "ceja-preocupada-i": {"centro": [436, 425], "escala": 1.5},
+    "ceja-preocupada-d": {"centro": [822, 425], "escala": 1.5}
+  }
+}

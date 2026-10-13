@@ -60,8 +60,15 @@ import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
 import com.alvarotc.bito.ui.theme.TintaSuave
 
-/** Axes whose "nothing worn" is a real state — the only ones an EQUIPPED tap can clear back to. */
-private val UNPINNABLE_AXES = setOf(CustomizationCategory.PATTERN, CustomizationCategory.UPPER, CustomizationCategory.LOWER)
+/** Ejes que pueden quedarse vacíos: los únicos que un toque en lo puesto puede quitar. */
+private val UNPINNABLE_AXES =
+    setOf(
+        CustomizationCategory.HEAD,
+        CustomizationCategory.FACE,
+        CustomizationCategory.NECK,
+        CustomizationCategory.FEET,
+        CustomizationCategory.COSTUME,
+    )
 
 /**
  * Habi's store (mockup 4a-4d): the axis-tabbed item grid plus the freezer card underneath it.
@@ -162,6 +169,7 @@ private fun tapAction(
         StoreItemState.Owned -> if (entry.item.default) onUnequipDefault(entry.item) else onEquip(entry.item.id)
         StoreItemState.Affordable, is StoreItemState.MissingPoints -> onPreview(entry.item.id)
         is StoreItemState.Locked -> Unit
+        StoreItemState.OutOfSeason -> Unit
     }
 }
 
@@ -169,7 +177,7 @@ private fun tapAction(
  * so a dead tap never even attaches a clickable (better a11y than a handler that does nothing). */
 private fun isTappable(entry: StoreEntry): Boolean =
     when (entry.state) {
-        is StoreItemState.Locked -> false
+        is StoreItemState.Locked, StoreItemState.OutOfSeason -> false
         StoreItemState.Equipped -> entry.item.category in UNPINNABLE_AXES
         else -> true
     }
@@ -223,7 +231,7 @@ private fun StoreItemCard(
     modifier: Modifier = Modifier,
 ) {
     val equipped = entry.state is StoreItemState.Equipped
-    val locked = entry.state is StoreItemState.Locked
+    val locked = entry.state is StoreItemState.Locked || entry.state == StoreItemState.OutOfSeason
     val shape = RoundedCornerShape(16.dp)
     Column(
         modifier
@@ -290,6 +298,13 @@ private fun StoreItemFooter(entry: StoreEntry) {
         // MissingPoints shows the same plain price as Affordable — the grid never spells out the
         // shortfall (GUIA Fidelidad M6 checkpoint ruling); the PurchaseSheet is where refusal shows.
         StoreItemState.Affordable, is StoreItemState.MissingPoints -> entry.item.price?.let { PriceRow(it) }
+        StoreItemState.OutOfSeason ->
+            Text(
+                stringResource(R.string.store_out_of_season),
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
+                color = TintaSuave,
+                textAlign = TextAlign.Center,
+            )
         is StoreItemState.Locked ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 Icon(BitoIcons.Lock, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(11.dp))
@@ -372,13 +387,15 @@ private fun FreezerCard(
 private fun axisLabelRes(category: CustomizationCategory): Int =
     when (category) {
         CustomizationCategory.BODY_COLOR -> R.string.store_axis_colors
-        CustomizationCategory.PATTERN -> R.string.store_axis_patterns
         CustomizationCategory.EYE_COLOR -> R.string.store_axis_eyes
-        CustomizationCategory.UPPER -> R.string.store_axis_upper
-        CustomizationCategory.LOWER -> R.string.store_axis_lower
+        CustomizationCategory.HEAD -> R.string.store_axis_head
+        CustomizationCategory.FACE -> R.string.store_axis_face
+        CustomizationCategory.NECK -> R.string.store_axis_neck
+        CustomizationCategory.FEET -> R.string.store_axis_feet
+        CustomizationCategory.COSTUME -> R.string.store_axis_costumes
     }
 
-/** ui-only naming table (docs/05 §2: "Nombres como string resources ES + EN mapeados por id en ui/"). */
+/** Nombres por id, solo en ui/ (docs/05 §2). */
 fun itemNameRes(id: String): Int =
     when (id) {
         "body-salvia" -> R.string.item_body_salvia
@@ -387,7 +404,6 @@ fun itemNameRes(id: String): Int =
         "body-cielo" -> R.string.item_body_cielo
         "body-lavanda" -> R.string.item_body_lavanda
         "body-rosa" -> R.string.item_body_rosa
-        "body-oliva" -> R.string.item_body_oliva
         "body-terracota" -> R.string.item_body_terracota
         "body-carbon" -> R.string.item_body_carbon
         "body-dorado" -> R.string.item_body_dorado
@@ -397,21 +413,25 @@ fun itemNameRes(id: String): Int =
         "eyes-azul" -> R.string.item_eyes_azul
         "eyes-ambar" -> R.string.item_eyes_ambar
         "eyes-violeta" -> R.string.item_eyes_violeta
-        "eyes-granate" -> R.string.item_eyes_granate
-        "pattern-motas" -> R.string.item_pattern_motas
-        "pattern-rayitas" -> R.string.item_pattern_rayitas
-        "pattern-corazones" -> R.string.item_pattern_corazones
-        "pattern-estrellas" -> R.string.item_pattern_estrellas
-        "pattern-flores" -> R.string.item_pattern_flores
-        "pattern-chispas" -> R.string.item_pattern_chispas
-        "pattern-llamas" -> R.string.item_pattern_llamas
-        "upper-gorro-lana" -> R.string.item_upper_gorro_lana
-        "upper-lazo" -> R.string.item_upper_lazo
-        "upper-copa" -> R.string.item_upper_copa
-        "upper-corona" -> R.string.item_upper_corona
-        "lower-calcetines" -> R.string.item_lower_calcetines
-        "lower-zapatillas" -> R.string.item_lower_zapatillas
-        // Unreachable for any real catalog entry (HabiCatalog.all is exhaustively covered above);
-        // falls back to a real, already-loaded string rather than crashing on a corrupt id.
+        "head-gorro-lana" -> R.string.item_head_gorro_lana
+        "head-boina" -> R.string.item_head_boina
+        "head-paja" -> R.string.item_head_paja
+        "head-auriculares" -> R.string.item_head_auriculares
+        "head-copa" -> R.string.item_head_copa
+        "head-flor" -> R.string.item_head_flor
+        "head-corona" -> R.string.item_head_corona
+        "face-gafas-redondas" -> R.string.item_face_gafas_redondas
+        "face-gafas-sol" -> R.string.item_face_gafas_sol
+        "neck-bufanda" -> R.string.item_neck_bufanda
+        "neck-panuelo" -> R.string.item_neck_panuelo
+        "neck-collar-flores" -> R.string.item_neck_collar_flores
+        "neck-panuelo-brasa" -> R.string.item_neck_panuelo_brasa
+        "feet-calcetines" -> R.string.item_feet_calcetines
+        "feet-botas-agua" -> R.string.item_feet_botas_agua
+        "feet-zapatillas" -> R.string.item_feet_zapatillas
+        "costume-calabaza" -> R.string.item_costume_calabaza
+        "costume-reno" -> R.string.item_costume_reno
+        "costume-dinosaurio" -> R.string.item_costume_dinosaurio
+        // Inalcanzable para un artículo real: cae a un texto que existe en vez de romper con un id corrupto.
         else -> R.string.store_title
     }

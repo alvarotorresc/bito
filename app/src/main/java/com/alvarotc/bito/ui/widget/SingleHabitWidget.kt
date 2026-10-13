@@ -116,7 +116,7 @@ class SingleHabitWidget : GlanceAppWidget() {
                         prefs.personality,
                         owned,
                     )
-                SingleHabitData(state, renderHabiBitmap(state.spec, HABI_BITMAP_SIZE_PX))
+                SingleHabitData(state, renderHabiBitmap(context, state.spec, HABI_BITMAP_SIZE_PX))
             }.conflate().flowOn(Dispatchers.Default)
         val initial = dataFlow.first()
         provideContent {
