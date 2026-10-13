@@ -7,8 +7,9 @@ Uso, desde la raíz del repo:
 Lee tools/arte/habi.json, jardin.json, tintes.json y caras.json. Borra y vuelve a escribir los
 app/src/main/res/drawable-nodpi/{habi,costume,garden}_*.webp y genera HabiAtlas.kt,
 HabiTintTable.kt, HabiFaceTable.kt (ui/habi), GardenArt.kt y GardenLookTable.kt (ui/garden).
-Códigos: 0 bien; 5 los WebP pasan de 6 MB (bajar --calidad); 6 hay piezas provisionales o sin
-aprobar en --definitivo (no se escribe nada).
+Códigos: 0 bien; 2 tintes.json no tiene la sección `jardin` (no se escribe nada); 5 los WebP
+pasan de 6 MB (bajar --calidad); 6 hay piezas provisionales o sin aprobar en --definitivo (no se
+escribe nada).
 
 Disfraces: la cara se pinta desplazada (dx, dy) y recortada por el hueco del disfraz, como en el
 prototipo vivo. La máscara del hueco (`costume_<x>_hueco`) es la piel verde del disfraz, con sus
