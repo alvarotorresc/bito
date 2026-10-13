@@ -160,15 +160,15 @@ class HabiViewModelTest {
             backgroundScope.launch { vm.uiState.collect {} }
             advanceUntilIdle()
 
-            vm.preview("upper-copa") // price 120, balance 0
+            vm.preview("head-copa") // price 120, balance 0
             advanceUntilIdle()
 
-            vm.purchase("upper-copa")
+            vm.purchase("head-copa")
             advanceUntilIdle()
 
-            assertEquals("upper-copa", vm.uiState.value.previewItemId)
+            assertEquals("head-copa", vm.uiState.value.previewItemId)
             assertTrue(db.pointsLedgerDao().all().none { it.reason == PointsReason.BUY_ITEM })
-            assertNull(db.customizationItemDao().byId("upper-copa"))
+            assertNull(db.customizationItemDao().byId("head-copa"))
         }
 
     @Test
@@ -255,13 +255,13 @@ class HabiViewModelTest {
             // the test ends) is enough to keep it live for `.value` reads below.
             backgroundScope.launch { vm.uiState.collect {} }
             advanceUntilIdle()
-            db.customizationItemDao().upsert(customizationItemEntity("upper-lazo", CustomizationCategory.UPPER, equipped = true))
+            db.customizationItemDao().upsert(customizationItemEntity("neck-collar-flores", CustomizationCategory.NECK, equipped = true))
             advanceUntilIdle()
-            assertEquals("upper-lazo", vm.uiState.value.spec.equipped.upper)
+            assertEquals("neck-collar-flores", vm.uiState.value.spec.equipped.neck)
 
-            vm.unequip(CustomizationCategory.UPPER)
+            vm.unequip(CustomizationCategory.NECK)
             advanceUntilIdle()
 
-            assertNull(vm.uiState.value.spec.equipped.upper)
+            assertNull(vm.uiState.value.spec.equipped.neck)
         }
 }

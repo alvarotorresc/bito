@@ -379,7 +379,6 @@ fun DrawScope.drawHabi(
     val bodyTone = spec.bodyToneOverride ?: HabiPalette.bodyColor(spec.equipped.bodyColor)
 
     drawBody(vp, bodyTone, spec.equipped.bodyColor)
-    drawPattern(vp, spec.equipped.pattern, bodyTone)
     drawBodyShading(vp, bodyTone)
     drawCheeks(vp, face)
     // Closed lids are a whole-eye replacement, not a closure amount: blink, droop, gaze and
@@ -391,8 +390,8 @@ fun DrawScope.drawHabi(
     }
     drawBrows(vp, face)
     drawMouth(vp, face, resolved.smirkProgress, resolved.mouthWobble)
-    drawUpper(vp, spec.equipped.upper)
-    drawLower(vp, spec.equipped.lower)
+    drawUpper(vp, spec.equipped.head)
+    drawLower(vp, spec.equipped.feet)
 }
 
 /**
@@ -949,10 +948,10 @@ private fun DrawScope.drawUpper(
     upperId: String?,
 ) {
     when (upperId) {
-        "upper-gorro-lana" -> drawGorroLana(vp)
-        "upper-lazo" -> drawLazo(vp)
-        "upper-copa" -> drawCopa(vp)
-        "upper-corona" -> drawCorona(vp)
+        "head-gorro-lana" -> drawGorroLana(vp)
+        "head-boina" -> drawLazo(vp)
+        "head-copa" -> drawCopa(vp)
+        "head-corona" -> drawCorona(vp)
         else -> Unit // null or unknown catalog id: no-op, never crash.
     }
 }
@@ -1074,8 +1073,8 @@ private fun DrawScope.drawLower(
     lowerId: String?,
 ) {
     when (lowerId) {
-        "lower-calcetines" -> drawCalcetines(vp)
-        "lower-zapatillas" -> drawZapatillas(vp)
+        "feet-calcetines" -> drawCalcetines(vp)
+        "feet-zapatillas" -> drawZapatillas(vp)
         else -> Unit // null or unknown catalog id: no-op, never crash.
     }
 }

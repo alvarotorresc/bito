@@ -114,10 +114,13 @@
 
     <string name="store_title">Tienda</string>
     <string name="store_axis_colors">Colores</string>
-    <string name="store_axis_patterns">Patrones</string>
     <string name="store_axis_eyes">Ojos</string>
-    <string name="store_axis_upper">Arriba</string>
-    <string name="store_axis_lower">Abajo</string>
+    <string name="store_axis_head">Cabeza</string>
+    <string name="store_axis_face">Cara</string>
+    <string name="store_axis_neck">Cuello</string>
+    <string name="store_axis_feet">Pies</string>
+    <string name="store_axis_costumes">Disfraces</string>
+    <string name="store_out_of_season">fuera de temporada</string>
     <string name="store_equipped">equipado</string>
     <string name="store_tap_to_equip">tocar para equipar</string>
     <string name="store_pts_label">pts</string>
@@ -144,7 +147,6 @@
     <string name="item_body_cielo">Cielo</string>
     <string name="item_body_lavanda">Lavanda</string>
     <string name="item_body_rosa">Rosa empolvado</string>
-    <string name="item_body_oliva">Oliva</string>
     <string name="item_body_terracota">Terracota</string>
     <string name="item_body_carbon">Carbón</string>
     <string name="item_body_dorado">Dorado</string>
@@ -155,21 +157,27 @@
     <string name="item_eyes_azul">Azul</string>
     <string name="item_eyes_ambar">Ámbar</string>
     <string name="item_eyes_violeta">Violeta</string>
-    <string name="item_eyes_granate">Granate</string>
 
-    <string name="item_pattern_motas">Motas</string>
-    <string name="item_pattern_rayitas">Rayitas</string>
-    <string name="item_pattern_corazones">Corazones</string>
-    <string name="item_pattern_estrellas">Estrellas</string>
-    <string name="item_pattern_flores">Flores</string>
-    <string name="item_pattern_chispas">Chispas</string>
-    <string name="item_pattern_llamas">Llamas</string>
+    <string name="item_head_gorro_lana">Gorro de lana</string>
+    <string name="item_head_boina">Boina</string>
+    <string name="item_head_paja">Sombrero de paja</string>
+    <string name="item_head_auriculares">Auriculares</string>
+    <string name="item_head_copa">Sombrero de copa</string>
+    <string name="item_head_flor">Flor</string>
+    <string name="item_head_corona">Corona</string>
+    <string name="item_face_gafas_redondas">Gafas redondas</string>
+    <string name="item_face_gafas_sol">Gafas de sol</string>
+    <string name="item_neck_bufanda">Bufanda</string>
+    <string name="item_neck_panuelo">Pañuelo</string>
+    <string name="item_neck_collar_flores">Collar de flores</string>
+    <string name="item_neck_panuelo_brasa">Pañuelo brasa</string>
+    <string name="item_feet_calcetines">Calcetines</string>
+    <string name="item_feet_botas_agua">Botas de agua</string>
+    <string name="item_feet_zapatillas">Zapatillas</string>
+    <string name="item_costume_calabaza">Calabaza</string>
+    <string name="item_costume_reno">Reno</string>
+    <string name="item_costume_dinosaurio">Dinosaurio</string>
 
-    <string name="item_upper_gorro_lana">Gorrito de lana</string>
-    <string name="item_upper_lazo">Lazo</string>
-    <string name="item_upper_copa">Sombrero de copa</string>
-    <string name="item_upper_corona">Corona</string>
 
-    <string name="item_lower_calcetines">Calcetines</string>
-    <string name="item_lower_zapatillas">Zapatillas</string>
+
 </resources>

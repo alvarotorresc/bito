@@ -79,7 +79,7 @@ class PointsReconcilerTest {
         }
 
     @Test
-    fun `reconcile grants the sparks pattern when a habit reaches a 7-day streak`() =
+    fun `reconcile grants the flower when a habit reaches a 7-day streak`() =
         runTest {
             val today = DAY_ZERO + 6
             habits.create(habitEntity(id = "cama", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1))
@@ -87,8 +87,8 @@ class PointsReconcilerTest {
                 journal.log(entryEntity(id = "e$day", habitId = "cama", logicalDay = day, value = 1))
             }
             reconciler.reconcile(today = today, nowMillis = 10L)
-            val granted = db.customizationItemDao().all().single { it.itemId == "pattern-chispas" }
-            assertEquals(CustomizationCategory.PATTERN, granted.category)
+            val granted = db.customizationItemDao().all().single { it.itemId == "head-flor" }
+            assertEquals(CustomizationCategory.HEAD, granted.category)
             assertFalse(granted.equipped)
         }
 
@@ -101,22 +101,22 @@ class PointsReconcilerTest {
                 journal.log(entryEntity(id = "e$day", habitId = "cama", logicalDay = day, value = 1))
             }
             reconciler.reconcile(today = today, nowMillis = 10L)
-            rewards.equip("pattern-chispas")
+            rewards.equip("head-flor")
             for (day in DAY_ZERO..today) journal.remove("e$day")
 
             reconciler.reconcile(today = today, nowMillis = 20L)
 
-            val granted = db.customizationItemDao().all().single { it.itemId == "pattern-chispas" }
+            val granted = db.customizationItemDao().all().single { it.itemId == "head-flor" }
             assertTrue(granted.equipped)
         }
 
     @Test
     fun `grantItems is idempotent thanks to insert-ignore`() =
         runTest {
-            rewards.grantItems(setOf("pattern-chispas"), 10L)
-            rewards.equip("pattern-chispas")
-            rewards.grantItems(setOf("pattern-chispas"), 20L)
-            val rows = db.customizationItemDao().all().filter { it.itemId == "pattern-chispas" }
+            rewards.grantItems(setOf("head-flor"), 10L)
+            rewards.equip("head-flor")
+            rewards.grantItems(setOf("head-flor"), 20L)
+            val rows = db.customizationItemDao().all().filter { it.itemId == "head-flor" }
             assertEquals(1, rows.size)
             assertTrue(rows.single().equipped)
         }

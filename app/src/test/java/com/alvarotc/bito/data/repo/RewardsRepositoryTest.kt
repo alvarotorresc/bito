@@ -94,7 +94,7 @@ class RewardsRepositoryTest {
         runTest {
             db.pointsLedgerDao().insert(pointsLedgerEntity(id = "seed", delta = 1_000, refId = "seed"))
 
-            assertFalse(rewards.purchase(HabiCatalog.byId("upper-corona")!!, DAY_ZERO, 10L))
+            assertFalse(rewards.purchase(HabiCatalog.byId("head-corona")!!, DAY_ZERO, 10L))
             assertFalse(rewards.purchase(HabiCatalog.byId("body-salvia")!!, DAY_ZERO, 10L))
         }
 

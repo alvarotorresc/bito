@@ -95,7 +95,7 @@ fun pointsLedgerEntity(
 
 fun customizationItemEntity(
     itemId: String = "hat-basic",
-    category: CustomizationCategory = CustomizationCategory.UPPER,
+    category: CustomizationCategory = CustomizationCategory.HEAD,
     acquiredAtMillis: Long = 1_000L,
     equipped: Boolean = false,
 ) = CustomizationItemEntity(itemId, category, acquiredAtMillis, equipped)

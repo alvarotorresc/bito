@@ -40,7 +40,7 @@ class BackupCodecTest {
             pointsLedger = listOf(BackupPointsEntry("p1", 1, PointsReason.HABIT_DONE, "agua:0", 0, 4L)),
             freezerUses = listOf(BackupFreezerUse("f1", "agua", 2, 5L)),
             badges = listOf(BackupBadge("first-habit", 6L)),
-            customizationItems = listOf(BackupCustomizationItem("hat", CustomizationCategory.UPPER, 7L, true)),
+            customizationItems = listOf(BackupCustomizationItem("hat", CustomizationCategory.HEAD, 7L, true)),
             settings =
                 BackupSettings(
                     userName = "Alvaro", dayCutoffMinutes = 180, languageTag = "es",

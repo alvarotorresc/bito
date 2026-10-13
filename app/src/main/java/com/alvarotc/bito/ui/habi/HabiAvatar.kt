@@ -545,44 +545,18 @@ private fun HabiAvatarDoradoPreview() {
     }
 }
 
-/** T10 catalog: every pattern, human-checked here — fidelity against the mockup is a visual call, not a test. */
-@Preview(showBackground = true, backgroundColor = 0xFFF2ECE1)
-@Composable
-private fun HabiAvatarPatternsPreview() {
-    val patterns =
-        listOf(
-            "pattern-motas",
-            "pattern-rayitas",
-            "pattern-corazones",
-            "pattern-estrellas",
-            "pattern-flores",
-            "pattern-chispas",
-            "pattern-llamas",
-        )
-    BitoTheme {
-        Row(modifier = Modifier.padding(16.dp)) {
-            for (pattern in patterns) {
-                HabiAvatar(
-                    spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(pattern = pattern)),
-                    modifier = Modifier.size(72.dp).padding(4.dp),
-                )
-            }
-        }
-    }
-}
-
 /** T10 catalog: every upper + lower item. */
 @Preview(showBackground = true, backgroundColor = 0xFFF2ECE1)
 @Composable
 private fun HabiAvatarAccessoriesPreview() {
-    val uppers = listOf("upper-gorro-lana", "upper-lazo", "upper-copa", "upper-corona")
-    val lowers = listOf("lower-calcetines", "lower-zapatillas")
+    val uppers = listOf("head-gorro-lana", "head-boina", "head-copa", "head-corona")
+    val lowers = listOf("feet-calcetines", "feet-zapatillas")
     BitoTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             Row {
                 for (upper in uppers) {
                     HabiAvatar(
-                        spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(upper = upper)),
+                        spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(head = upper)),
                         modifier = Modifier.size(72.dp).padding(4.dp),
                     )
                 }
@@ -590,7 +564,7 @@ private fun HabiAvatarAccessoriesPreview() {
             Row {
                 for (lower in lowers) {
                     HabiAvatar(
-                        spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(lower = lower)),
+                        spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet(feet = lower)),
                         modifier = Modifier.size(72.dp).padding(4.dp),
                     )
                 }

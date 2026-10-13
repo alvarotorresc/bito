@@ -65,13 +65,13 @@ class HabiUiStateTest {
                 ownedItem("body-terracota", CustomizationCategory.BODY_COLOR, equipped = true),
                 // Owned but NOT equipped — must not leak into the worn set.
                 ownedItem("body-carbon", CustomizationCategory.BODY_COLOR, equipped = false),
-                ownedItem("upper-lazo", CustomizationCategory.UPPER, equipped = true),
+                ownedItem("neck-collar-flores", CustomizationCategory.NECK, equipped = true),
             )
 
         val result = buildHabiUiState(state, owned = owned, balance = 0, personality = Personality.NEUTRA, today = TODAY)
 
         assertEquals("body-terracota", result.spec.equipped.bodyColor)
-        assertEquals("upper-lazo", result.spec.equipped.upper)
+        assertEquals("neck-collar-flores", result.spec.equipped.neck)
         // Eyes untouched -> still the axis default.
         assertEquals("eyes-tinta", result.spec.equipped.eyeColor)
     }
@@ -85,10 +85,12 @@ class HabiUiStateTest {
         assertEquals(
             listOf(
                 CustomizationCategory.BODY_COLOR,
-                CustomizationCategory.PATTERN,
                 CustomizationCategory.EYE_COLOR,
-                CustomizationCategory.UPPER,
-                CustomizationCategory.LOWER,
+                CustomizationCategory.HEAD,
+                CustomizationCategory.FACE,
+                CustomizationCategory.NECK,
+                CustomizationCategory.FEET,
+                CustomizationCategory.COSTUME,
             ),
             result.store.keys.toList(),
         )
@@ -116,17 +118,18 @@ class HabiUiStateTest {
 
         // Affordable, including the exact-balance boundary (>=).
         assertEquals(StoreItemState.Affordable, stateOf("body-vainilla")) // price 15
-        assertEquals(StoreItemState.Affordable, stateOf("pattern-corazones")) // price 50 == balance
+        assertEquals(StoreItemState.Affordable, stateOf("face-gafas-redondas")) // price 50 == balance
 
         // Priced but out of reach.
-        val missing = assertIs<StoreItemState.MissingPoints>(stateOf("upper-gorro-lana")) // price 80
+        val missing = assertIs<StoreItemState.MissingPoints>(stateOf("head-paja")) // price 80
         assertEquals(30, missing.missing)
 
         // Achievement-only exclusives.
-        val lockedUpper = assertIs<StoreItemState.Locked>(stateOf("upper-corona"))
-        assertEquals(100, lockedUpper.requiredStreak)
-        val lockedPattern = assertIs<StoreItemState.Locked>(stateOf("pattern-chispas"))
-        assertEquals(7, lockedPattern.requiredStreak)
+        val lockedCrown = assertIs<StoreItemState.Locked>(stateOf("head-corona"))
+        assertEquals(100, lockedCrown.requiredStreak)
+        val lockedFlower = assertIs<StoreItemState.Locked>(stateOf("head-flor"))
+        assertEquals(7, lockedFlower.requiredStreak)
+        assertEquals(StoreItemState.OutOfSeason, stateOf("costume-calabaza")) // TODAY es 14 de agosto
     }
 
     @Test
@@ -148,7 +151,7 @@ class HabiUiStateTest {
         val state = domainState()
         val owned = listOf(ownedItem("body-terracota", CustomizationCategory.BODY_COLOR, equipped = true))
 
-        // 90 is upper-lazo's exact price — Affordable, not MissingPoints.
+        // 90 is neck-collar-flores's exact price — Affordable, not MissingPoints.
         val previewing =
             buildHabiUiState(
                 state,
@@ -156,22 +159,22 @@ class HabiUiStateTest {
                 balance = 90,
                 personality = Personality.NEUTRA,
                 today = TODAY,
-                previewItemId = "upper-lazo",
+                previewItemId = "neck-collar-flores",
             )
 
         // The avatar wears the preview on top of what's really equipped...
         assertEquals("body-terracota", previewing.spec.equipped.bodyColor)
-        assertEquals("upper-lazo", previewing.spec.equipped.upper)
-        assertEquals("upper-lazo", previewing.previewItemId)
+        assertEquals("neck-collar-flores", previewing.spec.equipped.neck)
+        assertEquals("neck-collar-flores", previewing.previewItemId)
         // ...but the store grid never lies: the previewed item is still just Affordable/Owned/etc,
         // derived from the real DB-backed equipped set, not "Equipped" because it's on screen.
-        val previewedEntry = previewing.store.getValue(CustomizationCategory.UPPER).first { it.item.id == "upper-lazo" }
+        val previewedEntry = previewing.store.getValue(CustomizationCategory.NECK).first { it.item.id == "neck-collar-flores" }
         assertEquals(StoreItemState.Affordable, previewedEntry.state)
 
         val notPreviewing =
             buildHabiUiState(state, owned = owned, balance = 0, personality = Personality.NEUTRA, today = TODAY)
 
-        assertEquals(null, notPreviewing.spec.equipped.upper)
+        assertEquals(null, notPreviewing.spec.equipped.neck)
         assertEquals(null, notPreviewing.previewItemId)
     }
 

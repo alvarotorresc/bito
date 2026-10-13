@@ -172,7 +172,7 @@ class BackupRoundTripTest {
         db.freezerUseDao().insert(freezerUseEntity(id = "f1", habitId = "h1", protectedDay = DAY_ZERO))
         db.badgeDao().insert(BadgeEntity("first-week", 6_000L))
         db.customizationItemDao().upsert(
-            customizationItemEntity(itemId = "hat-basic", category = CustomizationCategory.UPPER, equipped = true),
+            customizationItemEntity(itemId = "hat-basic", category = CustomizationCategory.HEAD, equipped = true),
         )
 
         db.breathingSessionDao().insert(

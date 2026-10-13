@@ -16,7 +16,6 @@ import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.domain.model.CatalogItem
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.ui.theme.Borde
-import com.alvarotc.bito.ui.theme.HabiSalvia
 import com.alvarotc.bito.ui.theme.Tinta
 import kotlin.math.cos
 import kotlin.math.sin
@@ -37,9 +36,9 @@ fun StoreItemThumb(
         when (item.category) {
             CustomizationCategory.BODY_COLOR -> drawColorSwatch(HabiPalette.bodyColor(item.id))
             CustomizationCategory.EYE_COLOR -> drawColorSwatch(HabiPalette.eyeColor(item.id))
-            CustomizationCategory.PATTERN -> drawPatternSwatch(item.id)
-            CustomizationCategory.UPPER -> drawUpperGlyph(item.id)
-            CustomizationCategory.LOWER -> drawLowerGlyph(item.id)
+            CustomizationCategory.HEAD -> drawUpperGlyph(item.id)
+            CustomizationCategory.FEET -> drawLowerGlyph(item.id)
+            CustomizationCategory.FACE, CustomizationCategory.NECK, CustomizationCategory.COSTUME -> Unit
         }
     }
 }
@@ -48,43 +47,6 @@ private fun DrawScope.drawColorSwatch(color: Color) {
     val radius = size.minDimension / 2f * 0.86f
     drawCircle(color = color, radius = radius, center = center)
     drawCircle(color = Borde, radius = radius, center = center, style = Stroke(width = 1.5.dp.toPx()))
-}
-
-private fun DrawScope.drawPatternSwatch(id: String) {
-    drawColorSwatch(HabiSalvia)
-    val r = size.minDimension / 2f * 0.55f
-    when (id) {
-        "pattern-motas" -> {
-            val dotR = size.minDimension * 0.05f
-            listOf(
-                Offset(center.x - r * 0.45f, center.y - r * 0.35f),
-                Offset(center.x + r * 0.4f, center.y - r * 0.05f),
-                Offset(center.x - r * 0.1f, center.y + r * 0.5f),
-            ).forEach { drawCircle(color = Tinta, radius = dotR, center = it) }
-        }
-        "pattern-rayitas" -> {
-            val step = size.minDimension * 0.2f
-            for (i in -1..1) {
-                val x = center.x + i * step
-                drawLine(
-                    Tinta,
-                    Offset(x - r * 0.35f, center.y - r * 0.75f),
-                    Offset(x + r * 0.35f, center.y + r * 0.75f),
-                    strokeWidth = 1.6.dp.toPx(),
-                    cap = StrokeCap.Round,
-                )
-            }
-        }
-        "pattern-corazones" -> drawHeart(center, r, Tinta)
-        "pattern-estrellas" -> drawFourPointStar(center, r, r * 0.35f, Tinta)
-        "pattern-flores" -> drawFlower(center, r, Tinta)
-        "pattern-chispas" -> {
-            drawFourPointStar(Offset(center.x - r * 0.3f, center.y - r * 0.2f), r * 0.55f, r * 0.2f, Tinta)
-            drawFourPointStar(Offset(center.x + r * 0.4f, center.y + r * 0.35f), r * 0.32f, r * 0.12f, Tinta)
-        }
-        "pattern-llamas" -> drawFlame(center, r, Tinta)
-        else -> drawCircle(color = Tinta, radius = r * 0.2f, center = center)
-    }
 }
 
 private fun DrawScope.drawUpperGlyph(id: String) {
