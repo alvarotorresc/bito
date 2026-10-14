@@ -47,6 +47,7 @@ fun Segmentado(
     elegida: Int,
     alElegir: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    habilitado: Boolean = true,
 ) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
@@ -88,6 +89,7 @@ fun Segmentado(
                         .clip(BitoFormas.canto)
                         .selectable(
                             selected = i == elegida,
+                            enabled = habilitado,
                             interactionSource = remember { MutableInteractionSource() },
                             indication = null,
                             role = Role.Tab,
