@@ -171,6 +171,8 @@ fun JardinCompartido(
     saltoHabi: Int = 0,
     subida: () -> Float = { 0f },
     fiesta: Int = 0,
+    // 0 de día, 1 de noche: se pasa tal cual a la escena.
+    noche: () -> Float = { 0f },
 ) {
     val densidad = LocalDensity.current
     val colores = BitoTema.colores
@@ -252,6 +254,7 @@ fun JardinCompartido(
                 destacar = destacar,
                 saltoHabi = saltoHabi,
                 fiesta = fiesta,
+                noche = noche,
             )
         }
     }

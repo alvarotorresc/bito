@@ -166,6 +166,10 @@ class CelebracionesViewModel(
     private var esperandoLibro = false
     private var enHoy = false
 
+    /** Lo último que dijo el Inicio de Hoy, y si el cierre del día está abierto encima. */
+    private var hoyVisible = false
+    private var cierreAbierto = false
+
     /** Logros nuevos que esperan a su entrada del libro (o a que pase [VENTANA_LOGRO_MS]) para ordenarse por G14. */
     private val retenidos = mutableListOf<Momento.Logro>()
     private var ventana: Job? = null
@@ -310,6 +314,23 @@ class CelebracionesViewModel(
 
     /** Regla 11: salir de Hoy da por terminado lo que suena (cuenta para su lote); el resto espera. */
     fun enHoy(visible: Boolean) {
+        hoyVisible = visible
+        aplicarEnHoy(visible && !cierreAbierto)
+    }
+
+    /**
+     * El cierre del día se abre y se cierra encima de Hoy sin salir de su ruta. Esqueleto de la Ola 0: con el cierre
+     * abierto la cola se comporta como fuera de Hoy, igual que con el repaso de antes; el carril del cierre
+     * (Tarea 28) cambia el cuerpo para retener la cadena y soltarla tras sellar.
+     */
+    fun retenerCierre(retener: Boolean) {
+        // Solo cuenta el cambio: decir «cerrado» al montar Hoy no puede pausar lo que ya suena.
+        if (retener == cierreAbierto) return
+        cierreAbierto = retener
+        aplicarEnHoy(hoyVisible && !retener)
+    }
+
+    private fun aplicarEnHoy(visible: Boolean) {
         enHoy = visible
         if (visible) {
             esperandoLibro = false // una restauración se hace fuera de Hoy: al volver, el libro ya llegó

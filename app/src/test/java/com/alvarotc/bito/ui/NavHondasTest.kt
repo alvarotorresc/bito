@@ -7,7 +7,15 @@ import org.junit.Test
 class NavHondasTest {
     @Test
     fun `only the four routes of this piece go down a stratum`() {
-        assertEquals(setOf("habit?id={id}", "task?id={id}", "tasks", "archived"), RUTAS_HONDAS)
+        assertEquals(setOf(RUTA_FORM_HABITO, "task?id={id}", "tasks", "archived"), RUTAS_HONDAS)
+    }
+
+    @Test
+    fun `the habit form route carries an optional target and Today its close and big thing flags`() {
+        assertEquals("habit?id={id}&objetivo={objetivo}", RUTA_FORM_HABITO)
+        assertEquals("today?cierre={cierre}&gordo={gordo}", RUTA_HOY)
+        assertEquals(TipoTransicion.BAJA_ENTRA, transicionDe(Momento.ENTRA, RUTA_HOY, RUTA_FORM_HABITO, reducido = false))
+        assertEquals(CambioSonoro.DESCENSO, sonidoDeCambio(RUTA_HOY, RUTA_FORM_HABITO, haciaDelante = true))
     }
 
     @Test
@@ -24,16 +32,16 @@ class NavHondasTest {
 
     @Test
     fun `other routes keep the global transition and reduced motion fades`() {
-        assertEquals(TipoTransicion.GLOBAL, transicionDe(Momento.ENTRA, "today", "review", reducido = false))
+        assertEquals(TipoTransicion.GLOBAL, transicionDe(Momento.ENTRA, "today", "breathing", reducido = false))
         assertEquals(TipoTransicion.GLOBAL, transicionDe(Momento.ENTRA, "tasks", "focus?taskId={taskId}", reducido = false))
-        assertEquals(TipoTransicion.FUNDIDO, transicionDe(Momento.ENTRA, "today", "habit?id={id}", reducido = true))
+        assertEquals(TipoTransicion.FUNDIDO, transicionDe(Momento.ENTRA, "today", RUTA_FORM_HABITO, reducido = true))
     }
 
     @Test
     fun `descent sounds going in, ascent coming out, nothing elsewhere`() {
         assertEquals(CambioSonoro.DESCENSO, sonidoDeCambio("today", "tasks", haciaDelante = true))
         assertEquals(CambioSonoro.ASCENSO, sonidoDeCambio("tasks", "today", haciaDelante = false))
-        assertNull(sonidoDeCambio("today", "review", haciaDelante = true))
+        assertNull(sonidoDeCambio("today", "breathing", haciaDelante = true))
         assertNull(sonidoDeCambio("tasks", "tasks", haciaDelante = true))
     }
 
@@ -60,6 +68,6 @@ class NavHondasTest {
         assertEquals(CambioSonoro.ACERCAR, sonidoDeCambio("settings", "today", haciaDelante = false))
         assertEquals(CambioSonoro.DESCENSO, sonidoDeCambio("today", RUTA_FICHA, haciaDelante = true))
         assertEquals(CambioSonoro.ASCENSO, sonidoDeCambio(RUTA_FICHA, "today", haciaDelante = false))
-        assertNull(sonidoDeCambio("today", "review", haciaDelante = true))
+        assertNull(sonidoDeCambio("today", "breathing", haciaDelante = true))
     }
 }

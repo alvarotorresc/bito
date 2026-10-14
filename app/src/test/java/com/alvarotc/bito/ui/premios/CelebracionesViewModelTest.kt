@@ -249,6 +249,46 @@ class CelebracionesViewModelTest {
             assertEquals(MarcaLibro(11, "r"), marca())
         }
 
+    /** Esqueleto de la Ola 0: el cierre abierto encima de Hoy pausa la cola como lo hacía salir al repaso. */
+    @Test
+    fun `while the day close is open nothing plays and it resumes when the close goes down`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.enHoy(true)
+            vm.retenerCierre(true)
+            advanceUntilIdle()
+            db.pointsLedgerDao().insertAll(listOf(fila("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5)))
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            // Hoy vuelve a decir que se ve (cambia el primer plano): el cierre sigue mandando.
+            vm.enHoy(true)
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+
+            vm.retenerCierre(false)
+            advanceUntilIdle()
+            assertEquals(TipoVeta.RACHA, (vm.actual.value as Momento.Veta).tipo)
+        }
+
+    /** Montar Hoy dice «cierre cerrado» antes que «Hoy visible»: eso no puede apagar lo que ya suena. */
+    @Test
+    fun `saying the close is shut while something plays does not stop it`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            insertar("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5)
+            vm = crear()
+            advanceUntilIdle()
+            val sonando = vm.actual.value
+
+            vm.retenerCierre(false)
+            vm.enHoy(true)
+            advanceUntilIdle()
+
+            assertEquals(TipoVeta.RACHA, (sonando as Momento.Veta).tipo)
+            assertEquals(sonando, vm.actual.value)
+        }
+
     @Test
     fun `after a restore nothing old is celebrated`() =
         runTest(dispatcher) {

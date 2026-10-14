@@ -169,6 +169,8 @@ class HabitFormViewModel(
         fun factory(
             container: AppContainer,
             habitId: String?,
+            // El objetivo que sugiere Habi desde la ficha; aún no se usa (Tarea 29).
+            objetivoSugerido: Int? = null,
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {

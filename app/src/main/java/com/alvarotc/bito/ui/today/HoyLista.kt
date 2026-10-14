@@ -98,6 +98,9 @@ fun HoyLista(
     contentPadding: PaddingValues = PaddingValues(),
     creado: String? = null,
     alCreadoVisto: () -> Unit = {},
+    // El aviso de la mañana pide la hoja de lo gordo; la lista avisa de que lo vio (la hoja la abre la Tarea 24).
+    abrirGordo: Boolean = false,
+    alGordoVisto: () -> Unit = {},
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -121,6 +124,7 @@ fun HoyLista(
             vistoCargando = false
         }
     }
+    LaunchedEffect(abrirGordo) { if (abrirGordo) alGordoVisto() }
     LaunchedEffect(brotando) {
         if (brotando != null) {
             delay(BROTE_VIGENCIA_MS)

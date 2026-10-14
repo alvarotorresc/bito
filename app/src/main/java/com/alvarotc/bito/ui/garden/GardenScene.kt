@@ -250,6 +250,8 @@ fun GardenScene(
     forma: Shape = RoundedCornerShape(24.dp),
     // Cada incremento, la fiesta del día completo: las plantas en ola, Habi salta y la luz sube 1,4 s (spec §6.3).
     fiesta: Int = 0,
+    // 0 de día, 1 de noche (G40). Lambda para leerla al dibujar sin recomponer en cada fotograma; aún no se pinta.
+    noche: () -> Float = { 0f },
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }

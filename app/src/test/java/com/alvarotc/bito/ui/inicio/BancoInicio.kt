@@ -21,12 +21,16 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.ui.camino.CaminoViewModel
+import com.alvarotc.bito.ui.cierre.CierreViewModel
 import com.alvarotc.bito.ui.garden.LocalSondaJardin
 import com.alvarotc.bito.ui.garden.SondaJardin
+import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.premios.RegistroAnclas
+import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import com.alvarotc.bito.ui.today.TodayViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -61,6 +65,8 @@ internal class BancoInicio(
     lateinit var camino: CaminoViewModel
     lateinit var celebraciones: CelebracionesViewModel
     lateinit var ajustes: SettingsRepository
+    lateinit var cierre: CierreViewModel
+    lateinit var journal: JournalRepository
     val registro = RegistroAnclas()
     val sonido = SonidoGrabado()
     val tacto = TactoGrabado()
@@ -98,7 +104,7 @@ internal class BancoInicio(
                 .allowMainThreadQueries()
                 .build()
         habits = HabitsRepository(db)
-        val journal = JournalRepository(db)
+        journal = JournalRepository(db)
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(almacen("inicio"))
         ajustes = settings
@@ -123,6 +129,21 @@ internal class BancoInicio(
             )
         camino = CaminoViewModel(domainState, settings, rewards, { fixedNow }, { utc }, dispatcherVM)
         celebraciones = CelebracionesViewModel(domainState, rewards, settings, CoroutineScope(dispatcher + Job()))
+        cierre =
+            CierreViewModel(
+                ReviewViewModel(
+                    domainState,
+                    habits,
+                    journal,
+                    settings,
+                    reconciler,
+                    rewards,
+                    HabiSounds(MotorSonidoMudo),
+                    now = { fixedNow },
+                    zone = { utc },
+                    defaultDispatcher = dispatcherVM,
+                ),
+            )
     }
 
     fun sembrar(
@@ -143,7 +164,25 @@ internal class BancoInicio(
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         enPrimerPlano: Boolean = false,
+        cierreAlEntrar: Boolean = false,
+        alCierreVisto: () -> Unit = {},
+        gordo: Boolean = false,
+        alGordoVisto: () -> Unit = {},
     ) = CompositionLocalProvider(LocalSondaJardin provides sonda) {
-        InicioScreen(hoy, camino, celebraciones, navegar, creado, alCreadoVisto, enPrimerPlano, registro)
+        InicioScreen(
+            hoy,
+            camino,
+            celebraciones,
+            navegar,
+            creado,
+            alCreadoVisto,
+            enPrimerPlano,
+            registro,
+            cierre = cierreAlEntrar,
+            alCierreVisto = alCierreVisto,
+            cierreViewModel = cierre,
+            gordo = gordo,
+            alGordoVisto = alGordoVisto,
+        )
     }
 }

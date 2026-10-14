@@ -1,7 +1,19 @@
 package com.alvarotc.bito.ui
 
+/**
+ * El Inicio. Los dos argumentos son opcionales (`false`), así que `today` a secas sigue valiendo; `cierre` abre el
+ * cierre del día y `gordo` la hoja de lo gordo, una sola vez cada uno (la entrada apunta que ya los vio).
+ */
+internal const val RUTA_HOY = "today?cierre={cierre}&gordo={gordo}"
+
+/** El formulario del hábito; `objetivo` (-1 = ninguno) es el objetivo que sugiere Habi al editar. */
+internal const val RUTA_FORM_HABITO = "habit?id={id}&objetivo={objetivo}"
+
+/** El valor de `objetivo` cuando no hay objetivo sugerido. */
+internal const val SIN_OBJETIVO = -1
+
 /** Rutas que bajan un estrato (G21/G22). Las demás conservan su transición hasta su pieza (decisión 13). */
-internal val RUTAS_HONDAS = setOf("habit?id={id}", "task?id={id}", "tasks", "archived")
+internal val RUTAS_HONDAS = setOf(RUTA_FORM_HABITO, "task?id={id}", "tasks", "archived")
 
 /** La ficha de un hábito; `lectura` es opcional, así que `detail/<id>` sigue valiendo. */
 internal const val RUTA_FICHA = "detail/{habitId}?lectura={lectura}"

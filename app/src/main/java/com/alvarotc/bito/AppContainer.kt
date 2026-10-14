@@ -1,15 +1,19 @@
 package com.alvarotc.bito
 
+import android.app.AlarmManager
 import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
+import com.alvarotc.bito.data.habla.FuentePropuestasHabi
 import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.habla.MemoriaRepository
+import com.alvarotc.bito.data.habla.PermisosAvisos
 import com.alvarotc.bito.data.habla.PropuestaVigenteStore
-import com.alvarotc.bito.data.propuestas.PropuestasProvisionales
 import com.alvarotc.bito.data.repo.BreathingRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
@@ -19,13 +23,18 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.notifications.AvisosHabi
+import com.alvarotc.bito.ui.notifications.AvisosHabiNulo
+import com.alvarotc.bito.ui.notifications.QuickActionUseCase
 import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.crearTacto
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.map
 
 /** Hand-built DI (tech doc §1.4: no framework — constructors). */
 class AppContainer(context: Context) {
@@ -61,6 +70,37 @@ class AppContainer(context: Context) {
     val backup = BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME)
     val reconciler = PointsReconciler(domainState, rewards, settings = settings, despachador = Dispatchers.Default)
 
-    // La pieza 4 sustituye esta línea.
-    val propuestas: FuentePropuestas by lazy { PropuestasProvisionales(domainState.observe(), settings.settings) }
+    // Los avisos de Habi: sin avisos hasta que la Tarea 11 cablee los de Android.
+    val avisosHabi: AvisosHabi = AvisosHabiNulo
+
+    private val appContext = context.applicationContext
+
+    val propuestas: FuentePropuestas by lazy {
+        FuentePropuestasHabi(
+            estado = domainState.observe(),
+            ajustes = settings.settings,
+            recordatorios = habits.observeHabits().map { lista -> lista.mapNotNull { h -> h.reminderMinutes?.let { h.id to it } }.toMap() },
+            memoria = memoria,
+            vigentes = propuestaVigente,
+            gordo = loGordo,
+            aceptados = avisosAceptados,
+            // La Tarea 32 pasa el catálogo de los recursos.
+            catalogo = { CatalogoHablaVacio },
+            avisos = avisosHabi,
+            permisos = { permisosAvisos() },
+            // «Hecho» de la vuelta: la misma escritura que las acciones rápidas de los recordatorios.
+            registrar = { habitId, cantidad -> registrarVuelta.log(habitId, cantidad) },
+        )
+    }
+
+    private val registrarVuelta by lazy { QuickActionUseCase(journal, reconciler, domainState, habits, settings) }
+
+    private fun permisosAvisos(): PermisosAvisos {
+        val notificaciones = NotificationManagerCompat.from(appContext).areNotificationsEnabled()
+        // Antes de Android 12 las alarmas exactas no piden permiso.
+        val alarmas =
+            Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+                appContext.getSystemService(AlarmManager::class.java)?.canScheduleExactAlarms() == true
+        return PermisosAvisos(notificaciones, alarmas)
+    }
 }

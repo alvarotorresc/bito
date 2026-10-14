@@ -76,4 +76,20 @@ class NavRequestsTest {
 
         assertNull(NavRequests.pending.value)
     }
+
+    @Test
+    fun `open accepts the big thing and Today`() {
+        NavRequests.open("gordo")
+        assertEquals("gordo", NavRequests.pending.value)
+        NavRequests.open("today")
+        assertEquals("today", NavRequests.pending.value)
+    }
+
+    @Test
+    fun `review and the big thing open Today with their flag, the rest go as they are`() {
+        assertEquals("today?cierre=true", NavRequests.destino("review"))
+        assertEquals("today?gordo=true", NavRequests.destino("gordo"))
+        assertEquals("today", NavRequests.destino("today"))
+        assertEquals("tasks", NavRequests.destino("tasks"))
+    }
 }

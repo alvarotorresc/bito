@@ -104,6 +104,8 @@ fun DetailScreen(
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
     onOpenHabi: () -> Unit,
+    // Editar con el objetivo que sugiere Habi (Tarea 29); sin él, editar a secas.
+    alEditarConObjetivo: (String, Int) -> Unit = { id, _ -> onEdit(id) },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val propuesta by viewModel.propuesta.collectAsStateWithLifecycle()

@@ -635,4 +635,60 @@ class InicioScreenTest {
     fun `the garden of Today is cut with a straight bottom edge`() {
         assertEquals(RectangleShape, FormaJardinHoy)
     }
+
+    @Test
+    fun `closing the day hides the pill and the plus and back returns to Today`() {
+        banco.preparar()
+        var vistos = 0
+        rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true, alCierreVisto = { vistos++ }) } }
+        rule.waitUntil(5_000) { hay("cierre") }
+
+        assertEquals(1, vistos)
+        rule.onNodeWithTag("pildora").assertDoesNotExist()
+        rule.onNodeWithTag("boton-crear").assertDoesNotExist()
+
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.waitUntil(5_000) { !hay("cierre") }
+        rule.onNodeWithTag("pildora").assertExists()
+        rule.onNodeWithTag("boton-crear").assertExists()
+        rule.onNodeWithTag("pildora-hoy").assertIsSelected()
+    }
+
+    @Test
+    fun `the close day button opens the close inside Inicio instead of leaving`() {
+        montar(habitos = 1)
+        rule.onNodeWithTag("cerrar-dia").performScrollTo().performClick()
+        rule.waitUntil(5_000) { hay("cierre") }
+
+        assertTrue("no sale a otra ruta: ${banco.llamadas}", "repaso" !in banco.llamadas)
+        rule.onNodeWithTag("pildora").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the close mounts the current review over Inicio`() {
+        banco.preparar(habitos = 1)
+        rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true) } }
+        rule.waitUntil(5_000) { hay("review-seal") }
+        rule.onNodeWithTag("inicio").assertExists()
+    }
+
+    @Test
+    fun `the big thing flag reaches the list and is marked seen`() {
+        banco.preparar()
+        var vistos = 0
+        rule.setContent { ConSistema { banco.Inicio(gordo = true, alGordoVisto = { vistos++ }) } }
+        rule.waitUntil(5_000) { vistos == 1 }
+        rule.onNodeWithTag("inicio-hoy").assertExists()
+    }
+
+    @Test
+    fun `without the flags nothing is marked seen`() {
+        banco.preparar()
+        var vistos = 0
+        rule.setContent { ConSistema { banco.Inicio(alCierreVisto = { vistos++ }, alGordoVisto = { vistos++ }) } }
+        rule.waitForIdle()
+        assertEquals(0, vistos)
+        rule.onNodeWithTag("cierre").assertDoesNotExist()
+        rule.onNodeWithTag("pildora").assertExists()
+    }
 }
