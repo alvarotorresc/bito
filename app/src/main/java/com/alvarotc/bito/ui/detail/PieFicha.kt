@@ -60,7 +60,7 @@ private const val MAX_COPITOS = 5
 /**
  * Lo que la ficha aprobada no dibuja (decisión 7), bajo la nota de Habi: el cumplimiento de 7 y 365 días, los
  * congeladores (solo en hábitos diarios sin archivar), «He recaído» (solo abstinencia), y pausar, archivar,
- * reanudar o reactivar. En modo lectura, o con el hábito archivado, solo queda «Reactivar».
+ * reanudar o reactivar. En modo lectura, o con el hábito archivado, el cumplimiento se ve y solo queda «Reactivar».
  */
 @Composable
 fun PieFicha(
@@ -74,7 +74,7 @@ fun PieFicha(
     val editable = !estado.lectura && !archivado
 
     Column(modifier.fillMaxWidth().testTag("pie-ficha"), verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
-        if (!estado.lectura) Cumplimiento(estado.windows)
+        Cumplimiento(estado.windows)
         if (editable && estado.period == Period.DAY) {
             Congeladores(
                 tiene = estado.freezersOwned,

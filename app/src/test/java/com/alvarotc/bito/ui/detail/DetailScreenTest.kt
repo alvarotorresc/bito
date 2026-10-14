@@ -343,12 +343,13 @@ class DetailScreenTest {
     }
 
     @Test
-    fun `read only mode has no circle, no tappable days and only reactivate`() {
+    fun `read only mode shows compliance but has no circle, no tappable days and only reactivate`() {
         create(status = HabitStatus.ARCHIVED)
         setContent("h1", lectura = true)
 
         compose.onNodeWithTag("marcar-hoy").assertDoesNotExist()
-        compose.onNodeWithText("7 días", substring = true).assertDoesNotExist()
+        compose.onNodeWithText("7 días", substring = true).performScrollTo().assertExists()
+        compose.onNodeWithText("365 días", substring = true).assertExists()
         tapDay(today - 3)
         compose.onNodeWithTag("day-sheet").assertDoesNotExist()
         compose.onNodeWithTag("reactivate").performScrollTo().assertExists()
