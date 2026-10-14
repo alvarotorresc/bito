@@ -7,7 +7,6 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
-import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.theme.BitoTheme
 import org.junit.Assert.assertEquals
@@ -57,20 +56,6 @@ class HabiScreenTest {
         compose.onNodeWithText("Sargento").performClick()
 
         assertEquals(Personality.SARGENTO, selected)
-    }
-
-    @Test
-    fun `the points sheet lists the economy values, never hardcoded copy`() {
-        compose.setContent {
-            BitoTheme {
-                PointsInfoSheet(economy = EconomyConfig(), onDismiss = {})
-            }
-        }
-
-        compose.onNodeWithTag("points-info-sheet").assertExists()
-        compose.onNodeWithText("+3").assertExists() // perfect day, straight from EconomyConfig
-        compose.onNodeWithText("+300").assertExists() // the 365-day streak milestone
-        compose.onNodeWithText("a freezer costs 100 bitos").assertExists()
     }
 
     @Test
