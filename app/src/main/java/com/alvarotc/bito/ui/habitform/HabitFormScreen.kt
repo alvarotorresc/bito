@@ -480,8 +480,8 @@ private fun CuerpoObjetivo(
             },
             contentAlignment = Alignment.TopStart,
             label = "objetivo",
-        ) { _ ->
-            if (state.preset == HabitPreset.QUIT && state.quitMode == QuitMode.TOTAL) {
+        ) { (preset, quitMode) ->
+            if (preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL) {
                 Text(
                     stringResource(R.string.habitform_dejar_del_todo),
                     style = BitoTema.tipos.t14,

@@ -266,8 +266,9 @@ class AjustesScreenTest {
         abrir("Avisos y respiración")
         rule.onNode(isDialog()).assertDoesNotExist()
         pulsar("Avisos de Habi")
-        // Los textos de «Mañana» y «Noche» son de la hoja (Tarea 24); aquí se comprueba que la fila la abre.
         rule.onNode(isDialog()).assertExists()
+        rule.onNodeWithText("Mañana").assertExists()
+        rule.onNodeWithText("Noche").assertExists()
     }
 
     @Test
