@@ -4,6 +4,7 @@ import com.alvarotc.bito.domain.habla.Candidata
 import com.alvarotc.bito.domain.habla.Hechos
 import com.alvarotc.bito.domain.habla.Hueco
 import com.alvarotc.bito.domain.habla.Situacion
+import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.propuestas.Respuesta
 
@@ -29,17 +30,19 @@ object Respuestas {
     /** Tras guardar la hoja de lo gordo. */
     fun gordoElegido(h: Hechos): Candidata = Candidata(Situacion.GORDO_ELEGIDO, null, emptyMap(), listOf(Respuesta.AHORA, Respuesta.LUEGO))
 
-    /** Tras «Hoy no» o «Ahora no»: la frase corta, sin acciones (P6: aporta `n` y `tarea`). */
-    fun trasHoyNo(h: Hechos): Candidata = Candidata(Situacion.TRAS_HOY_NO, null, quedaHoy(h), emptyList())
+    /** Tras «Hoy no» o «Ahora no»: la frase corta, sin acciones ni huecos (HUECOS.md: ni `{n}` ni `{tarea}`). */
+    fun trasHoyNo(h: Hechos): Candidata = Candidata(Situacion.TRAS_HOY_NO, null, emptyMap(), emptyList())
 
-    /** El día sellado (Hoy de noche), sin acciones (P6: aporta `n` y `tarea`). */
-    fun noche(h: Hechos): Candidata = Candidata(Situacion.NOCHE, null, quedaHoy(h), emptyList())
-
-    /** `n`: hábitos exigibles sin hacer más tareas sin hacer; `tarea`: la primera tarea sin hacer, si hay. */
-    private fun quedaHoy(h: Hechos): Map<Hueco, ValorHueco> {
-        val habitos = h.habitos.count { it.exigibleHoy && !it.hechoHoy }
-        val tareas = h.tareas.filterNot { it.hecha }
-        val n = mapOf(Hueco.N to ValorHueco.Numero(habitos + tareas.size))
-        return tareas.firstOrNull()?.let { n + (Hueco.TAREA to ValorHueco.Texto(it.titulo)) } ?: n
+    /**
+     * El día sellado (Hoy de noche), sin acciones. Sin `{n}`; `{tarea}` es la primera tarea de lo
+     * gordo que quedó sin hacer (el arrastre de §5.4); sin arrastre, no hay `{tarea}` (HUECOS.md).
+     */
+    fun noche(h: Hechos): Candidata {
+        val arrastre =
+            h.gordo
+                .filter { it.tipo == TipoRefGordo.TAREA && it !in h.gordoHecho }
+                .firstNotNullOfOrNull { ref -> h.tareas.firstOrNull { it.id == ref.id } }
+        val huecos = arrastre?.let { mapOf(Hueco.TAREA to ValorHueco.Texto(it.titulo)) } ?: emptyMap()
+        return Candidata(Situacion.NOCHE, null, huecos, emptyList())
     }
 }

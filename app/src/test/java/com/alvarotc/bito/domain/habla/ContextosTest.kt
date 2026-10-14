@@ -77,6 +77,7 @@ class ContextosTest {
         assertNull(de(nombre = "  ").nombre)
         assertNull(de(nombre = null).nombre)
         assertEquals("Álvaro", de(nombre = "Álvaro").nombre)
+        assertEquals("Álvaro", de(nombre = "  Álvaro ").nombre)
     }
 
     @Test

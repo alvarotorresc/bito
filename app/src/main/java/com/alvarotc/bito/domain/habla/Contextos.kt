@@ -50,7 +50,7 @@ object Contextos {
             franja = Franja.de(ahoraMin),
             fase = fase,
             voz = voz,
-            nombre = nombre?.takeIf { it.isNotBlank() },
+            nombre = nombre?.trim()?.takeIf { it.isNotEmpty() },
             horaManana = horaManana,
             horaNoche = horaNoche,
             corteDia = corteDia,
