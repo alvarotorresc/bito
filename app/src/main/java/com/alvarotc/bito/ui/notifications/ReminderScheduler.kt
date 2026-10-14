@@ -11,12 +11,12 @@ import com.alvarotc.bito.domain.ClockTimes
 import com.alvarotc.bito.domain.model.HabitStatus
 import java.time.ZoneId
 
-/** What a scheduled reminder slot is for. TASKS y BREATHING al final: el nombre viaja en el Intent. */
-enum class SlotKind { GLOBAL, HABIT, REVIEW, TASKS, BREATHING }
+/** What a scheduled reminder slot is for. El nombre viaja en el Intent; HABI_MANANA y ACEPTADO los rellena el carril de avisos. */
+enum class SlotKind { GLOBAL, HABIT, HABI_NOCHE, TASKS, BREATHING, HABI_MANANA, ACEPTADO }
 
 /**
  * A single reminder to fire at [minutesOfDay]. [key] disambiguates slots of the same [kind]:
- * the configured minute for GLOBAL, the habit id for HABIT, empty for the one REVIEW slot.
+ * the configured minute for GLOBAL, the habit id for HABIT, empty for the one HABI_NOCHE slot.
  */
 data class Slot(val kind: SlotKind, val key: String, val minutesOfDay: Int)
 
@@ -38,7 +38,7 @@ object ReminderScheduler {
 
     /**
      * The reminder slots implied by current settings and habits: one GLOBAL slot per configured
-     * hour, one HABIT slot per `ACTIVE` habit with a reminder set, always one REVIEW slot, and
+     * hour, one HABIT slot per `ACTIVE` habit with a reminder set, always one HABI_NOCHE slot, and
      * one TASKS slot at noon while [Settings.taskNoticesEnabled] is on, and one BREATHING slot at
      * [Settings.breathingReminderTimeMinutes] while [Settings.breathingReminderEnabled] is on.
      */
@@ -51,7 +51,7 @@ object ReminderScheduler {
             habits
                 .filter { it.status == HabitStatus.ACTIVE && it.reminderMinutes != null }
                 .map { Slot(SlotKind.HABIT, it.id, it.reminderMinutes!!) }
-        val review = Slot(SlotKind.REVIEW, "", settings.habiNightMinutes)
+        val noche = Slot(SlotKind.HABI_NOCHE, "", settings.habiNightMinutes)
         val tasks =
             if (settings.taskNoticesEnabled) listOf(Slot(SlotKind.TASKS, "", TASKS_NOTICE_MINUTES)) else emptyList()
         val breathing =
@@ -60,7 +60,7 @@ object ReminderScheduler {
             } else {
                 emptyList()
             }
-        return global + habit + listOf(review) + tasks + breathing
+        return global + habit + listOf(noche) + tasks + breathing
     }
 
     fun scheduleAll(

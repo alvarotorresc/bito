@@ -117,7 +117,7 @@ class ReminderUseCase(
                     Outcome.RemindHabit(card.name, quickTargetOf(card), slot)
                 }
             }
-            SlotKind.REVIEW ->
+            SlotKind.HABI_NOCHE ->
                 if (reviewIsPending(state)) {
                     Outcome.Review(slot, reviewPendingCount(state), prefs.personality, prefs.userName)
                 } else {
@@ -138,6 +138,8 @@ class ReminderUseCase(
                 }
             }
             SlotKind.BREATHING -> Outcome.Breathing(slot, prefs.personality, prefs.userName)
+            // Sin plan todavía: el carril de avisos los rellena.
+            SlotKind.HABI_MANANA, SlotKind.ACEPTADO -> Outcome.Stale
         }
     }
 }

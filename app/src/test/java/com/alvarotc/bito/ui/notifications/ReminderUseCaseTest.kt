@@ -173,15 +173,15 @@ class ReminderUseCaseTest {
                 habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
             )
 
-            val pending = useCase.evaluate("REVIEW", "")
+            val pending = useCase.evaluate("HABI_NOCHE", "")
             assertTrue(pending is ReminderUseCase.Outcome.Review)
-            assertEquals(SlotKind.REVIEW, (pending as ReminderUseCase.Outcome.Review).slot.kind)
+            assertEquals(SlotKind.HABI_NOCHE, (pending as ReminderUseCase.Outcome.Review).slot.kind)
 
             db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
 
-            val settled = useCase.evaluate("REVIEW", "")
+            val settled = useCase.evaluate("HABI_NOCHE", "")
             assertTrue(settled is ReminderUseCase.Outcome.Silent)
-            assertEquals(SlotKind.REVIEW, (settled as ReminderUseCase.Outcome.Silent).slot.kind)
+            assertEquals(SlotKind.HABI_NOCHE, (settled as ReminderUseCase.Outcome.Silent).slot.kind)
         }
 
     @Test
@@ -192,10 +192,10 @@ class ReminderUseCaseTest {
             )
             journal.sealDay(today, fixedNow)
 
-            val outcome = useCase.evaluate("REVIEW", "")
+            val outcome = useCase.evaluate("HABI_NOCHE", "")
 
             assertTrue(outcome is ReminderUseCase.Outcome.Silent)
-            assertEquals(SlotKind.REVIEW, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
+            assertEquals(SlotKind.HABI_NOCHE, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
         }
 
     @Test
@@ -347,7 +347,7 @@ class ReminderUseCaseTest {
                 habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
             )
 
-            val outcome = useCase.evaluate("REVIEW", "")
+            val outcome = useCase.evaluate("HABI_NOCHE", "")
 
             assertTrue(outcome is ReminderUseCase.Outcome.Review)
             val review = outcome as ReminderUseCase.Outcome.Review
@@ -489,5 +489,12 @@ class ReminderUseCaseTest {
             assertEquals(SlotKind.BREATHING, breathing.slot.kind)
             assertEquals(Personality.CHEERLEADER, breathing.personality)
             assertEquals("Álvaro", breathing.userName)
+        }
+
+    @Test
+    fun `a morning or accepted slot without plan is stale`() =
+        runTest(dispatcher) {
+            assertEquals(ReminderUseCase.Outcome.Stale, useCase.evaluate("HABI_MANANA", ""))
+            assertEquals(ReminderUseCase.Outcome.Stale, useCase.evaluate("ACEPTADO", "p1"))
         }
 }

@@ -27,7 +27,7 @@ import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabi
-import com.alvarotc.bito.ui.notifications.AvisosHabiNulo
+import com.alvarotc.bito.ui.notifications.AvisosHabiAndroid
 import com.alvarotc.bito.ui.notifications.QuickActionUseCase
 import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.crearTacto
@@ -67,11 +67,12 @@ class AppContainer(context: Context) {
     val tacto: Tacto by lazy { crearTacto(context.applicationContext, settings) }
     val habiSounds by lazy { HabiSounds(sonido) }
     val keyStore = BackupKeyStore(context.filesDir)
-    val backup = BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME)
+    val backup =
+        BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME, cancelarAvisos = { avisosHabi.cancelarAceptados(it) })
     val reconciler = PointsReconciler(domainState, rewards, settings = settings, despachador = Dispatchers.Default)
 
-    // Los avisos de Habi: sin avisos hasta que la Tarea 11 cablee los de Android.
-    val avisosHabi: AvisosHabi = AvisosHabiNulo
+    // Los avisos de Habi. Perezoso: la restauración y la fuente lo piden, el arranque no.
+    val avisosHabi: AvisosHabi by lazy { AvisosHabiAndroid(context.applicationContext, contenedor = { this }) }
 
     private val appContext = context.applicationContext
 
@@ -95,7 +96,7 @@ class AppContainer(context: Context) {
 
     private val registrarVuelta by lazy { QuickActionUseCase(journal, reconciler, domainState, habits, settings) }
 
-    private fun permisosAvisos(): PermisosAvisos {
+    internal fun permisosAvisos(): PermisosAvisos {
         val notificaciones = NotificationManagerCompat.from(appContext).areNotificationsEnabled()
         // Antes de Android 12 las alarmas exactas no piden permiso.
         val alarmas =

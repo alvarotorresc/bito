@@ -1,4 +1,4 @@
-package com.alvarotc.bito.ui.review
+package com.alvarotc.bito.ui.habla
 
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Period
@@ -27,7 +27,7 @@ private fun card(
     streak = 0,
 )
 
-class ReviewRowsTest {
+class FilasPendientesTest {
     @Test
     fun `undone positives are rows, done ones are not`() {
         val rows = reviewRowsOf(listOf(card("a"), card("b", done = true)), todaySealed = false)

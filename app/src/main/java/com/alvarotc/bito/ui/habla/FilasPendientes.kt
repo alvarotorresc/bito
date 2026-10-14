@@ -1,4 +1,4 @@
-package com.alvarotc.bito.ui.review
+package com.alvarotc.bito.ui.habla
 
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.ui.today.HabitCardUi

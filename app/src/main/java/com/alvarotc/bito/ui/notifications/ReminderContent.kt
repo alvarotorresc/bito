@@ -1,6 +1,6 @@
 package com.alvarotc.bito.ui.notifications
 
-import com.alvarotc.bito.ui.review.reviewRowsOf
+import com.alvarotc.bito.ui.habla.reviewRowsOf
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.TodayUiState
 

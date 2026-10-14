@@ -22,7 +22,7 @@ class ReminderSchedulerTest {
         assertTrue(slots.any { it.kind == SlotKind.GLOBAL && it.key == "480" && it.minutesOfDay == 480 })
         assertTrue(slots.any { it.kind == SlotKind.GLOBAL && it.key == "1200" && it.minutesOfDay == 1200 })
         assertTrue(slots.any { it.kind == SlotKind.HABIT && it.key == "h1" && it.minutesOfDay == 600 })
-        assertTrue(slots.any { it.kind == SlotKind.REVIEW && it.key == "" && it.minutesOfDay == 1290 })
+        assertTrue(slots.any { it.kind == SlotKind.HABI_NOCHE && it.key == "" && it.minutesOfDay == 1290 })
         assertTrue(slots.any { it.kind == SlotKind.TASKS && it.key == "" && it.minutesOfDay == 12 * 60 })
     }
 
@@ -39,7 +39,7 @@ class ReminderSchedulerTest {
         val slots = ReminderScheduler.slotsOf(settings, habits)
 
         assertEquals(2, slots.size)
-        assertEquals(setOf(SlotKind.REVIEW, SlotKind.TASKS), slots.map { it.kind }.toSet())
+        assertEquals(setOf(SlotKind.HABI_NOCHE, SlotKind.TASKS), slots.map { it.kind }.toSet())
     }
 
     @Test
@@ -106,5 +106,15 @@ class ReminderSchedulerTest {
         val codes = ReminderScheduler.slotsOf(settings, emptyList()).map(ReminderScheduler::requestCodeOf)
 
         assertEquals(codes.size, codes.toSet().size)
+    }
+
+    @Test
+    fun `the night slot replaces the review slot`() {
+        val slots = ReminderScheduler.slotsOf(Settings(habiNightMinutes = 21 * 60 + 30), emptyList())
+
+        assertTrue(slots.contains(Slot(SlotKind.HABI_NOCHE, "", 21 * 60 + 30)))
+        assertTrue(slots.none { it.kind.name == "REVIEW" })
+        assertTrue(SlotKind.entries.none { it.name == "REVIEW" })
+        assertTrue(slots.none { it.kind == SlotKind.HABI_MANANA || it.kind == SlotKind.ACEPTADO })
     }
 }
