@@ -164,6 +164,23 @@ class CalendarioGotasTest {
     }
 
     @Test
+    fun `a past pending day is drawn as a number but still calls back, a day off does not`() {
+        val tocados = mutableListOf<Int>()
+        val conPendiente = dias().map { if (it.day == dia(11)) it.copy(dot = DayDot.PENDING) else it }
+        rule.setContent {
+            ConSistema { CalendarioGotas(octubre, conPendiente, agosto, octubre, {}, {}, { tocados += it }) }
+        }
+        assertEquals(EstadoGota.NUMERO, CalendarioGotasLogica.estadoDe(conPendiente.first { it.day == dia(11) }))
+        rule.onNodeWithTag("dia-${dia(11)}").performClick()
+        assertEquals(listOf(dia(11)), tocados)
+        rule.onNodeWithContentDescription("11 de octubre, pendiente").assertExists()
+        // Los días en pausa y los que aún no existen no responden.
+        assertFalse(CalendarioGotasLogica.respondeAlToque(HeatmapDay(1, DayDot.OFF, false)))
+        assertFalse(CalendarioGotasLogica.respondeAlToque(HeatmapDay(1, DayDot.PAUSED, false)))
+        assertTrue(CalendarioGotasLogica.respondeAlToque(HeatmapDay(1, DayDot.PENDING, false)))
+    }
+
+    @Test
     fun `not interactive ignores taps on days`() {
         val tocados = mutableListOf<Int>()
         var atras = 0

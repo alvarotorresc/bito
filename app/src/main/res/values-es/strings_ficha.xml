@@ -2,15 +2,14 @@
 <resources>
     <!-- Calendario de gotas -->
     <string name="ficha_cal_mes_pattern">MMMM yyyy</string>
-    <string name="ficha_dia_cd">%1$s, %2$s</string>
     <string name="ficha_dia_hecho">hecho</string>
     <string name="ficha_dia_sin_hacer">sin hacer</string>
     <string name="ficha_dia_congelado">congelado</string>
     <string name="ficha_dia_hoy_hecho">hoy, hecho</string>
     <string name="ficha_dia_hoy_sin_marcar">hoy, sin marcar</string>
+    <string name="ficha_dia_pendiente">pendiente</string>
     <string name="ficha_dia_pausa">en pausa</string>
     <string name="ficha_dia_sin_registro">sin registro</string>
-    <string name="ficha_leyenda_hecho">Hecho</string>
     <string name="ficha_leyenda_sin_hacer">Sin hacer</string>
     <string name="ficha_leyenda_congelador">Congelador</string>
     <string name="ficha_leyenda_hoy">Hoy</string>
@@ -49,7 +48,6 @@
     <string name="ficha_cal_nota">Toca un día pasado para corregirlo. Los congeladores no se tocan.</string>
     <string name="ficha_vale">Vale</string>
     <string name="ficha_no_hace_falta">No hace falta</string>
-    <string name="ficha_dias_7">7 días</string>
     <string name="ficha_dias_365">365 días</string>
     <string name="ficha_cumple_linea">%1$s · %2$s</string>
     <string name="ficha_cumple_cd">%1$s: %2$d de %3$d</string>

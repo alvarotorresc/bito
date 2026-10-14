@@ -134,6 +134,13 @@ internal object CalendarioGotasLogica {
         ultimoMes: YearMonth,
     ): Boolean = mes < ultimoMes
 
+    /**
+     * Si un día responde al toque. Se decide por el punto, no por el dibujo: un día pasado sin sellar (en abstinencia,
+     * `PENDING`) se dibuja solo con el número pero se puede tocar para sellarlo; lo que no responde es lo que no existe
+     * todavía o no cuenta (`OFF`, por venir o antes de plantarlo) y los días en pausa.
+     */
+    fun respondeAlToque(d: HeatmapDay): Boolean = d.isToday || (d.dot != DayDot.OFF && d.dot != DayDot.PAUSED)
+
     /** Si la gota de [dot] va llena: hecho, o la de hoy cuando ya está marcada. */
     fun llena(dot: DayDot): Boolean = dot == DayDot.FULFILLED || dot == DayDot.ACTIVITY
 }
@@ -417,10 +424,11 @@ private fun CeldaGota(
                 estado == EstadoGota.HOY && llena -> R.string.ficha_dia_hoy_hecho
                 estado == EstadoGota.HOY -> R.string.ficha_dia_hoy_sin_marcar
                 dia.dot == DayDot.PAUSED -> R.string.ficha_dia_pausa
+                dia.dot == DayDot.PENDING -> R.string.ficha_dia_pendiente
                 else -> R.string.ficha_dia_sin_registro
             },
         )
-    val descripcion = stringResource(R.string.ficha_dia_cd, nombreDia, estadoTexto)
+    val descripcion = stringResource(R.string.heatmap_day_cd, nombreDia, estadoTexto)
 
     // G31: la gota que cambia de estado hace un pulso (1 a 1,15 a 1). Con reducido, ninguno.
     val escala = remember { Animatable(1f) }
@@ -448,7 +456,7 @@ private fun CeldaGota(
     val forma = RoundedCornerShape(14.dp)
     var celda = Modifier.fillMaxWidth().height(Medidas.toqueMinimo).testTag("dia-${dia.day}")
     if (hoy) celda = celda.padding(horizontal = 3.dp).clip(forma).background(colores.canto).border(Medidas.linea, colores.contorno, forma)
-    if (interactivo && estado != EstadoGota.NUMERO) {
+    if (interactivo && CalendarioGotasLogica.respondeAlToque(dia)) {
         celda =
             celda.clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, role = Role.Button) {
                 if (estado == EstadoGota.CONGELADO) {
@@ -509,7 +517,7 @@ private fun GotaLlena(modifier: Modifier = Modifier) {
         enCaja {
             drawPath(GotaPath, colores.agua)
             drawPath(GotaPath, colores.contorno, style = TrazoHecho)
-            drawOval(Color.White.copy(alpha = 0.75f), topLeft = Offset(9.2f, 17f), size = Size(3.6f, 6f))
+            drawOval(colores.campo.copy(alpha = 0.75f), topLeft = Offset(9.2f, 17f), size = Size(3.6f, 6f))
         }
     }
 }
@@ -549,7 +557,7 @@ private fun Leyenda() {
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        EntradaLeyenda(stringResource(R.string.ficha_leyenda_hecho)) { GotaLlena() }
+        EntradaLeyenda(stringResource(R.string.day_done)) { GotaLlena() }
         EntradaLeyenda(stringResource(R.string.ficha_leyenda_sin_hacer)) { GotaSeca(colores.raiz, TrazoSeco) }
         EntradaLeyenda(stringResource(R.string.ficha_leyenda_congelador)) { Copito() }
         EntradaLeyenda(stringResource(R.string.ficha_leyenda_hoy)) { GotaSeca(colores.contorno, TrazoHoy) }
