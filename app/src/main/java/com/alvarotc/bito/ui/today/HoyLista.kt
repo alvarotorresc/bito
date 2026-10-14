@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.today
 
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -34,7 +36,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
@@ -45,11 +49,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.propuestas.Respuesta
+import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.inicio.EntradaSesion
 import com.alvarotc.bito.ui.inicio.NavegacionInicio
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
+import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
@@ -436,9 +442,34 @@ private fun HoyVacio(
     modifier: Modifier = Modifier,
 ) {
     val colores = BitoTema.colores
-    Column(modifier.fillMaxWidth().testTag("hoy-vacio"), verticalArrangement = Arrangement.spacedBy(Medidas.e8)) {
-        Text(stringResource(R.string.empty_today_title), style = BitoTema.tipos.t19.fuerte(), color = colores.tinta)
-        Text(stringResource(R.string.empty_today_body), style = BitoTema.tipos.t16, color = colores.tintaSuave)
-        Boton(stringResource(R.string.create_habit), alCrear, Modifier.padding(top = Medidas.e8), estilo = EstiloBoton.PRINCIPAL)
+    Row(
+        modifier.fillMaxWidth().testTag("hoy-vacio"),
+        horizontalArrangement = Arrangement.spacedBy(Medidas.e16),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // La semilla es el arte de la primera etapa del jardín, el que ya va en el APK.
+        Box(
+            Modifier.size(
+                SEMILLA_HORNACINA_ANCHO,
+                SEMILLA_HORNACINA_ALTO,
+            ).clip(BitoFormas.hornacina).background(colores.hornacina).testTag("hoy-semilla"),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            Image(
+                painterResource(GardenArt.plants[0][0].res),
+                contentDescription = null,
+                modifier = Modifier.padding(bottom = Medidas.e8).width(SEMILLA_ANCHO),
+                contentScale = ContentScale.FillWidth,
+            )
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Medidas.e8)) {
+            Text(stringResource(R.string.empty_today_title), style = BitoTema.tipos.t19.fuerte(), color = colores.tinta)
+            Text(stringResource(R.string.empty_today_body), style = BitoTema.tipos.t16, color = colores.tintaSuave)
+            Boton(stringResource(R.string.create_habit), alCrear, Modifier.padding(top = Medidas.e8), estilo = EstiloBoton.PRINCIPAL)
+        }
     }
 }
+
+private val SEMILLA_HORNACINA_ANCHO = 84.dp
+private val SEMILLA_HORNACINA_ALTO = 96.dp
+private val SEMILLA_ANCHO = 60.dp

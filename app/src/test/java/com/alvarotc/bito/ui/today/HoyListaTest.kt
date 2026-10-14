@@ -208,6 +208,13 @@ class HoyListaTest {
     }
 
     @Test
+    fun `empty Today puts the seed in its niche`() {
+        banco.preparar()
+        banco.montar()
+        rule.onNodeWithTag("hoy-semilla").assertIsDisplayed()
+    }
+
+    @Test
     fun `loading shows breathing placeholders and no card`() {
         banco.preparar(ticks = MutableSharedFlow())
         banco.sembrar(RealHabits.makeBed)
