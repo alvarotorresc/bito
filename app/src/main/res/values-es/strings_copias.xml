@@ -1,3 +1,64 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Textos del bloque copias (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
-<resources />
+<resources>
+    <string name="copias_err_carpeta_t">La carpeta ya no está disponible</string>
+    <string name="copias_err_carpeta_d">Vuelve a elegirla y seguimos.</string>
+    <string name="copias_err_carpeta_a">Elegir carpeta</string>
+    <string name="copias_err_escritura_t">La última copia falló</string>
+    <string name="copias_err_escritura_d">Tus datos están bien. Se reintentará sola.</string>
+    <string name="copias_err_escritura_a">Reintentar ahora</string>
+    <string name="copias_err_clave_t">Falta la passphrase de cifrado</string>
+    <string name="copias_err_clave_d">El cifrado está activo, pero este móvil no la tiene. Las copias automáticas esperan.</string>
+    <string name="copias_err_clave_a">Poner passphrase</string>
+    <string name="copias_restaurar">Restaurar…</string>
+    <string name="copias_cifrado_sub">Con passphrase. Sin ella, la copia no se abre.</string>
+    <plurals name="copias_conservar_sub">
+        <item quantity="one">La última copia; las más viejas se borran.</item>
+        <item quantity="many">Las últimas %1$d copias; las más viejas se borran.</item>
+        <item quantity="other">Las últimas %1$d copias; las más viejas se borran.</item>
+    </plurals>
+    <string name="copias_conservar_cd">Copias que se guardan</string>
+    <string name="copias_off_titulo">¿Quitar el cifrado?</string>
+    <string name="copias_off_cuerpo">Apagarlo no borra nada: las copias cifradas antiguas se siguen leyendo con su passphrase. Las nuevas se guardarán sin cifrar.</string>
+    <string name="copias_off_verbo">Quitar el cifrado</string>
+    <string name="copias_pass_titulo">Cifrado de las copias</string>
+    <string name="copias_pass_desc">Las copias se guardarán cifradas con esta passphrase. Bito no la manda a ningún sitio.</string>
+    <string name="copias_pass_min">Mínimo 8 caracteres</string>
+    <plurals name="copias_pass_faltan">
+        <item quantity="one">Falta 1 carácter</item>
+        <item quantity="many">Faltan %1$d caracteres</item>
+        <item quantity="other">Faltan %1$d caracteres</item>
+    </plurals>
+    <string name="copias_pass_ok">Longitud correcta</string>
+    <string name="copias_pass_repite">Ahora repítela</string>
+    <string name="copias_pass_no_coinciden">No coinciden</string>
+    <string name="copias_pass_coinciden">Coinciden</string>
+    <string name="copias_pass_boton">Cifrar las copias</string>
+    <string name="copias_paso">Paso %1$d de %2$d</string>
+    <string name="copias_rest_titulo">Restaurar una copia</string>
+    <string name="copias_rest_desc">Elige el archivo.</string>
+    <string name="copias_rest_elegir">Elegir archivo</string>
+    <string name="copias_rest_cifrada">Esta copia está cifrada</string>
+    <string name="copias_rest_cifrada_desc">Escribe la passphrase con la que se hizo.</string>
+    <string name="copias_rest_seguir">Seguir</string>
+    <string name="copias_rest_atras">Atrás</string>
+    <string name="copias_ahora">Ahora</string>
+    <string name="copias_la_copia">La copia</string>
+    <string name="copias_habitos">Hábitos</string>
+    <string name="copias_registros">Registros</string>
+    <string name="copias_exp_titulo">Exportar copia</string>
+    <string name="copias_exp_desc">Guarda un archivo con todo, por ejemplo para pasarlo a otro móvil.</string>
+    <string name="copias_exp_cifrada">Saldrá cifrada con tu passphrase.</string>
+    <string name="copias_exp_plana">Saldrá sin cifrar: cualquiera con el archivo podrá leerlo.</string>
+    <string name="copias_exp_guardar">Guardar archivo</string>
+    <string name="copias_version">Versión</string>
+    <string name="copias_codigo_url">github.com/alvarotorresc/bito</string>
+    <string name="copias_licencia_sub">GPL-3.0</string>
+    <string name="copias_abre_github">Se abre GitHub en el navegador</string>
+    <string name="copias_abre_formulario">Se abre el formulario en el navegador</string>
+    <string name="copias_abre_licencia">Se abre la licencia completa en el navegador</string>
+    <string name="copias_resumen_sin_carpeta">Sin carpeta elegida</string>
+    <string name="copias_resumen_cifradas">cifradas</string>
+    <string name="copias_resumen_sin_cifrar">sin cifrar</string>
+    <string name="copias_resumen_ultima">última %1$s</string>
+</resources>

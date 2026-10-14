@@ -1,3 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Textos del bloque copias (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
-<resources />
+<resources>
+    <string name="copias_err_carpeta_t">The folder is no longer available</string>
+    <string name="copias_err_carpeta_d">Choose it again and we carry on.</string>
+    <string name="copias_err_carpeta_a">Choose folder</string>
+    <string name="copias_err_escritura_t">The last backup failed</string>
+    <string name="copias_err_escritura_d">Your data is fine. It will be retried on its own.</string>
+    <string name="copias_err_escritura_a">Retry now</string>
+    <string name="copias_err_clave_t">The encryption passphrase is missing</string>
+    <string name="copias_err_clave_d">Encryption is on, but this phone does not have it. Automatic backups wait.</string>
+    <string name="copias_err_clave_a">Set passphrase</string>
+    <string name="copias_restaurar">Restore…</string>
+    <string name="copias_cifrado_sub">With a passphrase. Without it, the backup does not open.</string>
+    <plurals name="copias_conservar_sub">
+        <item quantity="one">The last backup; older ones are deleted.</item>
+        <item quantity="other">The last %1$d backups; older ones are deleted.</item>
+    </plurals>
+    <string name="copias_conservar_cd">Backups to keep</string>
+    <string name="copias_off_titulo">Remove encryption?</string>
+    <string name="copias_off_cuerpo">Turning it off deletes nothing: old encrypted backups can still be read with their passphrase. New ones will be saved unencrypted.</string>
+    <string name="copias_off_verbo">Remove encryption</string>
+    <string name="copias_pass_titulo">Backup encryption</string>
+    <string name="copias_pass_desc">Backups will be saved encrypted with this passphrase. Bito never sends it anywhere.</string>
+    <string name="copias_pass_min">Minimum 8 characters</string>
+    <plurals name="copias_pass_faltan">
+        <item quantity="one">1 more character needed</item>
+        <item quantity="other">%1$d more characters needed</item>
+    </plurals>
+    <string name="copias_pass_ok">Long enough</string>
+    <string name="copias_pass_repite">Now repeat it</string>
+    <string name="copias_pass_no_coinciden">They do not match</string>
+    <string name="copias_pass_coinciden">They match</string>
+    <string name="copias_pass_boton">Encrypt backups</string>
+    <string name="copias_paso">Step %1$d of %2$d</string>
+    <string name="copias_rest_titulo">Restore a backup</string>
+    <string name="copias_rest_desc">Choose the file.</string>
+    <string name="copias_rest_elegir">Choose file</string>
+    <string name="copias_rest_cifrada">This backup is encrypted</string>
+    <string name="copias_rest_cifrada_desc">Type the passphrase it was made with.</string>
+    <string name="copias_rest_seguir">Continue</string>
+    <string name="copias_rest_atras">Back</string>
+    <string name="copias_ahora">Now</string>
+    <string name="copias_la_copia">The backup</string>
+    <string name="copias_habitos">Habits</string>
+    <string name="copias_registros">Log entries</string>
+    <string name="copias_exp_titulo">Export a backup</string>
+    <string name="copias_exp_desc">Save a file with everything, for example to move to another phone.</string>
+    <string name="copias_exp_cifrada">It will be saved encrypted with your passphrase.</string>
+    <string name="copias_exp_plana">It will be saved unencrypted: anyone with the file can read it.</string>
+    <string name="copias_exp_guardar">Save file</string>
+    <string name="copias_version">Version</string>
+    <string name="copias_codigo_url">github.com/alvarotorresc/bito</string>
+    <string name="copias_licencia_sub">GPL-3.0</string>
+    <string name="copias_abre_github">Opens GitHub in the browser</string>
+    <string name="copias_abre_formulario">Opens the form in the browser</string>
+    <string name="copias_abre_licencia">Opens the full license in the browser</string>
+    <string name="copias_resumen_sin_carpeta">No folder chosen</string>
+    <string name="copias_resumen_cifradas">encrypted</string>
+    <string name="copias_resumen_sin_cifrar">unencrypted</string>
+    <string name="copias_resumen_ultima">last %1$s</string>
+</resources>
