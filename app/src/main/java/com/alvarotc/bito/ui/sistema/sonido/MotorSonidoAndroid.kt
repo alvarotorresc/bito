@@ -35,6 +35,8 @@ class MotorSonidoAndroid(
     private val timbreNormal: () -> Boolean,
     private val scope: CoroutineScope,
     precargaEn: CoroutineDispatcher? = null,
+    /** Las rampas de los bucles y su estado viven en un solo hilo (Main.immediate en producción). */
+    private val scopeBucles: CoroutineScope = scope,
 ) : MotorSonido {
     private val ids = java.util.concurrent.ConcurrentHashMap<Snd, Int>()
     private val bucles = java.util.concurrent.ConcurrentHashMap<Snd, BucleSoundPool>()
@@ -56,7 +58,7 @@ class MotorSonidoAndroid(
 
     override fun bucle(snd: Snd): Bucle =
         bucles.getOrPut(snd) {
-            BucleSoundPool(reproductor, { ids[snd] ?: 0 }, { ganancia(snd.canal) }, scope)
+            BucleSoundPool(reproductor, { ids[snd] ?: 0 }, { ganancia(snd.canal) }, scopeBucles)
         }
 
     override fun probar(

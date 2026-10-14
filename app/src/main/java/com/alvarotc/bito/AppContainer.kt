@@ -42,9 +42,11 @@ class AppContainer(context: Context) {
                 context.filesDir.resolve("focus.preferences_pb")
             },
         )
-    val sonido: MotorSonido = crearMotorSonido(context.applicationContext, settings)
-    val tacto: Tacto = crearTacto(context.applicationContext, settings)
-    val habiSounds = HabiSounds(sonido)
+
+    // Perezosos: alarmas y widgets arrancan el proceso sin tocar el audio (35 OGG) ni el vibrador.
+    val sonido: MotorSonido by lazy { crearMotorSonido(context.applicationContext, settings) }
+    val tacto: Tacto by lazy { crearTacto(context.applicationContext, settings) }
+    val habiSounds by lazy { HabiSounds(sonido) }
     val keyStore = BackupKeyStore(context.filesDir)
     val backup = BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME)
     val reconciler = PointsReconciler(domainState, rewards, settings = settings, despachador = Dispatchers.Default)
