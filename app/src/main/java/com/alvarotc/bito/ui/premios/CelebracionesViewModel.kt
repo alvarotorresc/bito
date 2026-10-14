@@ -151,17 +151,42 @@ class CelebracionesViewModel(
     private var jardinAnterior: GardenState? = null
     private var hayEmision = false
     private var marcaAnterior: MarcaLibro? = null
+    private var idsAnteriores: Set<String>? = null
+    private var libroCambioAntes = false
+
+    /** Tras restaurar con los ajustes por delante del libro: lo próximo que cambie en el libro es lo restaurado. */
+    private var esperandoLibro = false
     private var enHoy = false
     private var siguienteLote = 0L
-    private val lotes = mutableMapOf<Long, Lote>()
+
+    /** Ordenados por número: la marca solo avanza hasta el final del lote más antiguo aún abierto (regla 9). */
+    private val lotes = sortedMapOf<Long, Lote>()
 
     init {
         viewModelScope.launch {
             combine(domainState.observe(), rewards.observeBadges(), settings.settings) { state, badges, prefs ->
                 Triple(state, badges, prefs)
             }.collect { (state, badges, prefs) ->
-                // Restaurar dentro de la sesión (regla 4): la marca era no-null y ahora no hay ninguna.
-                if (hayEmision && marcaAnterior != null && prefs.celebratedLedgerMark == null) restaurar()
+                val ids = state.pointsLedger.mapTo(mutableSetOf()) { it.id }
+                val cambioLibro = idsAnteriores != null && ids != idsAnteriores
+
+                // Restaurar dentro de la sesión (regla 4): la marca era no-null y ya no hay ninguna, o han desaparecido
+                // entradas del libro (solo una restauración lo borra). Sea cual sea el orden en que lleguen libro y
+                // ajustes, lo que traiga se trata como un arranque: no se celebra nada viejo.
+                val marcaBorrada = hayEmision && marcaAnterior != null && prefs.celebratedLedgerMark == null
+                val libroReemplazado = vistas?.let { !ids.containsAll(it) } == true
+                var arranque = false
+                if (marcaBorrada || libroReemplazado) {
+                    restaurar()
+                    arranque = true
+                    esperandoLibro = marcaBorrada && !libroReemplazado && !libroCambioAntes
+                } else if (esperandoLibro && cambioLibro) {
+                    arranque = true
+                    esperandoLibro = false
+                }
+                libroCambioAntes = cambioLibro
+                idsAnteriores = ids
+                val primera = !hayEmision
                 hayEmision = true
                 marcaAnterior = prefs.celebratedLedgerMark
 
@@ -172,26 +197,25 @@ class CelebracionesViewModel(
                 val libro =
                     DerivarMomentos.delLibro(
                         state.pointsLedger,
-                        prefs.celebratedLedgerMark,
-                        vistas,
+                        if (arranque) null else prefs.celebratedLedgerMark,
+                        if (arranque) null else vistas,
                         prefs,
                         enHoy,
                         lote,
                         habitos = state.habits.associate { it.id to it.name },
                         badges = badges,
                     )
-                val (logros, ids) = DerivarMomentos.logros(badges, logrosVistos, prefs, lote)
+                val (logros, logrosIds) = DerivarMomentos.logros(badges, logrosVistos, prefs, lote)
                 vistas = libro.vistas
-                logrosVistos = ids
+                logrosVistos = logrosIds
 
                 val momentos = libro.momentos + logros
-                val marca = libro.marcaLote
-                when {
-                    momentos.isNotEmpty() -> {
-                        lotes[lote] = Lote(momentos.size, marca)
-                        cola.encolar(momentos)
-                    }
-                    marca != null -> escribirMarca(marca)
+                // Sin marca y sin libro (instalación nueva) se fija una de partida: así restaurar siempre se nota.
+                val marca = libro.marcaLote ?: MarcaLibro(0, "").takeIf { primera && prefs.celebratedLedgerMark == null }
+                if (momentos.isNotEmpty() || marca != null) {
+                    lotes[lote] = Lote(momentos.size, marca)
+                    cola.encolar(momentos)
+                    avanzarMarca()
                 }
             }
         }
@@ -216,9 +240,17 @@ class CelebracionesViewModel(
     private fun cerrarEnLote(m: Momento) {
         val lote = lotes[m.lote] ?: return
         lote.pendientes--
-        if (lote.pendientes > 0) return
-        lotes.remove(m.lote)
-        lote.marca?.let(::escribirMarca)
+        avanzarMarca()
+    }
+
+    /** Escribe la marca de los lotes cerrados desde el más antiguo, hasta el primero que siga abierto. */
+    private fun avanzarMarca() {
+        var marca: MarcaLibro? = null
+        while (lotes.isNotEmpty() && lotes.getValue(lotes.firstKey()).pendientes <= 0) {
+            val cerrado = lotes.remove(lotes.firstKey())!!
+            marca = listOfNotNull(marca, cerrado.marca).maxOrNull()
+        }
+        marca?.let(::escribirMarca)
     }
 
     /** Nunca hacia atrás. */
@@ -232,9 +264,13 @@ class CelebracionesViewModel(
     fun enHoy(visible: Boolean) {
         enHoy = visible
         if (visible) {
+            esperandoLibro = false // una restauración se hace fuera de Hoy: al volver, el libro ya llegó
             cola.reanudar()
         } else {
-            cola.actual.value?.let(::cerrarEnLote)
+            cola.actual.value?.let {
+                marcarVisto(it) // si no, el repaso volvería a celebrarlo
+                cerrarEnLote(it)
+            }
             cola.pausar()
         }
     }
@@ -249,6 +285,13 @@ class CelebracionesViewModel(
     /** Reglas 9 y 10. */
     fun terminado(m: Momento) {
         if (cola.actual.value != m) return
+        marcarVisto(m)
+        cerrarEnLote(m)
+        cola.terminado()
+    }
+
+    /** Regla 10: las claves que comparte con el repaso. */
+    private fun marcarVisto(m: Momento) {
         when {
             m is Momento.Veta && m.tipo == TipoVeta.DIA && m.dia != null -> {
                 val dia = m.dia
@@ -256,15 +299,9 @@ class CelebracionesViewModel(
             }
             m is Momento.Logro ->
                 viewModelScope.launch {
-                    settings.update {
-                        it.copy(
-                            badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, m.unlockedAtMillis),
-                        )
-                    }
+                    settings.update { it.copy(badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, m.unlockedAtMillis)) }
                 }
         }
-        cerrarEnLote(m)
-        cola.terminado()
     }
 
     companion object {
