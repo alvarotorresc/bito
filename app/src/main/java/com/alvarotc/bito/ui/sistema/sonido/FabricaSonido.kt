@@ -60,6 +60,7 @@ fun crearMotorSonido(
         timbreNormal = { audio.ringerMode == AudioManager.RINGER_MODE_NORMAL },
         scope = scope,
         precargaEn = Dispatchers.IO,
+        scopeBucles = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
     )
 }
 

@@ -5,7 +5,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-/** Bucle sobre un [Reproductor]: entra con rampa de 400 ms y sale con rampa de 600 ms (spec §4.4.1). */
+/**
+ * Bucle sobre un [Reproductor]. Todo el estado se toca solo desde el hilo del [scope] (Main.immediate en producción).
+ * Entra con rampa de 400 ms y sale con rampa de 600 ms (spec §4.4.1).
+ */
 class BucleSoundPool(
     private val reproductor: Reproductor,
     private val id: () -> Int,
@@ -24,6 +27,9 @@ class BucleSoundPool(
         if (sonando) return
         val sample = id()
         if (!reproductor.listo(sample)) return
+        // Una salida en rampa aún pendiente deja su stream sonando: se corta antes de abrir otro.
+        rampa?.cancel()
+        if (stream != 0) reproductor.parar(stream)
         sonando = true
         actual = 0f
         stream = reproductor.play(sample, 0f, bucle = true)
