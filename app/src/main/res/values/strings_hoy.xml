@@ -1,2 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources />
+<resources>
+    <string name="hoy_habi">Habi</string>
+    <string name="hoy_vale">OK</string>
+    <string name="hoy_ahora">Now</string>
+    <string name="hoy_tu_dia">Your day</string>
+    <string name="hoy_n_de_m">%1$d of %2$d</string>
+    <string name="hoy_de_m">of %1$d</string>
+    <string name="hoy_dia_n">day %1$d</string>
+    <string name="hoy_he_recaido">I relapsed</string>
+    <string name="hoy_registrar">Log it</string>
+    <string name="hoy_limite_pasado">Over the limit. Tomorrow counts again.</string>
+    <string name="hoy_ver_todas">See all tasks ›</string>
+    <string name="hoy_en_pausa_nota">They don\'t count in your day.</string>
+    <plurals name="hoy_sellados_n">
+        <item quantity="one">%1$d day sealed.</item>
+        <item quantity="other">%1$d days sealed.</item>
+    </plurals>
+</resources>

@@ -60,38 +60,6 @@ fun ExactValueSheet(
     }
 }
 
-/** Prompts to seal every day left un-sealed while the user was away. */
-@Composable
-fun BatchSealSheet(
-    dayCount: Int,
-    onSealAll: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp)) {
-            Text(stringResource(R.string.seal_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            Spacer(Modifier.height(8.dp))
-            val body =
-                if (dayCount == 1) {
-                    stringResource(R.string.seal_sheet_body_one)
-                } else {
-                    stringResource(R.string.seal_sheet_body_many, dayCount)
-                }
-            Text(body, style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
-            Spacer(Modifier.height(16.dp))
-            val confirmLabel =
-                if (dayCount == 1) {
-                    stringResource(R.string.seal_sheet_confirm_one)
-                } else {
-                    stringResource(R.string.seal_sheet_confirm_many, dayCount)
-                }
-            PillButton(confirmLabel, onClick = onSealAll, modifier = Modifier.fillMaxWidth())
-            Spacer(Modifier.height(8.dp))
-            GhostPillButton(stringResource(R.string.seal_sheet_later), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
-        }
-    }
-}
-
 /** Confirms a relapse before it starts the streak over — no drama, one deliberate tap. */
 @Composable
 fun RelapseSheet(
