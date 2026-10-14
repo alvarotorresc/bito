@@ -28,17 +28,8 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import java.util.UUID
 
-/** A WEEKLY_TIMES target counts days, not sessions: 7 is the physical weekly maximum. */
-internal const val MAX_WEEKLY_TIMES = 7
-
 /** Single source of truth for target clamping, shared by [HabitFormViewModel.adjustTarget], [HabitFormViewModel.setTarget], and [com.alvarotc.bito.ui.onboarding.OnboardingViewModel.setHabitTarget]. */
-internal fun HabitFormState.clampTarget(raw: Int): Int =
-    if (preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL) {
-        0
-    } else {
-        val max = if (preset == HabitPreset.WEEKLY_TIMES) MAX_WEEKLY_TIMES else Int.MAX_VALUE
-        raw.coerceIn(1, max)
-    }
+internal fun HabitFormState.clampTarget(raw: Int): Int = raw.coerceIn(rangoObjetivo())
 
 /** Backs the habit create/edit form: one state shape drives all five presets. */
 class HabitFormViewModel(

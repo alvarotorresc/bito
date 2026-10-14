@@ -1,3 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Textos del bloque habitform (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
-<resources />
+<resources>
+    <string name="habitform_prompt_editar">Change whatever you like. Its history stays as it is.</string>
+    <string name="habitform_nombre_etiqueta">Habit name</string>
+    <string name="habitform_nombre_pista">Read, drink water, walk…</string>
+    <string name="habitform_nombre_ayuda">Give it a name, even a short one.</string>
+    <string name="habitform_tipo">Type</string>
+    <string name="habitform_tipo_diario">Once a day: done or not</string>
+    <string name="habitform_tipo_cantidad">Glasses, pages… per day, week or month</string>
+    <string name="habitform_tipo_duracion">Minutes per day, week or month</string>
+    <string name="habitform_tipo_semana">A few times each week</string>
+    <string name="habitform_tipo_dejar">Completely or with a limit</string>
+    <string name="habitform_tipo_fijo">The type can\'t be changed: archive the habit and create a new one.</string>
+    <string name="habitform_objetivo">Goal</string>
+    <string name="habitform_como_dejarlo">How to quit</string>
+    <string name="habitform_como_mucho">At most</string>
+    <string name="habitform_cada">Every</string>
+    <string name="habitform_unidad">Unit</string>
+    <string name="habitform_unidad_pista">glasses, pages…</string>
+    <string name="habitform_vez">time</string>
+    <string name="habitform_veces">times</string>
+    <string name="habitform_escribir_objetivo">Type the goal, now %1$d</string>
+    <string name="habitform_dejar_del_todo">Every day without it adds to your streak.</string>
+    <string name="habitform_en_dia">in the day</string>
+    <string name="habitform_en_semana">in the week</string>
+    <string name="habitform_en_mes">in the month</string>
+    <string name="habitform_resumen_hecho">Done on reaching %1$s %2$s.</string>
+    <string name="habitform_resumen_semana">Done on marking it %1$s between Monday and Sunday.</string>
+    <string name="habitform_resumen_limite">All good while you stay under %1$s %2$s.</string>
+    <string name="habitform_aviso_minimo">At least 1.</string>
+    <string name="habitform_aviso_semana">At most 7: one per day.</string>
+    <string name="habitform_binario_ayuda">The goal is just written down; logging is one tap.</string>
+    <string name="habitform_binario_fijo">It can\'t be changed when editing.</string>
+    <string name="habitform_paso">Each tap adds</string>
+    <string name="habitform_paso_ayuda">How much the circle goes up in Today.</string>
+    <string name="habitform_borrar">Delete habit</string>
+    <string name="habitform_borrar_titulo">Delete for good?</string>
+    <string name="habitform_borrar_cuerpo">All its history goes away. The bitos you earned stay.</string>
+    <string name="habitform_borrar_verbo">Delete</string>
+</resources>

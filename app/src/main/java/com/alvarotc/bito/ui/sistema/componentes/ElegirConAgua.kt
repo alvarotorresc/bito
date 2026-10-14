@@ -46,7 +46,11 @@ data class OpcionAgua(
     val icono: ImageVector? = null,
 )
 
-/** G24: el aro de lo elegido se llena de agua y el anterior se vacía. Nunca una fila de chips. */
+/**
+ * G24: el aro de lo elegido se llena de agua y el anterior se vacía. Nunca una fila de chips.
+ * Con [llena] la forma `CANTO` pasa a una pila de cantos a todo el ancho (aro, textos y el icono a la
+ * derecha): la de los tipos de hábito, que son más de tres y llevan subtítulo.
+ */
 @Composable
 fun ElegirConAgua(
     opciones: List<OpcionAgua>,
@@ -54,6 +58,7 @@ fun ElegirConAgua(
     alElegir: (String) -> Unit,
     modifier: Modifier = Modifier,
     forma: FormaAgua = FormaAgua.FILA,
+    llena: Boolean = false,
 ) {
     val gesto = rememberGesto()
     val reglas: (OpcionAgua) -> Modifier = { o ->
@@ -78,6 +83,31 @@ fun ElegirConAgua(
                 ) {
                     Aro(o.clave == elegida)
                     Textos(o, TextAlign.Start)
+                }
+            }
+        }
+    } else if (llena) {
+        Column(modifier.selectableGroup(), verticalArrangement = Arrangement.spacedBy(Medidas.e8)) {
+            opciones.forEach { o ->
+                Row(
+                    reglas(o)
+                        .fillMaxWidth()
+                        .heightIn(min = Medidas.toqueMinimo)
+                        .border(Medidas.linea, BitoTema.colores.contorno, BitoFormas.campo)
+                        .padding(horizontal = Medidas.e12, vertical = Medidas.e8),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(Medidas.e12),
+                ) {
+                    Aro(o.clave == elegida)
+                    Column(Modifier.weight(1f)) {
+                        Text(o.texto, style = BitoTema.tipos.t16.fuerte(), color = BitoTema.colores.tinta)
+                        if (o.subtitulo != null) {
+                            Text(o.subtitulo, style = BitoTema.tipos.t14, color = BitoTema.colores.tintaSuave)
+                        }
+                    }
+                    if (o.icono != null) {
+                        Icon(o.icono, contentDescription = null, tint = BitoTema.colores.tinta, modifier = Modifier.size(20.dp))
+                    }
                 }
             }
         }

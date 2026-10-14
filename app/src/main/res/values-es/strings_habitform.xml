@@ -1,3 +1,41 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Textos del bloque habitform (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
-<resources />
+<resources>
+    <string name="habitform_prompt_editar">Cambia lo que quieras. Su historial se queda como está.</string>
+    <string name="habitform_nombre_etiqueta">Nombre del hábito</string>
+    <string name="habitform_nombre_pista">Leer, beber agua, caminar…</string>
+    <string name="habitform_nombre_ayuda">Ponle un nombre, aunque sea corto.</string>
+    <string name="habitform_tipo">Tipo</string>
+    <string name="habitform_tipo_diario">Una vez al día: hecho o no</string>
+    <string name="habitform_tipo_cantidad">Vasos, páginas… al día, semana o mes</string>
+    <string name="habitform_tipo_duracion">Minutos al día, semana o mes</string>
+    <string name="habitform_tipo_semana">Unas veces cada semana</string>
+    <string name="habitform_tipo_dejar">Del todo o con un límite</string>
+    <string name="habitform_tipo_fijo">El tipo no se cambia: archiva el hábito y crea uno nuevo.</string>
+    <string name="habitform_objetivo">Objetivo</string>
+    <string name="habitform_como_dejarlo">Cómo dejarlo</string>
+    <string name="habitform_como_mucho">Como mucho</string>
+    <string name="habitform_cada">Cada</string>
+    <string name="habitform_unidad">Unidad</string>
+    <string name="habitform_unidad_pista">vasos, páginas…</string>
+    <string name="habitform_vez">vez</string>
+    <string name="habitform_veces">veces</string>
+    <string name="habitform_escribir_objetivo">Escribir el objetivo, ahora %1$d</string>
+    <string name="habitform_dejar_del_todo">Cada día sin hacerlo suma a la racha.</string>
+    <string name="habitform_en_dia">en el día</string>
+    <string name="habitform_en_semana">en la semana</string>
+    <string name="habitform_en_mes">en el mes</string>
+    <string name="habitform_resumen_hecho">Hecho al llegar a %1$s %2$s.</string>
+    <string name="habitform_resumen_semana">Hecho al marcarlo %1$s entre lunes y domingo.</string>
+    <string name="habitform_resumen_limite">Bien mientras no pases de %1$s %2$s.</string>
+    <string name="habitform_aviso_minimo">Al menos 1.</string>
+    <string name="habitform_aviso_semana">Como mucho 7: una por día.</string>
+    <string name="habitform_binario_ayuda">El objetivo queda escrito; registrar es un toque.</string>
+    <string name="habitform_binario_fijo">No se cambia al editar.</string>
+    <string name="habitform_paso">Cada toque suma</string>
+    <string name="habitform_paso_ayuda">Lo que sube el círculo en Hoy.</string>
+    <string name="habitform_borrar">Borrar hábito</string>
+    <string name="habitform_borrar_titulo">¿Borrar para siempre?</string>
+    <string name="habitform_borrar_cuerpo">Se va todo su historial. Los bitos que ganaste se quedan.</string>
+    <string name="habitform_borrar_verbo">Borrar</string>
+</resources>
