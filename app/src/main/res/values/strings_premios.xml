@@ -1,2 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources />
+<resources>
+    <string name="premios_dia_completo">Full day</string>
+    <string name="premios_dia_frase">All of today\'s habits, done.</string>
+    <string name="premios_semana_completa">Full week</string>
+    <string name="premios_mes_completo">Full month</string>
+    <plurals name="premios_dias_seguidos">
+        <item quantity="one">%1$d day in a row</item>
+        <item quantity="other">%1$d days in a row</item>
+    </plurals>
+    <string name="premios_mas_n">+%1$d</string>
+</resources>
