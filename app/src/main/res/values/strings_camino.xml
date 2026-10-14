@@ -1,2 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources />
+<resources>
+    <string name="camino_este_mes">this month</string>
+    <string name="camino_este_ano">this year</string>
+    <string name="camino_tu_semana">Your week</string>
+    <string name="camino_frente_semana">+%1$d %% vs last week</string>
+    <string name="camino_mejor_racha">Your best streak: %1$d</string>
+    <string name="camino_registros_totales">Total entries</string>
+    <string name="camino_ley_cumplido">done</string>
+    <string name="camino_ley_fallado">missed</string>
+    <string name="camino_ley_congelado">frozen</string>
+    <string name="camino_ley_pausa">paused</string>
+    <string name="camino_ley_pendiente">pending</string>
+</resources>
