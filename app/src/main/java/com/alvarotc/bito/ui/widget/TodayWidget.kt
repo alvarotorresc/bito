@@ -119,8 +119,8 @@ class TodayWidget : GlanceAppWidget() {
         /** 2x2-ish: the list fits but the title doesn't — compact header and rows. */
         val NARROW = DpSize(110.dp, 110.dp)
 
-        /** 3x2 and up: the original full layout. */
-        val FULL = DpSize(180.dp, 110.dp)
+        /** Wide enough (minWidth of the widget info, 250dp) for the full layout with habit names. */
+        val FULL = DpSize(250.dp, 110.dp)
     }
 }
 
