@@ -104,21 +104,32 @@ fun StatsScreen(
             Box(Modifier.padding(padding).fillMaxSize().testTag("stats-loading"))
             return@Scaffold
         }
-        Column(
-            Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            Text(stringResource(R.string.nav_stats), style = MaterialTheme.typography.headlineLarge, color = Tinta)
-            CommentatorBubble(state.mood, state.personality, state.equipped)
-            PerfectDaysCard(state.perfectDays)
-            WeekCard(state.week)
-            StreaksSection(state.activeStreaks)
-            Teasers(state.bestRecord, state.totalEntries, onOpenRecords, onOpenNumbers)
-            AchievementsSection(state, onOpenBadges)
-        }
+        StatsContenido(state, onOpenRecords, onOpenNumbers, onOpenBadges, Modifier.padding(padding))
+    }
+}
+
+/** Todo lo que pinta la pestaña de estadísticas a partir de [state]; Camino lo reutiliza mientras llega su contenido propio. */
+@Composable
+internal fun StatsContenido(
+    state: StatsUiState,
+    onOpenRecords: () -> Unit,
+    onOpenNumbers: () -> Unit,
+    onOpenBadges: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
+        verticalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        Text(stringResource(R.string.nav_stats), style = MaterialTheme.typography.headlineLarge, color = Tinta)
+        CommentatorBubble(state.mood, state.personality, state.equipped)
+        PerfectDaysCard(state.perfectDays)
+        WeekCard(state.week)
+        StreaksSection(state.activeStreaks)
+        Teasers(state.bestRecord, state.totalEntries, onOpenRecords, onOpenNumbers)
+        AchievementsSection(state, onOpenBadges)
     }
 }
 

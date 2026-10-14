@@ -1,6 +1,9 @@
 package com.alvarotc.bito.ui.habi
 
 import com.alvarotc.bito.data.db.CustomizationItemEntity
+import com.alvarotc.bito.domain.EtiquetaMovimiento
+import com.alvarotc.bito.domain.FechaMovimiento
+import com.alvarotc.bito.domain.Movimiento
 import com.alvarotc.bito.domain.RealHabits
 import com.alvarotc.bito.domain.StoreItemState
 import com.alvarotc.bito.domain.TODAY
@@ -276,5 +279,27 @@ class HabiUiStateTest {
                 gardenOverride = forced,
             )
         assertEquals(forced, result.garden)
+    }
+
+    @Test
+    fun `the recent movements travel into the state untouched`() {
+        val lista =
+            listOf(
+                Movimiento("m2", 5, EtiquetaMovimiento.DiaCompleto, FechaMovimiento.HOY, TODAY),
+                Movimiento("m1", -30, EtiquetaMovimiento.Congelador, FechaMovimiento.AYER, TODAY - 1),
+            )
+
+        val ui =
+            buildHabiUiState(
+                domainState(),
+                owned = emptyList(),
+                balance = 0,
+                personality = Personality.NEUTRA,
+                today = TODAY,
+                movimientos = lista,
+            )
+
+        assertEquals(lista, ui.movimientos)
+        assertEquals(emptyList(), buildHabiUiState(domainState(), emptyList(), 0, Personality.NEUTRA, TODAY).movimientos)
     }
 }

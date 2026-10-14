@@ -11,11 +11,15 @@ import com.alvarotc.bito.domain.entryOn
 import com.alvarotc.bito.domain.ledgerEntry
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.plantaDeHabito
 import com.alvarotc.bito.ui.today.CardKind
+import java.time.LocalDate
 import java.time.YearMonth
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class DetailUiStateTest {
     @Test
@@ -91,5 +95,27 @@ class DetailUiStateTest {
         assertEquals(requestedMonth.lengthOfMonth(), result.heatmap.size)
         assertEquals(Heatmap.monthOf(state, habit, requestedMonth, TODAY), result.heatmap)
         assertEquals(CardKind.CHECK, result.kind)
+    }
+
+    @Test
+    fun `the plant, the 30 day window, read mode and the first month come with the state`() {
+        val habit = RealHabits.makeBed
+        val state = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(TODAY, TODAY - 1)))
+
+        val result = buildDetailUiState(state, habit.id, YearMonth.of(2026, 8), TODAY)!!
+
+        assertEquals(plantaDeHabito(habit, state, TODAY), result.planta)
+        assertEquals(result.windows[1], result.pct30)
+        assertEquals(HabitStats.windowStats(state, habit, TODAY, 30), result.pct30)
+        assertFalse(result.lectura)
+        assertEquals(YearMonth.from(LocalDate.ofEpochDay(habit.createdOnDay.toLong())), result.primerMes)
+    }
+
+    @Test
+    fun `read mode is carried through`() {
+        val habit = RealHabits.makeBed
+        val state = domainState(habits = listOf(habit))
+
+        assertTrue(buildDetailUiState(state, habit.id, YearMonth.of(2026, 8), TODAY, lectura = true)!!.lectura)
     }
 }
