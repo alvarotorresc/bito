@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -30,12 +32,21 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.PlantaFicha
+import com.alvarotc.bito.domain.WindowStats
+import com.alvarotc.bito.domain.model.GardenSpecies
+import com.alvarotc.bito.domain.model.GrowthStage
+import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.detail.Lamina
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.sistema.componentes.AvisoHost
 import com.alvarotc.bito.ui.sistema.componentes.Boton
@@ -75,6 +86,7 @@ import com.alvarotc.bito.ui.sistema.componentes.TonoOpcion
 import com.alvarotc.bito.ui.sistema.componentes.rememberAvisoEstado
 import com.alvarotc.bito.ui.sistema.sonido.LocalSonido
 import com.alvarotc.bito.ui.sistema.sonido.Snd
+import com.alvarotc.bito.ui.today.CardKind
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.time.LocalDate
@@ -205,11 +217,55 @@ fun GaleriaSistema(alCerrar: () -> Unit) {
             seccion("Muelles") {
                 Muelles.tabla.forEach { (nombre, par) -> Muelle(nombre, par.first, par.second) }
             }
+            seccion("Láminas") { Laminas() }
             item(key = "pie") { Box(Modifier.size(48.dp)) }
         }
         AvisoHost(aviso, Modifier.align(androidx.compose.ui.Alignment.BottomCenter))
     }
 }
+
+/**
+ * Las treinta láminas de la ficha (6 especies × 5 etapas) a escala 0,5, de dos en dos y con su clave encima
+ * («manzano-5»), para revisar las flechas de cada planta en el Pixel (spec §10.2).
+ */
+@Composable
+private fun Laminas() {
+    Column(Modifier.testTag("galeria-laminas"), verticalArrangement = Arrangement.spacedBy(Medidas.e8)) {
+        val todas = GardenSpecies.entries.flatMap { especie -> GrowthStage.entries.map { etapa -> especie to etapa } }
+        todas.chunked(2).forEach { fila ->
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
+                fila.forEach { (especie, etapa) ->
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(Medidas.e4)) {
+                        Text("${especie.key}-${etapa.ordinal + 1}", style = BitoTema.tipos.t14, color = BitoTema.colores.tinta)
+                        Lamina(
+                            planta = PlantaFicha(especie, etapa, 0),
+                            mejor = 21,
+                            pct30 = WindowStats(26, 30),
+                            actual = 9,
+                            periodo = Period.DAY,
+                            kind = CardKind.CHECK,
+                            modifier = Modifier.aMediaEscala(),
+                        )
+                    }
+                }
+                if (fila.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+/** Mide el contenido al doble del ancho disponible (el de una pantalla) y lo pinta a la mitad: la lámina a escala 0,5. */
+private fun Modifier.aMediaEscala(): Modifier =
+    layout { medible, restricciones ->
+        val colocable = medible.measure(Constraints.fixedWidth(restricciones.maxWidth * 2))
+        layout(colocable.width / 2, colocable.height / 2) {
+            colocable.placeWithLayer(0, 0) {
+                scaleX = 0.5f
+                scaleY = 0.5f
+                transformOrigin = TransformOrigin(0f, 0f)
+            }
+        }
+    }
 
 /** Un cuadradito que salta con el muelle [nombre] al tocarlo. */
 @Composable
