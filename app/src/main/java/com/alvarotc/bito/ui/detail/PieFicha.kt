@@ -74,7 +74,7 @@ fun PieFicha(
     val editable = !estado.lectura && !archivado
 
     Column(modifier.fillMaxWidth().testTag("pie-ficha"), verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
-        Cumplimiento(estado.windows)
+        if (!estado.lectura) Cumplimiento(estado.windows)
         if (editable && estado.period == Period.DAY) {
             Congeladores(
                 tiene = estado.freezersOwned,
@@ -130,7 +130,7 @@ private fun Cumplimiento(windows: List<WindowStats>) {
     val colores = BitoTema.colores
     val filas =
         listOf(
-            stringResource(R.string.ficha_dias_7) to windows.getOrNull(0),
+            stringResource(R.string.window_7) to windows.getOrNull(0),
             stringResource(R.string.ficha_dias_365) to windows.getOrNull(2),
         )
     Column(

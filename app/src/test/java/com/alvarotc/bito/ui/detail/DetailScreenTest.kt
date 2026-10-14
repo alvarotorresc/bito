@@ -262,8 +262,7 @@ class DetailScreenTest {
     @Test
     fun `an abstinence day offers relapse or clean and says it seals the day`() {
         create(direction = Direction.ZERO, target = 0)
-        // Una recaída: el día queda fallado y se puede tocar (un día sin sellar es solo el número).
-        runBlocking { db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today - 2, value = 1)) }
+        // Un día pasado sin sellar se dibuja solo con el número, pero se toca para sellarlo.
         setContent("h1")
         tapDay(today - 2)
 
@@ -346,6 +345,7 @@ class DetailScreenTest {
         setContent("h1", lectura = true)
 
         compose.onNodeWithTag("marcar-hoy").assertDoesNotExist()
+        compose.onNodeWithText("7 días", substring = true).assertDoesNotExist()
         tapDay(today - 3)
         compose.onNodeWithTag("day-sheet").assertDoesNotExist()
         compose.onNodeWithTag("reactivate").performScrollTo().assertExists()

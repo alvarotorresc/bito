@@ -140,13 +140,14 @@ fun DetailScreen(
         if (!interactivo || current.kind == CardKind.ABSTINENCE) return
         repeat(mesesHasta(current.month, mesActual)) { viewModel.nextMonth() }
         if (current.kind != CardKind.CHECK || !hechoHoy) {
-            gesto(Snd.GORGOTEO, Haptica.TICKS)
+            // El gorgoteo ya lo suena el modelo al registrar (HabiSound.LOG): aquí solo la háptica y la llegada.
+            gesto(h = Haptica.TICKS)
             scope.launch {
                 delay(LLEGADA_SIN_GOTA_MS)
                 gesto(Snd.LLEGADA, Haptica.CLICK)
             }
         } else {
-            gesto(Snd.VACIAR, Haptica.LOW)
+            gesto(h = Haptica.LOW)
         }
         viewModel.marcarHoy()
     }
