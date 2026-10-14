@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.taskEntity
@@ -342,5 +343,71 @@ class HoyListaTest {
         banco.montar(creado = "no-esta", alCreadoVisto = { vistos++ })
         banco.esperar(800)
         assertEquals(1, vistos)
+    }
+
+    @Test
+    fun `a finished task is marked at once and its row leaves after the exit animation`() {
+        banco.preparar()
+        runBlocking { TasksRepository(banco.db).create(taskEntity(id = "t1", createdOnDay = banco.hoy)) }
+        banco.montar()
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("circulo-tarea-t1").performClick()
+        rule.waitForIdle()
+        val estado = runBlocking { banco.db.taskDao().all().first { it.id == "t1" }.status }
+        assertEquals("se marca sin esperar a la animación", TaskStatus.DONE, estado)
+        rule.onNodeWithTag("tarea-t1").assertExists()
+        rule.mainClock.advanceTimeBy(800)
+        rule.onAllNodesWithTag("tarea-t1").assertCountEquals(0)
+    }
+
+    @Test
+    fun `holding the name and dragging reorders the habits`() {
+        banco.preparar()
+        banco.sembrar(RealHabits.makeBed, RealHabits.meditate, RealHabits.floss)
+        banco.montar()
+        rule.onNodeWithTag("nombre-make-bed").performTouchInput {
+            down(center)
+            advanceEventTime(700)
+            moveBy(androidx.compose.ui.geometry.Offset(0f, 60f), delayMillis = 50)
+            moveBy(androidx.compose.ui.geometry.Offset(0f, 120f), delayMillis = 50)
+            moveBy(androidx.compose.ui.geometry.Offset(0f, 60f), delayMillis = 50)
+            up()
+        }
+        banco.esperar()
+        val orden = runBlocking { banco.db.habitDao().all().sortedBy { it.sortOrder }.map { it.id } }
+        assertTrue("make-bed ya no es el primero: $orden", orden.first() != "make-bed")
+        assertEquals(null, banco.fichaAbierta)
+    }
+
+    @Test
+    fun `habit rows keep their streaks for every kind and the name is a full touch target`() {
+        fun card(
+            id: String,
+            kind: CardKind,
+            period: Period = Period.DAY,
+            direction: Direction = Direction.AT_LEAST,
+            streak: Int,
+        ) = HabitCardUi(id, "H $id", kind, 1, 3, null, 1, direction, period, false, false, streak)
+        val cards =
+            listOf(
+                card("check", CardKind.CHECK, streak = 5),
+                card("semana", CardKind.CHECK, period = Period.WEEK, streak = 3),
+                card("cuenta", CardKind.COUNTER, streak = 4),
+                card("dura", CardKind.DURATION, streak = 6),
+                card("abst", CardKind.ABSTINENCE, direction = Direction.ZERO, streak = 12),
+            )
+        rule.setContent {
+            com.alvarotc.bito.ui.sistema.ConSistema {
+                androidx.compose.foundation.layout.Column {
+                    cards.forEach { FilaHabito(it, {}, {}, {}, {}, {}) }
+                }
+            }
+        }
+        rule.onNodeWithText("día 5").assertIsDisplayed()
+        rule.onNodeWithText("racha de 3", substring = true).assertIsDisplayed()
+        rule.onNodeWithText("día 4").assertIsDisplayed()
+        rule.onNodeWithText("día 6").assertIsDisplayed()
+        rule.onNodeWithText("día 12", substring = true).assertIsDisplayed()
+        assertTrue(rule.onNodeWithTag("nombre-check").getBoundsInRoot().height >= 44.dp)
     }
 }

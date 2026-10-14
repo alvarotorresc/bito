@@ -149,4 +149,20 @@ class TarjetaHabiTest {
         assertEquals(listOf("ruta:focus?taskId=t1"), b.llamadas)
         assertEquals(listOf(Respuesta.AHORA), fuente.respuestas)
     }
+
+    @Test
+    fun `a proposal that arrives after answering and an empty gap sprouts again`() {
+        val sonido = SonidoGrabado()
+        val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habi_name_fallback), todas))
+        montar(fuente, sonido)
+        rule.onNodeWithText("Vale").performClick()
+        val tras = sonido.snds().count { it == Snd.BROTE }
+        fuente.flujo.value = null
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(500)
+        fuente.flujo.value = Propuesta("dos", texto(R.string.hoy_tu_dia), todas)
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(500)
+        assertEquals(tras + 1, sonido.snds().count { it == Snd.BROTE })
+    }
 }

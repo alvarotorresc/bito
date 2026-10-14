@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -55,6 +56,8 @@ import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -149,6 +152,10 @@ private fun ConMantener(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalViewConfiguration provides config, content = content)
 }
 
+/** Marca semántica de que la fila aún está entrando (alfa < 1); la leen los tests. */
+internal val EntrandoKey = SemanticsPropertyKey<Boolean>("entrando")
+internal var SemanticsPropertyReceiver.entrando by EntrandoKey
+
 /** Aparece escalonada al cargar y, si [brotar], brota (G34: escala .9 a 1 y alfa). */
 internal fun Modifier.aparecer(
     activo: Boolean,
@@ -165,7 +172,7 @@ internal fun Modifier.aparecer(
                 a.animateTo(1f, tween(if (reducido) Duraciones.REDUCIDO else Duraciones.BROTAR_FILA, easing = Curvas.out))
             }
         }
-        graphicsLayer {
+        semantics { entrando = a.value < 1f }.graphicsLayer {
             alpha = a.value
             if (brotar && !reducido) {
                 val s = 0.9f + 0.1f * a.value
@@ -263,18 +270,15 @@ internal fun FilaHabito(
             }
         }
         Column(Modifier.weight(1f)) {
-            Text(
-                card.name,
-                style = t.t16.fuerte(),
-                color = colores.tinta,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier =
-                    nombreModifier
-                        .testTag("nombre-${card.id}")
-                        .clickable(onClick = alAbrir),
-            )
-            val subtitulo =
+            val rachaMin = if (card.kind == CardKind.ABSTINENCE) 1 else 2
+            val rachaTexto =
+                when {
+                    card.kind == CardKind.CHECK && card.period == Period.DAY -> null // sale a la derecha
+                    card.streak < rachaMin -> null
+                    card.period == Period.DAY -> stringResource(R.string.hoy_dia_n, card.streak)
+                    else -> stringResource(R.string.hoy_racha_n, card.streak)
+                }
+            val base =
                 when {
                     card.kind == CardKind.ABSTINENCE ->
                         stringResource(if (card.failed) R.string.relapse_today else R.string.clean_today)
@@ -284,6 +288,20 @@ internal fun FilaHabito(
                         stringResource(R.string.month_progress, card.progress, card.target)
                     else -> null
                 }
+            val subtitulo = listOfNotNull(base, rachaTexto).joinToString(" · ").ifEmpty { null }
+            Text(
+                card.name,
+                style = t.t16.fuerte(),
+                color = colores.tinta,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier =
+                    nombreModifier
+                        .testTag("nombre-${card.id}")
+                        .heightIn(min = if (subtitulo == null) Medidas.toqueMinimo else 0.dp)
+                        .clickable(onClick = alAbrir)
+                        .wrapContentHeight(Alignment.CenterVertically),
+            )
             if (subtitulo != null) {
                 Text(
                     subtitulo,
@@ -351,6 +369,7 @@ internal fun FilaHabito(
 internal fun FilaTarea(
     task: TaskRowUi,
     hoy: LogicalDay,
+    saliendo: Boolean,
     alTerminar: () -> Unit,
     alEmpezar: () -> Unit,
     alHoyNo: () -> Unit,
@@ -362,7 +381,6 @@ internal fun FilaTarea(
     val gesto = rememberGesto()
     val anclas = LocalAnclas.current
     var abierta by remember { mutableStateOf(false) }
-    var saliendo by remember { mutableStateOf(false) }
     val sale by animateFloatAsState(
         if (saliendo) 1f else 0f,
         tween(if (reducido) Duraciones.REDUCIDO else Duraciones.HUNDIR_FILA, delayMillis = if (reducido) 0 else 120, easing = Curvas.out),
@@ -371,7 +389,6 @@ internal fun FilaTarea(
 
     fun terminar() {
         if (saliendo) return
-        saliendo = true
         anclas?.granos(ClavesAncla.tarea(task.id))
         gesto(Snd.ASENTAR, Haptica.FALL)
         alTerminar()

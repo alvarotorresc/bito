@@ -73,6 +73,7 @@ private const val FILAS_HUECO = 4
 private const val ESCALON_ENTRADA_MS = 60
 private const val MAX_ESCALONADAS = 8
 private const val SALIDA_TAREA_MS = 340L
+private const val BROTE_VIGENCIA_MS = 1500L
 private const val PUNTOS_MAX = 12
 
 /** La lista de Hoy (spec §5.3): Habi, «Tu día», hábitos, tareas, «En pausa» y cerrar el día, en un solo `LazyColumn`. */
@@ -101,8 +102,23 @@ fun HoyLista(
     var sealDismissed by rememberSaveable { mutableStateOf(false) }
     var limitePendiente by remember { mutableStateOf(false) }
     var brotando by remember { mutableStateOf<String?>(null) }
+    // La entrada escalonada solo ocurre al cargar: se apaga pasada su ventana y las filas que vuelven por scroll no la repiten.
     var vistoCargando by remember { mutableStateOf(false) }
     if (estado.loading) vistoCargando = true
+    LaunchedEffect(estado.loading) {
+        if (!estado.loading && vistoCargando) {
+            delay((MAX_ESCALONADAS * ESCALON_ENTRADA_MS + Duraciones.BROTAR_FILA + 100).toLong())
+            vistoCargando = false
+        }
+    }
+    LaunchedEffect(brotando) {
+        if (brotando != null) {
+            delay(BROTE_VIGENCIA_MS)
+            brotando = null
+        }
+    }
+    // Tareas ya marcadas que siguen dibujando su salida: la tarea se marca al instante, la fila se va después.
+    var saliendo by remember { mutableStateOf<Map<String, TaskRowUi>>(emptyMap()) }
 
     val textoRegistrado = stringResource(R.string.logged_snackbar)
     val textoLimite = stringResource(R.string.hoy_limite_pasado)
@@ -140,7 +156,15 @@ fun HoyLista(
             val hasta = ordenadas.indexOfFirst { it.id == to.key }
             if (desde != -1 && hasta != -1) ordenadas.add(hasta, ordenadas.removeAt(desde))
         }
-    val filas = filasDe(estado.copy(cards = ordenadas.toList()))
+    val base = filasDe(estado.copy(cards = ordenadas.toList()))
+    val filas =
+        if (saliendo.isEmpty()) {
+            base
+        } else {
+            val fuera = saliendo.values.filter { r -> estado.tasks.none { it.id == r.id } }.map { FilaHoy.Tarea(it) }
+            val corte = base.indexOfFirst { it !is FilaHoy.Habito && it !is FilaHoy.Tarea }.let { if (it < 0) base.size else it }
+            base.take(corte) + fuera + base.drop(corte)
+        }
     val hayTuDia = estado.cards.isNotEmpty()
     val vacio = !estado.loading && estado.cards.isEmpty() && estado.pausedHabits.isEmpty() && !estado.hasAnyTasks
 
@@ -201,9 +225,9 @@ fun HoyLista(
         }
     }
 
-    Box(modifier.testTag("hoy-lista")) {
+    Box(modifier) {
         LazyColumn(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().testTag("hoy-lista"),
             state = listState,
             contentPadding = contentPadding,
             verticalArrangement = Arrangement.spacedBy(Medidas.entreFilas),
@@ -276,10 +300,14 @@ fun HoyLista(
                         FilaTarea(
                             fila.row,
                             estado.today,
+                            saliendo = fila.row.id in saliendo,
                             alTerminar = {
+                                val row = fila.row
+                                viewModel.markTaskDone(row.id)
+                                saliendo = saliendo + (row.id to row)
                                 scope.launch {
                                     delay(SALIDA_TAREA_MS)
-                                    viewModel.markTaskDone(fila.row.id)
+                                    saliendo = saliendo - row.id
                                 }
                             },
                             alEmpezar = { navegar.abrirRuta("focus?taskId=${fila.row.id}") },

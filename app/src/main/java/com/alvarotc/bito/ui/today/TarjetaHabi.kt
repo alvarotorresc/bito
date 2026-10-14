@@ -75,6 +75,7 @@ fun TarjetaHabi(
 
     LaunchedEffect(propuesta?.id) {
         val id = propuesta?.id
+        if (id == null) respondida = null
         if (id != null && id != anterior[0]) {
             if (respondida == null) {
                 gesto(Snd.BROTE, Haptica.TICK)
