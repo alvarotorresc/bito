@@ -37,12 +37,15 @@ private const val CONTENTO_MS = 1200L
  * La maqueta del jardín de Ajustes (spec §5.1.2): la escena real al 74 %, fundida en la tierra por abajo y
  * con paralaje (sube a 0,45 de la velocidad del scroll). Deja de respirar cuando ya no se ve.
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun MaquetaJardin(
     garden: GardenState,
     spec: HabiSpec,
     scroll: ScrollState,
     modifier: Modifier = Modifier,
+    // Lo usa la Tarea 26: la escala de la maqueta durante la cámara Hoy → Ajustes.
+    escala: () -> Float = { 1f },
 ) {
     val gesto = rememberGesto()
     var alto by remember { mutableIntStateOf(0) }

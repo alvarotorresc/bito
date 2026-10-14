@@ -89,6 +89,7 @@ private val GlowMid = Color(0x38FFA050)
  * un globito con el nombre de su logro. La composición va a una capa propia para que los modos de
  * fusión solo mezclen con la escena.
  */
+@Suppress("UNUSED_PARAMETER")
 @Composable
 fun GardenScene(
     garden: GardenState,
@@ -97,6 +98,18 @@ fun GardenScene(
     delighted: Boolean = false,
     onHabiTap: (() -> Unit)? = null,
     animated: Boolean = true,
+    // Lo usa la Tarea 14: toque en el fondo de la escena.
+    alTocarFondo: (() -> Unit)? = null,
+    // Lo usa la Tarea 14: globito sobre la planta.
+    globitoPlanta: Boolean = false,
+    // Lo usa la Tarea 14: el especial que llega al jardín.
+    llegando: GardenSpecial? = null,
+    // Lo usa la Tarea 14: la parcela que está creciendo.
+    creciendo: Int? = null,
+    // Lo usa la Tarea 14: el especial que se destaca.
+    destacar: GardenSpecial? = null,
+    // Cada incremento, un salto de Habi de .24; lo pide el Inicio al volver de crear, spec §5.7.
+    saltoHabi: Int = 0,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }

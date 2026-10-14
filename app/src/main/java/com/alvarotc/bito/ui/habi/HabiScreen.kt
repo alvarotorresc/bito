@@ -48,6 +48,7 @@ import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.garden.GardenDebugPanel
 import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.premios.HojaSaldo
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -158,9 +159,14 @@ fun HabiScreen(viewModel: HabiViewModel) {
             )
         }
     }
-    if (showPointsSheet) {
-        PointsInfoSheet(economy = state.economy, onDismiss = { showPointsSheet = false })
-    }
+    HojaSaldo(
+        abierta = showPointsSheet,
+        saldo = state.balance,
+        movimientos = state.movimientos,
+        economia = state.economy,
+        alIrTienda = { showPointsSheet = false },
+        alCerrar = { showPointsSheet = false },
+    )
 }
 
 /** "probando: <ítem>" (mockup 4b), under the garden while Habi is trying something on. */
@@ -185,7 +191,7 @@ private fun TryingChip(
 }
 
 /**
- * The points chip; tapping it opens [PointsInfoSheet] (QA 2026-08-23 — the app finally explains
+ * The points chip; tapping it opens [com.alvarotc.bito.ui.premios.HojaSaldo] (QA 2026-08-23 — the app finally explains
  * how points are earned somewhere). `internal` for the same direct-test reason as
  * [PersonalityPills]. Surface's onClick overload carries the Button role for TalkBack.
  */
