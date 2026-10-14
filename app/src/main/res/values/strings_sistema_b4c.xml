@@ -1,3 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Textos del bloque sistema_b4c (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
-<resources />
+<resources>
+    <string name="sistema_b4c_personalidad_titulo">Habi\'s personality</string>
+    <string name="sistema_b4c_voz_neutra_ej">Today\'s big one is the report. Start by opening the document.</string>
+    <string name="sistema_b4c_voz_cheerleader_ej">The report is today\'s big one. Open the document and you\'re already winning.</string>
+    <string name="sistema_b4c_voz_sargento_ej">Report. Document open. Three minutes. Go.</string>
+</resources>
