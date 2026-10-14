@@ -31,7 +31,7 @@ import java.time.YearMonth
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
-class StubsTest {
+class ContratosInicioTest {
     @get:Rule
     val rule = createComposeRule()
 
@@ -81,7 +81,7 @@ class StubsTest {
     }
 
     @Test
-    fun `the calendar stub shows its month`() {
+    fun `the calendar shows its month`() {
         rule.setContent {
             ConSistema {
                 CalendarioGotas(YearMonth.of(2026, 10), emptyList(), YearMonth.of(2026, 1), YearMonth.of(2026, 10), {}, {}, {})

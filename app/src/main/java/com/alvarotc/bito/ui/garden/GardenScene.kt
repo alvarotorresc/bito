@@ -145,6 +145,9 @@ private val GlowMid = Color(0x38FFA050)
 internal class SondaJardin {
     var wiltDibujado: () -> Float = { 0f }
     var saltosHabi: () -> Int = { 0 }
+
+    /** Las claves de los especiales que se han destacado, en orden. */
+    val destacados = mutableListOf<String>()
 }
 
 internal val LocalSondaJardin = staticCompositionLocalOf<SondaJardin?> { null }
@@ -382,10 +385,16 @@ fun GardenScene(
         mecer(idx)
     }
 
-    // Destacar: el especial se aplasta una vez al cambiar.
-    LaunchedEffect(destacar) { destacar?.let { aplastar(it.key) } }
-
     val sonda = LocalSondaJardin.current
+
+    // Destacar: el especial se aplasta una vez al cambiar.
+    LaunchedEffect(destacar) {
+        destacar?.let {
+            sonda?.destacados?.add(it.key)
+            aplastar(it.key)
+        }
+    }
+
     SideEffect {
         sonda?.wiltDibujado = { wiltAnim.value }
         sonda?.saltosHabi = { habiNudge }

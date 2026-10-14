@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.inicio
 
 import android.content.Context
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -15,11 +16,17 @@ import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
+import com.alvarotc.bito.data.settings.MarcaLibro
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.ui.camino.CaminoViewModel
+import com.alvarotc.bito.ui.garden.LocalSondaJardin
+import com.alvarotc.bito.ui.garden.SondaJardin
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
+import com.alvarotc.bito.ui.premios.RegistroAnclas
+import com.alvarotc.bito.ui.sistema.SonidoGrabado
+import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.today.TodayViewModel
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +60,11 @@ internal class BancoInicio(
     lateinit var hoy: TodayViewModel
     lateinit var camino: CaminoViewModel
     lateinit var celebraciones: CelebracionesViewModel
+    lateinit var ajustes: SettingsRepository
+    val registro = RegistroAnclas()
+    val sonido = SonidoGrabado()
+    val tacto = TactoGrabado()
+    val sonda = SondaJardin()
 
     val llamadas = mutableListOf<String>()
     val navegar =
@@ -74,6 +86,7 @@ internal class BancoInicio(
     fun preparar(
         habitos: Int = 0,
         dispatcherVM: CoroutineDispatcher = dispatcher,
+        marcaCero: Boolean = false,
     ) {
         Dispatchers.setMain(dispatcher)
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -88,6 +101,9 @@ internal class BancoInicio(
         val journal = JournalRepository(db)
         val domainState = DomainStateRepository(db)
         val settings = SettingsRepository(almacen("inicio"))
+        ajustes = settings
+        // Con la marca a cero se celebra lo que entre en el libro desde ahora; sin marca, la primera lectura la fija.
+        if (marcaCero) runBlocking { settings.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) } }
         val rewards = RewardsRepository(db)
         val tasks = TasksRepository(db)
         val reconciler = PointsReconciler(domainState, rewards)
@@ -127,5 +143,7 @@ internal class BancoInicio(
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         enPrimerPlano: Boolean = false,
-    ) = InicioScreen(hoy, camino, celebraciones, navegar, creado, alCreadoVisto, enPrimerPlano)
+    ) = CompositionLocalProvider(LocalSondaJardin provides sonda) {
+        InicioScreen(hoy, camino, celebraciones, navegar, creado, alCreadoVisto, enPrimerPlano, registro)
+    }
 }

@@ -35,13 +35,17 @@ import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.R
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.settings.FocusClock
 import com.alvarotc.bito.data.settings.FocusSession
+import com.alvarotc.bito.data.settings.MarcaLibro
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -740,6 +744,111 @@ class BitoNavHostTest {
 
         val created = runBlocking { container.database.habitDao().all().single { it.name == "Beber agua" } }
         assertEquals(Metric.CHECK, created.metric)
+    }
+
+    /** Monta la app con la marca del libro a cero (lo que entre se celebra) y un despachador de «atrás» propio. */
+    private fun setContentCelebrando(
+        backOwner: FakeBackDispatcherOwner,
+        onboardingHecho: Boolean = true,
+        alNav: (NavHostController) -> Unit = {},
+    ) {
+        container = AppContainer(ApplicationProvider.getApplicationContext<Application>())
+        runBlocking {
+            if (onboardingHecho) completeOnboarding(container)
+            container.settings.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+        }
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides backOwner) {
+                    val nav = rememberNavController()
+                    alNav(nav)
+                    BitoNavHost(container, nav)
+                }
+            }
+        }
+        compose.waitForIdle()
+        waitPastLoadingGate()
+    }
+
+    private fun hayTag(tag: String) = compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+
+    /** Da tiempo real a que Room y DataStore entreguen lo suyo antes de afirmar que algo NO se pinta. */
+    private fun dejarPasar() =
+        repeat(10) {
+            compose.waitForIdle()
+            Thread.sleep(50)
+        }
+
+    /** Un logro que llega con Ajustes abierto espera: Ajustes no es Hoy. Al volver a Hoy, sale. */
+    @Test
+    fun `a new badge does not show while settings is open`() {
+        val backOwner = FakeBackDispatcherOwner()
+        setContentCelebrando(backOwner)
+        compose.onNodeWithTag("cabecera-ajustes", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("inicio").not() }
+        screenTitleNode("Reminders and breathing").assertExists()
+
+        runBlocking { container.database.badgeDao().insert(BadgeEntity("first-habit", 500)) }
+        dejarPasar()
+        assertTrue("el logro no se pinta con Ajustes abierto", !hayTag("hoja-logro"))
+
+        compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("hoja-logro") }
+    }
+
+    /**
+     * El repaso que el onboarding retiene y el día perfecto que ya estaba en el libro: ni el onboarding ni el repaso
+     * (que abre en cuanto el onboarding entrega) pintan la veta; sale al volver a Hoy.
+     */
+    @Test
+    fun `a pending perfect day with the review held behind onboarding is not painted until back on Today`() {
+        val backOwner = FakeBackDispatcherOwner()
+        lateinit var nav: NavHostController
+        setContentCelebrando(backOwner, onboardingHecho = false) { nav = it }
+        val hoy = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
+        runBlocking {
+            container.database
+                .pointsLedgerDao()
+                .insertAll(
+                    listOf(
+                        pointsLedgerEntity(
+                            id = "d",
+                            delta = 3,
+                            reason = PointsReason.PERFECT_DAY,
+                            refId = "day:$hoy",
+                            logicalDay = hoy,
+                            createdAtMillis = 10,
+                        ),
+                    ),
+                )
+        }
+        NavRequests.open("review")
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("onboarding-screen") }
+        dejarPasar()
+        assertTrue("el onboarding no pinta la veta", !hayTag("veta-DIA"))
+        assertEquals("review", NavRequests.pending.value)
+
+        compose.onNodeWithText("Get started", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("Skip", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-name-field", useUnmergedTree = true).performTextInput("Alvaro")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-continue", useUnmergedTree = true).performClick()
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-habit-name-field", useUnmergedTree = true).performTextInput("Beber agua")
+        compose.waitForIdle()
+        compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
+
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("review-seal") }
+        dejarPasar()
+        assertTrue("el repaso no pinta la veta del día", !hayTag("veta-DIA"))
+
+        compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
+        compose.waitUntil(timeoutMillis = 10_000) { hayTag("veta-DIA") || hayTag("hoja-logro") }
+        assertEquals("today", compose.runOnUiThread { nav.currentDestination?.route })
     }
 
     /**
