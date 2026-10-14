@@ -12,7 +12,7 @@ class ReminderSchedulerTest {
     // schedules a TASKS slot — these two counts recalibrate from 4 and 1 to 5 and 2.
     @Test
     fun `slots cover global hours, active habit reminders and the review`() {
-        val settings = Settings(globalReminderMinutes = listOf(480, 1200), reviewTimeMinutes = 1290)
+        val settings = Settings(globalReminderMinutes = listOf(480, 1200), habiNightMinutes = 1290)
         val habits = listOf(habitEntity(id = "h1", reminderMinutes = 600, status = HabitStatus.ACTIVE))
 
         val slots = ReminderScheduler.slotsOf(settings, habits)
@@ -28,7 +28,7 @@ class ReminderSchedulerTest {
 
     @Test
     fun `paused, archived and reminderless habits schedule nothing beyond review and tasks`() {
-        val settings = Settings(globalReminderMinutes = emptyList(), reviewTimeMinutes = 1290)
+        val settings = Settings(globalReminderMinutes = emptyList(), habiNightMinutes = 1290)
         val habits =
             listOf(
                 habitEntity(id = "paused", reminderMinutes = 600, status = HabitStatus.PAUSED),
@@ -69,7 +69,7 @@ class ReminderSchedulerTest {
 
     @Test
     fun `slot keys are stable and distinct`() {
-        val settings = Settings(globalReminderMinutes = listOf(480, 1200), reviewTimeMinutes = 1290)
+        val settings = Settings(globalReminderMinutes = listOf(480, 1200), habiNightMinutes = 1290)
         val habits = listOf(habitEntity(id = "h1", reminderMinutes = 600, status = HabitStatus.ACTIVE))
 
         val slots = ReminderScheduler.slotsOf(settings, habits)
@@ -98,7 +98,7 @@ class ReminderSchedulerTest {
         val settings =
             Settings(
                 globalReminderMinutes = listOf(22 * 60),
-                reviewTimeMinutes = 22 * 60,
+                habiNightMinutes = 22 * 60,
                 breathingReminderEnabled = true,
                 breathingReminderTimeMinutes = 22 * 60,
             )

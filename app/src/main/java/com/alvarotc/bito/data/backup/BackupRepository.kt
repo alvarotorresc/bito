@@ -19,6 +19,8 @@ class BackupRepository(
     private val settings: SettingsRepository,
     private val keyStore: BackupKeyStore,
     private val appVersion: String,
+    /** Cancela las alarmas de los avisos aceptados que la restauracion borra. La cablea el contenedor. */
+    private val cancelarAvisos: suspend (List<String>) -> Unit = {},
 ) {
     suspend fun exportJson(nowMillis: Long): String = exportJson(nowMillis, settings.settings.first())
 
@@ -64,6 +66,8 @@ class BackupRepository(
                     tasks = db.taskDao().all().sortedBy { it.id }.map { it.toBackup() },
                     taskEvents = db.taskEventDao().all().sortedBy { it.id }.map { it.toBackup() },
                     breathingSessions = db.breathingSessionDao().all().sortedBy { it.id }.map { it.toBackup() },
+                    habiMemoria = db.hablaDao().todosEventos().sortedBy { it.id }.map { it.toBackup() },
+                    loGordo = db.hablaDao().todoGordo().sortedWith(compareBy({ it.dia }, { it.posicion })).map { it.toBackup() },
                 )
             }
         return BackupCodec.encode(file)
@@ -80,6 +84,9 @@ class BackupRepository(
 
     suspend fun import(text: String) {
         val file = BackupCodec.decode(text) // validate before touching anything
+        // Las alarmas de los avisos aceptados se cancelan con los ids leidos antes de borrar las filas.
+        val pendientes = db.hablaDao().avisosPendientes().map { it.id }
+        if (pendientes.isNotEmpty()) cancelarAvisos(pendientes)
         db.withTransaction {
             // Children before parents on delete; parents before children on insert.
             db.entryDao().deleteAll()
@@ -94,6 +101,11 @@ class BackupRepository(
             db.habitDao().deleteAll()
             db.taskDao().deleteAll()
             db.breathingSessionDao().deleteAll()
+            // La memoria y lo gordo se reemplazan; lo demas de Habi solo vale para hoy y se vacia.
+            db.hablaDao().reemplazarMemoriaYGordo(file.habiMemoria.map { it.toEntity() }, file.loGordo.map { it.toEntity() })
+            db.hablaDao().vaciarAvisos()
+            db.hablaDao().vaciarVigentes()
+            db.hablaDao().vaciarUsos()
             file.habits.forEach { db.habitDao().upsert(it.toEntity()) }
             file.targetChanges.forEach { db.targetChangeDao().upsert(it.toEntity()) }
             file.pauseIntervals.forEach { db.pauseIntervalDao().upsert(it.toEntity()) }

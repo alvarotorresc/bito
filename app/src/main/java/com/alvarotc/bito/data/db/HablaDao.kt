@@ -121,6 +121,9 @@ interface HablaDao {
     @Query("SELECT * FROM habla_usada WHERE usado_millis >= :millis ORDER BY usado_millis, id")
     fun usosDesde(millis: Long): Flow<List<HablaUsadaEntity>>
 
+    @Query("DELETE FROM habla_usada")
+    suspend fun vaciarUsos()
+
     @Query("DELETE FROM habla_usada WHERE usado_millis < :millis")
     suspend fun borrarUsosAntesDe(millis: Long)
 }

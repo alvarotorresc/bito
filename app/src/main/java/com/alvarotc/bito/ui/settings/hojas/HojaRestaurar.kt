@@ -256,6 +256,11 @@ private fun VistaPrevia(
             ahora?.entries?.toString() ?: "-",
             preview.entries.toString(),
         )
+        FilaCuadro(
+            stringResource(R.string.copias_recuerdos),
+            ahora?.recuerdos?.toString() ?: "-",
+            preview.recuerdos.toString(),
+        )
     }
     AvisoPeligro(stringResource(R.string.import_preview_warning))
     BotonesHoja(

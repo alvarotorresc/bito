@@ -51,7 +51,7 @@ object ReminderScheduler {
             habits
                 .filter { it.status == HabitStatus.ACTIVE && it.reminderMinutes != null }
                 .map { Slot(SlotKind.HABIT, it.id, it.reminderMinutes!!) }
-        val review = Slot(SlotKind.REVIEW, "", settings.reviewTimeMinutes)
+        val review = Slot(SlotKind.REVIEW, "", settings.habiNightMinutes)
         val tasks =
             if (settings.taskNoticesEnabled) listOf(Slot(SlotKind.TASKS, "", TASKS_NOTICE_MINUTES)) else emptyList()
         val breathing =

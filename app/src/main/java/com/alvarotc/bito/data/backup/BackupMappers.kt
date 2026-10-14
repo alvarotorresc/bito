@@ -6,7 +6,9 @@ import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.DaySealEntity
 import com.alvarotc.bito.data.db.EntryEntity
 import com.alvarotc.bito.data.db.FreezerUseEntity
+import com.alvarotc.bito.data.db.HabiMemoriaEntity
 import com.alvarotc.bito.data.db.HabitEntity
+import com.alvarotc.bito.data.db.LoGordoEntity
 import com.alvarotc.bito.data.db.PauseIntervalEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.db.TargetChangeEntity
@@ -169,7 +171,7 @@ fun Settings.toBackup() =
         dayCutoffMinutes = dayCutoffMinutes,
         languageTag = languageTag,
         globalReminderMinutes = globalReminderMinutes,
-        reviewTimeMinutes = reviewTimeMinutes,
+        habiNightMinutes = habiNightMinutes,
         perfectDayCelebration = perfectDayCelebration,
         personality = personality,
         backupFolderUri = backupFolderUri,
@@ -212,7 +214,7 @@ fun BackupSettings.toSettings() =
         dayCutoffMinutes = dayCutoffMinutes,
         languageTag = languageTag,
         globalReminderMinutes = globalReminderMinutes,
-        reviewTimeMinutes = reviewTimeMinutes,
+        habiNightMinutes = habiNightMinutes,
         perfectDayCelebration = perfectDayCelebration,
         personality = personality,
         backupFolderUri = backupFolderUri,
@@ -248,3 +250,11 @@ fun BackupSettings.toSettings() =
         sessionBackground = sessionBackground,
         reduceMotion = reduceMotion,
     )
+
+fun HabiMemoriaEntity.toBackup() = BackupHabiMemoria(id = id, tipo = tipo, dia = dia, ref = ref, valor = valor, creadoMillis = creadoMillis)
+
+fun BackupHabiMemoria.toEntity() = HabiMemoriaEntity(id = id, tipo = tipo, dia = dia, ref = ref, valor = valor, creadoMillis = creadoMillis)
+
+fun LoGordoEntity.toBackup() = BackupLoGordo(dia = dia, posicion = posicion, tipo = tipo, refId = refId, creadoMillis = creadoMillis)
+
+fun BackupLoGordo.toEntity() = LoGordoEntity(dia = dia, posicion = posicion, tipo = tipo, refId = refId, creadoMillis = creadoMillis)

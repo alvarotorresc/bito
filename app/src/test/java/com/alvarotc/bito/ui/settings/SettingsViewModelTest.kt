@@ -158,14 +158,14 @@ class SettingsViewModelTest {
         }
 
     @Test
-    fun `the review time is a plain write`() =
+    fun `the night time is written within its range`() =
         runTest {
             advanceUntilIdle()
 
-            vm.setReviewTime(22 * 60)
+            vm.setHabiNight(22 * 60)
             advanceUntilIdle()
 
-            assertEquals(22 * 60, vm.state.value?.reviewTimeMinutes)
+            assertEquals(22 * 60, vm.state.value?.habiNightMinutes)
         }
 
     @Test
@@ -304,7 +304,7 @@ class SettingsViewModelTest {
             advanceUntilIdle()
             val s = vm.state.value!!
             assertEquals(10, s.volHabi)
-            assertEquals(19 * 60, s.reviewTimeMinutes)
+            assertEquals(19 * 60, s.habiNightMinutes)
             assertEquals(11 * 60, s.habiMorningMinutes)
             assertEquals(listOf(50, 1, 45, 8), listOf(s.pomoFocus, s.pomoShort, s.pomoLong, s.pomoRounds))
             assertEquals(false, s.pomoAutoBreak)

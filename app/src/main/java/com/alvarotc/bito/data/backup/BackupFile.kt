@@ -47,6 +47,30 @@ data class BackupFile(
      * M11. Con default por la misma razon que tasks/taskEvents.
      */
     val breathingSessions: List<BackupBreathingSession> = emptyList(),
+    /**
+     * Pieza 4 (v6). La memoria de Habi y lo gordo. Con default por la misma razon que las anteriores.
+     */
+    val habiMemoria: List<BackupHabiMemoria> = emptyList(),
+    val loGordo: List<BackupLoGordo> = emptyList(),
+)
+
+@Serializable
+data class BackupHabiMemoria(
+    val id: String,
+    val tipo: String,
+    val dia: Int,
+    val ref: String?,
+    val valor: Int?,
+    val creadoMillis: Long,
+)
+
+@Serializable
+data class BackupLoGordo(
+    val dia: Int,
+    val posicion: Int,
+    val tipo: String,
+    val refId: String,
+    val creadoMillis: Long,
 )
 
 @Serializable
@@ -181,7 +205,7 @@ data class BackupSettings(
     val dayCutoffMinutes: Int,
     val languageTag: String?,
     val globalReminderMinutes: List<Int>,
-    val reviewTimeMinutes: Int,
+    val habiNightMinutes: Int,
     val perfectDayCelebration: Boolean,
     val personality: Personality,
     val backupFolderUri: String?,
@@ -224,6 +248,8 @@ data class BackupPreview(
     val appVersion: String,
     val habits: Int,
     val entries: Int,
+    /** Los «Recuerdos de Habi» de la copia. */
+    val recuerdos: Int,
 )
 
-fun BackupFile.toPreview() = BackupPreview(exportedAt, appVersion, habits.size, entries.size)
+fun BackupFile.toPreview() = BackupPreview(exportedAt, appVersion, habits.size, entries.size, habiMemoria.size)

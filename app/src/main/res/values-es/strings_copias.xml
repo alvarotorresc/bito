@@ -46,6 +46,7 @@
     <string name="copias_la_copia">La copia</string>
     <string name="copias_habitos">Hábitos</string>
     <string name="copias_registros">Registros</string>
+    <string name="copias_recuerdos">Recuerdos de Habi</string>
     <string name="copias_exp_titulo">Exportar copia</string>
     <string name="copias_exp_desc">Guarda un archivo con todo, por ejemplo para pasarlo a otro móvil.</string>
     <string name="copias_exp_cifrada">Saldrá cifrada con tu passphrase.</string>

@@ -42,7 +42,7 @@ class SettingsRepositoryTest {
             assertEquals(0, settings.dayCutoffMinutes)
             assertNull(settings.languageTag)
             assertEquals(emptyList<Int>(), settings.globalReminderMinutes)
-            assertEquals(21 * 60 + 30, settings.reviewTimeMinutes)
+            assertEquals(21 * 60 + 30, settings.habiNightMinutes)
             assertEquals(true, settings.perfectDayCelebration)
             assertEquals(Personality.NEUTRA, settings.personality)
             assertNull(settings.backupFolderUri)
@@ -83,7 +83,7 @@ class SettingsRepositoryTest {
                     dayCutoffMinutes = 180,
                     languageTag = "es",
                     globalReminderMinutes = listOf(8 * 60, 22 * 60),
-                    reviewTimeMinutes = 22 * 60,
+                    habiNightMinutes = 22 * 60,
                     perfectDayCelebration = false,
                     personality = Personality.SARGENTO,
                     backupFolderUri = "content://tree/backups",
@@ -254,11 +254,23 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun `habi night minutes defaults to 21 30 and clamps to 19 00 23 30`() =
+        runTest {
+            val repo = SettingsRepository(store("habi-night"))
+            assertEquals(21 * 60 + 30, repo.settings.first().habiNightMinutes)
+
+            repo.update { it.copy(habiNightMinutes = 3 * 60) }
+            assertEquals(19 * 60, repo.settings.first().habiNightMinutes)
+            repo.update { it.copy(habiNightMinutes = 23 * 60 + 59) }
+            assertEquals(23 * 60 + 30, repo.settings.first().habiNightMinutes)
+        }
+
+    @Test
     fun `the piece 2 keys start at their documented defaults`() =
         runTest {
             val s = SettingsRepository(store("p2-defaults")).settings.first()
             assertEquals(8 * 60 + 30, s.habiMorningMinutes)
-            assertEquals(21 * 60 + 30, s.reviewTimeMinutes)
+            assertEquals(21 * 60 + 30, s.habiNightMinutes)
             assertEquals(false, s.dndEnabled)
             assertEquals(23 * 60, s.dndFromMinutes)
             assertEquals(7 * 60 + 30, s.dndToMinutes)
