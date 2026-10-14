@@ -490,6 +490,29 @@ class BackupRoundTripTest {
             assertEquals(emptyList(), dao.usosDesde(0L).first())
         }
 
+    @Test
+    fun `if the restore fails no notice is cancelled`() =
+        runTest {
+            val canceladas = mutableListOf<String>()
+            val conAvisos =
+                BackupRepository(db, settingsRepo, keyStore, "0.3.0-test", cancelarAvisos = { canceladas += it })
+            db.habitDao().upsert(habitEntity(id = "h1"))
+            db.hablaDao().insertarAviso(AvisoAceptadoEntity("a1", 100, "h1", 600, 0, "PENDIENTE", "p1", 1L))
+            // Dos registros con el mismo id: el segundo insert aborta la transaccion a mitad.
+            val roto =
+                BackupCodec.encode(
+                    BackupCodec.decode(conAvisos.exportJson(nowMillis = 9_000L)).let {
+                        val e = BackupEntry("dup", "h1", 0, 1, 1L)
+                        it.copy(entries = listOf(e, e))
+                    },
+                )
+
+            assertFailsWith<Exception> { conAvisos.import(roto) }
+
+            assertEquals(emptyList(), canceladas)
+            assertEquals(listOf("a1"), db.hablaDao().avisosPendientes().map { it.id })
+        }
+
     // Un test que solo compara exportJson() contra si mismo no puede fallar por un mapeador o un
     // orden mal hechos: siempre exporta lo mismo del mismo estado. Aqui el segundo export sale de
     // una base de datos DISTINTA, poblada por import() a partir del primer export — si el mapeador

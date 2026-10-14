@@ -84,41 +84,43 @@ class BackupRepository(
 
     suspend fun import(text: String) {
         val file = BackupCodec.decode(text) // validate before touching anything
-        // Las alarmas de los avisos aceptados se cancelan con los ids leidos antes de borrar las filas.
-        val pendientes = db.hablaDao().avisosPendientes().map { it.id }
+        val pendientes =
+            db.withTransaction {
+                // Los ids se leen antes de borrar las filas; las alarmas se cancelan solo si la restauracion acaba bien.
+                val ids = db.hablaDao().avisosPendientes().map { it.id }
+                // Children before parents on delete; parents before children on insert.
+                db.entryDao().deleteAll()
+                db.targetChangeDao().deleteAll()
+                db.pauseIntervalDao().deleteAll()
+                db.freezerUseDao().deleteAll()
+                db.daySealDao().deleteAll()
+                db.pointsLedgerDao().deleteAll()
+                db.badgeDao().deleteAll()
+                db.customizationItemDao().deleteAll()
+                db.taskEventDao().deleteAll()
+                db.habitDao().deleteAll()
+                db.taskDao().deleteAll()
+                db.breathingSessionDao().deleteAll()
+                // La memoria y lo gordo se reemplazan; lo demas de Habi solo vale para hoy y se vacia.
+                db.hablaDao().reemplazarMemoriaYGordo(file.habiMemoria.map { it.toEntity() }, file.loGordo.map { it.toEntity() })
+                db.hablaDao().vaciarAvisos()
+                db.hablaDao().vaciarVigentes()
+                db.hablaDao().vaciarUsos()
+                file.habits.forEach { db.habitDao().upsert(it.toEntity()) }
+                file.targetChanges.forEach { db.targetChangeDao().upsert(it.toEntity()) }
+                file.pauseIntervals.forEach { db.pauseIntervalDao().upsert(it.toEntity()) }
+                file.entries.forEach { db.entryDao().insert(it.toEntity()) }
+                file.daySeals.forEach { db.daySealDao().insert(it.toEntity()) }
+                file.pointsLedger.forEach { db.pointsLedgerDao().insert(it.toEntity()) }
+                file.freezerUses.forEach { db.freezerUseDao().insert(it.toEntity()) }
+                file.badges.forEach { db.badgeDao().insert(it.toEntity()) }
+                file.customizationItems.forEach { db.customizationItemDao().upsert(it.toEntity()) }
+                file.tasks.forEach { db.taskDao().upsert(it.toEntity()) }
+                file.taskEvents.forEach { db.taskEventDao().insert(it.toEntity()) }
+                file.breathingSessions.forEach { db.breathingSessionDao().insert(it.toEntity()) }
+                ids
+            }
         if (pendientes.isNotEmpty()) cancelarAvisos(pendientes)
-        db.withTransaction {
-            // Children before parents on delete; parents before children on insert.
-            db.entryDao().deleteAll()
-            db.targetChangeDao().deleteAll()
-            db.pauseIntervalDao().deleteAll()
-            db.freezerUseDao().deleteAll()
-            db.daySealDao().deleteAll()
-            db.pointsLedgerDao().deleteAll()
-            db.badgeDao().deleteAll()
-            db.customizationItemDao().deleteAll()
-            db.taskEventDao().deleteAll()
-            db.habitDao().deleteAll()
-            db.taskDao().deleteAll()
-            db.breathingSessionDao().deleteAll()
-            // La memoria y lo gordo se reemplazan; lo demas de Habi solo vale para hoy y se vacia.
-            db.hablaDao().reemplazarMemoriaYGordo(file.habiMemoria.map { it.toEntity() }, file.loGordo.map { it.toEntity() })
-            db.hablaDao().vaciarAvisos()
-            db.hablaDao().vaciarVigentes()
-            db.hablaDao().vaciarUsos()
-            file.habits.forEach { db.habitDao().upsert(it.toEntity()) }
-            file.targetChanges.forEach { db.targetChangeDao().upsert(it.toEntity()) }
-            file.pauseIntervals.forEach { db.pauseIntervalDao().upsert(it.toEntity()) }
-            file.entries.forEach { db.entryDao().insert(it.toEntity()) }
-            file.daySeals.forEach { db.daySealDao().insert(it.toEntity()) }
-            file.pointsLedger.forEach { db.pointsLedgerDao().insert(it.toEntity()) }
-            file.freezerUses.forEach { db.freezerUseDao().insert(it.toEntity()) }
-            file.badges.forEach { db.badgeDao().insert(it.toEntity()) }
-            file.customizationItems.forEach { db.customizationItemDao().upsert(it.toEntity()) }
-            file.tasks.forEach { db.taskDao().upsert(it.toEntity()) }
-            file.taskEvents.forEach { db.taskEventDao().insert(it.toEntity()) }
-            file.breathingSessions.forEach { db.breathingSessionDao().insert(it.toEntity()) }
-        }
         settings.update { file.settings.toSettings() }
     }
 }
