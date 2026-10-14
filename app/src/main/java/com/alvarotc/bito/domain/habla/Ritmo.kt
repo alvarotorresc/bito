@@ -48,6 +48,14 @@ object Ritmo {
     const val HORA_HABITUAL_REGISTROS = 5
     const val HORA_HABITUAL_DIAS = 30
 
+    /** §5.1 n.º 9 y §5.6: racha redonda (múltiplo de) y racha recuperada. */
+    const val RACHA_REDONDA_CADA = 5
+    const val RACHA_RECUPERADA = 8
+    const val RACHA_ROTA_MIN = 7
+
+    /** §4.3: cuántos periodos juzgados cuentan para el cumplimiento reciente. */
+    const val PERIODOS_JUZGADOS = 30
+
     /** §6.1: «Más tarde» en un aviso aceptado. */
     const val MAS_TARDE_MIN = 30
     const val MAS_TARDE_VECES = 2
