@@ -17,6 +17,7 @@ import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pauseIntervalEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.data.settings.MarcaLibro
 import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
@@ -49,6 +50,7 @@ import java.util.UUID
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -470,6 +472,12 @@ class BackupRoundTripTest {
             // Y el resto de ajustes sigue viajando: el recorte no se lleva nada mas.
             assertEquals(seededSettings.userName, restored.userName)
         }
+
+    @Test
+    fun `the celebrated ledger mark does not travel in the backup`() {
+        val copia = Settings(celebratedLedgerMark = MarcaLibro(5L, "x")).toBackup().toSettings()
+        assertNull(copia.celebratedLedgerMark)
+    }
 
     /** Un fichero de la 1.1.0: sin la lista de sesiones y sin las cuatro claves nuevas de settings. */
     private fun stripBreathingSettings(json: String): String {

@@ -17,6 +17,10 @@ interface PointsLedgerDao {
     @Query("SELECT * FROM points_ledger ORDER BY logicalDay, createdAtMillis")
     fun observeAll(): Flow<List<PointsLedgerEntity>>
 
+    /** Los últimos movimientos para «Tus bitos» (pieza 3, §9.1). Solo una consulta: el esquema no cambia. */
+    @Query("SELECT * FROM points_ledger ORDER BY createdAtMillis DESC, id DESC LIMIT :limit")
+    fun observeRecent(limit: Int): Flow<List<PointsLedgerEntity>>
+
     /** The balance is always derived — never stored (tech doc §3). */
     @Query("SELECT COALESCE(SUM(delta), 0) FROM points_ledger")
     fun observeBalance(): Flow<Int>
