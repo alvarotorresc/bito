@@ -12,6 +12,8 @@ import com.alvarotc.bito.data.backup.BackupWorker
 import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.domain.habla.EventoMemoria
+import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.ui.notifications.FocusReceiver
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.Notifier
@@ -171,6 +173,22 @@ class AppStartupTest {
         // Still DAILY: the cancelled collector never saw the WEEKLY write, so it never reached
         // WorkManager with it.
         assertEquals(TimeUnit.DAYS.toMillis(1), workInfos().single().periodicityInfo?.repeatIntervalMillis)
+    }
+
+    @Test
+    fun `start purges the memory of Habi older than 400 days with the injected clock`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val ahora = 20_500L * 86_400_000L + 12 * 3_600_000L
+        val hoy = 20_500
+        runBlocking {
+            container.memoria.anotar(EventoMemoria("viejo", TipoMemoria.ANIMO, hoy - 401, null, 1, ahora))
+            container.memoria.anotar(EventoMemoria("reciente", TipoMemoria.ANIMO, hoy - 10, null, 1, ahora))
+        }
+
+        AppStartup.start(app, container, testScope()) { ahora }
+
+        eventually(5_000) { runBlocking { container.database.hablaDao().todosEventos() }.map { it.id } == listOf("reciente") }
     }
 
     // ReminderSync/BackupSync/WidgetRefresher, los otros tres colectores que AppStartup.start

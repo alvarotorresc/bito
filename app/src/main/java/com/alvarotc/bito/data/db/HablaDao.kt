@@ -75,6 +75,9 @@ interface HablaDao {
     @Update
     suspend fun actualizarAviso(aviso: AvisoAceptadoEntity)
 
+    @Query("SELECT * FROM aviso_aceptado WHERE id = :id")
+    suspend fun aviso(id: String): AvisoAceptadoEntity?
+
     @Query("SELECT * FROM aviso_aceptado WHERE dia = :dia ORDER BY minuto, id")
     fun avisosDe(dia: Int): Flow<List<AvisoAceptadoEntity>>
 
@@ -94,6 +97,9 @@ interface HablaDao {
         ambito: String,
         habitId: String,
     ): PropuestaVigenteEntity?
+
+    @Query("SELECT * FROM propuesta_vigente ORDER BY ambito, habit_id")
+    fun vigentes(): Flow<List<PropuestaVigenteEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun guardarVigente(vigente: PropuestaVigenteEntity)

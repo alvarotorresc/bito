@@ -39,8 +39,15 @@ class TasksRepository(private val db: BitoDatabase) {
         )
     }
 
-    /** El ForeignKey CASCADE se lleva su historia. No descuenta puntos (regla E3). */
-    suspend fun delete(id: String) = db.taskDao().delete(id)
+    /**
+     * El ForeignKey CASCADE se lleva su historia; sus filas de lo gordo, en la misma transaccion.
+     * No descuenta puntos (regla E3).
+     */
+    suspend fun delete(id: String) =
+        db.withTransaction {
+            db.taskDao().delete(id)
+            db.hablaDao().borrarGordoDeRef(id)
+        }
 
     suspend fun markDone(
         id: String,

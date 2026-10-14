@@ -146,4 +146,15 @@ class HablaDaoTest {
             dao.borrarUsosAntesDe(250L)
             assertEquals(listOf("DRAMATICA"), dao.usosDesde(0L).first().map { it.voz })
         }
+
+    @Test
+    fun `aviso reads one row by id and vigentes lists every scope`() =
+        runBlocking {
+            dao.insertarAviso(aviso("a", "PENDIENTE"))
+            assertEquals("a", dao.aviso("a")!!.id)
+            assertNull(dao.aviso("nope"))
+            dao.guardarVigente(vigente("HOY", "", "SALUDO"))
+            dao.guardarVigente(vigente("FICHA", "h1", "FI_NUEVO"))
+            assertEquals(listOf("FICHA", "HOY"), dao.vigentes().first().map { it.ambito })
+        }
 }

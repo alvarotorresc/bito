@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.DAY_ZERO
+import com.alvarotc.bito.data.db.AvisoAceptadoEntity
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.db.LoGordoEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.domain.model.HabitStatus
 import kotlinx.coroutines.test.runTest
@@ -130,5 +132,24 @@ class HabitsRepositoryTest {
             val pause = db.pauseIntervalDao().forHabit("h1").single()
             assertEquals(DAY_ZERO + 3, pause.startDay)
             assertEquals(DAY_ZERO + 9, pause.endDay)
+        }
+
+    @Test
+    fun `deleting a habit removes its big-thing rows and accepted notices`() =
+        runTest {
+            repository.create(habitEntity(id = "h1"))
+            repository.create(habitEntity(id = "h2", name = "Leer"))
+            val habla = db.hablaDao()
+            habla.reemplazarGordo(
+                DAY_ZERO,
+                listOf(LoGordoEntity(DAY_ZERO, 0, "HABITO", "h1", 1L), LoGordoEntity(DAY_ZERO, 1, "HABITO", "h2", 1L)),
+            )
+            habla.insertarAviso(AvisoAceptadoEntity("a1", DAY_ZERO, "h1", 600, 0, "PENDIENTE", "p1", 1L))
+            habla.insertarAviso(AvisoAceptadoEntity("a2", DAY_ZERO, "h2", 600, 0, "PENDIENTE", "p2", 1L))
+
+            repository.delete("h1")
+
+            assertEquals(listOf("h2"), habla.todoGordo().map { it.refId })
+            assertEquals(listOf("a2"), habla.avisosPendientes().map { it.id })
         }
 }

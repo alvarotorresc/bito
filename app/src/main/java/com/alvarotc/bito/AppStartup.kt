@@ -2,6 +2,7 @@ package com.alvarotc.bito
 
 import android.app.Application
 import com.alvarotc.bito.data.backup.BackupSync
+import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.notifications.FocusSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
@@ -11,6 +12,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.time.ZoneId
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -60,6 +64,7 @@ object AppStartup {
         app: Application,
         container: AppContainer,
         scope: CoroutineScope = defaultScope,
+        now: () -> Long = System::currentTimeMillis,
     ) {
         if (!started.compareAndSet(false, true)) return
         startInvocations.incrementAndGet()
@@ -68,6 +73,18 @@ object AppStartup {
         ReminderSync.start(app, container, scope)
         BackupSync.start(app, container, scope)
         FocusSync.start(app, container, scope)
+        scope.launch { purgarMemoria(container, now) }
+    }
+
+    /** Memoria de Habi: 400 dias de eventos y 60 de usos. El dia logico sale de los ajustes. */
+    private suspend fun purgarMemoria(
+        container: AppContainer,
+        now: () -> Long,
+    ) {
+        val ahora = now()
+        val corte = container.settings.settings.first().dayCutoffMinutes
+        val hoy = LogicalDays.logicalDayOf(ahora, corte, ZoneId.systemDefault())
+        container.memoria.purgar(hoy, ahora)
     }
 
     /**
