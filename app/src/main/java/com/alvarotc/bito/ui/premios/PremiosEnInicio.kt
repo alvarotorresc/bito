@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -168,13 +169,20 @@ fun PremiosEnInicio(
                     } else {
                         val especial = GardenSpecial.entries.firstOrNull { it.badgeId == m.badgeId }
                         val dia = Instant.ofEpochMilli(m.unlockedAtMillis).atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay().toInt()
+                        var abierta by remember { mutableStateOf(true) }
+                        val alSalir = rememberCoroutineScope()
                         HojaLogro(
-                            abierta = true,
+                            abierta = abierta,
                             logro = LogroUi(def, conseguido = dia, progreso = null, especial = especial),
                             modo = ModoLogro.NUEVO,
                             alVerEnJardin = {
-                                celebraciones.terminado(m)
-                                alVerEnJardin(especial)
+                                // La hoja sale con su animación antes de llevar al jardín.
+                                abierta = false
+                                alSalir.launch {
+                                    delay(Duraciones.CERRAR_HOJA.toLong())
+                                    alVerEnJardin(especial)
+                                    celebraciones.terminado(m)
+                                }
                             },
                             alCerrar = { celebraciones.terminado(m) },
                         )

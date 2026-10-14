@@ -211,7 +211,9 @@ class PremiosEnInicioTest {
         registro.poner(ClavesAncla.PARCELA, androidx.compose.ui.geometry.Rect(100f, 100f, 200f, 220f))
         registro.gota("fila:h1")
         avanzar(100)
-        assertEquals(1, sonido.snds().count { it == Snd.GORGOTEO })
+        assertEquals("una sola capa: una sola llegada, y el gorgoteo es de la fila", 0, sonido.snds().count { it == Snd.GORGOTEO })
+        avanzar(800)
+        assertEquals(1, sonido.snds().count { it == Snd.LLEGADA })
     }
 
     @Test

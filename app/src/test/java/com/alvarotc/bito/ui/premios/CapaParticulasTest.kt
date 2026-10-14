@@ -13,6 +13,9 @@ import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -96,7 +99,8 @@ class CapaParticulasTest {
         assertEquals(3, llegadas)
         assertEquals(1, fin)
         assertEquals("sin monedas en el aire al final", 0, estado.monedas.size)
-        assertEquals(3, sonido.snds().count { it == Snd.MONEDA })
+        assertEquals("con varias, la primera es la campanilla", 1, sonido.snds().count { it == Snd.CAMPANILLA })
+        assertEquals(2, sonido.snds().count { it == Snd.MONEDA })
         assertEquals(3, tacto.hapticas.count { it == Haptica.TICK })
     }
 
@@ -124,7 +128,7 @@ class CapaParticulasTest {
             maxGotas = maxOf(maxGotas, estado.gotas.size)
         }
         assertEquals(TopesParticulas.GOTAS, maxGotas)
-        assertEquals("el sonido sale con todas, también con la séptima", 10, sonido.snds().count { it == Snd.GORGOTEO })
+        assertEquals("salir es de la fila: la capa no suena al salir", 0, sonido.snds().count { it == Snd.GORGOTEO })
 
         var maxGranos = 0
         repeat(3) {
@@ -184,10 +188,10 @@ class CapaParticulasTest {
         registro.gota("fila:h1")
         avanzar(100)
         assertEquals(1, estado.gotas.size)
-        assertEquals(listOf(Snd.GORGOTEO), sonido.snds())
+        assertTrue("al salir no suena nada (es de la fila)", sonido.sonados.isEmpty())
         avanzar(Duraciones.GOTA_RETRASO + Duraciones.GOTA + 40L)
         assertEquals(0, estado.gotas.size)
-        assertEquals(listOf(Snd.GORGOTEO, Snd.LLEGADA), sonido.snds())
+        assertEquals("solo suena al llegar", listOf(Snd.LLEGADA), sonido.snds())
         assertEquals(0, fin)
     }
 
@@ -203,7 +207,7 @@ class CapaParticulasTest {
         assertEquals("la gota sigue volando", 1, estado.gotas.size)
         avanzar(Duraciones.GOTA + 100L)
         assertEquals("una sola llegada de gota", 1, sonido.snds().count { it == Snd.LLEGADA })
-        assertEquals("una sola salida de gota", 1, sonido.snds().count { it == Snd.GORGOTEO })
+        assertEquals("la capa nunca pone el gorgoteo", 0, sonido.snds().count { it == Snd.GORGOTEO })
     }
 
     @Test
@@ -226,7 +230,7 @@ class CapaParticulasTest {
         avanzar(100)
         assertEquals(1, fin)
         assertEquals(0, estado.monedas.size)
-        assertTrue("suena igual", Snd.MONEDA in sonido.snds())
+        assertTrue("suena igual", Snd.CAMPANILLA in sonido.snds())
     }
 
     @Test
@@ -238,7 +242,7 @@ class CapaParticulasTest {
         avanzar(1_000)
         assertEquals(0, fin)
         assertEquals(0, estado.gotas.size)
-        assertTrue("la gota suena igual", Snd.GORGOTEO in sonido.snds())
+        assertTrue("la llegada suena igual", Snd.LLEGADA in sonido.snds())
     }
 
     @Test
@@ -251,7 +255,7 @@ class CapaParticulasTest {
         avanzar(16)
         registro.gota("fila:h1")
         avanzar(16)
-        assertEquals(2, sonido.snds().count { it == Snd.GORGOTEO })
+        assertEquals(0, sonido.snds().count { it == Snd.GORGOTEO })
         assertEquals(0, llegadas)
         assertEquals(1, estado.gotas.count { it.apagado.value == 1f })
     }
@@ -292,7 +296,36 @@ class CapaParticulasTest {
         assertEquals(0, fin)
         avanzar(Duraciones.REDUCIDO.toLong())
         assertEquals(1, fin)
-        assertTrue(Snd.MONEDA in sonido.snds())
+        assertTrue(Snd.CAMPANILLA in sonido.snds())
         assertEquals(3, llegadas)
+    }
+
+    @Test
+    fun `the balance is told once per coin that lands`() {
+        val registro = registroCompleto()
+        var avisos = 0
+        montar(registro, mutableStateOf(Momento.Monedas("fila:h1", 3, 3, 1)))
+        val tarea =
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined).launch {
+                registro.llegadasDeMoneda.collect { avisos++ }
+            }
+        avanzar(Duraciones.MONEDA + 40L)
+        assertEquals("el saldo no hace tic antes de que llegue la primera", 1, avisos)
+        avanzar(2L * Duraciones.MONEDA_ESCALON + 100L)
+        assertEquals(3, avisos)
+        tarea.cancel()
+    }
+
+    @Test
+    fun `retired anchors are pruned after two seconds`() {
+        var reloj = 0L
+        val registro = RegistroAnclas { reloj }
+        registro.poner("a", fila)
+        registro.quitar("a")
+        assertEquals(1, registro.retiradasRecordadas)
+        reloj = 2_500
+        registro.poner("b", fila)
+        registro.quitar("b")
+        assertEquals("la caducada se poda al retirar otra", 1, registro.retiradasRecordadas)
     }
 }

@@ -79,7 +79,7 @@ class HojaSaldoTest {
         val cerrar = rule.onNodeWithTag("saldo-cerrar")
         assertEquals(tiendaBotón.getUnclippedBoundsInRoot().top, cerrar.getUnclippedBoundsInRoot().top)
         assertTrue(tiendaBotón.getUnclippedBoundsInRoot().right <= cerrar.getUnclippedBoundsInRoot().left)
-        rule.onNodeWithText("Tienda").performClick()
+        rule.onNodeWithText("Ir a la tienda").performClick()
         rule.mainClock.advanceTimeBy(100)
         assertEquals("el retardo de 160 ms aún no ha pasado", 0, tienda)
         rule.mainClock.advanceTimeBy(100)

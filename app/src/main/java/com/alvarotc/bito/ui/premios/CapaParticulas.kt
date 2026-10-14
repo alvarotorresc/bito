@@ -30,7 +30,7 @@ import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Haptica
-import com.alvarotc.bito.ui.sistema.fuerte
+import com.alvarotc.bito.ui.sistema.cifra
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.Job
@@ -54,6 +54,12 @@ internal object TopesParticulas {
 internal const val ORIGEN_VETA = "veta"
 
 private const val APAGAR_MS = 120
+
+/** G4: una moneda suena «moneda»; con varias, la primera es la campanilla y el resto «moneda» al 60 %. */
+private fun sonidoDe(
+    i: Int,
+    total: Int,
+) = if (i == 0 && total > 1) Snd.CAMPANILLA else Snd.MONEDA
 
 /**
  * Bézier cuadrática del centro de [origen] al centro de la base de [destino] (o a su centro con [alCentro]), con el
@@ -144,7 +150,7 @@ internal fun CapaParticulasConEstado(
         registro.gotas.collect { evento ->
             when (evento) {
                 is EventoGota.Sale -> {
-                    gesto(Snd.GORGOTEO, Haptica.TICKS)
+                    // El sonido de salir es de la fila (mismo fotograma que el toque); la capa solo suena al llegar.
                     val desde = registro.posiciones[evento.origen]
                     val hasta = registro.posiciones[ClavesAncla.PARCELA]
                     when {
@@ -228,8 +234,11 @@ internal fun CapaParticulasConEstado(
             return@LaunchedEffect
         }
         if (reducido) {
-            gesto(Snd.MONEDA, Haptica.TICK)
-            repeat(n) { llegar() }
+            gesto(sonidoDe(0, n), Haptica.TICK)
+            repeat(n) {
+                registro.monedaLlego()
+                llegar()
+            }
             delay(Duraciones.REDUCIDO.toLong())
             terminar()
             return@LaunchedEffect
@@ -237,7 +246,7 @@ internal fun CapaParticulasConEstado(
         val desde = registro.posicionO(m.origen)
         val hasta = registro.posiciones[ClavesAncla.SALDO]
         if (desde == null || hasta == null) {
-            gesto(Snd.MONEDA, Haptica.TICK)
+            gesto(sonidoDe(0, n), Haptica.TICK)
             terminar()
             return@LaunchedEffect
         }
@@ -263,7 +272,8 @@ internal fun CapaParticulasConEstado(
                     } finally {
                         estado.monedas -= moneda
                     }
-                    gesto(Snd.MONEDA, Haptica.TICK, intensidad = if (i == 0) 1f else 0.6f)
+                    gesto(sonidoDe(i, n), Haptica.TICK, intensidad = if (i == 0) 1f else 0.6f)
+                    registro.monedaLlego()
                     llegar()
                 }
             }
@@ -273,7 +283,7 @@ internal fun CapaParticulasConEstado(
 
     val colores = BitoTema.colores
     val medidor = rememberTextMeasurer()
-    val estiloMas = BitoTema.tipos.t19.fuerte()
+    val estiloMas = BitoTema.tipos.t16.cifra()
     val imagenMoneda = ImageBitmap.imageResource(R.drawable.coin_small)
     Canvas(modifier.fillMaxSize()) {
         pintarGotas(estado, colores.agua, colores.aguaHonda)

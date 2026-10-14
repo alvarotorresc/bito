@@ -298,7 +298,7 @@ class BitoNavHostTest {
         compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
         compose.mainClock.advanceTimeByFrame()
         compose.mainClock.advanceTimeByFrame()
-        tapText(ApplicationProvider.getApplicationContext<Application>().getString(R.string.store_title))
+        tapText(ApplicationProvider.getApplicationContext<Application>().getString(R.string.premios_ir_tienda))
         compose.mainClock.advanceTimeBy(200) // la hoja navega a los 160 ms de cerrarse
         // Not waitForIdle(): with autoAdvance false it pumps no frames at all, so the nav
         // recomposition from the click above would never actually run.

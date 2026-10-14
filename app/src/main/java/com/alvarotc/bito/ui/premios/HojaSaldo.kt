@@ -15,7 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.EtiquetaMovimiento
@@ -60,7 +65,16 @@ fun HojaSaldo(
             Regla(economia.habitDonePoints, stringResource(R.string.premios_regla_habito))
             Regla(economia.taskDonePoints, stringResource(R.string.premios_regla_tarea, economia.taskOnTimePoints))
             Regla(economia.perfectDayPoints, stringResource(R.string.premios_regla_dia))
-            Regla(economia.perfectWeekPoints, stringResource(R.string.premios_regla_semana, economia.perfectMonthPoints))
+            Regla(
+                economia.perfectWeekPoints,
+                buildAnnotatedString {
+                    append(stringResource(R.string.premios_regla_semana) + " ")
+                    withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = colores.oroTexto)) {
+                        append(stringResource(R.string.premios_mas_n, economia.perfectMonthPoints))
+                    }
+                    append(" " + stringResource(R.string.premios_regla_mes))
+                },
+            )
             Regla(
                 racha[7] ?: 0,
                 stringResource(R.string.premios_regla_racha, racha[30] ?: 0, racha[100] ?: 0, racha[365] ?: 0),
@@ -77,7 +91,7 @@ fun HojaSaldo(
         Spacer(Modifier.height(Medidas.e16))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Medidas.e12)) {
             Boton(
-                stringResource(R.string.store_title),
+                stringResource(R.string.premios_ir_tienda),
                 { cerrarY(alIrTienda) },
                 Modifier.weight(1f).testTag("saldo-tienda"),
                 estilo = EstiloBoton.PRINCIPAL,
@@ -97,6 +111,12 @@ fun HojaSaldo(
 private fun Regla(
     puntos: Int,
     texto: String,
+) = Regla(puntos, AnnotatedString(texto))
+
+@Composable
+private fun Regla(
+    puntos: Int,
+    texto: AnnotatedString,
 ) {
     Row(verticalAlignment = Alignment.Top) {
         Text(

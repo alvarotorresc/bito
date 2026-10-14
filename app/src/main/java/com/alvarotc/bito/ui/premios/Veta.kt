@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
@@ -72,10 +72,10 @@ fun Veta(
         modifier
             .testTag("veta-$tipo")
             .fillMaxWidth()
-            .height(64.dp)
+            .heightIn(min = 64.dp)
             .background(tierra)
             .drawBehind { drawRect(costra, size = Size(size.width, 6.dp.toPx())) }
-            .padding(start = Medidas.e12, end = Medidas.e18),
+            .padding(start = Medidas.e12, end = Medidas.e18, top = 6.dp, bottom = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(Medidas.e12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -83,7 +83,7 @@ fun Veta(
         Column(Modifier.weight(1f)) {
             Text(titulo, style = BitoTema.tipos.t19.fuerte(), color = colores.tintaClara, maxLines = 1, overflow = TextOverflow.Ellipsis)
             if (frase.isNotBlank()) {
-                Text(frase, style = BitoTema.tipos.t14, color = colores.tintaClara, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(frase, style = BitoTema.tipos.t14, color = colores.tintaClara, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
         Row(Modifier.anclaParticula(ORIGEN_VETA), verticalAlignment = Alignment.CenterVertically) {

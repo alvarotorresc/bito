@@ -64,7 +64,21 @@ class RegistroAnclas(
     }
 
     fun quitar(clave: String) {
-        mapa.remove(clave)?.let { retiradas[clave] = it to ahora() }
+        val t = ahora()
+        retiradas.entries.removeAll { t - it.value.second > MEMORIA_MS } // no crece sin límite
+        mapa.remove(clave)?.let { retiradas[clave] = it to t }
+    }
+
+    /** Cuántas anclas retiradas se recuerdan ahora (para los tests). */
+    internal val retiradasRecordadas: Int get() = retiradas.size
+
+    private val emisorLlegadas = MutableSharedFlow<Unit>(extraBufferCapacity = 8, onBufferOverflow = BufferOverflow.DROP_OLDEST)
+
+    /** Cada moneda que llega al saldo: el saldo hace su tic en ese momento (G4), no cuando se escribe el libro. */
+    val llegadasDeMoneda: SharedFlow<Unit> = emisorLlegadas.asSharedFlow()
+
+    fun monedaLlego() {
+        emisorLlegadas.tryEmit(Unit)
     }
 
     /**
