@@ -134,6 +134,7 @@ class TodayViewModel(
 
     fun responder(r: Respuesta) {
         val id = propuesta.value?.id ?: return
+        // El efecto de la respuesta se atiende más adelante; por ahora se ignora.
         viewModelScope.launch { propuestas?.responder(id, r) }
     }
 

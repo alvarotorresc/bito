@@ -13,6 +13,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.propuestas.Accion
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
@@ -75,7 +76,8 @@ class ContratosInicioTest {
 
     @Test
     fun `the habi card renders the proposal text`() {
-        val p = Propuesta("p", TextoHabi(R.string.base_tab_hoy), setOf(Respuesta.VALE))
+        val p =
+            Propuesta("p", TextoHabi(R.string.base_tab_hoy), listOf(Accion(Respuesta.VALE, TextoHabi(R.string.hoy_vale), principal = true)))
         rule.setContent { ConSistema { TarjetaHabi(p, {}) } }
         rule.onNodeWithTag("tarjeta-habi").assertIsDisplayed()
     }

@@ -434,16 +434,12 @@ private fun NotaDeHabi(
             }
             if (propuesta.acciones.isNotEmpty()) {
                 Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
-                    if (Respuesta.VALE in propuesta.acciones) {
-                        val etiqueta = propuesta.etiquetaVale?.let { textoHabi(it) } ?: stringResource(R.string.ficha_vale)
-                        Boton(etiqueta, { alResponder(Respuesta.VALE) }, Modifier.testTag("habi-vale"), estilo = EstiloBoton.PRINCIPAL)
-                    }
-                    if (Respuesta.HOY_NO in propuesta.acciones) {
+                    propuesta.acciones.forEach { accion ->
                         Boton(
-                            stringResource(R.string.ficha_no_hace_falta),
-                            { alResponder(Respuesta.HOY_NO) },
-                            Modifier.testTag("habi-no"),
-                            estilo = EstiloBoton.FANTASMA,
+                            textoHabi(accion.etiqueta),
+                            { alResponder(accion.respuesta) },
+                            Modifier.testTag(if (accion.principal) "habi-vale" else "habi-no"),
+                            estilo = if (accion.principal) EstiloBoton.PRINCIPAL else EstiloBoton.FANTASMA,
                         )
                     }
                 }

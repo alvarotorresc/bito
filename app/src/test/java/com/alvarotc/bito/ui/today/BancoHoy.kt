@@ -23,8 +23,10 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -66,9 +68,13 @@ class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
     override suspend fun responder(
         id: String,
         respuesta: Respuesta,
-    ) {
+        hora: Int?,
+    ): Efecto {
         respuestas += respuesta
+        return Efecto.Ninguno
     }
+
+    override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
 }
 
 /** HoyLista real sobre Room en memoria, con grabadores de sonido, tacto, anclas y navegación. */

@@ -156,35 +156,37 @@ fun TarjetaHabi(
                                     horizontalArrangement = Arrangement.spacedBy(Medidas.e8),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    if (Respuesta.VALE in p.acciones) {
-                                        Boton(
-                                            p.etiquetaVale?.let { textoHabi(it) } ?: stringResource(R.string.hoy_vale),
-                                            {
-                                                respondida = Respuesta.VALE
-                                                gesto(Snd.BROTE, Haptica.TICK)
-                                                alResponder(Respuesta.VALE)
-                                            },
-                                            estilo = EstiloBoton.PRINCIPAL,
-                                        )
-                                    }
-                                    if (Respuesta.AHORA in p.acciones) {
-                                        BotonTexto(
-                                            stringResource(R.string.hoy_ahora),
-                                            {
-                                                gesto(h = Haptica.TICK)
-                                                alResponder(Respuesta.AHORA)
-                                            },
-                                        )
-                                    }
-                                    if (Respuesta.HOY_NO in p.acciones) {
-                                        BotonTexto(
-                                            stringResource(R.string.task_not_today),
-                                            {
-                                                respondida = Respuesta.HOY_NO
-                                                gesto(Snd.HUNDIR, Haptica.FALL)
-                                                alResponder(Respuesta.HOY_NO)
-                                            },
-                                        )
+                                    p.acciones.forEach { accion ->
+                                        val etiqueta = textoHabi(accion.etiqueta)
+                                        when {
+                                            accion.principal ->
+                                                Boton(
+                                                    etiqueta,
+                                                    {
+                                                        respondida = accion.respuesta
+                                                        gesto(Snd.BROTE, Haptica.TICK)
+                                                        alResponder(accion.respuesta)
+                                                    },
+                                                    estilo = EstiloBoton.PRINCIPAL,
+                                                )
+                                            accion.respuesta == Respuesta.HOY_NO ->
+                                                BotonTexto(
+                                                    etiqueta,
+                                                    {
+                                                        respondida = Respuesta.HOY_NO
+                                                        gesto(Snd.HUNDIR, Haptica.FALL)
+                                                        alResponder(Respuesta.HOY_NO)
+                                                    },
+                                                )
+                                            else ->
+                                                BotonTexto(
+                                                    etiqueta,
+                                                    {
+                                                        gesto(h = Haptica.TICK)
+                                                        alResponder(accion.respuesta)
+                                                    },
+                                                )
+                                        }
                                     }
                                 }
                             }

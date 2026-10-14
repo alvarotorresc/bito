@@ -6,7 +6,12 @@ import com.alvarotc.bito.domain.propuestas.TextoHabi
 
 /** Resuelve un [TextoHabi] con el idioma activo; los argumentos que son otro [TextoHabi] se resuelven antes. */
 @Composable
-fun textoHabi(t: TextoHabi): String {
-    val args = t.args.map { if (it is TextoHabi) textoHabi(it) else it }
-    return stringResource(t.res, *args.toTypedArray())
-}
+fun textoHabi(t: TextoHabi): String =
+    when (t) {
+        is TextoHabi.Recurso -> {
+            val args = t.args.map { if (it is TextoHabi) textoHabi(it) else it }
+            stringResource(t.res, *args.toTypedArray())
+        }
+        // Sin catálogo de trozos todavía: vacío.
+        is TextoHabi.Frase -> ""
+    }

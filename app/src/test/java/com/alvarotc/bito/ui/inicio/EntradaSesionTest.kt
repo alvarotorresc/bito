@@ -10,6 +10,8 @@ class EntradaSesionTest {
         assertEquals("focus?taskId=t1", EntradaSesion.ruta(Destino.Tarea("t1")))
         assertEquals("focus", EntradaSesion.ruta(Destino.Habito("h1")))
         assertEquals("breathing", EntradaSesion.ruta(Destino.Respirar))
+        assertEquals("focus", EntradaSesion.ruta(Destino.Cierre))
+        assertEquals("focus", EntradaSesion.ruta(Destino.LoGordo))
         assertEquals("focus", EntradaSesion.ruta(null))
     }
 }

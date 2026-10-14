@@ -20,6 +20,7 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.Metric
@@ -28,6 +29,7 @@ import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -451,15 +453,19 @@ class TodayViewModelTest {
                         habitId: String?,
                     ): Flow<Propuesta?> {
                         ambitos += ambito
-                        return flowOf(Propuesta("p", TextoHabi(1), emptySet()))
+                        return flowOf(Propuesta("p", TextoHabi(1), emptyList()))
                     }
 
                     override suspend fun responder(
                         id: String,
                         respuesta: Respuesta,
-                    ) {
+                        hora: Int?,
+                    ): Efecto {
                         respondidas += id to respuesta
+                        return Efecto.Ninguno
                     }
+
+                    override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
                 }
             vm = newViewModel(fuente)
             backgroundScope.launch { vm.propuesta.collect() }

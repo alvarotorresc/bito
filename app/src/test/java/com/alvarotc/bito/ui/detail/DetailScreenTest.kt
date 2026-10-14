@@ -35,6 +35,7 @@ import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -42,7 +43,9 @@ import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.propuestas.Accion
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -486,14 +489,28 @@ class DetailScreenTest {
                 override fun propuesta(
                     ambito: Ambito,
                     habitId: String?,
-                ): Flow<Propuesta?> = flowOf(Propuesta("p1", TextoHabi(R.string.got_it), setOf(Respuesta.VALE, Respuesta.HOY_NO)))
+                ): Flow<Propuesta?> =
+                    flowOf(
+                        Propuesta(
+                            "p1",
+                            TextoHabi(R.string.got_it),
+                            listOf(
+                                Accion(Respuesta.VALE, TextoHabi(R.string.ficha_vale), principal = true),
+                                Accion(Respuesta.HOY_NO, TextoHabi(R.string.ficha_no_hace_falta)),
+                            ),
+                        ),
+                    )
 
                 override suspend fun responder(
                     id: String,
                     respuesta: Respuesta,
-                ) {
+                    hora: Int?,
+                ): Efecto {
                     respuestas += respuesta
+                    return Efecto.Ninguno
                 }
+
+                override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
             }
         setContent("h1", propuestas = fuente)
 
@@ -512,12 +529,15 @@ class DetailScreenTest {
                 override fun propuesta(
                     ambito: Ambito,
                     habitId: String?,
-                ): Flow<Propuesta?> = flowOf(Propuesta("p1", TextoHabi(R.string.got_it), emptySet()))
+                ): Flow<Propuesta?> = flowOf(Propuesta("p1", TextoHabi(R.string.got_it), emptyList()))
 
                 override suspend fun responder(
                     id: String,
                     respuesta: Respuesta,
-                ) = Unit
+                    hora: Int?,
+                ): Efecto = Efecto.Ninguno
+
+                override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
             }
         setContent("h1", propuestas = fuente)
 

@@ -8,6 +8,6 @@ object EntradaSesion {
         when (destino) {
             is Destino.Tarea -> "focus?taskId=${destino.id}"
             Destino.Respirar -> "breathing"
-            is Destino.Habito, null -> "focus"
+            is Destino.Habito, Destino.Cierre, Destino.LoGordo, null -> "focus"
         }
 }

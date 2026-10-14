@@ -2,8 +2,11 @@ package com.alvarotc.bito.ui.inicio
 
 import android.content.Context
 import androidx.compose.material3.Text
-import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.propuestas.TextoHabi
@@ -15,7 +18,6 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
-@OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "es")
 class TextoHabiUiTest {
@@ -34,5 +36,11 @@ class TextoHabiUiTest {
         }
 
         compose.onNodeWithText(esperado).assertExists()
+    }
+
+    @Test
+    fun `a phrase without catalogue renders empty and does not crash`() {
+        compose.setContent { Text(textoHabi(TextoHabi.Frase(emptyList(), emptyMap())), Modifier.testTag("t")) }
+        compose.onNodeWithTag("t").assertTextEquals("")
     }
 }

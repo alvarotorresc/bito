@@ -91,7 +91,7 @@ internal fun EstadisticasCamino(
     Column(modifier.fillMaxWidth().padding(horizontal = Medidas.margen).padding(top = 18.dp, bottom = 22.dp)) {
         val comentario =
             remember(stats.mood, stats.personality) {
-                Propuesta("comentario", TextoHabi(HabiVoice.bubbleRes(stats.mood, stats.personality)), emptySet())
+                Propuesta("comentario", TextoHabi(HabiVoice.bubbleRes(stats.mood, stats.personality)), emptyList())
             }
         TarjetaHabi(comentario, alResponder = {}, modifier = Modifier.fillMaxWidth().testTag("camino-comentario"))
         DiasPerfectos(stats.perfectDays.thisMonth, stats.perfectDays.thisYear)

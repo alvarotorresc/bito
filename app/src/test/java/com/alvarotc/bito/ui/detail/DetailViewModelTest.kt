@@ -17,12 +17,14 @@ import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -317,15 +319,19 @@ class DetailViewModelTest {
                         habitId: String?,
                     ): Flow<Propuesta?> {
                         pedidas += ambito to habitId
-                        return flowOf(Propuesta("p", TextoHabi(1), emptySet()))
+                        return flowOf(Propuesta("p", TextoHabi(1), emptyList()))
                     }
 
                     override suspend fun responder(
                         id: String,
                         respuesta: Respuesta,
-                    ) {
+                        hora: Int?,
+                    ): Efecto {
                         respondidas += id to respuesta
+                        return Efecto.Ninguno
                     }
+
+                    override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
                 }
             habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
             val vm = newViewModel("h1", propuestas = fuente)

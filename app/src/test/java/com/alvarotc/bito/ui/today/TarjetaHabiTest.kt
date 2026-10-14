@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.today
 
+import android.content.Context
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.test.assertCountEquals
@@ -14,6 +15,7 @@ import androidx.compose.ui.test.performClick
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.domain.propuestas.Accion
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -31,6 +33,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
@@ -47,7 +50,12 @@ class TarjetaHabiTest {
         banco?.cerrar()
     }
 
-    private val todas = setOf(Respuesta.VALE, Respuesta.AHORA, Respuesta.HOY_NO)
+    private val todas =
+        listOf(
+            Accion(Respuesta.VALE, TextoHabi(R.string.hoy_vale), principal = true),
+            Accion(Respuesta.AHORA, TextoHabi(R.string.hoy_ahora)),
+            Accion(Respuesta.HOY_NO, TextoHabi(R.string.task_not_today)),
+        )
 
     private fun texto(res: Int) = TextoHabi(res)
 
@@ -66,7 +74,7 @@ class TarjetaHabiTest {
 
     @Test
     fun `a greeting without actions shows no buttons`() {
-        montar(FuenteFalsa(Propuesta("saludo", texto(R.string.habi_name_fallback), emptySet())))
+        montar(FuenteFalsa(Propuesta("saludo", texto(R.string.habi_name_fallback), emptyList())))
         rule.onNodeWithTag("tarjeta-habi").assertIsDisplayed()
         rule.onAllNodesWithText("Vale").assertCountEquals(0)
         rule.onAllNodesWithText("Ahora").assertCountEquals(0)
@@ -94,8 +102,39 @@ class TarjetaHabiTest {
     }
 
     @Test
+    fun `actions are painted in their order with the first one as main`() {
+        val ctx = RuntimeEnvironment.getApplication() as Context
+        val fuente =
+            FuenteFalsa(
+                Propuesta(
+                    "p",
+                    texto(R.string.habi_name_fallback),
+                    listOf(
+                        Accion(Respuesta.CERRAR_DIA, TextoHabi(R.string.today_close_day), principal = true),
+                        Accion(Respuesta.LUEGO, TextoHabi(R.string.task_not_today)),
+                    ),
+                ),
+            )
+        montar(fuente)
+        val cerrar = rule.onNodeWithText(ctx.getString(R.string.today_close_day)).getBoundsInRoot()
+        val luego = rule.onNodeWithText(ctx.getString(R.string.task_not_today)).getBoundsInRoot()
+        assertTrue(cerrar.left < luego.left)
+        assertEquals(cerrar.top.value, luego.top.value, 2f)
+        rule.onNodeWithText(ctx.getString(R.string.today_close_day)).performClick()
+        assertEquals(listOf(Respuesta.CERRAR_DIA), fuente.respuestas)
+    }
+
+    @Test
     fun `the yes label can be custom`() {
-        montar(FuenteFalsa(Propuesta("p", texto(R.string.habi_name_fallback), todas, etiquetaVale = texto(R.string.hoy_ahora))))
+        montar(
+            FuenteFalsa(
+                Propuesta(
+                    "p",
+                    texto(R.string.habi_name_fallback),
+                    todas.map { if (it.principal) it.copy(etiqueta = texto(R.string.hoy_ahora)) else it },
+                ),
+            ),
+        )
         rule.onAllNodesWithText("Ahora").assertCountEquals(2)
         rule.onAllNodesWithText("Vale").assertCountEquals(0)
     }
@@ -119,7 +158,7 @@ class TarjetaHabiTest {
         montar(fuente)
         rule.onNodeWithText("campeón").assertIsDisplayed()
         rule.onNodeWithText("Vale").performClick()
-        fuente.flujo.value = Propuesta("dos", texto(R.string.hoy_tu_dia), emptySet())
+        fuente.flujo.value = Propuesta("dos", texto(R.string.hoy_tu_dia), emptyList())
         rule.waitForIdle()
         rule.mainClock.advanceTimeBy(600)
         rule.onNodeWithText("Tu día").assertIsDisplayed()
@@ -131,7 +170,7 @@ class TarjetaHabiTest {
         val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habi_name_fallback), todas))
         montar(fuente)
         rule.onNodeWithText("Hoy no").performClick()
-        fuente.flujo.value = Propuesta("corta", texto(R.string.hoy_tu_dia), emptySet())
+        fuente.flujo.value = Propuesta("corta", texto(R.string.hoy_tu_dia), emptyList())
         rule.waitForIdle()
         rule.mainClock.advanceTimeBy(700)
         rule.onNodeWithText("Tu día").assertIsDisplayed()
