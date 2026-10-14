@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -134,7 +135,14 @@ fun AvisoHost(
                         .padding(horizontal = Medidas.e16, vertical = Medidas.e8),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(aviso.texto, style = BitoTema.tipos.t16, color = colores.tintaClara)
+                    Text(
+                        aviso.texto,
+                        style = BitoTema.tipos.t16,
+                        color = colores.tintaClara,
+                        maxLines = 3,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
                     if (aviso.accion != null) {
                         Text(
                             aviso.accion,
