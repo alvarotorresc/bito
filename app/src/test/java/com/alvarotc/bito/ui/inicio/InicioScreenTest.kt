@@ -596,6 +596,42 @@ class InicioScreenTest {
     }
 
     @Test
+    fun `coming back from creating a habit with a stale Today still makes Habi talk`() {
+        // Así se ve volver tras más de 5 s en el formulario: Hoy conserva un estado cargado sin el hábito nuevo.
+        val pausado = StandardTestDispatcher(TestScope().testScheduler)
+        banco.preparar(dispatcherVM = pausado)
+        banco.sembrar("make-bed", "Hacer la cama")
+        var creado by mutableStateOf<String?>(null)
+        var vistos = 0
+        rule.setContent { ConSistema { banco.Inicio(creado = creado, alCreadoVisto = { vistos++ }) } }
+        rule.waitForIdle()
+        pausado.scheduler.advanceUntilIdle()
+        rule.waitForIdle()
+        banco.sembrar("read", "Leer", 1)
+        creado = "read"
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(300)
+        pausado.scheduler.advanceUntilIdle()
+        rule.waitForIdle()
+        rule.onNodeWithText(frase()).assertExists()
+    }
+
+    @Test
+    fun `coming back from creating a task written after the signal still makes Habi talk`() {
+        banco.preparar()
+        banco.sembrar("make-bed", "Hacer la cama")
+        var creado by mutableStateOf<String?>(null)
+        rule.setContent { ConSistema { banco.Inicio(creado = creado) } }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        creado = "t1" // el id llega antes de que la tarea se escriba
+        rule.mainClock.advanceTimeBy(200)
+        runBlocking { TasksRepository(banco.db).create(taskEntity(id = "t1", createdOnDay = banco.hoyLogico)) }
+        rule.mainClock.advanceTimeBy(300)
+        rule.onNodeWithText(frase()).assertExists()
+    }
+
+    @Test
     fun `the garden of Today is cut with a straight bottom edge`() {
         assertEquals(RectangleShape, FormaJardinHoy)
     }

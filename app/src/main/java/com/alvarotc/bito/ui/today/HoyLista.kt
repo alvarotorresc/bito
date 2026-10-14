@@ -72,6 +72,7 @@ import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
@@ -80,6 +81,9 @@ private const val ESCALON_ENTRADA_MS = 60
 private const val MAX_ESCALONADAS = 8
 private const val SALIDA_TAREA_MS = 340L
 private const val BROTE_VIGENCIA_MS = 1500L
+
+/** Lo que se espera, al volver de crear, a que el id nuevo llegue al estado de Hoy (viejo o aún sin escribir). */
+internal const val ESPERA_CREADO_MS = 1_500L
 private const val PUNTOS_MAX = 12
 
 /** La lista de Hoy (spec §5.3): Habi, «Tu día», hábitos, tareas, «En pausa» y cerrar el día, en un solo `LazyColumn`. */
@@ -185,16 +189,19 @@ fun HoyLista(
     val hayTuDia = estado.cards.isNotEmpty()
     val vacio = !estado.loading && estado.cards.isEmpty() && estado.pausedHabits.isEmpty() && !estado.hasAnyTasks
 
-    // Volver de crear (§5.7): se espera a un estado cargado, se desplaza a la fila y brota.
+    // Volver de crear (§5.7): se espera a un estado cargado que ya traiga el id (con tope), se desplaza a la fila y brota.
     LaunchedEffect(creado) {
         if (creado == null) return@LaunchedEffect
-        val cargado = snapshotFlow { estado }.first { !it.loading }
-        val lista = filasDe(cargado)
-        val posicion =
-            lista.indexOfFirst {
+
+        fun posicionEn(s: TodayUiState) =
+            filasDe(s).indexOfFirst {
                 (it is FilaHoy.Habito && it.card.id == creado) || (it is FilaHoy.Tarea && it.row.id == creado)
             }
-        if (posicion >= 0) {
+        snapshotFlow { estado }.first { !it.loading }
+        // Cargado no basta: puede ser un estado viejo (Hoy dejó de escuchar) o la tarea aún no estar escrita.
+        val cargado = withTimeoutOrNull(ESPERA_CREADO_MS) { snapshotFlow { estado }.first { posicionEn(it) >= 0 } }
+        val posicion = cargado?.let(::posicionEn) ?: -1
+        if (cargado != null && posicion >= 0) {
             brotando = creado
             val indice = 2 + (if (cargado.cards.isNotEmpty()) 1 else 0) + posicion
             val visible = listState.layoutInfo.visibleItemsInfo

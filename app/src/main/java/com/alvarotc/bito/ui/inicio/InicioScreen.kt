@@ -98,11 +98,13 @@ import com.alvarotc.bito.ui.sistema.componentes.rememberAvisoEstado
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.tasks.CreateChoiceSheet
+import com.alvarotc.bito.ui.today.ESPERA_CREADO_MS
 import com.alvarotc.bito.ui.today.HoyLista
 import com.alvarotc.bito.ui.today.TodayViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.min
 import kotlin.math.roundToInt
 
@@ -362,8 +364,13 @@ fun InicioScreen(
 
         LaunchedEffect(creadoVisto) {
             val id = creadoVisto ?: return@LaunchedEffect
-            val e = snapshotFlow { estadoActual.value }.first { !it.loading }
-            if (e.cards.any { it.id == id } || e.tasks.any { it.id == id }) {
+            snapshotFlow { estadoActual.value }.first { !it.loading }
+            // El estado cargado puede ser viejo (Hoy dejó de escuchar) o la tarea aún no estar escrita: se espera al id, con tope.
+            val e =
+                withTimeoutOrNull(ESPERA_CREADO_MS) {
+                    snapshotFlow { estadoActual.value }.first { s -> s.cards.any { it.id == id } || s.tasks.any { it.id == id } }
+                }
+            if (e != null) {
                 if (!reducido) salto++
                 val rect = registro.posiciones[ClavesAncla.HABI]
                 val visible = rect != null && qGeometria() == 0f && rect.center.y > 0f && rect.center.y < borde()

@@ -36,6 +36,7 @@ import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.componentes.AvisoEstado
 import com.alvarotc.bito.ui.sistema.componentes.AvisoHost
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -104,6 +105,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
     fun preparar(
         fuente: FuentePropuestas? = null,
         ticks: Flow<Unit> = flowOf(Unit),
+        dispatcherVM: CoroutineDispatcher = dispatcher,
     ) {
         Dispatchers.setMain(dispatcher)
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -126,7 +128,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                 tasks = TasksRepository(db),
                 now = { fixedNow },
                 zone = { utc },
-                defaultDispatcher = dispatcher,
+                defaultDispatcher = dispatcherVM,
                 propuestas = fuente,
                 clockTicks = ticks,
             )

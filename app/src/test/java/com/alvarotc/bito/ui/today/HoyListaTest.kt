@@ -1,6 +1,9 @@
 package com.alvarotc.bito.ui.today
 
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertHasClickAction
@@ -18,6 +21,8 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
+import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.RealHabits
@@ -35,6 +40,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -348,7 +355,48 @@ class HoyListaTest {
         banco.sembrar(RealHabits.makeBed)
         var vistos = 0
         banco.montar(creado = "no-esta", alCreadoVisto = { vistos++ })
-        banco.esperar(800)
+        banco.esperar(ESPERA_CREADO_MS + 300)
+        assertEquals(1, vistos)
+    }
+
+    @Test
+    fun `a created habit missing from a stale loaded state still scrolls into view`() {
+        // Así se ve volver tras más de 5 s en el formulario: Hoy conserva un estado cargado sin el hábito nuevo.
+        val pausado = StandardTestDispatcher(TestScope().testScheduler)
+        banco.preparar(dispatcherVM = pausado)
+        banco.sembrar(*(1..15).map { RealHabits.makeBed.copy(id = "h$it", name = "Hábito $it") }.toTypedArray())
+        var creado by mutableStateOf<String?>(null)
+        var vistos = 0
+        rule.setContent { banco.Contenido(creado = creado, alCreadoVisto = { vistos++ }) }
+        rule.waitForIdle()
+        pausado.scheduler.advanceUntilIdle()
+        rule.waitForIdle()
+        runBlocking {
+            HabitsRepository(banco.db).create(habitEntity(id = "h16", name = "Hábito 16", createdOnDay = banco.hoy, sortOrder = 15))
+        }
+        creado = "h16"
+        banco.esperar(300)
+        pausado.scheduler.advanceUntilIdle()
+        banco.esperar(1500)
+        rule.onNodeWithTag("fila-h16").assertIsDisplayed()
+        assertEquals(1, vistos)
+    }
+
+    @Test
+    fun `a created task written after the signal still scrolls into view`() {
+        banco.preparar()
+        banco.sembrar(*(1..15).map { RealHabits.makeBed.copy(id = "h$it", name = "Hábito $it") }.toTypedArray())
+        var creado by mutableStateOf<String?>(null)
+        var vistos = 0
+        rule.setContent { banco.Contenido(creado = creado, alCreadoVisto = { vistos++ }) }
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = false
+        creado = "t1" // el id llega antes de que la tarea se escriba
+        rule.mainClock.advanceTimeBy(200)
+        runBlocking { TasksRepository(banco.db).create(taskEntity(id = "t1", createdOnDay = banco.hoy)) }
+        rule.mainClock.autoAdvance = true
+        banco.esperar(1500)
+        rule.onNodeWithTag("tarea-t1").assertIsDisplayed()
         assertEquals(1, vistos)
     }
 
