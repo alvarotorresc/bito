@@ -5,6 +5,7 @@ import com.alvarotc.bito.domain.Compliance
 import com.alvarotc.bito.domain.ComplianceStatus
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.MoodEngine
+import com.alvarotc.bito.domain.Movimiento
 import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
@@ -12,7 +13,9 @@ import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.DueKind
+import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
@@ -97,6 +100,10 @@ data class TodayUiState(
     // must stay up regardless.
     val hasAnyTasks: Boolean = false,
     val loading: Boolean = true,
+    val saldo: Int = 0,
+    val garden: GardenState = GardenState.INITIAL,
+    val movimientos: List<Movimiento> = emptyList(),
+    val economia: EconomyConfig = EconomyConfig(),
 )
 
 /**
@@ -113,6 +120,10 @@ fun buildTodayUiState(
     owned: List<CustomizationItemEntity> = emptyList(),
     userName: String = "",
     logHapticEnabled: Boolean = true,
+    balance: Int = 0,
+    garden: GardenState = GardenState.INITIAL,
+    movimientos: List<Movimiento> = emptyList(),
+    economia: EconomyConfig = EconomyConfig(),
 ): TodayUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -136,16 +147,18 @@ fun buildTodayUiState(
             .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
             .map { PausedHabitUi(it.id, it.name) }
     val taskRows =
-        Tasks.todayTasks(state, today).map { todayTask ->
-            TaskRowUi(
-                id = todayTask.task.id,
-                title = todayTask.task.title,
-                firstStep = todayTask.task.firstStep,
-                slot = todayTask.slot,
-                dueKind = todayTask.task.dueKind,
-                dueDay = todayTask.task.dueDay,
-            )
-        }
+        Tasks.todayTasks(state, today)
+            .sortedBy { it.slot.ordinal } // estable: dentro de cada franja queda el orden de Tasks.todayTasks
+            .map { todayTask ->
+                TaskRowUi(
+                    id = todayTask.task.id,
+                    title = todayTask.task.title,
+                    firstStep = todayTask.task.firstStep,
+                    slot = todayTask.slot,
+                    dueKind = todayTask.task.dueKind,
+                    dueDay = todayTask.task.dueDay,
+                )
+            }
     return TodayUiState(
         today = today,
         ringDone = cards.count { it.doneToday },
@@ -160,6 +173,10 @@ fun buildTodayUiState(
         tasks = taskRows,
         hasAnyTasks = state.tasks.isNotEmpty(),
         loading = false,
+        saldo = balance,
+        garden = garden,
+        movimientos = movimientos,
+        economia = economia,
     )
 }
 
