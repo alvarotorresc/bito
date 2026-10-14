@@ -1,2 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources />
+<resources>
+    <!-- Calendario de gotas -->
+    <string name="ficha_cal_mes_pattern">MMMM yyyy</string>
+    <string name="ficha_dia_cd">%1$s, %2$s</string>
+    <string name="ficha_dia_hecho">hecho</string>
+    <string name="ficha_dia_sin_hacer">sin hacer</string>
+    <string name="ficha_dia_congelado">congelado</string>
+    <string name="ficha_dia_hoy_hecho">hoy, hecho</string>
+    <string name="ficha_dia_hoy_sin_marcar">hoy, sin marcar</string>
+    <string name="ficha_dia_pausa">en pausa</string>
+    <string name="ficha_dia_sin_registro">sin registro</string>
+    <string name="ficha_leyenda_hecho">Hecho</string>
+    <string name="ficha_leyenda_sin_hacer">Sin hacer</string>
+    <string name="ficha_leyenda_congelador">Congelador</string>
+    <string name="ficha_leyenda_hoy">Hoy</string>
+    <string name="ficha_leyenda_por_venir">Por venir</string>
+</resources>
