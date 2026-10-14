@@ -28,6 +28,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -76,6 +77,12 @@ import kotlinx.coroutines.launch
 /** De qué sección sale una fila: decide si su menú ofrece «Traer a hoy» (solo Con plazo y Sin plazo). */
 private enum class Seccion { HOY, SEMANA, PLAZO, SUELTA, HECHA }
 
+/** Una fila recién terminada: se queda en su sección hasta acabar de animarse. */
+private data class SaliendoDeSeccion(
+    val seccion: Seccion,
+    val fila: TaskListRowUi,
+)
+
 private data class MenuDeFila(
     val fila: TaskListRowUi,
     val seccion: Seccion,
@@ -101,6 +108,8 @@ fun TasksScreen(
     var hechasAbiertas by remember { mutableStateOf(false) }
     var menu by remember { mutableStateOf<MenuDeFila?>(null) }
     var menuAbierto by remember { mutableStateOf(false) }
+    // Filas ya terminadas (la base ya las tiene como hechas) que acaban su animación en su sitio.
+    val saliendo = remember { mutableStateMapOf<String, SaliendoDeSeccion>() }
     var borrando by remember { mutableStateOf<TaskListRowUi?>(null) }
     val avisos = rememberAvisoEstado()
     val fallbackName = stringResource(R.string.habi_name_fallback)
@@ -140,6 +149,12 @@ fun TasksScreen(
         menuAbierto = true
     }
 
+    fun LazyListScope.seccion(
+        filas: List<TaskListRowUi>,
+        cual: Seccion,
+        titulo: Int,
+    ) = seccion(filas, cual, titulo, state.today, ::abrirMenu, viewModel::markDone, saliendo)
+
     Box(Modifier.fillMaxSize().background(colores.tAlta)) {
         LazyColumn(
             Modifier.fillMaxSize().testTag("tasks-list"),
@@ -150,10 +165,10 @@ fun TasksScreen(
             if (!state.loading && state.isEmpty) {
                 item(key = "vacia") { TareasVacias(state.personality) }
             } else {
-                seccion(state.todayTasks, Seccion.HOY, R.string.tasks_section_today, state.today, ::abrirMenu, viewModel::markDone)
-                seccion(state.weekTasks, Seccion.SEMANA, R.string.tasks_section_week, state.today, ::abrirMenu, viewModel::markDone)
-                seccion(state.datedTasks, Seccion.PLAZO, R.string.tasks_section_dated, state.today, ::abrirMenu, viewModel::markDone)
-                seccion(state.looseTasks, Seccion.SUELTA, R.string.tasks_section_loose, state.today, ::abrirMenu, viewModel::markDone)
+                seccion(state.todayTasks, Seccion.HOY, R.string.tasks_section_today)
+                seccion(state.weekTasks, Seccion.SEMANA, R.string.tasks_section_week)
+                seccion(state.datedTasks, Seccion.PLAZO, R.string.tasks_section_dated)
+                seccion(state.looseTasks, Seccion.SUELTA, R.string.tasks_section_loose)
                 if (state.doneTasks.isNotEmpty()) {
                     item(key = "sec-hechas") {
                         Plegable(
@@ -216,8 +231,11 @@ private fun LazyListScope.seccion(
     hoy: LogicalDay,
     abrirMenu: (TaskListRowUi, Seccion) -> Unit,
     terminar: (String) -> Unit,
+    saliendo: MutableMap<String, SaliendoDeSeccion>,
 ) {
-    if (filas.isEmpty()) return
+    val acabando = saliendo.filter { (id, s) -> s.seccion == seccion && filas.none { it.id == id } }.values.map { it.fila }
+    val todas = filas + acabando
+    if (todas.isEmpty()) return
     item(key = "sec-${seccion.name}") {
         Text(
             stringResource(titulo),
@@ -226,11 +244,15 @@ private fun LazyListScope.seccion(
             modifier = animateItemSuave(),
         )
     }
-    items(filas, key = { it.id }) { fila ->
+    items(todas, key = { it.id }) { fila ->
         FilaTarea(
             fila = fila,
             hoy = hoy,
-            onDone = { terminar(fila.id) },
+            onDone = {
+                saliendo[fila.id] = SaliendoDeSeccion(seccion, fila)
+                terminar(fila.id)
+            },
+            onAnimada = { saliendo.remove(fila.id) },
             onMenu = { abrirMenu(fila, seccion) },
             modifier = animateItemSuave(),
         )
@@ -274,7 +296,7 @@ private const val ESPERA_CAIDA_MS = 120
 /**
  * Una fila de tarea: círculo para terminarla (G6), nombre con su primer paso y su plazo, y los tres
  * puntos del menú. Al terminarla el círculo se llena de piedra, caen granos, y la fila baja 10 dp,
- * escala .97 y se funde; solo entonces se escribe en la base.
+ * escala .97 y se funde. Se escribe en la base al tocar: la animación es solo visual.
  */
 @Composable
 private fun FilaTarea(
@@ -283,6 +305,7 @@ private fun FilaTarea(
     onDone: () -> Unit,
     onMenu: () -> Unit,
     modifier: Modifier = Modifier,
+    onAnimada: () -> Unit = {},
 ) {
     val colores = BitoTema.colores
     val tipos = BitoTema.tipos
@@ -292,7 +315,7 @@ private fun FilaTarea(
     val granos = remember { Animatable(0f) }
     val caida = remember { Animatable(0f) }
     val hechaLabel = stringResource(R.string.task_done)
-    val onDoneActual by androidx.compose.runtime.rememberUpdatedState(onDone)
+    val onAnimadaActual by androidx.compose.runtime.rememberUpdatedState(onAnimada)
 
     LaunchedEffect(terminando) {
         if (!terminando) return@LaunchedEffect
@@ -307,7 +330,7 @@ private fun FilaTarea(
                 }
             }
         }
-        onDoneActual()
+        onAnimadaActual()
     }
 
     val lleno = fila.done || terminando
@@ -364,6 +387,7 @@ private fun FilaTarea(
                         if (!terminando) {
                             terminando = true
                             gesto(Snd.ASENTAR, Haptica.FALL)
+                            onDone()
                         }
                     }.semantics { contentDescription = hechaLabel },
                 contentAlignment = Alignment.Center,
