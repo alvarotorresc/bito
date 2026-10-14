@@ -9,7 +9,6 @@ import androidx.compose.ui.test.performClick
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.sistema.ConSistema
 import org.junit.Assert.assertEquals
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,8 +20,6 @@ import org.robolectric.annotation.Config
 class MenuFilaTest {
     @get:Rule val rule = createComposeRule()
 
-    // Con el Hoja provisional la accion llega en el acto; la Tarea 22 quita el @Ignore al fusionar la Tarea 13.
-    @Ignore("hasta fusionar la Tarea 13")
     @Test
     fun `choosing closes the sheet and the action lands 160 ms later`() {
         var editado = 0

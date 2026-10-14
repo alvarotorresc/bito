@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.sistema
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -26,6 +27,8 @@ class TactoAndroid(
 
     override fun conVista(vista: View): Tacto = TactoAndroid(vibrador, ajustes, sdk, vista, respuestaSistema)
 
+    // `PlanHaptico` solo devuelve Predefinido (API 29+) y Primitivas (API 30+) con el `sdk` que lo permite; lint no ve ese `sdk` inyectado.
+    @SuppressLint("NewApi")
     private fun ejecutar(
         h: Haptica,
         fuerza: Int,
@@ -56,5 +59,6 @@ class TactoAndroid(
         }
     }
 
+    @SuppressLint("NewApi")
     private fun primitivaSoportada(primitiva: Int): Boolean = sdk >= 30 && vibrador.areAllPrimitivesSupported(primitiva)
 }
