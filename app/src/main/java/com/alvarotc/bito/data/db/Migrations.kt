@@ -56,10 +56,9 @@ val MIGRATION_2_3 =
     }
 
 /**
- * 3 -> 4 (Bito 2, pieza 1): el catálogo de Habi cambia de ids y de ejes. Ninguna tabla cambia de
- * forma, pero una fila vieja de customization_items con PATTERN, UPPER o LOWER haría fallar a Room
- * al leer el enum. Sin compatibilidad hacia atrás para el catálogo (decisión de la spec): se vacía
- * SOLO esa tabla. Hábitos, registros, puntos, logros, tareas y respiración no se tocan. Los puntos
+ * 3 -> 4: el catálogo de Habi cambia de ids y de ejes. Ninguna tabla cambia de forma, pero una fila
+ * anterior de customization_items con PATTERN, UPPER o LOWER haría fallar a Room al leer el enum.
+ * El catálogo no se conserva entre esas versiones: se vacía SOLO esa tabla. Hábitos, registros, puntos, logros, tareas y respiración no se tocan. Los puntos
  * gastados en artículos viejos no se devuelven.
  */
 val MIGRATION_3_4 =

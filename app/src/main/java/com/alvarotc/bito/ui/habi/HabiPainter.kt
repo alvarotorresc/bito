@@ -3,7 +3,11 @@ package com.alvarotc.bito.ui.habi
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -77,6 +81,38 @@ internal fun DrawScope.drawHabiLayers(
         drawPiece(holeImage, fit, hole, 0f, 0f, 1f, null, BlendMode.DstIn)
         canvas.restore()
     }
+}
+
+/** Lo que [drawHabiLayers] va a pedir a [HabiArt] para pintar [layers]: (recurso, submuestreo), sin repetir. */
+internal fun recursosDe(
+    layers: List<HabiLayer>,
+    sample: Int,
+): List<Pair<Int, Int>> =
+    buildList {
+        layers.firstNotNullOfOrNull { HabiAtlas.costumeFaces[it.key] }?.mask?.let { add(it.res to sample) }
+        for (layer in layers) {
+            val piece = HabiAtlas.pieces[layer.key] ?: continue
+            val res = if (layer.iris) piece.iris else piece.res
+            if (res != null) add(res to sample)
+        }
+    }.distinct()
+
+/**
+ * True cuando todas las [piezas] están en la caché. Si ya lo estaban, en el mismo fotograma (así los
+ * tests de píxeles y las pantallas que vuelven no parpadean); si no, las decodifica en IO y avisa.
+ */
+@Composable
+fun rememberArte(
+    art: HabiArt,
+    piezas: List<Pair<Int, Int>>,
+): Boolean {
+    val yaEstaban = piezas.all { (res, s) -> art.enCache(res, s) }
+    var cargadas by remember(art) { mutableStateOf<List<Pair<Int, Int>>?>(null) }
+    LaunchedEffect(art, piezas) {
+        if (!yaEstaban) art.precargar(piezas)
+        cargadas = piezas
+    }
+    return yaEstaban || cargadas == piezas
 }
 
 private fun DrawScope.drawLayer(

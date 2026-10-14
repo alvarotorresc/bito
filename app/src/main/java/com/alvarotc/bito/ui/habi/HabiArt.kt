@@ -8,6 +8,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
  * Las piezas pintadas, decodificadas una vez por tamaño de submuestreo y guardadas en una caché con
@@ -35,12 +37,27 @@ class HabiArt internal constructor(
         res: Int,
         sample: Int = 1,
     ): ImageBitmap? {
-        val key = (res.toLong() shl SAMPLE_BITS) or sample.toLong()
+        val key = keyOf(res, sample)
         images.get(key)?.let { return it }
         val options = BitmapFactory.Options().apply { inSampleSize = sample }
         val bitmap = runCatching { BitmapFactory.decodeResource(resources, res, options) }.getOrNull() ?: return null
         return bitmap.asImageBitmap().also { images.put(key, it) }
     }
+
+    /** Si la pieza [res] con submuestreo [sample] ya está decodificada. No decodifica. */
+    fun enCache(
+        res: Int,
+        sample: Int = 1,
+    ): Boolean = images.get(keyOf(res, sample)) != null
+
+    /** Decodifica en `Dispatchers.IO` lo que falte de [piezas] (recurso, submuestreo) y lo deja en la caché. */
+    suspend fun precargar(piezas: Collection<Pair<Int, Int>>) =
+        withContext(Dispatchers.IO) { piezas.forEach { (res, sample) -> image(res, sample) } }
+
+    private fun keyOf(
+        res: Int,
+        sample: Int,
+    ): Long = (res.toLong() shl SAMPLE_BITS) or sample.toLong()
 
     @Synchronized
     fun filter(tints: List<ColorTint>): ColorFilter =
