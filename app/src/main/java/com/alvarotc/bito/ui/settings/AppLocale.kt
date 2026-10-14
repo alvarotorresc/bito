@@ -34,14 +34,14 @@ object AppLocale {
 
     /**
      * What a stored `languageTag` actually displays as, for UI that needs to pick ONE of "es"/"en"
-     * to highlight rather than SettingsScreen's textual third option (`R.string.language_system`).
+     * to highlight rather than AjustesScreen's textual third option (`R.string.language_system`).
      * Only "es"/"en" resolve to themselves; anything else — `null` ("follow the system") or a tag
      * `locales_config` doesn't declare (a backup restored from, or a device running, a locale
      * outside {es, en}) — falls through to [Locale.getDefault], the same "out-of-set == system"
-     * bucket [SettingsScreen]'s language row already treats identically via its own `else` branch.
+     * bucket [AjustesScreen]'s language row already treats identically via its own `else` branch.
      * Falls all the way to "en" (the base resource language) only when even THAT resolved value
      * isn't "es"/"en" either — [com.alvarotc.bito.ui.onboarding.OnboardingScreen]'s WelcomeScene has
-     * no third chip to land an unresolvable case on, unlike Settings' text row.
+     * no third chip to land an unresolvable case on, unlike Ajustes' text row.
      */
     fun resolveDisplayLanguage(tag: String?): String =
         (tag.takeIf { it == "es" || it == "en" } ?: Locale.getDefault().language)

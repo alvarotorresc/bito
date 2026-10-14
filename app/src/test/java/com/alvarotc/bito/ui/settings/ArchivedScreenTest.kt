@@ -39,7 +39,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 
-/** Drives the real [ArchivedScreen] over an in-memory Room database, following [SettingsScreenTest]'s harness. */
+/** Drives the real [ArchivedScreen] over an in-memory Room database, following [AjustesScreenTest]'s harness. */
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])

@@ -22,8 +22,8 @@ import kotlinx.coroutines.launch
 import java.time.ZoneId
 import kotlin.math.roundToInt
 
-// internal, not private: CutoffSheet (SettingsScreen.kt, same package) clamps its ± stepper to
-// the same window so the single source of truth for "how far the cutoff can move" lives here.
+// internal, not private: HojaDiaTermina (ui/settings/hojas) mirrors this window in its stepper
+// (paso 30, hasta 360), so the single source of truth for "how far the cutoff can move" lives here.
 internal const val MAX_CUTOFF_MINUTES = 6 * 60
 internal const val CUTOFF_STEP_MINUTES = 30
 

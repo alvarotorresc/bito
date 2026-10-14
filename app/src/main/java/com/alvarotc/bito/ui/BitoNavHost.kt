@@ -124,7 +124,7 @@ fun BitoNavHost(container: AppContainer) {
     // The very first Settings emission decides where the app opens (today vs onboarding) — a
     // hardcoded "today" start would flash before onboardingDone is known, so nothing but the app
     // background renders until that first value lands. Same "state == null means still loading"
-    // gate SettingsScreen already uses for its own DataStore-backed cards. Reading it only starts
+    // gate AjustesScreen already uses for its own DataStore-backed cards. Reading it only starts
     // once reconciled above, so this is the reconciled value for the "onboardingDone" case above,
     // not a fresh race against it.
     val settingsState by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)

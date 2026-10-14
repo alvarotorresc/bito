@@ -96,7 +96,6 @@
         <item quantity="one">last %1$d copy</item>
         <item quantity="other">last %1$d copies</item>
     </plurals>
-    <!-- CopiesSheet's ±1 stepper (SettingsScreen.kt): the Minus/Plus icons carry no label of their own. -->
     <string name="backup_now">Back up now</string>
     <string name="backup_export_manual">Export a copy…</string>
     <string name="backup_last_ok">Last backup: %1$s</string>
@@ -209,9 +208,8 @@
     <string name="onb_habit_goal_daily">time a day</string>
     <string name="onb_habit_goal_quantity">times</string>
     <string name="onb_habit_goal_weekly">times a week</string>
-    <!-- %1$s carries onb_habit_widget_bold, bolded in the composed sentence — same split-and-style
-         idiom SettingsScreen.kt's coloredCountLine/coloredFolderLine use, so this stays untranslated
-         markup-free and locale-safe. -->
+    <!-- %1$s carries onb_habit_widget_bold, bolded in the composed sentence — same split-and-style,
+         so this stays untranslated markup-free and locale-safe. -->
     <string name="onb_habit_widget_hint">Add the %1$s to your home screen — log without opening the app</string>
     <string name="onb_habit_widget_bold">Bito widget</string>
     <string name="onb_habit_create">Create and start</string>

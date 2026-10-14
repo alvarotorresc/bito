@@ -128,7 +128,7 @@ fun HabitFormScreen(
     var temblorNombre by remember { mutableIntStateOf(0) }
     val nombreEnVista = remember { BringIntoViewRequester() }
 
-    // Same launcher SettingsScreen.kt uses for the first GLOBAL reminder: fire-and-forget, the
+    // Same launcher ContenidoAvisos.kt uses for the first GLOBAL reminder: fire-and-forget, the
     // save below never waits on nor blocks on the result.
     val context = LocalContext.current
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -136,7 +136,7 @@ fun HabitFormScreen(
     fun guardar() {
         // QUIT's own reminder can never fire (ReminderUseCase.kt HABIT branch: a QUIT card is
         // always doneToday or failed) — asking for the permission here would be fishing for
-        // access with nothing to justify it (same rule SettingsScreen.kt documents for its own
+        // access with nothing to justify it (same rule ContenidoAvisos.kt documents for its own
         // first-reminder prompt).
         if (state.reminderMinutes != null &&
             state.preset != HabitPreset.QUIT &&

@@ -1,32 +1,10 @@
 package com.alvarotc.bito.ui.theme
 
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.sistema.Gabarito
-
-@OptIn(ExperimentalTextApi::class)
-private fun outfitFont(weight: FontWeight) =
-    Font(
-        resId = R.font.outfit,
-        weight = weight,
-        variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)),
-    )
-
-@Suppress("unused")
-val Outfit =
-    FontFamily(
-        outfitFont(FontWeight.Normal),
-        outfitFont(FontWeight.Medium),
-        outfitFont(FontWeight.SemiBold),
-        outfitFont(FontWeight.Bold),
-    )
 
 // Escala de la guía: el dato grande, la unidad pequeña — siempre.
 val BitoTypography =

@@ -22,7 +22,7 @@ import java.time.ZoneId
  * state, the same fix [BootReceiver] applies after a reboot wipes every alarm outright. The
  * broadcast itself only exists on SDK 31+; the guard below is repeated even though the manifest
  * intent-filter alone would make it unreachable pre-31, so the constant reference itself is
- * provably safe, not just reachability-safe (same reasoning as `SettingsScreen`'s own repeated
+ * provably safe, not just reachability-safe (same reasoning as `ContenidoAvisos`'s own repeated
  * SDK 31+ guard).
  */
 class ExactAlarmReceiver : BroadcastReceiver() {
