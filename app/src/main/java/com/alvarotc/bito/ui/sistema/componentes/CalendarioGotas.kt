@@ -165,6 +165,8 @@ private val TrazoHoy = Stroke(width = 2f, pathEffect = PathEffect.dashPathEffect
 private val DESPLAZAMIENTO_ENTRA = 56.dp
 private val DESPLAZAMIENTO_TITULO = 24.dp
 private val UMBRAL_DESLIZAR = 48.dp
+private const val TITULO_ENTRA_MS = 240
+private const val TITULO_SALE_MS = 160
 private const val DURACION_CAIDA = 240
 private const val RETRASO_CASCADA = 60
 private const val ESCALON_COLUMNA = 14
@@ -290,11 +292,11 @@ private fun CabeceraMes(
                 } else {
                     val dir = if (targetState > initialState) 1 else -1
                     val entra =
-                        slideInHorizontally(tween(Duraciones.ENTRAR - 40, 30, Curvas.out)) { dir * salto } +
-                            fadeIn(tween(Duraciones.ENTRAR - 40, 30, Curvas.out))
+                        slideInHorizontally(tween(TITULO_ENTRA_MS, 30, Curvas.out)) { dir * salto } +
+                            fadeIn(tween(TITULO_ENTRA_MS, 30, Curvas.out))
                     val sale =
-                        slideOutHorizontally(tween(160, easing = Curvas.out)) { -dir * salto } +
-                            fadeOut(tween(160, easing = Curvas.out))
+                        slideOutHorizontally(tween(TITULO_SALE_MS, easing = Curvas.out)) { -dir * salto } +
+                            fadeOut(tween(TITULO_SALE_MS, easing = Curvas.out))
                     entra togetherWith sale
                 }
             },

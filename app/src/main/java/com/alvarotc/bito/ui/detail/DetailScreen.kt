@@ -155,7 +155,13 @@ fun DetailScreen(
     Column(Modifier.fillMaxSize().background(colores.tAlta2).verticalScroll(rememberScrollState())) {
         Column(Modifier.fillMaxWidth().background(colores.cielo).statusBarsPadding()) {
             BarraSuperior(onBack = onBack, onEdit = { onEdit(current.habitId) })
-            CantoHabito(current, hechoHoy, circulo = !current.lectura, activo = interactivo, alMarcar = ::marcarHoy)
+            CantoHabito(
+                current,
+                hechoHoy,
+                circulo = interactivo && current.kind != CardKind.ABSTINENCE,
+                activo = interactivo,
+                alMarcar = ::marcarHoy,
+            )
             if (!current.hasAnyEntry) {
                 Text(
                     stringResource(R.string.detail_empty_hint),
@@ -175,7 +181,10 @@ fun DetailScreen(
                 ultimoMes = mesActual,
                 alMesAnterior = { viewModel.previousMonth() },
                 alMesSiguiente = { viewModel.nextMonth() },
-                alTocarDia = { dia -> if (dia == current.today) marcarHoy() else daySheetFor = dia },
+                // En abstinencia hoy no se marca (la recaída va por el pie): tocarlo no hace nada.
+                alTocarDia = { dia ->
+                    if (dia == current.today) marcarHoy() else daySheetFor = dia
+                },
                 interactivo = interactivo,
             )
             Text(

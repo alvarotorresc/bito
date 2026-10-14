@@ -160,8 +160,8 @@ private fun Cumplimiento(windows: List<WindowStats>) {
 }
 
 /**
- * «Tienes N» con sus copitos y la ⓘ. Sin congeladores, el chip lleva a la tienda; con ellos solo informa:
- * se usan desde el día fallado del calendario, a petición.
+ * «Tienes N» con sus copitos y la ⓘ. Sin congeladores, el chip lleva a la tienda; con ellos abre la
+ * información (como la ⓘ): se usan desde el día fallado del calendario, a petición.
  */
 @Composable
 private fun Congeladores(
@@ -179,18 +179,12 @@ private fun Congeladores(
                 .pulsar(fuente)
                 .background(colores.hielo, BitoFormas.canto)
                 .border(Medidas.linea, colores.contorno, BitoFormas.canto)
-                .let {
-                    if (tiene == 0) {
-                        it.clickable(
-                            interactionSource = fuente,
-                            indication = null,
-                            role = Role.Button,
-                            onClick = alTienda,
-                        )
-                    } else {
-                        it
-                    }
-                }.padding(horizontal = Medidas.e16)
+                .clickable(
+                    interactionSource = fuente,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = if (tiene == 0) alTienda else alInfo,
+                ).padding(horizontal = Medidas.e16)
                 .testTag("freezer-chip")
         Row(chip, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
             if (tiene == 0) {

@@ -82,6 +82,11 @@ import kotlin.math.min
 import kotlin.math.sin
 
 // Medidas del prototipo (13-mezcla/index.html `drawLamina`), en dp sobre una lámina de 412 de ancho.
+// Tiempos de la lámina que el catálogo (movimiento.md 2.1 y 2.2, G16) fija y `Duraciones` no trae.
+private const val PIN_MS = 160
+private const val DATO_MS = 220
+private const val FUNDIDO_ETAPA_MS = 260
+private const val ASENTAR_MS = 900
 private const val ALTO_LAMINA = 340f
 private const val ALTO_SUELO = 34f
 private const val ANCHO_TOPE_PLANTA = 236f
@@ -291,9 +296,9 @@ fun Lamina(
                 giro.animateTo(
                     0f,
                     keyframes {
-                        durationMillis = 900
-                        0.8f at 450 using Asentar
-                        0f at 900 using Asentar
+                        durationMillis = ASENTAR_MS
+                        0.8f at ASENTAR_MS / 2 using Asentar
+                        0f at ASENTAR_MS using Asentar
                     },
                 )
             }
@@ -301,7 +306,7 @@ fun Lamina(
                 val d0 = 120L + i * Duraciones.FLECHA_ESCALON
                 launch {
                     delay(d0)
-                    a.pin.animateTo(1f, tween(160, easing = Curvas.out))
+                    a.pin.animateTo(1f, tween(PIN_MS, easing = Curvas.out))
                 }
                 launch {
                     delay(d0 + 60)
@@ -313,7 +318,7 @@ fun Lamina(
                 }
                 launch {
                     delay(d0 + 300)
-                    a.dato.animateTo(1f, tween(220, easing = Curvas.out))
+                    a.dato.animateTo(1f, tween(DATO_MS, easing = Curvas.out))
                 }
             }
         }
@@ -370,7 +375,7 @@ fun Lamina(
             // G16: la etapa cambia con un fundido entre imágenes, sin salto.
             Crossfade(
                 targetState = planta.especie to planta.etapa,
-                animationSpec = tween(260),
+                animationSpec = tween(FUNDIDO_ETAPA_MS),
                 label = "lamina-etapa",
             ) { (especie, etapa) ->
                 val p = GardenArt.plants[especie.ordinal][etapa.ordinal]

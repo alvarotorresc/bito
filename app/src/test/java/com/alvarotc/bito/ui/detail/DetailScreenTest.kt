@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.hasProgressBarRangeInfo
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,6 +15,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
@@ -507,5 +510,44 @@ class DetailScreenTest {
         compose.onNodeWithText("Entendido").performScrollTo().assertExists()
         compose.onNodeWithText("Vale").assertDoesNotExist()
         compose.onNodeWithText("No hace falta").assertDoesNotExist()
+    }
+
+    @Test
+    fun `abstinence has no dead circle and tapping today does nothing`() {
+        create(direction = Direction.ZERO, target = 0)
+        setContent("h1")
+
+        compose.onNodeWithTag("marcar-hoy").assertDoesNotExist()
+        tapDay(today)
+        compose.onNodeWithTag("day-sheet").assertDoesNotExist()
+        runBlocking { assertTrue(db.entryDao().all().isEmpty()) }
+    }
+
+    @Test
+    fun `an archived habit has no circle either`() {
+        create(status = HabitStatus.ARCHIVED)
+        setContent("h1")
+
+        compose.onNodeWithTag("marcar-hoy").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the freezer chip with stock opens the information`() {
+        create()
+        buyFreezer()
+        setContent("h1")
+
+        tap("freezer-chip")
+        compose.onNodeWithTag("freezer-info-sheet").assertExists()
+        assertEquals(false, habiOpened)
+    }
+
+    @Test
+    fun `calendar day cells meet the 44dp touch floor`() {
+        create()
+        setContent("h1")
+
+        compose.onNodeWithTag("dia-$today").performScrollTo().assertWidthIsAtLeast(44.dp).assertHeightIsAtLeast(44.dp)
+        compose.onNodeWithTag("dia-${today - 1}").assertWidthIsAtLeast(44.dp).assertHeightIsAtLeast(44.dp)
     }
 }
