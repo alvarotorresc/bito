@@ -47,6 +47,9 @@ internal val ANCHO_PILDORA = 236.dp
 internal val ALTO_PILDORA = 56.dp
 private val AIRE_PILDORA = 4.dp
 private val RADIO_PILDORA = 28.dp
+private val SOMBRA_PILDORA = 12.dp
+private val ICONO_PESTANA = 22.dp
+private val SEPARACION_ICONO_TEXTO = 6.dp
 
 /**
  * La píldora Hoy / Camino, flotante: 236 por 56 dp. [q] va de 0 (Hoy) a 1 (Camino) y mueve la cápsula de
@@ -68,7 +71,7 @@ fun Pildora(
             .testTag("pildora")
             .semantics { contentDescription = descripcion }
             .size(ANCHO_PILDORA, ALTO_PILDORA)
-            .shadow(12.dp, BitoFormas.canto, ambientColor = colores.sombraFlota, spotColor = colores.sombraFlota)
+            .shadow(SOMBRA_PILDORA, BitoFormas.canto, ambientColor = colores.sombraFlota, spotColor = colores.sombraFlota)
             .background(colores.canto, BitoFormas.canto)
             .border(BorderStroke(Medidas.linea, colores.contorno), BitoFormas.canto),
     ) {
@@ -123,13 +126,13 @@ private fun Pestana(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
-        Icon(if (activa) iconoRelleno else icono, contentDescription = null, tint = tinta, modifier = Modifier.size(22.dp))
+        Icon(if (activa) iconoRelleno else icono, contentDescription = null, tint = tinta, modifier = Modifier.size(ICONO_PESTANA))
         Text(
             texto,
             style = BitoTema.tipos.t16.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
             color = tinta,
             maxLines = 1,
-            modifier = Modifier.padding(start = 6.dp),
+            modifier = Modifier.padding(start = SEPARACION_ICONO_TEXTO),
         )
     }
 }

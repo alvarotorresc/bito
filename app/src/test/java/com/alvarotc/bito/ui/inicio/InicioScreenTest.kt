@@ -552,7 +552,7 @@ class InicioScreenTest {
     }
 
     @Test
-    fun `leaving Today for Camino sends what was playing back to the queue and it returns on Today`() {
+    fun `leaving Today for Camino ends the vein that was playing`() {
         montarVivo()
         libro(fila("w", 10, PointsReason.PERFECT_DAY, "week:${banco.hoyLogico}", 10))
         esperarTag("veta-SEMANA")

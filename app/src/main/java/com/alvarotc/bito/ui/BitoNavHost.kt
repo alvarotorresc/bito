@@ -241,7 +241,7 @@ fun BitoNavHost(
                         ) { globalExit() }
                     },
                 ) {
-                    // No bottom nav: a fresh install's first-run flow, not a bar destination — same
+                    // A fresh install's first-run flow, not a destination of Inicio — same
                     // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
                     // welcome + story screens (7a-7d) against OnboardingViewModel's state/callbacks; T7-T8
                     // own the rest of the flow's content. This composable's own job stays just the spine:
@@ -351,8 +351,7 @@ fun BitoNavHost(
                     composable("habi") {
                         HabiScreen(viewModel = habiViewModel)
                     }
-                    // No bottom nav: the review is its own flow, not a bar destination (see the
-                    // bottomBar route set above, which deliberately omits "review").
+                    // The review is its own flow, a route that hangs from Inicio like the other secondary screens.
                     composable("review") {
                         ReviewScreen(
                             viewModel = viewModel(factory = ReviewViewModel.factory(container)),
@@ -361,9 +360,8 @@ fun BitoNavHost(
                     }
                     // D12 revocado: crear y editar una tarea son ahora una pantalla completa, calcada de
                     // la ruta "habit?id={id}" de arriba en el mismo sentido — un solo composable, id nulo
-                    // para crear — sin barra inferior, mismo patron de navegacion (push simple, sin
-                    // popUpTo ni launchSingleTop: esos dos solo aparecen en las pestanas de la barra
-                    // inferior mas abajo, nunca en las rutas de formulario). El "+" navega aqui sin id; el
+                    // para crear — mismo patron de navegacion (push simple, sin
+                    // popUpTo ni launchSingleTop: no hacen falta en una ruta de formulario). El "+" navega aqui sin id; el
                     // menu de fila de "tasks" navega con id.
                     composable(
                         "task?id={id}",
@@ -446,7 +444,7 @@ fun BitoNavHost(
                             }
                         }
                     }
-                    // Sin barra inferior: la lista es un destino secundario colgado de Hoy, como review.
+                    // La lista es un destino secundario colgado de Hoy, como review.
                     composable("tasks") {
                         TasksScreen(
                             viewModel = viewModel(factory = TasksViewModel.factory(container)),

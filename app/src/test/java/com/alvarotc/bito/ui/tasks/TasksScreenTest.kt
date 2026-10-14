@@ -51,7 +51,7 @@ import java.time.ZoneId
 /** Drives the real [TasksScreen] over an in-memory Room database, following [com.alvarotc.bito.ui.settings.ArchivedScreenTest]'s harness. */
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
-// Same phone-sized viewport as TodayScreenTest: a default Robolectric window is too short for
+// Same phone-sized viewport as HoyListaTest: a default Robolectric window is too short for
 // this LazyColumn to compose every section, so a lower one would just never exist to assert on.
 @Config(sdk = [35], qualifiers = "es-w411dp-h891dp")
 class TasksScreenTest {

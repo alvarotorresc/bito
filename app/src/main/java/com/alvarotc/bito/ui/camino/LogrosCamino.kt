@@ -177,8 +177,7 @@ internal fun LogrosCamino(
             Column(Modifier.padding(horizontal = Medidas.e12), verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
                 deLaFamilia.chunked(POR_FILA).forEach { fila ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        fila.forEach {
-                                logro ->
+                        fila.forEach { logro ->
                             LogroEnRejilla(logro, estado.hoy, mesImposible(estado), { alTocar(logro) }, Modifier.weight(1f))
                         }
                         repeat(POR_FILA - fila.size) { Spacer(Modifier.weight(1f)) }

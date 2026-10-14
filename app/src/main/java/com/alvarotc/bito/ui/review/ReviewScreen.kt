@@ -50,7 +50,7 @@ import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.RelapseSheet
 
 /**
- * The nightly review, entry point of the `review` route (no bottom nav — this is its own flow).
+ * The nightly review, entry point of the `review` route (its own flow, outside the Hoy/Camino pill).
  * E1 ([OpenState]) is built here: pending rows, the away-days batch seal and the "seal the day"
  * CTA. E2 ([SealedState]) renders once today is actually sealed — Habi on stage, the final ring,
  * points, streaks and any new badge (see [SealedDayContent]).

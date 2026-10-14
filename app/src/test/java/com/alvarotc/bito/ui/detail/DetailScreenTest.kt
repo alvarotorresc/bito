@@ -76,7 +76,7 @@ import java.io.File
 import java.time.ZoneId
 
 /**
- * La ficha real sobre una base Room en memoria, con el arnés de [com.alvarotc.bito.ui.today.TodayScreenTest]: los
+ * La ficha real sobre una base Room en memoria, con el arnés de [com.alvarotc.bito.ui.today.HoyListaTest]: los
  * ejecutores de Room y el dispatcher principal comparten un [UnconfinedTestDispatcher] para que `uiState` se asiente
  * en `waitForIdle`. Con `reducido`, Habi no respira (un bucle infinito no deja nunca en reposo) y el resto de
  * movimientos se funde en 150 ms; el movimiento en sí lo prueban los tests de [CalendarioGotas] y [Lamina].

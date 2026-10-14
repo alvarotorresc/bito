@@ -502,17 +502,14 @@ class BitoNavHostTest {
         esperarCierreDeLaHoja()
 
         compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertDoesNotExist()
-        // The habit form's own back chevron — reusing "the bottom bar hides on the habit form"
-        // above's own proof that this is genuinely the same route, not a new one.
+        // The habit form's own back chevron: proof that this is the habit form route, not a new one.
         compose.onNodeWithContentDescription("Back", useUnmergedTree = true).assertExists()
     }
 
     /**
      * D12 revoked: choosing "A task" now navigates to [com.alvarotc.bito.ui.tasks.TaskFormScreen]
      * (a route, "task-form-screen" tag) instead of opening the old TaskFormSheet as a global sheet
-     * — same reason "the bottom bar hides on the habit form but survives on stats" above already
-     * proves for "habit": a route change hides the bar, so this also re-proves that hasn't
-     * regressed for tasks. Recalibrated from the old "task-form-sheet" tag (the sheet itself is
+     * — a route of its own, like "habit". Recalibrated from the old "task-form-sheet" tag (the sheet itself is
      * gone now — retired once the tasks list's own edit flow moved to this same screen too).
      * Beyond the brief's own two: the model test covers [com.alvarotc.bito.ui.tasks.resolvedDueDay]
      * but nothing else ever composes [com.alvarotc.bito.ui.tasks.TaskFormScreen] itself in this
@@ -919,7 +916,7 @@ class BitoNavHostTest {
         assertNull(NavRequests.pending.value)
     }
 
-    /** M11: la notificacion del recordatorio abre el ejercicio EN REPOSO, sin barra inferior. */
+    /** M11: la notificacion del recordatorio abre el ejercicio EN REPOSO. */
     @Test
     fun `a pending breathing request opens the exercise at rest`() {
         NavRequests.open("breathing")

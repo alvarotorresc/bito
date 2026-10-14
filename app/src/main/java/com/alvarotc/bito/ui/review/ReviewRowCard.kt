@@ -75,7 +75,7 @@ private fun RowNameHeader(
     // [E]: name Text + StreakChip (Icon(Flame, null) + count Text) merge into one TalkBack stop.
     // A plain mergeDescendants alone would only concatenate the name and the bare count (e.g.
     // "Meditar 5"), silently dropping the word "streak" the flame icon carries for a sighted
-    // reader — same reasoning as StatsScreen's StreakWallCard fix (52304e0). The override only
+    // reader — same reasoning as the streak cards in Camino. The override only
     // applies once the chip is actually shown; otherwise the row is just the name, which already
     // reads fine on its own.
     val description = if (showStreak) stringResource(R.string.review_row_streak_cd, name, streak) else name

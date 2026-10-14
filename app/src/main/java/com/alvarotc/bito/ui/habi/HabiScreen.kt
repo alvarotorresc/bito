@@ -250,7 +250,7 @@ internal fun PersonalityPills(
             // options with no sign a 3rd, active one existed. `selectable` (always attached, per
             // OnboardingScreen's PersonalityCard) fixes that; `indication = null` on the active
             // pill only keeps the old visual byte-for-byte — it never had a ripple to begin with
-            // (a703aef's BitoBottomBar fix is the same pattern for the same reason).
+            // (the same pattern the old bottom bar used, for the same reason).
             val interactionSource = remember { MutableInteractionSource() }
             Box(
                 Modifier

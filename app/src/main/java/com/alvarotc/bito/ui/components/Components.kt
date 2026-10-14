@@ -226,7 +226,7 @@ fun RoundedBar(
             .clip(CircleShape)
             .background(HojaTinte)
             // mergeDescendants = true is NOT a no-op here either (see DotProgress above) — this
-            // is the exact boundary TodayScreenTest's "does not bleed into the card" test
+            // is the exact boundary the Today list tests' "does not bleed into the card" check
             // depends on: it stops this bar's own progressBarRangeInfo from folding into the
             // enclosing card's merged announcement, and makes the bar its own screen-reader
             // stop rather than an untouchable node.
