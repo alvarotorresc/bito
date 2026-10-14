@@ -8,19 +8,19 @@ import sys
 import comprobar
 import comun
 
-NOMBRE_LARGO = "Estiramientos largos"
+NOMBRE_LARGO = "Maria de los Angeles"  # 20 caracteres, para el peor caso de longitud
 
-# Cada escenario es un contexto de prueba; `sin_nombre` quita el hueco {nombre}.
+# Cada escenario es un contexto de prueba; con `nombre` None se compone «sin nombre».
 ESCENARIOS = [
     {"fase": "manana", "etiquetas": {"lunes", "invierno", "manana"}, "nombre": NOMBRE_LARGO,
-     "habito": NOMBRE_LARGO, "tarea": "Llamar al dentista", "n": 1},
+     "habito": "Estiramientos largos", "tarea": "Llamar al dentista", "n": 1},
     {"fase": "noche", "etiquetas": {"lunes", "invierno", "noche"}, "nombre": "Ana",
      "habito": "Agua 2 L", "tarea": "Sacar la basura", "n": 3},
     {"fase": "tarde", "etiquetas": {"sabado", "finde", "verano", "tarde"}, "nombre": None,
      "habito": "Flexiones", "tarea": "Pagar el alquiler", "n": 2},
-    {"fase": "mediodia", "etiquetas": {"miercoles", "primavera", "mediodia"}, "nombre": None,
+    {"fase": "mediodia", "etiquetas": {"miercoles", "primavera", "mediodia"}, "nombre": "Luis",
      "habito": "Leer", "tarea": "Comprar pan y leche", "n": 1},
-    {"fase": "noche", "etiquetas": {"domingo", "finde", "invierno", "noche", "despierta"}, "nombre": NOMBRE_LARGO,
+    {"fase": "noche", "etiquetas": {"domingo", "finde", "invierno", "noche", "despierta"}, "nombre": None,
      "habito": "Meditación de la tarde", "tarea": "Preparar la maleta", "n": 5},
     {"fase": "manana", "etiquetas": {"jueves", "otono", "manana", "esperando"}, "nombre": "Ana",
      "habito": "Estiramientos largos", "tarea": "Renovar el carné", "n": 4},
@@ -41,31 +41,23 @@ def _valores(esc, idioma):
     return v
 
 
-def _elegible(fila, esc, bolsa):
-    hu = set(comun.huecos_de(fila["es"]))
-    disponibles = set(_valores(esc, "es"))
-    if not hu <= disponibles:
-        return False
-    return True
+def _elegible(fila, esc):
+    return set(comun.huecos_de(fila["es"])) <= set(_valores(esc, "es")) \
+        and set(comun.etiquetas_de(fila["etiquetas"])) <= esc["etiquetas"]
 
 
-def _pesos(filas, esc):
-    return [2 if set(comun.etiquetas_de(f["etiquetas"])) & esc["etiquetas"] else 1 for f in filas]
-
-
-def _elegir(rng, filas, esc, bolsas):
-    ok = []
-    for f in filas:
-        et = set(comun.etiquetas_de(f["etiquetas"]))
-        if _elegible(f, esc, bolsas[f["bolsa"]]) and et <= esc["etiquetas"]:
-            ok.append(f)
+def _elegir(rng, filas, esc, usados):
+    ok = [f for f in filas if _elegible(f, esc)]
     if not ok:
         return None
-    return rng.choices(ok, weights=_pesos(ok, esc))[0]
+    nuevos = [f for f in ok if (f["bolsa"], f["indice"]) not in usados]
+    ok = nuevos or ok
+    pesos = [2 if set(comun.etiquetas_de(f["etiquetas"])) & esc["etiquetas"] else 1 for f in ok]
+    return rng.choices(ok, weights=pesos)[0]
 
 
 def _plan(ruta, n, semilla):
-    """Lista de listas de filas por frase; independiente del idioma."""
+    """Lista de (indice de escenario, trozos); independiente del idioma y sin repetidos."""
     bolsas = comun.cargar_bolsas()
     filas, _ = comun.leer_tsv(ruta)
     por = {}
@@ -77,19 +69,20 @@ def _plan(ruta, n, semilla):
     if aisladas:
         nucleos = list(por)
     rng = random.Random(semilla)
-    plan, i, intentos = [], 0, 0
-    while len(plan) < n and intentos < n * 50:
+    plan, vistos, usados, intentos = [], set(), set(), 0
+    while len(plan) < n and intentos < n * 200:
         intentos += 1
-        esc = ESCENARIOS[(intentos - 1) % len(ESCENARIOS)]
+        ie = (intentos - 1) % len(ESCENARIOS)
+        esc = ESCENARIOS[ie]
         bolsa = nucleos[len(plan) % len(nucleos)]
-        nucleo = _elegir(rng, por[bolsa], esc, bolsas)
+        nucleo = _elegir(rng, por[bolsa], esc, usados)
         if nucleo is None:
             continue
         trozos = []
         aperturas = [b for b in por if tipo(b) == "APERTURA"]
         if not aisladas and aperturas and rng.random() < 0.5:
             fase = [b for b in aperturas if b == "ap_" + esc["fase"]] or aperturas
-            ap = _elegir(rng, por[rng.choice(fase)], esc, bolsas)
+            ap = _elegir(rng, por[rng.choice(fase)], esc, usados)
             if ap:
                 trozos.append(ap)
         trozos.append(nucleo)
@@ -98,16 +91,50 @@ def _plan(ruta, n, semilla):
             cierres = [b for b in por if tipo(b) == "CIERRE"]
             pool = recuerdos if recuerdos and rng.random() < 0.3 else cierres
             if pool:
-                c = _elegir(rng, por[rng.choice(pool)], esc, bolsas)
+                c = _elegir(rng, por[rng.choice(pool)], esc, usados)
                 if c:
                     trozos.append(c)
-        plan.append((esc, trozos))
+        clave = (ie, tuple((t["bolsa"], t["indice"]) for t in trozos))
+        texto = (" ".join(comun.rellenar(t["es"], _valores(esc, "es"), "es") for t in trozos))
+        if clave in vistos or texto in vistos:
+            continue
+        vistos.update((clave, texto))
+        usados.update((t["bolsa"], t["indice"]) for t in trozos)
+        plan.append((ie, trozos))
     return plan
 
 
+def componer_detalle(ruta, n=30, semilla=1):
+    """Cada frase con su escenario: es, en, bolsas, huecos usados (con valor) y etiquetas."""
+    salida = []
+    for ie, trozos in _plan(ruta, n, semilla):
+        esc = ESCENARIOS[ie]
+        vals = _valores(esc, "es")
+        usados = []
+        for t in trozos:
+            for h in comun.huecos_de(t["es"]):
+                if h not in usados:
+                    usados.append(h)
+        salida.append({
+            "es": " ".join(comun.rellenar(t["es"], _valores(esc, "es"), "es") for t in trozos),
+            "en": " ".join(comun.rellenar(t["en"], _valores(esc, "en"), "en") for t in trozos),
+            "bolsas": [t["bolsa"] for t in trozos],
+            "datos": {h: vals[h] for h in usados},
+            "sin_nombre": esc["nombre"] is None,
+            "etiquetas": sorted(esc["etiquetas"]),
+        })
+    return salida
+
+
 def componer(ruta, n=30, semilla=1, idioma="es"):
-    return [" ".join(comun.rellenar(t[idioma], _valores(esc, idioma), idioma) for t in trozos)
-            for esc, trozos in _plan(ruta, n, semilla)]
+    return [d[idioma] for d in componer_detalle(ruta, n, semilla)]
+
+
+def _datos(d):
+    v = ", ".join(f"{k}={' / '.join(x) if isinstance(x, list) else x}" for k, x in d["datos"].items())
+    if d["sin_nombre"]:
+        v = (v + ", " if v else "") + "(sin nombre)"
+    return f"{v or 'sin huecos'} | etiquetas: {', '.join(d['etiquetas'])} | bolsas: {', '.join(d['bolsas'])}"
 
 
 def escribir(ruta, salida=None, n=30, semilla=1, minimos=True):
@@ -119,11 +146,9 @@ def escribir(ruta, salida=None, n=30, semilla=1, minimos=True):
     salida = salida or os.path.join(comun.AQUI, "muestras")
     nombre = os.path.basename(ruta)
     nombre = (nombre[:-4] if nombre.endswith(".tsv") else nombre) + ".md"
-    es = componer(ruta, n, semilla, "es")
-    en = componer(ruta, n, semilla, "en")
     lineas = [f"# Muestra {nombre[:-3]}", ""]
-    for i, (a, b) in enumerate(zip(es, en), start=1):
-        lineas += [f"{i}. ES: {a}", f"   EN: {b}", ""]
+    for i, d in enumerate(componer_detalle(ruta, n, semilla), start=1):
+        lineas += [f"{i}. ES: {d['es']}", f"   EN: {d['en']}", f"   datos: {_datos(d)}", ""]
     destino = os.path.join(salida, nombre)
     os.makedirs(salida, exist_ok=True)
     with open(destino, "w", encoding="utf-8") as f:
