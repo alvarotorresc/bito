@@ -69,11 +69,14 @@ fun PremiosEnInicio(
     modifier: Modifier = Modifier,
     personalidad: Personality = Personality.NEUTRA,
     nombre: String = "",
+    // Empieza la veta del día completo: el jardín hace su fiesta (ola de plantas, salto de Habi, luz).
+    alFiesta: () -> Unit = {},
 ) {
     val actual by celebraciones.actual.collectAsStateWithLifecycle()
     val actualAhora by rememberUpdatedState(actual)
     val jardin by rememberUpdatedState(alJardin)
     val asomar by rememberUpdatedState(alAsomarCabecera)
+    val fiesta by rememberUpdatedState(alFiesta)
     val reducido = BitoTema.reducido
     var monedasDeLaVeta by remember { mutableStateOf<Momento.Monedas?>(null) }
     val franja = remember { Animatable(0f) }
@@ -94,6 +97,7 @@ fun PremiosEnInicio(
         when (val m = actual) {
             is Momento.Veta -> {
                 try {
+                    if (m.tipo == TipoVeta.DIA) fiesta()
                     franja.snapTo(0f)
                     launch { franja.animateTo(1f, if (reducido) tween(Duraciones.REDUCIDO) else Muelles.hoja()) }
                     delay(if (reducido) Duraciones.REDUCIDO.toLong() else SALEN_MONEDAS_MS)

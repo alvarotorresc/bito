@@ -60,6 +60,7 @@ class PremiosEnInicioTest {
     private val sonido = SonidoGrabado()
     private val tacto = TactoGrabado()
     private val registro = RegistroAnclas()
+    private var fiestas = 0
     private val llamadasJardin = mutableListOf<Pair<GardenSpecial?, Int?>>()
     private val almacen = Job()
 
@@ -104,6 +105,7 @@ class PremiosEnInicioTest {
                         alVerEnJardin = {},
                         alJardin = { llegando, creciendo -> llamadasJardin += llegando to creciendo },
                         alAsomarCabecera = {},
+                        alFiesta = { fiestas++ },
                     )
                 }
             }
@@ -167,6 +169,17 @@ class PremiosEnInicioTest {
         avanzar(1_100L + 600L + 360L + 500L)
         assertTrue(!hay("veta-DIA"))
         assertTrue(hay("veta-RACHA"))
+    }
+
+    @Test
+    fun `the day vein calls the garden party once and the streak vein does not`() {
+        montar()
+        insertar(fila("d", 10, PointsReason.PERFECT_DAY, "day:$hoy", 3), fila("r", 11, PointsReason.STREAK_MILESTONE, "make-bed:7", 5))
+        esperar { hay("veta-DIA") }
+        assertEquals(1, fiestas)
+        avanzar(1_100L + 600L + 360L + 500L)
+        assertTrue(hay("veta-RACHA"))
+        assertEquals(1, fiestas)
     }
 
     @Test

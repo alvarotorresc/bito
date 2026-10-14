@@ -329,6 +329,7 @@ fun InicioScreen(
     // Volver de crear: el Inicio guarda su copia, porque la lista borra la señal al desplazarse.
     var creadoVisto by remember { mutableStateOf<String?>(null) }
     var salto by remember { mutableIntStateOf(0) }
+    var fiesta by remember { mutableIntStateOf(0) }
     var frase by remember { mutableStateOf<Int?>(null) }
     var enTarjeta by remember { mutableStateOf(false) }
     var puntoGlobito by remember { mutableStateOf<Offset?>(null) }
@@ -452,6 +453,7 @@ fun InicioScreen(
                     creciendo = creciendo,
                     destacar = destacar,
                     saltoHabi = salto,
+                    fiesta = fiesta,
                     subida = { subidaPx.floatValue },
                 )
                 if (caminoVisible) {
@@ -514,6 +516,7 @@ fun InicioScreen(
                         creciendo = c
                     },
                     alAsomarCabecera = { asomada = it },
+                    alFiesta = { fiesta++ },
                     personalidad = estado.spec.personality,
                     nombre = estado.userName,
                     modifier = Modifier.fillMaxSize(),

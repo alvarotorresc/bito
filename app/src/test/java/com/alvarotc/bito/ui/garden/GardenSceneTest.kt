@@ -134,6 +134,7 @@ class GardenSceneTest {
     // Las pruebas de la pieza 3: el jardín vivo, con sonido, tacto y anclas grabados.
     private var jardin by mutableStateOf(garden)
     private var salto by mutableIntStateOf(0)
+    private var fiesta by mutableIntStateOf(0)
     private val sonido = SonidoGrabado()
     private val tacto = TactoGrabado()
     private val registro = RegistroAnclas()
@@ -164,6 +165,7 @@ class GardenSceneTest {
                         creciendo = creciendo,
                         destacar = destacar,
                         saltoHabi = salto,
+                        fiesta = fiesta,
                     )
                 }
             }
@@ -334,6 +336,47 @@ class GardenSceneTest {
         compose.waitForIdle()
 
         assertEquals(1, sonda.saltosHabi())
+    }
+
+    @Test
+    fun `the party of a perfect day sways every plot once and Habi jumps`() {
+        val tres =
+            garden.copy(
+                plots =
+                    listOf(
+                        GardenPlot(GardenSpecies.ROUND_LEAVES, GrowthStage.SPROUT),
+                        GardenPlot(GardenSpecies.SUNFLOWERS, GrowthStage.SPROUT),
+                        GardenPlot(GardenSpecies.entries[2], GrowthStage.SPROUT),
+                    ),
+            )
+        montar(tres)
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        assertEquals(0, sonido.snds().count { it == Snd.PLANTA })
+
+        compose.runOnUiThread { fiesta = 1 }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeBy(1_500)
+
+        assertEquals(3, sonido.snds().count { it == Snd.PLANTA })
+        assertEquals(1, sonda.saltosHabi())
+    }
+
+    @Test
+    fun `the party does not start with the initial value and with reduced motion Habi stays still`() {
+        montar(reducido = true)
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(500)
+        assertEquals(0, sonido.snds().count { it == Snd.PLANTA })
+
+        compose.runOnUiThread { fiesta = 1 }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(1_500)
+
+        assertEquals(garden.plots.size, sonido.snds().count { it == Snd.PLANTA })
+        assertEquals(0, sonda.saltosHabi())
     }
 
     @Test

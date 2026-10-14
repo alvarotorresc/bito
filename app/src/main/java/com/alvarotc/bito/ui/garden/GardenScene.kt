@@ -127,6 +127,11 @@ private const val VIEJA_MS = 260
 private const val REVIVE_MS = 900
 private const val OLA_MS = 70L
 
+// La luz de la fiesta del día completo sube y baja en 1,4 s en total, con este brillo como tope.
+private const val FIESTA_SUBE_MS = 450
+private const val FIESTA_BAJA_MS = 950
+private const val FIESTA_LUZ_MAX = 0.22f
+
 // El mustio que se anima se cuantiza en octavos: la caché de filtros de HabiArt es por lista de tintes y no debe crecer por fotograma.
 private const val PASOS_MUSTIO = 8f
 
@@ -243,6 +248,8 @@ fun GardenScene(
     saltoHabi: Int = 0,
     // El recorte de la escena. Hoy a sangre pasa `RectangleShape`: su borde de abajo es recto contra la costra.
     forma: Shape = RoundedCornerShape(24.dp),
+    // Cada incremento, la fiesta del día completo: las plantas en ola, Habi salta y la luz sube 1,4 s (spec §6.3).
+    fiesta: Int = 0,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -335,6 +342,26 @@ fun GardenScene(
     LaunchedEffect(saltoHabi) {
         if (saltoHabi > ultimoSalto) habiNudge++
         ultimoSalto = saltoHabi
+    }
+
+    // La fiesta del día completo: ola de plantas (70 ms entre parcelas), salto de Habi y la luz que sube y baja en 1,4 s.
+    val luzFiesta = remember { Animatable(0f) }
+    var ultimaFiesta by remember { mutableIntStateOf(fiesta) }
+    LaunchedEffect(fiesta) {
+        val sube = fiesta > ultimaFiesta
+        ultimaFiesta = fiesta
+        if (!sube) return@LaunchedEffect
+        if (!reducido) habiNudge++
+        garden.plots.indices.forEach { i ->
+            launch {
+                delay(OLA_MS * i)
+                gesto(Snd.PLANTA, Haptica.TICK)
+                mecer(i)
+            }
+        }
+        luzFiesta.snapTo(0f)
+        luzFiesta.animateTo(1f, tween(if (reducido) BRILLO_MS else FIESTA_SUBE_MS, easing = Curvas.io))
+        luzFiesta.animateTo(0f, tween(if (reducido) BRILLO_MS else FIESTA_BAJA_MS, easing = Curvas.io))
     }
 
     // G15: un especial que llega. El avance parte de 0 en la misma composición en que cambia `llegando`.
@@ -551,6 +578,7 @@ fun GardenScene(
             items.filter { it.depth > habiDepth && it !in overLight }.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
             val (top, bottom) = GardenLook.lightGradient(garden.light)
             drawRect(Brush.verticalGradient(listOf(Color(top), Color(bottom))), blendMode = BlendMode.Multiply)
+            if (luzFiesta.value > 0f) drawRect(Color.White.copy(alpha = FIESTA_LUZ_MAX * luzFiesta.value), blendMode = BlendMode.Plus)
             overLight.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
             val night = GardenLook.nightness(garden.light)
             val lantern = GardenArt.specialSpots[GardenSpecial.LANTERN.key]
