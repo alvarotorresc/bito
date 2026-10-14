@@ -156,6 +156,7 @@ class HabitFormScreenTest {
         target: Int = 8,
         unit: String? = "vasos",
         reminderMinutes: Int? = null,
+        step: Int = 1,
     ): HabitFormViewModel {
         runBlocking {
             habits.create(
@@ -168,7 +169,7 @@ class HabitFormScreenTest {
                     target = target,
                     unit = unit,
                     logMode = LogMode.COUNTER,
-                    step = 1,
+                    step = step,
                     reminderMinutes = reminderMinutes,
                     createdOnDay = today,
                 ),
@@ -278,6 +279,51 @@ class HabitFormScreenTest {
         compose.onNodeWithText("Como mucho 7: una por día.").assertIsDisplayed()
         assertNotEquals(7, vm.state.value.target) // no se recorta a 7 a escondidas
         assertEquals(3, vm.state.value.target)
+    }
+
+    @Test
+    fun `a five-digit number from the sheet is kept whole`() {
+        val vm = montarNuevo(tipo = "Cantidad")
+
+        compose.onNodeWithTag("objetivo").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("target-input"))).performTextReplacement("12500")
+        compose.onNodeWithText("Guardar").performClick()
+        compose.waitForIdle()
+
+        assertEquals(12500, vm.state.value.target)
+    }
+
+    @Test
+    fun `a step of 250 can still be bumped`() {
+        val vm = montarEditando(step = 250)
+
+        compose.onNodeWithText("Más opciones").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNode(hasContentDescription(string(R.string.sistema_mas)) and hasAnyAncestor(hasTestTag("step-row")))
+            .performScrollTo()
+            .performClick()
+        compose.waitForIdle()
+
+        assertEquals(251, vm.state.value.step)
+    }
+
+    @Test
+    fun `the ten-jump clamps to the minimum instead of being refused`() {
+        val vm = montarNuevo(tipo = "Duración")
+
+        compose.onNodeWithTag("target-minus10").performScrollTo().performClick()
+        compose.onNodeWithTag("target-minus10").performClick()
+        compose.waitForIdle()
+
+        assertEquals(1, vm.state.value.target)
+    }
+
+    @Test
+    fun `editing disables the period segments for accessibility too`() {
+        montarEditando()
+
+        compose.onNodeWithText("semana").performScrollTo().assertIsNotEnabled()
     }
 
     @Test

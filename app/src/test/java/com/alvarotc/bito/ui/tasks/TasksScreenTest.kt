@@ -250,6 +250,21 @@ class TasksScreenTest {
     }
 
     @Test
+    fun `finishing a task writes it on tap, before the animation ends`() {
+        runBlocking {
+            tasksRepo.create(taskEntity(id = "t1", title = "Meditar", createdOnDay = today))
+        }
+        renderScreen()
+        compose.mainClock.autoAdvance = false
+
+        compose.onNodeWithTag("task-done-t1", useUnmergedTree = true).performClick()
+        compose.mainClock.advanceTimeByFrame()
+
+        assertEquals(TaskStatus.DONE, runBlocking { db.taskDao().byId("t1")?.status })
+        compose.mainClock.autoAdvance = true
+    }
+
+    @Test
     fun `the row menu edit calls onEditTask with the row id`() {
         runBlocking {
             tasksRepo.create(taskEntity(id = "t1", title = "Titulo original", createdOnDay = today))

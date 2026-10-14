@@ -134,6 +134,7 @@ fun HabitFormScreen(
     val notificationLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
     fun guardar() {
+        if (state.saving) return
         // QUIT's own reminder can never fire (ReminderUseCase.kt HABIT branch: a QUIT card is
         // always doneToday or failed) — asking for the permission here would be fishing for
         // access with nothing to justify it (same rule ContenidoAvisos.kt documents for its own
@@ -395,6 +396,9 @@ private fun Bloqueable(
     }
 }
 
+/** Tope del paso de Cantidad (un paso de 250 ml debe caber). */
+private const val MAX_PASO = 9999
+
 private fun HabitFormState.esLimite() = preset == HabitPreset.QUIT && quitMode == QuitMode.LIMIT
 
 private fun HabitFormState.esMinutos() = preset == HabitPreset.DURATION || (esLimite() && limitMetric == Metric.DURATION)
@@ -455,6 +459,7 @@ private fun CuerpoObjetivo(
                     elegida = if (state.quitMode == QuitMode.TOTAL) 0 else 1,
                     alElegir = { viewModel.selectQuitMode(if (it == 0) QuitMode.TOTAL else QuitMode.LIMIT) },
                     modifier = Modifier.fillMaxWidth(),
+                    habilitado = !bloqueado,
                 )
             }
             if (state.quitMode == QuitMode.LIMIT) {
@@ -464,6 +469,7 @@ private fun CuerpoObjetivo(
                         elegida = if (state.limitMetric == Metric.COUNT) 0 else 1,
                         alElegir = { viewModel.selectLimitMetric(if (it == 0) Metric.COUNT else Metric.DURATION) },
                         modifier = Modifier.fillMaxWidth(),
+                        habilitado = !bloqueado,
                     )
                 }
             }
@@ -524,6 +530,7 @@ private fun ControlesObjetivo(
                         elegida = PERIOD_OPTIONS.indexOf(state.period),
                         alElegir = { viewModel.selectPeriod(PERIOD_OPTIONS[it]) },
                         modifier = Modifier.fillMaxWidth(),
+                        habilitado = !bloqueado,
                     )
                 }
             }
@@ -618,7 +625,8 @@ private fun ObjetivoConPasos(
     val escribir = stringResource(R.string.habitform_escribir_objetivo, state.target)
 
     fun mover(delta: Int) {
-        if (state.target + delta in rango) {
+        // Pasarse del límite ajusta al límite (clampTarget); solo tiembla si ya estaba en él.
+        if ((state.target + delta).coerceIn(rango) != state.target) {
             gesto(Snd.TIC, Haptica.SEG)
             ajustar(delta)
         } else {
@@ -719,7 +727,7 @@ private fun MasOpciones(
                             valor = state.step,
                             alCambiar = { viewModel.adjustStep(it - state.step) },
                             min = 1,
-                            max = 99,
+                            max = maxOf(MAX_PASO, state.step),
                             descripcion = stringResource(R.string.habitform_paso),
                         )
                     },
