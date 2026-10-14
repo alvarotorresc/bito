@@ -175,7 +175,6 @@ class TodayViewModel(
         val id = UUID.randomUUID().toString()
         journal.log(EntryEntity(id, habitId, today, value, nowMillis))
         loggedEntry.value = id
-        habiSounds?.play(HabiSound.LOG)
     }
 
     fun tapPrimary(card: HabitCardUi) {

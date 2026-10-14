@@ -129,25 +129,24 @@ fun DetailScreen(
     val interactivo = !current.lectura && !archivado
     val mesActual = remember(current.today) { YearMonth.from(LocalDate.ofEpochDay(current.today.toLong())) }
 
-    // El círculo sigue a la gota de hoy; con otro mes en pantalla, a lo último que se vio.
-    val hoyVisible = current.heatmap.firstOrNull { it.isToday }?.dot?.let { it == DayDot.FULFILLED || it == DayDot.ACTIVITY }
-    var ultimoHecho by remember { mutableStateOf(false) }
-    LaunchedEffect(hoyVisible) { if (hoyVisible != null) ultimoHecho = hoyVisible }
-    val hechoHoy = hoyVisible ?: ultimoHecho
+    // El círculo sigue a lo de hoy aunque el calendario enseñe otro mes.
+    val hechoHoy = current.hechoHoy
 
-    // Marcar hoy (G1): sin gota que vuele (el jardín no se ve), la llegada suena 300 ms después. La abstinencia no se marca.
+    // Marcar hoy (G1). La abstinencia no se marca.
     fun marcarHoy() {
         if (!interactivo || current.kind == CardKind.ABSTINENCE) return
-        repeat(mesesHasta(current.month, mesActual)) { viewModel.nextMonth() }
+        // El sonido es el del catálogo, como en la fila de Hoy: gorgoteo al marcar, vaciar al desmarcar y tic al sumar.
+        when {
+            current.kind != CardKind.CHECK -> gesto(Snd.TIC, Haptica.TICK)
+            hechoHoy -> gesto(Snd.VACIAR, Haptica.LOW)
+            else -> gesto(Snd.GORGOTEO, Haptica.TICKS)
+        }
+        // Sin gota que vuele (el jardín no se ve), la llegada suena 300 ms después.
         if (current.kind != CardKind.CHECK || !hechoHoy) {
-            // El gorgoteo ya lo suena el modelo al registrar (HabiSound.LOG): aquí solo la háptica y la llegada.
-            gesto(h = Haptica.TICKS)
             scope.launch {
                 delay(LLEGADA_SIN_GOTA_MS)
                 gesto(Snd.LLEGADA, Haptica.CLICK)
             }
-        } else {
-            gesto(h = Haptica.LOW)
         }
         viewModel.marcarHoy()
     }
@@ -239,12 +238,6 @@ fun DetailScreen(
         )
     }
 }
-
-/** Cuántos meses hay de [desde] a [hasta] (0 si ya está en él o más allá). */
-private fun mesesHasta(
-    desde: YearMonth,
-    hasta: YearMonth,
-): Int = ((hasta.year - desde.year) * 12 + hasta.monthValue - desde.monthValue).coerceAtLeast(0)
 
 @Composable
 private fun BarraSuperior(

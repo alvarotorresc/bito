@@ -117,7 +117,8 @@ class DetailViewModel(
 
     /**
      * El gesto de Hoy desde la ficha: un CHECK alterna el día, un contador o una duración suman un
-     * paso; la abstinencia no se marca (la recaída va por el pie). En lectura o archivado, nada.
+     * paso; la abstinencia no se marca (la recaída va por el pie). En lectura o archivado, nada. No suena
+     * nada aquí: el sonido del gesto es del catálogo y lo pone la pantalla.
      */
     fun marcarHoy() =
         write { today, nowMillis ->
@@ -133,7 +134,6 @@ class DetailViewModel(
                     journal.log(EntryEntity(UUID.randomUUID().toString(), habitId, today, habit.step, nowMillis))
                 CardKind.ABSTINENCE -> return@write
             }
-            habiSounds.play(HabiSound.LOG)
         }
 
     fun setDayValue(

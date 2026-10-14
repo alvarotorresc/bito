@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.detail
 
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.Compliance
+import com.alvarotc.bito.domain.DayDot
 import com.alvarotc.bito.domain.HabitStats
 import com.alvarotc.bito.domain.Heatmap
 import com.alvarotc.bito.domain.HeatmapDay
@@ -77,6 +78,8 @@ data class DetailUiState(
     val mood: Mood = Mood.NORMAL,
     // El mes de creación del hábito: el calendario no baja de ahí (spec §8.4).
     val primerMes: YearMonth,
+    // Si hoy está hecho (un CHECK cumplido o un periodo con actividad), con el mes que se mire: el círculo de la ficha lo lee de aquí.
+    val hechoHoy: Boolean = false,
 )
 
 /**
@@ -138,6 +141,7 @@ fun buildDetailUiState(
         lectura = lectura,
         mood = MoodEngine.moodOf(state, today, StatsEngine.lastActivityDay(state)),
         primerMes = YearMonth.from(LocalDate.ofEpochDay(habit.createdOnDay.toLong())),
+        hechoHoy = Heatmap.dayDotOf(state, habit, today, today).let { it == DayDot.FULFILLED || it == DayDot.ACTIVITY },
     )
 }
 

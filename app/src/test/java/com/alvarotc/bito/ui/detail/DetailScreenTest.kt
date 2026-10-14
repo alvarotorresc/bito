@@ -378,6 +378,19 @@ class DetailScreenTest {
     }
 
     @Test
+    fun `marking today with another month on screen stays on that month`() {
+        create(createdOnDay = today - 62) // 14 de junio
+        setContent("h1")
+        tap("mes-anterior")
+        compose.onNodeWithText("Julio 2025").assertExists()
+
+        tap("marcar-hoy")
+
+        runBlocking { assertEquals(listOf(today), db.entryDao().all().map { it.logicalDay }) }
+        compose.onNodeWithText("Julio 2025").assertExists()
+    }
+
+    @Test
     fun `edit navigates`() {
         create()
         setContent("h1")

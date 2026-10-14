@@ -28,6 +28,7 @@ import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -247,6 +248,23 @@ class DetailViewModelTest {
             vm.marcarHoy()
             advanceUntilIdle()
             assertTrue(entriesOf("h1").isEmpty())
+        }
+
+    @Test
+    fun `marcarHoy makes no sound of its own, the screen puts the catalogue one`() =
+        runTest {
+            val sonido = SonidoGrabado()
+            habiSounds = HabiSounds(sonido)
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today - 5))
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            vm.marcarHoy()
+            advanceUntilIdle()
+            vm.marcarHoy()
+            advanceUntilIdle()
+
+            assertTrue(sonido.snds().isEmpty())
         }
 
     @Test

@@ -32,6 +32,8 @@ import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
+import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -91,20 +93,23 @@ class TodayViewModelTest {
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
 
-    private fun newViewModel(propuestas: FuentePropuestas? = null) =
-        TodayViewModel(
-            domainStateRepo,
-            habitsRepo,
-            journal,
-            settingsRepo,
-            reconciler,
-            rewardsRepo,
-            tasks = tasksRepo,
-            now = { fixedNow },
-            zone = { utc },
-            defaultDispatcher = dispatcher,
-            propuestas = propuestas,
-        )
+    private fun newViewModel(
+        propuestas: FuentePropuestas? = null,
+        habiSounds: HabiSounds? = null,
+    ) = TodayViewModel(
+        domainStateRepo,
+        habitsRepo,
+        journal,
+        settingsRepo,
+        reconciler,
+        rewardsRepo,
+        tasks = tasksRepo,
+        now = { fixedNow },
+        zone = { utc },
+        defaultDispatcher = dispatcher,
+        propuestas = propuestas,
+        habiSounds = habiSounds,
+    )
 
     @Before
     fun setUp() {
@@ -193,6 +198,28 @@ class TodayViewModelTest {
             advanceUntilIdle()
 
             assertEquals(2, state().cards.single { it.id == "h1" }.progress)
+        }
+
+    @Test
+    fun `logging from the row makes no sound in the model, the row puts the catalogue one`() =
+        runTest {
+            val sonido = SonidoGrabado()
+            vm = newViewModel(habiSounds = HabiSounds(sonido))
+            habitsRepo.create(
+                habitEntity(id = "c", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+            )
+            habitsRepo.create(
+                habitEntity(id = "n", metric = Metric.COUNT, direction = Direction.AT_LEAST, target = 10, step = 2, createdOnDay = today),
+            )
+            val check = state().cards.single { it.id == "c" }
+            val contador = state().cards.single { it.id == "n" }
+
+            vm.tapPrimary(check)
+            advanceUntilIdle()
+            vm.addAmount(contador, contador.step)
+            advanceUntilIdle()
+
+            assertTrue(sonido.snds().isEmpty())
         }
 
     @Test

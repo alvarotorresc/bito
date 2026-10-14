@@ -84,6 +84,17 @@ class DetailUiStateTest {
     }
 
     @Test
+    fun `today done is read from today whatever month is on screen`() {
+        val habit = RealHabits.makeBed
+        val hecho = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(TODAY)))
+        val vacio = domainState(habits = listOf(habit))
+
+        assertTrue(buildDetailUiState(hecho, habit.id, YearMonth.of(2026, 8), TODAY)!!.hechoHoy)
+        assertTrue(buildDetailUiState(hecho, habit.id, YearMonth.of(2026, 6), TODAY)!!.hechoHoy)
+        assertFalse(buildDetailUiState(vacio, habit.id, YearMonth.of(2026, 6), TODAY)!!.hechoHoy)
+    }
+
+    @Test
     fun `the heatmap month matches the requested month`() {
         val habit = RealHabits.makeBed
         val state = domainState(habits = listOf(habit), entries = entriesOn(habit, listOf(TODAY)))
