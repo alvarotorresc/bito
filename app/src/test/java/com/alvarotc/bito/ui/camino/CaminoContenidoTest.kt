@@ -142,9 +142,9 @@ class CaminoContenidoTest {
     }
 
     @Test
-    fun `a zero delta shows no chip either`() {
+    fun `a zero delta shows plus zero percent, as the old screen did`() {
         montar(estado(delta = 0))
-        rule.onNodeWithText(cadena(R.string.camino_frente_semana, 0)).assertDoesNotExist()
+        rule.onNodeWithText(cadena(R.string.camino_frente_semana, 0)).assertExists()
     }
 
     @Test

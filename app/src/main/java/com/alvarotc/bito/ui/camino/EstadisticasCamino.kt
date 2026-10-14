@@ -150,7 +150,7 @@ private fun TuSemana(estado: CaminoUiState) {
     val semana = estado.stats.week
     val delta = semana.deltaVsLastWeek
     Encabezado(stringResource(R.string.camino_tu_semana)) {
-        if (delta != null && delta > 0) {
+        if (delta != null && delta >= 0) {
             Text(
                 stringResource(R.string.camino_frente_semana, delta),
                 style = BitoTema.tipos.t14.fuerte(),
