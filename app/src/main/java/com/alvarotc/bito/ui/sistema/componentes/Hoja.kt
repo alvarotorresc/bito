@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -139,6 +141,7 @@ fun Hoja(
             }
         }
     val colores = BitoTema.colores
+    val densidad = LocalDensity.current.density
     val estado =
         rememberDraggableState { delta ->
             if (!cerrando) arrastre += delta
@@ -150,7 +153,7 @@ fun Hoja(
             enabled = !cerrando,
             onDragStopped = { velocidad ->
                 if (cerrando) return@draggable
-                if (HojaFisica.debeCerrar(arrastre, alto, velocidad / 1000f)) {
+                if (HojaFisica.debeCerrar(arrastre, alto, HojaFisica.dpPorMs(velocidad, densidad))) {
                     val actual = if (alto > 0f) (posicion.value * alto + HojaFisica.conFriccion(arrastre)) / alto else posicion.value
                     arrastre = 0f
                     posicion.snapTo(actual.coerceIn(0f, 1f))
@@ -220,7 +223,14 @@ fun Hoja(
                         titulo?.let { Text(it, style = BitoTema.tipos.t24.fuerte(), color = colores.tinta) }
                     }
                 }
-                Column(Modifier.testTag("hoja-cuerpo").fillMaxWidth().padding(Medidas.margen)) { hojaScope.contenido() }
+                Column(
+                    Modifier
+                        .testTag("hoja-cuerpo")
+                        .weight(1f, fill = false)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(Medidas.margen),
+                ) { hojaScope.contenido() }
                 if (seccion != null) {
                     Spacer(Modifier.fillMaxWidth().height(Medidas.costra).background(seccion.fondo))
                 }

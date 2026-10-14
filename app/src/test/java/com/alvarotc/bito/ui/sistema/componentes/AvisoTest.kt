@@ -48,4 +48,29 @@ class AvisoTest {
         rule.onNodeWithText("Tarea hecha").assertDoesNotExist()
         assertEquals(0.dp, estado.desplazamiento)
     }
+
+    @Test
+    fun `a long text leaves undo visible and tappable`() {
+        val estado = AvisoEstado()
+        var deshecho = 0
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            ConSistema {
+                val scope = rememberCoroutineScope()
+                LaunchedEffect(Unit) {
+                    scope.launch {
+                        estado.mostrar(
+                            "Un hábito con un nombre larguísimo ".repeat(8) + "vuelve a Hoy",
+                            "Deshacer",
+                        ) { deshecho++ }
+                    }
+                }
+                AvisoHost(estado)
+            }
+        }
+        rule.mainClock.advanceTimeBy(600)
+        rule.onNodeWithText("Deshacer").assertIsDisplayed().performClick()
+        rule.mainClock.advanceTimeBy(100)
+        assertEquals(1, deshecho)
+    }
 }

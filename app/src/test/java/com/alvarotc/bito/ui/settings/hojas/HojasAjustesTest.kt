@@ -3,17 +3,21 @@ package com.alvarotc.bito.ui.settings.hojas
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertRangeInfoEquals
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.filterToOne
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
@@ -163,5 +167,50 @@ class HojasAjustesTest {
         rule.mainClock.advanceTimeBy(100)
         assertFalse(sonido.bucles.getValue(Snd.FONDO_LLUVIA).sonando)
         assertTrue(sonido.bucles.getValue(Snd.FONDO_CAFE).sonando)
+    }
+
+    @Test
+    fun `closing from the clock step with the veil reopens on the list`() {
+        var abierta by mutableStateOf(true)
+        rule.setContent {
+            ConSistema { HojaAvisosHabi(abierta, 8 * 60, 21 * 60 + 30, {}, {}, { abierta = false }) }
+        }
+        rule.onNodeWithText("Noche").performClick()
+        rule.onNodeWithText("Guardar").assertIsDisplayed()
+        rule.onNodeWithTag("hoja-velo").performTouchInput { click(Offset(10f, 10f)) }
+        rule.waitForIdle()
+        abierta = true
+        rule.waitForIdle()
+        rule.onNodeWithText("Noche").assertIsDisplayed()
+    }
+
+    @Test
+    fun `closing do not disturb from the clock step with the veil reopens on the list`() {
+        var abierta by mutableStateOf(true)
+        rule.setContent {
+            ConSistema { HojaNoMolestar(abierta, true, 23 * 60, 7 * 60 + 30, false, {}, {}, {}, {}, { abierta = false }) }
+        }
+        rule.onNodeWithText("Desde").performClick()
+        rule.onNodeWithText("Guardar").assertIsDisplayed()
+        rule.onNodeWithTag("hoja-velo").performTouchInput { click(Offset(10f, 10f)) }
+        rule.waitForIdle()
+        abierta = true
+        rule.waitForIdle()
+        rule.onNodeWithText("Desde").assertIsDisplayed()
+    }
+
+    @Test
+    fun `closing reminders from the clock step with the veil reopens on the list`() {
+        var abierta by mutableStateOf(true)
+        rule.setContent {
+            ConSistema { HojaRecordatorios(abierta, listOf(12 * 60), {}, { _, _ -> }, {}, { abierta = false }) }
+        }
+        rule.onNodeWithText("Añadir una hora").performClick()
+        rule.onNodeWithText("Guardar").assertIsDisplayed()
+        rule.onNodeWithTag("hoja-velo").performTouchInput { click(Offset(10f, 10f)) }
+        rule.waitForIdle()
+        abierta = true
+        rule.waitForIdle()
+        rule.onNodeWithText("Añadir una hora").assertIsDisplayed()
     }
 }

@@ -37,7 +37,11 @@ fun HojaAvisosHabi(
     val colores = BitoTema.colores
     Hoja(
         abierta = abierta,
-        alCerrar = alCerrar,
+        alCerrar = {
+            // Cerrar con atrás o con el velo no pasa por Guardar: la próxima vez debe abrirse en la lista.
+            paso = LISTA
+            alCerrar()
+        },
         seccion = colores.estratos.avisos,
         etiqueta = stringResource(R.string.hojas_estrato_avisos),
         titulo = stringResource(R.string.hojas_habi_titulo),
