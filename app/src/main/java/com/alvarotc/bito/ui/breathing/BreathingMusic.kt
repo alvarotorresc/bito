@@ -102,6 +102,8 @@ class AndroidBreathingMusic(
 
     override fun start() {
         if (wantsToPlay) return
+        // Sin ganancia no hay nada que oír: pedir el foco pausaría el pódcast del usuario para nada.
+        if (gananciaAmbiente() <= 0f) return
         if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
         wantsToPlay = true
         volume = 0f

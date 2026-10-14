@@ -71,6 +71,17 @@ class BreathingMusicTest {
     }
 
     @Test
+    fun `a muted ambient channel neither takes focus nor plays`() {
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 0f })
+
+        music.start()
+
+        assertNull(shadowOf(audioManager).lastAudioFocusRequest)
+        assertFalse(music.wantsToPlay)
+        assertNull(currentPlayer(music))
+    }
+
+    @Test
     fun `a denied focus plays nothing`() {
         shadowOf(audioManager).setNextFocusRequestResponse(AudioManager.AUDIOFOCUS_REQUEST_FAILED)
         val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
