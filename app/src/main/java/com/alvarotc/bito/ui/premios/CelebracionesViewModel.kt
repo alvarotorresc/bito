@@ -110,7 +110,10 @@ internal object DerivarMomentos {
         prefs: Settings,
         lote: Long,
     ): Pair<List<Momento>, Set<String>> {
-        val nuevos = badges.filter { it.unlockedAtMillis > prefs.badgesSeenUntilMillis && (vistos == null || it.badgeId !in vistos) }
+        val nuevos =
+            badges
+                .filter { it.unlockedAtMillis > prefs.badgesSeenUntilMillis && (vistos == null || it.badgeId !in vistos) }
+                .sortedWith(compareBy({ it.unlockedAtMillis }, { it.badgeId }))
         return nuevos.map { Momento.Logro(it.badgeId, it.unlockedAtMillis, lote) } to badges.mapTo(mutableSetOf()) { it.badgeId }
     }
 
@@ -171,6 +174,9 @@ class CelebracionesViewModel(
 
     /** Ordenados por número: la marca solo avanza hasta el final del lote más antiguo aún abierto (regla 9). */
     private val lotes = sortedMapOf<Long, Lote>()
+
+    /** El instante del logro más reciente ya terminado: `badgesSeenUntilMillis` lo alcanza cuando no quede otro pendiente anterior. */
+    private var logroTerminadoHasta = 0L
 
     init {
         viewModelScope.launch {
@@ -272,6 +278,7 @@ class CelebracionesViewModel(
     /** Como un arranque: nada viejo se celebra, lo que sonaba se corta y la marca se refija a la entrada más reciente. */
     private fun restaurar() {
         vistas = null
+        logroTerminadoHasta = 0L
         lotes.clear()
         cola.descartar { it is Momento.Monedas || it is Momento.Veta }
         val sonando = cola.actual.value
@@ -338,10 +345,15 @@ class CelebracionesViewModel(
                 val dia = m.dia
                 viewModelScope.launch { settings.update { it.copy(perfectDayCelebratedDay = maxOf(it.perfectDayCelebratedDay, dia)) } }
             }
-            m is Momento.Logro ->
-                viewModelScope.launch {
-                    settings.update { it.copy(badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, m.unlockedAtMillis)) }
-                }
+            m is Momento.Logro -> {
+                // Varios logros de una evaluación comparten instante: la marca no pasa del primero aún pendiente, o la
+                // purga de la regla 12 lo quitaría de la cola sin celebrarlo. Si la app muere entre medias, el ya visto
+                // puede repetirse (como un lote del libro abierto); perderlo sería peor.
+                logroTerminadoHasta = maxOf(logroTerminadoHasta, m.unlockedAtMillis)
+                val pendientes = (cola.pendientes + retenidos).filterIsInstance<Momento.Logro>().filter { it != m }
+                val hasta = minOf(logroTerminadoHasta, (pendientes.minOfOrNull { it.unlockedAtMillis } ?: Long.MAX_VALUE) - 1)
+                viewModelScope.launch { settings.update { it.copy(badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, hasta)) } }
+            }
         }
     }
 

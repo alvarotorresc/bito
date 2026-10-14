@@ -400,4 +400,63 @@ class CelebracionesViewModelTest {
             runCurrent()
             assertEquals("first-habit", (vm.actual.value as Momento.Logro).badgeId)
         }
+
+    private suspend fun visto() = settingsRepo.settings.first().badgesSeenUntilMillis
+
+    @Test
+    fun `two badges unlocked at the same instant are both celebrated, in order`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            // Una evaluación escribe todos sus logros con el mismo instante (el primer día: primer hábito y día perfecto).
+            db.badgeDao().insertAll(listOf(BadgeEntity("perfect-day-1", 500), BadgeEntity("first-habit", 500)))
+            advanceUntilIdle()
+            val primero = vm.actual.value as Momento.Logro
+            assertEquals("first-habit", primero.badgeId)
+            vm.terminado(primero)
+            advanceUntilIdle()
+            assertTrue("la marca no alcanza al otro logro pendiente", visto() < 500)
+            val segundo = vm.actual.value as Momento.Logro
+            assertEquals("perfect-day-1", segundo.badgeId)
+            vm.terminado(segundo)
+            advanceUntilIdle()
+            assertTrue(visto() >= 500)
+            assertNull(vm.actual.value)
+        }
+
+    @Test
+    fun `leaving Today on the first of two simultaneous badges keeps the second for the return`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insertAll(listOf(BadgeEntity("first-habit", 500), BadgeEntity("perfect-day-1", 500)))
+            advanceUntilIdle()
+            assertEquals("first-habit", (vm.actual.value as Momento.Logro).badgeId)
+            vm.enHoy(false)
+            advanceUntilIdle()
+            assertTrue(visto() < 500)
+            vm.enHoy(true)
+            advanceUntilIdle()
+            assertEquals("perfect-day-1", (vm.actual.value as Momento.Logro).badgeId)
+        }
+
+    @Test
+    fun `an older badge finishing after a newer one never leaves the newer one unseen`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insert(BadgeEntity("first-habit", 500))
+            advanceUntilIdle()
+            val viejo = vm.actual.value as Momento.Logro
+            db.badgeDao().insert(BadgeEntity("perfect-day-1", 700)) // llega mientras suena el primero
+            advanceUntilIdle()
+            vm.terminado(viejo)
+            advanceUntilIdle()
+            vm.terminado(vm.actual.value!!)
+            advanceUntilIdle()
+            assertEquals(700L, visto())
+        }
 }
