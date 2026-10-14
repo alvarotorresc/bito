@@ -422,13 +422,29 @@ fun GardenScene(
             if (registro != null && c.isAttached) {
                 fun enRaiz(r: SceneRect) =
                     Rect(c.localToRoot(Offset(r.left, r.top)), c.localToRoot(Offset(r.left + r.width, r.top + r.height)))
+
+                // Solo se escribe si el rectángulo cambia: el bucle de fotogramas de abajo no mueve el registro en balde.
+                fun poner(
+                    clave: String,
+                    rect: Rect,
+                ) {
+                    if (registro.posiciones[clave] != rect) registro.poner(clave, rect)
+                }
                 val parcela = parcelaQueCrece(garden)
-                if (parcela in garden.plots.indices) registro.poner(ClavesAncla.PARCELA, enRaiz(baseDeParcela(parcela, sceneW, sceneH)))
-                registro.poner(ClavesAncla.HABI, enRaiz(habiBody))
+                if (parcela in garden.plots.indices) poner(ClavesAncla.PARCELA, enRaiz(baseDeParcela(parcela, sceneW, sceneH)))
+                poner(ClavesAncla.HABI, enRaiz(habiBody))
             }
         }
         val registrarActual by rememberUpdatedState(registrar)
-        LaunchedEffect(garden.plots.size, sceneW, sceneH, registro) { coordenadas[0]?.let(registrarActual) }
+        // El padre puede mover la escena solo con graphicsLayer (encoger con el scroll, crecer a Camino), lo que no
+        // dispara onGloballyPositioned: mientras esté compuesta, se recalcula cada ~16 ms (localToRoot cuenta la capa). Un bucle de `withFrameNanos` dejaría la escena siempre ocupada para las pruebas de Compose.
+        LaunchedEffect(registro) {
+            if (registro == null) return@LaunchedEffect
+            while (true) {
+                delay(ANCLAS_REFRESCO_MS)
+                coordenadas[0]?.let(registrarActual)
+            }
+        }
         Box(
             Modifier
                 .fillMaxSize()
@@ -548,6 +564,8 @@ fun GardenScene(
     }
 }
 
+// Cada cuánto se recalculan las anclas de la escena (un fotograma a 60 Hz).
+private const val ANCLAS_REFRESCO_MS = 16L
 private const val PIEDRAS_MS = 720
 private const val ASIENTA_MS = 420
 

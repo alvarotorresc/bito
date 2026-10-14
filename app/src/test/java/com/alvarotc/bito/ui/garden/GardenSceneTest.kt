@@ -8,6 +8,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -328,5 +330,38 @@ class GardenSceneTest {
         compose.waitForIdle()
 
         assertEquals(1, sonda.saltosHabi())
+    }
+
+    @Test
+    fun `the anchors follow a parent that only changes its graphicsLayer`() {
+        var escala by mutableStateOf(1f)
+        compose.setContent {
+            ConSistema(sonido, tacto) {
+                CompositionLocalProvider(LocalAnclas provides registro) {
+                    GardenScene(
+                        garden = garden,
+                        spec = spec,
+                        animated = false,
+                        modifier =
+                            Modifier.width(400.dp).graphicsLayer {
+                                scaleX = escala
+                                scaleY = escala
+                                transformOrigin = TransformOrigin(0f, 0f)
+                            },
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        val antes = registro.posiciones.getValue(ClavesAncla.HABI)
+
+        compose.runOnUiThread { escala = 0.5f }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeByFrame()
+        compose.mainClock.advanceTimeByFrame()
+
+        val despues = registro.posiciones.getValue(ClavesAncla.HABI)
+        assertEquals(antes.width / 2f, despues.width, 1f)
+        assertEquals(antes.left / 2f, despues.left, 1f)
     }
 }
