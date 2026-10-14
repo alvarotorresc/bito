@@ -116,10 +116,12 @@ internal fun StatsContenido(
     onOpenNumbers: () -> Unit,
     onOpenBadges: () -> Unit,
     modifier: Modifier = Modifier,
+    // Camino ya envuelve esto en su propio scroll: dos scrolls verticales anidados no se pueden medir.
+    conScroll: Boolean = true,
 ) {
     Column(
         modifier
-            .verticalScroll(rememberScrollState())
+            .then(if (conScroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp),
     ) {

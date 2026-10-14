@@ -21,7 +21,7 @@ fun CaminoContenido(
     modifier: Modifier = Modifier,
 ) {
     Column(modifier.verticalScroll(scroll).testTag("inicio-camino")) {
-        StatsContenido(estado.stats, {}, {}, {})
+        StatsContenido(estado.stats, {}, {}, {}, conScroll = false)
         Text("Logros · " + stringResource(R.string.stats_badges_count, estado.conseguidos, estado.logros.size))
     }
 }
