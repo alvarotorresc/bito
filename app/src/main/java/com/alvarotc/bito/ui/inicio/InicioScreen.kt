@@ -257,6 +257,7 @@ fun InicioScreen(
     creado: String? = null,
     alCreadoVisto: () -> Unit = {},
     enPrimerPlano: Boolean = true,
+    registro: RegistroAnclas = remember { RegistroAnclas() },
 ) {
     val estado by hoy.uiState.collectAsStateWithLifecycle()
     val estadoCamino by camino.uiState.collectAsStateWithLifecycle()
@@ -277,7 +278,6 @@ fun InicioScreen(
 
     var crear by remember { mutableStateOf(false) }
     var saldoAbierto by remember { mutableStateOf(false) }
-    val registro = remember { RegistroAnclas() }
     val avisos = LocalAvisosInicio.current ?: rememberAvisoEstado()
     var llegando by remember { mutableStateOf<GardenSpecial?>(null) }
     var creciendo by remember { mutableStateOf<Int?>(null) }
@@ -514,6 +514,8 @@ fun InicioScreen(
                         creciendo = c
                     },
                     alAsomarCabecera = { asomada = it },
+                    personalidad = estado.spec.personality,
+                    nombre = estado.userName,
                     modifier = Modifier.fillMaxSize(),
                 )
                 AvisoHost(avisos, Modifier.align(Alignment.BottomCenter).padding(bottom = AVISO_SOBRE_PILDORA - Medidas.margen))

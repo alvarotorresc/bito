@@ -19,6 +19,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathOperation
+import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -143,6 +145,9 @@ private fun sitioAstro(fase: LightPhase): Pair<Float, Float> =
         LightPhase.NOCHE -> 0.26f to 0.34f
     }
 
+/** El jardín de Hoy va a sangre: su borde de abajo es recto contra la costra, sin las esquinas de la tarjeta. */
+internal val FormaJardinHoy: Shape = RectangleShape
+
 /**
  * El jardín del Inicio: una sola escena que sirve a Hoy y a Camino. [q] (0 Hoy, 1 Camino) y [encogido]
  * (0 a 1, lo que se ha encogido al bajar la lista) se leen solo al dibujar, así que moverlos no recompone.
@@ -239,6 +244,7 @@ fun JardinCompartido(
                 delighted = contento,
                 onHabiTap = alTocarHabi,
                 animated = animado,
+                forma = FormaJardinHoy,
                 alTocarFondo = alTocarFondo,
                 llegando = llegando,
                 creciendo = creciendo,
