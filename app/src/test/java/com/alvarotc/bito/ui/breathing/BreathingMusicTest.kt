@@ -46,7 +46,7 @@ class BreathingMusicTest {
 
     @Test
     fun `start asks for media focus that pauses instead of ducking`() {
-        val music = AndroidBreathingMusic(context)
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
 
         music.start()
 
@@ -60,7 +60,7 @@ class BreathingMusicTest {
 
     @Test
     fun `start with granted focus actually plays the track`() {
-        val music = AndroidBreathingMusic(context)
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
 
         music.start()
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(FADE_IN_MS + 100))
@@ -73,7 +73,7 @@ class BreathingMusicTest {
     @Test
     fun `a denied focus plays nothing`() {
         shadowOf(audioManager).setNextFocusRequestResponse(AudioManager.AUDIOFOCUS_REQUEST_FAILED)
-        val music = AndroidBreathingMusic(context)
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
 
         music.start()
 
@@ -82,7 +82,7 @@ class BreathingMusicTest {
 
     @Test
     fun `stopping gives the focus back once the fade is over`() {
-        val music = AndroidBreathingMusic(context)
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
         music.start()
 
         music.stop()
@@ -94,7 +94,7 @@ class BreathingMusicTest {
 
     @Test
     fun `stopping without starting is a no-op`() {
-        val music = AndroidBreathingMusic(context)
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
 
         music.stop()
 
@@ -122,7 +122,7 @@ class BreathingMusicTest {
 
     @Test
     fun `an error on the player survives a later focus loss and gain`() {
-        val music = AndroidBreathingMusic(context)
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
         music.start()
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(FADE_IN_MS + 100))
         val player = currentPlayer(music)
@@ -155,7 +155,7 @@ class BreathingMusicTest {
             DataSource.toDataSource(FileDescriptor(), 0, 0),
             IOException("no se pudo abrir la pista"),
         )
-        val music = AndroidBreathingMusic(context)
+        val music = AndroidBreathingMusic(context, gananciaAmbiente = { 1f })
 
         music.start()
 
