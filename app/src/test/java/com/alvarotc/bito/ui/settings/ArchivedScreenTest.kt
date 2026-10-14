@@ -3,6 +3,8 @@ package com.alvarotc.bito.ui.settings
 import android.content.Context
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -108,5 +110,48 @@ class ArchivedScreenTest {
         compose.waitForIdle()
 
         assertEquals("gone", openedId)
+    }
+
+    @Test
+    @Config(sdk = [35], qualifiers = "es")
+    fun `reactivating removes the row and undo brings it back`() {
+        runBlocking {
+            HabitsRepository(db).create(
+                habitEntity(id = "gone", name = "Fumar", status = HabitStatus.ARCHIVED, archivedOnDay = 20_010),
+            )
+        }
+        val vm = SettingsViewModel(SettingsRepository(settingsStore()), HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                ArchivedScreen(viewModel = vm, onBack = {}, onOpenHabit = { openedId = it })
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("archived-gone", useUnmergedTree = true).assertExists()
+
+        compose.onNodeWithTag("archived-reactivate-gone", useUnmergedTree = true).performClick()
+        compose.waitUntil(
+            5_000,
+        ) { compose.onAllNodesWithText("Fumar vuelve a Hoy", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        compose.onNodeWithTag("archived-gone", useUnmergedTree = true).assertDoesNotExist()
+        assertEquals(HabitStatus.ACTIVE, runBlocking { db.habitDao().byId("gone") }?.status)
+
+        compose.onNodeWithText("Deshacer", useUnmergedTree = true).performClick()
+        compose.waitUntil(5_000) { compose.onAllNodesWithTag("archived-gone", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+        assertEquals(HabitStatus.ARCHIVED, runBlocking { db.habitDao().byId("gone") }?.status)
+    }
+
+    @Test
+    @Config(sdk = [35], qualifiers = "es")
+    fun `empty shows Habi and the empty text`() {
+        val vm = SettingsViewModel(SettingsRepository(settingsStore()), HabitsRepository(db))
+        compose.setContent {
+            BitoTheme {
+                ArchivedScreen(viewModel = vm, onBack = {}, onOpenHabit = { openedId = it })
+            }
+        }
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Todavía no hay nada archivado", useUnmergedTree = true).assertExists()
     }
 }
