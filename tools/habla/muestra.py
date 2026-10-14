@@ -74,8 +74,8 @@ def _plan(ruta, n, semilla):
         intentos += 1
         ie = (intentos - 1) % len(ESCENARIOS)
         esc = ESCENARIOS[ie]
-        bolsa = nucleos[len(plan) % len(nucleos)]
-        nucleo = _elegir(rng, por[bolsa], esc, usados)
+        todos = [f for b in nucleos for f in por[b]]
+        nucleo = _elegir(rng, todos, esc, usados)
         if nucleo is None:
             continue
         trozos = []
@@ -100,14 +100,14 @@ def _plan(ruta, n, semilla):
             continue
         vistos.update((clave, texto))
         usados.update((t["bolsa"], t["indice"]) for t in trozos)
-        plan.append((ie, trozos))
+        plan.append((ie, trozos, nucleo))
     return plan
 
 
 def componer_detalle(ruta, n=30, semilla=1):
     """Cada frase con su escenario: es, en, bolsas, huecos usados (con valor) y etiquetas."""
     salida = []
-    for ie, trozos in _plan(ruta, n, semilla):
+    for ie, trozos, nucleo in _plan(ruta, n, semilla):
         esc = ESCENARIOS[ie]
         vals = _valores(esc, "es")
         usados = []
@@ -119,6 +119,8 @@ def componer_detalle(ruta, n=30, semilla=1):
             "es": " ".join(comun.rellenar(t["es"], _valores(esc, "es"), "es") for t in trozos),
             "en": " ".join(comun.rellenar(t["en"], _valores(esc, "en"), "en") for t in trozos),
             "bolsas": [t["bolsa"] for t in trozos],
+            "nucleo": (nucleo["bolsa"], nucleo["indice"]),
+            "escenario": ie,
             "datos": {h: vals[h] for h in usados},
             "sin_nombre": esc["nombre"] is None,
             "etiquetas": sorted(esc["etiquetas"]),
@@ -143,11 +145,16 @@ def escribir(ruta, salida=None, n=30, semilla=1, minimos=True):
         for f in fallos:
             print(f, file=sys.stderr)
         raise SystemExit(1)
+    detalle = componer_detalle(ruta, n, semilla)
+    if len(detalle) < n:
+        print(f"{ruta}: la muestra solo llega a {len(detalle)} de {n} frases distintas; "
+              "faltan items o hay demasiados con huecos sin datos de prueba", file=sys.stderr)
+        raise SystemExit(1)
     salida = salida or os.path.join(comun.AQUI, "muestras")
     nombre = os.path.basename(ruta)
     nombre = (nombre[:-4] if nombre.endswith(".tsv") else nombre) + ".md"
     lineas = [f"# Muestra {nombre[:-3]}", ""]
-    for i, d in enumerate(componer_detalle(ruta, n, semilla), start=1):
+    for i, d in enumerate(detalle, start=1):
         lineas += [f"{i}. ES: {d['es']}", f"   EN: {d['en']}", f"   datos: {_datos(d)}", ""]
     destino = os.path.join(salida, nombre)
     os.makedirs(salida, exist_ok=True)

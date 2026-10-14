@@ -53,6 +53,26 @@ class MuestraTest(unittest.TestCase):
         with open(destino, encoding="utf-8") as f:
             self.assertEqual(30, f.read().count("   datos: "))
 
+    def test_solo_repite_si_no_queda_ningun_item_sin_usar(self):
+        ruta = tsv_valido()
+        filas, _ = muestra.comun.leer_tsv(ruta)
+        for semilla in range(60):
+            usados = set()
+            for d in muestra.componer_detalle(ruta, n=30, semilla=semilla):
+                esc = muestra.ESCENARIOS[d["escenario"]]
+                if d["nucleo"] in usados:
+                    libres = [f for f in filas if (f["bolsa"], f["indice"]) not in usados and muestra._elegible(f, esc)]
+                    self.assertEqual([], libres, f"semilla {semilla}: repite {d['nucleo']}")
+                usados.add(d["nucleo"])
+
+    def test_avisa_si_no_llega_al_numero_pedido(self):
+        f = tempfile.NamedTemporaryFile("w", suffix=".neutra.tsv", delete=False, encoding="utf-8")
+        f.write(CAB + "nu_saludo\t0\t\tHola.\tHi.\n"); f.close()
+        salida = tempfile.mkdtemp()
+        with self.assertRaises(SystemExit):
+            muestra.escribir(f.name, salida, minimos=False)
+        self.assertEqual([], os.listdir(salida))
+
     def test_no_escribe_si_comprobar_falla(self):
         f = tempfile.NamedTemporaryFile("w", suffix=".neutra.tsv", delete=False, encoding="utf-8")
         f.write(CAB + "nu_saludo\t0\t\tHola — mal.\tHi.\n"); f.close()
