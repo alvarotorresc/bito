@@ -41,11 +41,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.alvarotc.bito.BuildConfig
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.SpeechBubble
-import com.alvarotc.bito.ui.garden.GardenDebugPanel
 import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.icons.BitoIcons
 import com.alvarotc.bito.ui.premios.HojaSaldo
@@ -62,7 +60,7 @@ import kotlinx.coroutines.delay
  * store. No screen title (mockup 4a): the balance chip in the top-right corner carries the header
  * instead. Buying something in [StoreSection] previews live here too — the trying-on chip sits
  * right under the garden, and Habi in it already wears the preview via `state.spec` (see
- * [buildHabiUiState]). Debug builds add the garden debug panel under the scene.
+ * [buildHabiUiState]).
  */
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
@@ -124,9 +122,6 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
-            if (BuildConfig.DEBUG) {
-                GardenDebugPanel(current = state.garden, onForce = viewModel::forceGarden)
-            }
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }

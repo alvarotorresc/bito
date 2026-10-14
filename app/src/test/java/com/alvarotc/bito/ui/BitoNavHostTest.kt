@@ -111,6 +111,12 @@ class BitoNavHostTest {
         }
     }
 
+    /** Hábito y Tarea del «+» navegan 90 ms después de cerrarse la hoja: se deja correr ese tiempo. */
+    private fun esperarCierreDeLaHoja() {
+        compose.mainClock.advanceTimeBy(600)
+        compose.waitForIdle()
+    }
+
     /** Pulsa el nodo con ese tag invocando su acción, para los botones que el toque sintetizado no alcanza. */
     private fun tapTag(tag: String) {
         compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
@@ -377,7 +383,7 @@ class BitoNavHostTest {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
         tapText("Habit")
-        compose.waitForIdle()
+        esperarCierreDeLaHoja()
         compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("name-field"))).performTextInput("Agua")
         compose.onNodeWithText(app.getString(R.string.preset_quantity)).performScrollTo().performClick()
         compose.waitForIdle()
@@ -432,7 +438,7 @@ class BitoNavHostTest {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
         tapText("Habit")
-        compose.waitForIdle()
+        esperarCierreDeLaHoja()
         compose.onNodeWithTag("pildora", useUnmergedTree = true).assertDoesNotExist()
 
         compose.onNodeWithContentDescription("Back", useUnmergedTree = true).performClick()
@@ -466,7 +472,7 @@ class BitoNavHostTest {
         }
 
         tapText("Habit")
-        compose.waitForIdle()
+        esperarCierreDeLaHoja()
 
         compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertDoesNotExist()
         // The habit form's own back chevron — reusing "the bottom bar hides on the habit form"
