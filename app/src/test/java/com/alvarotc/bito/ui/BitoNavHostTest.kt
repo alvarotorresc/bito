@@ -199,13 +199,13 @@ class BitoNavHostTest {
 
         // The notifications card only renders once SettingsViewModel's DataStore-backed flow has
         // emitted (real dispatcher, not the test's) — waitForIdle alone doesn't pump that. With a
-        // fresh store no hours exist, so the reminders row hints its empty state.
-        val reminderCopy = "No reminders set"
+        // fresh store no hours exist, so the Notices stratum summary says so.
+        val reminderCopy = "No reminders"
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText(reminderCopy, substring = true, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        screenTitleNode("Settings").assertExists()
+        screenTitleNode("Reminders and breathing").assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
         compose.onNodeWithText(reminderCopy, substring = true, useUnmergedTree = true).assertExists()
     }
