@@ -40,6 +40,7 @@ import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.EventoGota
+import com.alvarotc.bito.ui.premios.Momento
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.componentes.AvisoEstado
@@ -424,7 +425,7 @@ class InicioScreenTest {
     fun `a new badge opens its sheet as new and Continue lets the next vein through`() {
         montarVivo()
         runBlocking { banco.db.badgeDao().insert(BadgeEntity("first-habit", 500)) }
-        esperarTag("hoja-logro")
+        avanzarHasta("hoja-logro")
         rule.onNodeWithTag("logro-estado", useUnmergedTree = true).assertDoesNotExist()
         libro(fila("d", 10, PointsReason.PERFECT_DAY, "day:${banco.hoyLogico}", 3))
         rule.mainClock.advanceTimeBy(3_000)
@@ -438,7 +439,7 @@ class InicioScreenTest {
     fun `see it in the garden from a new badge closes the sheet and takes you to Camino highlighting the special`() {
         montarVivo()
         runBlocking { banco.db.badgeDao().insert(BadgeEntity(GardenSpecial.LANTERN.badgeId, 500)) }
-        esperarTag("hoja-logro")
+        avanzarHasta("hoja-logro")
         rule.onNodeWithText(contexto.getString(R.string.camino_verlo)).performClick()
         avanzar(40)
         assertTrue("la hoja aún se está cerrando", hay("hoja-logro"))
@@ -499,15 +500,20 @@ class InicioScreenTest {
         banco.preparar(habitos = 1, marcaCero = true)
         rule.setContent { ConSistema(banco.sonido, banco.tacto) { banco.Inicio(enPrimerPlano = true) } }
         rule.waitForIdle()
-        var tics = 0
-        CoroutineScope(banco.dispatcher).launch { banco.registro.llegadasDeMoneda.collect { tics++ } }
-        rule.onNodeWithTag("circulo-h0").performClick()
-        // El primer hábito de la vida abre también su logro: se lee y se sigue.
+        // Crear el hábito ya abrió el logro first-habit: se lee y se sigue antes de marcar.
         avanzarHasta("hoja-logro")
         rule.onNodeWithText(contexto.getString(R.string.camino_seguir)).performClick()
+        avanzar(Duraciones.CERRAR_HOJA * 2L + 800L)
+        var tics = 0
+        CoroutineScope(banco.dispatcher).launch { banco.registro.llegadasDeMoneda.collect { tics++ } }
+        val orden = mutableListOf<Momento>()
+        CoroutineScope(banco.dispatcher).launch { banco.celebraciones.actual.collect { m -> m?.let { orden += it } } }
+        rule.onNodeWithTag("circulo-h0").performClick()
         avanzarHasta("veta-DIA")
         assertEquals("una moneda, un tic en el saldo", 1, tics)
-        assertTrue("la moneda sonó antes de la veta", Snd.MONEDA in banco.sonido.snds() || Snd.CAMPANILLA in banco.sonido.snds())
+        assertTrue("la moneda sonó", Snd.MONEDA in banco.sonido.snds() || Snd.CAMPANILLA in banco.sonido.snds())
+        // G14: las monedas primero y la veta después; el logro que se escribe aparte sale detrás, nunca delante.
+        assertEquals(listOf(1, 2), orden.map { it.orden }.take(2))
     }
 
     @Test

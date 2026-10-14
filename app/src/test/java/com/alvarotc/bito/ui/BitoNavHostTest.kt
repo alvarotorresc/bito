@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui
 
 import android.app.Application
 import android.app.NotificationManager
+import android.os.Looper
 import android.os.SystemClock
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
@@ -61,6 +62,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import java.time.Duration
 import java.time.ZoneId
 
 /**
@@ -783,6 +785,13 @@ class BitoNavHostTest {
 
     private fun hayTag(tag: String) = compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
 
+    /** Un logro nuevo espera [VENTANA_LOGRO_MS] en el reloj del hilo principal, que Robolectric solo mueve si se le pide. */
+    private fun esperarAvanzando(condicion: () -> Boolean) =
+        compose.waitUntil(timeoutMillis = 10_000) {
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(100))
+            condicion()
+        }
+
     /** Da tiempo real a que Room y DataStore entreguen lo suyo antes de afirmar que algo NO se pinta. */
     private fun dejarPasar() =
         repeat(10) {
@@ -804,7 +813,7 @@ class BitoNavHostTest {
         assertTrue("el logro no se pinta con Ajustes abierto", !hayTag("hoja-logro"))
 
         compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
-        compose.waitUntil(timeoutMillis = 5_000) { hayTag("hoja-logro") }
+        esperarAvanzando { hayTag("hoja-logro") }
     }
 
     /**
@@ -836,7 +845,9 @@ class BitoNavHostTest {
         NavRequests.open("review")
         compose.waitUntil(timeoutMillis = 5_000) { hayTag("onboarding-screen") }
         dejarPasar()
+
         assertTrue("el onboarding no pinta la veta", !hayTag("veta-DIA"))
+        assertTrue("el onboarding no pinta ningún logro", !hayTag("hoja-logro"))
         assertEquals("review", NavRequests.pending.value)
 
         compose.onNodeWithText("Get started", useUnmergedTree = true).performClick()
@@ -856,9 +867,12 @@ class BitoNavHostTest {
         compose.waitUntil(timeoutMillis = 5_000) { hayTag("review-seal") }
         dejarPasar()
         assertTrue("el repaso no pinta la veta del día", !hayTag("veta-DIA"))
+        assertTrue("el repaso no pinta ningún logro", !hayTag("hoja-logro"))
 
         compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
-        compose.waitUntil(timeoutMillis = 10_000) { hayTag("veta-DIA") || hayTag("hoja-logro") }
+        // La veta ya no sale aquí: la Hoy que asoma un instante bajo el onboarding la celebra a ciegas antes de que el
+        // repaso tome la pantalla (ver el informe). Lo que sí sale, y solo al volver, es el logro del primer hábito.
+        esperarAvanzando { hayTag("hoja-logro") }
         assertEquals("today", compose.runOnUiThread { nav.currentDestination?.route })
     }
 

@@ -29,8 +29,10 @@ import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -363,5 +365,39 @@ class CelebracionesViewModelTest {
             vm.enHoy(false)
             advanceUntilIdle()
             assertEquals(hoy, settingsRepo.settings.first().perfectDayCelebratedDay)
+        }
+
+    @Test
+    fun `a badge that arrives before its ledger entry plays after the coins (G14)`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insert(BadgeEntity("first-habit", 500)) // el logro se escribe antes que la fila del libro
+            advanceTimeBy(100)
+            runCurrent()
+            assertNull("el logro espera a ver si llega algo del libro", vm.actual.value)
+            insertar("a", 600, PointsReason.HABIT_DONE, "h1:$hoy")
+            runCurrent()
+            val monedas = vm.actual.value as Momento.Monedas
+            vm.terminado(monedas)
+            advanceUntilIdle()
+            assertEquals("first-habit", (vm.actual.value as Momento.Logro).badgeId)
+        }
+
+    @Test
+    fun `a badge with no ledger entry still plays once the window passes`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insert(BadgeEntity("first-habit", 500))
+            advanceTimeBy(VENTANA_LOGRO_MS - 50)
+            runCurrent()
+            assertNull(vm.actual.value)
+            advanceTimeBy(100)
+            runCurrent()
+            assertEquals("first-habit", (vm.actual.value as Momento.Logro).badgeId)
         }
 }

@@ -18,9 +18,14 @@ import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.PointsLedgerEntry
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
+
+/** Lo que espera un logro nuevo a que llegue su entrada del libro (se escriben por separado), para sonar tras las monedas (G14). */
+internal const val VENTANA_LOGRO_MS = 400L
 
 internal object DerivarMomentos {
     data class Resultado(val momentos: List<Momento>, val marcaLote: MarcaLibro?, val vistas: Set<String>)
@@ -157,6 +162,11 @@ class CelebracionesViewModel(
     /** Tras restaurar con los ajustes por delante del libro: lo próximo que cambie en el libro es lo restaurado. */
     private var esperandoLibro = false
     private var enHoy = false
+
+    /** Logros nuevos que esperan a su entrada del libro (o a que pase [VENTANA_LOGRO_MS]) para ordenarse por G14. */
+    private val retenidos = mutableListOf<Momento.Logro>()
+    private var ventana: Job? = null
+    private val scopeCola = colaScope ?: viewModelScope
     private var siguienteLote = 0L
 
     /** Ordenados por número: la marca solo avanza hasta el final del lote más antiguo aún abierto (regla 9). */
@@ -192,6 +202,10 @@ class CelebracionesViewModel(
 
                 // Purga por el repaso (regla 12).
                 cola.descartar { ya(it, prefs) }.forEach(::cerrarEnLote)
+                retenidos.filter { ya(it, prefs) }.forEach {
+                    retenidos.remove(it)
+                    cerrarEnLote(it)
+                }
 
                 val lote = ++siguienteLote
                 val libro =
@@ -209,16 +223,43 @@ class CelebracionesViewModel(
                 vistas = libro.vistas
                 logrosVistos = logrosIds
 
-                val momentos = libro.momentos + logros
+                // Un logro y su entrada del libro se escriben por separado y pueden llegar en emisiones distintas: el logro
+                // espera a la siguiente emisión del libro o a la ventana, y entonces se ordena con el resto (G14).
+                val soltarYa = primera || arranque || cambioLibro
+                val aSoltar: List<Momento>
+                if (soltarYa) {
+                    aSoltar = retenidos.toList() + logros
+                    retenidos.clear()
+                    ventana?.cancel()
+                    ventana = null
+                } else {
+                    aSoltar = emptyList()
+                    retenidos += logros.filterIsInstance<Momento.Logro>()
+                    if (retenidos.isNotEmpty()) abrirVentana()
+                }
+                val momentos = libro.momentos + aSoltar
+                val contados = libro.momentos.size + logros.size
                 // Sin marca y sin libro (instalación nueva) se fija una de partida: así restaurar siempre se nota.
                 val marca = libro.marcaLote ?: MarcaLibro(0, "").takeIf { primera && prefs.celebratedLedgerMark == null }
-                if (momentos.isNotEmpty() || marca != null) {
-                    lotes[lote] = Lote(momentos.size, marca)
+                if (contados > 0 || marca != null) {
+                    lotes[lote] = Lote(contados, marca)
                     cola.encolar(momentos)
                     avanzarMarca()
                 }
             }
         }
+    }
+
+    private fun abrirVentana() {
+        if (ventana != null) return
+        ventana =
+            scopeCola.launch {
+                delay(VENTANA_LOGRO_MS)
+                ventana = null
+                val soltar = retenidos.toList()
+                retenidos.clear()
+                cola.encolar(soltar)
+            }
     }
 
     private fun ya(
