@@ -7,6 +7,7 @@ import com.alvarotc.bito.ui.notifications.FocusSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
 import com.alvarotc.bito.ui.widget.WidgetRefresher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -73,7 +74,17 @@ object AppStartup {
         ReminderSync.start(app, container, scope)
         BackupSync.start(app, container, scope)
         FocusSync.start(app, container, scope)
-        scope.launch { purgarMemoria(container, now) }
+        scope.launch {
+            try {
+                purgarMemoria(container, now)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
+                // La purga es de mantenimiento: si falla, se reintenta en el proximo arranque.
+            }
+        }
     }
 
     /** Memoria de Habi: 400 dias de eventos y 60 de usos. El dia logico sale de los ajustes. */

@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 
 private const val DIAS_DE_MEMORIA = 400
 private const val DIAS_DE_USOS = 60
@@ -18,7 +19,7 @@ private const val MILLIS_POR_DIA = 86_400_000L
 
 /** Lo que Habi recuerda: eventos, lo gordo, avisos, propuestas vigentes y usos de trozos (spec 4.6). */
 class MemoriaRepository(
-    db: BitoDatabase,
+    private val db: BitoDatabase,
     private val now: () -> Long = System::currentTimeMillis,
 ) {
     private val dao = db.hablaDao()
@@ -30,7 +31,7 @@ class MemoriaRepository(
                 dao.eventosDesde(dia - DIAS_DE_MEMORIA),
                 dao.gordoDe(listOf(dia, dia - 1)),
                 dao.avisosDe(dia),
-                dao.vigentes(),
+                dao.vigentes().map { filas -> filas.mapNotNull { it.aDominio(db) } },
                 dao.usosDesde(now() - DIAS_DE_USOS * MILLIS_POR_DIA),
             ) { eventos, gordo, avisos, vigentes, usos ->
                 val usosDominio = usos.mapNotNull { it.aDominio() }
@@ -42,7 +43,7 @@ class MemoriaRepository(
                             .mapValues { (_, filas) -> filas.sortedBy { it.posicion }.mapNotNull { it.aDominio() } },
                     gordoElegidoMillis = gordo.filter { it.dia == dia }.maxOfOrNull { it.creadoMillis },
                     avisos = avisos.mapNotNull { it.aDominio() },
-                    vigentes = vigentes.mapNotNull { it.aDominio() },
+                    vigentes = vigentes,
                     mostradasHoy = mostradas(usosDominio, dia),
                     usos = usosDominio,
                 )

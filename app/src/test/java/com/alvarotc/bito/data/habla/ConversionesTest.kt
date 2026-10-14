@@ -64,6 +64,11 @@ class ConversionesTest {
     }
 
     @Test
+    fun `a stored respirar destination reads back as null`() {
+        assertNull(vigente.copy(situacion = Situacion.SALUDO, destino = Destino.Respirar).aEntidad().aDominio()!!.destino)
+    }
+
+    @Test
     fun `an ambiguous ref is a habit or a task depending on what the caller resolved`() {
         fun destino(esTarea: Boolean) =
             vigente.copy(situacion = Situacion.GORDO_SIN_EMPEZAR, ref = "x").aEntidad().aDominio(refEsTarea = esTarea)!!.destino

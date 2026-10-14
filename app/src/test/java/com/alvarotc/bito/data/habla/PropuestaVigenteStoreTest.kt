@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.ClaveTrozo
 import com.alvarotc.bito.domain.habla.PropuestaVigente
@@ -12,6 +13,8 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Ambito
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -78,5 +81,20 @@ class PropuestaVigenteStoreTest {
             store.vaciar()
             assertNull(store.leer(Ambito.HOY))
             assertNull(store.leer(Ambito.CAMINO))
+        }
+
+    @Test
+    fun `an ambiguous ref is resolved by the task table in both read paths`() =
+        runTest {
+            db.taskDao().upsert(taskEntity(id = "t1"))
+            store.guardar(vigente(Ambito.HOY, situacion = Situacion.GORDO_SIN_EMPEZAR).copy(ref = "t1"))
+            store.guardar(vigente(Ambito.FICHA, "h1", Situacion.GORDO_SIN_EMPEZAR).copy(ref = "h1"))
+
+            assertEquals(Destino.Tarea("t1"), store.leer(Ambito.HOY)!!.destino)
+            assertEquals(Destino.Habito("h1"), store.leer(Ambito.FICHA, "h1")!!.destino)
+
+            val vigentes = MemoriaRepository(db).observe(flowOf(20_000)).first().vigentes.associateBy { it.ambito }
+            assertEquals(Destino.Tarea("t1"), vigentes.getValue(Ambito.HOY).destino)
+            assertEquals(Destino.Habito("h1"), vigentes.getValue(Ambito.FICHA).destino)
         }
 }

@@ -56,7 +56,7 @@ data class PropuestaVigente(
     val creadoMillis: Long,
 )
 
-/** Una propuesta que se llegó a mostrar hoy, para el tope de §5.2. */
+/** Una propuesta que se llegó a mostrar hoy, para el tope de §5.2. [ref] va siempre `null`: los usos no la guardan. */
 data class Mostrada(
     val situacion: Situacion,
     val ref: String?,

@@ -4,7 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
-import com.alvarotc.bito.data.db.HablaUsadaEntity
+import com.alvarotc.bito.data.db.LoGordoEntity
 import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.EventoMemoria
 import com.alvarotc.bito.domain.habla.Situacion
@@ -63,7 +63,7 @@ class MemoriaRepositoryTest {
         runTest {
             repo.anotar(evento("e1", HOY))
             repo.anotarUsos(listOf(uso(1, "c1")))
-            db.hablaDao().reemplazarGordo(HOY, listOf(com.alvarotc.bito.data.db.LoGordoEntity(HOY, 0, "HABITO", "h1", 777L)))
+            db.hablaDao().reemplazarGordo(HOY, listOf(LoGordoEntity(HOY, 0, "HABITO", "h1", 777L)))
 
             val memoria = repo.observe(flowOf(HOY)).first()
 
@@ -117,7 +117,4 @@ class MemoriaRepositoryTest {
             assertEquals(2, memoria.mostradasHoy.size)
             assertEquals(5, memoria.usos.size)
         }
-
-    @Suppress("unused")
-    private fun fila(u: HablaUsadaEntity) = u
 }

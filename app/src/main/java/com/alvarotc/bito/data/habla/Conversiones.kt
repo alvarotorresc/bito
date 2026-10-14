@@ -1,6 +1,7 @@
 package com.alvarotc.bito.data.habla
 
 import com.alvarotc.bito.data.db.AvisoAceptadoEntity
+import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.HabiMemoriaEntity
 import com.alvarotc.bito.data.db.HablaUsadaEntity
 import com.alvarotc.bito.data.db.LoGordoEntity
@@ -146,6 +147,16 @@ fun PropuestaVigenteEntity.aDominio(refEsTarea: Boolean = false): PropuestaVigen
         hora = hora,
         creadoMillis = creadoMillis,
     )
+}
+
+/**
+ * Unico sitio que resuelve el ref ambiguo: mira la tabla de tareas. Lo usan [PropuestaVigenteStore]
+ * y `MemoriaRepository.observe`, para que ambos den el mismo destino.
+ */
+suspend fun PropuestaVigenteEntity.aDominio(db: BitoDatabase): PropuestaVigente? {
+    val lectura = Situacion.entries.firstOrNull { it.name == situacion }
+    val esTarea = ref != null && lectura != null && refAmbiguo(lectura) && db.taskDao().byId(ref) != null
+    return aDominio(refEsTarea = esTarea)
 }
 
 /** Situaciones cuyo `ref` puede ser una tarea o un habito (lo gordo mezcla los dos). */
