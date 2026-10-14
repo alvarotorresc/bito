@@ -1,47 +1,253 @@
 package com.alvarotc.bito.ui.inicio
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animate
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.alvarotc.bito.BuildConfig
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.ui.camino.CaminoContenido
 import com.alvarotc.bito.ui.camino.CaminoViewModel
+import com.alvarotc.bito.ui.garden.GardenArt
+import com.alvarotc.bito.ui.garden.GardenDebugPanel
+import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
+import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.HojaSaldo
 import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.premios.PremiosEnInicio
 import com.alvarotc.bito.ui.premios.RegistroAnclas
+import com.alvarotc.bito.ui.sistema.BitoFormas
+import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Curvas
+import com.alvarotc.bito.ui.sistema.Duraciones
+import com.alvarotc.bito.ui.sistema.Haptica
+import com.alvarotc.bito.ui.sistema.Medidas
+import com.alvarotc.bito.ui.sistema.Muelles
+import com.alvarotc.bito.ui.sistema.componentes.AvisoEstado
 import com.alvarotc.bito.ui.sistema.componentes.AvisoHost
+import com.alvarotc.bito.ui.sistema.componentes.Globito
 import com.alvarotc.bito.ui.sistema.componentes.rememberAvisoEstado
+import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.tasks.CreateChoiceSheet
 import com.alvarotc.bito.ui.today.HoyLista
 import com.alvarotc.bito.ui.today.TodayViewModel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlin.math.min
+import kotlin.math.roundToInt
 
-/** Hoy y Camino en una sola pantalla. Esqueleto: lo sustituye entero el carril c1. */
+/** Los avisos del Inicio. Los tests lo proveen para lanzar uno; fuera de ahí el Inicio crea el suyo. */
+internal val LocalAvisosInicio = compositionLocalOf<AvisoEstado?> { null }
+
+/** Cuánto se ve cada cosa con [q] (0 Hoy, 1 Camino), spec §7.1. */
+internal data class ProgresoCamino(
+    /** La lista se funde antes de la mitad. */
+    val alfaLista: Float,
+    /** Las estadísticas aparecen después de la mitad. */
+    val alfaEstadisticas: Float,
+    /** El título «Tu camino» aparece en el último 45 %. */
+    val alfaTitulo: Float,
+    /** La cabecera de Hoy y el + se funden enseguida. */
+    val alfaCabecera: Float,
+)
+
+internal fun progresoCamino(q: Float): ProgresoCamino =
+    ProgresoCamino(
+        alfaLista = (1f - q / 0.5f).coerceIn(0f, 1f),
+        alfaEstadisticas = ((q - 0.5f) / 0.5f).coerceIn(0f, 1f),
+        alfaTitulo = ((q - 0.55f) / 0.45f).coerceIn(0f, 1f),
+        alfaCabecera = (1f - q / 0.25f).coerceIn(0f, 1f),
+    )
+
+private const val LISTA_BAJA = 0.55f
+private const val ESTADISTICAS_SUBEN = 0.5f
+private const val DESTACAR_MS = 1_200L
+private const val CARICIAS_MS = 1_500L
+private const val CONTENTO_MS = 1_200L
+private const val TOQUES_CARICIA = 3
+private const val CREAR_A_NAVEGAR_MS = 90L
+private val AIRE_LISTA = 112.dp
+private val BARRA_CAMINO = 56.dp
+private val MARGEN_ABAJO = 20.dp
+private val SUBIDA_TARJETA = 14.dp
+private val AVISO_SOBRE_PILDORA = 88.dp
+private val TARJETA_BAJO_CABECERA = 72.dp
+
+/**
+ * Consume el desplazamiento hacia arriba hasta que [estado] llegue a [maximo] (el jardín encoge o sube) y
+ * lo devuelve cuando la lista está arriba del todo y el dedo sigue bajando.
+ */
+internal class ConexionEncoger(
+    private val estado: MutableFloatState,
+    private val maximo: Float,
+) : NestedScrollConnection {
+    override fun onPreScroll(
+        available: Offset,
+        source: NestedScrollSource,
+    ): Offset {
+        if (available.y >= 0f || estado.floatValue >= maximo) return Offset.Zero
+        val nuevo = (estado.floatValue - available.y).coerceAtMost(maximo)
+        val usado = nuevo - estado.floatValue
+        estado.floatValue = nuevo
+        return Offset(0f, -usado)
+    }
+
+    override fun onPostScroll(
+        consumed: Offset,
+        available: Offset,
+        source: NestedScrollSource,
+    ): Offset {
+        if (available.y <= 0f || estado.floatValue <= 0f) return Offset.Zero
+        val nuevo = (estado.floatValue - available.y).coerceAtLeast(0f)
+        val usado = estado.floatValue - nuevo
+        estado.floatValue = nuevo
+        return Offset(0f, usado)
+    }
+}
+
+/** «Tu camino ›», el enlace de Hoy bajo el jardín. */
+@Composable
+internal fun EnlaceTuCamino(
+    alPulsar: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val colores = BitoTema.colores
+    Row(
+        modifier
+            .fillMaxWidth()
+            .padding(horizontal = Medidas.margen, vertical = Medidas.e8),
+        horizontalArrangement = Arrangement.End,
+    ) {
+        Row(
+            Modifier
+                .clickable(role = Role.Button, onClick = alPulsar)
+                .padding(vertical = Medidas.e8)
+                .testTag("tu-camino"),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                stringResource(R.string.inicio_tu_camino),
+                style = BitoTema.tipos.t16.copy(fontSize = 15.sp, fontWeight = FontWeight.Bold),
+                color = colores.tinta,
+            )
+            Icon(IconosSistema.CaretRight, contentDescription = null, tint = colores.tinta, modifier = Modifier.size(18.dp))
+        }
+    }
+}
+
+/** El título «Tu camino» que se queda arriba: se asienta en tierra cuando el jardín pasa por debajo. */
+@Composable
+private fun TituloCamino(
+    asentado: () -> Float,
+    alfa: () -> Float,
+    modifier: Modifier = Modifier,
+) {
+    val colores = BitoTema.colores
+    Box(
+        modifier
+            .fillMaxWidth()
+            .height(BARRA_CAMINO)
+            .graphicsLayer { this.alpha = alfa() }
+            .testTag("camino-titulo"),
+    ) {
+        Box(
+            Modifier
+                .fillMaxSize()
+                .graphicsLayer { this.alpha = asentado() }
+                .background(colores.tAlta)
+                .border(Medidas.linea, colores.tAlta2),
+        )
+        Text(
+            stringResource(R.string.inicio_tu_camino),
+            style = BitoTema.tipos.t24.copy(fontWeight = FontWeight.Black),
+            color = colores.tinta,
+            modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = Medidas.margen),
+        )
+    }
+}
+
+private fun Modifier.bajoElJardin(borde: () -> Float): Modifier =
+    layout { medible, c ->
+        val arriba = borde().roundToInt().coerceIn(0, c.maxHeight)
+        val p = medible.measure(Constraints.fixed(c.maxWidth, c.maxHeight - arriba))
+        layout(c.maxWidth, c.maxHeight) { p.place(0, arriba) }
+    }
+
+/**
+ * Hoy y Camino en una sola pantalla sobre un solo jardín. [q] (0 Hoy, 1 Camino) lo mueve un `Animatable`
+ * con el muelle `camino`; su destino se guarda, así que Camino sobrevive a ir a otra ruta y volver.
+ * La lista de Hoy sale de la composición con q = 1 y Camino con q = 0.
+ */
 @Composable
 fun InicioScreen(
     hoy: TodayViewModel,
@@ -54,54 +260,298 @@ fun InicioScreen(
 ) {
     val estado by hoy.uiState.collectAsStateWithLifecycle()
     val estadoCamino by camino.uiState.collectAsStateWithLifecycle()
-    var q by rememberSaveable { mutableFloatStateOf(0f) }
+    val estadoActual = rememberUpdatedState(estado)
+    val reducido = BitoTema.reducido
+    val gesto = rememberGesto()
+    val scope = rememberCoroutineScope()
+    val densidad = LocalDensity.current
+
+    // El destino se guarda; el Animatable arranca ya en él, sin animar, al volver de otra ruta.
+    var destino by rememberSaveable { mutableFloatStateOf(0f) }
+    val q = remember { Animatable(destino) }
+    val qGeometria: () -> Float = { if (reducido) (if (q.value >= 0.5f) 1f else 0f) else q.value }
+    val encogidoPx = remember { mutableFloatStateOf(0f) }
+    val subidaPx = remember { mutableFloatStateOf(0f) }
+    val listState = rememberLazyListState()
+    val scrollCamino = rememberScrollState()
+
     var crear by remember { mutableStateOf(false) }
     var saldoAbierto by remember { mutableStateOf(false) }
     val registro = remember { RegistroAnclas() }
-    val avisos = rememberAvisoEstado()
-    BackHandler(enabled = q > 0f) { q = 0f }
+    val avisos = LocalAvisosInicio.current ?: rememberAvisoEstado()
+    var llegando by remember { mutableStateOf<GardenSpecial?>(null) }
+    var creciendo by remember { mutableStateOf<Int?>(null) }
+    var destacar by remember { mutableStateOf<GardenSpecial?>(null) }
+    var asomada by remember { mutableStateOf(false) }
+    val asomo = animateFloatAsState(if (asomada) 1f else 0f, tween(Duraciones.REDUCIDO), label = "asomo")
+
+    fun ir(a: Float) {
+        if (destino == a) return
+        destino = a
+        gesto(if (a > 0f) Snd.ABRIR else Snd.CERRAR, if (a > 0f) Haptica.RISE else Haptica.FALL)
+        scope.launch {
+            if (reducido) q.animateTo(a, tween(Duraciones.REDUCIDO)) else q.animateTo(a, Muelles.camino<Float>(umbral = 0.001f))
+        }
+    }
+
+    fun verEnJardin(especial: GardenSpecial?) {
+        ir(1f)
+        scope.launch {
+            launch { animate(subidaPx.floatValue, 0f, animationSpec = tween(460, easing = Curvas.out)) { v, _ -> subidaPx.floatValue = v } }
+            launch { scrollCamino.animateScrollTo(0, tween(460, easing = Curvas.out)) }
+            destacar = especial
+            delay(DESTACAR_MS)
+            destacar = null
+        }
+    }
+
+    BackHandler(enabled = destino > 0f) { ir(0f) }
     LaunchedEffect(estado.garden) { celebraciones.jardin(estado.garden) }
-    DisposableEffect(enPrimerPlano) {
-        celebraciones.enHoy(enPrimerPlano && q == 0f)
+    val enHoyQuieto by remember { derivedStateOf { q.value == 0f } }
+    DisposableEffect(enPrimerPlano, enHoyQuieto) {
+        celebraciones.enHoy(enPrimerPlano && enHoyQuieto)
         onDispose { celebraciones.enHoy(false) }
     }
-    CompositionLocalProvider(LocalAnclas provides registro) {
-        Box(Modifier.fillMaxSize().testTag("inicio")) {
-            Column {
-                CabeceraHoy(estado.today, estado.saldo, alSaldo = { saldoAbierto = true }, alAjustes = navegar.abrirAjustes)
-                JardinCompartido(
-                    estado.garden,
-                    estado.spec,
-                    q = { q },
-                    encogido = { 0f },
-                    animado = enPrimerPlano,
-                    alTocarFondo = { q = 1f },
-                )
-                if (q < 0.5f) {
+    LaunchedEffect(Unit) { snapshotFlow { q.value == 0f }.collect { if (it) subidaPx.floatValue = 0f } }
+
+    // Tres caricias en 1,5 s alegran a Habi (el mismo cálculo que HabiScreen).
+    val caricias = remember { ArrayDeque<Long>() }
+    var contento by remember { mutableStateOf(false) }
+    var pulso by remember { mutableIntStateOf(0) }
+    LaunchedEffect(pulso) {
+        if (pulso > 0) {
+            contento = true
+            delay(CONTENTO_MS)
+            contento = false
+        }
+    }
+
+    // Volver de crear: el Inicio guarda su copia, porque la lista borra la señal al desplazarse.
+    var creadoVisto by remember { mutableStateOf<String?>(null) }
+    var salto by remember { mutableIntStateOf(0) }
+    var frase by remember { mutableStateOf<Int?>(null) }
+    var enTarjeta by remember { mutableStateOf(false) }
+    var puntoGlobito by remember { mutableStateOf<Offset?>(null) }
+    var origen by remember { mutableStateOf(Offset.Zero) }
+    LaunchedEffect(creado) { if (creado != null) creadoVisto = creado }
+    BoxWithConstraints(
+        Modifier
+            .fillMaxSize()
+            .background(BitoTema.colores.tAlta)
+            .onGloballyPositioned { origen = it.positionInRoot() }
+            .testTag("inicio"),
+    ) {
+        val alto = constraints.maxHeight.toFloat()
+        val ancho = constraints.maxWidth.toFloat()
+        val escenaAlto = ancho / GardenArt.SCENE_ASPECT
+        val extra = with(densidad) { MedidasInicio.ARRIBA_CAMINO.toPx() }
+        val altoCamino = altoJardinCamino(alto, escenaAlto, extra)
+        val maxEncoger = (MedidasInicio.ALTO_HOY - MedidasInicio.ALTO_MIN) * alto
+        val maxSubida = (altoCamino - with(densidad) { BARRA_CAMINO.toPx() }).coerceAtLeast(1f)
+        val encogido = { (encogidoPx.floatValue / maxEncoger).coerceIn(0f, 1f) }
+        val borde = { bordeJardin(qGeometria(), encogido(), alto, escenaAlto, extra, subidaPx.floatValue) }
+        val conexionHoy = remember(maxEncoger) { ConexionEncoger(encogidoPx, maxEncoger) }
+        val conexionCamino = remember(maxSubida) { ConexionEncoger(subidaPx, maxSubida) }
+        val hoyVisible by remember { derivedStateOf { q.value < 1f } }
+        val caminoVisible by remember { derivedStateOf { q.value > 0f } }
+        val cabeceraVisible by remember { derivedStateOf { q.value < 0.25f && (encogido() < 0.85f || asomada) } }
+        val subidaTarjeta = with(densidad) { SUBIDA_TARJETA.roundToPx() }
+        val masActivo by remember { derivedStateOf { q.value < 0.25f } }
+
+        LaunchedEffect(creadoVisto) {
+            val id = creadoVisto ?: return@LaunchedEffect
+            val e = snapshotFlow { estadoActual.value }.first { !it.loading }
+            if (e.cards.any { it.id == id } || e.tasks.any { it.id == id }) {
+                if (!reducido) salto++
+                val rect = registro.posiciones[ClavesAncla.HABI]
+                val visible = rect != null && qGeometria() == 0f && rect.center.y > 0f && rect.center.y < borde()
+                puntoGlobito = if (visible) Offset(rect!!.center.x, rect.top) else null
+                enTarjeta = !visible
+                frase = HabiVoice.bubbleRes(e.spec.mood, e.spec.personality)
+                delay(Duraciones.GLOBITO.toLong())
+                frase = null
+            }
+            creadoVisto = null
+        }
+
+        CompositionLocalProvider(LocalAnclas provides registro) {
+            Box(Modifier.fillMaxSize()) {
+                if (caminoVisible) {
+                    Box(
+                        Modifier
+                            .bajoElJardin(borde)
+                            .graphicsLayer {
+                                val p = progresoCamino(q.value)
+                                translationY = if (reducido) 0f else ESTADISTICAS_SUBEN * alto * (1f - q.value)
+                                alpha = p.alfaEstadisticas
+                            }.nestedScroll(conexionCamino),
+                    ) {
+                        CaminoContenido(estadoCamino, scrollCamino, alVerEnJardin = ::verEnJardin, modifier = Modifier.fillMaxSize())
+                    }
+                }
+                if (hoyVisible) {
                     // inicio-hoy es de InicioScreen; inicio-camino lo pone CaminoContenido
-                    Box(Modifier.weight(1f).testTag("inicio-hoy")) {
+                    Box(
+                        Modifier
+                            .bajoElJardin(borde)
+                            .graphicsLayer {
+                                val p = progresoCamino(q.value)
+                                translationY = if (reducido) 0f else LISTA_BAJA * alto * q.value
+                                alpha = p.alfaLista
+                            }.nestedScroll(conexionHoy)
+                            .testTag("inicio-hoy"),
+                    ) {
                         HoyLista(
                             hoy,
                             navegar,
-                            rememberLazyListState(),
+                            listState,
                             avisos,
-                            encabezado = {},
+                            encabezado = {
+                                Column {
+                                    EnlaceTuCamino({ ir(1f) })
+                                    if (BuildConfig.DEBUG) {
+                                        GardenDebugPanel(
+                                            current = estado.garden,
+                                            onForce = hoy::forzarJardin,
+                                            modifier = Modifier.padding(horizontal = Medidas.margen),
+                                        )
+                                    }
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = AIRE_LISTA),
                             creado = creado,
                             alCreadoVisto = alCreadoVisto,
                         )
                     }
-                } else {
-                    CaminoContenido(estadoCamino, rememberScrollState(), alVerEnJardin = {}, modifier = Modifier.weight(1f))
+                }
+                JardinCompartido(
+                    estado.garden,
+                    estado.spec,
+                    q = qGeometria,
+                    encogido = encogido,
+                    modifier = Modifier.fillMaxSize(),
+                    contento = contento,
+                    animado = enPrimerPlano,
+                    alTocarHabi = {
+                        if (!contento) {
+                            val ahora = System.currentTimeMillis()
+                            caricias.addLast(ahora)
+                            while (caricias.isNotEmpty() && ahora - caricias.first() > CARICIAS_MS) caricias.removeFirst()
+                            if (caricias.size >= TOQUES_CARICIA) {
+                                caricias.clear()
+                                pulso++
+                                hoy.alAcariciarHabi()
+                            } else {
+                                hoy.alTocarHabi()
+                            }
+                        }
+                    },
+                    alTocarFondo = { ir(1f) },
+                    llegando = llegando,
+                    creciendo = creciendo,
+                    destacar = destacar,
+                    saltoHabi = salto,
+                    subida = { subidaPx.floatValue },
+                )
+                if (caminoVisible) {
+                    TituloCamino(
+                        asentado = { (subidaPx.floatValue / maxSubida).coerceIn(0f, 1f) },
+                        alfa = { progresoCamino(q.value).alfaTitulo },
+                        modifier = Modifier.align(Alignment.TopStart),
+                    )
+                }
+                if (cabeceraVisible) {
+                    CabeceraHoy(
+                        estado.today,
+                        estado.saldo,
+                        alSaldo = { saldoAbierto = true },
+                        alAjustes = navegar.abrirAjustes,
+                        modifier =
+                            Modifier
+                                .align(Alignment.TopStart)
+                                .graphicsLayer {
+                                    val base = (1f - encogido() / 0.85f).coerceIn(0f, 1f) * progresoCamino(q.value).alfaCabecera
+                                    alpha = maxOf(base, asomo.value)
+                                    translationY = -0.6f * encogidoPx.floatValue * (1f - asomo.value)
+                                },
+                    )
+                }
+
+                // La píldora y el +: en línea, sin tocarse aunque el ancho sea corto.
+                val anchoPildora = with(densidad) { ANCHO_PILDORA.toPx() }
+                val mas = with(densidad) { (Medidas.mas + Medidas.margen).toPx() }
+                val aire = with(densidad) { Medidas.margen.toPx() }
+                val xPildora = min((ancho - anchoPildora) / 2f, ancho - mas - aire - anchoPildora).coerceAtLeast(0f)
+                Pildora(
+                    q = qGeometria,
+                    alHoy = { ir(0f) },
+                    alCamino = { ir(1f) },
+                    modifier =
+                        Modifier
+                            .align(Alignment.BottomStart)
+                            .offset { IntOffset(xPildora.roundToInt(), 0) }
+                            .padding(bottom = MARGEN_ABAJO),
+                )
+                Box(
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(end = Medidas.margen, bottom = MARGEN_ABAJO)
+                        .graphicsLayer {
+                            translationY = -avisos.desplazamiento.toPx()
+                            alpha = progresoCamino(q.value).alfaCabecera
+                        },
+                ) {
+                    BotonMas(activo = masActivo, alPulsar = { crear = true })
+                }
+                PremiosEnInicio(
+                    celebraciones,
+                    registro,
+                    costuraY = borde,
+                    alVerEnJardin = ::verEnJardin,
+                    alJardin = { l, c ->
+                        llegando = l
+                        creciendo = c
+                    },
+                    alAsomarCabecera = { asomada = it },
+                    modifier = Modifier.fillMaxSize(),
+                )
+                AvisoHost(avisos, Modifier.align(Alignment.BottomCenter).padding(bottom = AVISO_SOBRE_PILDORA - Medidas.margen))
+                val texto = frase?.let { stringResource(it) }
+                val punto = puntoGlobito
+                if (punto != null) {
+                    Box(
+                        Modifier
+                            .offset { IntOffset((punto.x - origen.x).roundToInt(), (punto.y - origen.y).roundToInt()) }
+                            .size(1.dp),
+                    ) {
+                        Globito(visible = texto != null && !enTarjeta, texto = texto.orEmpty(), alIrse = { frase = null })
+                    }
+                }
+                Box(Modifier.align(Alignment.TopCenter).padding(top = TARJETA_BAJO_CABECERA)) {
+                    AnimatedVisibility(
+                        visible = texto != null && enTarjeta,
+                        enter =
+                            fadeIn(tween(Duraciones.COLOR)) +
+                                scaleIn(Muelles.hoja(reducido), initialScale = 0.96f) +
+                                slideInVertically(Muelles.hoja(reducido, IntOffset.VisibilityThreshold)) { subidaTarjeta },
+                        exit = fadeOut(tween(Duraciones.SALIR)),
+                    ) {
+                        Text(
+                            texto.orEmpty(),
+                            style = BitoTema.tipos.t16,
+                            color = BitoTema.colores.tinta,
+                            modifier =
+                                Modifier
+                                    .padding(horizontal = Medidas.margen)
+                                    .background(BitoTema.colores.canto, BitoFormas.globo)
+                                    .border(Medidas.linea, BitoTema.colores.contorno, BitoFormas.globo)
+                                    .padding(Medidas.e12)
+                                    .testTag("habi-asoma"),
+                        )
+                    }
                 }
             }
-            Pildora(q = { q }, alHoy = { q = 0f }, alCamino = { q = 1f }, modifier = Modifier.align(Alignment.BottomCenter))
-            BotonCrearStub(Modifier.align(Alignment.BottomEnd).testTag("boton-crear")) { crear = true }
-            PremiosEnInicio(celebraciones, registro, costuraY = { 0f }, alVerEnJardin = { q = 1f }, alJardin = {
-                    _,
-                    _,
-                ->
-            }, alAsomarCabecera = {})
-            AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
         }
     }
     HojaSaldo(
@@ -119,11 +569,17 @@ fun InicioScreen(
         CreateChoiceSheet(
             onHabit = {
                 crear = false
-                navegar.crearHabito()
+                scope.launch {
+                    delay(CREAR_A_NAVEGAR_MS)
+                    navegar.crearHabito()
+                }
             },
             onTask = {
                 crear = false
-                navegar.crearTarea()
+                scope.launch {
+                    delay(CREAR_A_NAVEGAR_MS)
+                    navegar.crearTarea()
+                }
             },
             onFocus = {
                 crear = false
@@ -138,14 +594,28 @@ fun InicioScreen(
     }
 }
 
+/** El + redondo de 56 dp, de agua y con sombra flotante: abre la hoja de crear. */
 @Composable
-private fun BotonCrearStub(
-    modifier: Modifier,
+private fun BotonMas(
+    activo: Boolean,
     alPulsar: () -> Unit,
 ) {
-    Icon(
-        IconosSistema.Plus,
-        contentDescription = stringResource(R.string.nav_new_habit),
-        modifier = modifier.padding(20.dp).size(48.dp).clickable(onClick = alPulsar),
-    )
+    val colores = BitoTema.colores
+    Box(
+        Modifier
+            .testTag("boton-crear")
+            .size(Medidas.mas)
+            .shadow(12.dp, CircleShape, ambientColor = colores.sombraFlota, spotColor = colores.sombraFlota)
+            .background(colores.agua, CircleShape)
+            .border(Medidas.linea, colores.contorno, CircleShape)
+            .clickable(enabled = activo, role = Role.Button, onClickLabel = stringResource(R.string.inicio_crear), onClick = alPulsar),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            IconosSistema.Plus,
+            contentDescription = stringResource(R.string.nav_new_habit),
+            tint = colores.contorno,
+            modifier = Modifier.size(28.dp),
+        )
+    }
 }
