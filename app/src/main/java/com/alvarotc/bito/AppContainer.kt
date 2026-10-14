@@ -19,6 +19,7 @@ import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.crearTacto
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
+import kotlinx.coroutines.Dispatchers
 
 /** Hand-built DI (tech doc §1.4: no framework — constructors). */
 class AppContainer(context: Context) {
@@ -46,5 +47,5 @@ class AppContainer(context: Context) {
     val habiSounds = HabiSounds(sonido)
     val keyStore = BackupKeyStore(context.filesDir)
     val backup = BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME)
-    val reconciler = PointsReconciler(domainState, rewards, settings = settings)
+    val reconciler = PointsReconciler(domainState, rewards, settings = settings, despachador = Dispatchers.Default)
 }
