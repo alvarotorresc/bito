@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.camino
 import android.content.Context
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.Text
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertContentDescriptionEquals
@@ -26,9 +27,12 @@ import com.alvarotc.bito.domain.PerfectDaysSummary
 import com.alvarotc.bito.domain.Totals
 import com.alvarotc.bito.domain.WeekRow
 import com.alvarotc.bito.domain.WeekSummary
+import com.alvarotc.bito.domain.model.BadgeCatalog
+import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.model.Progreso
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.stats.NumbersUiState
@@ -41,6 +45,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp")
@@ -190,5 +195,48 @@ class CaminoContenidoTest {
         montar(estado())
         rule.onNodeWithTag("streak-agua").assertContentDescriptionEquals("Agua, streak of 13 days")
         rule.onNodeWithTag("streak-agua").onChildren().assertCountEquals(0)
+    }
+
+    private fun conLogros(
+        estado: CaminoUiState,
+        conseguidos: Set<String> = emptySet(),
+    ) = estado.copy(
+        logros =
+            BadgeCatalog.all.map { def ->
+                LogroUi(
+                    def,
+                    if (def.id in conseguidos) 1 else null,
+                    def.threshold?.let { Progreso(0, it) },
+                    GardenSpecial.entries.firstOrNull { it.badgeId == def.id },
+                )
+            },
+        hoy = LocalDate.of(2026, 10, 13),
+    )
+
+    @Test
+    fun `order is stats then badges`() {
+        montar(conLogros(estado()))
+
+        fun arriba(etiqueta: String) = rule.onNodeWithText(etiqueta).fetchSemanticsNode().positionInRoot.y
+        val perfectos = arriba(cadena(R.string.stats_perfect_days_label))
+        val logros = arriba(cadena(R.string.camino_logros, 0, 14))
+        assertTrue(perfectos < logros)
+    }
+
+    @Test
+    fun `without habits it still lists badges`() {
+        montar(conLogros(estado(sinHabitos = true)))
+        rule.onNodeWithText(cadena(R.string.detail_empty_hint)).assertExists()
+        BadgeCatalog.all.forEach { rule.onNodeWithTag("logro-${it.id}").assertExists() }
+    }
+
+    @Test
+    fun `next month text comes from today`() {
+        // Este mes lleva 2 días perfectos y hoy es 13: algún día anterior falló, el mes redondo ya no puede ser.
+        val base = conLogros(estado())
+        montar(base.copy(stats = base.stats.copy(perfectDays = PerfectDaysSummary(2, 2, 2))))
+        rule.onNodeWithTag("logro-perfect-month").performScrollTo().performClick()
+        rule.waitForIdle()
+        rule.onNodeWithText(cadena(R.string.camino_otro_mes, "November 1")).assertExists()
     }
 }

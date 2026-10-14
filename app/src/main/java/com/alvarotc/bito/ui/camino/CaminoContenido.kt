@@ -33,6 +33,9 @@ fun CaminoContenido(
 ) {
     var recordsAbierta by remember { mutableStateOf(false) }
     var numerosAbierta by remember { mutableStateOf(false) }
+    // El logro se queda aunque la hoja ya se cierre: su salida todavía lo pinta.
+    var logroAbierto by remember { mutableStateOf<LogroUi?>(null) }
+    var logroVisible by remember { mutableStateOf(false) }
     Column(modifier.verticalScroll(scroll).background(BitoTema.colores.tAlta).testTag("inicio-camino")) {
         if (!estado.loading) {
             if (estado.sinHabitos) {
@@ -46,10 +49,27 @@ fun CaminoContenido(
                 EstadisticasCamino(estado, alRecords = { recordsAbierta = true }, alNumeros = { numerosAbierta = true })
             }
         }
-        // Provisional hasta la Tarea 22: la cuenta de logros.
-        val cuenta = stringResource(R.string.stats_badges_count, estado.conseguidos, estado.logros.size)
-        Text(stringResource(R.string.stats_badges_title) + " · " + cuenta, Modifier.padding(Medidas.margen))
+        LogrosCamino(estado, alTocar = { logro ->
+            logroAbierto = logro
+            logroVisible = true
+        })
         HojaRecords(recordsAbierta, estado.records.records, alCerrar = { recordsAbierta = false })
         HojaNumeros(numerosAbierta, estado.numbers.totals, alCerrar = { numerosAbierta = false })
+        HojaLogro(
+            abierta = logroVisible,
+            logro = logroAbierto,
+            modo = ModoLogro.CONSULTA,
+            alVerEnJardin = { alVerEnJardin(logroAbierto?.especial) },
+            alCerrar = { logroVisible = false },
+            hoy = estado.hoy,
+            mesImposible = mesImposible(estado),
+        )
     }
 }
+
+/**
+ * Mes redondo ya no puede salir este mes: algún día anterior de hoy no fue perfecto. Los días perfectos de este
+ * mes llegan hasta hoy, así que con menos que los días ya pasados del mes alguno falló.
+ */
+internal fun mesImposible(estado: CaminoUiState): Boolean =
+    !estado.sinHabitos && estado.stats.perfectDays.thisMonth < estado.hoy.dayOfMonth - 1

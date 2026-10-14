@@ -11,4 +11,21 @@
     <string name="camino_ley_congelado">frozen</string>
     <string name="camino_ley_pausa">paused</string>
     <string name="camino_ley_pendiente">pending</string>
+    <string name="camino_logros">Badges · %1$d of %2$d</string>
+    <string name="camino_lo_conseguiste">You got it on %1$s.</string>
+    <string name="camino_falta_dias">%1$d of %2$d days</string>
+    <string name="camino_otro_mes">%1$s starts a whole new month.</string>
+    <string name="camino_como_se_gana">Earned by: %1$s.</string>
+    <string name="camino_planto">Planted %1$s in your garden.</string>
+    <string name="camino_plantara">When you get it, it plants %1$s in your garden.</string>
+    <string name="camino_verlo">See it in the garden</string>
+    <string name="camino_seguir">Continue</string>
+    <string name="camino_logro_conseguido_cd">%1$s, earned</string>
+    <string name="camino_logro_pendiente_cd">%1$s, not yet: %2$s</string>
+    <string name="camino_especial_farolillo">the lantern</string>
+    <string name="camino_especial_caminito">the stone path</string>
+    <string name="camino_especial_estanque">the pond</string>
+    <string name="camino_especial_setas">the mushrooms</string>
+    <string name="camino_especial_cerezo_grande">the big cherry tree</string>
+    <string name="camino_especial_arbol_dorado">the golden tree</string>
 </resources>
