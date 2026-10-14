@@ -234,6 +234,20 @@ class CapaParticulasTest {
     }
 
     @Test
+    fun `coins without an anchor still tell the balance once per coin`() {
+        val registro = RegistroAnclas()
+        var avisos = 0
+        val tarea =
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined).launch {
+                registro.llegadasDeMoneda.collect { avisos++ }
+            }
+        montar(registro, mutableStateOf(Momento.Monedas("fila:h1", 3, 3, 1)))
+        avanzar(100)
+        assertEquals("el saldo sube con su tic aunque no haya vuelo", 3, avisos)
+        tarea.cancel()
+    }
+
+    @Test
     fun `a drop or grains without an anchor never end somebody else's coins`() {
         val registro = RegistroAnclas()
         montar(registro)

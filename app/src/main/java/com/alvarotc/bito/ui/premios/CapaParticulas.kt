@@ -247,6 +247,7 @@ internal fun CapaParticulasConEstado(
         val hasta = registro.posiciones[ClavesAncla.SALDO]
         if (desde == null || hasta == null) {
             gesto(sonidoDe(0, n), Haptica.TICK)
+            repeat(n) { registro.monedaLlego() }
             terminar()
             return@LaunchedEffect
         }
