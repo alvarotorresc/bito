@@ -27,6 +27,8 @@ import comun  # noqa: E402
 
 # Una edición cuenta como «no movida» si la mejor escala es 1 y el desplazamiento es 0.
 CAMBIO_MINIMO = 40
+# Con --eje cabeza, la franja de arriba de la piel (35 %) no cuenta para alinear: el gorro la tapa.
+IGNORAR_CABEZA = 0.35
 
 
 def _caja_cara_en_base():
@@ -49,7 +51,7 @@ def _fraccion_hueco(editada_rgb, caja, dx, dy):
     return comun.fraccion_verde(editada_rgb, (x0, y0, x1, y1))
 
 
-def extraer(base_rgb, editada_rgb, modo="accesorio", caja_cara=None):
+def extraer(base_rgb, editada_rgb, modo="accesorio", caja_cara=None, ignorar_arriba=0.0):
     """Devuelve (capa RGBA del tamaño de la base, desviación, fracción de piel en el hueco o None)."""
     rgba_ed = comun.quitar_magenta(editada_rgb)
     alfa_ed = rgba_ed[..., 3].astype(np.float32) / 255.0
@@ -70,7 +72,7 @@ def extraer(base_rgb, editada_rgb, modo="accesorio", caja_cara=None):
         hueco = _fraccion_hueco(editada_rgb, caja_cara or _caja_cara_en_base(), dx, dy)
     else:
         piel_ed = comun.mascara_verde(editada_rgb)
-        _, escala, dx, dy = comun.alinear(piel_base, piel_ed)
+        _, escala, dx, dy = comun.alinear(piel_base, piel_ed, ignorar_arriba=ignorar_arriba)
         dev = comun.desviacion_alineacion(escala, dx, dy, ancho)
         mascara = solido & ~piel_ed
         if abs(escala - 1) < 1e-3 and dx == 0 and dy == 0:
@@ -103,8 +105,11 @@ def main(argv=None):
     p.add_argument("salida")
     p.add_argument("--modo", choices=["accesorio", "gafas", "disfraz"], default="accesorio")
     p.add_argument("--umbral", type=float, default=comun.UMBRAL_ALINEACION)
+    p.add_argument("--eje", choices=["cabeza", "cara", "cuello", "pies"], default=None,
+                   help="Con 'cabeza', la franja de arriba (35 %%) no cuenta para alinear: el gorro la tapa.")
     args = p.parse_args(argv)
-    capa, dev, hueco = extraer(comun.cargar_rgb(args.base), comun.cargar_rgb(args.editada), args.modo)
+    capa, dev, hueco = extraer(comun.cargar_rgb(args.base), comun.cargar_rgb(args.editada), args.modo,
+                               ignorar_arriba=IGNORAR_CABEZA if args.eje == "cabeza" else 0.0)
     print(f"desviación {dev:.4f} (umbral {args.umbral})")
     if dev > args.umbral:
         print("DESALINEADO: repite la imagen en una conversación nueva.")
