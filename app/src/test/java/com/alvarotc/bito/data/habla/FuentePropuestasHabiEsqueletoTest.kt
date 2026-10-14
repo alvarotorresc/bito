@@ -8,9 +8,13 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.domainState
+import com.alvarotc.bito.domain.habla.Candidata
 import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
+import com.alvarotc.bito.domain.habla.ElegirCandidata
 import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.TipoRefGordo
+import com.alvarotc.bito.domain.habla.hechos
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Ambito
@@ -33,7 +37,10 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.time.ZoneId
 
-/** El esqueleto de la Ola 0: en Hoy saluda como la pieza 3 y lo gordo ya se guarda. */
+/**
+ * El esqueleto de la Ola 0: en Hoy saluda como la pieza 3 y lo gordo ya se guarda. Motor y hechos son falsos, para no
+ * depender de los cuerpos del carril m1. La Tarea 20 (m2) sustituye este test por el de la fuente completa.
+ */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class FuentePropuestasHabiEsqueletoTest {
@@ -51,27 +58,40 @@ class FuentePropuestasHabiEsqueletoTest {
     @After
     fun tearDown() = db.close()
 
-    private fun fuente(nombre: String) =
-        FuentePropuestasHabi(
-            estado = flowOf(domainState()),
-            ajustes = flowOf(Settings(userName = nombre, personality = Personality.NEUTRA)),
-            recordatorios = flowOf(emptyMap()),
-            memoria = MemoriaRepository(db) { ahora },
-            vigentes = PropuestaVigenteStore(db),
-            gordo = LoGordoRepository(db) { ahora },
-            aceptados = AvisosAceptadosRepository(db),
-            catalogo = { CatalogoHablaVacio },
-            avisos = AvisosHabiNulo,
-            permisos = { PermisosAvisos(notificaciones = true, alarmasExactas = true) },
-            now = { ahora },
-            zone = { utc },
-        )
+    private val elegidas = mutableListOf<Ambito>()
+
+    private fun motorQueDice(situacion: Situacion) =
+        ElegirCandidata { ambito, _, _, _, _ ->
+            elegidas += ambito
+            Candidata(situacion, null, emptyMap(), emptyList())
+        }
+
+    private fun fuente(
+        nombre: String,
+        motor: ElegirCandidata = motorQueDice(Situacion.SALUDO),
+    ) = FuentePropuestasHabi(
+        estado = flowOf(domainState()),
+        ajustes = flowOf(Settings(userName = nombre, personality = Personality.NEUTRA)),
+        recordatorios = flowOf(emptyMap()),
+        memoria = MemoriaRepository(db) { ahora },
+        vigentes = PropuestaVigenteStore(db),
+        gordo = LoGordoRepository(db) { ahora },
+        aceptados = AvisosAceptadosRepository(db),
+        catalogo = { CatalogoHablaVacio },
+        avisos = AvisosHabiNulo,
+        permisos = { PermisosAvisos(notificaciones = true, alarmasExactas = true) },
+        now = { ahora },
+        zone = { utc },
+        motor = motor,
+        hechos = { _, _, ctx, _ -> hechos().copy(hoy = ctx.hoy) },
+    )
 
     @Test
     fun `today greets as before, without actions and with the greeting id`() =
         runTest {
             val p = fuente("Álvaro").propuesta(Ambito.HOY).first()!!
 
+            assertEquals(listOf(Ambito.HOY), elegidas)
             assertEquals("SALUDO::$hoy", p.id)
             assertTrue(p.acciones.isEmpty())
             val texto = p.texto as TextoHabi.Recurso
@@ -95,6 +115,12 @@ class FuentePropuestasHabiEsqueletoTest {
             assertEquals(comentario, (f.propuesta(Ambito.CAMINO).first()!!.texto as TextoHabi.Recurso).res)
             assertNull(f.propuesta(Ambito.CIERRE).first())
             assertNull(f.propuesta(Ambito.DESCANSO).first())
+        }
+
+    @Test
+    fun `a situation other than the greeting is not painted yet`() =
+        runTest {
+            assertNull(fuente("Álvaro", motorQueDice(Situacion.CERRAR_DIA)).propuesta(Ambito.HOY).first())
         }
 
     @Test

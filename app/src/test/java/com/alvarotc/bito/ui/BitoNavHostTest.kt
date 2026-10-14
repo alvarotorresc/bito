@@ -580,9 +580,8 @@ class BitoNavHostTest {
         lateinit var nav: NavHostController
         setContentWithNav { nav = it }
 
-        // `review-seal` cuelga de la carga del repaso (Room y DataStore en hilos reales): se espera a esa condición.
+        // El cierre cuelga del Inicio, que espera a su carga (Room y DataStore en hilos reales): se espera a su etiqueta.
         esperarEtiqueta("cierre")
-        esperarEtiqueta("review-seal")
         assertNull(NavRequests.pending.value)
         assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
         compose.onNodeWithTag("pildora", useUnmergedTree = true).assertDoesNotExist()
@@ -601,6 +600,22 @@ class BitoNavHostTest {
         assertNull(NavRequests.pending.value)
         // Una sola entrada de Hoy: la petición la sustituye en vez de apilar otra.
         assertEquals(1, compose.runOnUiThread { nav.currentBackStack.value.count { it.destination.route == RUTA_HOY } })
+    }
+
+    @Test
+    fun `a review request from all tasks leaves only Today with the close in the stack`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        esperarEtiqueta("inicio-hoy")
+        compose.runOnUiThread { nav.navigate("tasks") }
+        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == "tasks" }
+
+        compose.runOnIdle { NavRequests.open("review") }
+
+        esperarEtiqueta("cierre")
+        val pila = compose.runOnUiThread { nav.currentBackStack.value.mapNotNull { it.destination.route } }
+        assertEquals(listOf(RUTA_HOY), pila)
+        assertEquals(true, compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getBoolean("cierre") })
     }
 
     @Test
@@ -812,7 +827,7 @@ class BitoNavHostTest {
 
         // Held, not navigated: onboarding is still the one showing and review never opened over it.
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
-        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("cierre", useUnmergedTree = true).assertDoesNotExist()
         // Genuinely still pending (not consumed into any ephemeral state): this is what makes the
         // hold rotation-safe -- NavRequests.pending is the one and only source of truth throughout.
         assertEquals("review", NavRequests.pending.value)
@@ -832,11 +847,10 @@ class BitoNavHostTest {
         compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("cierre", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("cierre", useUnmergedTree = true).assertExists()
-        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
         assertNull(NavRequests.pending.value) // fired through the normal branch and consumed there
     }
 
@@ -989,7 +1003,7 @@ class BitoNavHostTest {
         compose.waitForIdle()
         compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
 
-        compose.waitUntil(timeoutMillis = 5_000) { hayTag("review-seal") }
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("cierre") }
         dejarPasar()
         assertTrue("el repaso no pinta la veta del día", !hayTag("veta-DIA"))
         assertTrue("el repaso no pinta ningún logro", !hayTag("hoja-logro"))
