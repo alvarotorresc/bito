@@ -7,7 +7,7 @@ object Ritmo {
     const val ESPERA_TRAS_RESPONDER_MIN = 90
     const val TOPE_ACEPTADOS_DIA = 2
 
-    /** §5.6: días lógicos sin actividad para la vuelta (el umbral de DRAMATIC). */
+    /** §5.6: días lógicos sin actividad para la vuelta (el umbral de DRAMATIC: `hoy - ultimaActividad >= 3`, que es `diasSinActividad >= 2` en [Hechos]). */
     const val DIAS_AUSENCIA = 3
     const val DIAS_AUSENCIA_SEMANAL = 14
     const val PERMISO_CADA_DIAS = 7

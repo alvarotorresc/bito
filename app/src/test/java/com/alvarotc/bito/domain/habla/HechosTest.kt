@@ -106,14 +106,23 @@ class HechosTest {
 
     @Test
     fun `first day after an absence`() {
-        val tras = domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 4)))
+        val tras = domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 3)))
         assertTrue(de(tras).primerDiaTrasAusencia)
-        assertFalse(de(domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 3)))).primerDiaTrasAusencia)
+        assertFalse(de(domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 2)))).primerDiaTrasAusencia)
+    }
+
+    @Test
+    fun `the absence threshold is the one of the dramatic mood`() {
+        for ((hace, esperado) in listOf(2 to false, 3 to true)) {
+            val s = domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - hace)))
+            assertEquals("hace $hace", esperado, de(s).primerDiaTrasAusencia)
+            assertEquals("hace $hace", esperado, de(s).animoSemana == Mood.DRAMATIC)
+        }
     }
 
     @Test
     fun `an answer to the return today closes the first day`() {
-        val tras = domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 4)))
+        val tras = domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 3)))
         val respondida = Memoria(eventos = listOf(respuesta(Situacion.VUELTA, "h1", Respuesta.AHORA, millisOn(TODAY, 9))))
         val vuelta = Memoria(eventos = listOf(evento(TipoMemoria.VUELTA, TODAY, valor = 4)))
         assertFalse(de(tras, respondida).primerDiaTrasAusencia)

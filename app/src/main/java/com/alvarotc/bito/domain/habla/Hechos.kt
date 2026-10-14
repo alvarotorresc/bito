@@ -163,7 +163,7 @@ data class Hechos(
                 gordo = gordo,
                 gordoAyerSinHacer = gordoAyerSinHacer,
                 diasSinActividad = diasSinActividad,
-                primerDiaTrasAusencia = diasSinActividad >= Ritmo.DIAS_AUSENCIA && !vueltaRespondidaHoy(memoria, hoy),
+                primerDiaTrasAusencia = ausenciaLarga(state, hoy) && !vueltaRespondidaHoy(memoria, hoy),
                 animoAyer = animoAyer,
                 diaDuro = animoAyer == ANIMO_DURO,
                 diaSellado = diaSellado,
@@ -185,6 +185,15 @@ data class Hechos(
             state: DomainState,
             hoy: LogicalDay,
         ): Int = StatsEngine.lastActivityDay(state)?.let { (hoy - it - 1).coerceAtLeast(0) } ?: 0
+
+        /**
+         * El mismo umbral que DRAMATIC en `MoodEngine`: la última actividad (`StatsEngine.lastActivityDay`)
+         * a [Ritmo.DIAS_AUSENCIA] días lógicos o más de hoy.
+         */
+        private fun ausenciaLarga(
+            state: DomainState,
+            hoy: LogicalDay,
+        ): Boolean = StatsEngine.lastActivityDay(state)?.let { hoy - it >= Ritmo.DIAS_AUSENCIA } ?: false
 
         /** Habi ya respondió a la vuelta hoy, o la dejó registrada. */
         private fun vueltaRespondidaHoy(
