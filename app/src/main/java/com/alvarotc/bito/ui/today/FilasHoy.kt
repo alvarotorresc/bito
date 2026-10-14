@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -269,38 +268,41 @@ internal fun FilaHabito(
                 CirculoAgua(llenado(card), colores.agua, Modifier.anclaParticula(ClavesAncla.fila(card.id)))
             }
         }
-        Column(Modifier.weight(1f)) {
-            val rachaMin = if (card.kind == CardKind.ABSTINENCE) 1 else 2
-            val rachaTexto =
-                when {
-                    card.kind == CardKind.CHECK && card.period == Period.DAY -> null // sale a la derecha
-                    card.streak < rachaMin -> null
-                    card.period == Period.DAY -> stringResource(R.string.hoy_dia_n, card.streak)
-                    else -> stringResource(R.string.hoy_racha_n, card.streak)
-                }
-            val base =
-                when {
-                    card.kind == CardKind.ABSTINENCE ->
-                        stringResource(if (card.failed) R.string.relapse_today else R.string.clean_today)
-                    card.kind == CardKind.CHECK && card.period == Period.WEEK ->
-                        stringResource(R.string.week_progress, card.progress, card.target)
-                    card.kind == CardKind.CHECK && card.period == Period.MONTH ->
-                        stringResource(R.string.month_progress, card.progress, card.target)
-                    else -> null
-                }
-            val subtitulo = listOfNotNull(base, rachaTexto).joinToString(" · ").ifEmpty { null }
+        val rachaMin = if (card.kind == CardKind.ABSTINENCE) 1 else 2
+        val rachaTexto =
+            when {
+                card.kind == CardKind.CHECK && card.period == Period.DAY -> null // sale a la derecha
+                card.streak < rachaMin -> null
+                card.period == Period.DAY -> stringResource(R.string.hoy_dia_n, card.streak)
+                else -> stringResource(R.string.hoy_racha_n, card.streak)
+            }
+        val base =
+            when {
+                card.kind == CardKind.ABSTINENCE ->
+                    stringResource(if (card.failed) R.string.relapse_today else R.string.clean_today)
+                card.kind == CardKind.CHECK && card.period == Period.WEEK ->
+                    stringResource(R.string.week_progress, card.progress, card.target)
+                card.kind == CardKind.CHECK && card.period == Period.MONTH ->
+                    stringResource(R.string.month_progress, card.progress, card.target)
+                else -> null
+            }
+        val subtitulo = listOfNotNull(base, rachaTexto).joinToString(" · ").ifEmpty { null }
+        // Nombre y subtítulo son una sola zona pulsable (toque y mantener para reordenar) de al menos 44 dp.
+        Column(
+            Modifier
+                .weight(1f)
+                .then(nombreModifier)
+                .testTag("nombre-${card.id}")
+                .heightIn(min = Medidas.toqueMinimo)
+                .clickable(onClick = alAbrir),
+            verticalArrangement = Arrangement.Center,
+        ) {
             Text(
                 card.name,
                 style = t.t16.fuerte(),
                 color = colores.tinta,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier =
-                    nombreModifier
-                        .testTag("nombre-${card.id}")
-                        .heightIn(min = if (subtitulo == null) Medidas.toqueMinimo else 0.dp)
-                        .clickable(onClick = alAbrir)
-                        .wrapContentHeight(Alignment.CenterVertically),
             )
             if (subtitulo != null) {
                 Text(

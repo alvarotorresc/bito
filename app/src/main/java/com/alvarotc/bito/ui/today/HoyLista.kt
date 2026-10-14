@@ -118,7 +118,7 @@ fun HoyLista(
         }
     }
     // Tareas ya marcadas que siguen dibujando su salida: la tarea se marca al instante, la fila se va después.
-    var saliendo by remember { mutableStateOf<Map<String, TaskRowUi>>(emptyMap()) }
+    var saliendo by remember { mutableStateOf<Map<String, Pair<Int, TaskRowUi>>>(emptyMap()) }
 
     val textoRegistrado = stringResource(R.string.logged_snackbar)
     val textoLimite = stringResource(R.string.hoy_limite_pasado)
@@ -157,13 +157,24 @@ fun HoyLista(
             if (desde != -1 && hasta != -1) ordenadas.add(hasta, ordenadas.removeAt(desde))
         }
     val base = filasDe(estado.copy(cards = ordenadas.toList()))
+    // La fila saliente vuelve a su sitio dentro del bloque de tareas, no al final.
     val filas =
-        if (saliendo.isEmpty()) {
-            base
-        } else {
-            val fuera = saliendo.values.filter { r -> estado.tasks.none { it.id == r.id } }.map { FilaHoy.Tarea(it) }
-            val corte = base.indexOfFirst { it !is FilaHoy.Habito && it !is FilaHoy.Tarea }.let { if (it < 0) base.size else it }
-            base.take(corte) + fuera + base.drop(corte)
+        base.toMutableList().also { lista ->
+            saliendo.values.filter { (_, r) -> estado.tasks.none { it.id == r.id } }.sortedBy { it.first }.forEach { (indice, r) ->
+                val primera =
+                    lista.indexOfFirst { it is FilaHoy.Tarea }.let {
+                        if (it < 0) {
+                            lista.indexOfFirst {
+                                    f ->
+                                f !is FilaHoy.Habito
+                            }.let { n -> if (n < 0) lista.size else n }
+                        } else {
+                            it
+                        }
+                    }
+                val tareas = lista.count { it is FilaHoy.Tarea }
+                lista.add(primera + indice.coerceAtMost(tareas), FilaHoy.Tarea(r))
+            }
         }
     val hayTuDia = estado.cards.isNotEmpty()
     val vacio = !estado.loading && estado.cards.isEmpty() && estado.pausedHabits.isEmpty() && !estado.hasAnyTasks
@@ -304,7 +315,7 @@ fun HoyLista(
                             alTerminar = {
                                 val row = fila.row
                                 viewModel.markTaskDone(row.id)
-                                saliendo = saliendo + (row.id to row)
+                                saliendo = saliendo + (row.id to (estado.tasks.indexOfFirst { it.id == row.id }.coerceAtLeast(0) to row))
                                 scope.launch {
                                     delay(SALIDA_TAREA_MS)
                                     saliendo = saliendo - row.id

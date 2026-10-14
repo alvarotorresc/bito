@@ -384,14 +384,18 @@ class BitoNavHostTest {
         compose.waitForIdle()
         // Hoy consume `creado` en cuanto lo ve (alCreadoVisto): se observa cada valor que recibe, no el final.
         val vistos = mutableListOf<String?>()
+        val observador = androidx.lifecycle.Observer<String?> { vistos += it }
         compose.runOnUiThread {
-            nav.getBackStackEntry("today").savedStateHandle.getLiveData<String?>("creado").observeForever { vistos += it }
+            nav.getBackStackEntry("today").savedStateHandle.getLiveData<String?>("creado").observeForever(observador)
         }
         compose.onNodeWithTag("save").performScrollTo()
         tapTag("save")
         esperarRuta(nav, "today")
 
         val id = runBlocking { container.database.habitDao().all().single { it.name == "Agua" }.id }
+        compose.runOnUiThread {
+            nav.getBackStackEntry("today").savedStateHandle.getLiveData<String?>("creado").removeObserver(observador)
+        }
         assertTrue("Hoy recibió el id recién creado: $vistos", id in vistos)
     }
 

@@ -408,6 +408,28 @@ class HoyListaTest {
         rule.onNodeWithText("día 4").assertIsDisplayed()
         rule.onNodeWithText("día 6").assertIsDisplayed()
         rule.onNodeWithText("día 12", substring = true).assertIsDisplayed()
-        assertTrue(rule.onNodeWithTag("nombre-check").getBoundsInRoot().height >= 44.dp)
+        listOf("check", "semana", "cuenta", "dura", "abst").forEach {
+            assertTrue("nombre-$it pulsable", rule.onNodeWithTag("nombre-$it").getBoundsInRoot().height >= 44.dp)
+        }
+    }
+
+    @Test
+    fun `an exiting task row keeps its place among the tasks`() {
+        banco.preparar()
+        runBlocking {
+            TasksRepository(banco.db).create(taskEntity(id = "t1", title = "Primera", createdOnDay = banco.hoy))
+            TasksRepository(banco.db).create(taskEntity(id = "t2", title = "Segunda", createdOnDay = banco.hoy))
+        }
+        banco.montar()
+        val antes = rule.onNodeWithTag("tarea-t1").getBoundsInRoot().top.value < rule.onNodeWithTag("tarea-t2").getBoundsInRoot().top.value
+        val primera = if (antes) "t1" else "t2"
+        val otra = if (antes) "t2" else "t1"
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("circulo-tarea-$primera").performClick()
+        rule.waitForIdle()
+        rule.onNodeWithTag("tarea-$primera").assertExists()
+        assertTrue(
+            rule.onNodeWithTag("tarea-$primera").getBoundsInRoot().top.value < rule.onNodeWithTag("tarea-$otra").getBoundsInRoot().top.value,
+        )
     }
 }
