@@ -141,6 +141,7 @@ fun Hoja(
             }
         }
     val colores = BitoTema.colores
+    val densidad = LocalDensity.current.density
     val estado =
         rememberDraggableState { delta ->
             if (!cerrando) arrastre += delta
@@ -152,7 +153,7 @@ fun Hoja(
             enabled = !cerrando,
             onDragStopped = { velocidad ->
                 if (cerrando) return@draggable
-                if (HojaFisica.debeCerrar(arrastre, alto, velocidad / 1000f)) {
+                if (HojaFisica.debeCerrar(arrastre, alto, HojaFisica.dpPorMs(velocidad, densidad))) {
                     val actual = if (alto > 0f) (posicion.value * alto + HojaFisica.conFriccion(arrastre)) / alto else posicion.value
                     arrastre = 0f
                     posicion.snapTo(actual.coerceIn(0f, 1f))
