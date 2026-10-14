@@ -122,6 +122,16 @@ class BitoNavHostTest {
         compose.waitForIdle()
     }
 
+    /**
+     * Espera a que salga [tag]. Las pantallas de ruta (repaso, respirar) pintan su contenido solo cuando su
+     * ViewModel termina de cargar por los hilos reales de Room y DataStore, que `waitForIdle` no espera: afirmar
+     * con `assertExists` nada más montar es una carrera contra esos hilos.
+     */
+    private fun esperarEtiqueta(tag: String) =
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+
     /** Pulsa el nodo con ese tag invocando su acción, para los botones que el toque sintetizado no alcanza. */
     private fun tapTag(tag: String) {
         compose.onNodeWithTag(tag, useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
@@ -538,7 +548,8 @@ class BitoNavHostTest {
 
         setContent()
 
-        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
+        // `review-seal` cuelga de la carga del repaso (Room y DataStore en hilos reales): se espera a esa condición.
+        esperarEtiqueta("review-seal")
         assertNull(NavRequests.pending.value)
     }
 
@@ -901,7 +912,8 @@ class BitoNavHostTest {
 
         setContent()
 
-        compose.onNodeWithTag("breathing-start", useUnmergedTree = true).assertExists()
+        // `breathing-start` cuelga de la carga del ejercicio (Room y DataStore en hilos reales): se espera a esa condición.
+        esperarEtiqueta("breathing-start")
         compose.onNodeWithTag("breathing-phase", useUnmergedTree = true).assertDoesNotExist()
         assertNull(NavRequests.pending.value)
     }
@@ -911,9 +923,8 @@ class BitoNavHostTest {
     fun `the breathing option of the create sheet opens the exercise`() {
         setContent()
         elegirSesion("create-breathing")
-        compose.waitForIdle()
 
-        compose.onNodeWithTag("breathing-screen", useUnmergedTree = true).assertExists()
+        esperarEtiqueta("breathing-screen")
     }
 
     /**
