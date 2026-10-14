@@ -20,6 +20,10 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSpecial
@@ -363,5 +367,41 @@ class GardenSceneTest {
         val despues = registro.posiciones.getValue(ClavesAncla.HABI)
         assertEquals(antes.width / 2f, despues.width, 1f)
         assertEquals(antes.left / 2f, despues.left, 1f)
+    }
+
+    @Test
+    fun `the anchors only follow the parent while the app is resumed`() {
+        var escala by mutableStateOf(1f)
+        val dueno =
+            object : LifecycleOwner {
+                override val lifecycle = LifecycleRegistry.createUnsafe(this).apply { currentState = Lifecycle.State.RESUMED }
+            }
+        compose.setContent {
+            ConSistema(sonido, tacto) {
+                CompositionLocalProvider(LocalAnclas provides registro, LocalLifecycleOwner provides dueno) {
+                    GardenScene(
+                        garden = garden,
+                        spec = spec,
+                        animated = false,
+                        modifier =
+                            Modifier.width(400.dp).graphicsLayer {
+                                scaleX = escala
+                                scaleY = escala
+                                transformOrigin = TransformOrigin(0f, 0f)
+                            },
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.runOnUiThread { (dueno.lifecycle as LifecycleRegistry).currentState = Lifecycle.State.CREATED }
+        compose.waitForIdle()
+        val antes = registro.posiciones.getValue(ClavesAncla.HABI)
+
+        compose.runOnUiThread { escala = 0.5f }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(100)
+
+        assertEquals(antes, registro.posiciones.getValue(ClavesAncla.HABI))
     }
 }

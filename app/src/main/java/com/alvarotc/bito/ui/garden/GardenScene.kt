@@ -64,6 +64,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.GardenSeason
 import com.alvarotc.bito.domain.model.GardenSpecial
@@ -438,11 +441,15 @@ fun GardenScene(
         val registrarActual by rememberUpdatedState(registrar)
         // El padre puede mover la escena solo con graphicsLayer (encoger con el scroll, crecer a Camino), lo que no
         // dispara onGloballyPositioned: mientras esté compuesta, se recalcula cada ~16 ms (localToRoot cuenta la capa). Un bucle de `withFrameNanos` dejaría la escena siempre ocupada para las pruebas de Compose.
-        LaunchedEffect(registro) {
+        // Solo con la app en primer plano: en segundo plano la composición sigue viva y no hay nadie a quien apuntar.
+        val ciclo = LocalLifecycleOwner.current.lifecycle
+        LaunchedEffect(registro, ciclo) {
             if (registro == null) return@LaunchedEffect
-            while (true) {
-                delay(ANCLAS_REFRESCO_MS)
-                coordenadas[0]?.let(registrarActual)
+            ciclo.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                while (true) {
+                    delay(ANCLAS_REFRESCO_MS)
+                    coordenadas[0]?.let(registrarActual)
+                }
             }
         }
         Box(
