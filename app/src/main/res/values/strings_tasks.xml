@@ -56,4 +56,14 @@
     <string name="focus_busy_title">Something\'s already running</string>
     <string name="focus_busy_keep">Keep going with %1$s</string>
     <string name="focus_busy_switch">Drop it and start this</string>
+    <string name="tasks2_borrar_boton">Delete task</string>
+    <string name="tasks2_borrar_titulo">Delete this task?</string>
+    <string name="tasks2_borrar_cuerpo">The bitos you earned are yours.</string>
+    <string name="tasks2_falta_nombre">A name is missing.</string>
+    <string name="tasks2_fecha_titulo">Due when?</string>
+    <string name="tasks2_cambiar_fecha">Change the date</string>
+    <string name="tasks2_traida">Brought to today.</string>
+    <string name="tasks2_crear_habito">Habit</string>
+    <string name="tasks2_crear_tarea">Task</string>
+    <string name="tasks2_sesion_titulo">Session now</string>
 </resources>

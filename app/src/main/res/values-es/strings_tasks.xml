@@ -60,4 +60,14 @@
     <string name="focus_busy_title">Ya tienes algo en marcha</string>
     <string name="focus_busy_keep">Seguir con %1$s</string>
     <string name="focus_busy_switch">Dejarla y empezar esta</string>
+    <string name="tasks2_borrar_boton">Borrar tarea</string>
+    <string name="tasks2_borrar_titulo">¿Borrar esta tarea?</string>
+    <string name="tasks2_borrar_cuerpo">Los bitos que ganaste son tuyos.</string>
+    <string name="tasks2_falta_nombre">Falta el nombre.</string>
+    <string name="tasks2_fecha_titulo">¿Para cuándo?</string>
+    <string name="tasks2_cambiar_fecha">Cambiar la fecha</string>
+    <string name="tasks2_traida">Traída a hoy.</string>
+    <string name="tasks2_crear_habito">Hábito</string>
+    <string name="tasks2_crear_tarea">Tarea</string>
+    <string name="tasks2_sesion_titulo">Sesión ahora</string>
 </resources>
