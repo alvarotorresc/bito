@@ -64,6 +64,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
@@ -149,9 +150,8 @@ private val SUBIDA_TARJETA = 14.dp
 private val AVISO_SOBRE_PILDORA = 88.dp
 private val TARJETA_BAJO_CABECERA = 72.dp
 
-// Catálogo 3.8: con el cierre, el jardín y la tierra suben 76 dp y la lista de Hoy se hunde y se apaga.
+// Catálogo 3.8: con el cierre, el jardín y la tierra suben 76 dp (la lista de Hoy se hunde por su cuenta).
 private val SUBIDA_CIERRE = 76.dp
-private val HUNDIDA_CIERRE = 48.dp
 
 /**
  * Consume el desplazamiento hacia arriba hasta que [estado] llegue a [maximo] (el jardín encoge o sube) y
@@ -290,6 +290,7 @@ fun InicioScreen(
     val cierreEstado = rememberEstadoCierre(abiertoAlEmpezar = cierre)
     val cierreAbierto by remember { derivedStateOf { cierreEstado.abierto } }
     val cierreEnPantalla by remember { derivedStateOf { cierreEstado.abierto || cierreEstado.c.value > 0f } }
+    val hoyTapado by remember { derivedStateOf { cierreEstado.c.value >= 1f } }
 
     // El destino se guarda; el Animatable arranca ya en él, sin animar, al volver de otra ruta.
     var destino by rememberSaveable { mutableFloatStateOf(0f) }
@@ -359,6 +360,9 @@ fun InicioScreen(
             cierreEstado.ajustarNoche(cargado.todaySealed)
         }
     }
+    // Lo sellado que sabe el jardín: el estado en carga no lo cambia (se queda el último cargado).
+    var selladoCargado by remember { mutableStateOf(false) }
+    LaunchedEffect(estado.loading, estado.todaySealed) { if (!estado.loading) selladoCargado = estado.todaySealed }
     // El estado en carga trae el jardín inicial, no el tuyo: si contara como anterior, cada arranque celebraría todo el jardín.
     LaunchedEffect(estado.garden, estado.loading) { if (!estado.loading) celebraciones.jardin(estado.garden) }
     val enHoyQuieto by remember { derivedStateOf { q.value == 0f } }
@@ -458,10 +462,11 @@ fun InicioScreen(
                             .bajoElJardin(borde)
                             .graphicsLayer {
                                 val p = progresoCamino(q.value)
-                                val k = cierreEstado.c.value.coerceIn(0f, 1f)
-                                translationY = if (reducido) 0f else LISTA_BAJA * alto * q.value + HUNDIDA_CIERRE.toPx() * k
-                                alpha = p.alfaLista * (1f - k)
+                                translationY = if (reducido) 0f else LISTA_BAJA * alto * q.value
+                                alpha = p.alfaLista
                             }.nestedScroll(conexionHoy)
+                            // Tapada del todo por el cierre, la lista sale del árbol de accesibilidad.
+                            .then(if (hoyTapado) Modifier.clearAndSetSemantics {} else Modifier)
                             .testTag("inicio-hoy"),
                     ) {
                         HoyLista(
@@ -487,6 +492,7 @@ fun InicioScreen(
                             alCreadoVisto = alCreadoVisto,
                             abrirGordo = gordo,
                             alGordoVisto = alGordoVisto,
+                            hundida = { cierreEstado.c.value.coerceIn(0f, 1f) },
                         )
                     }
                 }
@@ -523,7 +529,7 @@ fun InicioScreen(
                     fiesta = fiesta,
                     subida = { subidaPx.floatValue },
                     // Ruling P22: con el cierre abierto sigue al anochecer; fuera, de noche solo con el día sellado.
-                    noche = { cierreEstado.nocheDelJardin(estadoActual.value.todaySealed) },
+                    noche = { cierreEstado.nocheDelJardin(selladoCargado) },
                 )
                 if (caminoVisible) {
                     TituloCamino(

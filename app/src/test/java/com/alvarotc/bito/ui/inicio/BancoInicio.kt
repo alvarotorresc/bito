@@ -129,22 +129,34 @@ internal class BancoInicio(
             )
         camino = CaminoViewModel(domainState, settings, rewards, { fixedNow }, { utc }, dispatcherVM)
         celebraciones = CelebracionesViewModel(domainState, rewards, settings, CoroutineScope(dispatcher + Job()))
-        cierre =
-            CierreViewModel(
-                ReviewViewModel(
-                    domainState,
-                    habits,
-                    journal,
-                    settings,
-                    reconciler,
-                    rewards,
-                    HabiSounds(MotorSonidoMudo),
-                    now = { fixedNow },
-                    zone = { utc },
-                    defaultDispatcher = dispatcherVM,
-                ),
-            )
+        cierre = construirCierre(domainState, settings, rewards, reconciler, dispatcherVM)
     }
+
+    /**
+     * El único sitio donde el banco construye el cierre. Este banco es del carril del cierre (u2) desde la Ola 1: cuando
+     * el cierre deje de montar el repaso, se cambia aquí y en ningún otro sitio.
+     */
+    private fun construirCierre(
+        domainState: DomainStateRepository,
+        settings: SettingsRepository,
+        rewards: RewardsRepository,
+        reconciler: PointsReconciler,
+        dispatcherVM: CoroutineDispatcher,
+    ): CierreViewModel =
+        CierreViewModel {
+            ReviewViewModel(
+                domainState,
+                habits,
+                journal,
+                settings,
+                reconciler,
+                rewards,
+                HabiSounds(MotorSonidoMudo),
+                now = { fixedNow },
+                zone = { utc },
+                defaultDispatcher = dispatcherVM,
+            )
+        }
 
     fun sembrar(
         id: String,

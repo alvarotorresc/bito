@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
@@ -77,6 +78,7 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private const val FILAS_HUECO = 4
+private val HUNDIDA_CIERRE = 48.dp
 private const val ESCALON_ENTRADA_MS = 60
 private const val MAX_ESCALONADAS = 8
 private const val SALIDA_TAREA_MS = 340L
@@ -101,6 +103,9 @@ fun HoyLista(
     // El aviso de la mañana pide la hoja de lo gordo; la lista avisa de que lo vio (la hoja la abre la Tarea 24).
     abrirGordo: Boolean = false,
     alGordoVisto: () -> Unit = {},
+    // Lo que se ha hundido la lista porque se abre el cierre (0 nada, 1 del todo); se lee al dibujar. Provisional: la
+    // lista entera baja y se apaga a la vez; el carril de Hoy (u1) lo cambia por un escalón de 25 ms por fila.
+    hundida: () -> Float = { 0f },
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -253,7 +258,13 @@ fun HoyLista(
         }
     }
 
-    Box(modifier) {
+    Box(
+        modifier.graphicsLayer {
+            val k = hundida()
+            if (!reducido) translationY = HUNDIDA_CIERRE.toPx() * k
+            alpha = 1f - k
+        },
+    ) {
         LazyColumn(
             Modifier.fillMaxWidth().testTag("hoy-lista"),
             state = listState,
