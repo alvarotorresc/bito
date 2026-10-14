@@ -31,13 +31,8 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SnackbarData
 import androidx.compose.material3.Surface
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -161,64 +156,6 @@ fun GhostPillButton(
         Spacer(Modifier.width(6.dp))
     }
     Text(text, style = MaterialTheme.typography.labelMedium)
-}
-
-/**
- * [BitoSnackbar] wrapped in a horizontal swipe-to-dismiss, notification-style (QA 2026-08-24):
- * flicking the card either way dismisses it, which resolves the host's suspended showSnackbar
- * with Dismissed — the caller's else-branch (consume, no undo) runs exactly as on timeout.
- */
-@Composable
-fun DismissableBitoSnackbar(data: SnackbarData) {
-    val dismissState =
-        rememberSwipeToDismissBoxState(
-            confirmValueChange = { value ->
-                val leaving = value != SwipeToDismissBoxValue.Settled
-                if (leaving) data.dismiss()
-                leaving
-            },
-        )
-    SwipeToDismissBox(state = dismissState, backgroundContent = {}) {
-        BitoSnackbar(data)
-    }
-}
-
-/**
- * Bito-styled snackbar body. The M3 default reads the inverse* slots this theme deliberately
- * doesn't define, falling back to Material's near-black + purple — pass this to every
- * [androidx.compose.material3.SnackbarHost] so transient messages speak Crema like the rest.
- */
-@Composable
-fun BitoSnackbar(
-    data: SnackbarData,
-    modifier: Modifier = Modifier,
-) {
-    Surface(
-        modifier = modifier.padding(12.dp).testTag("bito-snackbar"),
-        shape = RoundedCornerShape(24.dp),
-        color = Tarjeta,
-        border = BorderStroke(1.dp, Borde),
-        shadowElevation = 6.dp,
-    ) {
-        Row(
-            Modifier.padding(horizontal = 20.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                data.visuals.message,
-                style = MaterialTheme.typography.bodyLarge,
-                color = Tinta,
-                modifier = Modifier.weight(1f),
-            )
-            data.visuals.actionLabel?.let { label ->
-                Spacer(Modifier.size(12.dp))
-                TextButton(
-                    onClick = data::performAction,
-                    colors = ButtonDefaults.textButtonColors(contentColor = Hoja),
-                ) { Text(label, style = MaterialTheme.typography.titleMedium) }
-            }
-        }
-    }
 }
 
 /** «El progreso son puntitos»: filled dots toward small targets (≤ 12). */

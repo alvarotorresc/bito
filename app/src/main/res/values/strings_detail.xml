@@ -1,36 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="open_habit_hint">Open %1$s</string>
-
     <string name="unit_days">days</string>
-    <string name="unit_days_clean">clean days</string>
     <string name="unit_weeks">weeks</string>
     <string name="unit_months">months</string>
     <string name="record_chip">Record: %1$d</string>
 
-    <plurals name="freezer_chip_label">
-        <item quantity="one">%1$d freezer</item>
-        <item quantity="other">%1$d freezers</item>
-    </plurals>
-
     <string name="previous_month">Previous month</string>
     <string name="next_month">Next month</string>
 
-    <!-- DotHeatmap: TalkBack-only date patterns, and the aggregated/per-cell descriptions built
-         from them (heatmap_month_pattern mirrors today_date_pattern's own per-locale convention).
+    <!-- CalendarioGotas: TalkBack-only date pattern and per-cell descriptions.
          day_done/day_not_done/paused_section_title are reused per-cell instead of new keys. -->
-    <string name="heatmap_month_pattern">MMMM yyyy</string>
     <string name="heatmap_day_pattern">MMMM d</string>
-    <string name="heatmap_month_summary">%1$s: %2$d done, %3$d failed, %4$d frozen, %5$d paused of %6$d days</string>
     <string name="heatmap_day_cd">%1$s, %2$s</string>
     <string name="heatmap_day_frozen">Frozen</string>
     <string name="heatmap_day_pending">Pending</string>
 
     <string name="window_7">7 days</string>
-    <string name="window_30">30 days</string>
-    <string name="window_year">Year</string>
-    <string name="compliance_fraction">%1$d of %2$d</string>
-    <string name="compliance_caption">compliance · %1$s</string>
     <string name="no_data_placeholder" translatable="false">—</string>
 
     <string name="pause_habit">Pause</string>
@@ -39,11 +24,8 @@
 
     <string name="day_done">Done</string>
     <string name="day_not_done">Not done</string>
-    <string name="day_value_title">Set the day\'s total</string>
     <string name="relapsed_that_day">I slipped that day</string>
     <string name="stayed_clean">I stayed clean</string>
-    <string name="seal_day_hint">This seals the whole day, like batch sealing.</string>
-    <string name="use_freezer_action">Use a freezer (you have %1$d)</string>
 
     <string name="freezer_sheet_title">Freezers</string>
     <string name="freezer_sheet_body">A freezer protects one failed day without breaking your streak.</string>
@@ -59,7 +41,6 @@
     <string name="pause_note_hint">Note (optional)</string>
 
     <string name="archive_sheet_title">Archive this habit?</string>
-    <string name="archive_sheet_body">Archiving keeps everything — you can unarchive it later.</string>
 
     <string name="detail_empty_hint">Log your first day and this comes alive</string>
 </resources>
