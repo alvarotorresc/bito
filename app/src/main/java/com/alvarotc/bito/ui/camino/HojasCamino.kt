@@ -33,20 +33,25 @@ fun HojaRecords(
             if (records.isEmpty()) {
                 Text(stringResource(R.string.records_empty), style = BitoTema.tipos.t16, color = BitoTema.colores.tintaSuave)
             }
-            records.forEach { fila -> FilaRecord(fila) }
+            records.forEachIndexed { i, fila -> FilaRecord(fila, mejorDeSiempre = i == 0) }
         }
     }
 }
 
+/** La primera fila es la mejor racha de todas (la lista llega ordenada): lo dice, como la pantalla de récords de antes. */
 @Composable
-private fun FilaRecord(fila: RecordRow) {
+private fun FilaRecord(
+    fila: RecordRow,
+    mejorDeSiempre: Boolean,
+) {
     val actual =
         if (fila.current == 0) {
             stringResource(R.string.records_no_current_streak)
         } else {
             stringResource(R.string.records_current_streak, fila.current, stringResource(unidadDe(fila.period)))
         }
-    val subtitulo = if (fila.archived) "$actual · ${stringResource(R.string.records_archived_label)}" else actual
+    val conEstado = if (fila.archived) "$actual · ${stringResource(R.string.records_archived_label)}" else actual
+    val subtitulo = if (mejorDeSiempre) "${stringResource(R.string.records_best_caption)} · $conEstado" else conEstado
     Fila(fila.name, Modifier.testTag("record-${fila.habitId}"), subtitulo = subtitulo) {
         Text(stringResource(R.string.record_chip, fila.best), style = BitoTema.tipos.t16.fuerte(), color = BitoTema.colores.tinta)
     }

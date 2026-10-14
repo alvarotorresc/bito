@@ -158,6 +158,15 @@ class CaminoContenidoTest {
     }
 
     @Test
+    fun `the best record of all says it is your all-time best streak`() {
+        montar(estado())
+        rule.onNodeWithText(cadena(R.string.camino_mejor_racha, 31)).performScrollTo().performClick()
+        rule.waitForIdle()
+        val dentro = hasAnyAncestor(hasTestTag("hoja-records"))
+        rule.onAllNodes(hasText(cadena(R.string.records_best_caption), substring = true) and dentro).assertCountEquals(1)
+    }
+
+    @Test
     fun `the numbers sheet groups the counters`() {
         montar(estado())
         rule.onNodeWithText(cadena(R.string.camino_registros_totales)).performScrollTo().performClick()
