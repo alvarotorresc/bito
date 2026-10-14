@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
+import androidx.room.withTransaction
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
@@ -267,5 +268,100 @@ class CelebracionesViewModelTest {
             advanceUntilIdle() // incluye el respiro: si quedara algo en la cola, ya habría salido
             assertNull(vm.actual.value) // lo que sonaba se cortó y la cola quedó sin lo del libro
             assertEquals(MarcaLibro(22, "k"), marca()) // refijada sin celebrar
+        }
+
+    @Test
+    fun `a later batch never moves the mark past an earlier batch still open`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.enHoy(false)
+            advanceUntilIdle()
+            insertar("r", 10, PointsReason.STREAK_MILESTONE, "h1:7", 5) // veta de racha en pausa
+            advanceUntilIdle()
+            insertar("b", 20, PointsReason.BUY_ITEM, "item", -5) // un lote sin momentos
+            advanceUntilIdle()
+            assertEquals("si la app muriera ahora, la racha seguiría pendiente", MarcaLibro(0, ""), marca())
+            vm.enHoy(true)
+            advanceUntilIdle()
+            vm.terminado(vm.actual.value!!)
+            advanceUntilIdle()
+            assertEquals(MarcaLibro(20, "b"), marca())
+        }
+
+    @Test
+    fun `restoring on a fresh install, which never wrote a mark, celebrates nothing old`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.pointsLedgerDao().insertAll(
+                listOf(
+                    fila("s", 20, PointsReason.PERFECT_DAY, "week:2950", 10),
+                    fila("m", 21, PointsReason.PERFECT_DAY, "month:24300", 50),
+                    fila("k", 22, PointsReason.STREAK_MILESTONE, "h1:30", 20),
+                ),
+            )
+            advanceUntilIdle()
+            settingsRepo.update { it.copy(celebratedLedgerMark = null) }
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            assertEquals(MarcaLibro(22, "k"), marca())
+        }
+
+    @Test
+    fun `a restore whose settings arrive before the restored ledger celebrates nothing old`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            settingsRepo.update { it.copy(celebratedLedgerMark = null) }
+            advanceUntilIdle()
+            db.pointsLedgerDao().insertAll(
+                listOf(
+                    fila("s", 20, PointsReason.PERFECT_DAY, "week:2950", 10),
+                    fila("k", 22, PointsReason.STREAK_MILESTONE, "h1:30", 20),
+                ),
+            )
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            assertEquals(MarcaLibro(22, "k"), marca())
+        }
+
+    @Test
+    fun `a ledger that replaces the old one is a restore even before the settings arrive`() =
+        runTest(dispatcher) {
+            insertar("o", 5, PointsReason.HABIT_DONE, "h1:$hoy")
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(5, "o")) }
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.withTransaction {
+                db.pointsLedgerDao().deleteAll()
+                db.pointsLedgerDao().insertAll(
+                    listOf(
+                        fila("s", 20, PointsReason.PERFECT_DAY, "week:2950", 10),
+                        fila("k", 22, PointsReason.STREAK_MILESTONE, "h1:30", 20),
+                    ),
+                )
+            }
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            assertEquals(MarcaLibro(22, "k"), marca())
+        }
+
+    @Test
+    fun `leaving Today while a perfect day vein plays marks the day as celebrated`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.enHoy(true)
+            advanceUntilIdle()
+            insertar("d", 10, PointsReason.PERFECT_DAY, "day:$hoy", 3)
+            advanceUntilIdle()
+            vm.enHoy(false)
+            advanceUntilIdle()
+            assertEquals(hoy, settingsRepo.settings.first().perfectDayCelebratedDay)
         }
 }
