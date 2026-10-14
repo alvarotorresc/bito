@@ -6,8 +6,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -87,7 +85,7 @@ fun HojaPassphrase(
         titulo = stringResource(R.string.copias_pass_titulo),
     ) {
         Column(
-            Modifier.verticalScroll(rememberScrollState()),
+            Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(Medidas.e12),
         ) {
             Text(stringResource(R.string.copias_pass_desc), style = BitoTema.tipos.t16, color = colores.tintaSuave)

@@ -26,6 +26,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -220,7 +222,14 @@ fun Hoja(
                         titulo?.let { Text(it, style = BitoTema.tipos.t24.fuerte(), color = colores.tinta) }
                     }
                 }
-                Column(Modifier.testTag("hoja-cuerpo").fillMaxWidth().padding(Medidas.margen)) { hojaScope.contenido() }
+                Column(
+                    Modifier
+                        .testTag("hoja-cuerpo")
+                        .weight(1f, fill = false)
+                        .fillMaxWidth()
+                        .verticalScroll(rememberScrollState())
+                        .padding(Medidas.margen),
+                ) { hojaScope.contenido() }
                 if (seccion != null) {
                     Spacer(Modifier.fillMaxWidth().height(Medidas.costra).background(seccion.fondo))
                 }

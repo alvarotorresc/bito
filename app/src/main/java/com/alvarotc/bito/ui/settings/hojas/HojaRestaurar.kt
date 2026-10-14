@@ -10,9 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -141,7 +139,7 @@ fun HojaRestaurar(
         titulo = titulo,
     ) {
         cerrarRef[0] = { cerrar() }
-        Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth()) {
             PasosPuntos(paso + 1, total)
             HojaPasos(paso) { p ->
                 Column(Modifier.fillMaxWidth().padding(top = Medidas.e12), verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
