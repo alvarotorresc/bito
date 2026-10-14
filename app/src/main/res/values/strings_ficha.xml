@@ -15,4 +15,27 @@
     <string name="ficha_leyenda_congelador">Freezer</string>
     <string name="ficha_leyenda_hoy">Today</string>
     <string name="ficha_leyenda_por_venir">Upcoming</string>
+
+    <!-- Lámina de herbario -->
+    <plurals name="ficha_dias_seguidos">
+        <item quantity="one">day in a row</item>
+        <item quantity="other">days in a row</item>
+    </plurals>
+    <plurals name="ficha_semanas_seguidas">
+        <item quantity="one">week in a row</item>
+        <item quantity="other">weeks in a row</item>
+    </plurals>
+    <plurals name="ficha_meses_seguidos">
+        <item quantity="one">month in a row</item>
+        <item quantity="other">months in a row</item>
+    </plurals>
+    <plurals name="ficha_dias_limpios">
+        <item quantity="one">clean day</item>
+        <item quantity="other">clean days</item>
+    </plurals>
+    <string name="ficha_hoy_empieza_otra">days in a row; today a new one starts</string>
+    <string name="ficha_mejor_racha">best streak</string>
+    <string name="ficha_mejor_ahora">best streak: the current one</string>
+    <string name="ficha_ultimos_30">of the last 30 days</string>
+    <string name="ficha_planta_cd">The habit\'s plant</string>
 </resources>
