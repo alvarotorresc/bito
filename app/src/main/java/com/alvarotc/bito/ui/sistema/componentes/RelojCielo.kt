@@ -12,9 +12,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithCache
@@ -44,7 +45,6 @@ import com.alvarotc.bito.ui.sistema.Muelles
 import com.alvarotc.bito.ui.sistema.cifra
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
-import kotlinx.coroutines.launch
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -69,15 +69,17 @@ fun RelojCielo(
     val reducido = BitoTema.reducido
     val colores = BitoTema.colores
     val gesto = rememberGesto()
-    val scope = rememberCoroutineScope()
     val minutosActual by rememberUpdatedState(minutos)
     val alCambiarActual by rememberUpdatedState(alCambiar)
 
     // Posición del astro sin dar vueltas: valor sin envolver, para que viaje por el camino corto.
     val astro = remember { Animatable(minutos.toFloat()) }
+    var arrastrando by remember { mutableStateOf(false) }
     LaunchedEffect(minutos) {
         val delta = RelojLogica.caminoCorto(astro.value.roundToInt().mod(RelojLogica.DIA), minutos)
-        astro.snapTo(astro.value.roundToInt() + delta.toFloat())
+        val meta = astro.value.roundToInt() + delta.toFloat()
+        // Al arrastrar el astro sigue al dedo sin retraso; en el resto de casos viaja con el muelle.
+        if (arrastrando) astro.snapTo(meta) else astro.animateTo(meta, Muelles.reloj(reducido))
     }
 
     fun mover(nuevo: Int) {
@@ -127,22 +129,26 @@ fun RelojCielo(
                     val centro = Offset(size.width / 2f, size.height / 2f)
                     val destino = minutoDe(p, centro)
                     gesto(h = Haptica.CLICK)
-                    scope.launch {
-                        val delta = RelojLogica.caminoCorto(astro.value.roundToInt().mod(RelojLogica.DIA), destino)
-                        astro.animateTo(astro.value.roundToInt() + delta.toFloat(), Muelles.reloj(reducido))
-                        alCambiarActual(destino)
-                        gesto(Snd.TIC, Haptica.TICK)
-                    }
+                    // El valor cambia en el acto: Guardar durante el viaje del astro guarda el destino.
+                    alCambiarActual(destino)
+                    gesto(Snd.TIC, Haptica.TICK)
                 }
             }.pointerInput(paso, desde, hasta) {
                 val centro = Offset(size.width / 2f, size.height / 2f)
                 detectDragGestures(
                     onDragStart = { p ->
+                        arrastrando = true
                         gesto(h = Haptica.CLICK)
                         mover(minutoDe(p, centro))
                     },
-                    onDragEnd = { gesto(h = Haptica.TICK) },
-                    onDragCancel = { gesto(h = Haptica.TICK) },
+                    onDragEnd = {
+                        arrastrando = false
+                        gesto(h = Haptica.TICK)
+                    },
+                    onDragCancel = {
+                        arrastrando = false
+                        gesto(h = Haptica.TICK)
+                    },
                 ) { change, _ ->
                     change.consume()
                     mover(minutoDe(change.position, centro))

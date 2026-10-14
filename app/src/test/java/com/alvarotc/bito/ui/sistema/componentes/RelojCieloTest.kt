@@ -61,4 +61,17 @@ class RelojCieloTest {
         rule.onNodeWithTag("reloj").performKeyInput { pressKey(Key.DirectionUp) }
         assertEquals(510, m)
     }
+
+    @Test
+    fun `a tap reports its value at once, without waiting for the astro to travel`() {
+        var m by mutableStateOf(480)
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            ConSistema {
+                RelojCielo(m, { m = it }, Modifier.size(300.dp).testTag("reloj"), paso = 5, descripcion = "Hora")
+            }
+        }
+        rule.onNodeWithTag("reloj").performTouchInput { click(centerRight - Offset(8f, 0f)) }
+        assertEquals(360, m)
+    }
 }
