@@ -152,6 +152,14 @@ class ReminderUseCase(
 fun quickTargetOf(card: HabitCardUi): QuickTarget? =
     when (card.kind) {
         CardKind.CHECK -> QuickTarget(card.id, card.name, amount = 1, isCheck = true)
-        CardKind.COUNTER -> QuickTarget(card.id, card.name, amount = card.step, isCheck = false)
+        CardKind.COUNTER ->
+            QuickTarget(
+                card.id,
+                card.name,
+                amount = card.step,
+                isCheck = false,
+                hecho = card.progress,
+                objetivo = card.target,
+            )
         CardKind.DURATION, CardKind.ABSTINENCE -> null
     }

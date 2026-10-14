@@ -4,13 +4,19 @@ import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
-import com.alvarotc.bito.ui.theme.Hoja
+import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.renderHabiBitmap
+import com.alvarotc.bito.ui.sistema.BitoClaro
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Posts or cancels Bito's local notifications from already-decided content — [ReminderUseCase],
@@ -68,14 +74,9 @@ object Notifier {
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-        payload.targets.forEach { target ->
-            val label =
-                if (target.isCheck) {
-                    context.getString(R.string.notif_target_done, target.name)
-                } else {
-                    context.getString(R.string.notif_target_add, target.amount, target.name)
-                }
-            builder.addAction(0, label, quickActionIntent(context, target.habitId, target.amount, REMINDER_ID))
+                .setLargeIcon(iconoHabi(context, personality))
+        payload.targets.take(MAX_ACTIONS).forEach { target ->
+            builder.addAction(0, etiquetaAccion(context, target), quickActionIntent(context, target.habitId, target.amount, REMINDER_ID))
         }
         notify(context, REMINDER_ID, builder)
     }
@@ -135,6 +136,7 @@ object Notifier {
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setLargeIcon(iconoHabi(context, personality, dormido = true))
                 .setContentIntent(contentIntent(context, "review", 2))
         notify(context, REVIEW_ID, builder)
     }
@@ -148,9 +150,11 @@ object Notifier {
     fun showPerfectDay(
         context: Context,
         body: String,
+        personality: Personality = Personality.NEUTRA,
     ) {
         val builder =
             baseBuilder(context, NotificationChannels.CELEBRATIONS)
+                .setLargeIcon(iconoHabi(context, personality, mood = Mood.RADIANT))
                 .setContentTitle(context.getString(R.string.notif_perfect_day_title))
                 .setContentText(body)
         notify(context, CELEBRATION_ID, builder)
@@ -194,6 +198,7 @@ object Notifier {
                 .setContentTitle(title)
                 .setContentText(body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+                .setLargeIcon(iconoHabi(context, personality))
                 .setContentIntent(contentIntent(context, "tasks", 3))
         notify(context, TASKS_ID, builder)
     }
@@ -215,6 +220,7 @@ object Notifier {
             baseBuilder(context, NotificationChannels.REMINDERS)
                 .setContentTitle(context.getString(ReminderVoice.breathingTitleRes(personality), name))
                 .setContentText(context.getString(ReminderVoice.breathingBodyRes(personality)))
+                .setLargeIcon(iconoHabi(context, personality))
                 .setContentIntent(contentIntent(context, "breathing", 5))
         notify(context, BREATHING_ID, builder)
     }
@@ -265,13 +271,44 @@ object Notifier {
     /** Clears the focus tray. */
     fun cancelFocus(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
 
+    /** Lado en píxeles del icono grande: Habi sin accesorios (spec pieza 2 §5.6). */
+    private const val ICONO_PX = 192
+    private const val MAX_ACTIONS = 3
+
+    /** Habi pintada una vez por voz y expresión; los receptores ya trabajan fuera del hilo principal. */
+    private val iconos = ConcurrentHashMap<Triple<Personality, Mood, Boolean>, Bitmap>()
+
+    private fun iconoHabi(
+        context: Context,
+        personality: Personality,
+        mood: Mood = Mood.NORMAL,
+        dormido: Boolean = false,
+    ): Bitmap? {
+        val clave = Triple(personality, if (dormido) Mood.NORMAL else mood, dormido)
+        iconos[clave]?.let { return it }
+        // Un icono que no se pinta nunca debe costar el aviso: sale sin icono grande.
+        return runCatching {
+            renderHabiBitmap(
+                context.applicationContext,
+                HabiSpec(
+                    mood = if (dormido) Mood.NORMAL else mood,
+                    personality = personality,
+                    equipped = EquippedSet(),
+                    closedEyes = dormido,
+                    sleepCap = dormido,
+                ),
+                ICONO_PX,
+            )
+        }.getOrNull()?.also { iconos[clave] = it }
+    }
+
     private fun baseBuilder(
         context: Context,
         channelId: String,
     ): NotificationCompat.Builder =
         NotificationCompat.Builder(context, channelId)
             .setSmallIcon(R.drawable.ic_stat_habi)
-            .setColor(Hoja.toArgb())
+            .setColor(BitoClaro.aguaHonda.toArgb())
             .setContentIntent(contentIntent(context))
             .setAutoCancel(true)
             // TrayRefresher re-posts the GLOBAL reminder on every in-app write while it's showing
@@ -347,3 +384,15 @@ object Notifier {
         manager.notify(id, builder.build())
     }
 }
+
+/** Texto del botón de una acción rápida: «Hecho: Leer» o «+1 vaso · 7/8» (sin progreso si no hay objetivo). */
+internal fun etiquetaAccion(
+    context: Context,
+    target: QuickTarget,
+): String =
+    when {
+        target.isCheck -> context.getString(R.string.notif_target_done, target.name)
+        target.objetivo > 0 ->
+            context.getString(R.string.notif_target_add, target.amount, target.name, target.hecho, target.objetivo)
+        else -> context.getString(R.string.notif_action_add, target.amount) + " " + target.name
+    }
