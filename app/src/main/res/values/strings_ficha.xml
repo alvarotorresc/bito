@@ -38,4 +38,24 @@
     <string name="ficha_mejor_ahora">best streak: the current one</string>
     <string name="ficha_ultimos_30">of the last 30 days</string>
     <string name="ficha_planta_cd">The habit\'s plant</string>
+
+    <!-- Ficha: cabecera, nota, pie y hojas -->
+    <string name="ficha_editar">Edit</string>
+    <string name="ficha_marcar_hoy">Mark %1$s today</string>
+    <string name="ficha_cal_nota">Tap a past day to correct it. Freezers can\'t be tapped.</string>
+    <string name="ficha_vale">Okay</string>
+    <string name="ficha_no_hace_falta">No need</string>
+    <string name="ficha_dias_7">7 days</string>
+    <string name="ficha_dias_365">365 days</string>
+    <string name="ficha_cumple_linea">%1$s · %2$s</string>
+    <string name="ficha_cumple_cd">%1$s: %2$d of %3$d</string>
+    <string name="ficha_sin_congeladores">No freezers</string>
+    <string name="ficha_recaida_verbo">Register</string>
+    <string name="ficha_sella_dia">This seals the whole day.</string>
+    <string name="ficha_total_cd">Total for the day</string>
+    <string name="ficha_usar_congelador">Use a freezer (you have %1$d)</string>
+    <string name="ficha_congelador_pregunta">Use a freezer?</string>
+    <string name="ficha_te_quedara">You\'ll have %1$d left</string>
+    <string name="ficha_congelador_verbo">Use freezer</string>
+    <string name="ficha_archivar_cuerpo">Archiving keeps everything.</string>
 </resources>

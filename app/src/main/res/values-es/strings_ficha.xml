@@ -42,4 +42,24 @@
     <string name="ficha_mejor_ahora">mejor racha: la de ahora</string>
     <string name="ficha_ultimos_30">de los últimos 30 días</string>
     <string name="ficha_planta_cd">La planta del hábito</string>
+
+    <!-- Ficha: cabecera, nota, pie y hojas -->
+    <string name="ficha_editar">Editar</string>
+    <string name="ficha_marcar_hoy">Marcar %1$s hoy</string>
+    <string name="ficha_cal_nota">Toca un día pasado para corregirlo. Los congeladores no se tocan.</string>
+    <string name="ficha_vale">Vale</string>
+    <string name="ficha_no_hace_falta">No hace falta</string>
+    <string name="ficha_dias_7">7 días</string>
+    <string name="ficha_dias_365">365 días</string>
+    <string name="ficha_cumple_linea">%1$s · %2$s</string>
+    <string name="ficha_cumple_cd">%1$s: %2$d de %3$d</string>
+    <string name="ficha_sin_congeladores">Sin congeladores</string>
+    <string name="ficha_recaida_verbo">Registrar</string>
+    <string name="ficha_sella_dia">Esto sella el día entero.</string>
+    <string name="ficha_total_cd">Total del día</string>
+    <string name="ficha_usar_congelador">Usar un congelador (tienes %1$d)</string>
+    <string name="ficha_congelador_pregunta">¿Usar un congelador?</string>
+    <string name="ficha_te_quedara">Te quedará %1$d</string>
+    <string name="ficha_congelador_verbo">Usar congelador</string>
+    <string name="ficha_archivar_cuerpo">Archivar lo guarda todo.</string>
 </resources>
