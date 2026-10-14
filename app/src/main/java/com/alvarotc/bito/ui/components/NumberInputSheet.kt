@@ -21,8 +21,8 @@ import com.alvarotc.bito.ui.sistema.componentes.CampoGrande
 import com.alvarotc.bito.ui.sistema.componentes.Hoja
 import com.alvarotc.bito.ui.sistema.rememberGesto
 
-/** Cifras que caben en el campo grande: nadie pone un objetivo de cinco cifras. */
-private const val MAX_CIFRAS = 4
+/** Cifras que caben en el campo grande (cabe un Int: 999999). El tope de verdad lo pone [validar]. */
+private const val MAX_CIFRAS = 6
 
 /**
  * Direct numeric entry for any target/stepper value across the app, in a [Hoja] with the big
