@@ -49,8 +49,15 @@ sealed interface SceneTap {
     /** Abrir el globito con el logro de [item]. */
     data class Bubble(val item: SceneItem.Special) : SceneTap
 
-    data object None : SceneTap
+    /** El toque no cayó en Habi, ni en una planta, ni en un especial: el fondo de la escena (la tierra tampoco responde). */
+    data object Fondo : SceneTap
 }
+
+/** Lo que se mueve el dedo, en dp, antes de que un toque deje de serlo: un arrastre corto no abre nada (movimiento.md 1b). */
+internal const val UMBRAL_ARRASTRE_DP = 8f
+
+/** La parcela que está creciendo ahora: la última abierta, a la que llega el agua del día. */
+internal fun parcelaQueCrece(garden: GardenState): Int = garden.plots.lastIndex
 
 /** La tierra va justo detrás de su planta: medio punto de profundidad, como en el prototipo. */
 private const val SOIL_BEHIND = 0.5f
@@ -146,7 +153,7 @@ internal fun hitTest(
 
 /**
  * Qué hace un toque en ([x], [y]). Lo que está delante de Habi gana siempre; dentro de [habiBody]
- * (null si Habi no se toca) gana Habi; fuera, una planta se mece y un especial abre su globito.
+ * (null si no se comprueba) gana Habi; fuera, una planta se mece, un especial abre su globito y lo demás es el fondo.
  */
 internal fun onSceneTap(
     items: List<SceneItem>,
@@ -165,7 +172,7 @@ internal fun onSceneTap(
     return when (hit) {
         is SceneItem.Plant -> SceneTap.Sway(hit.plot)
         is SceneItem.Special -> SceneTap.Bubble(hit)
-        else -> SceneTap.None
+        else -> SceneTap.Fondo
     }
 }
 

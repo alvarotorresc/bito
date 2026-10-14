@@ -1,11 +1,14 @@
 package com.alvarotc.bito.ui.garden
 
 import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.AnimationSpec
 import androidx.compose.animation.core.AnimationVector1D
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,8 +21,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
@@ -27,9 +33,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -38,11 +47,16 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.changedToUp
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.LayoutCoordinates
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -50,13 +64,27 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.GardenSeason
 import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.GardenState
+import com.alvarotc.bito.domain.model.GrowthStage
 import com.alvarotc.bito.ui.habi.ColorTint
 import com.alvarotc.bito.ui.habi.HabiArt
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.rememberArte
+import com.alvarotc.bito.ui.premios.ClavesAncla
+import com.alvarotc.bito.ui.premios.LocalAnclas
+import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Curvas
+import com.alvarotc.bito.ui.sistema.Duraciones
+import com.alvarotc.bito.ui.sistema.Haptica
+import com.alvarotc.bito.ui.sistema.Muelles
+import com.alvarotc.bito.ui.sistema.componentes.Globito
+import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.stats.BadgeStrings
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Tarjeta
@@ -64,9 +92,40 @@ import com.alvarotc.bito.ui.theme.Tinta
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
+import kotlin.math.tan
 
 private const val BUBBLE_MS = 2500L
-private const val SWAY_KICK_DEGREES = 7f
+
+// El vaivén de un toque (G20): el muelle `planta` con este impulso inicial, en grados por segundo.
+private const val IMPULSO_PLANTA = 90f
+
+// Reducido: en vez de mecerse o aplastarse, la pieza brilla 300 ms.
+private const val BRILLO_MS = 300
+private const val BRILLO_ALFA = 0.45f
+
+// Un especial tocado o destacado se aplasta hasta este alto (muelle `nodulo`) y se ensancha la mitad de lo que se aplasta.
+private const val APLASTE_MIN = 0.9f
+private const val APLASTE_ENSANCHA = 0.5f
+
+// G15: lo que cae rebota aplastándose hasta aquí (muelle `caida`) y suelta cinco motas de polvo.
+private const val REBOTE_MIN = 0.88f
+private const val POLVO_MOTAS = 5
+private const val POLVO_ABRE = 0.2f
+private const val POLVO_RADIO = 0.07f
+private const val POLVO_ALFA = 0.6f
+private const val SALPICA_ALFA = 0.8f
+
+// G16: la etapa nueva sube desde su base (hasta la mitad de su alto, desde el 80 % de su tamaño) y la vieja se funde en 260 ms.
+private const val CRECE_SUBE = 0.55f
+private const val CRECE_ESCALA_MIN = 0.8f
+private const val VIEJA_MS = 260
+
+// El jardín que revive (§5.6): el mustio baja en 900 ms (300 reducido) y las plantas se mecen en ola, 70 ms entre parcelas.
+private const val REVIVE_MS = 900
+private const val OLA_MS = 70L
+
+// El mustio que se anima se cuantiza en octavos: la caché de filtros de HabiArt es por lista de tintes y no debe crecer por fotograma.
+private const val PASOS_MUSTIO = 8f
 
 // El brillo del farolillo de noche, como el del prototipo: una elipse del 22 % del ancho y el 30 % del
 // alto, centrada 1,5 puntos a la derecha y 15 por encima del pie del farolillo, en modo pantalla. Es
@@ -79,17 +138,83 @@ private const val GLOW_MID_STOP = 0.45f
 private val GlowCore = Color(0xBFFFBE6E)
 private val GlowMid = Color(0x38FFA050)
 
+/** Lo que las pruebas miran del jardín sin cambiar su firma: el mustio que se dibuja y cuántos saltos ha dado Habi. */
+internal class SondaJardin {
+    var wiltDibujado: () -> Float = { 0f }
+    var saltosHabi: () -> Int = { 0 }
+}
+
+internal val LocalSondaJardin = staticCompositionLocalOf<SondaJardin?> { null }
+
+/** Cómo llega cada especial al jardín (G15). */
+private enum class Llegada { CAE, BROTA, PIEDRAS, ASIENTA }
+
+private fun GardenSpecial.llegada(): Llegada =
+    when (this) {
+        GardenSpecial.LANTERN, GardenSpecial.MUSHROOMS -> Llegada.CAE
+        GardenSpecial.BIG_CHERRY, GardenSpecial.GOLDEN_TREE -> Llegada.BROTA
+        GardenSpecial.STONE_PATH -> Llegada.PIEDRAS
+        GardenSpecial.POND -> Llegada.ASIENTA
+    }
+
+/** El especial que llega: [p] es el avance de su llegada, [rebote] el aplastón de lo que cae y [polvo] el polvo que levanta. */
+private class AnimLlegada(val especial: GardenSpecial) {
+    val p = Animatable(0f)
+    val rebote = Animatable(1f)
+    val polvo = Animatable(0f)
+}
+
+/** La parcela que crece (G16): [p] sube la etapa nueva y [fundido] borra la vieja. */
+private class AnimCrece(inicio: Float) {
+    val p = Animatable(inicio)
+    val fundido = Animatable(inicio)
+}
+
+/** El globito de una planta tocada en Camino; [tick] reinicia sus 2,4 s en cada toque. */
+private class GlobitoDePlanta(val plot: Int, val tick: Int)
+
+private class Efectos(
+    val balanceo: Map<Int, Animatable<Float, AnimationVector1D>>,
+    val brillo: Map<String, Animatable<Float, AnimationVector1D>>,
+    val aplaste: Map<String, Animatable<Float, AnimationVector1D>>,
+    val llegada: AnimLlegada?,
+    val crece: AnimCrece?,
+    val creciendo: Int?,
+    val vieja: GardenPiece?,
+    val reducido: Boolean,
+    val polvo: Color,
+    val salpicadura: Color,
+)
+
+/** Cómo se pinta una pieza este fotograma: desplazamiento, escala, opacidad, recorte horizontal y brillo. */
+private class Pose {
+    var dy = 0f
+    var escalaX = 1f
+    var escalaY = 1f
+    var alpha = 1f
+    var recorteArriba = 0f
+    var recorteAbajo = Float.MAX_VALUE
+    var brillo = 0f
+}
+
 /**
  * El jardín de Habi (pieza 1 §6.3), de atrás adelante: fondo, parcelas, plantas y especiales por
  * profundidad, Habi (con su sombra, que es capa suya), lo que queda delante de Habi, la luz en modo
  * multiplicar y, de noche, el farolillo encima de la luz ([itemsOverLight]) con su brillo en modo
  * pantalla. Mustio y estación son tintes y transformaciones sobre el mismo arte pintado
  * ([GardenLook]). Todos los toques los decide [onSceneTap]: el cuerpo de Habi hace lo de siempre
- * ([onHabiTap], con la reacción de [HabiAvatar] hacia el dedo); una planta se mece; un especial abre
- * un globito con el nombre de su logro. La composición va a una capa propia para que los modos de
- * fusión solo mezclen con la escena.
+ * ([onHabiTap], con la reacción de [HabiAvatar] hacia el dedo); una planta se mece (G20) y, con
+ * [globitoPlanta] (Camino), dice su especie y etapa; un especial se aplasta y abre un globito con su
+ * logro; el fondo llama a [alTocarFondo] (un arrastre de más de [UMBRAL_ARRASTRE_DP] no es un toque).
+ *
+ * [llegando] es el especial que llega (G15), [creciendo] la parcela que sube de etapa (G16) y
+ * [destacar] el especial que se aplasta una vez. Cada incremento de [saltoHabi] es un salto de Habi.
+ * Cuando el mustio de [garden] baja (el jardín revive al sellar) se anima en 900 ms, las plantas se
+ * mecen en ola y Habi salta. Nada de esto recompone por fotograma: los avances son `Animatable`
+ * leídos al dibujar. La escena registra en [LocalAnclas] la base de la parcela que crece
+ * ([ClavesAncla.PARCELA]) y el cuerpo de Habi ([ClavesAncla.HABI]). [forma] recorta la escena: por
+ * defecto esquinas de 24 dp; el Inicio a sangre pasa un rectángulo.
  */
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun GardenScene(
     garden: GardenState,
@@ -98,27 +223,43 @@ fun GardenScene(
     delighted: Boolean = false,
     onHabiTap: (() -> Unit)? = null,
     animated: Boolean = true,
-    // Lo usa la Tarea 14: toque en el fondo de la escena.
+    // Toque en el fondo de la escena (ni Habi, ni planta, ni especial).
     alTocarFondo: (() -> Unit)? = null,
-    // Lo usa la Tarea 14: globito sobre la planta.
+    // Globito sobre la planta y sobre el especial tocados (Camino).
     globitoPlanta: Boolean = false,
-    // Lo usa la Tarea 14: el especial que llega al jardín.
+    // El especial que llega al jardín.
     llegando: GardenSpecial? = null,
-    // Lo usa la Tarea 14: la parcela que está creciendo.
+    // La parcela que está creciendo.
     creciendo: Int? = null,
-    // Lo usa la Tarea 14: el especial que se destaca.
+    // El especial que se destaca.
     destacar: GardenSpecial? = null,
     // Cada incremento, un salto de Habi de .24; lo pide el Inicio al volver de crear, spec §5.7.
     saltoHabi: Int = 0,
+    // El recorte de la escena. Hoy a sangre pasa `RectangleShape`: su borde de abajo es recto contra la costra.
+    forma: Shape = RoundedCornerShape(24.dp),
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
-    val listo = rememberArte(art, remember(garden) { recursosDelJardin(garden) })
+    val reducido = BitoTema.reducido
+    val colores = BitoTema.colores
+    val gesto = rememberGesto()
     val scope = rememberCoroutineScope()
-    val sway = remember { mutableStateMapOf<Int, Animatable<Float, AnimationVector1D>>() }
+    // Lo que se pinta: el jardín y, mientras llega, el especial que llega aunque aún no esté en él.
+    val pintado =
+        remember(garden, llegando) {
+            if (llegando != null && llegando !in garden.specials) garden.copy(specials = garden.specials + llegando) else garden
+        }
+    val vieja = remember(garden, creciendo) { etapaVieja(garden, creciendo) }
+    val listo = rememberArte(art, remember(pintado, creciendo) { recursosDelJardin(pintado, creciendo) })
+
+    val balanceo = remember { mutableStateMapOf<Int, Animatable<Float, AnimationVector1D>>() }
+    val brillo = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
+    val aplaste = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
     var bubble by remember { mutableStateOf<SceneItem.Special?>(null) }
     // Cada toque en un especial vuelve a contar los 2,5 s, aunque sea el mismo.
     var bubbleTick by remember { mutableIntStateOf(0) }
+    var globo by remember { mutableStateOf<GlobitoDePlanta?>(null) }
+    var globoTick by remember { mutableIntStateOf(0) }
     var habiNudge by remember { mutableIntStateOf(0) }
     var habiTouch by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
     LaunchedEffect(bubble, bubbleTick) {
@@ -127,29 +268,183 @@ fun GardenScene(
             bubble = null
         }
     }
+
+    // G20: la planta se mece desde la base con el muelle `planta`; reducido, brilla 300 ms.
+    fun mecer(plot: Int) {
+        if (reducido) {
+            val b = brillo.getOrPut("p$plot") { Animatable(0f) }
+            scope.launch {
+                b.snapTo(1f)
+                b.animateTo(0f, tween(BRILLO_MS))
+            }
+        } else {
+            val a = balanceo.getOrPut(plot) { Animatable(0f) }
+            scope.launch { a.animateTo(0f, Muelles.planta<Float>(), initialVelocity = IMPULSO_PLANTA) }
+        }
+    }
+
+    // El especial se aplasta con el muelle `nodulo`; reducido, brilla.
+    fun aplastar(key: String) {
+        if (reducido) {
+            val b = brillo.getOrPut(key) { Animatable(0f) }
+            scope.launch {
+                b.snapTo(1f)
+                b.animateTo(0f, tween(BRILLO_MS))
+            }
+        } else {
+            val a = aplaste.getOrPut(key) { Animatable(1f) }
+            scope.launch {
+                a.snapTo(APLASTE_MIN)
+                a.animateTo(1f, Muelles.nodulo<Float>())
+            }
+        }
+    }
+
+    // El jardín que revive: el mustio que se dibuja baja animado; si sube (el jardín se mustia) cambia sin animar.
+    val wiltAnim = remember { Animatable(garden.wilt.toFloat()) }
+    var ultimoWilt by remember { mutableIntStateOf(garden.wilt) }
+    LaunchedEffect(garden.wilt) {
+        val destino = garden.wilt
+        val baja = destino < ultimoWilt
+        ultimoWilt = destino
+        if (!baja) {
+            wiltAnim.snapTo(destino.toFloat())
+        } else {
+            gesto(Snd.PLANTA, Haptica.TICK)
+            if (!reducido) {
+                habiNudge++
+                garden.plots.indices.forEach { i ->
+                    launch {
+                        delay(OLA_MS * i)
+                        mecer(i)
+                    }
+                }
+            }
+            wiltAnim.animateTo(destino.toFloat(), tween(if (reducido) BRILLO_MS else REVIVE_MS, easing = Curvas.io))
+        }
+    }
+
+    // Habi salta por el mismo camino que el toque; solo una subida cuenta (el valor inicial ya está contestado).
+    var ultimoSalto by remember { mutableIntStateOf(saltoHabi) }
+    LaunchedEffect(saltoHabi) {
+        if (saltoHabi > ultimoSalto) habiNudge++
+        ultimoSalto = saltoHabi
+    }
+
+    // G15: un especial que llega. El avance parte de 0 en la misma composición en que cambia `llegando`.
+    val llegada = remember(llegando) { llegando?.let { AnimLlegada(it) } }
+    LaunchedEffect(llegando) {
+        val l = llegada ?: return@LaunchedEffect
+        val breve: AnimationSpec<Float> = tween(Duraciones.REDUCIDO)
+        when (l.especial.llegada()) {
+            Llegada.CAE -> {
+                if (reducido) {
+                    gesto(Snd.POSAR, Haptica.THUD)
+                    l.p.animateTo(1f, breve)
+                } else {
+                    l.p.animateTo(1f, tween(Duraciones.CAER, easing = Curvas.cae))
+                    gesto(Snd.POSAR, Haptica.THUD)
+                    launch { l.polvo.animateTo(1f, tween(Duraciones.POLVO, easing = Curvas.lin)) }
+                    l.rebote.snapTo(REBOTE_MIN)
+                    l.rebote.animateTo(1f, Muelles.caida<Float>())
+                }
+            }
+            Llegada.BROTA -> {
+                gesto(Snd.BROTE, Haptica.TICK)
+                l.p.animateTo(1f, if (reducido) breve else Muelles.hoja<Float>())
+            }
+            Llegada.PIEDRAS -> {
+                gesto(Snd.POSAR, Haptica.TICK)
+                l.p.animateTo(1f, if (reducido) breve else tween(PIEDRAS_MS, easing = Curvas.drawer))
+            }
+            Llegada.ASIENTA -> {
+                gesto(Snd.LLEGADA, Haptica.CLICK)
+                l.p.animateTo(1f, if (reducido) breve else tween(ASIENTA_MS, easing = Curvas.out))
+            }
+        }
+    }
+
+    // G16: la parcela que crece. La etapa vieja es la anterior de la planta; en una parcela nueva (etapa 1) no hay vieja.
+    val crece = remember(creciendo) { AnimCrece(if (creciendo == null) 1f else 0f) }
+    val jardinActual by rememberUpdatedState(garden)
+    LaunchedEffect(creciendo) {
+        val idx = creciendo ?: return@LaunchedEffect
+        val plot = jardinActual.plots.getOrNull(idx) ?: return@LaunchedEffect
+        gesto(Snd.BROTE, Haptica.TICKS)
+        if (plot.stage == GrowthStage.SEED) habiNudge++
+        launch { crece.fundido.animateTo(1f, tween(if (reducido) Duraciones.REDUCIDO else VIEJA_MS)) }
+        launch { crece.p.animateTo(1f, if (reducido) tween(Duraciones.REDUCIDO) else Muelles.hoja<Float>()) }
+        delay(VIEJA_MS.toLong())
+        gesto(Snd.PLANTA, Haptica.CLICK)
+        mecer(idx)
+    }
+
+    // Destacar: el especial se aplasta una vez al cambiar.
+    LaunchedEffect(destacar) { destacar?.let { aplastar(it.key) } }
+
+    val sonda = LocalSondaJardin.current
+    SideEffect {
+        sonda?.wiltDibujado = { wiltAnim.value }
+        sonda?.saltosHabi = { habiNudge }
+    }
+
+    val registro = LocalAnclas.current
+    DisposableEffect(registro) {
+        onDispose {
+            registro?.quitar(ClavesAncla.PARCELA)
+            registro?.quitar(ClavesAncla.HABI)
+        }
+    }
+    val coordenadas = remember { arrayOfNulls<LayoutCoordinates>(1) }
+
     BoxWithConstraints(
         modifier
             .fillMaxWidth()
             .aspectRatio(GardenArt.SCENE_ASPECT)
-            .clip(RoundedCornerShape(24.dp))
+            .clip(forma)
             .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .testTag("garden-scene"),
     ) {
         val sceneW = constraints.maxWidth.toFloat()
         val sceneH = constraints.maxHeight.toFloat()
-        val items = remember(garden, sceneW, sceneH) { sceneItems(garden, sceneW, sceneH) }
+        val items = remember(pintado, sceneW, sceneH) { sceneItems(pintado, sceneW, sceneH) }
         val habiDepth = GardenArt.habiSpot.yPct
-        val plantTints = GardenLook.plantTints(garden.wilt, garden.season)
-        val grassTints = GardenLook.grassTints(garden.wilt, garden.season)
         val overLight = itemsOverLight(items, garden.light)
         val habi = habiRect(sceneW, sceneH)
-        val habiBody = if (onHabiTap != null) habiBodyRect(sceneW, sceneH) else null
+        val habiBody = habiBodyRect(sceneW, sceneH)
         val currentOnHabiTap by rememberUpdatedState(onHabiTap)
+        val currentAlTocarFondo by rememberUpdatedState(alTocarFondo)
+        val efectos =
+            Efectos(balanceo, brillo, aplaste, llegada, crece, creciendo, vieja, reducido, colores.tAlta, colores.hielo)
+
+        // Las anclas, en coordenadas de la raíz y aunque la escena vaya escalada por su padre.
+        val registrar: (LayoutCoordinates) -> Unit = { c ->
+            if (registro != null && c.isAttached) {
+                fun enRaiz(r: SceneRect) =
+                    Rect(c.localToRoot(Offset(r.left, r.top)), c.localToRoot(Offset(r.left + r.width, r.top + r.height)))
+                val parcela = parcelaQueCrece(garden)
+                if (parcela in garden.plots.indices) registro.poner(ClavesAncla.PARCELA, enRaiz(baseDeParcela(parcela, sceneW, sceneH)))
+                registro.poner(ClavesAncla.HABI, enRaiz(habiBody))
+            }
+        }
+        val registrarActual by rememberUpdatedState(registrar)
+        LaunchedEffect(garden.plots.size, sceneW, sceneH, registro) { coordenadas[0]?.let(registrarActual) }
+        Box(
+            Modifier
+                .fillMaxSize()
+                .onGloballyPositioned {
+                    coordenadas[0] = it
+                    registrarActual(it)
+                },
+        )
 
         Canvas(Modifier.fillMaxSize()) {
             if (!listo) return@Canvas
-            art.image(GardenArt.background)?.let { drawFill(it, if (grassTints.isEmpty()) null else art.filter(grassTints)) }
-            items.filter { it.depth <= habiDepth && it !in overLight }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
+            val wilt = wiltAnim.value
+            val tintesCesped = tintes(wilt, garden.season, planta = false)
+            val tintesPlanta = tintes(wilt, garden.season, planta = true)
+            art.image(GardenArt.background)?.let { drawFill(it, if (tintesCesped.isEmpty()) null else art.filter(tintesCesped)) }
+            items.filter { it.depth <= habiDepth && it !in overLight }.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
         }
 
         val density = LocalDensity.current
@@ -169,55 +464,186 @@ fun GardenScene(
         )
 
         // La capa de delante recoge todos los toques: la caja del lienzo de Habi es mucho mayor que su
-        // cuerpo y, si los recogiera Habi, taparía el farolillo.
+        // cuerpo y, si los recogiera Habi, taparía el farolillo. Un toque es bajar y subir sin pasar de
+        // UMBRAL_ARRASTRE_DP (ni que el padre, el scroll, se quede el gesto); un arrastre corto no abre nada.
         Canvas(
             Modifier
                 .fillMaxSize()
-                .pointerInput(items, habiBody) {
-                    detectTapGestures { tap ->
-                        when (val action = onSceneTap(items, tap.x, tap.y, habiBody)) {
-                            is SceneTap.Habi -> {
-                                habiTouch =
-                                    Offset(
-                                        ((action.x - habi.left) / habi.width).coerceIn(0f, 1f),
-                                        ((action.y - habi.top) / habi.height).coerceIn(0f, 1f),
-                                    )
-                                habiNudge++
-                                currentOnHabiTap?.invoke()
+                .pointerInput(items, habiBody, globitoPlanta, reducido) {
+                    val umbral = UMBRAL_ARRASTRE_DP.dp.toPx()
+                    awaitEachGesture {
+                        val down = awaitFirstDown(requireUnconsumed = false)
+                        var toque = true
+                        while (true) {
+                            val cambio = awaitPointerEvent().changes.firstOrNull { it.id == down.id }
+                            if (cambio == null || cambio.isConsumed || (cambio.position - down.position).getDistance() > umbral) {
+                                toque = false
+                                break
                             }
-                            is SceneTap.Sway -> {
-                                val anim = sway.getOrPut(action.plot) { Animatable(0f) }
-                                scope.launch {
-                                    anim.snapTo(SWAY_KICK_DEGREES)
-                                    anim.animateTo(0f, spring(dampingRatio = 0.3f, stiffness = 200f))
+                            if (cambio.changedToUp()) {
+                                cambio.consume()
+                                break
+                            }
+                        }
+                        if (!toque) return@awaitEachGesture
+                        when (val action = onSceneTap(items, down.position.x, down.position.y, habiBody)) {
+                            is SceneTap.Habi ->
+                                currentOnHabiTap?.let { alTocarHabi ->
+                                    habiTouch =
+                                        Offset(
+                                            ((action.x - habi.left) / habi.width).coerceIn(0f, 1f),
+                                            ((action.y - habi.top) / habi.height).coerceIn(0f, 1f),
+                                        )
+                                    habiNudge++
+                                    alTocarHabi()
                                 }
+                            is SceneTap.Sway -> {
+                                gesto(Snd.PLANTA, Haptica.TICK)
+                                mecer(action.plot)
+                                if (globitoPlanta) globo = GlobitoDePlanta(action.plot, ++globoTick)
                             }
                             is SceneTap.Bubble -> {
+                                gesto(Snd.PLANTA, Haptica.TICK)
+                                aplastar(action.item.special.key)
                                 bubble = action.item
                                 bubbleTick++
                             }
-                            SceneTap.None -> Unit
+                            SceneTap.Fondo -> currentAlTocarFondo?.invoke()
                         }
                     }
                 },
         ) {
             if (!listo) return@Canvas
-            items.filter { it.depth > habiDepth && it !in overLight }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
+            val wilt = wiltAnim.value
+            val tintesPlanta = tintes(wilt, garden.season, planta = true)
+            items.filter { it.depth > habiDepth && it !in overLight }.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
             val (top, bottom) = GardenLook.lightGradient(garden.light)
             drawRect(Brush.verticalGradient(listOf(Color(top), Color(bottom))), blendMode = BlendMode.Multiply)
-            overLight.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
+            overLight.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
             val night = GardenLook.nightness(garden.light)
             val lantern = GardenArt.specialSpots[GardenSpecial.LANTERN.key]
             if (GardenSpecial.LANTERN in garden.specials && lantern != null && night > 0f) drawLanternGlow(lantern, night)
         }
 
-        bubble?.let { SpecialBubble(it, sceneW) }
+        bubble?.let { SpecialBubble(it, sceneW, conOrigen = globitoPlanta) }
+        globo?.let { g ->
+            val plant = items.firstOrNull { it is SceneItem.Plant && it.plot == g.plot }
+            if (plant != null) {
+                key(g.tick) {
+                    // El globito se posa sobre su padre: una caja con el rectángulo de la planta.
+                    Box(
+                        Modifier
+                            .offset { IntOffset(plant.rect.left.roundToInt(), plant.rect.top.roundToInt()) }
+                            .size(with(density) { plant.rect.width.toDp() }, with(density) { plant.rect.height.toDp() }),
+                    ) {
+                        Globito(
+                            visible = true,
+                            texto = textoPlanta(garden, g.plot),
+                            alIrse = { if (globo?.tick == g.tick) globo = null },
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
-/** Lo que [GardenScene] pinta para [garden]: el fondo y la pieza de cada parcela y de cada especial, a tamaño completo. */
-internal fun recursosDelJardin(garden: GardenState): List<Pair<Int, Int>> =
-    (listOf(GardenArt.background) + sceneItems(garden, 1f, 1f).map { it.res }).distinct().map { it to 1 }
+private const val PIEDRAS_MS = 720
+private const val ASIENTA_MS = 420
+
+/** La base de la parcela [plot] (su tierra, sin hundir) en píxeles de la escena: adonde llega la gota de lo que se marca. */
+internal fun baseDeParcela(
+    plot: Int,
+    sceneW: Float,
+    sceneH: Float,
+): SceneRect {
+    val spot = GardenArt.plotSpots[plot]
+    val soil = GardenArt.plots[plot]
+    return spotRect(spot, spot.heightPct * soil.heightRatio, soil.aspect, sceneW, sceneH)
+}
+
+/** La pieza de la etapa anterior de la parcela [creciendo], para fundirla mientras sube la nueva. Null en una parcela nueva. */
+internal fun etapaVieja(
+    garden: GardenState,
+    creciendo: Int?,
+): GardenPiece? {
+    val plot = creciendo?.let { garden.plots.getOrNull(it) } ?: return null
+    val anterior = plot.stage.ordinal - 1
+    return if (anterior < 0) null else GardenArt.plants[plot.species.ordinal][anterior]
+}
+
+/** Lo que [GardenScene] pinta para [garden]: el fondo y la pieza de cada parcela y de cada especial, y la etapa vieja de [creciendo], a tamaño completo. */
+internal fun recursosDelJardin(
+    garden: GardenState,
+    creciendo: Int? = null,
+): List<Pair<Int, Int>> =
+    (listOf(GardenArt.background) + sceneItems(garden, 1f, 1f).map { it.res } + listOfNotNull(etapaVieja(garden, creciendo)?.res))
+        .distinct()
+        .map { it to 1 }
+
+@Composable
+private fun textoPlanta(
+    garden: GardenState,
+    plot: Int,
+): String {
+    val parcela = garden.plots.getOrNull(plot) ?: return ""
+    val etapa = parcela.stage.ordinal + 1
+    return if (plot == parcelaQueCrece(garden)) {
+        stringResource(R.string.jardin_crece_ahora, stringResource(nombreDeEspecie(parcela.species)), etapa)
+    } else {
+        stringResource(R.string.jardin_etapa, etapa)
+    }
+}
+
+private fun nombreDeEspecie(species: GardenSpecies): Int =
+    when (species) {
+        GardenSpecies.ROUND_LEAVES -> R.string.base_especie_hojas_redondas
+        GardenSpecies.SUNFLOWERS -> R.string.base_especie_girasoles
+        GardenSpecies.LAVENDER -> R.string.base_especie_lavanda
+        GardenSpecies.APPLE_TREE -> R.string.base_especie_manzano
+        GardenSpecies.FERNS -> R.string.base_especie_helechos
+        GardenSpecies.CHERRY_TREE -> R.string.base_especie_cerezo
+    }
+
+private fun nombreDeEspecial(special: GardenSpecial): Int =
+    when (special) {
+        GardenSpecial.LANTERN -> R.string.jardin_especial_farolillo
+        GardenSpecial.STONE_PATH -> R.string.jardin_especial_caminito
+        GardenSpecial.POND -> R.string.jardin_especial_estanque
+        GardenSpecial.MUSHROOMS -> R.string.jardin_especial_setas
+        GardenSpecial.BIG_CHERRY -> R.string.jardin_especial_cerezo_grande
+        GardenSpecial.GOLDEN_TREE -> R.string.jardin_especial_arbol_dorado
+    }
+
+/**
+ * Los tintes del mustio [wilt] (que al animarse es fraccionario) y la estación: lo mismo que
+ * [GardenLook.plantTints] y [GardenLook.grassTints] con los valores de [GardenLookTable]. El mustio se
+ * cuantiza en octavos para que la caché de filtros no crezca fotograma a fotograma.
+ */
+private fun tintes(
+    wilt: Float,
+    season: GardenSeason,
+    planta: Boolean,
+): List<ColorTint> {
+    val w = (wilt * PASOS_MUSTIO).roundToInt() / PASOS_MUSTIO
+    val mustio =
+        if (w == 0f) {
+            null
+        } else if (planta) {
+            ColorTint(
+                saturation = 1f - GardenLookTable.PLANT_SATURATION_LOSS * w,
+                brightness = 1f - GardenLookTable.PLANT_DIM * w,
+                sepia = GardenLookTable.PLANT_SEPIA * w,
+            )
+        } else {
+            ColorTint(
+                saturation = 1f - GardenLookTable.GRASS_SATURATION_LOSS * w,
+                brightness = 1f - GardenLookTable.GRASS_DIM * w,
+                sepia = GardenLookTable.GRASS_SEPIA * w,
+            )
+        }
+    return listOfNotNull(mustio, GardenLookTable.seasons[season.name])
+}
 
 private fun DrawScope.drawLanternGlow(
     lantern: GardenSpot,
@@ -265,26 +691,130 @@ private fun DrawScope.drawFill(
 }
 
 /**
- * Una pieza en su rectángulo. Las plantas llevan el mustio del prototipo, `scaleY(..) skewX(..)`
- * con el origen en el pie (la copa se ladea a la derecha), y encima el vaivén del toque.
+ * Una pieza en su sitio con su pose de este fotograma: las plantas llevan el mustio del prototipo,
+ * `scaleY(..) skewX(..)` con el origen en el pie (la copa se ladea a la derecha), y encima el vaivén
+ * del toque. Los especiales llevan su llegada (G15) y su aplastón; la parcela que crece, la etapa que sube (G16).
  */
 private fun DrawScope.drawItem(
     art: HabiArt,
     item: SceneItem,
-    wilt: Int,
+    wilt: Float,
     plantTints: List<ColorTint>,
-    sway: Map<Int, Animatable<Float, AnimationVector1D>>,
+    fx: Efectos,
 ) {
     val image = art.image(item.res) ?: return
     val r = item.rect
+    val base = r.top + r.height
+    val pivot = Offset(r.left + r.width / 2f, base)
+    val pose = Pose()
     val plant = item as? SceneItem.Plant
+    val special = item as? SceneItem.Special
+    val filtro = if (plant != null && plantTints.isNotEmpty()) art.filter(plantTints) else null
+    var giro = 0f
+    if (plant != null) {
+        giro = fx.balanceo[plant.plot]?.value ?: 0f
+        pose.brillo = fx.brillo["p${plant.plot}"]?.value ?: 0f
+        val crece = fx.crece
+        if (crece != null && plant.plot == fx.creciendo) {
+            val p = crece.p.value
+            if (fx.reducido) {
+                pose.alpha = p.coerceIn(0f, 1f)
+            } else {
+                pose.dy = (1f - p) * r.height * CRECE_SUBE
+                val e = CRECE_ESCALA_MIN + (1f - CRECE_ESCALA_MIN) * p
+                pose.escalaX = e
+                pose.escalaY = e
+                pose.recorteAbajo = base
+            }
+            val vieja = fx.vieja
+            val imagenVieja = vieja?.let { art.image(it.res) }
+            if (vieja != null && imagenVieja != null && crece.fundido.value < 1f) {
+                val spot = GardenArt.plotSpots[plant.plot]
+                val rv = spotRect(spot, spot.heightPct * vieja.heightRatio, vieja.aspect, size.width, size.height)
+                val viejaPose = Pose().apply { alpha = 1f - crece.fundido.value }
+                drawPieza(imagenVieja, rv, true, wilt, filtro, giro, viejaPose)
+            }
+        }
+    }
+    if (special != null) {
+        val key = special.special.key
+        pose.brillo = fx.brillo[key]?.value ?: 0f
+        fx.aplaste[key]?.value?.let { a ->
+            pose.escalaY *= a
+            pose.escalaX *= 1f + (1f - a) * APLASTE_ENSANCHA
+        }
+        val llegada = fx.llegada?.takeIf { it.especial == special.special }
+        if (llegada != null) posarLlegada(llegada, r, base, fx.reducido, pose)
+    }
+    drawPieza(image, r, plant != null, wilt, filtro, giro, pose)
+    val llegada = fx.llegada
+    if (special != null && llegada != null && llegada.especial == special.special && !fx.reducido) {
+        when (special.special.llegada()) {
+            Llegada.CAE -> drawPolvo(llegada.polvo.value, pivot, r, fx.polvo)
+            Llegada.ASIENTA -> drawSalpicadura(llegada.p.value, r, fx.salpicadura)
+            else -> Unit
+        }
+    }
+}
+
+/** La pose de un especial que llega (G15), según cómo llegue; reducido, solo se funde. */
+private fun posarLlegada(
+    llegada: AnimLlegada,
+    r: SceneRect,
+    base: Float,
+    reducido: Boolean,
+    pose: Pose,
+) {
+    val p = llegada.p.value
+    if (reducido) {
+        pose.alpha = p.coerceIn(0f, 1f)
+        return
+    }
+    when (llegada.especial.llegada()) {
+        Llegada.CAE -> {
+            pose.dy = -(1f - p) * base
+            val rebote = llegada.rebote.value
+            pose.escalaY = rebote
+            pose.escalaX = 1f + (1f - rebote) * APLASTE_ENSANCHA
+        }
+        Llegada.BROTA -> {
+            pose.dy = (1f - p) * r.height
+            pose.recorteAbajo = base
+        }
+        // De delante hacia el fondo: se descubre de abajo hacia arriba.
+        Llegada.PIEDRAS -> pose.recorteArriba = r.top + r.height * (1f - p.coerceIn(0f, 1f))
+        Llegada.ASIENTA -> {
+            pose.alpha = p.coerceIn(0f, 1f)
+            val e = ASIENTA_ESCALA_MIN + (1f - ASIENTA_ESCALA_MIN) * p
+            pose.escalaX = e
+            pose.escalaY = e
+        }
+    }
+}
+
+private const val ASIENTA_ESCALA_MIN = 0.9f
+
+private fun DrawScope.drawPieza(
+    image: ImageBitmap,
+    r: SceneRect,
+    planta: Boolean,
+    wilt: Float,
+    filtro: ColorFilter?,
+    giro: Float,
+    pose: Pose,
+) {
     val pivot = Offset(r.left + r.width / 2f, r.top + r.height)
     withTransform({
-        if (plant != null) {
-            sway[plant.plot]?.value?.let { rotate(it, pivot) }
+        if (pose.recorteArriba > 0f || pose.recorteAbajo < size.height) {
+            clipRect(top = pose.recorteArriba, bottom = pose.recorteAbajo.coerceAtMost(size.height))
+        }
+        if (pose.dy != 0f) translate(0f, pose.dy)
+        if (planta && giro != 0f) rotate(giro, pivot)
+        if (pose.escalaX != 1f || pose.escalaY != 1f) scale(pose.escalaX, pose.escalaY, pivot)
+        if (planta) {
             // Orden CSS: el último se aplica primero, así que el punto se cizalla y luego encoge.
-            scale(1f, GardenLook.plantScaleY(wilt), pivot)
-            val shear = GardenLook.plantShear(wilt)
+            scale(1f, 1f - GardenLookTable.PLANT_SHRINK * wilt, pivot)
+            val shear = tan(Math.toRadians((-GardenLookTable.PLANT_LEAN_DEGREES * wilt).toDouble())).toFloat()
             if (shear != 0f) {
                 translate(pivot.x, pivot.y)
                 transform(Matrix().apply { values[Matrix.SkewX] = shear })
@@ -300,18 +830,70 @@ private fun DrawScope.drawItem(
             srcSize = IntSize(image.width, image.height),
             dstOffset = IntOffset.Zero,
             dstSize = IntSize(image.width, image.height),
-            colorFilter = if (plant != null && plantTints.isNotEmpty()) art.filter(plantTints) else null,
+            alpha = pose.alpha,
+            colorFilter = filtro,
             filterQuality = FilterQuality.Medium,
         )
+        if (pose.brillo > 0f) {
+            drawImage(
+                image = image,
+                srcOffset = IntOffset.Zero,
+                srcSize = IntSize(image.width, image.height),
+                dstOffset = IntOffset.Zero,
+                dstSize = IntSize(image.width, image.height),
+                alpha = pose.brillo * BRILLO_ALFA,
+                colorFilter = ColorFilter.tint(Color.White, BlendMode.SrcIn),
+                filterQuality = FilterQuality.Medium,
+            )
+        }
     }
 }
 
-/** El globito con el nombre del logro, centrado encima del especial sin salirse de la escena. */
+/** El polvo de lo que cae (G15): cinco motas que se abren y se apagan en 420 ms. */
+private fun DrawScope.drawPolvo(
+    t: Float,
+    pivot: Offset,
+    r: SceneRect,
+    color: Color,
+) {
+    if (t <= 0f || t >= 1f) return
+    repeat(POLVO_MOTAS) { k ->
+        val x = pivot.x + (k - POLVO_MOTAS / 2) * r.width * POLVO_ABRE * (0.4f + t)
+        val y = pivot.y - t * r.height * 0.05f
+        drawCircle(color.copy(alpha = (1f - t) * POLVO_ALFA), radius = r.width * POLVO_RADIO * (0.5f + t), center = Offset(x, y))
+    }
+}
+
+/** La salpicadura del estanque que se asienta (G15): un anillo que se abre sobre el agua y se apaga. */
+private fun DrawScope.drawSalpicadura(
+    t: Float,
+    r: SceneRect,
+    color: Color,
+) {
+    if (t <= 0f || t >= 1f) return
+    val ancho = r.width * (0.4f + 0.6f * t)
+    val alto = ancho * 0.3f
+    drawOval(
+        color = color.copy(alpha = (1f - t) * SALPICA_ALFA),
+        topLeft = Offset(r.left + r.width / 2f - ancho / 2f, r.top + r.height * 0.6f - alto / 2f),
+        size = Size(ancho, alto),
+        style = Stroke(width = 2.dp.toPx()),
+    )
+}
+
+/**
+ * El globito del especial tocado, centrado encima de él sin salirse de la escena: el nombre de su
+ * logro y, con [conOrigen] (Camino), de qué especial es y con qué logro llegó.
+ */
 @Composable
 private fun SpecialBubble(
     item: SceneItem.Special,
     sceneW: Float,
+    conOrigen: Boolean = false,
 ) {
+    val logro = stringResource(BadgeStrings.badgeNameRes(item.special.badgeId))
+    val texto =
+        if (conOrigen) stringResource(R.string.jardin_llego_con, stringResource(nombreDeEspecial(item.special)), logro) else logro
     Surface(
         modifier =
             Modifier
@@ -330,7 +912,7 @@ private fun SpecialBubble(
         border = BorderStroke(1.dp, Borde),
     ) {
         Text(
-            stringResource(BadgeStrings.badgeNameRes(item.special.badgeId)),
+            texto,
             style = MaterialTheme.typography.labelMedium,
             color = Tinta,
             modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
