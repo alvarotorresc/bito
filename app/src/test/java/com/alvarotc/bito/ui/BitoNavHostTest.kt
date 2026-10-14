@@ -50,6 +50,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -381,12 +382,17 @@ class BitoNavHostTest {
         compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("name-field"))).performTextInput("Agua")
         compose.onNodeWithText(app.getString(R.string.preset_quantity)).performScrollTo().performClick()
         compose.waitForIdle()
+        // Hoy consume `creado` en cuanto lo ve (alCreadoVisto): se observa cada valor que recibe, no el final.
+        val vistos = mutableListOf<String?>()
+        compose.runOnUiThread {
+            nav.getBackStackEntry("today").savedStateHandle.getLiveData<String?>("creado").observeForever { vistos += it }
+        }
         compose.onNodeWithTag("save").performScrollTo()
         tapTag("save")
         esperarRuta(nav, "today")
 
         val id = runBlocking { container.database.habitDao().all().single { it.name == "Agua" }.id }
-        assertEquals(id, compose.runOnUiThread { nav.getBackStackEntry("today").savedStateHandle.get<String>("creado") })
+        assertTrue("Hoy recibió el id recién creado: $vistos", id in vistos)
     }
 
     @Test
