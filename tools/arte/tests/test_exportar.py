@@ -391,5 +391,23 @@ class ExportarMonedaTest(unittest.TestCase):
             self.assertLess(grande.getpixel((2, 2))[3], 10)
 
 
+
+class TestRecorteJardin(unittest.TestCase):
+    def test_el_recorte_borra_la_franja_izquierda_baja(self):
+        arr = np.zeros((100, 100, 4), dtype=np.uint8)
+        arr[:, :] = (90, 140, 70, 255)
+        img = Image.fromarray(arr, "RGBA")
+        recortada = exportar.aplicar_recorte(img, {"izquierda_pct": 3.5, "desde_alto_pct": 58})
+        a = np.array(recortada.getchannel("A"))
+        self.assertEqual(0, a[80, 1])  # abajo a la izquierda: fuera
+        self.assertEqual(255, a[30, 1])  # arriba a la izquierda: se queda
+        self.assertEqual(255, a[80, 50])  # abajo en el centro: se queda
+
+    def test_sin_recorte_la_imagen_no_cambia(self):
+        arr = np.full((10, 10, 4), 200, dtype=np.uint8)
+        img = Image.fromarray(arr, "RGBA")
+        self.assertEqual(img.tobytes(), exportar.aplicar_recorte(img, None).tobytes())
+
+
 if __name__ == "__main__":
     unittest.main()

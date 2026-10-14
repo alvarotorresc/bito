@@ -1,6 +1,7 @@
 {
-  "_nota": "Posiciones del prototipo vivo (vivo/index.html) en [x, y, alto] (% de la escena; x centro, y base). Parcelas: alto del árbol = 34 x depth(y) x alto de la etapa 5 / 760, con depth(y) = 0.55 + (y - 50) / 70; alto_parcela = media de tierra / árbol (el vivo fija el ancho de la tierra, aquí se fija su alto: unos pocos % de diferencia entre especies). Especiales: ancho del vivo pasado a alto con el aspecto 2400/1792. Caminito, estanque, cerezo grande y árbol dorado: arte definitivo; sus alturas son relativas a la etapa 5 de una parcela a su profundidad (los árboles, 1,5 x) y su posición está pendiente de la aprobación del arquitecto en la galería.",
+  "_nota": "Recortes: la hoja suelta del manzano 5, pieza 3 §10.3. Posiciones del prototipo vivo (vivo/index.html) en [x, y, alto] (% de la escena; x centro, y base). Parcelas: alto del árbol = 34 x depth(y) x alto de la etapa 5 / 760, con depth(y) = 0.55 + (y - 50) / 70; alto_parcela = media de tierra / árbol (el vivo fija el ancho de la tierra, aquí se fija su alto: unos pocos % de diferencia entre especies). Especiales: ancho del vivo pasado a alto con el aspecto 2400/1792. Caminito, estanque, cerezo grande y árbol dorado: arte definitivo; sus alturas son relativas a la etapa 5 de una parcela a su profundidad (los árboles, 1,5 x) y su posición está pendiente de la aprobación del arquitecto en la galería.",
   "fuentes": "~/Pictures/bito-habi/lote-d/piezas",
+  "recortes": {"manzano-5.png": {"izquierda_pct": 3.5, "desde_alto_pct": 58}},
   "fondo": {"archivo": "~/Pictures/bito-habi/lote-d/fondo.jpg"},
   "ancho_fondo": 1600,
   "escala_piezas": 0.8,

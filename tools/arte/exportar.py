@@ -252,8 +252,20 @@ def exportar_habi(manifiesto, ruta_manifiesto, dir_res, calidad, caras=None):
     return entradas, lienzo, lienzo[3] * escala_salida
 
 
+def aplicar_recorte(img, recorte):
+    """Borra (alfa 0) la franja izquierda de `izquierda_pct` % del ancho por debajo de `desde_alto_pct` % del alto."""
+    if not recorte:
+        return img
+    arr = np.array(img)
+    x = round(img.width * recorte["izquierda_pct"] / 100)
+    y = round(img.height * recorte["desde_alto_pct"] / 100)
+    arr[y:, :x, 3] = 0
+    return Image.fromarray(arr, "RGBA")
+
+
 def _pieza_jardin(manifiesto, ruta_manifiesto, archivo, recurso, dir_res, escala, calidad):
     original = Image.open(ruta_fuente(manifiesto, ruta_manifiesto, archivo)).convert("RGBA")
+    original = aplicar_recorte(original, manifiesto.get("recortes", {}).get(os.path.basename(archivo)))
     caja = caja_alfa(original)
     if caja is None:
         raise SystemExit(f"{archivo}: la pieza está vacía")
