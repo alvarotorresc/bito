@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -91,15 +92,22 @@ fun CabeceraHoy(
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
+            // La zona pulsable llega a 44 dp aunque la píldora del saldo sea más baja.
             Box(
                 Modifier
-                    .anclaParticula(ClavesAncla.SALDO)
-                    .background(colores.canto, BitoFormas.canto)
-                    .border(Medidas.linea, colores.contorno, BitoFormas.canto)
-                    .clickable(role = Role.Button, onClick = alSaldo)
-                    .padding(horizontal = Medidas.e12, vertical = Medidas.e8)
-                    .testTag("cabecera-saldo"),
-            ) { Saldo(saldo) }
+                    .testTag("cabecera-saldo")
+                    .heightIn(min = Medidas.toqueMinimo)
+                    .clickable(role = Role.Button, onClick = alSaldo),
+                contentAlignment = Alignment.Center,
+            ) {
+                Box(
+                    Modifier
+                        .anclaParticula(ClavesAncla.SALDO)
+                        .background(colores.canto, BitoFormas.canto)
+                        .border(Medidas.linea, colores.contorno, BitoFormas.canto)
+                        .padding(horizontal = Medidas.e12, vertical = Medidas.e8),
+                ) { Saldo(saldo) }
+            }
             Box(
                 Modifier
                     .padding(start = Medidas.e4)
