@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
+    <string-array name="habla_nu_saludo_sargento">
+        <item>Let\'s move, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_nu_saludo_cheerleader">
+        <item>Hey, {nombre}! Today\'s ours.</item>
+    </string-array>
+    <string-array name="habla_nu_saludo_neutra">
+        <item>Hi, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_nu_todo_hecho_sargento">
+        <item>My day\'s done. Close yours when it\'s time.</item>
+    </string-array>
+    <string-array name="habla_nu_todo_hecho_cheerleader">
+        <item>I\'m all done for today. Staying right here till we close!</item>
+    </string-array>
+    <string-array name="habla_nu_todo_hecho_neutra">
+        <item>I\'ve finished my day. I\'ll stay here, waiting on yours.</item>
+    </string-array>
+    <string-array name="habla_nu_cerrar_dia_sargento">
+        <item>All that is left is closing the day.</item>
+    </string-array>
+    <string-array name="habla_nu_cerrar_dia_cheerleader">
+        <item>All that is left is closing the day.</item>
+    </string-array>
+    <string-array name="habla_nu_cerrar_dia_neutra">
+        <item>All that is left is closing the day.</item>
+    </string-array>
+    <string-array name="habla_nu_noche_sargento">
+        <item>Lights out. You should do the same.</item>
+    </string-array>
+    <string-array name="habla_nu_noche_cheerleader">
+        <item>Falling asleep happy. See you tomorrow!</item>
+    </string-array>
+    <string-array name="habla_nu_noche_neutra">
+        <item>Day closed. Good night.</item>
+    </string-array>
+    <string-array name="habla_nu_tras_hoy_no_sargento">
+        <item>Okay, tomorrow then.</item>
+    </string-array>
+    <string-array name="habla_nu_tras_hoy_no_cheerleader">
+        <item>Okay, tomorrow then.</item>
+    </string-array>
+    <string-array name="habla_nu_tras_hoy_no_neutra">
+        <item>Okay, tomorrow then.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_sargento">
+        <item>Done, I\'ll remind you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_cheerleader">
+        <item>Done, I\'ll remind you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_neutra">
+        <item>Done, I\'ll remind you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_gordo_sargento">
+        <item>I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_gordo_cheerleader">
+        <item>I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_gordo_neutra">
+        <item>I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_elegido_sargento">
+        <item>Today\'s big thing is set: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_elegido_cheerleader">
+        <item>Today\'s big thing is set: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_elegido_neutra">
+        <item>Today\'s big thing is set: {gordo}.</item>
+    </string-array>
+</resources>

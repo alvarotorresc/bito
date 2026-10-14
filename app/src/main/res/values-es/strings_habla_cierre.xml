@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bolsas provisionales de Habi, un item por bolsa y voz. Se sustituyen enteras al volcar los textos definitivos. -->
+    <string-array name="habla_cie_gordo_hecho_sargento">
+        <item>Lo gordo está hecho.</item>
+    </string-array>
+    <string-array name="habla_cie_gordo_hecho_cheerleader">
+        <item>Lo gordo está hecho.</item>
+    </string-array>
+    <string-array name="habla_cie_gordo_hecho_neutra">
+        <item>Lo gordo está hecho.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_sargento">
+        <item>Hoy salió lo que ayer se escapó.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_cheerleader">
+        <item>Hoy salió lo que ayer se escapó.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_neutra">
+        <item>Hoy salió lo que ayer se escapó.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_sargento">
+        <item>La racha sigue creciendo.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_cheerleader">
+        <item>La racha sigue creciendo.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_neutra">
+        <item>La racha sigue creciendo.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_sargento">
+        <item>Cerremos el día, {nombre}. Sin excusas.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_cheerleader">
+        <item>¡Hora de cerrar el día, {nombre}! Lo que falte, lo hacemos ya.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_neutra">
+        <item>Repaso del día, {nombre}. Solo lo que queda.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_sargento">
+        <item>Nada pendiente. Hoy no tengo quejas, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_cheerleader">
+        <item>¡{nombre}, lo tienes todo hecho! Sella y a descansar.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_neutra">
+        <item>Nada pendiente, {nombre}. Puedes sellar el día.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_sargento">
+        <item>Me alegro. Mañana seguimos al mismo ritmo.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_cheerleader">
+        <item>Me alegro. Mañana seguimos al mismo ritmo.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_neutra">
+        <item>Me alegro. Mañana seguimos al mismo ritmo.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_sargento">
+        <item>Vale. Mañana te propongo algo corto para arrancar.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_cheerleader">
+        <item>Vale. Mañana te propongo algo corto para arrancar.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_neutra">
+        <item>Vale. Mañana te propongo algo corto para arrancar.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_sargento">
+        <item>Gracias por contármelo. Mañana te propongo menos.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_cheerleader">
+        <item>Gracias por contármelo. Mañana te propongo menos.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_neutra">
+        <item>Gracias por contármelo. Mañana te propongo menos.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_sargento">
+        <item>Día cerrado, {nombre}. Mañana, más.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_cheerleader">
+        <item>¡Otro día en el bolsillo, {nombre}! Qué bien sienta, ¿eh? Mañana seguimos.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_neutra">
+        <item>Día sellado, {nombre}. Hasta mañana.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_sargento">
+        <item>Día perfecto, {nombre}. Así se hace. No te relajes.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_cheerleader">
+        <item>¡Día perfecto, {nombre}! Todo hecho, todo. Estoy que no quepo en mí.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_neutra">
+        <item>Día perfecto, {nombre}. Todo lo exigible, cumplido.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_sargento">
+        <item>Para mañana: {lista}.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_cheerleader">
+        <item>Para mañana: {lista}.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_neutra">
+        <item>Para mañana: {lista}.</item>
+    </string-array>
+</resources>

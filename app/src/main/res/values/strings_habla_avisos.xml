@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
+    <string-array name="habla_av_manana_titulo_sargento">
+        <item>Good morning.</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_cheerleader">
+        <item>Good morning.</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_neutra">
+        <item>Good morning.</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_gordo_sargento">
+        <item>Today\'s big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_gordo_cheerleader">
+        <item>Today\'s big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_gordo_neutra">
+        <item>Today\'s big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_av_recordatorio_sargento">
+        <item>There is something left for today.</item>
+    </string-array>
+    <string-array name="habla_av_recordatorio_cheerleader">
+        <item>There is something left for today.</item>
+    </string-array>
+    <string-array name="habla_av_recordatorio_neutra">
+        <item>There is something left for today.</item>
+    </string-array>
+    <string-array name="habla_av_noche_titulo_sargento">
+        <item>Before bed.</item>
+    </string-array>
+    <string-array name="habla_av_noche_titulo_cheerleader">
+        <item>Before bed.</item>
+    </string-array>
+    <string-array name="habla_av_noche_titulo_neutra">
+        <item>Before bed.</item>
+    </string-array>
+    <string-array name="habla_av_noche_cuerpo_sargento">
+        <item>If you like, close the day.</item>
+    </string-array>
+    <string-array name="habla_av_noche_cuerpo_cheerleader">
+        <item>If you like, close the day.</item>
+    </string-array>
+    <string-array name="habla_av_noche_cuerpo_neutra">
+        <item>If you like, close the day.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_titulo_sargento">
+        <item>I\'ll remind you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_titulo_cheerleader">
+        <item>I\'ll remind you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_titulo_neutra">
+        <item>I\'ll remind you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_cuerpo_sargento">
+        <item>See you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_cuerpo_cheerleader">
+        <item>See you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_cuerpo_neutra">
+        <item>See you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_av_ausencia_sargento">
+        <item>I\'m here whenever you like.</item>
+    </string-array>
+    <string-array name="habla_av_ausencia_cheerleader">
+        <item>I\'m here whenever you like.</item>
+    </string-array>
+    <string-array name="habla_av_ausencia_neutra">
+        <item>I\'m here whenever you like.</item>
+    </string-array>
+</resources>

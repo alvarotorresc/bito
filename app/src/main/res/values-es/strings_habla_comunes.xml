@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bolsas provisionales de Habi, un item por bolsa y voz. Se sustituyen enteras al volcar los textos definitivos. -->
+    <string-array name="habla_ap_manana_sargento">
+        <item>Buenos días.</item>
+    </string-array>
+    <string-array name="habla_ap_manana_cheerleader">
+        <item>Buenos días.</item>
+    </string-array>
+    <string-array name="habla_ap_manana_neutra">
+        <item>Buenos días.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_sargento">
+        <item>Buenas noches.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_cheerleader">
+        <item>Buenas noches.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_neutra">
+        <item>Buenas noches.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_sargento">
+        <item>Buen día.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_cheerleader">
+        <item>Buen día.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_neutra">
+        <item>Buen día.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_sargento">
+        <item>Buenas tardes.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_cheerleader">
+        <item>Buenas tardes.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_neutra">
+        <item>Buenas tardes.</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_sargento">
+        <item>Con un paso ya vale.</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_cheerleader">
+        <item>Con un paso ya vale.</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_neutra">
+        <item>Con un paso ya vale.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_sargento">
+        <item>Sin prisa.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_cheerleader">
+        <item>Sin prisa.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_neutra">
+        <item>Sin prisa.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_sargento">
+        <item>Qué bien tenerte de vuelta.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_cheerleader">
+        <item>Qué bien tenerte de vuelta.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_neutra">
+        <item>Qué bien tenerte de vuelta.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_sargento">
+        <item>Ayer fue duro. Hoy es otro día.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_cheerleader">
+        <item>Ayer fue duro. Hoy es otro día.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_neutra">
+        <item>Ayer fue duro. Hoy es otro día.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_sargento">
+        <item>La racha ha vuelto.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_cheerleader">
+        <item>La racha ha vuelto.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_neutra">
+        <item>La racha ha vuelto.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_sargento">
+        <item>Cumpliste la hora que acordamos.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_cheerleader">
+        <item>Cumpliste la hora que acordamos.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_neutra">
+        <item>Cumpliste la hora que acordamos.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_sargento">
+        <item>Lo gordo de ayer salió.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_cheerleader">
+        <item>Lo gordo de ayer salió.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_neutra">
+        <item>Lo gordo de ayer salió.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_sargento">
+        <item>Ayer fue un buen día.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_cheerleader">
+        <item>Ayer fue un buen día.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_neutra">
+        <item>Ayer fue un buen día.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_sargento">
+        <item>Hoy es {dia_semana}, y a veces cuesta.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_cheerleader">
+        <item>Hoy es {dia_semana}, y a veces cuesta.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_neutra">
+        <item>Hoy es {dia_semana}, y a veces cuesta.</item>
+    </string-array>
+</resources>

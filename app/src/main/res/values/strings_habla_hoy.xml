@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
+    <string-array name="habla_nu_ayer_escapo_sargento">
+        <item>Yesterday this one slipped: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_ayer_escapo_cheerleader">
+        <item>Yesterday this one slipped: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_ayer_escapo_neutra">
+        <item>Yesterday this one slipped: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_elegir_gordo_sargento">
+        <item>What\'s the big thing today?</item>
+    </string-array>
+    <string-array name="habla_nu_elegir_gordo_cheerleader">
+        <item>What\'s the big thing today?</item>
+    </string-array>
+    <string-array name="habla_nu_elegir_gordo_neutra">
+        <item>What\'s the big thing today?</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_sin_empezar_sargento">
+        <item>Today\'s big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_sin_empezar_cheerleader">
+        <item>Today\'s big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_sin_empezar_neutra">
+        <item>Today\'s big thing: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_hora_habitual_sargento">
+        <item>Your usual time is near: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_hora_habitual_cheerleader">
+        <item>Your usual time is near: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_hora_habitual_neutra">
+        <item>Your usual time is near: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_vuelta_sargento">
+        <item>Today is a good day to come back.</item>
+    </string-array>
+    <string-array name="habla_nu_vuelta_cheerleader">
+        <item>Today is a good day to come back.</item>
+    </string-array>
+    <string-array name="habla_nu_vuelta_neutra">
+        <item>Today is a good day to come back.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_duro_sargento">
+        <item>Today, no rush. One thing is enough.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_duro_cheerleader">
+        <item>Today, no rush. One thing is enough.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_duro_neutra">
+        <item>Today, no rush. One thing is enough.</item>
+    </string-array>
+    <string-array name="habla_nu_racha_cerca_sargento">
+        <item>Your streak is close to a milestone: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_racha_cerca_cheerleader">
+        <item>Your streak is close to a milestone: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_racha_cerca_neutra">
+        <item>Your streak is close to a milestone: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_flojo_sargento">
+        <item>Today is a bit harder. Start with something small.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_flojo_cheerleader">
+        <item>Today is a bit harder. Start with something small.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_flojo_neutra">
+        <item>Today is a bit harder. Start with something small.</item>
+    </string-array>
+    <string-array name="habla_nu_tarea_vence_sargento">
+        <item>A task is due: {tarea}.</item>
+    </string-array>
+    <string-array name="habla_nu_tarea_vence_cheerleader">
+        <item>A task is due: {tarea}.</item>
+    </string-array>
+    <string-array name="habla_nu_tarea_vence_neutra">
+        <item>A task is due: {tarea}.</item>
+    </string-array>
+    <string-array name="habla_nu_regular_sargento">
+        <item>Something short to get going today: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_regular_cheerleader">
+        <item>Something short to get going today: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_regular_neutra">
+        <item>Something short to get going today: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_avisos_sargento">
+        <item>To remind you I need permission for notifications.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_avisos_cheerleader">
+        <item>To remind you I need permission for notifications.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_avisos_neutra">
+        <item>To remind you I need permission for notifications.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_alarmas_sargento">
+        <item>To remind you right on time I need permission for alarms.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_alarmas_cheerleader">
+        <item>To remind you right on time I need permission for alarms.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_alarmas_neutra">
+        <item>To remind you right on time I need permission for alarms.</item>
+    </string-array>
+</resources>

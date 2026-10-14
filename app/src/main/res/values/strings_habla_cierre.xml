@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
+    <string-array name="habla_cie_gordo_hecho_sargento">
+        <item>The big thing is done.</item>
+    </string-array>
+    <string-array name="habla_cie_gordo_hecho_cheerleader">
+        <item>The big thing is done.</item>
+    </string-array>
+    <string-array name="habla_cie_gordo_hecho_neutra">
+        <item>The big thing is done.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_sargento">
+        <item>What slipped yesterday got done today.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_cheerleader">
+        <item>What slipped yesterday got done today.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_neutra">
+        <item>What slipped yesterday got done today.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_sargento">
+        <item>The streak keeps growing.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_cheerleader">
+        <item>The streak keeps growing.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_neutra">
+        <item>The streak keeps growing.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_sargento">
+        <item>Let\'s close the day, {nombre}. No excuses.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_cheerleader">
+        <item>Time to close the day, {nombre}! Whatever\'s left, we finish it now.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_neutra">
+        <item>Day review, {nombre}. Just what\'s left.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_sargento">
+        <item>All clear. No complaints from me today, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_cheerleader">
+        <item>{nombre}, you\'ve got it all done! Seal it and rest up.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_neutra">
+        <item>Nothing pending, {nombre}. You can seal the day.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_sargento">
+        <item>Glad to hear it. Tomorrow we keep the same pace.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_cheerleader">
+        <item>Glad to hear it. Tomorrow we keep the same pace.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_neutra">
+        <item>Glad to hear it. Tomorrow we keep the same pace.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_sargento">
+        <item>Okay. Tomorrow I\'ll suggest something short to get going.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_cheerleader">
+        <item>Okay. Tomorrow I\'ll suggest something short to get going.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_neutra">
+        <item>Okay. Tomorrow I\'ll suggest something short to get going.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_sargento">
+        <item>Thanks for telling me. Tomorrow I\'ll suggest less.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_cheerleader">
+        <item>Thanks for telling me. Tomorrow I\'ll suggest less.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_neutra">
+        <item>Thanks for telling me. Tomorrow I\'ll suggest less.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_sargento">
+        <item>Day closed, {nombre}. Tomorrow, more.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_cheerleader">
+        <item>That\'s a wrap, {nombre}! Tomorrow we go again.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_neutra">
+        <item>Day sealed, {nombre}. See you tomorrow.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_sargento">
+        <item>Perfect day, {nombre}. That\'s how it\'s done. Don\'t get comfortable.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_cheerleader">
+        <item>A perfect day, {nombre}! Every single thing, done. I could burst.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_neutra">
+        <item>Perfect day, {nombre}. Everything required, done.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_sargento">
+        <item>For tomorrow: {lista}.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_cheerleader">
+        <item>For tomorrow: {lista}.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_neutra">
+        <item>For tomorrow: {lista}.</item>
+    </string-array>
+</resources>

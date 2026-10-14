@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
+    <string-array name="habla_fi_hoy_falta_sargento">
+        <item>Still pending today.</item>
+    </string-array>
+    <string-array name="habla_fi_hoy_falta_cheerleader">
+        <item>Still pending today.</item>
+    </string-array>
+    <string-array name="habla_fi_hoy_falta_neutra">
+        <item>Still pending today.</item>
+    </string-array>
+    <string-array name="habla_fi_objetivo_sargento">
+        <item>A smaller goal might help: {objetivo}.</item>
+    </string-array>
+    <string-array name="habla_fi_objetivo_cheerleader">
+        <item>A smaller goal might help: {objetivo}.</item>
+    </string-array>
+    <string-array name="habla_fi_objetivo_neutra">
+        <item>A smaller goal might help: {objetivo}.</item>
+    </string-array>
+    <string-array name="habla_fi_racha_vs_mejor_sargento">
+        <item>Streak of {racha}. Best: {mejor}.</item>
+    </string-array>
+    <string-array name="habla_fi_racha_vs_mejor_cheerleader">
+        <item>Streak of {racha}. Best: {mejor}.</item>
+    </string-array>
+    <string-array name="habla_fi_racha_vs_mejor_neutra">
+        <item>Streak of {racha}. Best: {mejor}.</item>
+    </string-array>
+    <string-array name="habla_fi_mejor_dia_sargento">
+        <item>Your best day is usually {dia_semana}.</item>
+    </string-array>
+    <string-array name="habla_fi_mejor_dia_cheerleader">
+        <item>Your best day is usually {dia_semana}.</item>
+    </string-array>
+    <string-array name="habla_fi_mejor_dia_neutra">
+        <item>Your best day is usually {dia_semana}.</item>
+    </string-array>
+    <string-array name="habla_fi_constancia_sargento">
+        <item>Consistency over the last 30 days: {pct} %.</item>
+    </string-array>
+    <string-array name="habla_fi_constancia_cheerleader">
+        <item>Consistency over the last 30 days: {pct} %.</item>
+    </string-array>
+    <string-array name="habla_fi_constancia_neutra">
+        <item>Consistency over the last 30 days: {pct} %.</item>
+    </string-array>
+    <string-array name="habla_fi_nuevo_sargento">
+        <item>This habit has just begun.</item>
+    </string-array>
+    <string-array name="habla_fi_nuevo_cheerleader">
+        <item>This habit has just begun.</item>
+    </string-array>
+    <string-array name="habla_fi_nuevo_neutra">
+        <item>This habit has just begun.</item>
+    </string-array>
+    <string-array name="habla_fi_limpio_sargento">
+        <item>{n|clean day|clean days} so far.</item>
+    </string-array>
+    <string-array name="habla_fi_limpio_cheerleader">
+        <item>{n|clean day|clean days} so far.</item>
+    </string-array>
+    <string-array name="habla_fi_limpio_neutra">
+        <item>{n|clean day|clean days} so far.</item>
+    </string-array>
+    <string-array name="habla_fi_pausa_sargento">
+        <item>Paused since {fecha}.</item>
+    </string-array>
+    <string-array name="habla_fi_pausa_cheerleader">
+        <item>Paused since {fecha}.</item>
+    </string-array>
+    <string-array name="habla_fi_pausa_neutra">
+        <item>Paused since {fecha}.</item>
+    </string-array>
+    <string-array name="habla_ca_radiante_sargento">
+        <item>A very solid week.</item>
+    </string-array>
+    <string-array name="habla_ca_radiante_cheerleader">
+        <item>A very solid week.</item>
+    </string-array>
+    <string-array name="habla_ca_radiante_neutra">
+        <item>A very solid week.</item>
+    </string-array>
+    <string-array name="habla_ca_normal_sargento">
+        <item>Acceptable. We both know you\'ve got more.</item>
+    </string-array>
+    <string-array name="habla_ca_normal_cheerleader">
+        <item>Good week. And the next one? Even better!</item>
+    </string-array>
+    <string-array name="habla_ca_normal_neutra">
+        <item>A steady week. Keep going.</item>
+    </string-array>
+    <string-array name="habla_ca_mustio_sargento">
+        <item>A weak week. One habit today is enough to get going.</item>
+    </string-array>
+    <string-array name="habla_ca_mustio_cheerleader">
+        <item>A weak week. One habit today is enough to get going.</item>
+    </string-array>
+    <string-array name="habla_ca_mustio_neutra">
+        <item>A weak week. One habit today is enough to get going.</item>
+    </string-array>
+    <string-array name="habla_ca_ausencia_sargento">
+        <item>No entries for a few days. I\'m still here.</item>
+    </string-array>
+    <string-array name="habla_ca_ausencia_cheerleader">
+        <item>No entries for a few days. I\'m still here.</item>
+    </string-array>
+    <string-array name="habla_ca_ausencia_neutra">
+        <item>No entries for a few days. I\'m still here.</item>
+    </string-array>
+</resources>

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bolsas provisionales de Habi, un item por bolsa y voz. Se sustituyen enteras al volcar los textos definitivos. -->
+    <string-array name="habla_nu_saludo_sargento">
+        <item>En marcha, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_nu_saludo_cheerleader">
+        <item>Hola, {nombre}. ¡A por hoy!</item>
+    </string-array>
+    <string-array name="habla_nu_saludo_neutra">
+        <item>Hola, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_nu_todo_hecho_sargento">
+        <item>Mi día está hecho. Cierra el tuyo cuando toque.</item>
+    </string-array>
+    <string-array name="habla_nu_todo_hecho_cheerleader">
+        <item>Lo mío ya está hecho. ¡Me quedo contigo hasta cerrar!</item>
+    </string-array>
+    <string-array name="habla_nu_todo_hecho_neutra">
+        <item>He terminado mi día. Aquí me quedo, esperando el tuyo.</item>
+    </string-array>
+    <string-array name="habla_nu_cerrar_dia_sargento">
+        <item>Queda cerrar el día.</item>
+    </string-array>
+    <string-array name="habla_nu_cerrar_dia_cheerleader">
+        <item>Queda cerrar el día.</item>
+    </string-array>
+    <string-array name="habla_nu_cerrar_dia_neutra">
+        <item>Queda cerrar el día.</item>
+    </string-array>
+    <string-array name="habla_nu_noche_sargento">
+        <item>Me duermo. Tú también deberías.</item>
+    </string-array>
+    <string-array name="habla_nu_noche_cheerleader">
+        <item>Me duermo feliz. ¡Hasta mañana!</item>
+    </string-array>
+    <string-array name="habla_nu_noche_neutra">
+        <item>Día cerrado. Buenas noches.</item>
+    </string-array>
+    <string-array name="habla_nu_tras_hoy_no_sargento">
+        <item>Vale, mañana será.</item>
+    </string-array>
+    <string-array name="habla_nu_tras_hoy_no_cheerleader">
+        <item>Vale, mañana será.</item>
+    </string-array>
+    <string-array name="habla_nu_tras_hoy_no_neutra">
+        <item>Vale, mañana será.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_sargento">
+        <item>Hecho, te aviso a las {hora}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_cheerleader">
+        <item>Hecho, te aviso a las {hora}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_neutra">
+        <item>Hecho, te aviso a las {hora}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_gordo_sargento">
+        <item>Te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_gordo_cheerleader">
+        <item>Te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_confirma_vale_gordo_neutra">
+        <item>Te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_elegido_sargento">
+        <item>Lo gordo de hoy queda así: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_elegido_cheerleader">
+        <item>Lo gordo de hoy queda así: {gordo}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_elegido_neutra">
+        <item>Lo gordo de hoy queda así: {gordo}.</item>
+    </string-array>
+</resources>
