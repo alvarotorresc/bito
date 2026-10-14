@@ -47,8 +47,8 @@
     <string name="freezer_sheet_title">Congeladores</string>
     <string name="freezer_sheet_body">Un congelador protege un día fallado sin romper tu racha.</string>
     <string name="freezers_owned_label">Tienes %1$d</string>
-    <string name="buy_freezer_action">Comprar por %1$d pts</string>
-    <string name="buy_freezer_missing">Te faltan %1$d pts</string>
+    <string name="buy_freezer_action">Comprar por %1$d bitos</string>
+    <string name="buy_freezer_missing">Te faltan %1$d bitos</string>
 
     <string name="freezer_info_hint">Información de congeladores</string>
     <string name="freezer_info_sheet_title">Congeladores</string>

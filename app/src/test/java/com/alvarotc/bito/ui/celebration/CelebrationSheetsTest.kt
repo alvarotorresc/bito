@@ -64,7 +64,7 @@ class CelebrationSheetsTest {
         // string into the description — was a static "Habi" regardless of mood.
         compose.onNodeWithContentDescription("Habi, doing okay", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Perfect day!", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText("+40 pts", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("+40 bitos", useUnmergedTree = true).assertExists()
     }
 
     @Test

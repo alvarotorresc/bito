@@ -23,8 +23,6 @@
     <string name="task_due_week_today">se acaba hoy</string>
     <string name="task_due_last_week">de la semana pasada</string>
     <string name="create_choice_title">¿Qué añadimos?</string>
-    <string name="create_choice_habit">Un hábito</string>
-    <string name="create_choice_task">Una tarea</string>
     <string name="task_form_title">Nueva tarea</string>
     <string name="task_form_edit_title">Editar la tarea</string>
     <string name="task_form_name_hint">¿Qué tienes pendiente?</string>
@@ -45,8 +43,6 @@
     <string name="task_edit">Editar</string>
     <string name="task_delete">Borrar</string>
     <string name="task_row_menu_cd">Más opciones</string>
-    <string name="task_delete_confirm_title">¿Borrar la tarea?</string>
-    <string name="task_delete_confirm_body">Su historia se va con ella. Los puntos ganados son tuyos.</string>
     <string name="focus_title">Foco</string>
     <string name="focus_minutes">%1$d min</string>
     <string name="focus_done">He terminado</string>

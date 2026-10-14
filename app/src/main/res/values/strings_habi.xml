@@ -10,7 +10,7 @@
     <string name="mood_label_normal">doing okay</string>
     <string name="mood_label_wilted">feeling low</string>
     <string name="mood_label_dramatic">having a hard time</string>
-    <string name="habi_balance_points">points</string>
+    <string name="habi_balance_points">bitos</string>
     <string name="habi_name_fallback">champ</string>
 
     <!--
@@ -123,23 +123,23 @@
     <string name="store_out_of_season">out of season</string>
     <string name="store_equipped">equipped</string>
     <string name="store_tap_to_equip">tap to equip</string>
-    <string name="store_pts_label">pts</string>
+    <string name="store_pts_label">bitos</string>
     <string name="store_locked_streak">streak %1$d</string>
     <string name="store_trying">trying on: %1$s</string>
     <string name="store_buy_title">Buy %1$s?</string>
     <string name="store_buy_button">Buy</string>
-    <string name="store_balance_after">balance after: %1$d pts</string>
-    <string name="store_your_balance">your balance: %1$d pts</string>
-    <string name="store_missing_pts">%1$d pts short</string>
-    <string name="store_freezer_buy">buy · %1$d pts</string>
-    <string name="points_info_title">Points</string>
+    <string name="store_balance_after">balance after: %1$d bitos</string>
+    <string name="store_your_balance">your balance: %1$d bitos</string>
+    <string name="store_missing_pts">%1$d bitos short</string>
+    <string name="store_freezer_buy">buy · %1$d bitos</string>
+    <string name="points_info_title">Bitos</string>
     <string name="points_info_habit_done">habit done</string>
     <string name="points_info_perfect_day">perfect day</string>
     <string name="points_info_perfect_week">perfect week</string>
     <string name="points_info_perfect_month">perfect month</string>
     <string name="points_info_streak_row">%1$d-day streak</string>
     <string name="points_info_plus">+%1$d</string>
-    <string name="points_info_freezer_note">a freezer costs %1$d pts</string>
+    <string name="points_info_freezer_note">a freezer costs %1$d bitos</string>
 
     <string name="item_body_salvia">Sage</string>
     <string name="item_body_vainilla">Vanilla</string>
