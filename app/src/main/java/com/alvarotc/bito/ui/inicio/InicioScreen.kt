@@ -139,6 +139,9 @@ private const val CREAR_A_NAVEGAR_MS = 90L
 private val AIRE_LISTA = 112.dp
 private val BARRA_CAMINO = 56.dp
 private val MARGEN_ABAJO = 20.dp
+private val SUBIDA_TARJETA = 14.dp
+private val AVISO_SOBRE_PILDORA = 88.dp
+private val TARJETA_BAJO_CABECERA = 72.dp
 
 /**
  * Consume el desplazamiento hacia arriba hasta que [estado] llegue a [maximo] (el jardín encoge o sube) y
@@ -311,7 +314,7 @@ fun InicioScreen(
     }
     LaunchedEffect(Unit) { snapshotFlow { q.value == 0f }.collect { if (it) subidaPx.floatValue = 0f } }
 
-    // Tres caricias en 1,5 s ponen a Habi contento (el mismo cálculo que HabiScreen).
+    // Tres caricias en 1,5 s alegran a Habi (el mismo cálculo que HabiScreen).
     val caricias = remember { ArrayDeque<Long>() }
     var contento by remember { mutableStateOf(false) }
     var pulso by remember { mutableIntStateOf(0) }
@@ -352,7 +355,7 @@ fun InicioScreen(
         val hoyVisible by remember { derivedStateOf { q.value < 1f } }
         val caminoVisible by remember { derivedStateOf { q.value > 0f } }
         val cabeceraVisible by remember { derivedStateOf { q.value < 0.25f && (encogido() < 0.85f || asomada) } }
-        val subidaTarjeta = with(densidad) { 14.dp.roundToPx() }
+        val subidaTarjeta = with(densidad) { SUBIDA_TARJETA.roundToPx() }
         val masActivo by remember { derivedStateOf { q.value < 0.25f } }
 
         LaunchedEffect(creadoVisto) {
@@ -379,7 +382,7 @@ fun InicioScreen(
                             .bajoElJardin(borde)
                             .graphicsLayer {
                                 val p = progresoCamino(q.value)
-                                translationY = ESTADISTICAS_SUBEN * alto * (1f - q.value)
+                                translationY = if (reducido) 0f else ESTADISTICAS_SUBEN * alto * (1f - q.value)
                                 alpha = p.alfaEstadisticas
                             }.nestedScroll(conexionCamino),
                     ) {
@@ -393,7 +396,7 @@ fun InicioScreen(
                             .bajoElJardin(borde)
                             .graphicsLayer {
                                 val p = progresoCamino(q.value)
-                                translationY = LISTA_BAJA * alto * q.value
+                                translationY = if (reducido) 0f else LISTA_BAJA * alto * q.value
                                 alpha = p.alfaLista
                             }.nestedScroll(conexionHoy)
                             .testTag("inicio-hoy"),
@@ -513,7 +516,7 @@ fun InicioScreen(
                     alAsomarCabecera = { asomada = it },
                     modifier = Modifier.fillMaxSize(),
                 )
-                AvisoHost(avisos, Modifier.align(Alignment.BottomCenter).padding(bottom = 88.dp - Medidas.margen))
+                AvisoHost(avisos, Modifier.align(Alignment.BottomCenter).padding(bottom = AVISO_SOBRE_PILDORA - Medidas.margen))
                 val texto = frase?.let { stringResource(it) }
                 val punto = puntoGlobito
                 if (punto != null) {
@@ -525,7 +528,7 @@ fun InicioScreen(
                         Globito(visible = texto != null && !enTarjeta, texto = texto.orEmpty(), alIrse = { frase = null })
                     }
                 }
-                Box(Modifier.align(Alignment.TopCenter).padding(top = 72.dp)) {
+                Box(Modifier.align(Alignment.TopCenter).padding(top = TARJETA_BAJO_CABECERA)) {
                     AnimatedVisibility(
                         visible = texto != null && enTarjeta,
                         enter =

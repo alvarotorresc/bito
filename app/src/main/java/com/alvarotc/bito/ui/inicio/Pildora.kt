@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -78,7 +79,7 @@ fun Pildora(
                 .offset { IntOffset((q().coerceIn(0f, 1f) * tab.toPx()).roundToInt(), 0) }
                 .width(tab)
                 .fillMaxHeight()
-                .background(colores.tHonda, RoundedCornerShapeCapsula),
+                .background(colores.tHonda, BitoFormas.canto),
         )
         Row(Modifier.padding(AIRE_PILDORA).height(ALTO_PILDORA - AIRE_PILDORA * 2), horizontalArrangement = Arrangement.Start) {
             Pestana(
@@ -100,8 +101,6 @@ fun Pildora(
         }
     }
 }
-
-private val RoundedCornerShapeCapsula = androidx.compose.foundation.shape.RoundedCornerShape(percent = 50)
 
 @Composable
 private fun Pestana(
@@ -127,7 +126,7 @@ private fun Pestana(
         Icon(if (activa) iconoRelleno else icono, contentDescription = null, tint = tinta, modifier = Modifier.size(22.dp))
         Text(
             texto,
-            style = BitoTema.tipos.t16.copy(fontSize = 16.sp, fontWeight = androidx.compose.ui.text.font.FontWeight.Bold),
+            style = BitoTema.tipos.t16.copy(fontSize = 16.sp, fontWeight = FontWeight.Bold),
             color = tinta,
             maxLines = 1,
             modifier = Modifier.padding(start = 6.dp),

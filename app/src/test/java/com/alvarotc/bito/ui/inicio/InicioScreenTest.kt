@@ -17,6 +17,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.height
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.habi.HabiVoice
@@ -127,16 +128,47 @@ class InicioScreenTest {
         rule.onNodeWithTag("inicio-camino").assertExists()
     }
 
+    private fun alturaJardin() = rule.onNodeWithTag("jardin-alto").getBoundsInRoot().height.value
+
     @Test
     fun `tapping the pill mid transition reverses without a jump`() {
         montar()
         rule.mainClock.autoAdvance = false
+        val inicio = alturaJardin()
         rule.onNodeWithTag("pildora-camino").performClick()
         rule.mainClock.advanceTimeBy(120)
+        val enMedio = alturaJardin()
+        assertTrue("va creciendo hacia Camino", enMedio > inicio + 10f)
         rule.onNodeWithTag("pildora-hoy").performClick()
+        rule.mainClock.advanceTimeByFrame()
+        val tras = alturaJardin()
+        // Continúa desde donde estaba: un fotograma mueve unos pocos dp, no vuelve a un extremo.
+        assertTrue("sin salto: $enMedio -> $tras", kotlin.math.abs(tras - enMedio) < 40f)
+        assertTrue("no ha vuelto de golpe a Hoy", tras > inicio + 5f)
         rule.mainClock.advanceTimeBy(2_000)
         rule.onNodeWithTag("inicio-hoy").assertExists()
         rule.onNodeWithTag("pildora-hoy").assertIsSelected()
+        assertEquals(inicio, alturaJardin(), 1f)
+    }
+
+    @Test
+    fun `with reduced motion the list does not slide, it only fades`() {
+        montar(reducido = true)
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("pildora-camino").performClick()
+        rule.mainClock.advanceTimeBy(40)
+        val lista = rule.onNodeWithTag("inicio-hoy").getBoundsInRoot()
+        assertEquals("la lista no se desplaza", alturaJardin(), lista.top.value, 1f)
+    }
+
+    @Test
+    fun `with full motion the list slides down while it leaves`() {
+        montar()
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("pildora-camino").performClick()
+        rule.mainClock.advanceTimeBy(100)
+        val lista = rule.onNodeWithTag("inicio-hoy").getBoundsInRoot()
+        assertTrue("la lista baja", lista.top.value > alturaJardin() + 20f)
     }
 
     @Test

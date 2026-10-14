@@ -52,6 +52,7 @@ internal object MedidasInicio {
     /** Los pies de Habi, en la fracción del alto de la escena desde la que encoge. */
     const val PIES_HABI = 0.88f
     val ARRIBA_CAMINO = 150.dp
+    val ASTRO = 46.dp
 }
 
 internal fun lerpF(
@@ -175,7 +176,7 @@ fun JardinCompartido(
         val extra = with(densidad) { MedidasInicio.ARRIBA_CAMINO.toPx() }
         val altoCamino = altoJardinCamino(alto, escenaAlto, extra)
         val costra = with(densidad) { Medidas.costra.toPx() }
-        val astro = with(densidad) { 46.dp.toPx() }
+        val astro = with(densidad) { MedidasInicio.ASTRO.toPx() }
         val borde = { bordeJardin(q(), encogido(), alto, escenaAlto, extra, subida()) }
 
         // Mide el borde de abajo del jardín sin pintar nada: lo miran los tests.

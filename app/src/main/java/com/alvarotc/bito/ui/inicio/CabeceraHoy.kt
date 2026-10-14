@@ -20,6 +20,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.LogicalDay
@@ -71,9 +72,23 @@ fun CabeceraHoy(
         verticalAlignment = Alignment.Top,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Column {
-            Text(fecha.first, style = BitoTema.tipos.t24.copy(fontWeight = FontWeight.Bold), color = colores.tinta)
-            if (fecha.second.isNotEmpty()) Text(fecha.second, style = BitoTema.tipos.t16, color = colores.tintaSuave)
+        Column(Modifier.weight(1f, fill = false)) {
+            Text(
+                fecha.first,
+                style = BitoTema.tipos.t24.copy(fontWeight = FontWeight.Bold),
+                color = colores.tinta,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (fecha.second.isNotEmpty()) {
+                Text(
+                    fecha.second,
+                    style = BitoTema.tipos.t16,
+                    color = colores.tintaSuave,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
