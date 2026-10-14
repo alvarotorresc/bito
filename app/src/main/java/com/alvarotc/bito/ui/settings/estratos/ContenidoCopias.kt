@@ -18,6 +18,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -84,8 +85,8 @@ fun ContenidoCopias(
     val avisos = rememberAvisoEstado()
     var verPassphrase by remember { mutableStateOf(false) }
     var verApagar by remember { mutableStateOf(false) }
-    var restaurando by remember { mutableStateOf(false) }
-    var exportando by remember { mutableStateOf(false) }
+    var restaurando by rememberSaveable { mutableStateOf(false) }
+    var exportando by rememberSaveable { mutableStateOf(false) }
     var haciendoAhora by remember { mutableStateOf(false) }
 
     val lanzadorCarpeta =
@@ -111,7 +112,7 @@ fun ContenidoCopias(
         )
     // Cada mensaje se consume, tenga texto o no; si no, uno idéntico seguido no volvería a disparar el efecto.
     // Con la hoja de restaurar abierta, los suyos (passphrase incorrecta, archivo no válido) son de la hoja.
-    LaunchedEffect(estado.message) {
+    LaunchedEffect(estado.message, restaurando) {
         val mensaje = estado.message ?: return@LaunchedEffect
         val deLaHoja =
             restaurando && mensaje in setOf(BackupMessage.WRONG_PASSPHRASE, BackupMessage.INVALID_FILE, BackupMessage.IO_ERROR)
