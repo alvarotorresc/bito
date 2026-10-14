@@ -26,7 +26,7 @@
     <string name="hojas_habi_manana">Morning</string>
     <string name="hojas_habi_noche">Night</string>
     <string name="hojas_habi_noche_nota">Replaces the daily review</string>
-    <string name="hojas_habi_rangos">The morning moves between 6:00 and 11:00; the night, between 19:00 and 23:30. If a reminder falls at the same time, Habi sends just one.</string>
+    <string name="hojas_habi_rangos">The morning moves between 6:00 and 11:00; the night, between 19:00 and 23:30.</string>
     <string name="hojas_habi_aviso_manana">Morning nudge</string>
     <string name="hojas_habi_aviso_noche">Night nudge</string>
     <string name="hojas_habi_reloj_manana">Morning nudge time</string>

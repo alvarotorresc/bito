@@ -26,7 +26,7 @@
     <string name="hojas_habi_manana">Mañana</string>
     <string name="hojas_habi_noche">Noche</string>
     <string name="hojas_habi_noche_nota">Sustituye al repaso del día</string>
-    <string name="hojas_habi_rangos">La mañana se mueve entre las 6:00 y las 11:00; la noche, entre las 19:00 y las 23:30. Si hay un recordatorio a la misma hora, Habi manda uno solo.</string>
+    <string name="hojas_habi_rangos">La mañana se mueve entre las 6:00 y las 11:00; la noche, entre las 19:00 y las 23:30.</string>
     <string name="hojas_habi_aviso_manana">Aviso de la mañana</string>
     <string name="hojas_habi_aviso_noche">Aviso de la noche</string>
     <string name="hojas_habi_reloj_manana">Hora del aviso de la mañana</string>
