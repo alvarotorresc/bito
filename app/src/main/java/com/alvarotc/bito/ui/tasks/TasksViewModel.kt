@@ -85,26 +85,31 @@ class TasksViewModel(
         doneTask.value = null
     }
 
+    /** Devuelve el id de la tarea que se escribe: se genera fuera del `write` para poder avisar de él al momento. */
     fun create(
         title: String,
         firstStep: String?,
         dueKind: DueKind,
         dueDay: LogicalDay?,
-    ) = write { today, nowMillis ->
-        tasks.create(
-            TaskEntity(
-                id = UUID.randomUUID().toString(),
-                title = title,
-                firstStep = firstStep,
-                dueKind = dueKind,
-                dueDay = resolvedDue(dueKind, dueDay, today),
-                status = TaskStatus.OPEN,
-                createdAtMillis = nowMillis,
-                createdOnDay = today,
-                doneAtMillis = null,
-                doneOnDay = null,
-            ),
-        )
+    ): String {
+        val id = UUID.randomUUID().toString()
+        write { today, nowMillis ->
+            tasks.create(
+                TaskEntity(
+                    id = id,
+                    title = title,
+                    firstStep = firstStep,
+                    dueKind = dueKind,
+                    dueDay = resolvedDue(dueKind, dueDay, today),
+                    status = TaskStatus.OPEN,
+                    createdAtMillis = nowMillis,
+                    createdOnDay = today,
+                    doneAtMillis = null,
+                    doneOnDay = null,
+                ),
+            )
+        }
+        return id
     }
 
     fun edit(

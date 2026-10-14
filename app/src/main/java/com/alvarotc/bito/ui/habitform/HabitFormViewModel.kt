@@ -115,16 +115,22 @@ class HabitFormViewModel(
      * (the habit being edited vanished mid-save), where [onSaved] does NOT run and the form stays
      * alive, so leaving `saving` latched there would strand the button disabled forever.
      */
-    fun save(onSaved: () -> Unit) {
+    fun save(
+        onSaved: () -> Unit,
+        alCrear: (String) -> Unit = {},
+    ) {
         val form = formState.value
         if (form.saving || !form.canSave) return
         formState.update { it.copy(saving = true) }
         viewModelScope.launch {
             val today = LogicalDays.logicalDayOf(now(), settings.settings.first().dayCutoffMinutes, zone())
             val editingId = form.editingId
+            var creadoId: String? = null
             if (editingId == null) {
                 val sortOrder = (habits.observeHabits().first().maxOfOrNull { it.sortOrder } ?: -1) + 1
-                habits.create(form.toNewEntity(UUID.randomUUID().toString(), today, now(), sortOrder))
+                val id = UUID.randomUUID().toString()
+                habits.create(form.toNewEntity(id, today, now(), sortOrder))
+                creadoId = id
             } else {
                 val existing = habits.habit(editingId)
                 if (existing == null) {
@@ -145,6 +151,7 @@ class HabitFormViewModel(
             // Como cualquier escritura: la marca de agua del jardín (D11) recoge lo que sube al
             // bajar un objetivo, y los puntos pendientes se conceden al momento.
             reconciler.reconcile(today, now())
+            creadoId?.let(alCrear)
             onSaved()
         }
     }

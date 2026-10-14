@@ -2,6 +2,7 @@
 
 package com.alvarotc.bito.ui.settings
 
+import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -65,6 +66,7 @@ fun AjustesScreen(
     onBack: () -> Unit,
     onOpenArchived: () -> Unit,
     onOpenIntro: () -> Unit = {},
+    entrada: AnimatedVisibilityScope? = null,
 ) {
     val settings by settingsViewModel.state.collectAsStateWithLifecycle()
     val archivados by settingsViewModel.archivedHabits.collectAsStateWithLifecycle()
@@ -81,7 +83,7 @@ fun AjustesScreen(
             .verticalScroll(scroll),
     ) {
         Box(Modifier.background(colores.estratos.general.fondo)) {
-            MaquetaJardin(garden = habi.garden, spec = habi.spec, scroll = scroll, modifier = Modifier.statusBarsPadding())
+            MaquetaJardin(garden = habi.garden, spec = habi.spec, scroll = scroll, modifier = Modifier.statusBarsPadding(), escala = { 1f })
         }
         settings?.let { actual ->
             EstratoAjustes(GENERAL, R.string.ajustes_estrato_general, resumenGeneral(actual, habi.spec.personality, resources), abierto, {

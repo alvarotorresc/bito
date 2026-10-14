@@ -280,4 +280,15 @@ class TasksViewModelTest {
             assertTrue(db.taskEventDao().all().none { it.taskId == "t1" })
             assertTrue(db.pointsLedgerDao().all().any { it.reason == PointsReason.TASK_DONE && it.refId == "task:t1" })
         }
+
+    @Test
+    fun `create returns the id of the task that ends up in the database`() =
+        runTest {
+            vm = newViewModel()
+
+            val id = vm.create("Llamar", null, DueKind.NONE, null)
+            advanceUntilIdle()
+
+            assertEquals(id, db.taskDao().all().single().id)
+        }
 }

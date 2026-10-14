@@ -106,7 +106,7 @@ class HabitFormViewModelTest {
             vm.setUnit("vasos")
             var saved = false
 
-            vm.save { saved = true }
+            vm.save(onSaved = { saved = true })
             advanceUntilIdle()
 
             assertTrue(saved)
@@ -130,7 +130,7 @@ class HabitFormViewModelTest {
             vm.setName("Nuevo")
             vm.selectPreset(HabitPreset.DAILY_CHECK)
 
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             val created = db.habitDao().all().single { it.name == "Nuevo" }
@@ -178,7 +178,7 @@ class HabitFormViewModelTest {
             vm.adjustTarget(2) // 8 -> 10
             assertEquals(10, vm.state.value.target)
 
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             val updated = db.habitDao().byId("h1")!!
@@ -209,7 +209,7 @@ class HabitFormViewModelTest {
             advanceUntilIdle()
 
             vm.setName("Agua fria")
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             val updated = db.habitDao().byId("h1")!!
@@ -246,7 +246,7 @@ class HabitFormViewModelTest {
             assertEquals(0.0, settingsRepo.settings.first().gardenWaterHighMark, 1e-9)
 
             vm.setTarget(6)
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             val water = GardenEngine.totalWater(DomainStateRepository(db).snapshot(), today)
@@ -326,7 +326,7 @@ class HabitFormViewModelTest {
             val vm = newViewModel()
             var saved = false
 
-            vm.save { saved = true }
+            vm.save(onSaved = { saved = true })
             advanceUntilIdle()
 
             assertFalse(saved)
@@ -376,7 +376,7 @@ class HabitFormViewModelTest {
             vm.setName("Meditar")
             vm.setReminder(9 * 60)
 
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             val stored = db.habitDao().all().single()
@@ -402,7 +402,7 @@ class HabitFormViewModelTest {
             advanceUntilIdle()
 
             vm.setReminder(null)
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             val updated = db.habitDao().byId("h1")!!
@@ -415,8 +415,8 @@ class HabitFormViewModelTest {
             val vm = newViewModel()
             vm.setName("Agua")
 
-            vm.save {}
-            vm.save {}
+            vm.save(onSaved = {})
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             assertEquals(1, db.habitDao().all().size)
@@ -428,12 +428,12 @@ class HabitFormViewModelTest {
             val vm = newViewModel()
             vm.setName("Agua")
 
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             assertTrue(vm.state.value.saving)
 
-            vm.save {}
+            vm.save(onSaved = {})
             advanceUntilIdle()
 
             assertEquals(1, db.habitDao().all().size)
@@ -449,5 +449,36 @@ class HabitFormViewModelTest {
             advanceUntilIdle()
 
             assertEquals("neck-collar-flores", vm.equipped.value.neck)
+        }
+
+    @Test
+    fun `creating reports the new id to alCrear before onSaved`() =
+        runTest {
+            val vm = newViewModel()
+            vm.setName("Agua")
+            vm.selectPreset(HabitPreset.DAILY_CHECK)
+            val orden = mutableListOf<String>()
+
+            vm.save(onSaved = { orden += "guardado" }, alCrear = { orden += "crea:$it" })
+            advanceUntilIdle()
+
+            val id = db.habitDao().all().single().id
+            assertEquals(listOf("crea:$id", "guardado"), orden)
+        }
+
+    @Test
+    fun `editing never calls alCrear`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", name = "Agua", createdOnDay = today))
+            val vm = newViewModel("h1")
+            advanceUntilIdle()
+            var llamado = false
+            var guardado = false
+
+            vm.save(onSaved = { guardado = true }, alCrear = { llamado = true })
+            advanceUntilIdle()
+
+            assertTrue(guardado)
+            assertFalse(llamado)
         }
 }
