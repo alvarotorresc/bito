@@ -417,8 +417,12 @@ class HoyListaTest {
     fun `an exiting task row keeps its place among the tasks`() {
         banco.preparar()
         runBlocking {
-            TasksRepository(banco.db).create(taskEntity(id = "t1", title = "Primera", createdOnDay = banco.hoy))
-            TasksRepository(banco.db).create(taskEntity(id = "t2", title = "Segunda", createdOnDay = banco.hoy))
+            TasksRepository(
+                banco.db,
+            ).create(taskEntity(id = "t1", title = "Primera", dueKind = DueKind.DATE, dueDay = banco.hoy, createdOnDay = banco.hoy))
+            TasksRepository(
+                banco.db,
+            ).create(taskEntity(id = "t2", title = "Segunda", dueKind = DueKind.DATE, dueDay = banco.hoy, createdOnDay = banco.hoy))
         }
         banco.montar()
         val antes = rule.onNodeWithTag("tarea-t1").getBoundsInRoot().top.value < rule.onNodeWithTag("tarea-t2").getBoundsInRoot().top.value
@@ -428,8 +432,8 @@ class HoyListaTest {
         rule.onNodeWithTag("circulo-tarea-$primera").performClick()
         rule.waitForIdle()
         rule.onNodeWithTag("tarea-$primera").assertExists()
-        assertTrue(
-            rule.onNodeWithTag("tarea-$primera").getBoundsInRoot().top.value < rule.onNodeWithTag("tarea-$otra").getBoundsInRoot().top.value,
-        )
+        val arriba = rule.onNodeWithTag("tarea-$primera").getBoundsInRoot().top.value
+        val abajo = rule.onNodeWithTag("tarea-$otra").getBoundsInRoot().top.value
+        assertTrue(arriba < abajo)
     }
 }
