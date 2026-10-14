@@ -177,7 +177,10 @@ internal fun LogrosCamino(
             Column(Modifier.padding(horizontal = Medidas.e12), verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
                 deLaFamilia.chunked(POR_FILA).forEach { fila ->
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        fila.forEach { logro -> LogroEnRejilla(logro, estado.hoy, { alTocar(logro) }, Modifier.weight(1f)) }
+                        fila.forEach {
+                                logro ->
+                            LogroEnRejilla(logro, estado.hoy, mesImposible(estado), { alTocar(logro) }, Modifier.weight(1f))
+                        }
                         repeat(POR_FILA - fila.size) { Spacer(Modifier.weight(1f)) }
                     }
                 }
@@ -190,6 +193,7 @@ internal fun LogrosCamino(
 private fun LogroEnRejilla(
     logro: LogroUi,
     hoy: LocalDate,
+    mesImposible: Boolean,
     alPulsar: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -198,7 +202,7 @@ private fun LogroEnRejilla(
     val encendido = logro.conseguido != null
     // Solo anima el que se enciende mientras se mira (§11.4): el resto nace ya en su estado.
     val estabaEncendido = remember { encendido }
-    val falta = faltaTexto(logro, hoy) ?: if (encendido) null else stringResource(BadgeStrings.badgeHowRes(logro.def.id))
+    val falta = faltaTexto(logro, hoy, mesImposible) ?: if (encendido) null else stringResource(BadgeStrings.badgeHowRes(logro.def.id))
     val nombre = stringResource(BadgeStrings.badgeNameRes(logro.def.id))
     val descripcion =
         if (encendido) {

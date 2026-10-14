@@ -13,6 +13,7 @@ import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onChildren
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -235,8 +236,13 @@ class CaminoContenidoTest {
         // Este mes lleva 2 días perfectos y hoy es 13: algún día anterior falló, el mes redondo ya no puede ser.
         val base = conLogros(estado())
         montar(base.copy(stats = base.stats.copy(perfectDays = PerfectDaysSummary(2, 2, 2))))
-        rule.onNodeWithTag("logro-perfect-month").performScrollTo().performClick()
+        val otroMes = cadena(R.string.camino_otro_mes, "November 1")
+        // La rejilla ya lo dice en su celda, sin abrir la hoja.
+        rule.onNodeWithTag("logro-perfect-month").performScrollTo()
+        rule.onAllNodesWithText(otroMes).assertCountEquals(1)
+        rule.onNodeWithTag("logro-perfect-month").performClick()
         rule.waitForIdle()
-        rule.onNodeWithText(cadena(R.string.camino_otro_mes, "November 1")).assertExists()
+        // Y la hoja lo repite: la celda y la hoja.
+        rule.onAllNodesWithText(otroMes).assertCountEquals(2)
     }
 }
