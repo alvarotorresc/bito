@@ -45,6 +45,29 @@ data class HabitFormState(
     val canSave get() = name.isNotBlank() && (target >= 1 || (preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL))
 }
 
+/** A WEEKLY_TIMES target counts days, not sessions: 7 is the physical weekly maximum. */
+internal const val MAX_WEEKLY_TIMES = 7
+
+/** El aviso que sale cuando el número tecleado cae fuera de [rangoObjetivo]. */
+enum class AvisoObjetivo { AL_MENOS_UNO, COMO_MUCHO_SEMANA }
+
+/** Los valores que admite el objetivo según el tipo: Dejar del todo no tiene objetivo (solo el 0). */
+fun HabitFormState.rangoObjetivo(): IntRange =
+    when {
+        preset == HabitPreset.QUIT && quitMode == QuitMode.TOTAL -> 0..0
+        preset == HabitPreset.WEEKLY_TIMES -> 1..MAX_WEEKLY_TIMES
+        else -> 1..Int.MAX_VALUE
+    }
+
+/** Qué avisar si [valor] se sale del rango (en vez de recortarlo a escondidas), o null si vale. */
+fun HabitFormState.avisoObjetivo(valor: Int): AvisoObjetivo? =
+    when {
+        valor in rangoObjetivo() -> null
+        valor < rangoObjetivo().first -> AvisoObjetivo.AL_MENOS_UNO
+        preset == HabitPreset.WEEKLY_TIMES -> AvisoObjetivo.COMO_MUCHO_SEMANA
+        else -> null
+    }
+
 /** Rule E2 (initial target) is recorded by the repository on create, not here. */
 fun HabitFormState.toNewEntity(
     id: String,

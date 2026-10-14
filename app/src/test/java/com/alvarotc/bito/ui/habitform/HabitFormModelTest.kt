@@ -266,4 +266,42 @@ class HabitFormModelTest {
         assertEquals(SORT_ORDER, entity.sortOrder)
         assertEquals(step, entity.step)
     }
+
+    // --- Target range and the warning that replaces silent clamping -------------------
+
+    @Test
+    fun `the target range depends on the preset`() {
+        assertEquals(1..7, HabitFormState(preset = HabitPreset.WEEKLY_TIMES).rangoObjetivo())
+        assertEquals(0..0, HabitFormState(preset = HabitPreset.QUIT, quitMode = QuitMode.TOTAL).rangoObjetivo())
+        assertEquals(1, HabitFormState(preset = HabitPreset.QUANTITY).rangoObjetivo().first)
+        assertEquals(1, HabitFormState(preset = HabitPreset.QUIT, quitMode = QuitMode.LIMIT).rangoObjetivo().first)
+    }
+
+    @Test
+    fun `a weekly target above seven warns that seven is the most`() {
+        val form = HabitFormState(preset = HabitPreset.WEEKLY_TIMES)
+
+        assertEquals(AvisoObjetivo.COMO_MUCHO_SEMANA, form.avisoObjetivo(9))
+        assertNull(form.avisoObjetivo(7))
+        assertNull(form.avisoObjetivo(1))
+    }
+
+    @Test
+    fun `zero warns that one is the least`() {
+        assertEquals(AvisoObjetivo.AL_MENOS_UNO, HabitFormState(preset = HabitPreset.DURATION).avisoObjetivo(0))
+        assertEquals(AvisoObjetivo.AL_MENOS_UNO, HabitFormState(preset = HabitPreset.WEEKLY_TIMES).avisoObjetivo(0))
+    }
+
+    @Test
+    fun `a big number in an open-ended preset is accepted`() {
+        assertNull(HabitFormState(preset = HabitPreset.QUANTITY).avisoObjetivo(9_999))
+    }
+
+    @Test
+    fun `quit entirely only accepts zero`() {
+        val form = HabitFormState(preset = HabitPreset.QUIT, quitMode = QuitMode.TOTAL)
+
+        assertNull(form.avisoObjetivo(0))
+        assertEquals(0, form.clampTarget(5))
+    }
 }
