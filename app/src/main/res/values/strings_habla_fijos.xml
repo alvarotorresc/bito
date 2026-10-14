@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Habi's button labels (EtiquetasAccion). -->
+    <string name="habla_vale">OK</string>
+    <string name="habla_vale_a_las">OK, at %1$s</string>
+    <string name="habla_vale_habito">OK, %1$s</string>
+    <string name="habla_ahora">Now</string>
+    <string name="habla_empezar">Start</string>
+    <string name="habla_empezar_25">Start, 25 min</string>
+    <string name="habla_sesion_25">25-minute session</string>
+    <string name="habla_hecho">Done</string>
+    <string name="habla_cerrar_dia">Close the day</string>
+    <string name="habla_elegir">Choose</string>
+    <string name="habla_otra_hora">Another time</string>
+    <string name="habla_luego">Later</string>
+    <string name="habla_todavia_no">Not yet</string>
+    <string name="habla_ahora_no">Not now</string>
+    <string name="habla_no_hace_falta">No need</string>
+    <string name="habla_permitir">Allow</string>
+</resources>

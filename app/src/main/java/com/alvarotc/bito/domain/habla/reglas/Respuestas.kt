@@ -1,0 +1,45 @@
+package com.alvarotc.bito.domain.habla.reglas
+
+import com.alvarotc.bito.domain.habla.Candidata
+import com.alvarotc.bito.domain.habla.Hechos
+import com.alvarotc.bito.domain.habla.Hueco
+import com.alvarotc.bito.domain.habla.Situacion
+import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.propuestas.Respuesta
+
+/**
+ * Las candidatas que salen como respuesta y no por prioridad (spec §5.1, segunda tabla).
+ * Provisional: candidatas mínimas de su situación; la Tarea 14 escribe los cuerpos.
+ */
+object Respuestas {
+    /** Tras «Vale, a las…». Con lo gordo sin hacer, sesión o luego; sin él, solo «Otra hora». */
+    fun confirmaVale(
+        c: Candidata,
+        hora: Int?,
+        h: Hechos,
+    ): Candidata =
+        Candidata(
+            situacion = Situacion.CONFIRMA_VALE,
+            ref = c.ref,
+            huecos = if (hora == null) emptyMap() else mapOf(Hueco.HORA to ValorHueco.Hora(hora)),
+            acciones = if (h.gordo.isEmpty()) listOf(Respuesta.OTRA_HORA) else listOf(Respuesta.AHORA, Respuesta.LUEGO),
+            hora = hora,
+        )
+
+    /** Tras guardar la hoja de lo gordo. */
+    fun gordoElegido(h: Hechos): Candidata = Candidata(Situacion.GORDO_ELEGIDO, null, emptyMap(), listOf(Respuesta.AHORA, Respuesta.LUEGO))
+
+    /** Tras «Hoy no» o «Ahora no»: la frase corta, sin acciones (P6: aporta `n` y `tarea`). */
+    fun trasHoyNo(h: Hechos): Candidata = Candidata(Situacion.TRAS_HOY_NO, null, quedaHoy(h), emptyList())
+
+    /** El día sellado (Hoy de noche), sin acciones (P6: aporta `n` y `tarea`). */
+    fun noche(h: Hechos): Candidata = Candidata(Situacion.NOCHE, null, quedaHoy(h), emptyList())
+
+    /** `n`: hábitos exigibles sin hacer más tareas sin hacer; `tarea`: la primera tarea sin hacer, si hay. */
+    private fun quedaHoy(h: Hechos): Map<Hueco, ValorHueco> {
+        val habitos = h.habitos.count { it.exigibleHoy && !it.hechoHoy }
+        val tareas = h.tareas.filterNot { it.hecha }
+        val n = mapOf(Hueco.N to ValorHueco.Numero(habitos + tareas.size))
+        return tareas.firstOrNull()?.let { n + (Hueco.TAREA to ValorHueco.Texto(it.titulo)) } ?: n
+    }
+}
