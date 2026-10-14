@@ -48,9 +48,9 @@ import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.review.ReviewScreen
 import com.alvarotc.bito.ui.review.ReviewViewModel
+import com.alvarotc.bito.ui.settings.AjustesScreen
 import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
-import com.alvarotc.bito.ui.settings.SettingsScreen
 import com.alvarotc.bito.ui.settings.SettingsViewModel
 import com.alvarotc.bito.ui.stats.BadgesScreen
 import com.alvarotc.bito.ui.stats.BadgesViewModel
@@ -263,9 +263,10 @@ fun BitoNavHost(container: AppContainer) {
                 )
             }
             composable("settings") {
-                SettingsScreen(
+                AjustesScreen(
                     backupViewModel = viewModel(factory = BackupViewModel.factory(container)),
                     settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
+                    habiViewModel = habiViewModel,
                     onBack = { nav.popBackStack() },
                     onOpenArchived = { nav.navigate("archived") },
                     onOpenIntro = { nav.navigate("onboarding_replay") },
@@ -556,6 +557,14 @@ fun BitoNavHost(container: AppContainer) {
                 onTask = {
                     showCreateChoice = false
                     nav.navigate("task")
+                },
+                onFocus = {
+                    showCreateChoice = false
+                    nav.navigate("focus")
+                },
+                onBreathing = {
+                    showCreateChoice = false
+                    nav.navigate("breathing") { launchSingleTop = true }
                 },
                 onDismiss = { showCreateChoice = false },
             )

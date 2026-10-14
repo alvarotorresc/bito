@@ -27,6 +27,8 @@ fun CreateChoiceSheet(
     onHabit: () -> Unit,
     onTask: () -> Unit,
     onDismiss: () -> Unit,
+    onFocus: () -> Unit = {},
+    onBreathing: () -> Unit = {},
 ) {
     ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
         Column(Modifier.padding(20.dp).testTag("create-choice-sheet")) {
