@@ -1,2 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources />
+<resources>
+    <!-- Calendario de gotas -->
+    <string name="ficha_cal_mes_pattern">MMMM yyyy</string>
+    <string name="ficha_dia_hecho">hecho</string>
+    <string name="ficha_dia_sin_hacer">sin hacer</string>
+    <string name="ficha_dia_congelado">congelado</string>
+    <string name="ficha_dia_hoy_hecho">hoy, hecho</string>
+    <string name="ficha_dia_hoy_sin_marcar">hoy, sin marcar</string>
+    <string name="ficha_dia_pendiente">pendiente</string>
+    <string name="ficha_dia_pausa">en pausa</string>
+    <string name="ficha_dia_sin_registro">sin registro</string>
+    <string name="ficha_leyenda_sin_hacer">Sin hacer</string>
+    <string name="ficha_leyenda_congelador">Congelador</string>
+    <string name="ficha_leyenda_hoy">Hoy</string>
+    <string name="ficha_leyenda_por_venir">Por venir</string>
+
+    <!-- Lámina de herbario -->
+    <plurals name="ficha_dias_seguidos">
+        <item quantity="one">día seguido</item>
+        <item quantity="many">días seguidos</item>
+        <item quantity="other">días seguidos</item>
+    </plurals>
+    <plurals name="ficha_semanas_seguidas">
+        <item quantity="one">semana seguida</item>
+        <item quantity="many">semanas seguidas</item>
+        <item quantity="other">semanas seguidas</item>
+    </plurals>
+    <plurals name="ficha_meses_seguidos">
+        <item quantity="one">mes seguido</item>
+        <item quantity="many">meses seguidos</item>
+        <item quantity="other">meses seguidos</item>
+    </plurals>
+    <plurals name="ficha_dias_limpios">
+        <item quantity="one">día limpio</item>
+        <item quantity="many">días limpios</item>
+        <item quantity="other">días limpios</item>
+    </plurals>
+    <string name="ficha_hoy_empieza_otra">días seguidos; hoy empieza otra</string>
+    <string name="ficha_mejor_racha">mejor racha</string>
+    <string name="ficha_mejor_ahora">mejor racha: la de ahora</string>
+    <string name="ficha_ultimos_30">de los últimos 30 días</string>
+    <string name="ficha_planta_cd">La planta del hábito</string>
+
+    <!-- Ficha: cabecera, nota, pie y hojas -->
+    <string name="ficha_editar">Editar</string>
+    <string name="ficha_marcar_hoy">Marcar %1$s hoy</string>
+    <string name="ficha_cal_nota">Toca un día pasado para corregirlo. Los congeladores no se tocan.</string>
+    <string name="ficha_vale">Vale</string>
+    <string name="ficha_no_hace_falta">No hace falta</string>
+    <string name="ficha_dias_365">365 días</string>
+    <string name="ficha_cumple_linea">%1$s · %2$s</string>
+    <string name="ficha_cumple_cd">%1$s: %2$d de %3$d</string>
+    <string name="ficha_sin_congeladores">Sin congeladores</string>
+    <string name="ficha_recaida_verbo">Registrar</string>
+    <string name="ficha_sella_dia">Esto sella el día entero.</string>
+    <string name="ficha_total_cd">Total del día</string>
+    <string name="ficha_usar_congelador">Usar un congelador (tienes %1$d)</string>
+    <string name="ficha_congelador_pregunta">¿Usar un congelador?</string>
+    <string name="ficha_te_quedara">Te quedará %1$d</string>
+    <string name="ficha_congelador_verbo">Usar congelador</string>
+    <string name="ficha_archivar_cuerpo">Archivar lo guarda todo.</string>
+</resources>

@@ -1,25 +1,21 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.alvarotc.bito.ui.detail
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -28,21 +24,34 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
-import com.alvarotc.bito.ui.components.GhostPillButton
-import com.alvarotc.bito.ui.components.NumberInputSheet
-import com.alvarotc.bito.ui.components.PillButton
 import com.alvarotc.bito.ui.components.SpeechBubble
+import com.alvarotc.bito.ui.components.formatDayWithPattern
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
-import com.alvarotc.bito.ui.theme.Peligro
-import com.alvarotc.bito.ui.theme.PeligroTinte
-import com.alvarotc.bito.ui.theme.Tarjeta
-import com.alvarotc.bito.ui.theme.Tinta
-import com.alvarotc.bito.ui.theme.TintaSuave
+import com.alvarotc.bito.ui.icons.IconosSistema
+import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Haptica
+import com.alvarotc.bito.ui.sistema.Medidas
+import com.alvarotc.bito.ui.sistema.componentes.Boton
+import com.alvarotc.bito.ui.sistema.componentes.BotonTexto
+import com.alvarotc.bito.ui.sistema.componentes.BotonesHoja
+import com.alvarotc.bito.ui.sistema.componentes.Campo
+import com.alvarotc.bito.ui.sistema.componentes.CampoGrande
+import com.alvarotc.bito.ui.sistema.componentes.EstiloBoton
+import com.alvarotc.bito.ui.sistema.componentes.Hoja
+import com.alvarotc.bito.ui.sistema.componentes.HojaPasos
+import com.alvarotc.bito.ui.sistema.componentes.HojaScope
+import com.alvarotc.bito.ui.sistema.componentes.Stepper
+import com.alvarotc.bito.ui.sistema.fuerte
+import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.today.CardKind
 
-/** The retroactive/day-edit registration actions [DaySheet] can trigger for one day. */
+/** El mayor total que acepta la hoja de un día: cinco cifras. */
+private const val TOTAL_MAXIMO = 99_999
+
+/** Las acciones de registro retroactivo que una [DaySheet] puede lanzar sobre un día. */
 data class DaySheetActions(
     val onMarkDone: () -> Unit,
     val onMarkNotDone: () -> Unit,
@@ -53,11 +62,10 @@ data class DaySheetActions(
 )
 
 /**
- * Retroactive registration for one heatmap day. The body varies by [kind]: CHECK/BINARY toggles
- * done/not-done; COUNTER/DURATION delegates to [NumberInputSheet]; ABSTINENCE offers "I stayed
- * clean" (seals the day) or "I slipped that day". A freezer row only appears when the day is
- * [freezerOffered] (eligible AND at least one is owned) — every variant, including COUNTER/
- * DURATION, offers it via [NumberInputSheet]'s `extraContent` slot.
+ * La hoja de un día pasado (G7), según [kind]: un check ofrece «Hecho» y «No lo hice»; un contador o una duración,
+ * el total con [Stepper] y [CampoGrande] prellenado con lo registrado ([currentValue]); la abstinencia, «Estuve
+ * limpio» y «Recaí ese día», con la nota de que sella el día. Si [freezerOffered], un congelador se usa solo a
+ * petición y con un paso de confirmación (G8). Cada acción se aplica y la hoja se cierra con su salida.
  */
 @Composable
 fun DaySheet(
@@ -68,133 +76,165 @@ fun DaySheet(
     freezersOwned: Int,
     actions: DaySheetActions,
     onDismiss: () -> Unit,
+    unit: String? = null,
 ) {
-    when (kind) {
-        CardKind.CHECK ->
-            CheckDaySheet(freezerOffered, freezersOwned, actions.onMarkDone, actions.onMarkNotDone, actions.onUseFreezer, onDismiss)
-        CardKind.COUNTER, CardKind.DURATION ->
-            NumberInputSheet(
-                title = stringResource(R.string.day_value_title),
-                initial = currentValue,
-                onConfirm = actions.onSetValue,
-                onDismiss = onDismiss,
-                extraContent =
-                    if (freezerOffered) {
-                        {
-                            Spacer(Modifier.height(16.dp))
-                            GhostPillButton(
-                                stringResource(R.string.use_freezer_action, freezersOwned),
-                                onClick = {
-                                    actions.onUseFreezer()
-                                    onDismiss()
-                                },
-                                modifier = Modifier.fillMaxWidth(),
-                            )
-                        }
-                    } else {
-                        null
-                    },
-            )
-        CardKind.ABSTINENCE ->
-            AbstinenceDaySheet(freezerOffered, freezersOwned, actions.onRelapse, actions.onStayedClean, actions.onUseFreezer, onDismiss)
-    }
-    // `day` is not read directly here: every action closure above already carries the day it
-    // targets (bound by the caller), so the sheet body itself has nothing day-specific to render
-    // beyond routing on `kind` — keeping `day` in the signature documents what the sheet is for.
-}
-
-@Composable
-private fun CheckDaySheet(
-    freezerOffered: Boolean,
-    freezersOwned: Int,
-    onMarkDone: () -> Unit,
-    onMarkNotDone: () -> Unit,
-    onUseFreezer: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("day-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton(
-                stringResource(R.string.day_done),
-                onClick = {
-                    onMarkDone()
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            GhostPillButton(
-                stringResource(R.string.day_not_done),
-                onClick = {
-                    onMarkNotDone()
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            if (freezerOffered) {
-                GhostPillButton(
-                    stringResource(R.string.use_freezer_action, freezersOwned),
-                    onClick = {
-                        onUseFreezer()
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
+    val patron = stringResource(R.string.heatmap_day_pattern)
+    val titulo = remember(day, patron) { formatDayWithPattern(day, patron) }
+    var paso by remember { mutableIntStateOf(0) }
+    Hoja(abierta = true, alCerrar = onDismiss, modifier = Modifier.testTag("day-sheet"), titulo = titulo) {
+        HojaPasos(paso) { p ->
+            if (p == 0) {
+                PasoDia(kind, currentValue, unit, freezerOffered, freezersOwned, actions) { paso = 1 }
+            } else {
+                PasoCongelador(freezersOwned, actions.onUseFreezer, alVolver = { paso = 0 })
             }
         }
     }
 }
 
 @Composable
-private fun AbstinenceDaySheet(
+private fun HojaScope.PasoDia(
+    kind: CardKind,
+    currentValue: Int,
+    unit: String?,
     freezerOffered: Boolean,
     freezersOwned: Int,
-    onRelapse: () -> Unit,
-    onStayedClean: () -> Unit,
-    onUseFreezer: () -> Unit,
-    onDismiss: () -> Unit,
+    actions: DaySheetActions,
+    alCongelador: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("day-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.seal_day_hint), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            PillButton(
-                stringResource(R.string.stayed_clean),
-                onClick = {
-                    onStayedClean()
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            GhostPillButton(
-                stringResource(R.string.relapsed_that_day),
-                onClick = {
-                    onRelapse()
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                color = Peligro,
-                borderColor = PeligroTinte,
-            )
-            if (freezerOffered) {
-                GhostPillButton(
-                    stringResource(R.string.use_freezer_action, freezersOwned),
-                    onClick = {
-                        onUseFreezer()
-                        onDismiss()
+    val gesto = rememberGesto()
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
+        when (kind) {
+            CardKind.CHECK -> {
+                Boton(
+                    stringResource(R.string.day_done),
+                    {
+                        gesto(Snd.LLEGADA, Haptica.CLICK)
+                        actions.onMarkDone()
+                        cerrar()
                     },
-                    modifier = Modifier.fillMaxWidth(),
+                    Modifier.fillMaxWidth(),
+                    estilo = EstiloBoton.PRINCIPAL,
+                    alto = Medidas.botonHoja,
+                )
+                Boton(
+                    stringResource(R.string.day_not_done),
+                    {
+                        gesto(Snd.VACIAR, Haptica.LOW)
+                        actions.onMarkNotDone()
+                        cerrar()
+                    },
+                    Modifier.fillMaxWidth(),
+                    alto = Medidas.botonHoja,
+                )
+            }
+            CardKind.COUNTER, CardKind.DURATION -> {
+                var texto by remember { mutableStateOf(currentValue.toString()) }
+                val valor = (texto.toIntOrNull() ?: 0).coerceIn(0, TOTAL_MAXIMO)
+                Stepper(
+                    valor = valor,
+                    alCambiar = { texto = it.toString() },
+                    min = 0,
+                    max = TOTAL_MAXIMO,
+                    descripcion = stringResource(R.string.ficha_total_cd),
+                    modifier = Modifier.align(Alignment.CenterHorizontally),
+                )
+                CampoGrande(texto, { texto = it.filter(Char::isDigit).take(5) }, Modifier.fillMaxWidth(), unidad = unit)
+                BotonesHoja(
+                    principal = stringResource(R.string.sistema_guardar),
+                    alPrincipal = {
+                        if (valor > currentValue) gesto(Snd.LLEGADA, Haptica.CLICK) else gesto(Snd.VACIAR, Haptica.LOW)
+                        actions.onSetValue(valor)
+                        cerrar()
+                    },
+                )
+            }
+            CardKind.ABSTINENCE -> {
+                Text(
+                    stringResource(R.string.ficha_sella_dia),
+                    style = BitoTema.tipos.t14,
+                    color = BitoTema.colores.tintaSuave,
+                )
+                Boton(
+                    stringResource(R.string.stayed_clean),
+                    {
+                        gesto(Snd.LLEGADA, Haptica.CLICK)
+                        actions.onStayedClean()
+                        cerrar()
+                    },
+                    Modifier.fillMaxWidth(),
+                    estilo = EstiloBoton.PRINCIPAL,
+                    alto = Medidas.botonHoja,
+                )
+                Boton(
+                    stringResource(R.string.relapsed_that_day),
+                    {
+                        gesto(Snd.VACIAR, Haptica.LOW)
+                        actions.onRelapse()
+                        cerrar()
+                    },
+                    Modifier.fillMaxWidth(),
+                    alto = Medidas.botonHoja,
                 )
             }
         }
+        if (freezerOffered) {
+            BotonTexto(stringResource(R.string.ficha_usar_congelador, freezersOwned), alCongelador, Modifier.fillMaxWidth())
+        }
     }
 }
+
+/** G8: el paso de confirmación de un congelador, con los copitos y lo que queda. */
+@Composable
+private fun HojaScope.PasoCongelador(
+    owned: Int,
+    alUsar: () -> Unit,
+    alVolver: () -> Unit,
+) {
+    val gesto = rememberGesto()
+    val colores = BitoTema.colores
+    Column(
+        Modifier.fillMaxWidth().testTag("congelador-confirmar"),
+        verticalArrangement = Arrangement.spacedBy(Medidas.e12),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(stringResource(R.string.ficha_congelador_pregunta), style = BitoTema.tipos.t19.fuerte(), color = colores.tinta)
+        Row(horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
+            repeat(owned.coerceAtMost(MAX_COPITOS)) { i ->
+                Icon(
+                    IconosSistema.Snowflake,
+                    contentDescription = null,
+                    tint = colores.copo,
+                    // El último es el que se gasta.
+                    modifier = Modifier.size(28.dp).alpha(if (i == owned.coerceAtMost(MAX_COPITOS) - 1) GASTADO else 1f),
+                )
+            }
+        }
+        Text(
+            stringResource(R.string.ficha_te_quedara, (owned - 1).coerceAtLeast(0)),
+            style = BitoTema.tipos.t16,
+            color = colores.tintaSuave,
+        )
+        BotonesHoja(
+            principal = stringResource(R.string.ficha_congelador_verbo),
+            alPrincipal = {
+                gesto(Snd.CAMPANILLA, Haptica.CONFIRM)
+                alUsar()
+                cerrar()
+            },
+            suave = stringResource(R.string.cancel),
+            alSuave = alVolver,
+        )
+    }
+}
+
+private const val MAX_COPITOS = 6
+private const val GASTADO = 0.35f
 
 /**
- * What freezers are and how to spend them — pure info, dismissed by its own "Entendido"/"Got it"
- * button, no write of any kind. Mockup 4d: title, then an inner card with a mini Habi face,
- * "HABI · <personality>" and the personality-voiced body ([HabiVoice.freezerInfoRes]) — the same
- * [SpeechBubble] avatar slot the Stats commentator uses. Opened both from the habit Detail screen
- * and from the Habi store's [com.alvarotc.bito.ui.habi.StoreSection] freezer card. [equipped] is
- * the user's real worn set, so the mini Habi here is THE user's Habi, not a naked default.
+ * Qué son los congeladores y cómo se gastan: información pura, sin escribir nada. Una hoja con Habi (la del usuario,
+ * con lo que lleva puesto) que habla en su personalidad ([HabiVoice.freezerInfoRes]). La abre la ficha y también la
+ * tienda de Habi, por eso su firma no cambia.
  */
 @Composable
 fun FreezerInfoSheet(
@@ -203,9 +243,13 @@ fun FreezerInfoSheet(
     equipped: EquippedSet,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("freezer-info-sheet"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.freezer_info_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
+    Hoja(
+        abierta = true,
+        alCerrar = onDismiss,
+        modifier = Modifier.testTag("freezer-info-sheet"),
+        titulo = stringResource(R.string.freezer_info_sheet_title),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
             SpeechBubble(
                 speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
                 text =
@@ -222,60 +266,60 @@ fun FreezerInfoSheet(
                     )
                 },
             )
-            PillButton(stringResource(R.string.got_it), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
+            BotonesHoja(principal = stringResource(R.string.got_it), alPrincipal = { cerrar() })
         }
     }
 }
 
-/** Pausing suspends registration and streak judgment until resumed; the note is optional context. */
+/** Pausar suspende el registro y el juicio de la racha hasta reanudar; la nota es contexto opcional. */
 @Composable
 fun PauseSheet(
     onPause: (String?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var note by remember { mutableStateOf("") }
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("pause-sheet"), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(stringResource(R.string.pause_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            OutlinedTextField(
-                value = note,
-                onValueChange = { note = it },
-                placeholder = { Text(stringResource(R.string.pause_note_hint)) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            PillButton(
-                stringResource(R.string.pause_habit),
-                onClick = {
-                    onPause(note.trim().ifBlank { null })
-                    onDismiss()
+    var nota by remember { mutableStateOf("") }
+    Hoja(
+        abierta = true,
+        alCerrar = onDismiss,
+        modifier = Modifier.testTag("pause-sheet"),
+        titulo = stringResource(R.string.pause_sheet_title),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
+            Campo(nota, { nota = it }, Modifier.fillMaxWidth(), pista = stringResource(R.string.pause_note_hint))
+            BotonesHoja(
+                principal = stringResource(R.string.pause_habit),
+                alPrincipal = {
+                    onPause(nota.trim().ifBlank { null })
+                    cerrar()
                 },
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = Tinta,
             )
         }
     }
 }
 
-/** Archiving keeps all history — not destructive, so no `peligro`; it confirms in `tinta`, deliberate rather than the routine positive `hoja` (QA 2026-08-23). Pausing confirms the same way. */
+/** Archivar lo conserva todo: no es destructivo, así que confirma sin rojo. */
 @Composable
 fun ArchiveSheet(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("archive-sheet"), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.archive_sheet_title), style = MaterialTheme.typography.titleMedium, color = Tinta)
-            Text(stringResource(R.string.archive_sheet_body), style = MaterialTheme.typography.bodyLarge, color = TintaSuave)
-            PillButton(
-                stringResource(R.string.archive_habit),
-                onClick = {
+    Hoja(
+        abierta = true,
+        alCerrar = onDismiss,
+        modifier = Modifier.testTag("archive-sheet"),
+        titulo = stringResource(R.string.archive_sheet_title),
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
+            Text(stringResource(R.string.ficha_archivar_cuerpo), style = BitoTema.tipos.t16, color = BitoTema.colores.tintaSuave)
+            BotonesHoja(
+                principal = stringResource(R.string.archive_habit),
+                alPrincipal = {
                     onConfirm()
-                    onDismiss()
+                    cerrar()
                 },
-                modifier = Modifier.fillMaxWidth(),
-                containerColor = Tinta,
+                suave = stringResource(R.string.cancel),
+                alSuave = { cerrar() },
             )
-            GhostPillButton(stringResource(R.string.cancel), onClick = onDismiss, modifier = Modifier.fillMaxWidth())
         }
     }
 }

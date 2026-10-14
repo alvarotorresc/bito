@@ -1,84 +1,103 @@
 package com.alvarotc.bito.ui.detail
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.animateDp
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.DayDot
-import com.alvarotc.bito.domain.WindowStats
+import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogicalDay
-import com.alvarotc.bito.domain.model.Period
-import com.alvarotc.bito.ui.components.BitoCard
-import com.alvarotc.bito.ui.components.DotHeatmap
-import com.alvarotc.bito.ui.components.GhostIconButton
-import com.alvarotc.bito.ui.components.PillButton
-import com.alvarotc.bito.ui.components.SegmentedPills
-import com.alvarotc.bito.ui.components.formatDayMedium
-import com.alvarotc.bito.ui.components.formatMonthLabel
-import com.alvarotc.bito.ui.icons.BitoIcons
-import com.alvarotc.bito.ui.theme.Borde
-import com.alvarotc.bito.ui.theme.Brasa
-import com.alvarotc.bito.ui.theme.BrasaTinte
-import com.alvarotc.bito.ui.theme.Hoja
-import com.alvarotc.bito.ui.theme.HojaTinte
-import com.alvarotc.bito.ui.theme.Papel
-import com.alvarotc.bito.ui.theme.Tinta
-import com.alvarotc.bito.ui.theme.TintaSuave
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.Respuesta
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.icons.IconosSistema
+import com.alvarotc.bito.ui.inicio.LocalAnimacionRuta
+import com.alvarotc.bito.ui.inicio.cantoCompartido
+import com.alvarotc.bito.ui.inicio.textoHabi
+import com.alvarotc.bito.ui.sistema.BitoFormas
+import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Curvas
+import com.alvarotc.bito.ui.sistema.Duraciones
+import com.alvarotc.bito.ui.sistema.Haptica
+import com.alvarotc.bito.ui.sistema.Medidas
+import com.alvarotc.bito.ui.sistema.Muelles
+import com.alvarotc.bito.ui.sistema.componentes.Boton
+import com.alvarotc.bito.ui.sistema.componentes.CalendarioGotas
+import com.alvarotc.bito.ui.sistema.componentes.EstiloBoton
+import com.alvarotc.bito.ui.sistema.componentes.pulsar
+import com.alvarotc.bito.ui.sistema.fuerte
+import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.today.CardKind
-import com.alvarotc.bito.ui.today.RelapseSheet
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.YearMonth
 
-/** [SegmentedPills] order for the compliance windows, matching [DetailUiState.windows]' [7, 30, 365] order. */
-private val WINDOW_LABEL_RES = listOf(R.string.window_7, R.string.window_30, R.string.window_year)
+private const val ALTO_CANTO = 76
+private const val RADIO_CANTO_FILA = 28
+private const val RADIO_CANTO = 38
+private const val NOMBRE_FILA = 16f
+private const val NOMBRE_CABECERA = 24f
+private const val LLEGADA_SIN_GOTA_MS = 300L
+private const val CANTO_MS = 440
 
-/** The M5 habit detail screen: monument, heatmap, retroactive editing, freezers, pause/archive. */
+/**
+ * La ficha de un hábito (pieza 3, §8): el canto con el círculo de hoy, la lámina de herbario con la planta y sus
+ * tres datos, el calendario de gotas, la nota de Habi y el pie con lo que la ficha aprobada no dibuja (cumplimiento,
+ * congeladores, recaída, pausar y archivar). En modo lectura no escribe: sin círculo, días que no responden y solo «Reactivar».
+ */
 @Composable
 fun DetailScreen(
     viewModel: DetailViewModel,
@@ -87,14 +106,11 @@ fun DetailScreen(
     onOpenHabi: () -> Unit,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    // `uiState` seeds `null` before its first real emission AND when the habit genuinely does not
-    // exist — the two are indistinguishable by type. `hasLoaded` tells them apart for the only
-    // case that matters in practice: a habit deleted (from Settings/import) while its detail is
-    // open bounces back once it was seen to exist; a cold-start null never fires onBack. Plain
-    // `remember`, not `rememberSaveable`: a recreated VM after process death re-seeds `uiState`
-    // at `null` too, so a saveable `true` here would false-positive onBack on the very first
-    // frame. Config changes (the only other case `rememberSaveable` would help) are already
-    // covered by the VM's cached StateFlow re-emitting its last value.
+    val propuesta by viewModel.propuesta.collectAsStateWithLifecycle()
+    // `uiState` arranca en `null` antes de su primera emisión Y cuando el hábito no existe: por tipo no se distinguen.
+    // `hasLoaded` separa el único caso que importa: un hábito borrado (desde Ajustes o al importar) con su ficha
+    // abierta vuelve atrás una vez visto; un `null` de arranque en frío nunca llama a onBack. `remember` a secas, no
+    // `rememberSaveable`: tras morir el proceso el VM recreado también parte de `null`.
     var hasLoaded by remember { mutableStateOf(false) }
     LaunchedEffect(state) {
         if (state != null) {
@@ -105,67 +121,104 @@ fun DetailScreen(
     }
     val current = state ?: return
 
+    val colores = BitoTema.colores
+    val gesto = rememberGesto()
+    val scope = rememberCoroutineScope()
     var daySheetFor by remember { mutableStateOf<LogicalDay?>(null) }
-    var showFreezerInfoSheet by remember { mutableStateOf(false) }
-    var showPauseSheet by remember { mutableStateOf(false) }
-    var showArchiveSheet by remember { mutableStateOf(false) }
-    var relapseSheetOpen by remember { mutableStateOf(false) }
-    var windowIndex by rememberSaveable { mutableStateOf(0) }
+    val archivado = current.status == HabitStatus.ARCHIVED
+    val interactivo = !current.lectura && !archivado
+    val mesActual = remember(current.today) { YearMonth.from(LocalDate.ofEpochDay(current.today.toLong())) }
 
-    Scaffold(containerColor = Papel) { padding ->
-        Column(
-            Modifier
-                .padding(padding)
-                .verticalScroll(rememberScrollState())
-                .padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp),
-        ) {
-            DetailHeader(current.name, onBack, { onEdit(current.habitId) })
+    // El círculo sigue a la gota de hoy; con otro mes en pantalla, a lo último que se vio.
+    val hoyVisible = current.heatmap.firstOrNull { it.isToday }?.dot?.let { it == DayDot.FULFILLED || it == DayDot.ACTIVITY }
+    var ultimoHecho by remember { mutableStateOf(false) }
+    LaunchedEffect(hoyVisible) { if (hoyVisible != null) ultimoHecho = hoyVisible }
+    val hechoHoy = hoyVisible ?: ultimoHecho
+
+    // Marcar hoy (G1): sin gota que vuele (el jardín no se ve), la llegada suena 300 ms después. La abstinencia no se marca.
+    fun marcarHoy() {
+        if (!interactivo || current.kind == CardKind.ABSTINENCE) return
+        repeat(mesesHasta(current.month, mesActual)) { viewModel.nextMonth() }
+        if (current.kind != CardKind.CHECK || !hechoHoy) {
+            // El gorgoteo ya lo suena el modelo al registrar (HabiSound.LOG): aquí solo la háptica y la llegada.
+            gesto(h = Haptica.TICKS)
+            scope.launch {
+                delay(LLEGADA_SIN_GOTA_MS)
+                gesto(Snd.LLEGADA, Haptica.CLICK)
+            }
+        } else {
+            gesto(h = Haptica.LOW)
+        }
+        viewModel.marcarHoy()
+    }
+
+    Column(Modifier.fillMaxSize().background(colores.tAlta2).verticalScroll(rememberScrollState())) {
+        Column(Modifier.fillMaxWidth().background(colores.cielo).statusBarsPadding()) {
+            BarraSuperior(onBack = onBack, onEdit = { onEdit(current.habitId) })
+            CantoHabito(
+                current,
+                hechoHoy,
+                circulo = interactivo && current.kind != CardKind.ABSTINENCE,
+                activo = interactivo,
+                alMarcar = ::marcarHoy,
+            )
             if (!current.hasAnyEntry) {
                 Text(
                     stringResource(R.string.detail_empty_hint),
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp),
-                    color = TintaSuave,
+                    Modifier.padding(start = Medidas.e24, end = Medidas.e24, top = Medidas.e12),
+                    style = BitoTema.tipos.t14,
+                    color = colores.tintaSuave,
                 )
             }
-            // Archived: data stays visible (monument, heatmap, % pills) but every write surface
-            // closes — no freezer purchase, no day-tap sheet, no relapse (already gated below).
-            val archived = current.status == HabitStatus.ARCHIVED
-            Monument(state = current)
-            MonumentActionsRow(
-                showRelapsePill = current.kind == CardKind.ABSTINENCE && !archived,
-                showFreezerPill = current.period == Period.DAY && !archived,
-                freezersOwned = current.freezersOwned,
-                onRelapseClick = { relapseSheetOpen = true },
-                // QA 2026-08-23: owning freezers turns the pill into usage guidance (the info sheet
-                // pointing at the red day); with none to use it keeps navigating to the store to buy.
-                onFreezerClick = { if (current.freezersOwned > 0) showFreezerInfoSheet = true else onOpenHabi() },
-                onFreezerInfoClick = { showFreezerInfoSheet = true },
+            Spacer(Modifier.height(Medidas.e8))
+        }
+        Lamina(current.planta, current.bestStreak, current.pct30, current.currentStreak, current.period, current.kind)
+        Column(Modifier.padding(start = Medidas.e12, end = Medidas.e12, top = 22.dp)) {
+            CalendarioGotas(
+                mes = current.month,
+                dias = current.heatmap,
+                primerMes = current.primerMes,
+                ultimoMes = mesActual,
+                alMesAnterior = { viewModel.previousMonth() },
+                alMesSiguiente = { viewModel.nextMonth() },
+                // En abstinencia hoy no se marca (la recaída va por el pie): tocarlo no hace nada.
+                alTocarDia = { dia ->
+                    if (dia == current.today) marcarHoy() else daySheetFor = dia
+                },
+                interactivo = interactivo,
             )
-            HeatmapSection(
-                current = current,
-                onPrevMonth = viewModel::previousMonth,
-                onNextMonth = viewModel::nextMonth,
-                onDayTap = { day -> if (!archived) daySheetFor = day },
-            )
-            ComplianceSection(current.windows, windowIndex, onSelect = { windowIndex = it })
-            FooterActions(
-                status = current.status,
-                pausedSinceDay = current.pausedSinceDay,
-                onPause = { showPauseSheet = true },
-                onResume = viewModel::resume,
-                onArchive = { showArchiveSheet = true },
-                onUnarchive = viewModel::unarchive,
+            Text(
+                stringResource(R.string.ficha_cal_nota),
+                Modifier.padding(start = 6.dp, end = 6.dp, top = Medidas.e8),
+                style = BitoTema.tipos.t14,
+                color = colores.tintaSobreTAlta2,
             )
         }
+        NotaDeHabi(propuesta, current, viewModel::responder)
+        PieFicha(
+            estado = current,
+            acciones =
+                AccionesPie(
+                    pausar = { viewModel.pause(it) },
+                    reanudar = { viewModel.resume() },
+                    archivar = { viewModel.archive() },
+                    reactivar = {
+                        viewModel.unarchive()
+                        if (current.lectura) onBack()
+                    },
+                    recaer = { viewModel.logRelapseOn(current.today) },
+                    irTienda = onOpenHabi,
+                ),
+            modifier = Modifier.padding(start = Medidas.margen, end = Medidas.margen, top = 22.dp),
+        )
+        Spacer(Modifier.height(40.dp).navigationBarsPadding())
     }
 
     daySheetFor?.let { day ->
         val heatmapDay = current.heatmap.find { it.day == day }
-        // Equivalent to FreezerEngine.eligibilityOf(...) == ELIGIBLE: a FAILED dot already means
-        // period == DAY, compliance FAILED, not already protected; `!isToday` matches the engine's
-        // day >= today -> FUTURE_DAY (freezers only ever protect a day already in the past).
-        val freezerOffered = heatmapDay?.dot == DayDot.FAILED && heatmapDay.isToday.not() && current.freezersOwned > 0
+        // Equivale a FreezerEngine.eligibilityOf(...) == ELIGIBLE: un punto FAILED ya implica periodo DAY, cumplimiento
+        // fallado y sin proteger; `!isToday` casa con day >= today -> FUTURE_DAY (un congelador solo protege un día pasado).
+        val freezerOffered = heatmapDay?.dot == DayDot.FAILED && !heatmapDay.isToday && current.freezersOwned > 0
         DaySheet(
             day = day,
             kind = current.kind,
@@ -182,426 +235,226 @@ fun DetailScreen(
                     onUseFreezer = { viewModel.applyFreezer(day) },
                 ),
             onDismiss = { daySheetFor = null },
-        )
-    }
-    if (showFreezerInfoSheet) {
-        FreezerInfoSheet(
-            personality = current.personality,
-            userName = current.userName,
-            equipped = current.equipped,
-            onDismiss = { showFreezerInfoSheet = false },
-        )
-    }
-    if (showPauseSheet) {
-        PauseSheet(onPause = viewModel::pause, onDismiss = { showPauseSheet = false })
-    }
-    if (showArchiveSheet) {
-        ArchiveSheet(onConfirm = viewModel::archive, onDismiss = { showArchiveSheet = false })
-    }
-    if (relapseSheetOpen) {
-        RelapseSheet(
-            name = current.name,
-            onConfirm = {
-                viewModel.logRelapseOn(current.today)
-                relapseSheetOpen = false
-            },
-            onDismiss = { relapseSheetOpen = false },
+            unit = current.unit,
         )
     }
 }
 
+/** Cuántos meses hay de [desde] a [hasta] (0 si ya está en él o más allá). */
+private fun mesesHasta(
+    desde: YearMonth,
+    hasta: YearMonth,
+): Int = ((hasta.year - desde.year) * 12 + hasta.monthValue - desde.monthValue).coerceAtLeast(0)
+
 @Composable
-private fun DetailHeader(
-    name: String,
+private fun BarraSuperior(
     onBack: () -> Unit,
     onEdit: () -> Unit,
 ) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        PlainIconButton(BitoIcons.ChevronLeft, contentDescription = stringResource(R.string.back), onClick = onBack)
-        Text(
-            name,
-            style = MaterialTheme.typography.headlineLarge,
-            color = Tinta,
-            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-        )
-        PlainIconButton(
-            BitoIcons.Pencil,
-            contentDescription = stringResource(R.string.edit_habit_hint, name),
-            onClick = onEdit,
-        )
-    }
-}
-
-/**
- * A bare, borderless icon tap target — no pill/outline container, per the 2a mockup's header and
- * calendar-nav chevrons (contrast [com.alvarotc.bito.ui.components.GhostIconButton], which always
- * draws a bordered pill and stays canon for every other call site). The 44dp box is touch comfort
- * only, invisible — [iconSize] is what actually renders.
- */
-@Composable
-private fun PlainIconButton(
-    icon: ImageVector,
-    contentDescription: String?,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    color: Color = Tinta,
-    iconSize: Dp = 24.dp,
-    enabled: Boolean = true,
-) = Box(
-    modifier
-        .size(44.dp)
-        .clip(CircleShape)
-        .clickable(enabled = enabled, onClick = onClick),
-    contentAlignment = Alignment.Center,
-) {
-    Icon(icon, contentDescription = contentDescription, tint = color, modifier = Modifier.size(iconSize))
-}
-
-/**
- * The racha-monument, per the 2a mockup: a [BitoCard] wrapping the biggest number in the app,
- * everything centered — number + flame, unit line, record chip. The freezer/relapse pills that
- * used to live on this card's own row now sit below it as [MonumentActionsRow], full-width pills
- * of their own.
- */
-@Composable
-private fun Monument(state: DetailUiState) {
-    // ZERO/abstinence habits always carry period == DAY (see HabitFormModel's QuitMode.TOTAL
-    // shape) — "días limpios" is keyed off the habit's kind, not its period, so a plain DAY-period
-    // CHECK/COUNTER habit still reads the ordinary "días" unit.
-    val unitRes =
-        if (state.kind == CardKind.ABSTINENCE) {
-            R.string.unit_days_clean
-        } else {
-            when (state.period) {
-                Period.DAY -> R.string.unit_days
-                Period.WEEK -> R.string.unit_weeks
-                Period.MONTH -> R.string.unit_months
-            }
-        }
-    BitoCard(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            // mergeDescendants: true folds the number, the unit line and the record chip — three
-            // to four separate TalkBack stops today — into one: "78, days, Record: 40". No
-            // interactive children live inside this card (the relapse/freezer pills sit below it
-            // in MonumentActionsRow, a sibling composable), so nothing gets swallowed.
-            Modifier.fillMaxWidth().semantics(mergeDescendants = true) {},
-            horizontalAlignment = Alignment.CenterHorizontally,
+    val colores = BitoTema.colores
+    val atras = stringResource(R.string.back)
+    Row(Modifier.fillMaxWidth().height(56.dp).padding(horizontal = Medidas.e8), verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .size(Medidas.toqueMinimo)
+                .clip(CircleShape)
+                .clickable(role = Role.Button, onClick = onBack)
+                .testTag("atras")
+                .semantics { contentDescription = atras },
+            contentAlignment = Alignment.Center,
         ) {
-            // The flame sits to the number's right, raised toward its top rather than centered on
-            // its full height — Alignment.Top (not CenterVertically) is what reads as "elevada"
-            // next to a number many times the flame's own height.
-            Row(verticalAlignment = Alignment.Top) {
-                Text(
-                    "${state.currentStreak}",
-                    style = MaterialTheme.typography.displayLarge.copy(fontSize = 78.sp, fontWeight = FontWeight.Bold),
-                    color = Tinta,
-                )
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    BitoIcons.Flame,
-                    contentDescription = null,
-                    tint = Brasa,
-                    modifier = Modifier.padding(top = 6.dp).size(36.dp),
-                )
-            }
-            Spacer(Modifier.height(4.dp))
+            Icon(IconosSistema.ArrowLeft, null, Modifier.size(24.dp), tint = colores.tinta)
+        }
+        Spacer(Modifier.weight(1f))
+        Box(
+            Modifier
+                .height(Medidas.toqueMinimo)
+                .clip(BitoFormas.canto)
+                .clickable(role = Role.Button, onClick = onEdit)
+                .padding(horizontal = Medidas.e12)
+                .testTag("editar"),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(stringResource(R.string.ficha_editar), style = BitoTema.tipos.t16.fuerte(), color = colores.tinta)
+        }
+    }
+}
+
+/**
+ * El canto del hábito (elemento compartido con su fila de Hoy): el círculo de marcar hoy, el nombre y a qué planta
+ * alimenta. Con la transición compartida, el radio pasa de 28 a 38 y el nombre de 16 a 24 sp en 440 ms `drawer`.
+ */
+@Composable
+private fun CantoHabito(
+    estado: DetailUiState,
+    hecho: Boolean,
+    circulo: Boolean,
+    activo: Boolean,
+    alMarcar: () -> Unit,
+) {
+    val colores = BitoTema.colores
+    val ruta = LocalAnimacionRuta.current
+    val radio: Dp
+    val nombre: Float
+    if (ruta != null && !BitoTema.reducido) {
+        val spec = tween<Dp>(CANTO_MS, easing = Curvas.drawer)
+        radio =
+            ruta.transition.animateDp({
+                spec
+            }, label = "canto-radio") { if (it == EnterExitState.Visible) RADIO_CANTO.dp else RADIO_CANTO_FILA.dp }.value
+        nombre =
+            ruta.transition.animateFloat({ tween(CANTO_MS, easing = Curvas.drawer) }, label = "canto-nombre") {
+                if (it == EnterExitState.Visible) NOMBRE_CABECERA else NOMBRE_FILA
+            }.value
+    } else {
+        radio = RADIO_CANTO.dp
+        nombre = NOMBRE_CABECERA
+    }
+    val forma = RoundedCornerShape(radio)
+    val marcarCd = stringResource(R.string.ficha_marcar_hoy, estado.name)
+    Row(
+        Modifier
+            .padding(horizontal = Medidas.margen)
+            .cantoCompartido(estado.habitId)
+            .fillMaxWidth()
+            .height(ALTO_CANTO.dp)
+            .clip(forma)
+            .background(colores.canto)
+            .border(Medidas.linea, colores.contorno, forma)
+            .padding(start = 6.dp, end = 22.dp)
+            .testTag("canto"),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (circulo) {
+            CirculoHoy(hecho, activo, marcarCd, alMarcar)
+        } else {
+            Spacer(Modifier.size(Medidas.e16))
+        }
+        Column(Modifier.weight(1f)) {
             Text(
-                stringResource(unitRes),
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                color = TintaSuave,
+                estado.name,
+                style = BitoTema.tipos.t24.fuerte().copy(fontSize = nombre.sp, lineHeight = (nombre * 1.1f).sp),
+                color = colores.tinta,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            Spacer(Modifier.height(12.dp))
-            RecordChip(state.bestStreak)
-        }
-    }
-}
-
-/**
- * Compact per the mockup's chip size (6dp vertical / 12dp horizontal) — the architect's override
- * keeps this chip's brasa-tinte/brasa colors against the mockup's plain papel treatment.
- */
-@Composable
-private fun RecordChip(bestStreak: Int) {
-    Row(
-        Modifier.clip(CircleShape).background(BrasaTinte).padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Icon(BitoIcons.Flame, contentDescription = null, tint = Brasa, modifier = Modifier.size(14.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(
-            stringResource(R.string.record_chip, bestStreak),
-            style = MaterialTheme.typography.labelMedium.copy(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
-            color = Brasa,
-        )
-    }
-}
-
-/**
- * The pill row under the monument card: "He recaído" (ZERO habits) and the freezer pill (DAY
- * period), each Row-weight-equal so a lone survivor takes the full row on its own — that still
- * holds when only the relapse pill shows. The freezer pill instead shares its cell with a small
- * ⓘ affordance at the row's right edge, own tap target (no nested-clickable stealing the pill's
- * own tap), opening [FreezerInfoSheet]. Neither pill's gate changes from the old standalone call
- * sites — only their position and shape do.
- */
-@Composable
-private fun MonumentActionsRow(
-    showRelapsePill: Boolean,
-    showFreezerPill: Boolean,
-    freezersOwned: Int,
-    onRelapseClick: () -> Unit,
-    onFreezerClick: () -> Unit,
-    onFreezerInfoClick: () -> Unit,
-) {
-    if (!showRelapsePill && !showFreezerPill) return
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        if (showRelapsePill) {
-            RelapsePill(onClick = onRelapseClick, modifier = Modifier.weight(1f).testTag("relapse-pill"))
-        }
-        if (showFreezerPill) {
-            FreezerPill(freezersOwned, onClick = onFreezerClick, modifier = Modifier.weight(1f).testTag("freezer-chip"))
-            GhostIconButton(
-                BitoIcons.Info,
-                contentDescription = stringResource(R.string.freezer_info_hint),
-                onClick = onFreezerInfoClick,
-                modifier = Modifier.testTag("freezer-info"),
+            Text(
+                stringResource(alimentaRes(estado.planta.especie)),
+                style = BitoTema.tipos.t14,
+                color = colores.tintaSuave,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
         }
     }
 }
 
-/** "He recaído": a discreet, border-only pill — no fill, no destructive color (canon per GUIA). */
+private fun alimentaRes(especie: GardenSpecies): Int =
+    when (especie) {
+        GardenSpecies.ROUND_LEAVES -> R.string.base_alimenta_hojas_redondas
+        GardenSpecies.SUNFLOWERS -> R.string.base_alimenta_girasoles
+        GardenSpecies.LAVENDER -> R.string.base_alimenta_lavanda
+        GardenSpecies.APPLE_TREE -> R.string.base_alimenta_manzano
+        GardenSpecies.FERNS -> R.string.base_alimenta_helechos
+        GardenSpecies.CHERRY_TREE -> R.string.base_alimenta_cerezo
+    }
+
+/** El círculo de marcar hoy (G1): el agua sube con el muelle `marcar` y sale la marca. */
 @Composable
-private fun RelapsePill(
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun CirculoHoy(
+    hecho: Boolean,
+    activo: Boolean,
+    descripcion: String,
+    alPulsar: () -> Unit,
 ) {
+    val colores = BitoTema.colores
+    val reducido = BitoTema.reducido
+    val nivel = remember { Animatable(if (hecho) 1f else 0f) }
+    LaunchedEffect(hecho, reducido) {
+        nivel.animateTo(if (hecho) 1f else 0f, if (reducido) tween(Duraciones.REDUCIDO) else Muelles.marcar())
+    }
+    val fuente = remember { MutableInteractionSource() }
     Box(
-        modifier
-            .heightIn(min = 56.dp)
-            .clip(CircleShape)
-            .border(1.dp, Borde, CircleShape)
-            .clickable(onClick = onClick),
+        Modifier
+            .size(52.dp)
+            .pulsar(fuente, redondo = true)
+            .clickable(enabled = activo, interactionSource = fuente, indication = null, role = Role.Button, onClick = alPulsar)
+            .testTag("marcar-hoy")
+            .semantics { contentDescription = descripcion },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            stringResource(R.string.relapse_action),
-            style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-            color = TintaSuave,
-        )
+        Box(
+            Modifier
+                .size(36.dp)
+                .clip(CircleShape)
+                .drawBehind {
+                    val alto = size.height * nivel.value
+                    drawRect(colores.agua, Offset(0f, size.height - alto), Size(size.width, alto))
+                }.border(Medidas.linea, colores.contorno, CircleShape),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                IconosSistema.Check,
+                null,
+                Modifier
+                    .size(20.dp)
+                    .graphicsLayer {
+                        val v = nivel.value
+                        alpha = ((v - 0.45f) * 2f).coerceIn(0f, 1f)
+                        scaleX = 0.7f + 0.3f * v.coerceAtMost(1f)
+                        scaleY = scaleX
+                    },
+                tint = colores.tinta,
+            )
+        }
     }
 }
 
-/**
- * The freezer pill: architect override keeps the old chip's hoja-tinte fill / hoja+tinta content
- * against the mockup's plain outline, resized into the mockup's 56dp pill. The count renders bold
- * and larger than the trailing word — [buildAnnotatedString] splits the localized "%1$d word"
- * string on its first space rather than hardcoding word order, since [R.plurals.freezer_chip_label]
- * already puts the digits first in both shipped locales.
- */
+/** La nota de Habi sobre este hábito: la propuesta con su mini Habi; «Vale» y «No hace falta» solo si trae acciones. */
 @Composable
-private fun FreezerPill(
-    owned: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+private fun NotaDeHabi(
+    propuesta: Propuesta?,
+    estado: DetailUiState,
+    alResponder: (Respuesta) -> Unit,
 ) {
+    if (propuesta == null) return
+    val colores = BitoTema.colores
     Row(
-        modifier
-            .heightIn(min = 56.dp)
-            .clip(CircleShape)
-            .background(HojaTinte)
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+        Modifier
+            .padding(start = Medidas.margen, end = Medidas.margen, top = 22.dp)
+            .fillMaxWidth()
+            .background(colores.canto, BitoFormas.tarjeta)
+            .border(Medidas.linea, colores.contorno, BitoFormas.tarjeta)
+            .padding(start = Medidas.e8, top = Medidas.e12, end = Medidas.e16, bottom = 14.dp)
+            .testTag("nota-habi"),
+        horizontalArrangement = Arrangement.spacedBy(Medidas.e8),
     ) {
-        Icon(BitoIcons.Snowflake, contentDescription = null, tint = Hoja, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        val label = pluralStringResource(R.plurals.freezer_chip_label, owned, owned)
-        val splitAt = label.indexOf(' ').let { if (it == -1) label.length else it }
-        Text(
-            buildAnnotatedString {
-                withStyle(SpanStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)) {
-                    append(label.substring(0, splitAt))
-                }
-                if (splitAt < label.length) {
-                    withStyle(SpanStyle(fontSize = 14.sp, fontWeight = FontWeight.Normal)) {
-                        append(label.substring(splitAt))
+        HabiAvatar(
+            HabiSpec(estado.mood, estado.personality, estado.equipped),
+            Modifier.size(76.dp, 84.dp),
+            animated = !BitoTema.reducido,
+        )
+        Column(Modifier.weight(1f)) {
+            Crossfade(propuesta, animationSpec = tween(Duraciones.RELEVO_ENTRA), label = "nota-habi") { p ->
+                Text(textoHabi(p.texto), style = BitoTema.tipos.t16.copy(lineHeight = 22.sp), color = colores.tinta)
+            }
+            if (propuesta.acciones.isNotEmpty()) {
+                Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
+                    if (Respuesta.VALE in propuesta.acciones) {
+                        val etiqueta = propuesta.etiquetaVale?.let { textoHabi(it) } ?: stringResource(R.string.ficha_vale)
+                        Boton(etiqueta, { alResponder(Respuesta.VALE) }, Modifier.testTag("habi-vale"), estilo = EstiloBoton.PRINCIPAL)
+                    }
+                    if (Respuesta.HOY_NO in propuesta.acciones) {
+                        Boton(
+                            stringResource(R.string.ficha_no_hace_falta),
+                            { alResponder(Respuesta.HOY_NO) },
+                            Modifier.testTag("habi-no"),
+                            estilo = EstiloBoton.FANTASMA,
+                        )
                     }
                 }
-            },
-            style = MaterialTheme.typography.labelMedium,
-            color = Tinta,
-        )
-    }
-}
-
-@Composable
-private fun HeatmapSection(
-    current: DetailUiState,
-    onPrevMonth: () -> Unit,
-    onNextMonth: () -> Unit,
-    onDayTap: (LogicalDay) -> Unit,
-) {
-    val currentRealMonth = remember(current.today) { YearMonth.from(LocalDate.ofEpochDay(current.today.toLong())) }
-    val nextDisabled = current.month >= currentRealMonth
-    // The month header keeps the card's usual 20dp inset; only the day grid gets a tighter one of
-    // its own (8dp, plus a 3dp inter-cell gap instead of 4dp) — at BitoCard's default 20dp on all
-    // sides, 7 columns landed at ~41-44dp, under the guide's ≥44dp touch floor at the narrowest
-    // supported width. Trimming just the grid's budget (not the header's) clears it with headroom
-    // at both w393dp and w411dp without touching the screen's 20dp margins.
-    // Lowercase per the mockup ("agosto"); the year only joins in when it isn't the current one
-    // ("agosto 2025"), same as a plain "MMMM" vs "MMMM yyyy" pattern switch.
-    val monthLabel = remember(current.month, currentRealMonth) { formatMonthLabel(current.month, currentRealMonth) }
-    BitoCard(modifier = Modifier.fillMaxWidth(), contentPadding = 0.dp) {
-        Column(Modifier.padding(vertical = 20.dp)) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 20.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    monthLabel,
-                    style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium),
-                    color = TintaSuave,
-                    modifier = Modifier.weight(1f),
-                )
-                PlainIconButton(
-                    BitoIcons.ChevronLeft,
-                    contentDescription = stringResource(R.string.previous_month),
-                    onClick = onPrevMonth,
-                    color = TintaSuave,
-                    iconSize = 20.dp,
-                )
-                PlainIconButton(
-                    BitoIcons.ChevronRight,
-                    contentDescription = stringResource(R.string.next_month),
-                    onClick = onNextMonth,
-                    color = if (nextDisabled) TintaSuave.copy(alpha = 0.4f) else TintaSuave,
-                    iconSize = 20.dp,
-                    enabled = !nextDisabled,
-                )
             }
-            Spacer(Modifier.height(8.dp))
-            DotHeatmap(
-                days = current.heatmap,
-                onDayTap = onDayTap,
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp).testTag("heatmap"),
-            )
         }
     }
-}
-
-@Composable
-private fun ComplianceSection(
-    windows: List<WindowStats>,
-    selectedIndex: Int,
-    onSelect: (Int) -> Unit,
-) {
-    val labels = WINDOW_LABEL_RES.map { stringResource(it) }
-    val selected = windows.getOrNull(selectedIndex)
-    val percent = selected?.percent
-    BitoCard(modifier = Modifier.fillMaxWidth()) {
-        SegmentedPills(
-            options = labels,
-            selectedIndex = selectedIndex,
-            onSelect = onSelect,
-            modifier = Modifier.fillMaxWidth(),
-            fillWidth = true,
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            percent?.let { "$it%" } ?: stringResource(R.string.no_data_placeholder),
-            style = MaterialTheme.typography.displayLarge.copy(fontSize = 64.sp, fontWeight = FontWeight.Bold),
-            color = if (percent != null && percent >= 80) Hoja else Tinta,
-        )
-        if (selected != null && percent != null) {
-            Spacer(Modifier.height(4.dp))
-            Text(
-                stringResource(
-                    R.string.compliance_caption,
-                    stringResource(R.string.compliance_fraction, selected.fulfilled, selected.judged),
-                ),
-                style = MaterialTheme.typography.labelMedium.copy(fontSize = 14.sp),
-                color = TintaSuave,
-            )
-        }
-    }
-}
-
-@Composable
-private fun FooterActions(
-    status: HabitStatus,
-    pausedSinceDay: LogicalDay?,
-    onPause: () -> Unit,
-    onResume: () -> Unit,
-    onArchive: () -> Unit,
-    onUnarchive: () -> Unit,
-) {
-    // Archived habits offer only "Reactivar" — every other registration/lifecycle action is
-    // gated off the screen above (freezer chip, day-tap sheet, relapse pill).
-    if (status == HabitStatus.ARCHIVED) {
-        PillButton(
-            stringResource(R.string.unarchive_habit),
-            onClick = onUnarchive,
-            modifier = Modifier.fillMaxWidth().testTag("reactivate"),
-        )
-        return
-    }
-    Column {
-        if (status == HabitStatus.PAUSED && pausedSinceDay != null) {
-            val since = remember(pausedSinceDay) { formatDayMedium(pausedSinceDay) }
-            Text(stringResource(R.string.paused_since, since), style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-            Spacer(Modifier.height(8.dp))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (status == HabitStatus.PAUSED) {
-                LifecycleActionButton(
-                    text = stringResource(R.string.resume_habit),
-                    icon = BitoIcons.Play,
-                    onClick = onResume,
-                    modifier = Modifier.weight(1f).testTag("resume"),
-                )
-            } else {
-                LifecycleActionButton(
-                    text = stringResource(R.string.pause_habit),
-                    icon = BitoIcons.Pause,
-                    onClick = onPause,
-                    modifier = Modifier.weight(1f).testTag("pause"),
-                )
-            }
-            LifecycleActionButton(
-                text = stringResource(R.string.archive_habit),
-                icon = BitoIcons.Archive,
-                onClick = onArchive,
-                modifier = Modifier.weight(1f).testTag("archive"),
-            )
-        }
-    }
-}
-
-/**
- * Pausar/Archivar canon: two equal-weight outlined pills, 52dp tall, icon + 15sp label — no
- * longer [com.alvarotc.bito.ui.components.GhostPillButton]'s smaller ghost treatment, which stays
- * as-is for its other call sites (sheets, forms, settings) not touched by this fix.
- */
-@Composable
-private fun LifecycleActionButton(
-    text: String,
-    icon: ImageVector,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) = OutlinedButton(
-    onClick = onClick,
-    modifier = modifier.heightIn(min = 52.dp),
-    shape = CircleShape,
-    border = BorderStroke(1.dp, Borde),
-    colors = ButtonDefaults.outlinedButtonColors(contentColor = TintaSuave),
-) {
-    Icon(icon, contentDescription = null, modifier = Modifier.size(20.dp))
-    Spacer(Modifier.width(8.dp))
-    Text(text, style = MaterialTheme.typography.labelMedium.copy(fontSize = 15.sp, fontWeight = FontWeight.Medium))
 }
