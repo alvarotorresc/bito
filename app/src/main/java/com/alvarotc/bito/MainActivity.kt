@@ -5,6 +5,8 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.ui.AppVisibility
 import com.alvarotc.bito.ui.BitoNavHost
 import com.alvarotc.bito.ui.NavRequests
@@ -32,8 +34,14 @@ class MainActivity : AppCompatActivity() {
         // the process died. onNewIntent covers every fresh tap on its own, independent of this.
         if (savedInstanceState == null) handleIntent(intent)
         setContent {
-            BitoTheme {
-                BitoNavHost((application as BitoApp).container)
+            val container = (application as BitoApp).container
+            val ajustes by container.settings.settings.collectAsStateWithLifecycle(initialValue = null)
+            BitoTheme(
+                reducirAnimaciones = ajustes?.reduceMotion == true,
+                sonido = container.sonido,
+                tacto = container.tacto,
+            ) {
+                BitoNavHost(container)
             }
         }
     }
@@ -55,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStop() {
         AppVisibility.visible = false
+        (application as BitoApp).container.sonido.segundoPlano()
         super.onStop()
     }
 

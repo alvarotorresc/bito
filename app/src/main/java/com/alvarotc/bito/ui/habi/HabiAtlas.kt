@@ -122,6 +122,7 @@ internal object HabiAtlas {
             "head-copa" to AtlasPiece(R.drawable.habi_head_copa, 326.0f, -232.0f, 411.0f, 329.0f),
             "head-flor" to AtlasPiece(R.drawable.habi_head_flor, 650.0f, -24.0f, 272.0f, 269.0f),
             "head-corona" to AtlasPiece(R.drawable.habi_head_corona, 282.0f, -226.0f, 494.0f, 322.0f),
+            "head-gorro-dormir" to AtlasPiece(R.drawable.habi_head_gorro_dormir, 94.0f, -200.0f, 1226.0f, 1410.0f),
             "face-gafas-redondas" to AtlasPiece(R.drawable.habi_face_gafas_redondas, -10.0f, 1.0f, 1137.0f, 1396.0f),
             "face-gafas-sol" to AtlasPiece(R.drawable.habi_face_gafas_sol, -8.0f, 432.0f, 1074.0f, 315.0f),
             "neck-bufanda" to AtlasPiece(R.drawable.habi_neck_bufanda, -30.0f, 1.0f, 1154.0f, 1394.0f),

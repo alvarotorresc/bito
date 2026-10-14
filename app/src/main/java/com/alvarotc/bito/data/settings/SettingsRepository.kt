@@ -17,6 +17,21 @@ enum class BackupFrequency { DAILY, WEEKLY }
 
 enum class AutoBackupError { FOLDER, WRITE, MISSING_KEY }
 
+/** Sonido de fondo de la sesión (decisión 5). La vista previa suena en Ajustes; el uso es de la pieza 5. */
+enum class SessionBackground { RAIN, BROWN, CAFE, NONE }
+
+/** Rangos de las claves de la pieza 2 (spec §5.1.3). Se acotan al leer, así un valor fuera de rango nunca llega a la interfaz. */
+object SettingsRanges {
+    val HABI_MORNING = 6 * 60..11 * 60
+    val HABI_NIGHT = 19 * 60..23 * 60 + 30
+    val DAY_MINUTE = 0..24 * 60 - 1
+    val POMO_FOCUS = 5..90
+    val POMO_SHORT = 1..30
+    val POMO_LONG = 5..45
+    val POMO_ROUNDS = 2..8
+    val LEVEL = 0..10
+}
+
 /**
  * App settings (tech doc §3, "DataStore"). Defaults marked provisional are
  * pending later sessions (economy/backup/M9 texts) and safe to change.
@@ -49,6 +64,27 @@ data class Settings(
     val breathingLastMode: BreathingMode = BreathingMode.CALM,
     /** Pieza 1 (D11): el máximo de agua que ha tenido el jardín. Las etapas no bajan aunque se corrija el pasado. */
     val gardenWaterHighMark: Double = 0.0,
+    /** Pieza 2 (§5.1.3). Aviso de Habi de la mañana: solo se guarda hasta la pieza 4. La noche es [reviewTimeMinutes] (decisión 3). */
+    val habiMorningMinutes: Int = 8 * 60 + 30,
+    /** No molestar propio (D10): solo se guarda hasta la pieza 5. */
+    val dndEnabled: Boolean = false,
+    val dndFromMinutes: Int = 23 * 60,
+    val dndToMinutes: Int = 7 * 60 + 30,
+    /** Pomodoro (D9): 4 bloques de 25 + 5 y descanso largo de 15. Solo se guarda hasta la pieza 5. */
+    val pomoFocus: Int = 25,
+    val pomoShort: Int = 5,
+    val pomoLong: Int = 15,
+    val pomoRounds: Int = 4,
+    val pomoAutoBreak: Boolean = true,
+    /** Interruptor general de sonido (decisión 2) y volúmenes por canal de 0 a 10 (D3). */
+    val soundEnabled: Boolean = true,
+    val volHabi: Int = 8,
+    val volEffects: Int = 7,
+    val volAmbient: Int = 6,
+    val vibStrength: Int = 7,
+    val sessionBackground: SessionBackground = SessionBackground.RAIN,
+    /** «Reducir animaciones» propio; el del sistema (escala 0) se suma en `rememberReducido`. */
+    val reduceMotion: Boolean = false,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -83,6 +119,22 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val breathingMusicEnabled = booleanPreferencesKey("breathing_music_enabled")
         val breathingLastMode = stringPreferencesKey("breathing_last_mode")
         val gardenWaterHighMark = doublePreferencesKey("garden_water_high_mark")
+        val habiMorningMinutes = intPreferencesKey("habi_morning_minutes")
+        val dndEnabled = booleanPreferencesKey("dnd_enabled")
+        val dndFromMinutes = intPreferencesKey("dnd_from_minutes")
+        val dndToMinutes = intPreferencesKey("dnd_to_minutes")
+        val pomoFocus = intPreferencesKey("pomo_focus")
+        val pomoShort = intPreferencesKey("pomo_short")
+        val pomoLong = intPreferencesKey("pomo_long")
+        val pomoRounds = intPreferencesKey("pomo_rounds")
+        val pomoAutoBreak = booleanPreferencesKey("pomo_auto_break")
+        val soundEnabled = booleanPreferencesKey("sound_enabled")
+        val volHabi = intPreferencesKey("vol_habi")
+        val volEffects = intPreferencesKey("vol_effects")
+        val volAmbient = intPreferencesKey("vol_ambient")
+        val vibStrength = intPreferencesKey("vib_strength")
+        val sessionBackground = stringPreferencesKey("session_background")
+        val reduceMotion = booleanPreferencesKey("reduce_motion")
 
         /**
          * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
@@ -199,6 +251,24 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
                 this[Keys.breathingLastMode]?.let { name -> runCatching { BreathingMode.valueOf(name) }.getOrNull() }
                     ?: defaults.breathingLastMode,
             gardenWaterHighMark = this[Keys.gardenWaterHighMark] ?: defaults.gardenWaterHighMark,
+            habiMorningMinutes = (this[Keys.habiMorningMinutes] ?: defaults.habiMorningMinutes).coerceIn(SettingsRanges.HABI_MORNING),
+            dndEnabled = this[Keys.dndEnabled] ?: defaults.dndEnabled,
+            dndFromMinutes = (this[Keys.dndFromMinutes] ?: defaults.dndFromMinutes).coerceIn(SettingsRanges.DAY_MINUTE),
+            dndToMinutes = (this[Keys.dndToMinutes] ?: defaults.dndToMinutes).coerceIn(SettingsRanges.DAY_MINUTE),
+            pomoFocus = (this[Keys.pomoFocus] ?: defaults.pomoFocus).coerceIn(SettingsRanges.POMO_FOCUS),
+            pomoShort = (this[Keys.pomoShort] ?: defaults.pomoShort).coerceIn(SettingsRanges.POMO_SHORT),
+            pomoLong = (this[Keys.pomoLong] ?: defaults.pomoLong).coerceIn(SettingsRanges.POMO_LONG),
+            pomoRounds = (this[Keys.pomoRounds] ?: defaults.pomoRounds).coerceIn(SettingsRanges.POMO_ROUNDS),
+            pomoAutoBreak = this[Keys.pomoAutoBreak] ?: defaults.pomoAutoBreak,
+            soundEnabled = this[Keys.soundEnabled] ?: defaults.soundEnabled,
+            volHabi = (this[Keys.volHabi] ?: defaults.volHabi).coerceIn(SettingsRanges.LEVEL),
+            volEffects = (this[Keys.volEffects] ?: defaults.volEffects).coerceIn(SettingsRanges.LEVEL),
+            volAmbient = (this[Keys.volAmbient] ?: defaults.volAmbient).coerceIn(SettingsRanges.LEVEL),
+            vibStrength = (this[Keys.vibStrength] ?: defaults.vibStrength).coerceIn(SettingsRanges.LEVEL),
+            sessionBackground =
+                this[Keys.sessionBackground]?.let { name -> runCatching { SessionBackground.valueOf(name) }.getOrNull() }
+                    ?: defaults.sessionBackground,
+            reduceMotion = this[Keys.reduceMotion] ?: defaults.reduceMotion,
         )
     }
 
@@ -228,5 +298,21 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.breathingMusicEnabled] = breathingMusicEnabled
         prefs[Keys.breathingLastMode] = breathingLastMode.name
         prefs[Keys.gardenWaterHighMark] = gardenWaterHighMark
+        prefs[Keys.habiMorningMinutes] = habiMorningMinutes
+        prefs[Keys.dndEnabled] = dndEnabled
+        prefs[Keys.dndFromMinutes] = dndFromMinutes
+        prefs[Keys.dndToMinutes] = dndToMinutes
+        prefs[Keys.pomoFocus] = pomoFocus
+        prefs[Keys.pomoShort] = pomoShort
+        prefs[Keys.pomoLong] = pomoLong
+        prefs[Keys.pomoRounds] = pomoRounds
+        prefs[Keys.pomoAutoBreak] = pomoAutoBreak
+        prefs[Keys.soundEnabled] = soundEnabled
+        prefs[Keys.volHabi] = volHabi
+        prefs[Keys.volEffects] = volEffects
+        prefs[Keys.volAmbient] = volAmbient
+        prefs[Keys.vibStrength] = vibStrength
+        prefs[Keys.sessionBackground] = sessionBackground.name
+        prefs[Keys.reduceMotion] = reduceMotion
     }
 }

@@ -1,20 +1,23 @@
 package com.alvarotc.bito.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import com.alvarotc.bito.ui.sistema.BitoClaro
+import com.alvarotc.bito.ui.sistema.Escena
 
-// Tokens de color de Bito — dirección "Crema" (fuente de verdad: design/GUIA.md)
-val Papel = Color(0xFFF2ECE1)
-val Tarjeta = Color(0xFFFBF8F2)
-val Borde = Color(0xFFE7DFD1)
-val Tinta = Color(0xFF3C352B)
-val TintaSuave = Color(0xFF9C9285)
-val Hoja = Color(0xFF57A06B)
-val HojaTinte = Color(0xFFE3EDE0)
-val Brasa = Color(0xFFD9704F)
-val BrasaTinte = Color(0xFFF7E3DB)
+// Alias de la paleta de la Bito 2 (spec pieza 2, §4.2.5, decisión 1): las pantallas que aún no se han
+// rehecho compilan sin tocarlas y no conviven dos paletas. Se borran cuando la última deje de usarlos.
+val Papel = BitoClaro.tAlta
+val Tarjeta = BitoClaro.canto
+val Borde = BitoClaro.hornacina
+val Tinta = BitoClaro.tinta
+val TintaSuave = BitoClaro.tintaSuave
+val Hoja = BitoClaro.agua
+val HojaTinte = BitoClaro.hielo
+val Brasa = Escena.rachas.anillo
+val BrasaTinte = Escena.rachas.disco
+val Peligro = BitoClaro.peligro
+val PeligroTinte = BitoClaro.peligroFondo
+
+// Piel de Habi y mofletes: son del arte, no de la interfaz; no cambian.
 val HabiSalvia = Color(0xFFA9C9A1)
 val Mofletes = Color(0xFFE8B4A8)
-
-// peligro — acciones destructivas y la marca de dato «día fallado» en calendarios (QA 2026-08-23); ver GUIA
-val Peligro = Color(0xFFC14B3A)
-val PeligroTinte = Color(0xFFF5DFDA)

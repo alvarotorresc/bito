@@ -20,6 +20,9 @@ const val GAZE_MAX_Y = 12f
  */
 const val COSTUME_GAZE_SCALE = 0.5f
 
+/** El gorro de dormir (lote E, D15): no se vende, solo se pone mientras Habi duerme (spec pieza 2, §7.2). */
+const val SLEEP_CAP_KEY = "head-gorro-dormir"
+
 /** Por debajo de este alto se decodifica con submuestreo (§3.3). */
 internal const val SUBSAMPLE_BELOW_DP = 100f
 
@@ -158,6 +161,7 @@ internal fun habiLayers(
         // Las gafas siguen la mirada como la cara, pero no van enmascaradas (sin disfraz no hay máscara).
         equipped.face?.let { layers += HabiLayer(it, HabiPart.GLASSES, dx, dy) }
         equipped.head?.let { layers += HabiLayer(it, HabiPart.HEAD) }
+        if (spec.sleepCap) layers += HabiLayer(SLEEP_CAP_KEY, HabiPart.HEAD)
     }
     return layers
 }

@@ -1,7 +1,11 @@
-@file:OptIn(ExperimentalMaterial3Api::class)
-
 package com.alvarotc.bito.ui.tasks
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -9,364 +13,420 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarDuration
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.DueKind
+import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.LogicalDay
-import com.alvarotc.bito.ui.components.BitoCard
-import com.alvarotc.bito.ui.components.DismissableBitoSnackbar
-import com.alvarotc.bito.ui.components.GhostIconButton
-import com.alvarotc.bito.ui.components.GhostPillButton
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
-import com.alvarotc.bito.ui.icons.BitoIcons
-import com.alvarotc.bito.ui.theme.Hoja
-import com.alvarotc.bito.ui.theme.Papel
-import com.alvarotc.bito.ui.theme.Peligro
-import com.alvarotc.bito.ui.theme.Tarjeta
-import com.alvarotc.bito.ui.theme.Tinta
-import com.alvarotc.bito.ui.theme.TintaSuave
+import com.alvarotc.bito.ui.icons.IconosSistema
+import com.alvarotc.bito.ui.sistema.BitoFormas
+import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Duraciones
+import com.alvarotc.bito.ui.sistema.Haptica
+import com.alvarotc.bito.ui.sistema.Medidas
+import com.alvarotc.bito.ui.sistema.Muelles
+import com.alvarotc.bito.ui.sistema.componentes.AvisoHost
+import com.alvarotc.bito.ui.sistema.componentes.MenuFila
+import com.alvarotc.bito.ui.sistema.componentes.OpcionMenu
+import com.alvarotc.bito.ui.sistema.componentes.Plegable
+import com.alvarotc.bito.ui.sistema.componentes.TonoOpcion
+import com.alvarotc.bito.ui.sistema.componentes.rememberAvisoEstado
+import com.alvarotc.bito.ui.sistema.fuerte
+import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.sistema.sonido.Snd
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+/** De qué sección sale una fila: decide si su menú ofrece «Traer a hoy» (solo Con plazo y Sin plazo). */
+private enum class Seccion { HOY, SEMANA, PLAZO, SUELTA, HECHA }
+
+/** Una fila recién terminada: se queda en su sección hasta acabar de animarse. */
+private data class SaliendoDeSeccion(
+    val seccion: Seccion,
+    val fila: TaskListRowUi,
+)
+
+private data class MenuDeFila(
+    val fila: TaskListRowUi,
+    val seccion: Seccion,
+)
 
 /**
- * The full tasks list (spec §8.4): five sections that never overlap, straight off [TasksUiState] —
- * Hoy, Esta semana, Con plazo, Sin plazo and, last and folded, Hechas. [onStartFocus] defaults to
- * a no-op, same pattern as [com.alvarotc.bito.ui.today.TodayScreen]'s own: T19 wires it to the
- * focus route, this task only threads the parameter through to every row's "Empezar".
+ * Todas las tareas: Hoy, Esta semana, Con plazo, Sin plazo y, al final y plegada, Hechas. Terminar
+ * una tarea (G6) deja caer granos y avisa con Deshacer; el menú de fila lleva Empezar, Traer a hoy,
+ * Editar y Borrar. Las firmas de navegación no cambian: las llama `BitoNavHost`.
  */
 @Composable
 fun TasksScreen(
     viewModel: TasksViewModel,
     onBack: () -> Unit,
     onStartFocus: (String) -> Unit = {},
-    // D12 revoked: editing now navigates to TaskFormScreen's own route instead of opening a sheet
-    // inline here — same default-no-op pattern onStartFocus already carries.
     onEditTask: (String) -> Unit = {},
 ) {
+    val colores = BitoTema.colores
+    val gesto = rememberGesto()
+    val scope = rememberCoroutineScope()
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val taskDone by viewModel.lastTaskDone.collectAsStateWithLifecycle()
-    var doneExpanded by remember { mutableStateOf(false) }
-    var menuFor by remember { mutableStateOf<TaskListRowUi?>(null) }
-    var deleting by remember { mutableStateOf<TaskListRowUi?>(null) }
-    val snackbar = remember { SnackbarHostState() }
+    var hechasAbiertas by remember { mutableStateOf(false) }
+    var menu by remember { mutableStateOf<MenuDeFila?>(null) }
+    var menuAbierto by remember { mutableStateOf(false) }
+    // Filas ya terminadas (la base ya las tiene como hechas) que acaban su animación en su sitio.
+    val saliendo = remember { mutableStateMapOf<String, SaliendoDeSeccion>() }
+    var borrando by remember { mutableStateOf<TaskListRowUi?>(null) }
+    val avisos = rememberAvisoEstado()
     val fallbackName = stringResource(R.string.habi_name_fallback)
     val taskDoneLabel = stringResource(HabiVoice.taskDoneRes(state.personality), state.userName.ifBlank { fallbackName })
+    val deshacer = stringResource(R.string.sistema_deshacer)
+    val traida = stringResource(R.string.tasks2_traida)
 
-    // Same phrase and pattern Hoy already shows after marking a task done — this list had none.
+    // Terminar una tarea: el aviso lleva Deshacer, que la reabre. Los bitos ganados no se quitan.
     LaunchedEffect(taskDone) {
-        if (taskDone != null) {
-            try {
-                snackbar.showSnackbar(taskDoneLabel, duration = SnackbarDuration.Short)
-            } finally {
-                viewModel.consumeTaskDone()
+        val id = taskDone ?: return@LaunchedEffect
+        viewModel.consumeTaskDone()
+        scope.launch {
+            avisos.mostrar(taskDoneLabel, deshacer) {
+                gesto(Snd.DESCENSO, Haptica.LOW)
+                viewModel.reopen(id)
             }
         }
     }
 
-    Scaffold(
-        containerColor = Papel,
-        snackbarHost = { SnackbarHost(snackbar) { DismissableBitoSnackbar(it) } },
-    ) { padding ->
-        LazyColumn(
-            Modifier.padding(padding).fillMaxWidth().testTag("tasks-list"),
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            item { TasksHeader(onBack) }
-            if (state.isEmpty) {
-                item { Text(stringResource(R.string.tasks_empty), style = MaterialTheme.typography.bodyLarge, color = TintaSuave) }
-            } else {
-                taskSection(
-                    tasks = state.todayTasks,
-                    titleRes = R.string.tasks_section_today,
-                    today = state.today,
-                    // Hoy is where "bring to today" lands you, not a place you leave it from.
-                    showBringToToday = false,
-                    onBringToToday = {},
-                    onDone = viewModel::markDone,
-                    onStart = onStartFocus,
-                    onMenu = { menuFor = it },
-                )
-                taskSection(
-                    tasks = state.weekTasks,
-                    titleRes = R.string.tasks_section_week,
-                    today = state.today,
-                    showBringToToday = true,
-                    onBringToToday = viewModel::bringToToday,
-                    onDone = viewModel::markDone,
-                    onStart = onStartFocus,
-                    onMenu = { menuFor = it },
-                )
-                taskSection(
-                    tasks = state.datedTasks,
-                    titleRes = R.string.tasks_section_dated,
-                    today = state.today,
-                    showBringToToday = true,
-                    onBringToToday = viewModel::bringToToday,
-                    onDone = viewModel::markDone,
-                    onStart = onStartFocus,
-                    onMenu = { menuFor = it },
-                )
-                taskSection(
-                    tasks = state.looseTasks,
-                    titleRes = R.string.tasks_section_loose,
-                    today = state.today,
-                    showBringToToday = true,
-                    onBringToToday = viewModel::bringToToday,
-                    onDone = viewModel::markDone,
-                    onStart = onStartFocus,
-                    onMenu = { menuFor = it },
-                )
+    fun traerAHoy(fila: TaskListRowUi) {
+        gesto(Snd.ASCENSO, Haptica.TICK)
+        viewModel.bringToToday(fila.id) { apunte ->
+            scope.launch {
+                avisos.mostrar(traida, deshacer) {
+                    gesto(Snd.DESCENSO, Haptica.LOW)
+                    viewModel.undoBring(apunte)
+                }
+            }
+        }
+    }
 
+    fun abrirMenu(
+        fila: TaskListRowUi,
+        seccion: Seccion,
+    ) {
+        menu = MenuDeFila(fila, seccion)
+        menuAbierto = true
+    }
+
+    fun LazyListScope.seccion(
+        filas: List<TaskListRowUi>,
+        cual: Seccion,
+        titulo: Int,
+    ) = seccion(filas, cual, titulo, state.today, ::abrirMenu, viewModel::markDone, saliendo)
+
+    Box(Modifier.fillMaxSize().background(colores.tAlta)) {
+        LazyColumn(
+            Modifier.fillMaxSize().testTag("tasks-list"),
+            contentPadding = PaddingValues(Medidas.margen),
+            verticalArrangement = Arrangement.spacedBy(Medidas.entreFilas),
+        ) {
+            item(key = "cabecera") { CabeceraTareas(stringResource(R.string.tasks_screen_title), onBack) }
+            if (!state.loading && state.isEmpty) {
+                item(key = "vacia") { TareasVacias(state.personality) }
+            } else {
+                seccion(state.todayTasks, Seccion.HOY, R.string.tasks_section_today)
+                seccion(state.weekTasks, Seccion.SEMANA, R.string.tasks_section_week)
+                seccion(state.datedTasks, Seccion.PLAZO, R.string.tasks_section_dated)
+                seccion(state.looseTasks, Seccion.SUELTA, R.string.tasks_section_loose)
                 if (state.doneTasks.isNotEmpty()) {
-                    item {
-                        GhostPillButton(
-                            text = stringResource(R.string.tasks_section_done),
-                            onClick = { doneExpanded = !doneExpanded },
-                            icon = if (doneExpanded) BitoIcons.ChevronDown else BitoIcons.ChevronRight,
+                    item(key = "sec-hechas") {
+                        Plegable(
+                            titulo = stringResource(R.string.tasks_section_done),
+                            abierto = hechasAbiertas,
+                            alCambiar = { hechasAbiertas = it },
                             modifier = Modifier.testTag("tasks-done-toggle"),
-                        )
-                    }
-                    if (doneExpanded) {
-                        items(state.doneTasks, key = { "done-${it.id}" }) { row ->
-                            // Done rows carry no circle click, no bring, no start: reopening one is
-                            // the deshacer of Hoy's own snackbar, never a tap from this list.
-                            TaskRow(
-                                row = row,
-                                today = state.today,
-                                showBringToToday = false,
-                                onBringToToday = {},
-                                onDone = {},
-                                onStart = {},
-                                onMenu = { menuFor = row },
-                            )
+                        ) {
+                            Column(Modifier.padding(top = Medidas.e8), verticalArrangement = Arrangement.spacedBy(Medidas.entreFilas)) {
+                                state.doneTasks.forEach { fila ->
+                                    FilaTarea(fila, state.today, onDone = {}, onMenu = { abrirMenu(fila, Seccion.HECHA) })
+                                }
+                            }
                         }
                     }
                 }
             }
         }
+        AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
     }
 
-    menuFor?.let { row ->
-        TaskRowMenuSheet(
-            onEdit = {
-                menuFor = null
-                onEditTask(row.id)
-            },
-            onDelete = {
-                menuFor = null
-                deleting = row
-            },
-            onDismiss = { menuFor = null },
+    val actual = menu
+    if (actual != null) {
+        val fila = actual.fila
+        val opciones =
+            buildList {
+                if (actual.seccion != Seccion.HECHA) {
+                    add(OpcionMenu(stringResource(R.string.task_start), IconosSistema.Play, TonoOpcion.AGUA) { onStartFocus(fila.id) })
+                }
+                if (actual.seccion == Seccion.PLAZO || actual.seccion == Seccion.SUELTA) {
+                    add(OpcionMenu(stringResource(R.string.task_bring_today), IconosSistema.ArrowUp, TonoOpcion.AGUA) { traerAHoy(fila) })
+                }
+                add(OpcionMenu(stringResource(R.string.task_edit), IconosSistema.PencilSimple, TonoOpcion.PIEDRA) { onEditTask(fila.id) })
+                add(OpcionMenu(stringResource(R.string.task_delete), IconosSistema.Trash, TonoOpcion.PELIGRO) { borrando = fila })
+            }
+        MenuFila(
+            abierto = menuAbierto,
+            alCerrar = { menuAbierto = false },
+            opciones = opciones,
+            titulo = fila.title,
+            modifier = Modifier.testTag("task-row-menu"),
         )
     }
 
-    deleting?.let { row ->
-        DeleteTaskConfirmSheet(
-            onConfirm = {
-                viewModel.delete(row.id)
-                deleting = null
+    DialogoBorrarTarea(
+        abierto = borrando != null,
+        alConfirmar = {
+            borrando?.let { viewModel.delete(it.id) }
+            borrando = null
+        },
+        alCancelar = { borrando = null },
+    )
+}
+
+/** Una sección con filas: su título y sus filas. Si está vacía no deja ni el título. */
+private fun LazyListScope.seccion(
+    filas: List<TaskListRowUi>,
+    seccion: Seccion,
+    titulo: Int,
+    hoy: LogicalDay,
+    abrirMenu: (TaskListRowUi, Seccion) -> Unit,
+    terminar: (String) -> Unit,
+    saliendo: MutableMap<String, SaliendoDeSeccion>,
+) {
+    val acabando = saliendo.filter { (id, s) -> s.seccion == seccion && filas.none { it.id == id } }.values.map { it.fila }
+    val todas = filas + acabando
+    if (todas.isEmpty()) return
+    item(key = "sec-${seccion.name}") {
+        Text(
+            stringResource(titulo),
+            style = BitoTema.tipos.t14.fuerte(),
+            color = BitoTema.colores.tintaSuave,
+            modifier = animateItemSuave(),
+        )
+    }
+    items(todas, key = { it.id }) { fila ->
+        FilaTarea(
+            fila = fila,
+            hoy = hoy,
+            onDone = {
+                saliendo[fila.id] = SaliendoDeSeccion(seccion, fila)
+                terminar(fila.id)
             },
-            onDismiss = { deleting = null },
+            onAnimada = { saliendo.remove(fila.id) },
+            onMenu = { abrirMenu(fila, seccion) },
+            modifier = animateItemSuave(),
         )
     }
 }
+
+/** Las filas viajan entre secciones con el muelle `camino` (G35); con reducido no viajan. */
+@Composable
+private fun LazyItemScope.animateItemSuave(): Modifier =
+    Modifier.animateItem(
+        placementSpec = if (BitoTema.reducido) null else Muelles.camino(umbral = IntOffset.VisibilityThreshold),
+    )
 
 @Composable
-private fun TasksHeader(onBack: () -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        GhostIconButton(BitoIcons.ChevronLeft, contentDescription = stringResource(R.string.back), onClick = onBack)
-        Text(
-            stringResource(R.string.tasks_screen_title),
-            style = MaterialTheme.typography.headlineLarge,
-            color = Tinta,
-            modifier = Modifier.weight(1f).padding(horizontal = 12.dp),
-        )
+private fun TareasVacias(personality: com.alvarotc.bito.domain.model.Personality) {
+    val colores = BitoTema.colores
+    Column(
+        Modifier.fillMaxWidth().padding(top = Medidas.e24),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(Medidas.e12),
+    ) {
+        Box(
+            Modifier
+                .size(width = 140.dp, height = 150.dp)
+                .background(colores.hornacina, BitoFormas.hornacina),
+            contentAlignment = Alignment.BottomCenter,
+        ) {
+            HabiAvatar(
+                spec = HabiSpec(Mood.NORMAL, personality, EquippedSet()),
+                modifier = Modifier.size(112.dp),
+                animated = false,
+            )
+        }
+        Text(stringResource(R.string.tasks_empty), style = BitoTema.tipos.t19.fuerte(), color = colores.tinta)
     }
 }
 
-/** One non-empty section: its header, then every row — a no-op for an empty list, no bare header. */
-private fun LazyListScope.taskSection(
-    tasks: List<TaskListRowUi>,
-    titleRes: Int,
-    today: LogicalDay,
-    showBringToToday: Boolean,
-    onBringToToday: (String) -> Unit,
-    onDone: (String) -> Unit,
-    onStart: (String) -> Unit,
-    onMenu: (TaskListRowUi) -> Unit,
-) {
-    if (tasks.isEmpty()) return
-    item { Text(stringResource(titleRes), style = MaterialTheme.typography.labelMedium, color = TintaSuave) }
-    items(tasks, key = { it.id }) { row ->
-        TaskRow(
-            row = row,
-            today = today,
-            showBringToToday = showBringToToday,
-            onBringToToday = { onBringToToday(row.id) },
-            onDone = { onDone(row.id) },
-            onStart = { onStart(row.id) },
-            onMenu = { onMenu(row) },
-        )
-    }
-}
+private const val GRANOS = 14
+private const val ESPERA_CAIDA_MS = 120
 
 /**
- * One task's row: a circle to mark it done (left), title/first step/due legend, "bring to today"
- * (only outside Hoy) and "start", and an ellipsis opening the edit/delete menu. Mirrors
- * [com.alvarotc.bito.ui.today.TodayScreen]'s own task row, plus the parts Today never needed.
+ * Una fila de tarea: círculo para terminarla (G6), nombre con su primer paso y su plazo, y los tres
+ * puntos del menú. Al terminarla el círculo se llena de piedra, caen granos, y la fila baja 10 dp,
+ * escala .97 y se funde. Se escribe en la base al tocar: la animación es solo visual.
  */
 @Composable
-private fun TaskRow(
-    row: TaskListRowUi,
-    today: LogicalDay,
-    showBringToToday: Boolean,
-    onBringToToday: () -> Unit,
+private fun FilaTarea(
+    fila: TaskListRowUi,
+    hoy: LogicalDay,
     onDone: () -> Unit,
-    onStart: () -> Unit,
     onMenu: () -> Unit,
-) {
-    val doneLabel = stringResource(R.string.task_done)
-    BitoCard(modifier = Modifier.fillMaxWidth().testTag("task-${row.id}")) {
-        Row(verticalAlignment = Alignment.Top) {
-            val circleShape = Modifier.size(56.dp).clip(CircleShape).border(1.dp, Hoja, CircleShape)
-            if (row.done) {
-                // No onClick, no contentDescription: a done row is not reopened from this list —
-                // the absence of the affordance IS the "no se desmarca" rule.
-                Box(circleShape, contentAlignment = Alignment.Center) {
-                    Icon(BitoIcons.Check, contentDescription = null, tint = Hoja)
-                }
-            } else {
-                Box(
-                    circleShape
-                        .testTag("task-done-${row.id}")
-                        .clickable(onClick = onDone)
-                        .semantics { contentDescription = doneLabel },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(BitoIcons.Check, contentDescription = null, tint = Hoja)
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(row.title, style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold), color = Tinta)
-                if (row.firstStep != null) {
-                    Text(row.firstStep, style = MaterialTheme.typography.labelMedium, color = TintaSuave)
-                }
-                // A suelta has no due day to hand taskDueLabel: task_no_due says so instead of
-                // rendering nothing, same as Today's row would if it ever showed a loose one.
-                val dueLabel =
-                    if (row.dueKind == DueKind.NONE) {
-                        stringResource(R.string.task_no_due)
-                    } else {
-                        taskDueLabel(row.dueKind, row.dueDay, today)
-                    }
-                if (dueLabel != null) {
-                    val overdue = taskDueOverdue(row.dueKind, row.dueDay, today)
-                    Text(dueLabel, style = MaterialTheme.typography.labelMedium, color = if (overdue) Peligro else TintaSuave)
-                }
-            }
-            GhostIconButton(
-                BitoIcons.Ellipsis,
-                contentDescription = stringResource(R.string.task_row_menu_cd),
-                onClick = onMenu,
-                modifier = Modifier.testTag("task-menu-${row.id}"),
-            )
-        }
-        if (!row.done) {
-            Spacer(Modifier.height(10.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (showBringToToday) {
-                    GhostPillButton(
-                        text = stringResource(R.string.task_bring_today),
-                        onClick = onBringToToday,
-                        modifier = Modifier.testTag("task-bring-${row.id}"),
-                    )
-                }
-                GhostPillButton(
-                    text = stringResource(R.string.task_start),
-                    onClick = onStart,
-                    modifier = Modifier.testTag("task-start-${row.id}"),
-                )
-            }
-        }
-    }
-}
-
-/** The ellipsis menu: exactly two rows, editar and borrar — calcado del resto de sheets del repo. */
-@Composable
-private fun TaskRowMenuSheet(
-    onEdit: () -> Unit,
-    onDelete: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    ModalBottomSheet(onDismissRequest = onDismiss, containerColor = Tarjeta) {
-        Column(Modifier.padding(20.dp).testTag("task-row-menu")) {
-            TaskMenuRow(BitoIcons.Pencil, stringResource(R.string.task_edit), onEdit, Modifier.testTag("task-menu-edit"))
-            Spacer(Modifier.height(4.dp))
-            // Borrar en rojo, calcado de HabitFormScreen's own delete button (Peligro): the sheet
-            // this row opens already confirms in red, so the row that leads there should read the
-            // same way instead of looking identical to "editar" until you tap it.
-            TaskMenuRow(
-                BitoIcons.Trash,
-                stringResource(R.string.task_delete),
-                onDelete,
-                Modifier.testTag("task-menu-delete"),
-                tint = Peligro,
-            )
-        }
-    }
-}
-
-@Composable
-private fun TaskMenuRow(
-    icon: ImageVector,
-    text: String,
-    onClick: () -> Unit,
     modifier: Modifier = Modifier,
-    tint: Color = Tinta,
+    onAnimada: () -> Unit = {},
 ) {
+    val colores = BitoTema.colores
+    val tipos = BitoTema.tipos
+    val reducido = BitoTema.reducido
+    val gesto = rememberGesto()
+    var terminando by remember { mutableStateOf(false) }
+    val granos = remember { Animatable(0f) }
+    val caida = remember { Animatable(0f) }
+    val hechaLabel = stringResource(R.string.task_done)
+    val onAnimadaActual by androidx.compose.runtime.rememberUpdatedState(onAnimada)
+
+    LaunchedEffect(terminando) {
+        if (!terminando) return@LaunchedEffect
+        if (reducido) {
+            caida.animateTo(1f, tween(Duraciones.REDUCIDO))
+        } else {
+            coroutineScope {
+                launch { granos.animateTo(1f, tween(Duraciones.GRANOS, easing = LinearEasing)) }
+                launch {
+                    delay(ESPERA_CAIDA_MS.toLong())
+                    caida.animateTo(1f, tween(Duraciones.CAER))
+                }
+            }
+        }
+        onAnimadaActual()
+    }
+
+    val lleno = fila.done || terminando
+    val relleno by animateColorAsState(
+        if (lleno) colores.piedra else colores.canto,
+        tween(Duraciones.COLOR),
+        label = "circuloTarea",
+    )
+    val hecha = fila.done
     Row(
-        modifier.fillMaxWidth().heightIn(min = 56.dp).clickable(onClick = onClick),
+        modifier
+            .fillMaxWidth()
+            .testTag("task-${fila.id}")
+            .graphicsLayer {
+                val c = caida.value
+                alpha = 1f - c
+                if (!reducido) {
+                    translationY = 10.dp.toPx() * c
+                    val e = 1f - 0.03f * c
+                    scaleX = e
+                    scaleY = e
+                }
+            }.background(colores.canto, BitoFormas.tarjeta)
+            .border(Medidas.linea, colores.contorno, BitoFormas.tarjeta)
+            .padding(horizontal = Medidas.e12, vertical = Medidas.e8),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(Medidas.e12),
     ) {
-        Icon(icon, contentDescription = null, tint = tint)
-        Text(text, style = MaterialTheme.typography.bodyLarge, color = tint)
+        val circulo =
+            Modifier
+                .size(Medidas.toqueMinimo)
+                .drawBehind {
+                    val p = granos.value
+                    if (p > 0f && p < 1f) {
+                        repeat(GRANOS) { i ->
+                            val tramo = (Duraciones.GRANOS - GRANOS * Duraciones.GRANOS_ESCALON).toFloat()
+                            val t = ((p * Duraciones.GRANOS - i * Duraciones.GRANOS_ESCALON) / tramo).coerceIn(0f, 1f)
+                            val x = size.width / 2f + ((i * 37) % 11 - 5) * 2.2.dp.toPx()
+                            val y = size.height * 0.8f + 26.dp.toPx() * t * t
+                            drawCircle(colores.piedra.copy(alpha = 1f - t), radius = 1.8.dp.toPx(), center = Offset(x, y))
+                        }
+                    }
+                }.background(relleno, CircleShape)
+                .border(Medidas.linea, if (lleno) colores.piedra else colores.contorno, CircleShape)
+        if (hecha) {
+            Box(circulo, contentAlignment = Alignment.Center) {
+                Icon(IconosSistema.Check, contentDescription = null, tint = colores.tinta, modifier = Modifier.size(20.dp))
+            }
+        } else {
+            Box(
+                circulo
+                    .testTag("task-done-${fila.id}")
+                    .clickable(role = Role.Button) {
+                        if (!terminando) {
+                            terminando = true
+                            gesto(Snd.ASENTAR, Haptica.FALL)
+                            onDone()
+                        }
+                    }.semantics { contentDescription = hechaLabel },
+                contentAlignment = Alignment.Center,
+            ) {
+                if (terminando) {
+                    Icon(IconosSistema.Check, contentDescription = null, tint = colores.tinta, modifier = Modifier.size(20.dp))
+                }
+            }
+        }
+        Column(
+            Modifier.weight(1f).clickable(onClick = onMenu).defaultMinSize(minHeight = Medidas.toqueMinimo),
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(fila.title, style = tipos.t16.fuerte(), color = if (hecha) colores.tintaSuave else colores.tinta)
+            if (fila.firstStep != null) {
+                Text(fila.firstStep, style = tipos.t14, color = colores.tintaSuave)
+            }
+            // Una suelta no tiene día que darle a taskDueLabel: «sin plazo» lo dice en vez de callar.
+            val plazo =
+                if (fila.dueKind == DueKind.NONE) {
+                    stringResource(R.string.task_no_due)
+                } else {
+                    taskDueLabel(fila.dueKind, fila.dueDay, hoy)
+                }
+            if (plazo != null) {
+                val vencida = taskDueOverdue(fila.dueKind, fila.dueDay, hoy)
+                Text(plazo, style = tipos.t14, color = if (vencida) colores.peligro else colores.tintaSuave)
+            }
+        }
+        val menuCd = stringResource(R.string.task_row_menu_cd)
+        Box(
+            Modifier
+                .size(Medidas.toqueMinimo)
+                .testTag("task-menu-${fila.id}")
+                .clickable(role = Role.Button, onClick = onMenu)
+                .semantics { contentDescription = menuCd },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(IconosSistema.DotsThree, contentDescription = null, tint = colores.tintaSuave)
+        }
     }
 }

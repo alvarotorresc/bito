@@ -24,7 +24,7 @@ object PerfectDayNotifier {
     ) {
         val prefs = container.settings.settings.first()
         if (!CelebrationGate.shouldNotifyPerfectDay(reachedNow, prefs.perfectDayCelebration, AppVisibility.visible)) return
-        Notifier.showPerfectDay(context, bodyFor(context, prefs))
+        Notifier.showPerfectDay(context, bodyFor(context, prefs), prefs.personality)
     }
 
     /** Testable seam: the text the notification carries for a given settings snapshot. */

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos del bloque ajustes (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
+<resources>
+    <string name="ajustes_estrato_general">General</string>
+    <string name="ajustes_estrato_avisos">Avisos y respiración</string>
+    <string name="ajustes_estrato_sonido">Sonido y tacto</string>
+    <string name="ajustes_estrato_copias">Copias de seguridad</string>
+    <string name="ajustes_estrato_acerca">Acerca de</string>
+
+    <string name="ajustes_resumen_sonido_on">Sonido encendido · vibración %1$d</string>
+    <string name="ajustes_resumen_sonido_off">Sonido apagado</string>
+    <string name="ajustes_resumen_avisos">%1$s · Habi %2$s</string>
+    <string name="ajustes_resumen_sin_recordatorios">Sin recordatorios</string>
+    <string name="ajustes_lista_y">%1$s y %2$s</string>
+    <string name="ajustes_rango_horas">%1$s a %2$s</string>
+
+    <string name="ajustes_personalidad">Personalidad de Habi</string>
+    <string name="ajustes_personalidad_sub">Cómo te habla: las mismas propuestas, con otro tono.</string>
+    <string name="ajustes_ver_de_nuevo">Ver de nuevo</string>
+    <string name="ajustes_archivados">Hábitos archivados (%1$d)</string>
+    <string name="ajustes_ver">Ver</string>
+
+    <string name="ajustes_permitir">Permitir</string>
+    <string name="ajustes_activar">Activar</string>
+    <string name="ajustes_alarmas_exactas">Las alarmas exactas están desactivadas: los avisos pueden desviarse.</string>
+    <string name="ajustes_recordatorios_sub">Habi te escribe si te queda algo por marcar.</string>
+    <string name="ajustes_ninguno">Ninguno</string>
+    <string name="ajustes_avisos_habi">Avisos de Habi</string>
+    <string name="ajustes_avisos_habi_sub">Dos al día, a hora fija: por la mañana y por la noche.</string>
+    <string name="ajustes_no_molestar">No molestar</string>
+    <string name="ajustes_no_molestar_sub">Habi calla en estas horas. Lo pendiente espera.</string>
+    <string name="ajustes_sesion_foco">Sesión de foco</string>
+    <string name="ajustes_pomodoro">Pomodoro</string>
+    <string name="ajustes_pomodoro_sub">Foco, descansos y rondas.</string>
+    <string name="ajustes_pomodoro_valor">%1$d + %2$d min</string>
+    <string name="ajustes_hora_respiracion">Hora del recordatorio de respirar</string>
+
+    <string name="ajustes_sonido">Sonido</string>
+    <string name="ajustes_sonido_sub">Todo lo que suena en Bito.</string>
+    <string name="ajustes_volumen_canal">Volumen por canal</string>
+    <string name="ajustes_fondo">Sonido de fondo de la sesión</string>
+    <string name="ajustes_fondo_sub">Suena mientras haces foco o respiras.</string>
+    <string name="ajustes_fondo_lluvia">Lluvia</string>
+    <string name="ajustes_fondo_marron">Ruido marrón</string>
+    <string name="ajustes_fondo_cafe">Cafetería</string>
+    <string name="ajustes_fondo_ninguno">Ninguno</string>
+    <string name="ajustes_sonido_registro">Sonido al registrar</string>
+    <string name="ajustes_sonido_registro_sub">El gorgoteo del agua al marcar.</string>
+    <string name="ajustes_vibracion_sub">Al registrar y al respirar.</string>
+    <string name="ajustes_reducir">Reducir animaciones</string>
+    <string name="ajustes_reducir_sub">Fundidos cortos en vez de movimiento. También sigue al ajuste del sistema.</string>
+</resources>

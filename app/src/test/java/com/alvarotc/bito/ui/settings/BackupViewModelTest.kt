@@ -621,4 +621,47 @@ class BackupViewModelTest {
 
             assertNull(throwingVm.state.value.backupCount)
         }
+
+    @Test
+    fun `an unencrypted restore preview carries what there is now`() =
+        runTest {
+            db.habitDao().upsert(habitEntity(id = "h1"))
+            val exported = backup.exportJson(fixedNow)
+            db.habitDao().upsert(habitEntity(id = "h2")) // ahora hay 2 hábitos; la copia trae 1
+            val uri = Uri.parse("content://bito/now-vs-copy.bito")
+            shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(exported.toByteArray()))
+
+            vm.loadImport(resolver, uri)
+            advanceUntilIdle()
+
+            val estado = state()
+            assertEquals(1, estado.preview!!.habits)
+            assertEquals(2, estado.ahora!!.habits)
+
+            vm.dismissImport()
+            advanceUntilIdle()
+            assertNull(state().ahora)
+        }
+
+    @Test
+    fun `an encrypted restore preview also carries what there is now`() =
+        runTest {
+            db.habitDao().upsert(habitEntity(id = "h1"))
+            val encrypted =
+                BackupCrypto.encrypt(
+                    backup.exportJson(fixedNow),
+                    BackupCrypto.deriveKey("right-pass".toCharArray(), BackupCrypto.newSalt(), TEST_ARGON2_PARAMS),
+                )
+            val uri = Uri.parse("content://bito/now-vs-copy-enc.bito")
+            shadowOf(resolver).registerInputStream(uri, ByteArrayInputStream(encrypted))
+
+            vm.loadImport(resolver, uri)
+            advanceUntilIdle()
+            assertNull(state().ahora)
+
+            vm.submitImportPassphrase("right-pass".toCharArray())
+            advanceUntilIdle()
+
+            assertEquals(1, state().ahora!!.habits)
+        }
 }

@@ -46,17 +46,15 @@
     <string name="form_title_edit">Editar hábito</string>
     <string name="habi_form_prompt_sargento">Nuevo hábito. Nombre y forma; el resto puede esperar.</string>
     <string name="habi_form_prompt_cheerleader">¡Un hábito nuevo! Ponle nombre, dale forma, y a por él.</string>
-    <string name="habi_form_prompt_neutra">¿Qué hábito construimos? Ponle nombre y elige su forma — lo demás puede esperar.</string>
+    <string name="habi_form_prompt_neutra">¿Qué hábito construimos? Ponle nombre y elige su forma: lo demás puede esperar.</string>
     <string name="personality_neutra">Neutra</string>
     <string name="personality_sargento">Sargento</string>
     <string name="personality_cheerleader">Cheerleader</string>
-    <string name="name_hint">Nombre del hábito</string>
     <string name="preset_daily">Diario</string>
     <string name="preset_quantity">Cantidad</string>
     <string name="preset_duration">Duración</string>
     <string name="preset_weekly">X por semana</string>
     <string name="preset_quit">Dejar de hacer</string>
-    <string name="preset_locked_hint">El tipo no se cambia — archiva y crea uno nuevo</string>
     <string name="quit_total">Del todo</string>
     <string name="quit_limit">Con límite</string>
     <string name="limit_amount">Veces</string>
@@ -69,27 +67,17 @@
     <string name="target_plus1_cd">Aumentar el objetivo en 1</string>
     <string name="target_minus10_cd">Reducir el objetivo en 10</string>
     <string name="target_plus10_cd">Aumentar el objetivo en 10</string>
-    <string name="unit_hint">Unidad (vasos, páginas…)</string>
     <string name="more_options">Más opciones</string>
     <string name="binary_mode">Solo cumplido</string>
-    <string name="binary_mode_hint">El objetivo es una referencia escrita; registrar es un tap</string>
-    <string name="step_label">Cada tap suma</string>
-    <string name="step_minus_cd">Reducir el incremento</string>
-    <string name="step_plus_cd">Aumentar el incremento</string>
     <string name="form_reminder_label">Recordatorio</string>
     <string name="form_reminder_none">Sin recordatorio</string>
     <string name="form_reminder_clear">Quitar recordatorio</string>
     <string name="form_reminder_quit_hint">Sin avisos: Bito no te recuerda lo que intentas evitar</string>
     <string name="save_habit">Guardar</string>
-    <string name="delete_habit">Eliminar hábito</string>
-    <string name="delete_confirm_title">¿Eliminar para siempre?</string>
-    <string name="delete_confirm_body">Todo su historial se va con él. Los puntos ganados son tuyos.</string>
-    <string name="delete_confirm_yes">Eliminar</string>
     <string name="back">Atrás</string>
 
-    <string name="settings_title">Ajustes</string>
     <string name="backups_title">Copias de seguridad</string>
-    <string name="backups_body">Un único archivo legible con todo: hábitos, historial, puntos y ajustes.</string>
+    <string name="backups_body">Un único archivo legible con todo: hábitos, historial, bitos y ajustes.</string>
     <string name="backup_pick_folder">Elegir carpeta</string>
     <string name="backup_frequency_daily">Diaria</string>
     <string name="backup_frequency_weekly">Semanal</string>
@@ -100,10 +88,7 @@
         <item quantity="many">últimas %1$d copias</item>
         <item quantity="other">últimas %1$d copias</item>
     </plurals>
-    <string name="backup_copies_minus_cd">Reducir copias guardadas</string>
-    <string name="backup_copies_plus_cd">Aumentar copias guardadas</string>
     <string name="backup_now">Hacer backup ahora</string>
-    <string name="backup_restore">Restaurar</string>
     <string name="backup_export_manual">Exportar copia…</string>
     <string name="backup_last_ok">Último backup: %1$s</string>
     <string name="backup_status_today">hoy</string>
@@ -114,15 +99,9 @@
         <item quantity="many">%1$d copias en %2$s</item>
         <item quantity="other">%1$d copias en %2$s</item>
     </plurals>
-    <string name="backup_error_folder">La carpeta ya no está disponible — vuelve a elegirla</string>
-    <string name="backup_error_write">La última copia falló, se reintentará</string>
-    <string name="backup_error_missing_key">Falta la passphrase de cifrado</string>
     <string name="backup_encrypt">Cifrado</string>
-    <string name="backup_encrypt_subtitle">Protege el archivo con contraseña</string>
-    <string name="backup_encrypt_off">Desactivado</string>
     <string name="backup_encrypt_needs_key">Necesita passphrase</string>
     <string name="backup_encrypt_warning">Si olvidas la passphrase, la copia es irrecuperable. Bito no la guarda en ningún sitio.</string>
-    <string name="backup_encrypt_off_note">Apagarlo no borra nada — las copias cifradas antiguas se siguen leyendo con su passphrase.</string>
     <string name="backup_passphrase">Passphrase</string>
     <string name="backup_passphrase_repeat">Repite la passphrase</string>
     <string name="backup_passphrase_wrong">Passphrase incorrecta</string>
@@ -131,7 +110,6 @@
     <string name="backup_missing_key_snack">El cifrado necesita una passphrase antes de exportar</string>
     <string name="import_preview_title">¿Restaurar esta copia?</string>
     <string name="import_preview_meta">Del %1$s · app %2$s</string>
-    <string name="import_preview_counts">%1$s · %2$s</string>
     <plurals name="import_preview_habits">
         <item quantity="one">%1$d hábito</item>
         <item quantity="many">%1$d hábitos</item>
@@ -151,31 +129,14 @@
 
     <string name="cutoff_label">El día termina a las</string>
     <string name="cutoff_row_hint">para noctámbulos: lo que hagas antes de esa hora cuenta como hoy</string>
-    <string name="cutoff_note">Aplica desde ahora; los días sellados no se tocan</string>
-    <string name="cutoff_minus_cd">Corte más temprano</string>
-    <string name="cutoff_plus_cd">Corte más tarde</string>
     <string name="reminders_section_title">Recordatorios</string>
-    <string name="reminders_section_body">Avisos en el móvil para que no se te olvide registrar tus hábitos.</string>
-    <string name="reminder_none_hint">Sin avisos configurados — añade una hora para que Bito te avise.</string>
-    <string name="reminder_add">Añadir aviso</string>
-    <string name="reminder_remove">Quitar</string>
-    <string name="review_label">Repaso del día</string>
-    <string name="review_hint">Un aviso por la noche para repasar el día y cerrarlo.</string>
-    <string name="reminder_exact_notice">Las alarmas exactas están desactivadas — los avisos pueden desviarse. Toca para permitirlas.</string>
     <string name="notif_permission_hint">Permite las notificaciones para oír los avisos</string>
-    <string name="settings_notifications_section">Notificaciones</string>
     <string name="settings_task_notices_label">Avisos de tareas</string>
     <string name="settings_task_notices_hint">A mediodía, cuando se acerca un plazo</string>
-    <string name="sheet_done">Listo</string>
 
-    <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Sonidos de Habi</string>
     <string name="settings_habi_sounds_hint">Saluditos y celebraciones. Nunca en notificaciones.</string>
     <string name="settings_intro_row">Introducción</string>
-    <string name="settings_intro_value">ver de nuevo</string>
-    <string name="settings_log_section">Al registrar</string>
-    <string name="settings_log_sound">Sonido</string>
-    <string name="settings_log_sound_hint">Un toquecito al registrar un hábito</string>
     <string name="settings_log_haptic">Vibración</string>
     <string name="settings_log_haptic_hint">Una vibración suave al registrar y al respirar</string>
 
@@ -184,7 +145,6 @@
     <string name="language_spanish">Español</string>
     <string name="language_english">English</string>
     <string name="language_system">Del sistema</string>
-    <string name="language_cycle_hint">Cambiar idioma</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Hábito archivado (%1$d)</item>
         <item quantity="many">Hábitos archivados (%1$d)</item>
@@ -196,10 +156,8 @@
     <string name="unarchive_habit">Reactivar</string>
 
     <string name="about_section_title">Acerca de</string>
-    <string name="about_version">v%1$s</string>
     <string name="about_source_row">Código fuente</string>
     <string name="about_support_row">Apoya el proyecto</string>
-    <string name="about_support_value">donar</string>
     <string name="about_license_row">Licencia libre</string>
     <string name="about_feedback_row">¿Algo no va?</string>
     <string name="about_feedback_hint">un formulario de un minuto, sin cuentas</string>

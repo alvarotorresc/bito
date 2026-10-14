@@ -250,4 +250,52 @@ class SettingsRepositoryTest {
 
             assertEquals(BreathingMode.CALM, SettingsRepository(dataStore).settings.first().breathingLastMode)
         }
+
+    @Test
+    fun `the piece 2 keys start at their documented defaults`() =
+        runTest {
+            val s = SettingsRepository(store("p2-defaults")).settings.first()
+            assertEquals(8 * 60 + 30, s.habiMorningMinutes)
+            assertEquals(21 * 60 + 30, s.reviewTimeMinutes)
+            assertEquals(false, s.dndEnabled)
+            assertEquals(23 * 60, s.dndFromMinutes)
+            assertEquals(7 * 60 + 30, s.dndToMinutes)
+            assertEquals(listOf(25, 5, 15, 4), listOf(s.pomoFocus, s.pomoShort, s.pomoLong, s.pomoRounds))
+            assertEquals(true, s.pomoAutoBreak)
+            assertEquals(true, s.soundEnabled)
+            assertEquals(listOf(8, 7, 6, 7), listOf(s.volHabi, s.volEffects, s.volAmbient, s.vibStrength))
+            assertEquals(SessionBackground.RAIN, s.sessionBackground)
+            assertEquals(false, s.reduceMotion)
+        }
+
+    @Test
+    fun `out of range values are clamped when read`() =
+        runTest {
+            val repo = SettingsRepository(store("p2-ranges"))
+            repo.update {
+                it.copy(
+                    volHabi = 14,
+                    vibStrength = -2,
+                    pomoFocus = 200,
+                    pomoRounds = 1,
+                    habiMorningMinutes = 3 * 60,
+                    dndFromMinutes = 5000,
+                )
+            }
+            val s = repo.settings.first()
+            assertEquals(10, s.volHabi)
+            assertEquals(0, s.vibStrength)
+            assertEquals(90, s.pomoFocus)
+            assertEquals(2, s.pomoRounds)
+            assertEquals(6 * 60, s.habiMorningMinutes)
+            assertEquals(24 * 60 - 1, s.dndFromMinutes)
+        }
+
+    @Test
+    fun `an unknown session background falls back to rain`() =
+        runTest {
+            val dataStore = store("p2-bg")
+            dataStore.edit { it[stringPreferencesKey("session_background")] = "OCEAN" }
+            assertEquals(SessionBackground.RAIN, SettingsRepository(dataStore).settings.first().sessionBackground)
+        }
 }

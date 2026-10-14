@@ -366,5 +366,30 @@ class TablaDeCarasTest(unittest.TestCase):
         self.assertTrue(all(len(linea) <= 120 for linea in kt.splitlines()))
 
 
+class ExportarMonedaTest(unittest.TestCase):
+    def test_recorta_al_alfa_centra_y_exporta_cada_tamano(self):
+        from PIL import ImageDraw
+
+        with tempfile.TemporaryDirectory() as d:
+            fuente = Image.new("RGBA", (400, 300), (0, 0, 0, 0))
+            ImageDraw.Draw(fuente).ellipse((100, 40, 300, 240), fill=(226, 176, 74, 255))
+            ruta = os.path.join(d, "moneda.png")
+            fuente.save(ruta)
+            manifiesto = {
+                "fuente": ruta,
+                "salidas": [
+                    {"archivo": "coin.webp", "px": 192},
+                    {"archivo": "coin_small.webp", "px": 72, "nitidez": True},
+                ],
+            }
+            salidas = exportar.exportar_moneda(manifiesto, d, 90)
+            self.assertEqual([os.path.basename(s) for s in salidas], ["coin.webp", "coin_small.webp"])
+            grande, pequena = Image.open(salidas[0]), Image.open(salidas[1])
+            self.assertEqual(grande.size, (192, 192))
+            self.assertEqual(pequena.size, (72, 72))
+            self.assertGreater(grande.getpixel((96, 96))[3], 250)
+            self.assertLess(grande.getpixel((2, 2))[3], 10)
+
+
 if __name__ == "__main__":
     unittest.main()

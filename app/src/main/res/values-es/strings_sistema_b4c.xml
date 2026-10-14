@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos del bloque sistema_b4c (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
+<resources>
+    <string name="sistema_b4c_personalidad_titulo">Personalidad de Habi</string>
+    <string name="sistema_b4c_voz_neutra_ej">Hoy lo gordo es el informe. Empieza por abrir el documento.</string>
+    <string name="sistema_b4c_voz_cheerleader_ej">El informe es lo gordo de hoy. Abre el documento y ya vas ganando.</string>
+    <string name="sistema_b4c_voz_sargento_ej">Informe. Documento abierto. Tres minutos. Ya.</string>
+</resources>

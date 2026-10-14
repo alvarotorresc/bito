@@ -30,6 +30,9 @@ FRANJA_PIES = 0.05
 # Búsqueda de alineación: escalas y desplazamiento máximo (px a resolución completa).
 ESCALAS = tuple(np.arange(0.96, 1.0401, 0.01))
 DESPLAZAMIENTO_MAX = 56
+# Desempate de alinear: si la mejor combinación no gana a escala 1 y desplazamiento 0 por más de
+# esto de IoU, se queda la identidad (spec pieza 2, §7.4).
+DESEMPATE = 0.005
 
 
 def cargar_rgb(ruta):
@@ -249,21 +252,42 @@ def _reducir(mascara, f):
     return np.asarray(im.resize((mascara.shape[1] // f, mascara.shape[0] // f), Image.BILINEAR)) > 127
 
 
-def alinear(piel_base, piel_editada):
+def elegir_alineacion(mejor, iou_identidad, margen=DESEMPATE):
+    """Entre la mejor combinación (iou, escala, dx, dy) y la identidad, la identidad si la otra no gana por más de margen."""
+    if mejor[0] - iou_identidad <= margen:
+        return (iou_identidad, 1.0, 0, 0)
+    return mejor
+
+
+def _sin_franja_de_arriba(mascara, corte):
+    m = mascara.copy()
+    m[: max(0, int(corte)), :] = False
+    return m
+
+
+def alinear(piel_base, piel_editada, ignorar_arriba=0.0):
     """Escala y desplazamiento de la editada que maximizan el solape (IoU) de la piel con la base.
 
     El encuadre por contorno falla si el accesorio tapa un lado (auriculares, bufanda); el solape de
-    la piel que queda a la vista, no. Devuelve (iou, escala, dx, dy) con dx, dy en píxeles
-    completos: la editada se escala por `escala` y se pega en (dx, dy).
+    la piel que queda a la vista, no. `ignorar_arriba` (fracción del alto de la piel de la base) deja
+    fuera del IoU la franja de arriba: un gorro que tapa la cabeza ya no empuja a escalar ni a mover.
+    Devuelve (iou, escala, dx, dy) con dx, dy en píxeles completos.
     """
     from PIL import Image
 
+    if ignorar_arriba > 0:
+        filas = np.nonzero(piel_base.any(axis=1))[0]
+        if filas.size:
+            corte = filas[0] + ignorar_arriba * (filas[-1] - filas[0])
+            piel_base = _sin_franja_de_arriba(piel_base, corte)
+            piel_editada = _sin_franja_de_arriba(piel_editada, corte)
     f = 4 if max(piel_base.shape) >= 1024 else 2
     b = _reducir(piel_base, f)
     e = _reducir(piel_editada, f)
     rango = DESPLAZAMIENTO_MAX // f
     area_b = np.count_nonzero(b)
     mejor = (-1.0, 1.0, 0, 0)
+    iou_identidad = 0.0
     for sc in ESCALAS:
         h, w = e.shape
         im = Image.fromarray((e * 255).astype(np.uint8))
@@ -280,9 +304,11 @@ def alinear(piel_base, piel_editada):
                 inter = np.count_nonzero(trozo & base)
                 union = area_es + area_b - inter
                 iou = inter / union if union else 0.0
+                if abs(sc - 1.0) < 1e-6 and dx == 0 and dy == 0:
+                    iou_identidad = iou
                 if iou > mejor[0]:
                     mejor = (iou, float(sc), dx * f, dy * f)
-    return mejor
+    return elegir_alineacion(mejor, iou_identidad)
 
 
 def fraccion_verde(rgb, caja):

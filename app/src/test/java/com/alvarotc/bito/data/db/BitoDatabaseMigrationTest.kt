@@ -126,7 +126,7 @@ class BitoDatabaseMigrationTest {
 
     /**
      * Una base v3 de verdad, la de la 1.3.0: la v2 de [seedVersionTwo], la tabla de respiración con
-     * el DDL exacto de MIGRATION_2_3 y una fila del catálogo viejo con un eje que ya no existe
+     * el DDL exacto de MIGRATION_2_3 y una fila del catálogo anterior con un eje que ya no existe
      * (PATTERN): si sobreviviera, Room no podría leerla.
      */
     private fun seedVersionThree(context: Context) {

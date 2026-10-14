@@ -7,7 +7,6 @@
     <string name="ring_of">%1$d of %2$d</string>
     <string name="ring_caption">habits today</string>
     <string name="unit_min">min</string>
-    <string name="progress_fraction" translatable="false">%1$s / %2$s</string>
     <string name="week_progress">%1$d of %2$d this week</string>
     <string name="month_progress">%1$d of %2$d this month</string>
     <string name="limit_caption">max %1$s</string>
@@ -50,20 +49,18 @@
 
     <string name="form_title_new">New habit</string>
     <string name="form_title_edit">Edit habit</string>
-    <string name="habi_form_prompt_sargento">New habit. Name and shape — the rest can wait.</string>
+    <string name="habi_form_prompt_sargento">New habit. Name and shape: the rest can wait.</string>
     <string name="habi_form_prompt_cheerleader">A new habit! Name it, shape it, and let\'s go.</string>
-    <string name="habi_form_prompt_neutra">What habit are we building? Name it and pick its shape — everything else can wait.</string>
+    <string name="habi_form_prompt_neutra">What habit are we building? Name it and pick its shape: everything else can wait.</string>
     <string name="habi_speaker" translatable="false">HABI · %1$s</string>
     <string name="personality_neutra">Neutra</string>
     <string name="personality_sargento">Sargento</string>
     <string name="personality_cheerleader">Cheerleader</string>
-    <string name="name_hint">Habit name</string>
     <string name="preset_daily">Daily</string>
     <string name="preset_quantity">Amount</string>
     <string name="preset_duration">Duration</string>
     <string name="preset_weekly">X per week</string>
     <string name="preset_quit">Quit</string>
-    <string name="preset_locked_hint">Type can\'t change — archive and create a new one</string>
     <string name="quit_total">Cold turkey</string>
     <string name="quit_limit">With a limit</string>
     <string name="limit_amount">Times</string>
@@ -78,28 +75,18 @@
     <string name="target_plus1_cd">Increase target by 1</string>
     <string name="target_minus10_cd">Decrease target by 10</string>
     <string name="target_plus10_cd">Increase target by 10</string>
-    <string name="unit_hint">Unit (glasses, pages…)</string>
     <string name="more_options">More options</string>
     <string name="binary_mode">Just done / not done</string>
-    <string name="binary_mode_hint">The goal is a written reference; logging is one tap</string>
-    <string name="step_label">Tap adds</string>
     <!-- StepRow's own ±1 IconButtons (the "tap adds" advanced stepper), same bare-icon gap. -->
-    <string name="step_minus_cd">Decrease step</string>
-    <string name="step_plus_cd">Increase step</string>
     <string name="form_reminder_label">Reminder</string>
     <string name="form_reminder_none">None</string>
     <string name="form_reminder_clear">Remove reminder</string>
     <string name="form_reminder_quit_hint">No reminders: Bito won\'t nag you about what you\'re avoiding</string>
     <string name="save_habit">Save</string>
-    <string name="delete_habit">Delete habit</string>
-    <string name="delete_confirm_title">Delete forever?</string>
-    <string name="delete_confirm_body">Its whole history goes with it. Points you earned stay yours.</string>
-    <string name="delete_confirm_yes">Delete</string>
     <string name="back">Back</string>
 
-    <string name="settings_title">Settings</string>
     <string name="backups_title">Backups</string>
-    <string name="backups_body">One readable file with everything: habits, history, points and settings.</string>
+    <string name="backups_body">One readable file with everything: habits, history, bitos and settings.</string>
     <string name="backup_pick_folder">Choose folder</string>
     <string name="backup_frequency_daily">Daily</string>
     <string name="backup_frequency_weekly">Weekly</string>
@@ -109,11 +96,7 @@
         <item quantity="one">last %1$d copy</item>
         <item quantity="other">last %1$d copies</item>
     </plurals>
-    <!-- CopiesSheet's ±1 stepper (SettingsScreen.kt): the Minus/Plus icons carry no label of their own. -->
-    <string name="backup_copies_minus_cd">Decrease kept copies</string>
-    <string name="backup_copies_plus_cd">Increase kept copies</string>
     <string name="backup_now">Back up now</string>
-    <string name="backup_restore">Restore</string>
     <string name="backup_export_manual">Export a copy…</string>
     <string name="backup_last_ok">Last backup: %1$s</string>
     <string name="backup_status_today">today</string>
@@ -123,15 +106,9 @@
         <item quantity="one">%1$d copy in %2$s</item>
         <item quantity="other">%1$d copies in %2$s</item>
     </plurals>
-    <string name="backup_error_folder">The folder is no longer available — choose it again</string>
-    <string name="backup_error_write">The last backup failed, it will be retried</string>
-    <string name="backup_error_missing_key">The encryption passphrase is missing</string>
     <string name="backup_encrypt">Encryption</string>
-    <string name="backup_encrypt_subtitle">Protects the file with a password</string>
-    <string name="backup_encrypt_off">Off</string>
     <string name="backup_encrypt_needs_key">Needs a passphrase</string>
     <string name="backup_encrypt_warning">If you forget the passphrase, the backup is unrecoverable. Bito stores it nowhere.</string>
-    <string name="backup_encrypt_off_note">Turning it off doesn\'t delete anything — old encrypted backups stay readable with their passphrase.</string>
     <string name="backup_passphrase">Passphrase</string>
     <string name="backup_passphrase_repeat">Repeat passphrase</string>
     <string name="backup_passphrase_wrong">Wrong passphrase</string>
@@ -140,7 +117,6 @@
     <string name="backup_missing_key_snack">Encryption needs a passphrase before exporting</string>
     <string name="import_preview_title">Restore this backup?</string>
     <string name="import_preview_meta">From %1$s · app %2$s</string>
-    <string name="import_preview_counts">%1$s · %2$s</string>
     <plurals name="import_preview_habits">
         <item quantity="one">%1$d habit</item>
         <item quantity="other">%1$d habits</item>
@@ -158,32 +134,15 @@
 
     <string name="cutoff_label">Your day ends at</string>
     <string name="cutoff_row_hint">for night owls: what you do before that time still counts as today</string>
-    <string name="cutoff_note">Applies from now on; sealed days stay as they are</string>
     <!-- CutoffSheet's ±30min stepper: same bare-icon gap as backup_copies_minus_cd/plus_cd above. -->
-    <string name="cutoff_minus_cd">Earlier cutoff</string>
-    <string name="cutoff_plus_cd">Later cutoff</string>
     <string name="reminders_section_title">Reminders</string>
-    <string name="reminders_section_body">Phone nudges so you don\'t forget to log your habits.</string>
-    <string name="reminder_none_hint">No reminders set — add a time so Bito can nudge you.</string>
-    <string name="reminder_add">Add reminder</string>
-    <string name="reminder_remove">Remove</string>
-    <string name="review_label">Daily review</string>
-    <string name="review_hint">An evening nudge to look back on the day and close it.</string>
-    <string name="reminder_exact_notice">Exact alarms are off — reminders may drift. Tap to allow.</string>
     <string name="notif_permission_hint">Allow notifications to hear reminders</string>
-    <string name="settings_notifications_section">Notifications</string>
     <string name="settings_task_notices_label">Task reminders</string>
     <string name="settings_task_notices_hint">At noon, when a deadline is close</string>
-    <string name="sheet_done">Done</string>
 
-    <string name="settings_habi_section">Habi</string>
     <string name="settings_habi_sounds">Habi sounds</string>
     <string name="settings_habi_sounds_hint">Little greetings and celebrations. Never in notifications.</string>
     <string name="settings_intro_row">Intro</string>
-    <string name="settings_intro_value">watch again</string>
-    <string name="settings_log_section">On logging</string>
-    <string name="settings_log_sound">Sound</string>
-    <string name="settings_log_sound_hint">A tiny tick when you log a habit</string>
     <string name="settings_log_haptic">Vibration</string>
     <string name="settings_log_haptic_hint">A soft buzz when you log and when you breathe</string>
 
@@ -196,7 +155,6 @@
          already announced via the merged "Language, Spanish" text, so this is a low-priority extra
          hint about the tap behavior itself, via onClickLabel (TalkBack appends it to "double tap
          to..."), not a replacement for it. -->
-    <string name="language_cycle_hint">Cycle language</string>
     <plurals name="archived_habits_row">
         <item quantity="one">Archived habit (%1$d)</item>
         <item quantity="other">Archived habits (%1$d)</item>
@@ -207,10 +165,8 @@
     <string name="unarchive_habit">Reactivate</string>
 
     <string name="about_section_title">About</string>
-    <string name="about_version">v%1$s</string>
     <string name="about_source_row">Source code</string>
     <string name="about_support_row">Support the project</string>
-    <string name="about_support_value">donate</string>
     <string name="about_license_row">Free license</string>
     <string name="about_feedback_row">Something not right?</string>
     <string name="about_feedback_hint">a one-minute form, no account needed</string>
@@ -252,9 +208,8 @@
     <string name="onb_habit_goal_daily">time a day</string>
     <string name="onb_habit_goal_quantity">times</string>
     <string name="onb_habit_goal_weekly">times a week</string>
-    <!-- %1$s carries onb_habit_widget_bold, bolded in the composed sentence — same split-and-style
-         idiom SettingsScreen.kt's coloredCountLine/coloredFolderLine use, so this stays untranslated
-         markup-free and locale-safe. -->
+    <!-- %1$s carries onb_habit_widget_bold, bolded in the composed sentence — same split-and-style,
+         so this stays untranslated markup-free and locale-safe. -->
     <string name="onb_habit_widget_hint">Add the %1$s to your home screen — log without opening the app</string>
     <string name="onb_habit_widget_bold">Bito widget</string>
     <string name="onb_habit_create">Create and start</string>

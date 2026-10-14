@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos del bloque archivados (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
+<resources>
+    <string name="archivados_nota">Archiving keeps everything. Tap one to see it.</string>
+    <string name="archivados_reactivar">Reactivate</string>
+    <string name="archivados_vuelve">%1$s is back on Today</string>
+    <string name="archivados_deshacer">Undo</string>
+</resources>

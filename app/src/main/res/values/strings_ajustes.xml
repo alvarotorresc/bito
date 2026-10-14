@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings for the ajustes block (piece 2 spec, §15.3). Only its own task writes them, with the block prefix. -->
+<resources>
+    <string name="ajustes_estrato_general">General</string>
+    <string name="ajustes_estrato_avisos">Reminders and breathing</string>
+    <string name="ajustes_estrato_sonido">Sound and touch</string>
+    <string name="ajustes_estrato_copias">Backups</string>
+    <string name="ajustes_estrato_acerca">About</string>
+
+    <string name="ajustes_resumen_sonido_on">Sound on · vibration %1$d</string>
+    <string name="ajustes_resumen_sonido_off">Sound off</string>
+    <string name="ajustes_resumen_avisos">%1$s · Habi %2$s</string>
+    <string name="ajustes_resumen_sin_recordatorios">No reminders</string>
+    <string name="ajustes_lista_y">%1$s and %2$s</string>
+    <string name="ajustes_rango_horas">%1$s to %2$s</string>
+
+    <string name="ajustes_personalidad">Habi\'s personality</string>
+    <string name="ajustes_personalidad_sub">How it talks to you: same suggestions, another tone.</string>
+    <string name="ajustes_ver_de_nuevo">See again</string>
+    <string name="ajustes_archivados">Archived habits (%1$d)</string>
+    <string name="ajustes_ver">View</string>
+
+    <string name="ajustes_permitir">Allow</string>
+    <string name="ajustes_activar">Turn on</string>
+    <string name="ajustes_alarmas_exactas">Exact alarms are off: reminders may drift.</string>
+    <string name="ajustes_recordatorios_sub">Habi writes to you if something is left to log.</string>
+    <string name="ajustes_ninguno">None</string>
+    <string name="ajustes_avisos_habi">Habi\'s notices</string>
+    <string name="ajustes_avisos_habi_sub">Two a day, at fixed times: morning and night.</string>
+    <string name="ajustes_no_molestar">Do not disturb</string>
+    <string name="ajustes_no_molestar_sub">Habi stays quiet at these hours. What is pending waits.</string>
+    <string name="ajustes_sesion_foco">Focus session</string>
+    <string name="ajustes_pomodoro">Pomodoro</string>
+    <string name="ajustes_pomodoro_sub">Focus, breaks and rounds.</string>
+    <string name="ajustes_pomodoro_valor">%1$d + %2$d min</string>
+    <string name="ajustes_hora_respiracion">Breathing reminder time</string>
+
+    <string name="ajustes_sonido">Sound</string>
+    <string name="ajustes_sonido_sub">Everything that makes noise in Bito.</string>
+    <string name="ajustes_volumen_canal">Volume per channel</string>
+    <string name="ajustes_fondo">Session background sound</string>
+    <string name="ajustes_fondo_sub">Plays while you focus or breathe.</string>
+    <string name="ajustes_fondo_lluvia">Rain</string>
+    <string name="ajustes_fondo_marron">Brown noise</string>
+    <string name="ajustes_fondo_cafe">Cafe</string>
+    <string name="ajustes_fondo_ninguno">None</string>
+    <string name="ajustes_sonido_registro">Sound when logging</string>
+    <string name="ajustes_sonido_registro_sub">The water gurgle when you tick.</string>
+    <string name="ajustes_vibracion_sub">When logging and when breathing.</string>
+    <string name="ajustes_reducir">Reduce animations</string>
+    <string name="ajustes_reducir_sub">Short fades instead of motion. It also follows the system setting.</string>
+</resources>

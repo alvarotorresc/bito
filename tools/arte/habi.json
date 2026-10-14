@@ -43,6 +43,7 @@
     {"clave": "head-copa", "archivo": "~/Pictures/bito-habi/lote-c/capa-copa.png", "origen": [-200, -300]},
     {"clave": "head-flor", "archivo": "~/Pictures/bito-habi/lote-c/capa-flor.png", "origen": [-200, -300]},
     {"clave": "head-corona", "archivo": "~/Pictures/bito-habi/lote-c/capa-corona.png", "origen": [-200, -300]},
+    {"clave": "head-gorro-dormir", "archivo": "~/Pictures/bito-habi/lote-e/capa-head-gorro-dormir.png", "origen": [-200, -300]},
     {"clave": "face-gafas-redondas", "archivo": "~/Pictures/bito-habi/lote-c/completadas/capa-gafas-redondas.png", "origen": [-48, -300]},
     {"clave": "face-gafas-sol", "archivo": "~/Pictures/bito-habi/lote-c/capa-gafas-sol.png", "origen": [-200, -300]},
     {"clave": "neck-bufanda", "archivo": "~/Pictures/bito-habi/lote-c/completadas/capa-bufanda.png", "origen": [-48, -300]},

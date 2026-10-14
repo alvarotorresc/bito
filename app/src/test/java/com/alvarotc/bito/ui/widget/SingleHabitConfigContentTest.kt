@@ -1,7 +1,14 @@
 package com.alvarotc.bito.ui.widget
 
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsEnabled
+import androidx.compose.ui.test.assertIsNotSelected
+import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -99,5 +106,25 @@ class SingleHabitConfigContentTest {
         compose.onNodeWithText("Caminar").performClick()
 
         assertEquals("pasos", picked)
+    }
+
+    @Test
+    fun `an option is a radio button and the chosen one is selected`() {
+        compose.setContent {
+            BitoTheme {
+                SingleHabitConfigContent(
+                    habits = listOf(habitEntity(id = "agua", name = "Beber agua"), habitEntity(id = "pasos", name = "Caminar")),
+                    selected = "pasos",
+                    onSelect = {},
+                    onSave = {},
+                )
+            }
+        }
+
+        compose.onNode(isSelectable() and hasText("Caminar")).assertIsSelected()
+        compose.onNode(isSelectable() and hasText("Beber agua")).assertIsNotSelected()
+        compose.onNode(
+            SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.RadioButton) and hasText("Caminar"),
+        ).assertExists()
     }
 }

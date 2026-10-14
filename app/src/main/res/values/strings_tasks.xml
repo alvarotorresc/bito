@@ -19,8 +19,6 @@
     <string name="task_due_week_today">ends today</string>
     <string name="task_due_last_week">from last week</string>
     <string name="create_choice_title">What are we adding?</string>
-    <string name="create_choice_habit">A habit</string>
-    <string name="create_choice_task">A task</string>
     <string name="task_form_title">New task</string>
     <string name="task_form_edit_title">Edit task</string>
     <string name="task_form_name_hint">What\'s pending?</string>
@@ -41,8 +39,6 @@
     <string name="task_edit">Edit</string>
     <string name="task_delete">Delete</string>
     <string name="task_row_menu_cd">More options</string>
-    <string name="task_delete_confirm_title">Delete this task?</string>
-    <string name="task_delete_confirm_body">Its history goes with it. The points you earned are yours.</string>
     <string name="focus_title">Focus</string>
     <string name="focus_minutes">%1$d min</string>
     <string name="focus_done">I\'m done</string>
@@ -56,4 +52,14 @@
     <string name="focus_busy_title">Something\'s already running</string>
     <string name="focus_busy_keep">Keep going with %1$s</string>
     <string name="focus_busy_switch">Drop it and start this</string>
+    <string name="tasks2_borrar_boton">Delete task</string>
+    <string name="tasks2_borrar_titulo">Delete this task?</string>
+    <string name="tasks2_borrar_cuerpo">The bitos you earned are yours.</string>
+    <string name="tasks2_falta_nombre">A name is missing.</string>
+    <string name="tasks2_fecha_titulo">Due when?</string>
+    <string name="tasks2_cambiar_fecha">Change the date</string>
+    <string name="tasks2_traida">Brought to today.</string>
+    <string name="tasks2_crear_habito">Habit</string>
+    <string name="tasks2_crear_tarea">Task</string>
+    <string name="tasks2_sesion_titulo">Session now</string>
 </resources>

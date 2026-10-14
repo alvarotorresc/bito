@@ -987,8 +987,7 @@ private fun GoalStepChip(
 }
 
 /**
- * 7g's widget hint (`onb_habit_widget_hint`, "widget de Bito"/"Bito widget" bolded) — same
- * split-and-style idiom [com.alvarotc.bito.ui.settings.SettingsScreen]'s `coloredCountLine` uses:
+ * 7g's widget hint (`onb_habit_widget_hint`, "widget de Bito"/"Bito widget" bolded) — split-and-style:
  * the RAW template (no format args passed to [stringResource]) is split on the literal "%1$s"
  * token so the substituted segment can carry its own [SpanStyle], instead of losing the token to
  * eager substitution.

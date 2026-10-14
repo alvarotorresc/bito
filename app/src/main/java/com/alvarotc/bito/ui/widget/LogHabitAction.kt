@@ -7,7 +7,9 @@ import androidx.glance.appwidget.action.ActionCallback
 import androidx.glance.appwidget.updateAll
 import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.ui.notifications.PerfectDayNotifier
+import com.alvarotc.bito.ui.sistema.Haptica
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.first
 
 /** Runs a widget tap: logs the habit and refreshes every instance with the new state. */
 class LogHabitAction : ActionCallback {
@@ -19,6 +21,8 @@ class LogHabitAction : ActionCallback {
         val habitId = parameters[HABIT_ID] ?: return
         val amount = parameters[AMOUNT] ?: 1
         val container = (context.applicationContext as BitoApp).container
+        // En un proceso recién arrancado la caché del tacto aún no ha leído los ajustes: se mira aquí.
+        if (container.settings.settings.first().logHapticEnabled) container.tacto.haptica(Haptica.TICK)
         val reached = WidgetLogger(container.journal, container.reconciler, container.settings).log(habitId, amount)
         // A notifier failure (e.g. POST_NOTIFICATIONS revoked mid-flight) must never swallow the
         // repaint below — same guard WidgetRefresher keeps around its own updateAll, including

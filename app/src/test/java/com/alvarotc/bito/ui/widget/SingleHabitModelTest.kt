@@ -67,11 +67,13 @@ class SingleHabitModelTest {
     }
 
     @Test
-    fun `duration and abstinence habits never log from the tap`() {
-        val duration = buildSingleHabitModel(state(card("guitarra", CardKind.DURATION)), "guitarra")
+    fun `a duration habit adds five minutes from the tap and abstinence never logs`() {
+        val duration = buildSingleHabitModel(state(card("guitarra", CardKind.DURATION, target = 30)), "guitarra")
         val abstinence = buildSingleHabitModel(state(card("fumar", CardKind.ABSTINENCE)), "fumar")
 
-        assertFalse(assertIs<SingleHabitModel.Active>(duration).tapLogs)
+        val active = assertIs<SingleHabitModel.Active>(duration)
+        assertTrue(active.tapLogs)
+        assertEquals(5, active.step)
         assertFalse(assertIs<SingleHabitModel.Active>(abstinence).tapLogs)
     }
 

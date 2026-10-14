@@ -64,7 +64,16 @@ class TasksViewModel(
             reconciler.reconcile(today, nowMillis)
         }
 
-    fun bringToToday(id: String) = write { today, nowMillis -> tasks.bringToToday(id, today, nowMillis) }
+    /** [alTraer] recibe el id del apunte escrito, para el Deshacer ([undoBring]). */
+    fun bringToToday(
+        id: String,
+        alTraer: (eventId: String) -> Unit = {},
+    ) = write { today, nowMillis -> alTraer(tasks.bringToToday(id, today, nowMillis)) }
+
+    fun undoBring(eventId: String) = write { _, _ -> tasks.undoBring(eventId) }
+
+    /** El Deshacer de terminar una tarea: vuelve a estar abierta; los bitos ganados no se quitan. */
+    fun reopen(id: String) = write { _, _ -> tasks.reopen(id) }
 
     fun markDone(id: String) =
         write { today, nowMillis ->

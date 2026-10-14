@@ -11,6 +11,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.alvarotc.bito.domain.model.GardenLight
 import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSeason
@@ -30,6 +33,7 @@ import com.alvarotc.bito.domain.model.GrowthStage
 import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.ui.components.BitoCard
 import com.alvarotc.bito.ui.components.GhostPillButton
+import com.alvarotc.bito.ui.sistema.GaleriaSistema
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Tinta
@@ -54,6 +58,7 @@ internal fun GardenDebugPanel(
     modifier: Modifier = Modifier,
 ) {
     var open by remember { mutableStateOf(false) }
+    var galeria by remember { mutableStateOf(false) }
     BitoCard(modifier = modifier.fillMaxWidth().testTag("garden-debug"), onClick = { open = !open }) {
         Text("Depuración del jardín", style = MaterialTheme.typography.titleSmall, color = Tinta)
         if (!open) return@BitoCard
@@ -84,6 +89,12 @@ internal fun GardenDebugPanel(
             }
         }
         GhostPillButton("Volver al jardín de verdad", onClick = { onForce(null) }, modifier = Modifier.padding(top = 8.dp))
+        TextButton(onClick = { galeria = true }) { Text("Galería del sistema") }
+        if (galeria) {
+            Dialog(onDismissRequest = { galeria = false }, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+                GaleriaSistema(alCerrar = { galeria = false })
+            }
+        }
     }
 }
 

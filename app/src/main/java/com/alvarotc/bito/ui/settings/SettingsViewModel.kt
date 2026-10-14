@@ -7,18 +7,23 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.data.settings.Settings
+import com.alvarotc.bito.data.settings.SettingsRanges
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogicalDay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.time.ZoneId
 import kotlin.math.roundToInt
 
-// internal, not private: CutoffSheet (SettingsScreen.kt, same package) clamps its ± stepper to
-// the same window so the single source of truth for "how far the cutoff can move" lives here.
+// internal, not private: HojaDiaTermina (ui/settings/hojas) mirrors this window in its stepper
+// (paso 30, hasta 360), so the single source of truth for "how far the cutoff can move" lives here.
 internal const val MAX_CUTOFF_MINUTES = 6 * 60
 internal const val CUTOFF_STEP_MINUTES = 30
 
@@ -66,6 +71,67 @@ class SettingsViewModel(
     fun removeReminder(minutes: Int) = write { it.copy(globalReminderMinutes = it.globalReminderMinutes.filterNot { m -> m == minutes }) }
 
     fun setReviewTime(minutes: Int) = write { it.copy(reviewTimeMinutes = minutes) }
+
+    fun setHabiMorning(minutes: Int) = write { it.copy(habiMorningMinutes = minutes.coerceIn(SettingsRanges.HABI_MORNING)) }
+
+    /** La noche de los avisos de Habi es la hora del repaso (decisión 3): sigue lanzando el aviso de repaso actual. */
+    fun setHabiNight(minutes: Int) = write { it.copy(reviewTimeMinutes = minutes.coerceIn(SettingsRanges.HABI_NIGHT)) }
+
+    fun setDndEnabled(enabled: Boolean) = write { it.copy(dndEnabled = enabled) }
+
+    fun setDndFrom(minutes: Int) = write { it.copy(dndFromMinutes = halfHour(minutes)) }
+
+    fun setDndTo(minutes: Int) = write { it.copy(dndToMinutes = halfHour(minutes)) }
+
+    fun setPomodoro(
+        focus: Int,
+        short: Int,
+        long: Int,
+        rounds: Int,
+        autoBreak: Boolean,
+    ) = write {
+        it.copy(
+            pomoFocus = (focus / 5 * 5).coerceIn(SettingsRanges.POMO_FOCUS),
+            pomoShort = short.coerceIn(SettingsRanges.POMO_SHORT),
+            pomoLong = (long / 5 * 5).coerceIn(SettingsRanges.POMO_LONG),
+            pomoRounds = rounds.coerceIn(SettingsRanges.POMO_ROUNDS),
+            pomoAutoBreak = autoBreak,
+        )
+    }
+
+    fun setSoundEnabled(enabled: Boolean) = write { it.copy(soundEnabled = enabled) }
+
+    fun setVolHabi(level: Int) = write { it.copy(volHabi = level.coerceIn(SettingsRanges.LEVEL)) }
+
+    fun setVolEffects(level: Int) = write { it.copy(volEffects = level.coerceIn(SettingsRanges.LEVEL)) }
+
+    fun setVolAmbient(level: Int) = write { it.copy(volAmbient = level.coerceIn(SettingsRanges.LEVEL)) }
+
+    fun setVibStrength(level: Int) = write { it.copy(vibStrength = level.coerceIn(SettingsRanges.LEVEL)) }
+
+    fun setSessionBackground(background: SessionBackground) = write { it.copy(sessionBackground = background) }
+
+    fun setReduceMotion(enabled: Boolean) = write { it.copy(reduceMotion = enabled) }
+
+    /** Reactivar desde archivados (spec §5.4). */
+    fun reactivate(habit: ArchivedHabitUi) {
+        viewModelScope.launch { habits.unarchive(habit.id) }
+    }
+
+    /** El Deshacer de reactivar: vuelve a archivarlo con su fecha de archivo de antes. */
+    fun rearchive(habit: ArchivedHabitUi) {
+        viewModelScope.launch {
+            val now = System.currentTimeMillis()
+            val day =
+                habit.archivedOnDay
+                    ?: LogicalDays.logicalDayOf(now, settings.settings.first().dayCutoffMinutes, ZoneId.systemDefault())
+            habits.archive(habit.id, day, now)
+        }
+    }
+
+    private fun halfHour(minutes: Int): Int =
+        ((minutes.toDouble() / CUTOFF_STEP_MINUTES).roundToInt() * CUTOFF_STEP_MINUTES)
+            .coerceIn(SettingsRanges.DAY_MINUTE.first, 23 * 60 + 30)
 
     fun setHabiSounds(enabled: Boolean) = write { it.copy(habiSoundsEnabled = enabled) }
 

@@ -19,7 +19,7 @@
     <string name="review_seal_day">Seal the day</string>
     <string name="review_sealed_title">Day sealed</string>
     <string name="review_perfect_title">Perfect day!</string>
-    <string name="review_points_today" translatable="false">+%1$d pts</string>
+    <string name="review_points_today" translatable="false">+%1$d bitos</string>
     <plurals name="review_streaks_advanced">
         <item quantity="one">%1$d streak advanced</item>
         <item quantity="other">%1$d streaks advanced</item>

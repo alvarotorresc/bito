@@ -79,7 +79,7 @@ fun NotificationPermissionPrompt(
                 .onFailure { if (it is CancellationException) throw it }
                 .getOrDefault(false)
         // The SDK guard is repeated so the constant reference itself is provably safe, not just
-        // reachability-safe (same convention as SettingsScreen's exact-alarm intent).
+        // reachability-safe (same convention as ContenidoAvisos' exact-alarm intent).
         //
         // runCatching for blast radius, not likelihood: this effect runs on the first frame of
         // every launch for every user, so a stripped OEM/Go build with no permission-controller

@@ -2,6 +2,7 @@ package com.alvarotc.bito.data.backup
 
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
@@ -48,6 +49,10 @@ class BackupCodecTest {
                     backupFolderUri = null, backupFrequency = BackupFrequency.WEEKLY,
                     backupCopies = 3, backupEncryption = false, onboardingDone = true,
                     gardenWaterHighMark = 12.5,
+                    habiMorningMinutes = 8 * 60 + 30, dndEnabled = false, dndFromMinutes = 23 * 60,
+                    dndToMinutes = 7 * 60 + 30, pomoFocus = 25, pomoShort = 5, pomoLong = 15, pomoRounds = 4,
+                    pomoAutoBreak = true, soundEnabled = true, volHabi = 8, volEffects = 7, volAmbient = 6,
+                    vibStrength = 7, sessionBackground = SessionBackground.RAIN, reduceMotion = false,
                 ),
         )
 
@@ -61,7 +66,7 @@ class BackupCodecTest {
     fun `encoded backup is human readable json`() {
         val text = BackupCodec.encode(sampleFile())
         assertTrue(text.contains("\n")) // pretty-printed (§5.1 data sovereignty)
-        assertTrue(text.contains("\"schemaVersion\": 4"))
+        assertTrue(text.contains("\"schemaVersion\": 5"))
         assertTrue(text.contains("\"Beber agua\""))
     }
 
@@ -110,13 +115,19 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `the schema version is 4 since the garden`() {
-        assertEquals(4, BackupCodec.SCHEMA_VERSION)
+    fun `the schema version is 5 since the piece 2 settings`() {
+        assertEquals(5, BackupCodec.SCHEMA_VERSION)
+    }
+
+    @Test
+    fun `a version 4 file is rejected as older, not imported`() {
+        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 5", "\"schemaVersion\": 4")
+        assertFailsWith<BackupFormatException> { BackupCodec.decode(older) }
     }
 
     @Test
     fun `a version 3 file is rejected as older, not imported`() {
-        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 4", "\"schemaVersion\": 3")
+        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 5", "\"schemaVersion\": 3")
         val error = assertFailsWith<BackupFormatException> { BackupCodec.decode(older) }
         assertTrue(error.message!!.contains("older"))
     }

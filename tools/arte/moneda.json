@@ -1,0 +1,8 @@
+{
+  "_nota": "Monedita de oro con la carita de Habi (lote E, aprobada, D15). 192 px = 48 dp a xxxhdpi; 72 px afinada para 18 dp. moneda-16/24/48.png solo sirven de referencia.",
+  "fuente": "~/Pictures/bito-habi/lote-e/moneda.png",
+  "salidas": [
+    {"archivo": "coin.webp", "px": 192},
+    {"archivo": "coin_small.webp", "px": 72, "nitidez": true}
+  ]
+}

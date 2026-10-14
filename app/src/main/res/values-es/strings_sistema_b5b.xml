@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos del bloque sistema_b5b (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
+<resources>
+    <string name="sistema_b5b_mes_anterior">Mes anterior</string>
+    <string name="sistema_b5b_mes_siguiente">Mes siguiente</string>
+    <string name="sistema_b5b_canal_habi">Habi</string>
+    <string name="sistema_b5b_canal_efectos">Efectos</string>
+    <string name="sistema_b5b_canal_ambiente">Ambiente</string>
+    <string name="sistema_b5b_canal_vibracion">Vibración</string>
+</resources>

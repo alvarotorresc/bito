@@ -56,6 +56,7 @@ import com.alvarotc.bito.ui.habi.ColorTint
 import com.alvarotc.bito.ui.habi.HabiArt
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.rememberArte
 import com.alvarotc.bito.ui.stats.BadgeStrings
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Tarjeta
@@ -99,6 +100,7 @@ fun GardenScene(
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
+    val listo = rememberArte(art, remember(garden) { recursosDelJardin(garden) })
     val scope = rememberCoroutineScope()
     val sway = remember { mutableStateMapOf<Int, Animatable<Float, AnimationVector1D>>() }
     var bubble by remember { mutableStateOf<SceneItem.Special?>(null) }
@@ -132,6 +134,7 @@ fun GardenScene(
         val currentOnHabiTap by rememberUpdatedState(onHabiTap)
 
         Canvas(Modifier.fillMaxSize()) {
+            if (!listo) return@Canvas
             art.image(GardenArt.background)?.let { drawFill(it, if (grassTints.isEmpty()) null else art.filter(grassTints)) }
             items.filter { it.depth <= habiDepth && it !in overLight }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
         }
@@ -185,6 +188,7 @@ fun GardenScene(
                     }
                 },
         ) {
+            if (!listo) return@Canvas
             items.filter { it.depth > habiDepth && it !in overLight }.forEach { drawItem(art, it, garden.wilt, plantTints, sway) }
             val (top, bottom) = GardenLook.lightGradient(garden.light)
             drawRect(Brush.verticalGradient(listOf(Color(top), Color(bottom))), blendMode = BlendMode.Multiply)
@@ -197,6 +201,10 @@ fun GardenScene(
         bubble?.let { SpecialBubble(it, sceneW) }
     }
 }
+
+/** Lo que [GardenScene] pinta para [garden]: el fondo y la pieza de cada parcela y de cada especial, a tamaño completo. */
+internal fun recursosDelJardin(garden: GardenState): List<Pair<Int, Int>> =
+    (listOf(GardenArt.background) + sceneItems(garden, 1f, 1f).map { it.res }).distinct().map { it to 1 }
 
 private fun DrawScope.drawLanternGlow(
     lantern: GardenSpot,

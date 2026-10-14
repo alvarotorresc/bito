@@ -23,8 +23,6 @@
     <string name="task_due_week_today">se acaba hoy</string>
     <string name="task_due_last_week">de la semana pasada</string>
     <string name="create_choice_title">¿Qué añadimos?</string>
-    <string name="create_choice_habit">Un hábito</string>
-    <string name="create_choice_task">Una tarea</string>
     <string name="task_form_title">Nueva tarea</string>
     <string name="task_form_edit_title">Editar la tarea</string>
     <string name="task_form_name_hint">¿Qué tienes pendiente?</string>
@@ -45,8 +43,6 @@
     <string name="task_edit">Editar</string>
     <string name="task_delete">Borrar</string>
     <string name="task_row_menu_cd">Más opciones</string>
-    <string name="task_delete_confirm_title">¿Borrar la tarea?</string>
-    <string name="task_delete_confirm_body">Su historia se va con ella. Los puntos ganados son tuyos.</string>
     <string name="focus_title">Foco</string>
     <string name="focus_minutes">%1$d min</string>
     <string name="focus_done">He terminado</string>
@@ -60,4 +56,14 @@
     <string name="focus_busy_title">Ya tienes algo en marcha</string>
     <string name="focus_busy_keep">Seguir con %1$s</string>
     <string name="focus_busy_switch">Dejarla y empezar esta</string>
+    <string name="tasks2_borrar_boton">Borrar tarea</string>
+    <string name="tasks2_borrar_titulo">¿Borrar esta tarea?</string>
+    <string name="tasks2_borrar_cuerpo">Los bitos que ganaste son tuyos.</string>
+    <string name="tasks2_falta_nombre">Falta el nombre.</string>
+    <string name="tasks2_fecha_titulo">¿Para cuándo?</string>
+    <string name="tasks2_cambiar_fecha">Cambiar la fecha</string>
+    <string name="tasks2_traida">Traída a hoy.</string>
+    <string name="tasks2_crear_habito">Hábito</string>
+    <string name="tasks2_crear_tarea">Tarea</string>
+    <string name="tasks2_sesion_titulo">Sesión ahora</string>
 </resources>

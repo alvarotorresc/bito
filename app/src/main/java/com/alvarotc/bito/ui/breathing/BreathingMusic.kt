@@ -5,7 +5,9 @@ import android.media.AudioAttributes
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.MediaPlayer
+import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.ui.sistema.sonido.Canal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -71,6 +73,10 @@ internal fun volumeRamp(
 class AndroidBreathingMusic(
     context: Context,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
+    /** Ganancia del canal ambiente (0 a 1): la música de respirar la sigue (spec §4.4.1). */
+    private val gananciaAmbiente: () -> Float = {
+        (context.applicationContext as? BitoApp)?.container?.sonido?.ganancia(Canal.AMBIENTE) ?: 1f
+    },
 ) : BreathingMusic {
     private val appContext = context.applicationContext
     private val audioManager = appContext.getSystemService(AudioManager::class.java)
@@ -96,6 +102,8 @@ class AndroidBreathingMusic(
 
     override fun start() {
         if (wantsToPlay) return
+        // Sin ganancia no hay nada que oír: pedir el foco pausaría el pódcast del usuario para nada.
+        if (gananciaAmbiente() <= 0f) return
         if (audioManager.requestAudioFocus(focusRequest) != AudioManager.AUDIOFOCUS_REQUEST_GRANTED) return
         wantsToPlay = true
         volume = 0f
@@ -176,7 +184,8 @@ class AndroidBreathingMusic(
         durationMs: Long,
     ) {
         for (value in volumeRamp(from, to, durationMs)) {
-            runCatching { target.setVolume(value, value) }
+            val v = value * gananciaAmbiente().coerceIn(0f, 1f)
+            runCatching { target.setVolume(v, v) }
             if (target === player) volume = value
             delay(RAMP_STEP_MS)
         }

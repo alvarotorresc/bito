@@ -8,8 +8,10 @@ import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
@@ -199,13 +201,13 @@ class BitoNavHostTest {
 
         // The notifications card only renders once SettingsViewModel's DataStore-backed flow has
         // emitted (real dispatcher, not the test's) — waitForIdle alone doesn't pump that. With a
-        // fresh store no hours exist, so the reminders row hints its empty state.
-        val reminderCopy = "No reminders set"
+        // fresh store no hours exist, so the Notices stratum summary says so.
+        val reminderCopy = "No reminders"
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithText(reminderCopy, substring = true, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        screenTitleNode("Settings").assertExists()
+        screenTitleNode("Reminders and breathing").assertExists()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertExists()
         compose.onNodeWithText(reminderCopy, substring = true, useUnmergedTree = true).assertExists()
     }
@@ -301,7 +303,7 @@ class BitoNavHostTest {
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
-        tapText("A habit")
+        tapText("Habit")
         compose.waitForIdle()
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
 
@@ -324,8 +326,8 @@ class BitoNavHostTest {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText("A habit", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText("A task", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Habit", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Task", useUnmergedTree = true).assertExists()
     }
 
     @Test
@@ -338,7 +340,7 @@ class BitoNavHostTest {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        tapText("A habit")
+        tapText("Habit")
         compose.waitForIdle()
 
         compose.onNodeWithTag("create-choice-sheet", useUnmergedTree = true).assertDoesNotExist()
@@ -370,13 +372,15 @@ class BitoNavHostTest {
             compose.onAllNodesWithTag("create-choice-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        tapText("A task")
+        tapText("Task")
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
         compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertExists()
-        compose.onNodeWithTag("task-form-save", useUnmergedTree = true).assertIsNotEnabled()
+        // El Guardar apagado se pulsa para decir qué falta: se marca con su descripción de estado.
+        compose.onNodeWithTag("task-form-save", useUnmergedTree = true)
+            .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
         compose.onNodeWithTag("bottom-bar", useUnmergedTree = true).assertDoesNotExist()
     }
 
@@ -912,11 +916,15 @@ class BitoNavHostTest {
         compose.waitForIdle()
         waitPastLoadingGate()
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("task-start-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("task-menu-t1", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        compose.onNodeWithTag("task-start-t1", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
         compose.waitForIdle()
+        compose.onNodeWithText("Start", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("focus-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
 
         compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
@@ -957,14 +965,7 @@ class BitoNavHostTest {
 
         compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
         compose.waitForIdle()
-        // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
-        // touch gestures under this Robolectric harness — invoking the node's own OnClick
-        // semantics action directly is what actually proves the tap wires through.
-        compose.onNodeWithTag("task-menu-edit")
-            .fetchSemanticsNode()
-            .config[SemanticsActions.OnClick]
-            .action
-            ?.invoke()
+        compose.onNodeWithText("Edit", useUnmergedTree = true).performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -1006,11 +1007,7 @@ class BitoNavHostTest {
 
         compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
         compose.waitForIdle()
-        compose.onNodeWithTag("task-menu-edit")
-            .fetchSemanticsNode()
-            .config[SemanticsActions.OnClick]
-            .action
-            ?.invoke()
+        compose.onNodeWithText("Edit", useUnmergedTree = true).performClick()
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("task-form-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
@@ -1018,13 +1015,9 @@ class BitoNavHostTest {
         // The screen's own button, not inside a sheet: performClick() works here.
         compose.onNodeWithTag("task-delete", useUnmergedTree = true).performClick()
         compose.waitForIdle()
-        compose.onNodeWithTag("task-delete-confirm", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Delete this task?", useUnmergedTree = true).assertExists()
 
-        compose.onNodeWithTag("task-delete-confirm-yes")
-            .fetchSemanticsNode()
-            .config[SemanticsActions.OnClick]
-            .action
-            ?.invoke()
+        compose.onNodeWithText("Delete", useUnmergedTree = true).performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
             compose.onAllNodesWithTag("tasks-list", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
@@ -1066,9 +1059,8 @@ class BitoNavHostTest {
 
         compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
         compose.waitForIdle()
-        val editAction = compose.onNodeWithTag("task-menu-edit").fetchSemanticsNode().config[SemanticsActions.OnClick].action
         runBlocking { container.tasks.delete("t1") }
-        editAction?.invoke()
+        compose.onNodeWithText("Edit", useUnmergedTree = true).performClick()
         compose.waitForIdle()
 
         compose.waitUntil(timeoutMillis = 5_000) {
@@ -1121,11 +1113,15 @@ class BitoNavHostTest {
         compose.waitForIdle()
         waitPastLoadingGate()
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("task-start-t2", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("task-menu-t2", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
 
-        compose.onNodeWithTag("task-start-t2", useUnmergedTree = true).performClick()
+        compose.onNodeWithTag("task-menu-t2", useUnmergedTree = true).performClick()
         compose.waitForIdle()
+        compose.onNodeWithText("Start", useUnmergedTree = true).performClick()
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodesWithTag("focus-busy-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
         compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertExists()
 
         // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
@@ -1149,6 +1145,6 @@ class BitoNavHostTest {
         // never comes back.
         compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithTag("task-start-t2", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("task-menu-t2", useUnmergedTree = true).assertExists()
     }
 }

@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -437,8 +438,30 @@ fun HabiAvatar(
             current
         }
 
+    // El submuestreo depende del alto que se pinta, que solo se sabe tras medir: hasta entonces no hay nada
+    // que decodificar ni que pintar. Se piden las caras de los guiños y del mimo además de las de ahora,
+    // para que ningún fotograma pida una pieza sin decodificar.
+    var heightPx by remember { mutableIntStateOf(0) }
+    val sample = if (heightPx > 0) sampleSizeFor(heightPx.toFloat(), heightPx / density.density) else 0
+    val piezas =
+        remember(spec, delighted, fadeFrom, sample) {
+            if (sample == 0) {
+                emptyList()
+            } else {
+                val looks = listOf(HabiLook(), HabiLook(eyeClosure = 1f), HabiLook(delighted = true))
+                val specs =
+                    listOfNotNull(
+                        spec,
+                        fadeFrom?.let { spec.copy(mood = it.mood, personality = it.personality, closedEyes = it.closedEyes) },
+                    )
+                specs.flatMap { sp -> looks.flatMap { recursosDe(habiLayers(sp, it), sample) } }.distinct()
+            }
+        }
+    val listo = rememberArte(art, piezas)
+
     val canvasModifier =
         modifier
+            .onSizeChanged { heightPx = it.height }
             .semantics { this.contentDescription = contentDescription }
             .let { base ->
                 if (onTap != null) {
@@ -476,7 +499,8 @@ fun HabiAvatar(
             }
 
     Canvas(canvasModifier) {
-        drawHabiLayers(art, layers, sampleSizeFor(size.height, size.height / this.density))
+        if (!listo || sample == 0) return@Canvas
+        drawHabiLayers(art, layers, sample)
         if (delighted) drawHearts(heartsPhaseValue)
     }
 }

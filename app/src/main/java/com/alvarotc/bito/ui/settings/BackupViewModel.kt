@@ -75,6 +75,8 @@ data class BackupUiState(
     val askImportPassphrase: Boolean = false,
     /** Files in [folderName] matching the backup name pattern; null while unknown (no folder, or not counted yet) — the status chip's second line never shows a fabricated number. */
     val backupCount: Int? = null,
+    /** What the app holds right now, loaded together with [preview] so the restore sheet can set both side by side. */
+    val ahora: BackupPreview? = null,
 )
 
 /**
@@ -269,31 +271,37 @@ class BackupViewModel(
         if (backup.isEncrypted(bytes)) {
             clearPending()
             pendingImportBytes = bytes
-            backupState.update { it.copy(busy = false, preview = null, askImportPassphrase = true) }
+            backupState.update { it.copy(busy = false, preview = null, ahora = null, askImportPassphrase = true) }
             return
         }
         val result =
             runCatching {
                 withContext(ioDispatcher) {
                     val text = bytes.decodeToString()
-                    text to backup.preview(text)
+                    Triple(text, backup.preview(text), currentCounts())
                 }
             }
         result
-            .onSuccess { (text, preview) ->
+            .onSuccess { (text, preview, ahora) ->
                 // Clear before assigning: a plain file loaded after an encrypted one (sheet still
                 // up) must drop the old pendingImportBytes, or a later submitImportPassphrase
                 // call would decrypt the stale file and silently swap the preview underneath it.
                 clearPending()
                 pendingImportText = text
-                backupState.update { it.copy(busy = false, preview = preview) }
+                backupState.update { it.copy(busy = false, preview = preview, ahora = ahora) }
             }.onFailure { error -> onImportLoadFailed(error) }
     }
+
+    /**
+     * Habit and entry counts of what the app holds now, counted the way a backup counts them (the
+     * same export-and-preview path), for the restore sheet's «Ahora» column. Null if it can't tell.
+     */
+    private suspend fun currentCounts(): BackupPreview? = runCatching { backup.preview(backup.exportJson(now())) }.getOrNull()
 
     private fun onImportLoadFailed(error: Throwable) {
         clearPending()
         val message = if (error is BackupFormatException) BackupMessage.INVALID_FILE else BackupMessage.IO_ERROR
-        backupState.update { it.copy(busy = false, preview = null, message = message) }
+        backupState.update { it.copy(busy = false, preview = null, ahora = null, message = message) }
     }
 
     fun confirmImport() {
@@ -310,6 +318,7 @@ class BackupViewModel(
                 it.copy(
                     busy = false,
                     preview = null,
+                    ahora = null,
                     message = if (result.isSuccess) BackupMessage.IMPORT_DONE else BackupMessage.IO_ERROR,
                 )
             }
@@ -318,7 +327,7 @@ class BackupViewModel(
 
     fun dismissImport() {
         clearPending()
-        backupState.update { it.copy(preview = null) }
+        backupState.update { it.copy(preview = null, ahora = null) }
     }
 
     /**
@@ -422,17 +431,17 @@ class BackupViewModel(
                     runCatching {
                         withContext(cryptoDispatcher) {
                             val text = backup.decryptToJson(bytes, passphrase)
-                            text to backup.preview(text)
+                            Triple(text, backup.preview(text), currentCounts())
                         }
                     }
                 } finally {
                     passphrase.fill(' ')
                 }
             result
-                .onSuccess { (text, preview) ->
+                .onSuccess { (text, preview, ahora) ->
                     clearPending()
                     pendingImportText = text
-                    backupState.update { it.copy(busy = false, preview = preview) }
+                    backupState.update { it.copy(busy = false, preview = preview, ahora = ahora) }
                 }.onFailure { error ->
                     if (error is WrongPassphraseException) {
                         backupState.update { it.copy(busy = false, message = BackupMessage.WRONG_PASSPHRASE) }

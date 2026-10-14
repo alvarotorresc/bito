@@ -2,6 +2,7 @@ package com.alvarotc.bito.data.backup
 
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.settings.BackupFrequency
+import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
@@ -172,6 +173,7 @@ data class BackupBreathingSession(
  * auto-backup, meaningless on the phone the file is restored to (pinned by BackupRoundTripTest's
  * "local auto backup state does not travel in exports"). gardenWaterHighMark (pieza 1) viaja
  * siempre: sin ella, restaurar haría bajar etapas del jardín ya vistas.
+ * Las claves de la pieza 2 viajan todas (spec §6), sin valores por defecto: una copia sin ellas no es v5.
  */
 @Serializable
 data class BackupSettings(
@@ -198,6 +200,22 @@ data class BackupSettings(
     val breathingMusicEnabled: Boolean = false,
     val breathingLastMode: BreathingMode = BreathingMode.CALM,
     val gardenWaterHighMark: Double,
+    val habiMorningMinutes: Int,
+    val dndEnabled: Boolean,
+    val dndFromMinutes: Int,
+    val dndToMinutes: Int,
+    val pomoFocus: Int,
+    val pomoShort: Int,
+    val pomoLong: Int,
+    val pomoRounds: Int,
+    val pomoAutoBreak: Boolean,
+    val soundEnabled: Boolean,
+    val volHabi: Int,
+    val volEffects: Int,
+    val volAmbient: Int,
+    val vibStrength: Int,
+    val sessionBackground: SessionBackground,
+    val reduceMotion: Boolean,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */

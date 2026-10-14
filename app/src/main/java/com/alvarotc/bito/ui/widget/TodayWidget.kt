@@ -23,9 +23,6 @@ import androidx.glance.appwidget.GlanceAppWidget
 import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
-import androidx.glance.appwidget.cornerRadius
-import androidx.glance.appwidget.lazy.LazyColumn
-import androidx.glance.appwidget.lazy.items
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
@@ -33,10 +30,13 @@ import androidx.glance.layout.Alignment
 import androidx.glance.layout.Box
 import androidx.glance.layout.Column
 import androidx.glance.layout.Row
+import androidx.glance.layout.fillMaxHeight
 import androidx.glance.layout.fillMaxSize
 import androidx.glance.layout.fillMaxWidth
+import androidx.glance.layout.height
 import androidx.glance.layout.padding
 import androidx.glance.layout.size
+import androidx.glance.layout.width
 import androidx.glance.semantics.contentDescription
 import androidx.glance.semantics.semantics
 import androidx.glance.text.FontWeight
@@ -47,12 +47,8 @@ import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.LogicalDays
-import com.alvarotc.bito.ui.habi.renderHabiBitmap
-import com.alvarotc.bito.ui.theme.Hoja
-import com.alvarotc.bito.ui.theme.Papel
-import com.alvarotc.bito.ui.theme.Tarjeta
-import com.alvarotc.bito.ui.theme.Tinta
-import com.alvarotc.bito.ui.theme.TintaSuave
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.ui.sistema.BitoClaro
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.TodayUiState
 import com.alvarotc.bito.ui.today.buildTodayUiState
@@ -64,7 +60,7 @@ import kotlinx.coroutines.flow.flowOn
 import java.time.ZoneId
 
 /** Offscreen render size (px) for the header's mini Habi — Glance only paints bitmaps (tech doc §6.1). */
-private const val HABI_BITMAP_SIZE_PX = 96
+private const val HABI_BITMAP_SIZE_PX = 192
 
 class TodayWidget : GlanceAppWidget() {
     override val sizeMode = SizeMode.Responsive(setOf(STRIP, NARROW, FULL))
@@ -97,7 +93,11 @@ class TodayWidget : GlanceAppWidget() {
                         prefs.personality,
                         owned,
                     )
-                WidgetData(state, renderHabiBitmap(context, state.spec, HABI_BITMAP_SIZE_PX))
+                WidgetData(
+                    state,
+                    HabiWidgetCache.bitmap(context, state.spec, HABI_BITMAP_SIZE_PX),
+                    HabiWidgetCache.bitmap(context, state.spec.copy(mood = Mood.RADIANT), HABI_BITMAP_SIZE_PX),
+                )
             }.conflate().flowOn(Dispatchers.Default)
         // First paint stays synchronous-ish: seed with a real emission so the widget never shows
         // an empty frame while the flow warms up.
@@ -106,11 +106,11 @@ class TodayWidget : GlanceAppWidget() {
             val data by dataFlow.collectAsState(initial = initial)
             val widgetPrefs = currentState<Preferences>()
             val selected = widgetPrefs[TodayWidgetKeys.selectedIds]
-            WidgetContent(buildWidgetModel(data.state, selected), data.habiBitmap)
+            WidgetContent(buildWidgetModel(data.state, selected), data.habiBitmap, data.radiantBitmap)
         }
     }
 
-    private data class WidgetData(val state: TodayUiState, val habiBitmap: Bitmap)
+    private data class WidgetData(val state: TodayUiState, val habiBitmap: Bitmap, val radiantBitmap: Bitmap)
 
     companion object {
         /** 2x1-ish: no room for rows — a header strip (Habi + n/n) that opens the app. */
@@ -119,8 +119,8 @@ class TodayWidget : GlanceAppWidget() {
         /** 2x2-ish: the list fits but the title doesn't — compact header and rows. */
         val NARROW = DpSize(110.dp, 110.dp)
 
-        /** 3x2 and up: the original full layout. */
-        val FULL = DpSize(180.dp, 110.dp)
+        /** Wide enough (minWidth of the widget info, 250dp) for the full layout with habit names. */
+        val FULL = DpSize(250.dp, 110.dp)
     }
 }
 
@@ -136,68 +136,115 @@ object TodayWidgetKeys {
 private fun WidgetContent(
     model: WidgetModel,
     habiBitmap: Bitmap,
+    radiantBitmap: Bitmap,
 ) {
     val context = LocalContext.current
     // SizeMode.Responsive hands LocalSize exactly one of the declared buckets, so
     // comparing against them picks the layout the host actually has room for.
     val size = LocalSize.current
+    val todoHecho = model.items.isEmpty() && model.total > 0
+    val habi = if (todoHecho) radiantBitmap else habiBitmap
     if (size.height < TodayWidget.NARROW.height) {
-        StripContent(model, habiBitmap)
+        StripContent(model, habi)
         return
     }
     val full = size.width >= TodayWidget.FULL.width
-    Column(
+    val colores = BitoClaro
+    Row(
         modifier =
             GlanceModifier
                 .fillMaxSize()
-                .background(ColorProvider(Papel))
-                .padding(12.dp),
+                .background(ImageProvider(R.drawable.widget_fondo))
+                .padding(10.dp),
     ) {
-        Row(
-            modifier = GlanceModifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Image(
-                provider = ImageProvider(habiBitmap),
-                contentDescription = null,
-                modifier = GlanceModifier.size(if (full) 36.dp else 28.dp),
-            )
-            if (full) {
-                Text(
-                    text = context.getString(R.string.widget_title),
-                    modifier = GlanceModifier.defaultWeight().padding(start = 8.dp),
-                    style = TextStyle(color = ColorProvider(Tinta), fontSize = 16.sp, fontWeight = FontWeight.Medium),
-                )
-            } else {
-                // The title is the first thing to go when 2 cells wide: Habi + count carry it.
-                Box(modifier = GlanceModifier.defaultWeight()) {}
-            }
-            Text(
-                text = context.getString(R.string.widget_progress, model.done, model.total),
-                style = TextStyle(color = ColorProvider(TintaSuave), fontSize = 12.sp),
-            )
-        }
-        if (model.items.isEmpty()) {
+        if (full) {
+            // El nicho: Habi en su hornacina, sin accesorios (se ve igual de pequeño).
             Box(
-                modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
-                contentAlignment = Alignment.Center,
+                modifier =
+                    GlanceModifier
+                        .width(80.dp)
+                        .fillMaxHeight()
+                        .background(ImageProvider(R.drawable.widget_nicho))
+                        .clickable(actionStartActivity<MainActivity>()),
+                contentAlignment = Alignment.BottomCenter,
             ) {
-                Text(
-                    text = context.getString(R.string.widget_all_done),
-                    style = TextStyle(color = ColorProvider(Hoja), fontSize = 14.sp, fontWeight = FontWeight.Medium),
+                Image(
+                    provider = ImageProvider(habi),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(72.dp),
                 )
             }
-        } else {
-            LazyColumn(modifier = GlanceModifier.fillMaxWidth().defaultWeight()) {
-                items(model.items) { item ->
-                    // A row-level padding modifier would land inside the card background
-                    // (Glance maps one composable to one RemoteViews padding call, unlike
-                    // Compose's nesting), so the inter-card gap needs its own wrapper.
-                    Box(modifier = GlanceModifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                        WidgetRow(item, compact = !full)
-                    }
+            Box(modifier = GlanceModifier.width(10.dp)) {}
+        }
+        Column(modifier = GlanceModifier.defaultWeight().fillMaxHeight()) {
+            Row(
+                modifier = GlanceModifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                if (!full) {
+                    Image(
+                        provider = ImageProvider(habi),
+                        contentDescription = null,
+                        modifier = GlanceModifier.size(36.dp),
+                    )
+                    Box(modifier = GlanceModifier.width(6.dp)) {}
+                }
+                if (full) {
+                    Text(
+                        text = context.getString(R.string.widget_title),
+                        modifier = GlanceModifier.defaultWeight(),
+                        style = TextStyle(color = ColorProvider(colores.tinta), fontSize = 19.sp, fontWeight = FontWeight.Bold),
+                    )
+                } else {
+                    Box(modifier = GlanceModifier.defaultWeight()) {}
+                }
+                Text(
+                    text = context.getString(R.string.widget_progress, model.done, model.total),
+                    style = TextStyle(color = ColorProvider(colores.tinta), fontSize = 16.sp, fontWeight = FontWeight.Bold),
+                )
+            }
+            if (todoHecho) {
+                Column(
+                    modifier = GlanceModifier.fillMaxWidth().defaultWeight(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = context.getString(R.string.widget_all_done),
+                        style = TextStyle(color = ColorProvider(colores.tinta), fontSize = 24.sp, fontWeight = FontWeight.Bold),
+                    )
+                }
+            } else {
+                Puntitos(model.done, model.total)
+                model.items.take(FILAS_MAX).forEach { item -> WidgetRow(item) }
+                val ocultos = pendientesOcultos(model.items.size)
+                if (ocultos > 0) {
+                    Text(
+                        text = context.getString(R.string.widget2_more, ocultos),
+                        modifier = GlanceModifier.padding(start = 8.dp),
+                        style = TextStyle(color = ColorProvider(colores.tintaSuave), fontSize = 14.sp),
+                    )
                 }
             }
+        }
+    }
+}
+
+/** Un puntito por hábito del día: de agua los hechos, de hornacina los pendientes (hasta doce). */
+@Composable
+private fun Puntitos(
+    hechos: Int,
+    total: Int,
+) {
+    val n = total.coerceIn(0, 12)
+    if (n == 0) return
+    Row(modifier = GlanceModifier.padding(vertical = 4.dp)) {
+        for (i in 0 until n) {
+            Image(
+                provider = ImageProvider(if (i < hechos) R.drawable.widget_punto_hecho else R.drawable.widget_punto),
+                contentDescription = null,
+                modifier = GlanceModifier.size(8.dp),
+            )
+            Box(modifier = GlanceModifier.width(4.dp)) {}
         }
     }
 }
@@ -206,105 +253,89 @@ private fun WidgetContent(
 @Composable
 private fun StripContent(
     model: WidgetModel,
-    habiBitmap: Bitmap,
+    habi: Bitmap,
 ) {
     val context = LocalContext.current
+    val colores = BitoClaro
     val description = context.getString(R.string.widget_open_action, context.getString(R.string.widget_title))
     Row(
         modifier =
             GlanceModifier
                 .fillMaxSize()
-                .background(ColorProvider(Papel))
+                .background(ImageProvider(R.drawable.widget_fondo))
                 .clickable(actionStartActivity<MainActivity>())
                 .semantics { contentDescription = description }
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(horizontal = 10.dp, vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Image(
-            provider = ImageProvider(habiBitmap),
+            provider = ImageProvider(habi),
             contentDescription = null,
-            modifier = GlanceModifier.size(28.dp),
+            modifier = GlanceModifier.size(36.dp),
         )
         Box(modifier = GlanceModifier.defaultWeight()) {}
-        if (model.items.isEmpty()) {
-            Text(
-                text = context.getString(R.string.widget_all_done),
-                style = TextStyle(color = ColorProvider(Hoja), fontSize = 13.sp, fontWeight = FontWeight.Medium),
-            )
-        } else {
-            Text(
-                text = context.getString(R.string.widget_progress, model.done, model.total),
-                style = TextStyle(color = ColorProvider(Tinta), fontSize = 14.sp, fontWeight = FontWeight.Medium),
-            )
-        }
+        val text =
+            if (model.items.isEmpty() && model.total > 0) {
+                context.getString(R.string.widget_all_done)
+            } else {
+                context.getString(R.string.widget_progress, model.done, model.total)
+            }
+        Text(
+            text = text,
+            style = TextStyle(color = ColorProvider(colores.tinta), fontSize = 19.sp, fontWeight = FontWeight.Bold),
+        )
     }
 }
 
+/** Una fila: el nombre abre Bito; el círculo (44 dp de toque) registra. */
 @Composable
-private fun WidgetRow(
-    item: WidgetItem,
-    compact: Boolean,
-) {
+private fun WidgetRow(item: WidgetItem) {
     val context = LocalContext.current
+    val colores = BitoClaro
     val action =
-        if (item.tapLogs) {
-            actionRunCallback<LogHabitAction>(
-                actionParametersOf(
-                    LogHabitAction.HABIT_ID to item.habitId,
-                    LogHabitAction.AMOUNT to item.step,
-                ),
-            )
-        } else {
-            actionStartActivity<MainActivity>()
-        }
-    val description =
-        if (item.tapLogs) {
-            context.getString(R.string.widget_log_action, item.name)
-        } else {
-            context.getString(R.string.widget_open_action, item.name)
-        }
+        actionRunCallback<LogHabitAction>(
+            actionParametersOf(
+                LogHabitAction.HABIT_ID to item.habitId,
+                LogHabitAction.AMOUNT to item.step,
+            ),
+        )
     Row(
-        modifier =
-            GlanceModifier
-                .fillMaxWidth()
-                .background(ColorProvider(Tarjeta))
-                .cornerRadius(16.dp)
-                .clickable(action)
-                .semantics { contentDescription = description }
-                .padding(if (compact) 8.dp else 12.dp),
+        modifier = GlanceModifier.fillMaxWidth().height(44.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(modifier = GlanceModifier.defaultWeight()) {
+        Column(
+            modifier =
+                GlanceModifier
+                    .defaultWeight()
+                    .padding(start = 8.dp)
+                    .clickable(actionStartActivity<MainActivity>())
+                    .semantics { contentDescription = context.getString(R.string.widget_open_action, item.name) },
+        ) {
             Text(
                 text = item.name,
                 maxLines = 1,
-                style = TextStyle(color = ColorProvider(Tinta), fontSize = if (compact) 13.sp else 14.sp),
+                style = TextStyle(color = ColorProvider(colores.tinta), fontSize = 16.sp, fontWeight = FontWeight.Medium),
             )
             if (item.kind == CardKind.COUNTER) {
                 Text(
                     text = context.getString(R.string.widget_progress, item.progress, item.target),
-                    style = TextStyle(color = ColorProvider(TintaSuave), fontSize = if (compact) 11.sp else 12.sp),
+                    style = TextStyle(color = ColorProvider(colores.tintaSuave), fontSize = 12.sp),
                 )
             }
         }
         if (item.tapLogs) {
-            val bubble = if (compact) 24.dp else 28.dp
             Box(
                 modifier =
                     GlanceModifier
-                        .size(bubble)
-                        .cornerRadius(if (compact) 12.dp else 14.dp)
-                        .background(ColorProvider(Hoja)),
+                        .size(44.dp)
+                        .clickable(action)
+                        .semantics { contentDescription = context.getString(R.string.widget_log_action, item.name) },
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    text = "+",
-                    style =
-                        TextStyle(
-                            color = ColorProvider(Tarjeta),
-                            fontSize = if (compact) 14.sp else 16.sp,
-                            fontWeight = FontWeight.Medium,
-                        ),
+                Image(
+                    provider = ImageProvider(R.drawable.widget_circulo),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(26.dp),
                 )
             }
         }

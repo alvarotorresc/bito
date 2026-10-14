@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Textos comunes de los componentes del sistema (spec pieza 2, §15.3). Solo los escribe la Tarea 10. -->
+<resources>
+    <string name="sistema_cancelar">Cancel</string>
+    <string name="sistema_deshacer">Undo</string>
+    <string name="sistema_guardar">Save</string>
+    <string name="sistema_ahora_no">Not now</string>
+    <string name="sistema_cerrar">Close</string>
+    <string name="sistema_mas">More</string>
+    <string name="sistema_menos">Less</string>
+    <string name="sistema_mostrar">Show</string>
+    <string name="sistema_ocultar">Hide</string>
+    <string name="sistema_apagado">Off</string>
+    <string name="sistema_encendido">On</string>
+    <plurals name="sistema_saldo">
+        <item quantity="one">%d bito</item>
+        <item quantity="other">%d bitos</item>
+    </plurals>
+</resources>

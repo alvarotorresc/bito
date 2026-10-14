@@ -35,6 +35,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -118,7 +119,7 @@ class ReviewScreenTest {
         settingsRepo = SettingsRepository(settingsStore())
         val rewards = RewardsRepository(db)
         val reconciler = PointsReconciler(domainState, rewards)
-        val habiSounds = HabiSounds(context, settingsRepo, dispatcher = dispatcher)
+        val habiSounds = HabiSounds(MotorSonidoMudo)
         val vm =
             ReviewViewModel(
                 domainState,

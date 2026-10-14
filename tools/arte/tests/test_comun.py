@@ -163,5 +163,35 @@ class HaloYHuecoTest(unittest.TestCase):
         self.assertFalse(r[0:3, 0].any())
 
 
+MARRON = (120, 80, 50)
+
+
+class AlinearConCabezaTapadaTest(unittest.TestCase):
+    def _gorro(self):
+        base = elipse(lienzo(300, 300), 150, 170, 80, 110, SALVIA)
+        puesta = elipse(lienzo(300, 300), 150, 170, 80, 110, SALVIA)
+        # Un gorro ancho tapa el 35 % de arriba de la cabeza y sobresale por los lados.
+        puesta[40:105, 50:250] = MARRON
+        return comun.mascara_verde(base), comun.mascara_verde(puesta)
+
+    def test_sin_ignorar_arriba_la_cabeza_tapada_da_un_falso_desalineado(self):
+        b, e = self._gorro()
+        _, escala, dx, dy = comun.alinear(b, e)
+        self.assertGreater(comun.desviacion_alineacion(escala, dx, dy, 160), comun.UMBRAL_ALINEACION)
+
+    def test_ignorando_la_franja_de_arriba_la_cabeza_tapada_queda_alineada(self):
+        b, e = self._gorro()
+        _, escala, dx, dy = comun.alinear(b, e, ignorar_arriba=0.35)
+        self.assertLessEqual(comun.desviacion_alineacion(escala, dx, dy, 160), comun.UMBRAL_ALINEACION)
+
+
+class DesempateTest(unittest.TestCase):
+    def test_si_la_mejor_apenas_gana_a_la_identidad_se_queda_la_identidad(self):
+        self.assertEqual(comun.elegir_alineacion((0.904, 1.02, 4, -2), 0.900), (0.900, 1.0, 0, 0))
+
+    def test_si_la_mejor_gana_de_verdad_se_queda_la_mejor(self):
+        self.assertEqual(comun.elegir_alineacion((0.95, 1.0, 10, 10), 0.80), (0.95, 1.0, 10, 10))
+
+
 if __name__ == "__main__":
     unittest.main()

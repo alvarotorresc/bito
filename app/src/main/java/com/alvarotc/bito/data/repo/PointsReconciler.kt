@@ -11,7 +11,9 @@ import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
 import com.alvarotc.bito.domain.model.PointsReason
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
 
 /**
  * What a [PointsReconciler.reconcile] pass granted: nothing here was owned
@@ -40,8 +42,17 @@ class PointsReconciler(
     private val economy: EconomyConfig = EconomyConfig(),
     // Opcional para no tocar los tests que no miran el jardín; AppContainer siempre lo pasa.
     private val settings: SettingsRepository? = null,
+    // AppContainer pasa Dispatchers.Default para que totalWater no corra en el hilo principal de los
+    // ViewModel que llaman aquí. Null = sin cambiar de hilo (tests).
+    private val despachador: CoroutineDispatcher? = null,
+    private val calcularAgua: (DomainState, LogicalDay) -> Double = GardenEngine::totalWater,
 ) {
     suspend fun reconcile(
+        today: LogicalDay,
+        nowMillis: Long,
+    ): ReconcileResult = despachador?.let { withContext(it) { reconcileAqui(today, nowMillis) } } ?: reconcileAqui(today, nowMillis)
+
+    private suspend fun reconcileAqui(
         today: LogicalDay,
         nowMillis: Long,
     ): ReconcileResult {
@@ -72,7 +83,7 @@ class PointsReconciler(
         state: DomainState,
         today: LogicalDay,
     ) {
-        val water = GardenEngine.totalWater(state, today)
+        val water = calcularAgua(state, today)
         if (water <= settings.settings.first().gardenWaterHighMark) return
         settings.update { if (water > it.gardenWaterHighMark) it.copy(gardenWaterHighMark = water) else it }
     }

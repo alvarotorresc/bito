@@ -13,7 +13,7 @@ import org.robolectric.annotation.Config
  * A bare AppCompatActivity themed with the app's real `Theme.Bito`, deliberately not
  * [MainActivity] itself: touching `(application as BitoApp).container` would start
  * [AppStartup]'s real background sync against a real [AppContainer], which is the leak the rest
- * of this suite goes out of its way to avoid (see [com.alvarotc.bito.ui.settings.SettingsScreenTest]'s
+ * of this suite goes out of its way to avoid (see [com.alvarotc.bito.ui.settings.AjustesScreenTest]'s
  * class doc). This activity isolates exactly the one thing MainActivity's `AppCompatActivity`
  * switch risks: AppCompatDelegate's `ensureSubDecor()` throws unless the theme resolves as a
  * `Theme.AppCompat.*` descendant, and that check fires from `onCreate`'s `setContentView` call

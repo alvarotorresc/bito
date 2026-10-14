@@ -65,8 +65,8 @@
     <string name="notif_reminder_single_body">Still open today</string>
     <string name="notif_action_done">Done</string>
     <string name="notif_action_add" translatable="false">+%1$d</string>
-    <string name="notif_target_done">✓ %1$s</string>
-    <string name="notif_target_add" translatable="false">+%1$d %2$s</string>
+    <string name="notif_target_done">Done: %1$s</string>
+    <string name="notif_target_add" translatable="false">+%1$d %2$s · %3$d/%4$d</string>
 
     <!--
         REVIEW nudge, in Habi's voice. Titles: %1$s = the user's name. Bodies: plurals keyed by

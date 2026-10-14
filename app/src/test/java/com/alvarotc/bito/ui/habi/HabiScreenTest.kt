@@ -70,7 +70,7 @@ class HabiScreenTest {
         compose.onNodeWithTag("points-info-sheet").assertExists()
         compose.onNodeWithText("+3").assertExists() // perfect day, straight from EconomyConfig
         compose.onNodeWithText("+300").assertExists() // the 365-day streak milestone
-        compose.onNodeWithText("a freezer costs 100 pts").assertExists()
+        compose.onNodeWithText("a freezer costs 100 bitos").assertExists()
     }
 
     @Test
