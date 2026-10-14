@@ -71,7 +71,7 @@
     <!-- Recordatorio por hábito: su propio nombre es el título, sin copy de personalidad (aún). -->
     <string name="notif_reminder_single_body">Sigue abierto hoy</string>
     <string name="notif_action_done">Hecho</string>
-    <string name="notif_target_done">✓ %1$s</string>
+    <string name="notif_target_done">Hecho: %1$s</string>
 
     <!--
         Aviso de REPASO con la voz de Habi. Títulos: %1$s = nombre del usuario. Cuerpos: plurals

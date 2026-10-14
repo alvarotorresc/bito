@@ -365,7 +365,7 @@ class ReminderUseCaseTest {
     @Test
     fun `a counter card yields a quick target sized to its step`() {
         val target = quickTargetOf(card(CardKind.COUNTER, step = 3))
-        assertEquals(QuickTarget("h1", "Agua", 3, isCheck = false), target)
+        assertEquals(QuickTarget("h1", "Agua", 3, isCheck = false, hecho = 0, objetivo = 1), target)
     }
 
     @Test

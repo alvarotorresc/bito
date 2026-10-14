@@ -12,7 +12,14 @@ private const val MAX_QUICK_TARGETS = 3
  * [isCheck] decides the action's label: a CHECK habit is "done" in one tap (no honest
  * "+N" to show — its target is always 1), everything else must say the amount it logs.
  */
-data class QuickTarget(val habitId: String, val name: String, val amount: Int, val isCheck: Boolean)
+data class QuickTarget(
+    val habitId: String,
+    val name: String,
+    val amount: Int,
+    val isCheck: Boolean,
+    val hecho: Int = 0,
+    val objetivo: Int = 0,
+)
 
 /**
  * The pure content of a reminder notification: what's still open, what can be one-tapped, and
@@ -48,6 +55,8 @@ fun buildReminderPayload(state: TodayUiState): ReminderPayload? {
                     it.name,
                     if (it.kind == CardKind.COUNTER) it.step else 1,
                     isCheck = it.kind == CardKind.CHECK,
+                    hecho = it.progress,
+                    objetivo = it.target,
                 )
             }
     return ReminderPayload(
