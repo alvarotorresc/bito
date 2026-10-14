@@ -1,10 +1,17 @@
 package com.alvarotc.bito.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.VisibilityThreshold
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -12,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,8 +28,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.unit.IntOffset
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavBackStackEntry
+import androidx.navigation.NavController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -52,6 +63,12 @@ import com.alvarotc.bito.ui.settings.AjustesScreen
 import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsViewModel
+import com.alvarotc.bito.ui.sistema.Duraciones
+import com.alvarotc.bito.ui.sistema.Haptica
+import com.alvarotc.bito.ui.sistema.LocalReducido
+import com.alvarotc.bito.ui.sistema.Muelles
+import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.stats.BadgesScreen
 import com.alvarotc.bito.ui.stats.BadgesViewModel
 import com.alvarotc.bito.ui.stats.NumbersScreen
@@ -122,6 +139,24 @@ fun BitoNavHost(container: AppContainer) {
     val startDestination = remember { if (loadedSettings.onboardingDone) "today" else "onboarding" }
 
     val nav = rememberNavController()
+    val reducido = LocalReducido.current
+    val gesto = rememberGesto()
+    DisposableEffect(nav, gesto) {
+        var anterior: String? = nav.currentDestination?.route
+        val oyente =
+            NavController.OnDestinationChangedListener { controller, destino, _ ->
+                val nueva = destino.route
+                val haciaDelante = controller.previousBackStackEntry?.destination?.route == anterior
+                when (sonidoDeCambio(anterior, nueva, haciaDelante)) {
+                    true -> gesto(Snd.DESCENSO, Haptica.TICK)
+                    false -> gesto(Snd.ASCENSO, Haptica.LOW)
+                    null -> Unit
+                }
+                anterior = nueva
+            }
+        nav.addOnDestinationChangedListener(oyente)
+        onDispose { nav.removeOnDestinationChangedListener(oyente) }
+    }
     val context = LocalContext.current
     // Stats and Habi retain their ViewModels across tab visits (scoped to this composable's own
     // store owner — the Activity — instead of each NavBackStackEntry): re-entering shows the
@@ -147,6 +182,15 @@ fun BitoNavHost(container: AppContainer) {
     // below): a user who already tapped an empty-habits prompt doesn't need to be asked what they
     // meant.
     var showCreateChoice by remember { mutableStateOf(false) }
+
+    val camara = Muelles.camara<IntOffset>(umbral = IntOffset.VisibilityThreshold)
+    val globalEnter: AnimatedContentTransitionScope<NavBackStackEntry>.(Int) -> EnterTransition = { signo ->
+        fadeIn(tween(150, easing = LinearOutSlowInEasing)) +
+            slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { signo * it / 12 }
+    }
+    val globalExit: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition = {
+        fadeOut(tween(150, easing = LinearOutSlowInEasing))
+    }
 
     Scaffold(
         containerColor = Papel,
@@ -194,15 +238,28 @@ fun BitoNavHost(container: AppContainer) {
             // only entering/leaving its route uses this. The juicy celebration sheets are
             // overlays, not routes, so they never see this.
             enterTransition = {
-                fadeIn(tween(150, easing = LinearOutSlowInEasing)) +
-                    slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { it / 12 }
+                entra(
+                    transicionDe(Momento.ENTRA, initialState.destination.route, targetState.destination.route, reducido),
+                    camara,
+                ) { globalEnter(1) }
             },
-            exitTransition = { fadeOut(tween(150, easing = LinearOutSlowInEasing)) },
+            exitTransition = {
+                sale(
+                    transicionDe(Momento.SALE, initialState.destination.route, targetState.destination.route, reducido),
+                    camara,
+                ) { globalExit() }
+            },
             popEnterTransition = {
-                fadeIn(tween(150, easing = LinearOutSlowInEasing)) +
-                    slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { -it / 12 }
+                entra(transicionDe(Momento.VUELVE_ENTRA, initialState.destination.route, targetState.destination.route, reducido), camara) {
+                    globalEnter(-1)
+                }
             },
-            popExitTransition = { fadeOut(tween(150, easing = LinearOutSlowInEasing)) },
+            popExitTransition = {
+                sale(
+                    transicionDe(Momento.VUELVE_SALE, initialState.destination.route, targetState.destination.route, reducido),
+                    camara,
+                ) { globalExit() }
+            },
         ) {
             // No bottom nav: a fresh install's first-run flow, not a bar destination — same
             // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
@@ -571,3 +628,27 @@ fun BitoNavHost(container: AppContainer) {
         }
     }
 }
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.entra(
+    t: TipoTransicion,
+    camara: FiniteAnimationSpec<IntOffset>,
+    global: AnimatedContentTransitionScope<NavBackStackEntry>.() -> EnterTransition,
+): EnterTransition =
+    when (t) {
+        TipoTransicion.BAJA_ENTRA -> slideInVertically(camara) { it }
+        TipoTransicion.SUBE_ENTRA -> slideInVertically(camara) { -it / 4 }
+        TipoTransicion.FUNDIDO -> fadeIn(tween(Duraciones.REDUCIDO))
+        else -> global()
+    }
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.sale(
+    t: TipoTransicion,
+    camara: FiniteAnimationSpec<IntOffset>,
+    global: AnimatedContentTransitionScope<NavBackStackEntry>.() -> ExitTransition,
+): ExitTransition =
+    when (t) {
+        TipoTransicion.BAJA_SALE -> slideOutVertically(camara) { -it / 4 }
+        TipoTransicion.SUBE_SALE -> slideOutVertically(camara) { it }
+        TipoTransicion.FUNDIDO -> fadeOut(tween(Duraciones.REDUCIDO))
+        else -> global()
+    }
