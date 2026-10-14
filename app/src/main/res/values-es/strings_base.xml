@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="base_alimenta_hojas_redondas">Alimenta la planta de hojas redondas</string>
+    <string name="base_alimenta_girasoles">Alimenta los girasoles</string>
+    <string name="base_alimenta_lavanda">Alimenta la lavanda</string>
+    <string name="base_alimenta_manzano">Alimenta el manzano</string>
+    <string name="base_alimenta_helechos">Alimenta los helechos</string>
+    <string name="base_alimenta_cerezo">Alimenta el cerezo</string>
+    <string name="base_especie_hojas_redondas">Planta</string>
+    <string name="base_especie_girasoles">Girasoles</string>
+    <string name="base_especie_lavanda">Lavanda</string>
+    <string name="base_especie_manzano">Manzano</string>
+    <string name="base_especie_helechos">Helechos</string>
+    <string name="base_especie_cerezo">Cerezo</string>
+    <string name="base_mov_dia">Día completo</string>
+    <string name="base_mov_semana">Semana completa</string>
+    <string name="base_mov_mes">Mes completo</string>
+    <string name="base_mov_racha">Racha de %1$d · %2$s</string>
+    <string name="base_mov_congelador">Un congelador</string>
+    <string name="base_mov_habito_borrado">Hábito borrado</string>
+    <string name="base_mov_tarea_borrada">Tarea borrada</string>
+    <string name="base_hoy">hoy</string>
+    <string name="base_ayer">ayer</string>
+    <string name="base_el_dia">el %1$s</string>
+    <string name="base_tab_hoy">Hoy</string>
+    <string name="base_tab_camino">Camino</string>
+</resources>

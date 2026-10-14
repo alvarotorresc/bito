@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="base_alimenta_hojas_redondas">Feeds the round-leaf plant</string>
+    <string name="base_alimenta_girasoles">Feeds the sunflowers</string>
+    <string name="base_alimenta_lavanda">Feeds the lavender</string>
+    <string name="base_alimenta_manzano">Feeds the apple tree</string>
+    <string name="base_alimenta_helechos">Feeds the ferns</string>
+    <string name="base_alimenta_cerezo">Feeds the cherry tree</string>
+    <string name="base_especie_hojas_redondas">Plant</string>
+    <string name="base_especie_girasoles">Sunflowers</string>
+    <string name="base_especie_lavanda">Lavender</string>
+    <string name="base_especie_manzano">Apple tree</string>
+    <string name="base_especie_helechos">Ferns</string>
+    <string name="base_especie_cerezo">Cherry tree</string>
+    <string name="base_mov_dia">Full day</string>
+    <string name="base_mov_semana">Full week</string>
+    <string name="base_mov_mes">Full month</string>
+    <string name="base_mov_racha">%1$d streak · %2$s</string>
+    <string name="base_mov_congelador">A freezer</string>
+    <string name="base_mov_habito_borrado">Deleted habit</string>
+    <string name="base_mov_tarea_borrada">Deleted task</string>
+    <string name="base_hoy">today</string>
+    <string name="base_ayer">yesterday</string>
+    <string name="base_el_dia">on %1$s</string>
+    <string name="base_tab_hoy">Today</string>
+    <string name="base_tab_camino">Path</string>
+</resources>

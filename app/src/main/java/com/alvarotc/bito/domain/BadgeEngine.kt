@@ -1,8 +1,10 @@
 package com.alvarotc.bito.domain
 
+import com.alvarotc.bito.domain.model.BadgeDef
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.model.Progreso
 
 /** Badges (docs/06). History justifies a set of ids; the data layer appends the missing ones and never removes. */
 object BadgeEngine {
@@ -44,6 +46,61 @@ object BadgeEngine {
         if (state.habits.any { Streaks.hasResurrected(state, it, today, RESURRECTION_MIN_RUN) }) earned += RESURRECTION
         if (state.freezerUses.isNotEmpty()) earned += FIRST_FREEZER
         return earned
+    }
+
+    /**
+     * Cuánto falta para [def] (pieza 3, §9.2), o null si el logro no tiene cuenta (Mes redondo,
+     * Resurrección). Rachas: la mejor racha actual de cualquier hábito; constancia: días perfectos;
+     * Semana entera: días seguidos con actividad; los de sí o no, 0 o 1. Nunca pasa del objetivo.
+     */
+    fun progressOf(
+        def: BadgeDef,
+        state: DomainState,
+        today: LogicalDay,
+        perfectDays: Set<LogicalDay> = PerfectDays.perfectDaysUpTo(state, today),
+    ): Progreso? {
+        fun hasta(
+            n: Int,
+            objetivo: Int,
+        ) = Progreso(n.coerceIn(0, objetivo), objetivo)
+
+        fun siNo(si: Boolean) = Progreso(if (si) 1 else 0, 1)
+        return when (def.id) {
+            in streakBadges.values -> {
+                val mejor = state.habits.maxOfOrNull { Streaks.streaksOf(state, it, today).current } ?: 0
+                hasta(mejor, def.threshold ?: return null)
+            }
+            in perfectDayBadges.values -> hasta(perfectDays.size, def.threshold ?: return null)
+            PERFECT_WEEK -> {
+                val primero = state.habits.minOfOrNull { it.createdOnDay }
+                val hecha =
+                    primero != null && primero <= today &&
+                        PerfectDays.perfectPeriodKeys(perfectDays, Period.WEEK, primero, today).isNotEmpty()
+                siNo(hecha)
+            }
+            FIRST_HABIT -> siNo(state.habits.isNotEmpty())
+            FIRST_WEEK -> hasta(currentActivityRun(state, today), ACTIVITY_RUN_DAYS)
+            FIRST_FREEZER -> siNo(state.freezerUses.isNotEmpty())
+            else -> null // perfect-month y resurrection
+        }
+    }
+
+    /** Días seguidos con una entrada o un sello que acaban hoy o ayer (si hoy aún no hay nada). */
+    internal fun currentActivityRun(
+        state: DomainState,
+        today: LogicalDay,
+    ): Int {
+        val activos =
+            (state.entries.asSequence().map { it.logicalDay } + state.daySeals.asSequence().map { it.logicalDay })
+                .filter { it <= today }
+                .toSet()
+        var dia = if (today in activos) today else today - 1
+        var n = 0
+        while (dia in activos) {
+            n++
+            dia--
+        }
+        return n
     }
 
     /** Append-only: never proposes revoking an unlocked badge. */

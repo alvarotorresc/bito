@@ -32,3 +32,6 @@ object BadgeCatalog {
 
     val size: Int get() = all.size
 }
+
+/** Lo que lleva un logro sin conseguir (pieza 3, §9.2). */
+data class Progreso(val actual: Int, val objetivo: Int)
