@@ -67,3 +67,57 @@ val MIGRATION_3_4 =
             db.execSQL("DELETE FROM `customization_items`")
         }
     }
+
+/**
+ * 4 -> 5 (pieza 4): las cinco tablas de la memoria de Habi (habi_memoria, lo_gordo,
+ * aviso_aceptado, propuesta_vigente, habla_usada) y sus indices. Solo CREA — ninguna fila
+ * existente se toca, ninguna columna cambia.
+ *
+ * El DDL esta copiado LITERAL de app/schemas/.../5.json (sustituyendo `${TABLE_NAME}` por el
+ * nombre real). Si no coincide caracter a caracter, Room aborta al abrir con
+ * IllegalStateException («Migration didn't properly handle...») y la app NO ARRANCA para quien
+ * ya tenga la version anterior instalada. Nada de fallbackToDestructiveMigration: eso borraria
+ * sus datos.
+ */
+val MIGRATION_4_5 =
+    object : Migration(4, 5) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `habi_memoria` (`id` TEXT NOT NULL, `tipo` TEXT NOT NULL, " +
+                    "`dia` INTEGER NOT NULL, `ref` TEXT, `valor` INTEGER, `creado_millis` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_habi_memoria_tipo_dia` ON `habi_memoria` (`tipo`, `dia`)",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `lo_gordo` (`dia` INTEGER NOT NULL, `posicion` INTEGER NOT NULL, " +
+                    "`tipo` TEXT NOT NULL, `ref_id` TEXT NOT NULL, `creado_millis` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`dia`, `posicion`))",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_lo_gordo_ref_id` ON `lo_gordo` (`ref_id`)")
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `aviso_aceptado` (`id` TEXT NOT NULL, `dia` INTEGER NOT NULL, " +
+                    "`habit_id` TEXT NOT NULL, `minuto` INTEGER NOT NULL, `pospuesto` INTEGER NOT NULL, " +
+                    "`estado` TEXT NOT NULL, `propuesta_id` TEXT NOT NULL, `creado_millis` INTEGER NOT NULL, " +
+                    "PRIMARY KEY(`id`))",
+            )
+            db.execSQL("CREATE INDEX IF NOT EXISTS `index_aviso_aceptado_dia` ON `aviso_aceptado` (`dia`)")
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `propuesta_vigente` (`ambito` TEXT NOT NULL, " +
+                    "`habit_id` TEXT NOT NULL, `dia` INTEGER NOT NULL, `situacion` TEXT NOT NULL, `ref` TEXT, " +
+                    "`trozos` TEXT NOT NULL, `huecos` TEXT NOT NULL, `acciones` TEXT NOT NULL, `hora` INTEGER, " +
+                    "`creado_millis` INTEGER NOT NULL, PRIMARY KEY(`ambito`, `habit_id`))",
+            )
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `habla_usada` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                    "`voz` TEXT NOT NULL, `bolsa` TEXT NOT NULL, `indice` INTEGER NOT NULL, " +
+                    "`combinacion` TEXT NOT NULL, `dia` INTEGER NOT NULL, `usado_millis` INTEGER NOT NULL, " +
+                    "`situacion` TEXT)",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_habla_usada_voz_bolsa_usado_millis` " +
+                    "ON `habla_usada` (`voz`, `bolsa`, `usado_millis`)",
+            )
+        }
+    }

@@ -19,8 +19,13 @@ import androidx.room.RoomDatabase
         TaskEntity::class,
         TaskEventEntity::class,
         BreathingSessionEntity::class,
+        HabiMemoriaEntity::class,
+        LoGordoEntity::class,
+        AvisoAceptadoEntity::class,
+        PropuestaVigenteEntity::class,
+        HablaUsadaEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class BitoDatabase : RoomDatabase() {
@@ -48,12 +53,14 @@ abstract class BitoDatabase : RoomDatabase() {
 
     abstract fun breathingSessionDao(): BreathingSessionDao
 
+    abstract fun hablaDao(): HablaDao
+
     companion object {
         private const val NAME = "bito.db"
 
         fun build(context: Context): BitoDatabase =
             Room.databaseBuilder(context, BitoDatabase::class.java, NAME)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
                 .build()
     }
 }
