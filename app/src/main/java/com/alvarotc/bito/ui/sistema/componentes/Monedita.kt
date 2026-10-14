@@ -20,6 +20,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
@@ -39,11 +40,13 @@ fun Monedita(
     Image(painterResource(id), contentDescription = null, modifier = modifier.size(tamano))
 }
 
-/** Saldo de bitos: monedita y cifra en rodillo; tic a .94 cuando cambia. */
+/** Saldo de bitos: monedita y cifra en rodillo; tic a .94 cuando cambia. La hoja «Tus bitos» lo usa grande. */
 @Composable
 fun Saldo(
     bitos: Int,
     modifier: Modifier = Modifier,
+    tamanoMoneda: Dp = 18.dp,
+    estilo: TextStyle? = null,
 ) {
     val reducido = BitoTema.reducido
     val escala = remember { Animatable(1f) }
@@ -65,8 +68,8 @@ fun Saldo(
             }.clearAndSetSemantics { contentDescription = descripcion },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Monedita(18.dp)
+        Monedita(tamanoMoneda)
         Spacer(Modifier.width(Medidas.e4))
-        CifraRodillo(bitos, estilo = BitoTema.tipos.t19.cifra(), color = BitoTema.colores.oroTexto)
+        CifraRodillo(bitos, estilo = estilo ?: BitoTema.tipos.t19.cifra(), color = BitoTema.colores.oroTexto)
     }
 }
