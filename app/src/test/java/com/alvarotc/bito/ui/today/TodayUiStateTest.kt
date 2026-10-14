@@ -2,7 +2,11 @@ package com.alvarotc.bito.ui.today
 
 import com.alvarotc.bito.domain.Compliance
 import com.alvarotc.bito.domain.ComplianceStatus
+import com.alvarotc.bito.domain.EtiquetaMovimiento
+import com.alvarotc.bito.domain.FechaMovimiento
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.Movimiento
 import com.alvarotc.bito.domain.RealHabits
 import com.alvarotc.bito.domain.THIS_MONDAY
 import com.alvarotc.bito.domain.Tasks
@@ -13,6 +17,7 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.Entry
+import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
@@ -524,5 +529,67 @@ class TodayUiStateTest {
 
         assertTrue(ui.cards.isEmpty())
         assertEquals(0, ui.ringTotal)
+    }
+
+    @Test
+    fun `tasks come after habits ordered by their today slot`() {
+        // Creadas en el orden contrario al de las franjas: suelta, de hoy, vencida.
+        val state =
+            stateOf(habits = emptyList()).copy(
+                tasks =
+                    listOf(
+                        Task("loose", "Suelta", null, DueKind.NONE, null, TaskStatus.OPEN, TODAY - 9, 100L),
+                        Task("today", "De hoy", null, DueKind.DATE, TODAY, TaskStatus.OPEN, TODAY - 2, 200L),
+                        Task("late", "Vencida", null, DueKind.DATE, TODAY - 3, TaskStatus.OPEN, TODAY - 5, 300L),
+                    ),
+            )
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertEquals(
+            listOf(Tasks.TodaySlot.OVERDUE, Tasks.TodaySlot.DUE_TODAY, Tasks.TodaySlot.LOOSE),
+            ui.tasks.map { it.slot },
+        )
+        assertEquals(listOf("late", "today", "loose"), ui.tasks.map { it.id })
+    }
+
+    @Test
+    fun `your day counts only habits`() {
+        val done = habit("h1", metric = Metric.CHECK)
+        val pending = habit("h2", metric = Metric.CHECK)
+        val state =
+            stateOf(habits = listOf(done, pending), entries = listOf(entry("e1", "h1", TODAY))).copy(
+                tasks = listOf(Task("t1", "Hecha", null, DueKind.NONE, null, TaskStatus.DONE, TODAY, 100L, TODAY)),
+            )
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertEquals(1, ui.ringDone)
+        assertEquals(2, ui.ringTotal)
+    }
+
+    @Test
+    fun `see all tasks stays with every task done`() {
+        val state =
+            stateOf(habits = emptyList()).copy(
+                tasks = listOf(Task("t1", "Hecha", null, DueKind.NONE, null, TaskStatus.DONE, TODAY - 5, 100L, TODAY - 2)),
+            )
+
+        val ui = buildTodayUiState(state, emptyMap(), TODAY)
+
+        assertTrue(ui.tasks.isEmpty())
+        assertTrue(ui.hasAnyTasks)
+    }
+
+    @Test
+    fun `balance, garden and movements pass through`() {
+        val jardin = GardenState.INITIAL.copy(plots = GardenEngine.plotsFor(30.0))
+        val movs = listOf(Movimiento("m1", 1, EtiquetaMovimiento.DiaCompleto, FechaMovimiento.HOY, TODAY))
+
+        val ui = buildTodayUiState(stateOf(habits = emptyList()), emptyMap(), TODAY, balance = 42, garden = jardin, movimientos = movs)
+
+        assertEquals(42, ui.saldo)
+        assertEquals(jardin, ui.garden)
+        assertEquals(movs, ui.movimientos)
     }
 }

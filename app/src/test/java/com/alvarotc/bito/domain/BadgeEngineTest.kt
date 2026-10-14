@@ -1,11 +1,15 @@
 package com.alvarotc.bito.domain
 
+import com.alvarotc.bito.domain.model.BadgeCatalog
+import com.alvarotc.bito.domain.model.Progreso
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BadgeEngineTest {
@@ -160,5 +164,40 @@ class BadgeEngineTest {
         // perfect-week is gone, but first-habit remains
         assertTrue("first-habit" in withEmpty)
         assertFalse("perfect-week" in withEmpty)
+    }
+
+    @Test
+    fun `Brasa viva with a streak of 13 is 13 of 100`() {
+        val cama = RealHabits.makeBed
+        val state = domainState(habits = listOf(cama), entries = (0..12).map { entryOn(cama, TODAY - it) })
+        assertEquals(13, Streaks.streaksOf(state, cama, TODAY).current) // precondición del escenario
+        assertEquals(Progreso(13, 100), BadgeEngine.progressOf(BadgeCatalog.byId("streak-100")!!, state, TODAY))
+    }
+
+    @Test
+    fun `every badge has a progress rule except the two without a count`() {
+        val state = domainState(habits = listOf(RealHabits.makeBed))
+        BadgeCatalog.all.forEach { def ->
+            val p = BadgeEngine.progressOf(def, state, TODAY)
+            if (def.id == "perfect-month" || def.id == "resurrection") assertNull(p, def.id) else assertNotNull(p, def.id)
+        }
+    }
+
+    @Test
+    fun `yes or no badges are 0 or 1`() {
+        val vacio = domainState()
+        assertEquals(Progreso(0, 1), BadgeEngine.progressOf(BadgeCatalog.byId("first-habit")!!, vacio, TODAY))
+        assertEquals(
+            Progreso(1, 1),
+            BadgeEngine.progressOf(BadgeCatalog.byId("first-habit")!!, domainState(habits = listOf(RealHabits.makeBed)), TODAY),
+        )
+        assertEquals(Progreso(0, 1), BadgeEngine.progressOf(BadgeCatalog.byId("first-freezer")!!, vacio, TODAY))
+    }
+
+    @Test
+    fun `first week counts the current run of active days up to 7`() {
+        val cama = RealHabits.makeBed
+        val state = domainState(habits = listOf(cama), entries = (1..4).map { entryOn(cama, TODAY - it) })
+        assertEquals(Progreso(4, 7), BadgeEngine.progressOf(BadgeCatalog.byId("first-week")!!, state, TODAY))
     }
 }

@@ -62,7 +62,7 @@ import kotlin.test.assertTrue
 
 /**
  * Drives the real [ReviewScreen] over an in-memory Room database, following
- * [com.alvarotc.bito.ui.today.TodayScreenTest]'s harness — both the main dispatcher and Room's
+ * [com.alvarotc.bito.ui.today.HoyListaTest]'s harness — both the main dispatcher and Room's
  * executors run on the same [UnconfinedTestDispatcher] so every VM write, Room emission and
  * recomposition settles synchronously within a plain `compose.waitForIdle()`.
  */
@@ -400,8 +400,8 @@ class ReviewScreenTest {
 
         // [E]: name Text + StreakChip (Icon(Flame, null) + count Text) used to be 2 separate
         // TalkBack stops. MERGED tree (no useUnmergedTree) on purpose: proves the override landed
-        // on the row's own node, not a child underneath it — same evidence shape as StatsScreen's
-        // "the streak wall card announces the streak" test.
+        // on the row's own node, not a child underneath it — same evidence shape as the
+        // streak announcements in Camino.
         compose.onNodeWithTag("review-row-name-h1").assertContentDescriptionEquals("Meditar, streak 3")
         compose.onNodeWithTag("review-row-name-h1").onChildren().assertCountEquals(0)
     }

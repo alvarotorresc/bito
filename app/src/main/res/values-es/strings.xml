@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="today_title">Hoy</string>
     <string name="today_date_pattern">EEEE, d \'de\' MMMM</string>
     <string name="ring_of">%1$d de %2$d</string>
     <string name="ring_caption">hábitos de hoy</string>
@@ -35,12 +34,8 @@
     <string name="empty_today_body">Crea tu primer hábito — registrarlo te costará casi nada.</string>
     <string name="create_habit">Crear hábito</string>
     <string name="paused_section_title">En pausa</string>
-    <string name="nav_today">Hoy</string>
-    <string name="nav_stats">Estadísticas</string>
-    <string name="nav_habi">Habi</string>
     <string name="nav_new_habit">Añadir</string>
     <string name="nav_settings">Ajustes</string>
-    <string name="edit_habit_hint">Editar %1$s</string>
 
     <string name="form_title_new">Nuevo hábito</string>
     <string name="form_title_edit">Editar hábito</string>
@@ -83,11 +78,6 @@
     <string name="backup_frequency_weekly">Semanal</string>
     <string name="backup_auto">Backup automático</string>
     <string name="backup_keep">Conservar</string>
-    <plurals name="backup_keep_value">
-        <item quantity="one">última %1$d copia</item>
-        <item quantity="many">últimas %1$d copias</item>
-        <item quantity="other">últimas %1$d copias</item>
-    </plurals>
     <string name="backup_now">Hacer backup ahora</string>
     <string name="backup_export_manual">Exportar copia…</string>
     <string name="backup_last_ok">Último backup: %1$s</string>
@@ -110,16 +100,6 @@
     <string name="backup_missing_key_snack">El cifrado necesita una passphrase antes de exportar</string>
     <string name="import_preview_title">¿Restaurar esta copia?</string>
     <string name="import_preview_meta">Del %1$s · app %2$s</string>
-    <plurals name="import_preview_habits">
-        <item quantity="one">%1$d hábito</item>
-        <item quantity="many">%1$d hábitos</item>
-        <item quantity="other">%1$d hábitos</item>
-    </plurals>
-    <plurals name="import_preview_entries">
-        <item quantity="one">%1$d registro</item>
-        <item quantity="many">%1$d registros</item>
-        <item quantity="other">%1$d registros</item>
-    </plurals>
     <string name="import_preview_warning">Restaurar reemplaza TODOS los datos actuales. No hay fusión.</string>
     <string name="import_confirm">Restaurar</string>
     <string name="msg_export_done">Copia guardada</string>
@@ -145,11 +125,6 @@
     <string name="language_spanish">Español</string>
     <string name="language_english">English</string>
     <string name="language_system">Del sistema</string>
-    <plurals name="archived_habits_row">
-        <item quantity="one">Hábito archivado (%1$d)</item>
-        <item quantity="many">Hábitos archivados (%1$d)</item>
-        <item quantity="other">Hábitos archivados (%1$d)</item>
-    </plurals>
     <string name="archived_title">Hábitos archivados</string>
     <string name="archived_since">Desde %1$s</string>
     <string name="archived_empty">Todavía no hay nada archivado</string>

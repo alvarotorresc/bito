@@ -116,6 +116,7 @@ private val PERIOD_OPTIONS = listOf(Period.DAY, Period.WEEK, Period.MONTH)
 fun HabitFormScreen(
     viewModel: HabitFormViewModel,
     onBack: () -> Unit,
+    alCrear: (String) -> Unit = {},
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val personality by viewModel.personality.collectAsStateWithLifecycle()
@@ -147,7 +148,7 @@ fun HabitFormScreen(
             notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
         }
         gesto(h = Haptica.CONFIRM)
-        viewModel.save(onBack)
+        viewModel.save(onBack, alCrear)
     }
 
     // El botón apagado se puede pulsar: dice qué falta y dónde.

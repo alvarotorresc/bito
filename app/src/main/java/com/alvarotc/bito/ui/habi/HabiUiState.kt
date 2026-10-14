@@ -4,6 +4,7 @@ import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.HabiEngine
 import com.alvarotc.bito.domain.MoodEngine
+import com.alvarotc.bito.domain.Movimiento
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.StoreItemState
@@ -46,6 +47,8 @@ data class HabiUiState(
     val userName: String = "",
     // Pieza 1: el jardín de Habi, deducido del historial (o forzado desde el panel de depuración).
     val garden: GardenState = GardenState.INITIAL,
+    // Los últimos movimientos del libro de bitos (pieza 3, §9.1): la misma fuente que Hoy.
+    val movimientos: List<Movimiento> = emptyList(),
     val loading: Boolean = true,
 )
 
@@ -84,6 +87,7 @@ fun buildHabiUiState(
     unlockedBadges: Set<String> = emptySet(),
     waterHighMark: Double = 0.0,
     gardenOverride: GardenState? = null,
+    movimientos: List<Movimiento> = emptyList(),
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -119,6 +123,7 @@ fun buildHabiUiState(
         previewItemId = previewItemId,
         userName = userName,
         garden = garden,
+        movimientos = movimientos,
         loading = false,
     )
 }

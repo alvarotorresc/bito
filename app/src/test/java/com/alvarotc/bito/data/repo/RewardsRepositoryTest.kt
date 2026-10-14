@@ -44,6 +44,21 @@ class RewardsRepositoryTest {
     }
 
     @Test
+    fun `recent movements come newest first, tie broken by id, capped`() =
+        runTest {
+            db.pointsLedgerDao().insertAll(
+                listOf(
+                    pointsLedgerEntity(id = "a", refId = "a", createdAtMillis = 10L),
+                    pointsLedgerEntity(id = "c", refId = "c", createdAtMillis = 30L),
+                    pointsLedgerEntity(id = "b", refId = "b", createdAtMillis = 30L),
+                    pointsLedgerEntity(id = "d", refId = "d", createdAtMillis = 20L),
+                ),
+            )
+            val recientes = rewards.observeRecentMovements(3).first()
+            assertEquals(listOf("c", "b", "d"), recientes.map { it.id })
+        }
+
+    @Test
     fun `purchase spends, acquires and equips in one shot`() =
         runTest {
             db.pointsLedgerDao().insert(pointsLedgerEntity(id = "seed", delta = 25, refId = "seed"))

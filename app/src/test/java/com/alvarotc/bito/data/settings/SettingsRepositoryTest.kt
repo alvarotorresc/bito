@@ -5,6 +5,8 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import com.alvarotc.bito.data.backup.toBackup
+import com.alvarotc.bito.data.backup.toSettings
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import kotlinx.coroutines.CoroutineScope
@@ -298,4 +300,31 @@ class SettingsRepositoryTest {
             dataStore.edit { it[stringPreferencesKey("session_background")] = "OCEAN" }
             assertEquals(SessionBackground.RAIN, SettingsRepository(dataStore).settings.first().sessionBackground)
         }
+
+    @Test
+    fun `the celebrated ledger mark round-trips and defaults to null`() =
+        runTest {
+            val repo = SettingsRepository(store("marca"))
+            assertNull(repo.settings.first().celebratedLedgerMark)
+            repo.update { it.copy(celebratedLedgerMark = MarcaLibro(1_234L, "id|con|barras")) }
+            assertEquals(MarcaLibro(1_234L, "id|con|barras"), repo.settings.first().celebratedLedgerMark)
+            repo.update { it.copy(celebratedLedgerMark = null) }
+            assertNull(repo.settings.first().celebratedLedgerMark)
+        }
+
+    @Test
+    fun `restoring a backup's settings clears the mark`() =
+        runTest {
+            val repo = SettingsRepository(store("restaurar"))
+            repo.update { it.copy(celebratedLedgerMark = MarcaLibro(99L, "x")) }
+            val copia = repo.settings.first().toBackup()
+            repo.update { copia.toSettings() } // lo mismo que BackupRepository.restore
+            assertNull(repo.settings.first().celebratedLedgerMark)
+        }
+
+    @Test
+    fun `marks order by time then by id`() {
+        assertTrue(MarcaLibro(1L, "z") < MarcaLibro(2L, "a"))
+        assertTrue(MarcaLibro(2L, "a") < MarcaLibro(2L, "b"))
+    }
 }

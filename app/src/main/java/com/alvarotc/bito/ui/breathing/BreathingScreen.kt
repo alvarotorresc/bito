@@ -66,7 +66,7 @@ import com.alvarotc.bito.ui.theme.TintaSuave
 import java.util.Locale
 
 /**
- * La pantalla del ejercicio de respiracion (spec §5.3), fuera de la barra inferior como review,
+ * La pantalla del ejercicio de respiracion (spec §5.3), fuera de la pildora Hoy/Camino como review,
  * tasks y focus. Tres estados: reposo (Habi despierto y «Empezar»), en marcha (Habi guia con los
  * ojos en rendija, palabra de fase y restante) y final (frase de cierre y contador).
  *

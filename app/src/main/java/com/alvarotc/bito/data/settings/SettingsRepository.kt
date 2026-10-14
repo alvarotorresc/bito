@@ -85,6 +85,8 @@ data class Settings(
     val sessionBackground: SessionBackground = SessionBackground.RAIN,
     /** «Reducir animaciones» propio; el del sistema (escala 0) se suma en `rememberReducido`. */
     val reduceMotion: Boolean = false,
+    /** Pieza 3 (§6.1): lo último celebrado del libro. Fuera de la copia. */
+    val celebratedLedgerMark: MarcaLibro? = null,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -135,6 +137,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val vibStrength = intPreferencesKey("vib_strength")
         val sessionBackground = stringPreferencesKey("session_background")
         val reduceMotion = booleanPreferencesKey("reduce_motion")
+        val celebratedLedgerMark = stringPreferencesKey("celebrated_ledger_mark")
 
         /**
          * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
@@ -269,6 +272,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
                 this[Keys.sessionBackground]?.let { name -> runCatching { SessionBackground.valueOf(name) }.getOrNull() }
                     ?: defaults.sessionBackground,
             reduceMotion = this[Keys.reduceMotion] ?: defaults.reduceMotion,
+            celebratedLedgerMark = MarcaLibro.decodificar(this[Keys.celebratedLedgerMark]),
         )
     }
 
@@ -314,5 +318,6 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.vibStrength] = vibStrength
         prefs[Keys.sessionBackground] = sessionBackground.name
         prefs[Keys.reduceMotion] = reduceMotion
+        celebratedLedgerMark?.let { prefs[Keys.celebratedLedgerMark] = it.codificar() } ?: prefs.remove(Keys.celebratedLedgerMark)
     }
 }

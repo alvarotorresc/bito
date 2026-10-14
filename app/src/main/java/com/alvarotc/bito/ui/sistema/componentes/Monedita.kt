@@ -20,9 +20,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
@@ -39,22 +41,31 @@ fun Monedita(
     Image(painterResource(id), contentDescription = null, modifier = modifier.size(tamano))
 }
 
-/** Saldo de bitos: monedita y cifra en rodillo; tic a .94 cuando cambia. */
+/** Saldo de bitos: monedita y cifra en rodillo; tic a .94 cuando cambia. La hoja «Tus bitos» lo usa grande. */
 @Composable
 fun Saldo(
     bitos: Int,
     modifier: Modifier = Modifier,
+    tamanoMoneda: Dp = 18.dp,
+    estilo: TextStyle? = null,
 ) {
     val reducido = BitoTema.reducido
     val escala = remember { Animatable(1f) }
     var anterior by remember { mutableIntStateOf(bitos) }
+
+    suspend fun tic() {
+        if (reducido) return
+        escala.snapTo(Duraciones.ESCALA_TIC_SALDO)
+        escala.animateTo(1f, tween(Duraciones.TIC_SALDO, easing = Curvas.out))
+    }
+    val anclas = LocalAnclas.current
+    // Con el Inicio delante, el tic llega con cada moneda que aterriza (G4), no cuando se escribe el libro.
+    LaunchedEffect(anclas) { anclas?.llegadasDeMoneda?.collect { tic() } }
     LaunchedEffect(bitos) {
+        val bajo = bitos < anterior
         if (bitos == anterior) return@LaunchedEffect
         anterior = bitos
-        if (!reducido) {
-            escala.snapTo(Duraciones.ESCALA_TIC_SALDO)
-            escala.animateTo(1f, tween(Duraciones.TIC_SALDO, easing = Curvas.out))
-        }
+        if (anclas == null || bajo) tic()
     }
     val descripcion = pluralStringResource(R.plurals.sistema_saldo, bitos, bitos)
     Row(
@@ -65,8 +76,8 @@ fun Saldo(
             }.clearAndSetSemantics { contentDescription = descripcion },
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Monedita(18.dp)
+        Monedita(tamanoMoneda)
         Spacer(Modifier.width(Medidas.e4))
-        CifraRodillo(bitos, estilo = BitoTema.tipos.t19.cifra(), color = BitoTema.colores.oroTexto)
+        CifraRodillo(bitos, estilo = estilo ?: BitoTema.tipos.t19.cifra(), color = BitoTema.colores.oroTexto)
     }
 }

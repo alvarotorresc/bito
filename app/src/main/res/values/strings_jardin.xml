@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="jardin_etapa">Stage %1$d of 5.</string>
+    <string name="jardin_crece_ahora">%1$s · Stage %2$d of 5. Grows now with what you check off.</string>
+    <string name="jardin_llego_con">%1$s · Came with %2$s.</string>
+    <string name="jardin_especial_farolillo">Lantern</string>
+    <string name="jardin_especial_caminito">Stone path</string>
+    <string name="jardin_especial_estanque">Pond</string>
+    <string name="jardin_especial_setas">Mushrooms</string>
+    <string name="jardin_especial_cerezo_grande">Big cherry tree</string>
+    <string name="jardin_especial_arbol_dorado">Golden tree</string>
+</resources>

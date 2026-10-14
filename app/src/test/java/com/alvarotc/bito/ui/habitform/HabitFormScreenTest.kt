@@ -69,7 +69,7 @@ import org.robolectric.annotation.Config
 import java.io.File
 import java.time.ZoneId
 
-/** Drives the real habit form (Spanish texts) over an in-memory Room database, mirroring TodayScreenTest's harness. */
+/** Drives the real habit form (Spanish texts) over an in-memory Room database, mirroring HoyListaTest's harness. */
 @OptIn(ExperimentalTestApi::class, ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "es-w411dp-h891dp")

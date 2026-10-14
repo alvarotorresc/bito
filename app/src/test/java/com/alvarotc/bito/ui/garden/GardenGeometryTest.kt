@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.garden
 
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.model.GardenLight
 import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenState
@@ -96,7 +97,7 @@ class GardenGeometryTest {
         val mushrooms = items.filterIsInstance<SceneItem.Special>().single()
         val tap = onSceneTap(items, mushrooms.rect.left + mushrooms.rect.width / 2f, mushrooms.rect.top + mushrooms.rect.height / 2f)
         assertEquals(SceneTap.Bubble(mushrooms), tap)
-        assertEquals(SceneTap.None, onSceneTap(items, 1f, 1f))
+        assertEquals(SceneTap.Fondo, onSceneTap(items, 1f, 1f))
     }
 
     @Test
@@ -104,7 +105,7 @@ class GardenGeometryTest {
         val items = sceneItems(GardenState.INITIAL, w, h)
         val soil = items.single { it is SceneItem.Soil }.rect
         // El borde de abajo de la tierra queda por debajo de la planta: ahí solo hay tierra.
-        assertEquals(SceneTap.None, onSceneTap(items, soil.left + soil.width / 2f, soil.top + soil.height - 1f))
+        assertEquals(SceneTap.Fondo, onSceneTap(items, soil.left + soil.width / 2f, soil.top + soil.height - 1f))
     }
 
     @Test
@@ -158,5 +159,22 @@ class GardenGeometryTest {
         // Sin fundido, como el prototipo: cuenta la fase, no la transición.
         assertTrue(itemsOverLight(items, GardenLight(LightPhase.TARDE, LightPhase.TARDE, LightPhase.NOCHE, 0.9f)).isEmpty())
         assertEquals(1, itemsOverLight(items, GardenLight(LightPhase.NOCHE, LightPhase.TARDE, LightPhase.NOCHE, 0.1f)).size)
+    }
+
+    @Test
+    fun `a tap on empty sky is the background`() {
+        val items = sceneItems(GardenState.INITIAL, 1000f, 600f)
+        assertEquals(SceneTap.Fondo, onSceneTap(items, 20f, 20f, habiBodyRect(1000f, 600f)))
+    }
+
+    @Test
+    fun `the growing plot is the last one`() {
+        val g = GardenState.INITIAL.copy(plots = GardenEngine.plotsFor(30.0))
+        assertEquals(1, parcelaQueCrece(g))
+    }
+
+    @Test
+    fun `the drag threshold is 8 dp`() {
+        assertEquals(8f, UMBRAL_ARRASTRE_DP, 0f)
     }
 }

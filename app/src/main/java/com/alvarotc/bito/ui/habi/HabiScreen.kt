@@ -41,13 +41,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.alvarotc.bito.BuildConfig
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.SpeechBubble
-import com.alvarotc.bito.ui.garden.GardenDebugPanel
 import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.premios.HojaSaldo
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
@@ -61,7 +60,7 @@ import kotlinx.coroutines.delay
  * store. No screen title (mockup 4a): the balance chip in the top-right corner carries the header
  * instead. Buying something in [StoreSection] previews live here too — the trying-on chip sits
  * right under the garden, and Habi in it already wears the preview via `state.spec` (see
- * [buildHabiUiState]). Debug builds add the garden debug panel under the scene.
+ * [buildHabiUiState]).
  */
 @Composable
 fun HabiScreen(viewModel: HabiViewModel) {
@@ -123,9 +122,6 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 },
                 modifier = Modifier.fillMaxWidth(),
             )
-            if (BuildConfig.DEBUG) {
-                GardenDebugPanel(current = state.garden, onForce = viewModel::forceGarden)
-            }
             state.previewItemId?.let { previewId ->
                 TryingChip(itemNameRes(previewId), modifier = Modifier.align(Alignment.CenterHorizontally))
             }
@@ -158,9 +154,14 @@ fun HabiScreen(viewModel: HabiViewModel) {
             )
         }
     }
-    if (showPointsSheet) {
-        PointsInfoSheet(economy = state.economy, onDismiss = { showPointsSheet = false })
-    }
+    HojaSaldo(
+        abierta = showPointsSheet,
+        saldo = state.balance,
+        movimientos = state.movimientos,
+        economia = state.economy,
+        alIrTienda = { showPointsSheet = false },
+        alCerrar = { showPointsSheet = false },
+    )
 }
 
 /** "probando: <ítem>" (mockup 4b), under the garden while Habi is trying something on. */
@@ -185,7 +186,7 @@ private fun TryingChip(
 }
 
 /**
- * The points chip; tapping it opens [PointsInfoSheet] (QA 2026-08-23 — the app finally explains
+ * The points chip; tapping it opens [com.alvarotc.bito.ui.premios.HojaSaldo] (QA 2026-08-23 — the app finally explains
  * how points are earned somewhere). `internal` for the same direct-test reason as
  * [PersonalityPills]. Surface's onClick overload carries the Button role for TalkBack.
  */
@@ -249,7 +250,7 @@ internal fun PersonalityPills(
             // options with no sign a 3rd, active one existed. `selectable` (always attached, per
             // OnboardingScreen's PersonalityCard) fixes that; `indication = null` on the active
             // pill only keeps the old visual byte-for-byte — it never had a ripple to begin with
-            // (a703aef's BitoBottomBar fix is the same pattern for the same reason).
+            // (the same pattern the old bottom bar used, for the same reason).
             val interactionSource = remember { MutableInteractionSource() }
             Box(
                 Modifier

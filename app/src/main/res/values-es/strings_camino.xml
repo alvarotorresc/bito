@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="camino_este_mes">este mes</string>
+    <string name="camino_este_ano">este año</string>
+    <string name="camino_tu_semana">Tu semana</string>
+    <string name="camino_frente_semana">+%1$d %% frente a la semana pasada</string>
+    <string name="camino_mejor_racha">Tu mejor racha: %1$d</string>
+    <string name="camino_registros_totales">Registros totales</string>
+    <string name="camino_ley_cumplido">cumplido</string>
+    <string name="camino_ley_fallado">fallado</string>
+    <string name="camino_ley_congelado">congelado</string>
+    <string name="camino_ley_pausa">en pausa</string>
+    <string name="camino_ley_pendiente">pendiente</string>
+    <string name="camino_logros">Logros · %1$d de %2$d</string>
+    <string name="camino_lo_conseguiste">Lo conseguiste el %1$s.</string>
+    <string name="camino_falta_dias">%1$d de %2$d días</string>
+    <string name="camino_otro_mes">El %1$s empieza otro mes entero.</string>
+    <string name="camino_como_se_gana">Se gana con: %1$s.</string>
+    <string name="camino_planto">Plantó %1$s en tu jardín.</string>
+    <string name="camino_plantara">Cuando llegue, planta %1$s en tu jardín.</string>
+    <string name="camino_verlo">Verlo en el jardín</string>
+    <string name="camino_seguir">Seguir</string>
+    <string name="camino_logro_conseguido_cd">%1$s, conseguido</string>
+    <string name="camino_logro_pendiente_cd">%1$s, pendiente: %2$s</string>
+    <string name="camino_especial_farolillo">el farolillo</string>
+    <string name="camino_especial_caminito">el caminito</string>
+    <string name="camino_especial_estanque">el estanque</string>
+    <string name="camino_especial_setas">las setas</string>
+    <string name="camino_especial_cerezo_grande">el cerezo grande</string>
+    <string name="camino_especial_arbol_dorado">el árbol dorado</string>
+</resources>

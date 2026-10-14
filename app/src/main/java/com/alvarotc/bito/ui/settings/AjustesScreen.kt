@@ -2,6 +2,9 @@
 
 package com.alvarotc.bito.ui.settings
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -39,6 +42,7 @@ import com.alvarotc.bito.ui.settings.estratos.resumenCopias
 import com.alvarotc.bito.ui.settings.estratos.resumenGeneral
 import com.alvarotc.bito.ui.settings.estratos.resumenSonido
 import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Muelles
 import com.alvarotc.bito.ui.sistema.componentes.EstratoPlegable
 import kotlinx.coroutines.delay
 
@@ -50,6 +54,23 @@ private const val ACERCA = 4
 
 /** Lo que tarda el estrato en abrirse antes de subirlo a la vista. */
 private const val ESPERA_ABRIR_MS = 260L
+
+/** Escala de la cámara Hoy → Ajustes: `1/0,74` fuera de pantalla (el jardín a tamaño de Hoy) y `1` visible. */
+internal fun escalaCamara(visible: Boolean): Float = if (visible) 1f else 1f / ESCALA_MAQUETA
+
+/** La escala de la maqueta leída de la transición de la ruta; fija en 1 con movimiento reducido o sin `entrada`. */
+@Composable
+private fun escalaCamaraEntrada(
+    entrada: AnimatedVisibilityScope?,
+    reducido: Boolean,
+): () -> Float {
+    if (entrada == null || reducido) return { 1f }
+    val escala by entrada.transition.animateFloat(
+        transitionSpec = { Muelles.camara() },
+        label = "camara-ajustes",
+    ) { escalaCamara(it == EnterExitState.Visible) }
+    return { escala }
+}
 
 /**
  * Ajustes de la Bito 2 (spec §5.1): la maqueta del jardín arriba y cinco estratos de tierra debajo, uno abierto
@@ -65,6 +86,7 @@ fun AjustesScreen(
     onBack: () -> Unit,
     onOpenArchived: () -> Unit,
     onOpenIntro: () -> Unit = {},
+    entrada: AnimatedVisibilityScope? = null,
 ) {
     val settings by settingsViewModel.state.collectAsStateWithLifecycle()
     val archivados by settingsViewModel.archivedHabits.collectAsStateWithLifecycle()
@@ -73,6 +95,7 @@ fun AjustesScreen(
     val colores = BitoTema.colores
     val scroll = rememberScrollState()
     var abierto by rememberSaveable { mutableStateOf<Int?>(null) }
+    val escala = escalaCamaraEntrada(entrada, BitoTema.reducido)
 
     Column(
         Modifier
@@ -81,7 +104,7 @@ fun AjustesScreen(
             .verticalScroll(scroll),
     ) {
         Box(Modifier.background(colores.estratos.general.fondo)) {
-            MaquetaJardin(garden = habi.garden, spec = habi.spec, scroll = scroll, modifier = Modifier.statusBarsPadding())
+            MaquetaJardin(garden = habi.garden, spec = habi.spec, scroll = scroll, modifier = Modifier.statusBarsPadding(), escala = escala)
         }
         settings?.let { actual ->
             EstratoAjustes(GENERAL, R.string.ajustes_estrato_general, resumenGeneral(actual, habi.spec.personality, resources), abierto, {

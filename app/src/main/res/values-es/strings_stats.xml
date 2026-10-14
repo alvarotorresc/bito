@@ -1,11 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="stats_perfect_days_label">Días perfectos</string>
-    <string name="stats_perfect_days_this_month">%1$d este mes</string>
-    <string name="stats_perfect_days_year_label">este año</string>
 
-    <string name="stats_week_title">Tu semana</string>
-    <string name="stats_week_delta">+%1$d%% vs semana pasada</string>
     <string name="stats_week_empty">Sin hábitos activos esta semana</string>
     <!-- Descripción TalkBack del grupo de puntos de WeekRowLine: "%1$s" = día corto (p.ej. "lun."),
          "%2$s" = day_done/day_not_done/etc, unidas por fila en "lun. hecho, mar. hecho, …". -->
@@ -21,14 +17,12 @@
 
     <string name="stats_teaser_records">Récords</string>
     <string name="stats_teaser_numbers">Tus números</string>
-    <string name="stats_teaser_records_caption">Récords · tu mejor racha</string>
-    <string name="stats_teaser_numbers_caption">Tus números · registros totales</string>
 
     <string name="records_empty">Aún no hay récords</string>
     <string name="records_archived_label">archivado</string>
-    <string name="records_best_caption">tu mejor racha de siempre</string>
     <string name="records_current_streak">ahora: %1$d %2$s</string>
     <string name="records_no_current_streak">sin racha ahora</string>
+    <string name="records_best_caption">tu mejor racha de siempre</string>
 
     <string name="numbers_section_log">Registro</string>
     <string name="numbers_section_rewards">Recompensas</string>

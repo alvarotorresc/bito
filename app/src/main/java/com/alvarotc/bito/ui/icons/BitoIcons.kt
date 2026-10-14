@@ -37,7 +37,6 @@ object BitoIcons {
     val Plus by lazy { lucide("plus", "M5 12h14", "M12 5v14") }
     val Minus by lazy { lucide("minus", "M5 12h14") }
     val Check by lazy { lucide("check", "M20 6 9 17l-5-5") }
-    val X by lazy { lucide("x", "M18 6 6 18", "m6 6 12 12") }
     val ChevronLeft by lazy { lucide("chevron-left", "m15 18-6-6 6-6") }
     val Flame by lazy {
         lucide(
@@ -46,30 +45,12 @@ object BitoIcons {
                 "2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z",
         )
     }
-    val Home by lazy { lucide("house", "m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z", "M9 22V12h6v10") }
     val Pencil by lazy {
         lucide(
             "pencil",
             "M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 " +
                 ".623.622l4.353-1.32a2 2 0 0 0 .83-.497z",
             "m15 5 4 4",
-        )
-    }
-    val Settings by lazy {
-        lucide(
-            "settings-2",
-            "M20 7h-9",
-            "M14 17H5",
-            "M14 17a3 3 0 1 0 6 0a3 3 0 1 0 -6 0",
-            "M4 7a3 3 0 1 0 6 0a3 3 0 1 0 -6 0",
-        )
-    }
-    val ChartColumn by lazy {
-        lucide(
-            "chart-no-axes-column",
-            "M5 21v-6",
-            "M12 21V3",
-            "M19 21V9",
         )
     }
     val Snowflake by lazy {
@@ -89,54 +70,12 @@ object BitoIcons {
             "m7 3 3 6h4",
         )
     }
-    val Pause by lazy {
-        lucide(
-            "pause",
-            "M15 3h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1h-3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z",
-            "M6 3h3a1 1 0 0 1 1 1v16a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z",
-        )
-    }
-    val Play by lazy {
-        lucide(
-            "play",
-            "M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z",
-        )
-    }
-    val Archive by lazy {
-        lucide(
-            "archive",
-            "M3 3h18a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z",
-            "M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8",
-            "M10 12h4",
-        )
-    }
-    val ChevronRight by lazy { lucide("chevron-right", "m9 18 6-6-6-6") }
-    val Trophy by lazy {
-        lucide(
-            "trophy",
-            "M6 9H4.5a2.5 2.5 0 0 1 0-5H6",
-            "M18 9h1.5a2.5 2.5 0 0 0 0-5H18",
-            "M4 22h16",
-            "M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22",
-            "M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22",
-            "M18 2H6v7a6 6 0 0 0 12 0V2Z",
-        )
-    }
-    val ArrowUp by lazy { lucide("arrow-up", "M5 12l7-7 7 7", "M12 19V5") }
     val Info by lazy {
         lucide(
             "info",
             "M22 12A10 10 0 1 0 2 12A10 10 0 1 0 22 12Z",
             "M12 16v-4",
             "M12 8h.01",
-        )
-    }
-    val Habi by lazy {
-        lucide(
-            "habi-bean",
-            "M12 3c4.4 0 7.5 3.6 7.5 9.5S16.4 21 12 21s-7.5-2.6-7.5-8.5S7.6 3 12 3",
-            "M9.5 11.5h.01",
-            "M14.5 11.5h.01",
         )
     }
     val Sparkle by lazy {
@@ -230,14 +169,6 @@ object BitoIcons {
             "M14 4h6v6h-6z",
             "M4 14h6v6h-6z",
             "M14 14h6v6h-6z",
-        )
-    }
-    val Wind by lazy {
-        lucide(
-            "wind",
-            "M12.8 19.6A2 2 0 1 0 14 16H2",
-            "M17.5 8a2.5 2.5 0 1 1 2 4H2",
-            "M9.8 4.4A2 2 0 1 1 11 8H2",
         )
     }
     val Clock by lazy {

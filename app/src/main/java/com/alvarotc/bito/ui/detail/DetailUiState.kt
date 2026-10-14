@@ -2,10 +2,14 @@ package com.alvarotc.bito.ui.detail
 
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.Compliance
+import com.alvarotc.bito.domain.DayDot
 import com.alvarotc.bito.domain.HabitStats
 import com.alvarotc.bito.domain.Heatmap
 import com.alvarotc.bito.domain.HeatmapDay
+import com.alvarotc.bito.domain.MoodEngine
+import com.alvarotc.bito.domain.PlantaFicha
 import com.alvarotc.bito.domain.PointsEngine
+import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.WindowStats
 import com.alvarotc.bito.domain.model.Direction
@@ -16,10 +20,13 @@ import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogMode
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.domain.plantaDeHabito
 import com.alvarotc.bito.ui.today.CardKind
+import java.time.LocalDate
 import java.time.YearMonth
 
 /** The 7/30/365-day compliance windows the monument's "% de cumplimiento" segment renders, in that order. */
@@ -63,6 +70,16 @@ data class DetailUiState(
     // Whether this habit has any entry at all (across all time, not just the displayed month).
     // Used to show/hide the empty-state hint.
     val hasAnyEntry: Boolean = false,
+    // Pieza 3: la planta del hábito en la lámina, y el 30 días suelto para la tira de números.
+    val planta: PlantaFicha,
+    val pct30: WindowStats,
+    // Modo lectura: la ficha se abre desde un hábito ajeno al día (p. ej. desde Camino) y no escribe.
+    val lectura: Boolean = false,
+    val mood: Mood = Mood.NORMAL,
+    // El mes de creación del hábito: el calendario no baja de ahí (spec §8.4).
+    val primerMes: YearMonth,
+    // Si hoy está hecho (un CHECK cumplido o un periodo con actividad), con el mes que se mire: el círculo de la ficha lo lee de aquí.
+    val hechoHoy: Boolean = false,
 )
 
 /**
@@ -80,6 +97,7 @@ fun buildDetailUiState(
     // Defaults empty so existing positional callers (tests predating the equipped avatar) keep
     // compiling unchanged — the same convention buildTodayUiState/buildStatsUiState follow.
     owned: List<CustomizationItemEntity> = emptyList(),
+    lectura: Boolean = false,
 ): DetailUiState? {
     val habit = state.habits.find { it.id == habitId } ?: return null
     val streaks = Streaks.streaksOf(state, habit, today)
@@ -96,6 +114,7 @@ fun buildDetailUiState(
             .groupBy { it.logicalDay }
             .mapValues { (_, dayEntries) -> Compliance.progressOf(habit, dayEntries) }
     val hasAnyEntry = state.entries.any { it.habitId == habitId }
+    val windows = WINDOW_SIZES.map { HabitStats.windowStats(state, habit, today, it) }
     return DetailUiState(
         habitId = habit.id,
         name = habit.name,
@@ -106,7 +125,7 @@ fun buildDetailUiState(
         currentStreak = streaks.current,
         bestStreak = streaks.best,
         period = habit.period,
-        windows = WINDOW_SIZES.map { HabitStats.windowStats(state, habit, today, it) },
+        windows = windows,
         month = month,
         heatmap = Heatmap.monthOf(state, habit, month, today),
         dayValues = dayValues,
@@ -117,6 +136,12 @@ fun buildDetailUiState(
         equipped = equippedSetOf(owned.filter { it.equipped }.map { it.itemId }),
         loading = false,
         hasAnyEntry = hasAnyEntry,
+        planta = plantaDeHabito(habit, state, today),
+        pct30 = windows[1],
+        lectura = lectura,
+        mood = MoodEngine.moodOf(state, today, StatsEngine.lastActivityDay(state)),
+        primerMes = YearMonth.from(LocalDate.ofEpochDay(habit.createdOnDay.toLong())),
+        hechoHoy = Heatmap.dayDotOf(state, habit, today, today).let { it == DayDot.FULFILLED || it == DayDot.ACTIVITY },
     )
 }
 
@@ -126,7 +151,7 @@ fun buildDetailUiState(
  * self-contained duplicate rather than sharing a function across packages: the rule is four
  * lines and Today's builder is out of scope for this task.
  */
-private fun cardKindOf(habit: Habit): CardKind {
+internal fun cardKindOf(habit: Habit): CardKind {
     val binaryLike = habit.metric == Metric.CHECK || habit.logMode == LogMode.BINARY
     return when {
         habit.direction == Direction.ZERO -> CardKind.ABSTINENCE

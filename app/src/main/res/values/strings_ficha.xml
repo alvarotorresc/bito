@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Calendario de gotas -->
+    <string name="ficha_cal_mes_pattern">MMMM yyyy</string>
+    <string name="ficha_dia_hecho">done</string>
+    <string name="ficha_dia_sin_hacer">not done</string>
+    <string name="ficha_dia_congelado">frozen</string>
+    <string name="ficha_dia_hoy_hecho">today, done</string>
+    <string name="ficha_dia_hoy_sin_marcar">today, not marked</string>
+    <string name="ficha_dia_pendiente">pending</string>
+    <string name="ficha_dia_pausa">paused</string>
+    <string name="ficha_dia_sin_registro">no record</string>
+    <string name="ficha_leyenda_sin_hacer">Not done</string>
+    <string name="ficha_leyenda_congelador">Freezer</string>
+    <string name="ficha_leyenda_hoy">Today</string>
+    <string name="ficha_leyenda_por_venir">Upcoming</string>
+
+    <!-- Lámina de herbario -->
+    <plurals name="ficha_dias_seguidos">
+        <item quantity="one">day in a row</item>
+        <item quantity="other">days in a row</item>
+    </plurals>
+    <plurals name="ficha_semanas_seguidas">
+        <item quantity="one">week in a row</item>
+        <item quantity="other">weeks in a row</item>
+    </plurals>
+    <plurals name="ficha_meses_seguidos">
+        <item quantity="one">month in a row</item>
+        <item quantity="other">months in a row</item>
+    </plurals>
+    <plurals name="ficha_dias_limpios">
+        <item quantity="one">clean day</item>
+        <item quantity="other">clean days</item>
+    </plurals>
+    <string name="ficha_hoy_empieza_otra">days in a row; today a new one starts</string>
+    <string name="ficha_mejor_racha">best streak</string>
+    <string name="ficha_mejor_ahora">best streak: the current one</string>
+    <string name="ficha_ultimos_30">of the last 30 days</string>
+    <string name="ficha_planta_cd">The habit\'s plant</string>
+
+    <!-- Ficha: cabecera, nota, pie y hojas -->
+    <string name="ficha_editar">Edit</string>
+    <string name="ficha_marcar_hoy">Mark %1$s today</string>
+    <string name="ficha_cal_nota">Tap a past day to correct it. Freezers can\'t be tapped.</string>
+    <string name="ficha_vale">Okay</string>
+    <string name="ficha_no_hace_falta">No need</string>
+    <string name="ficha_dias_365">365 days</string>
+    <string name="ficha_cumple_linea">%1$s · %2$s</string>
+    <string name="ficha_cumple_cd">%1$s: %2$d of %3$d</string>
+    <string name="ficha_sin_congeladores">No freezers</string>
+    <string name="ficha_recaida_verbo">Register</string>
+    <string name="ficha_sella_dia">This seals the whole day.</string>
+    <string name="ficha_total_cd">Total for the day</string>
+    <string name="ficha_usar_congelador">Use a freezer (you have %1$d)</string>
+    <string name="ficha_congelador_pregunta">Use a freezer?</string>
+    <string name="ficha_te_quedara">You\'ll have %1$d left</string>
+    <string name="ficha_congelador_verbo">Use freezer</string>
+    <string name="ficha_archivar_cuerpo">Archiving keeps everything.</string>
+</resources>

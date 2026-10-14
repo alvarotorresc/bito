@@ -9,6 +9,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -17,19 +18,30 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
+import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.FuentePropuestas
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.Respuesta
+import com.alvarotc.bito.domain.propuestas.TextoHabi
+import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
@@ -81,19 +93,23 @@ class TodayViewModelTest {
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
 
-    private fun newViewModel() =
-        TodayViewModel(
-            domainStateRepo,
-            habitsRepo,
-            journal,
-            settingsRepo,
-            reconciler,
-            rewardsRepo,
-            tasks = tasksRepo,
-            now = { fixedNow },
-            zone = { utc },
-            defaultDispatcher = dispatcher,
-        )
+    private fun newViewModel(
+        propuestas: FuentePropuestas? = null,
+        habiSounds: HabiSounds? = null,
+    ) = TodayViewModel(
+        domainStateRepo,
+        habitsRepo,
+        journal,
+        settingsRepo,
+        reconciler,
+        rewardsRepo,
+        tasks = tasksRepo,
+        now = { fixedNow },
+        zone = { utc },
+        defaultDispatcher = dispatcher,
+        propuestas = propuestas,
+        habiSounds = habiSounds,
+    )
 
     @Before
     fun setUp() {
@@ -182,6 +198,28 @@ class TodayViewModelTest {
             advanceUntilIdle()
 
             assertEquals(2, state().cards.single { it.id == "h1" }.progress)
+        }
+
+    @Test
+    fun `logging from the row makes no sound in the model, the row puts the catalogue one`() =
+        runTest {
+            val sonido = SonidoGrabado()
+            vm = newViewModel(habiSounds = HabiSounds(sonido))
+            habitsRepo.create(
+                habitEntity(id = "c", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+            )
+            habitsRepo.create(
+                habitEntity(id = "n", metric = Metric.COUNT, direction = Direction.AT_LEAST, target = 10, step = 2, createdOnDay = today),
+            )
+            val check = state().cards.single { it.id == "c" }
+            val contador = state().cards.single { it.id == "n" }
+
+            vm.tapPrimary(check)
+            advanceUntilIdle()
+            vm.addAmount(contador, contador.step)
+            advanceUntilIdle()
+
+            assertTrue(sonido.snds().isEmpty())
         }
 
     @Test
@@ -356,5 +394,123 @@ class TodayViewModelTest {
                     it.taskId == "t1" && it.kind == TaskEventKind.POSTPONED && it.logicalDay == today
                 },
             )
+        }
+
+    private suspend fun seedNoSmoking() =
+        habitsRepo.create(
+            habitEntity(id = "nosmoke", metric = Metric.CHECK, direction = Direction.ZERO, period = Period.DAY, createdOnDay = today),
+        )
+
+    @Test
+    fun `relapse today logs one entry for an abstinence habit and undo removes it`() =
+        runTest(dispatcher) {
+            seedNoSmoking()
+            val card = state().cards.single { it.id == "nosmoke" }
+            assertEquals(CardKind.ABSTINENCE, card.kind)
+
+            vm.recaerHoy(card)
+            advanceUntilIdle()
+
+            val entries = db.entryDao().all().filter { it.habitId == "nosmoke" }
+            assertEquals(1, entries.size)
+            assertEquals(1, entries.single().value)
+            assertEquals(today, entries.single().logicalDay)
+            assertEquals(entries.single().id, vm.lastLogged.value)
+
+            vm.undo()
+            advanceUntilIdle()
+
+            assertTrue(db.entryDao().all().none { it.habitId == "nosmoke" })
+        }
+
+    @Test
+    fun `relapse is ignored for other kinds`() =
+        runTest(dispatcher) {
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+            )
+            val card = state().cards.single { it.id == "h1" }
+            assertEquals(CardKind.CHECK, card.kind)
+
+            vm.recaerHoy(card)
+            advanceUntilIdle()
+
+            assertTrue(db.entryDao().all().isEmpty())
+            assertNull(vm.lastLogged.value)
+        }
+
+    @Test
+    fun `the proposal comes from the source for Today`() =
+        runTest(dispatcher) {
+            val respondidas = mutableListOf<Pair<String, Respuesta>>()
+            val ambitos = mutableListOf<Ambito>()
+            val fuente =
+                object : FuentePropuestas {
+                    override fun propuesta(
+                        ambito: Ambito,
+                        habitId: String?,
+                    ): Flow<Propuesta?> {
+                        ambitos += ambito
+                        return flowOf(Propuesta("p", TextoHabi(1), emptySet()))
+                    }
+
+                    override suspend fun responder(
+                        id: String,
+                        respuesta: Respuesta,
+                    ) {
+                        respondidas += id to respuesta
+                    }
+                }
+            vm = newViewModel(fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+
+            assertEquals("p", vm.propuesta.value?.id)
+            assertEquals(listOf(Ambito.HOY), ambitos)
+
+            vm.responder(Respuesta.HOY_NO)
+            advanceUntilIdle()
+
+            assertEquals(listOf("p" to Respuesta.HOY_NO), respondidas)
+        }
+
+    @Test
+    fun `without a source there is no proposal and answering does nothing`() =
+        runTest(dispatcher) {
+            assertNull(vm.propuesta.value)
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+            assertNull(vm.propuesta.value)
+        }
+
+    @Test
+    fun `forcing the garden overrides it and null goes back`() =
+        runTest(dispatcher) {
+            val forzado = GardenState.INITIAL.copy(plots = GardenEngine.plotsFor(30.0))
+            assertTrue(state().garden != forzado)
+
+            vm.forzarJardin(forzado)
+            advanceUntilIdle()
+            assertEquals(forzado, vm.uiState.value.garden)
+
+            vm.forzarJardin(null)
+            advanceUntilIdle()
+            assertTrue(vm.uiState.value.garden != forzado)
+        }
+
+    @Test
+    fun `the balance follows the ledger`() =
+        runTest(dispatcher) {
+            db.pointsLedgerDao().insertAll(
+                listOf(
+                    pointsLedgerEntity(id = "a", delta = 1, refId = "x:1", createdAtMillis = 10L),
+                    pointsLedgerEntity(id = "b", delta = 3, refId = "x:2", createdAtMillis = 20L),
+                ),
+            )
+
+            val ui = state()
+
+            assertEquals(4, ui.saldo)
+            assertEquals(listOf(3, 1), ui.movimientos.map { it.delta })
         }
 }

@@ -252,8 +252,20 @@ def exportar_habi(manifiesto, ruta_manifiesto, dir_res, calidad, caras=None):
     return entradas, lienzo, lienzo[3] * escala_salida
 
 
+def aplicar_recorte(img, recorte):
+    """Borra (alfa 0) la franja izquierda de `izquierda_pct` % del ancho por debajo de `desde_alto_pct` % del alto."""
+    if not recorte:
+        return img
+    arr = np.array(img)
+    x = round(img.width * recorte["izquierda_pct"] / 100)
+    y = round(img.height * recorte["desde_alto_pct"] / 100)
+    arr[y:, :x, 3] = 0
+    return Image.fromarray(arr, "RGBA")
+
+
 def _pieza_jardin(manifiesto, ruta_manifiesto, archivo, recurso, dir_res, escala, calidad):
     original = Image.open(ruta_fuente(manifiesto, ruta_manifiesto, archivo)).convert("RGBA")
+    original = aplicar_recorte(original, manifiesto.get("recortes", {}).get(os.path.basename(archivo)))
     caja = caja_alfa(original)
     if caja is None:
         raise SystemExit(f"{archivo}: la pieza está vacía")
@@ -283,6 +295,52 @@ def exportar_moneda(manifiesto, dir_res, calidad):
         img.save(ruta, "WEBP", quality=calidad, method=6)
         salidas.append(ruta)
     return salidas
+
+
+KT_CAMINO = os.path.join(RAIZ, "app", "src", "main", "java", "com", "alvarotc", "bito", "ui", "camino")
+
+
+def exportar_logros(manifiesto, dir_res, calidad):
+    """Los 14 emblemas (pieza 3, §10.1): cada pieza recortada al alfa, centrada en un cuadrado y a `px`.
+
+    Sin prefijo de PREFIJOS: la limpieza de piezas de Habi y del jardín no los borra.
+    """
+    fuentes = os.path.expanduser(manifiesto["fuentes"])
+    lado_final = int(manifiesto["px"])
+    salidas = []
+    for logro in manifiesto["logros"]:
+        ruta = os.path.join(fuentes, logro["pieza"] + ".png")
+        if not os.path.exists(ruta):
+            raise SystemExit(f"Falta la pieza del logro {logro['id']}: {ruta}")
+        fuente = Image.open(ruta).convert("RGBA")
+        caja = caja_alfa(fuente)
+        if caja is None:
+            raise SystemExit(f"{ruta}: la pieza está vacía")
+        pieza = fuente.crop(caja)
+        lado = max(pieza.size)
+        cuadrado = Image.new("RGBA", (lado, lado), (0, 0, 0, 0))
+        cuadrado.paste(pieza, ((lado - pieza.width) // 2, (lado - pieza.height) // 2))
+        destino = os.path.join(dir_res, f"logro_{logro['pieza']}.webp")
+        guardar_webp(cuadrado.resize((lado_final, lado_final), Image.LANCZOS), destino, calidad)
+        salidas.append(destino)
+    return salidas
+
+
+def kotlin_logros(manifiesto):
+    filas = "\n".join(f'            "{l["id"]}" to R.drawable.logro_{l["pieza"]},' for l in manifiesto["logros"])
+    return (
+        CABECERA
+        + "package com.alvarotc.bito.ui.camino\n\n"
+        + "import com.alvarotc.bito.R\n\n"
+        + "/** El arte de cada logro (pieza 3, §10.1), por `BadgeDef.id`. */\n"
+        + "internal object LogrosArte {\n"
+        + "    val porId: Map<String, Int> =\n"
+        + "        mapOf(\n"
+        + filas
+        + "\n        )\n\n"
+        + "    fun de(badgeId: String): Int? = porId[badgeId]\n"
+        + "}\n"
+    )
 
 
 def exportar_jardin(manifiesto, ruta_manifiesto, dir_res, calidad):
@@ -605,6 +663,7 @@ def main(argv=None):
     p.add_argument("--habi", default=os.path.join(AQUI, "habi.json"))
     p.add_argument("--jardin", default=os.path.join(AQUI, "jardin.json"))
     p.add_argument("--moneda", default=os.path.join(AQUI, "moneda.json"))
+    p.add_argument("--logros", default=os.path.join(AQUI, "logros.json"))
     p.add_argument("--tintes", default=os.path.join(AQUI, "tintes.json"))
     p.add_argument("--caras", default=os.path.join(AQUI, "caras.json"))
     p.add_argument("--res", default=RES)
@@ -631,6 +690,9 @@ def main(argv=None):
     entradas, lienzo, fuente_px = exportar_habi(habi, args.habi, args.res, args.calidad, caras)
     datos = exportar_jardin(jardin, args.jardin, args.res, args.calidad)
     exportar_moneda(cargar_json(args.moneda), args.res, args.calidad)
+    logros = cargar_json(args.logros)
+    exportar_logros(logros, args.res, args.calidad)
+    escribir(os.path.join(KT_CAMINO, "LogrosArte.kt"), kotlin_logros(logros))
     escribir(os.path.join(KT_HABI, "HabiAtlas.kt"), kotlin_atlas(entradas, lienzo, habi["cuerpo"], fuente_px))
     escribir(os.path.join(KT_HABI, "HabiTintTable.kt"), kotlin_tintes(tintes))
     escribir(os.path.join(KT_HABI, "HabiFaceTable.kt"), kotlin_caras(caras))

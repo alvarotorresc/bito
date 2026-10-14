@@ -1,0 +1,21 @@
+{
+  "_nota": "Los 14 emblemas de la dirección C (pieza 3, §10.1). 496 px = 124 dp a 4x, el tamaño grande de la hoja del logro. La pieza da el nombre del recurso (logro_<pieza>.webp); el id es el de BadgeCatalog.",
+  "fuentes": "~/Pictures/bito-habi/logros/piezas",
+  "px": 496,
+  "logros": [
+    {"pieza": "r1", "id": "streak-7"},
+    {"pieza": "r2", "id": "streak-30"},
+    {"pieza": "r3", "id": "streak-100"},
+    {"pieza": "r4", "id": "streak-365"},
+    {"pieza": "c1", "id": "perfect-day-1"},
+    {"pieza": "c2", "id": "perfect-days-10"},
+    {"pieza": "c3", "id": "perfect-days-50"},
+    {"pieza": "c4", "id": "perfect-days-100"},
+    {"pieza": "c5", "id": "perfect-week"},
+    {"pieza": "c6", "id": "perfect-month"},
+    {"pieza": "m1", "id": "first-habit"},
+    {"pieza": "m2", "id": "first-week"},
+    {"pieza": "m3", "id": "resurrection"},
+    {"pieza": "m4", "id": "first-freezer"}
+  ]
+}

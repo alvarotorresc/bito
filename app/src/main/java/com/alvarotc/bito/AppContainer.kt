@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.propuestas.PropuestasProvisionales
 import com.alvarotc.bito.data.repo.BreathingRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
@@ -14,6 +15,7 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.crearTacto
@@ -50,4 +52,7 @@ class AppContainer(context: Context) {
     val keyStore = BackupKeyStore(context.filesDir)
     val backup = BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME)
     val reconciler = PointsReconciler(domainState, rewards, settings = settings, despachador = Dispatchers.Default)
+
+    // La pieza 4 sustituye esta línea.
+    val propuestas: FuentePropuestas by lazy { PropuestasProvisionales(domainState.observe(), settings.settings) }
 }

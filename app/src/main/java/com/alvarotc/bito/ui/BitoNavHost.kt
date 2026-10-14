@@ -3,6 +3,8 @@ package com.alvarotc.bito.ui
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.VisibilityThreshold
@@ -19,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -29,10 +32,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.compose.currentStateAsState
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -44,40 +50,35 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.breathing.AndroidBreathingMusic
 import com.alvarotc.bito.ui.breathing.BreathingScreen
 import com.alvarotc.bito.ui.breathing.BreathingViewModel
-import com.alvarotc.bito.ui.celebration.BadgeUnlockSheet
-import com.alvarotc.bito.ui.celebration.CelebrationsViewModel
-import com.alvarotc.bito.ui.celebration.PerfectDaySheet
+import com.alvarotc.bito.ui.camino.CaminoViewModel
 import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.inicio.InicioScreen
+import com.alvarotc.bito.ui.inicio.LocalAnimacionRuta
+import com.alvarotc.bito.ui.inicio.LocalTransicionCompartida
+import com.alvarotc.bito.ui.inicio.NavegacionInicio
 import com.alvarotc.bito.ui.notifications.NotificationPermissionPrompt
 import com.alvarotc.bito.ui.onboarding.OnboardingReconciler
 import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
+import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.review.ReviewScreen
 import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.settings.AjustesScreen
 import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
 import com.alvarotc.bito.ui.settings.SettingsViewModel
+import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.LocalReducido
 import com.alvarotc.bito.ui.sistema.Muelles
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
-import com.alvarotc.bito.ui.stats.BadgesScreen
-import com.alvarotc.bito.ui.stats.BadgesViewModel
-import com.alvarotc.bito.ui.stats.NumbersScreen
-import com.alvarotc.bito.ui.stats.NumbersViewModel
-import com.alvarotc.bito.ui.stats.RecordsScreen
-import com.alvarotc.bito.ui.stats.RecordsViewModel
-import com.alvarotc.bito.ui.stats.StatsScreen
-import com.alvarotc.bito.ui.stats.StatsViewModel
-import com.alvarotc.bito.ui.tasks.CreateChoiceSheet
 import com.alvarotc.bito.ui.tasks.FocusScreen
 import com.alvarotc.bito.ui.tasks.FocusViewModel
 import com.alvarotc.bito.ui.tasks.TaskFormScreen
@@ -87,14 +88,18 @@ import com.alvarotc.bito.ui.tasks.TasksViewModel
 import com.alvarotc.bito.ui.tasks.resolvedDueDay
 import com.alvarotc.bito.ui.tasks.toFormState
 import com.alvarotc.bito.ui.theme.Papel
-import com.alvarotc.bito.ui.today.TodayScreen
 import com.alvarotc.bito.ui.today.TodayViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.time.ZoneId
 
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
-fun BitoNavHost(container: AppContainer) {
+fun BitoNavHost(
+    container: AppContainer,
+    // Los tests inyectan el suyo para leer la pila; la app usa el de siempre.
+    navController: NavHostController = rememberNavController(),
+) {
     // OnboardingReconciler.reconcile runs to completion FIRST, gating the rest of this composable
     // behind it — a v1/v2 restore's seeded `onboardingDone = true` (a habits-but-no-onboardingDone
     // restore, see OnboardingReconciler's own KDoc) is committed to DataStore before the settings
@@ -138,7 +143,7 @@ fun BitoNavHost(container: AppContainer) {
     // under an in-flight finish()-triggered navigate("today") the moment onboardingDone flips.
     val startDestination = remember { if (loadedSettings.onboardingDone) "today" else "onboarding" }
 
-    val nav = rememberNavController()
+    val nav = navController
     val reducido = LocalReducido.current
     val gesto = rememberGesto()
     DisposableEffect(nav, gesto) {
@@ -148,8 +153,10 @@ fun BitoNavHost(container: AppContainer) {
                 val nueva = destino.route
                 val haciaDelante = controller.previousBackStackEntry?.destination?.route == anterior
                 when (sonidoDeCambio(anterior, nueva, haciaDelante)) {
-                    true -> gesto(Snd.DESCENSO, Haptica.TICK)
-                    false -> gesto(Snd.ASCENSO, Haptica.LOW)
+                    CambioSonoro.DESCENSO -> gesto(Snd.DESCENSO, Haptica.TICK)
+                    CambioSonoro.ASCENSO -> gesto(Snd.ASCENSO, Haptica.LOW)
+                    CambioSonoro.ALEJAR -> gesto(Snd.ALEJAR, Haptica.TICK)
+                    CambioSonoro.ACERCAR -> gesto(Snd.ACERCAR, Haptica.LOW)
                     null -> Unit
                 }
                 anterior = nueva
@@ -158,12 +165,10 @@ fun BitoNavHost(container: AppContainer) {
         onDispose { nav.removeOnDestinationChangedListener(oyente) }
     }
     val context = LocalContext.current
-    // Stats and Habi retain their ViewModels across tab visits (scoped to this composable's own
-    // store owner — the Activity — instead of each NavBackStackEntry): re-entering shows the
-    // retained state instantly instead of a multi-second cold combine behind the loading gate
-    // (QA 2026-08-23). Today already survives via popBackStack; Detail stays per-entry by design.
-    val statsViewModel: StatsViewModel = viewModel(factory = StatsViewModel.factory(container))
+    // Activity-scoped (como habiViewModel): Hoy, Camino y las celebraciones vuelven al instante.
     val habiViewModel: HabiViewModel = viewModel(factory = HabiViewModel.factory(container))
+    val caminoViewModel: CaminoViewModel = viewModel(factory = CaminoViewModel.factory(container))
+    val celebracionesViewModel: CelebracionesViewModel = viewModel(factory = CelebracionesViewModel.factory(container))
     // Activity-scoped (this composable's own store owner), not the "task?id={id}" route's own —
     // on purpose: TasksViewModel.create/edit/delete are fire-and-forget inside viewModelScope, and
     // both the create and the edit path below call nav.popBackStack() right after starting one.
@@ -175,13 +180,10 @@ fun BitoNavHost(container: AppContainer) {
     val tasksViewModel: TasksViewModel = viewModel(factory = TasksViewModel.factory(container))
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
 
-    // The "+" button's own state: it asks first (CreateChoiceSheet), then navigates either to the
-    // habit form or to the task form (D12 revoked: a task's own form is now a full screen, same
-    // weight as a habit's — the bottom bar hides on it too, same as it already does on "habit").
-    // `onCreateHabit` on Today's own empty state deliberately skips this ask (see its call site
-    // below): a user who already tapped an empty-habits prompt doesn't need to be asked what they
-    // meant.
-    var showCreateChoice by remember { mutableStateOf(false) }
+    // Lo recién creado se deja en la entrada `today` (no en la anterior): Hoy lo recibe lo cree donde lo cree.
+    fun dejarCreado(id: String) {
+        runCatching { nav.getBackStackEntry("today") }.getOrNull()?.savedStateHandle?.set("creado", id)
+    }
 
     val camara = Muelles.camara<IntOffset>(umbral = IntOffset.VisibilityThreshold)
     val globalEnter: AnimatedContentTransitionScope<NavBackStackEntry>.(Int) -> EnterTransition = { signo ->
@@ -194,336 +196,313 @@ fun BitoNavHost(container: AppContainer) {
 
     Scaffold(
         containerColor = Papel,
-        bottomBar = {
-            if (currentRoute in setOf("today", "stats", "habi", "settings")) {
-                BitoBottomBar(
-                    currentRoute = currentRoute,
-                    onToday = { nav.popBackStack("today", inclusive = false) },
-                    onStats = {
-                        nav.navigate("stats") {
-                            popUpTo("today")
-                            launchSingleTop = true
-                        }
-                    },
-                    onCreate = { showCreateChoice = true },
-                    onHabi = {
-                        nav.navigate("habi") {
-                            popUpTo("today")
-                            launchSingleTop = true
-                        }
-                    },
-                    onSettings = {
-                        nav.navigate("settings") {
-                            popUpTo("today")
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-        },
     ) { padding ->
-        NavHost(
-            nav,
-            startDestination = startDestination,
-            // Consume the outer Scaffold's insets, not just offset for them — otherwise Today's
-            // and Settings' own Scaffolds (default contentWindowInsets = systemBars) re-apply
-            // the status bar gap on top of this padding under edge-to-edge.
-            modifier = Modifier.padding(padding).consumeWindowInsets(padding),
-            // Quiet global motion (motion spec §8: 150-250ms, ease-out) — every route change,
-            // bottom-bar tab switches included, gets a subtle fade + 1/12-width slide instead of
-            // the default hard cut. Every tween below carries LinearOutSlowInEasing explicitly —
-            // tween()'s own default (FastOutSlowInEasing) is NOT ease-out, so leaving it implicit
-            // on any of the eight calls here would quietly violate the spec on that one. Onboarding's
-            // own internal pager motion lives inside OnboardingScreen and is untouched by this;
-            // only entering/leaving its route uses this. The juicy celebration sheets are
-            // overlays, not routes, so they never see this.
-            enterTransition = {
-                entra(
-                    transicionDe(Momento.ENTRA, initialState.destination.route, targetState.destination.route, reducido),
-                    camara,
-                ) { globalEnter(1) }
-            },
-            exitTransition = {
-                sale(
-                    transicionDe(Momento.SALE, initialState.destination.route, targetState.destination.route, reducido),
-                    camara,
-                ) { globalExit() }
-            },
-            popEnterTransition = {
-                entra(transicionDe(Momento.VUELVE_ENTRA, initialState.destination.route, targetState.destination.route, reducido), camara) {
-                    globalEnter(-1)
-                }
-            },
-            popExitTransition = {
-                sale(
-                    transicionDe(Momento.VUELVE_SALE, initialState.destination.route, targetState.destination.route, reducido),
-                    camara,
-                ) { globalExit() }
-            },
-        ) {
-            // No bottom nav: a fresh install's first-run flow, not a bar destination — same
-            // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
-            // welcome + story screens (7a-7d) against OnboardingViewModel's state/callbacks; T7-T8
-            // own the rest of the flow's content. This composable's own job stays just the spine:
-            // instantiate the VM and leave once it reports done.
-            composable("onboarding") {
-                val onboardingVm: OnboardingViewModel = viewModel(factory = OnboardingViewModel.factory(container))
-                val onboardingState by onboardingVm.uiState.collectAsStateWithLifecycle()
-                LaunchedEffect(onboardingState.done) {
-                    if (onboardingState.done) {
-                        nav.navigate("today") { popUpTo("onboarding") { inclusive = true } }
-                    }
-                }
-                Box(Modifier.fillMaxSize().background(Papel).testTag("onboarding-screen")) {
-                    OnboardingScreen(onboardingVm)
-                }
-            }
-            composable("today") {
-                TodayScreen(
-                    viewModel = viewModel(factory = TodayViewModel.factory(container)),
-                    onCreateHabit = { nav.navigate("habit") },
-                    onOpenHabit = { nav.navigate("detail/$it") },
-                    onOpenHabi = {
-                        nav.navigate("habi") {
-                            popUpTo("today")
-                            launchSingleTop = true
+        SharedTransitionLayout {
+            CompositionLocalProvider(LocalTransicionCompartida provides this) {
+                NavHost(
+                    nav,
+                    startDestination = startDestination,
+                    // Consume the outer Scaffold's insets, not just offset for them — otherwise Today's
+                    // and Settings' own Scaffolds (default contentWindowInsets = systemBars) re-apply
+                    // the status bar gap on top of this padding under edge-to-edge.
+                    modifier = Modifier.padding(padding).consumeWindowInsets(padding),
+                    // Quiet global motion (motion spec §8: 150-250ms, ease-out) — every route change,
+                    // bottom-bar tab switches included, gets a subtle fade + 1/12-width slide instead of
+                    // the default hard cut. Every tween below carries LinearOutSlowInEasing explicitly —
+                    // tween()'s own default (FastOutSlowInEasing) is NOT ease-out, so leaving it implicit
+                    // on any of the eight calls here would quietly violate the spec on that one. Onboarding's
+                    // own internal pager motion lives inside OnboardingScreen and is untouched by this;
+                    // only entering/leaving its route uses this. The juicy celebration sheets are
+                    // overlays, not routes, so they never see this.
+                    enterTransition = {
+                        entra(
+                            transicionDe(Momento.ENTRA, initialState.destination.route, targetState.destination.route, reducido),
+                            camara,
+                        ) { globalEnter(1) }
+                    },
+                    exitTransition = {
+                        sale(
+                            transicionDe(Momento.SALE, initialState.destination.route, targetState.destination.route, reducido),
+                            camara,
+                        ) { globalExit() }
+                    },
+                    popEnterTransition = {
+                        entra(
+                            transicionDe(Momento.VUELVE_ENTRA, initialState.destination.route, targetState.destination.route, reducido),
+                            camara,
+                        ) {
+                            globalEnter(-1)
                         }
                     },
-                    onOpenReview = { nav.navigate("review") },
-                    onOpenTasks = { nav.navigate("tasks") },
-                    onStartFocus = { nav.navigate("focus?taskId=$it") },
-                    onOpenBreathing = { nav.navigate("breathing") { launchSingleTop = true } },
-                )
-            }
-            composable(
-                "habit?id={id}",
-                arguments =
-                    listOf(
-                        navArgument("id") {
-                            nullable = true
-                            defaultValue = null
-                        },
-                    ),
-            ) { entry ->
-                HabitFormScreen(
-                    viewModel = viewModel(factory = HabitFormViewModel.factory(container, entry.arguments?.getString("id"))),
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            composable("detail/{habitId}") { entry ->
-                val habitId = entry.arguments?.getString("habitId") ?: return@composable
-                DetailScreen(
-                    viewModel = viewModel(factory = DetailViewModel.factory(container, habitId)),
-                    onBack = { nav.popBackStack() },
-                    onEdit = { nav.navigate("habit?id=$it") },
-                    onOpenHabi = { nav.navigate("habi") { launchSingleTop = true } },
-                )
-            }
-            composable("settings") {
-                AjustesScreen(
-                    backupViewModel = viewModel(factory = BackupViewModel.factory(container)),
-                    settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
-                    habiViewModel = habiViewModel,
-                    onBack = { nav.popBackStack() },
-                    onOpenArchived = { nav.navigate("archived") },
-                    onOpenIntro = { nav.navigate("onboarding_replay") },
-                )
-            }
-            // Replay de la introducción desde Ajustes: mismos 7 pasos, nada se persiste — and
-            // `persist = false` is what actually makes that true. The flow's language and
-            // personality steps write to settings the moment they're tapped, not at the end, so
-            // the closing callback alone never stopped a replay from editing real data.
-            composable("onboarding_replay") {
-                OnboardingScreen(
-                    viewModel = viewModel(factory = OnboardingViewModel.factory(container, persist = false)),
-                    replayOnClose = { nav.popBackStack() },
-                )
-            }
-            composable("archived") {
-                ArchivedScreen(
-                    viewModel = viewModel(factory = SettingsViewModel.factory(container)),
-                    onBack = { nav.popBackStack() },
-                    onOpenHabit = { nav.navigate("detail/$it") },
-                )
-            }
-            composable("habi") {
-                HabiScreen(viewModel = habiViewModel)
-            }
-            composable("stats") {
-                StatsScreen(
-                    viewModel = statsViewModel,
-                    onOpenRecords = { nav.navigate("records") },
-                    onOpenNumbers = { nav.navigate("numbers") },
-                    onOpenBadges = { nav.navigate("badges") },
-                )
-            }
-            composable("records") {
-                RecordsScreen(
-                    viewModel = viewModel(factory = RecordsViewModel.factory(container)),
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            composable("numbers") {
-                NumbersScreen(
-                    viewModel = viewModel(factory = NumbersViewModel.factory(container)),
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            // Secondary screen, not in the bottom-bar route set above and not deep-link
-            // allowlisted (NavRequests) — reached only from Stats' Logros section.
-            composable("badges") {
-                BadgesScreen(
-                    viewModel = viewModel(factory = BadgesViewModel.factory(container)),
-                    onBack = { nav.popBackStack() },
-                )
-            }
-            // No bottom nav: the review is its own flow, not a bar destination (see the
-            // bottomBar route set above, which deliberately omits "review").
-            composable("review") {
-                ReviewScreen(
-                    viewModel = viewModel(factory = ReviewViewModel.factory(container)),
-                    onClose = { nav.popBackStack() },
-                )
-            }
-            // D12 revocado: crear y editar una tarea son ahora una pantalla completa, calcada de
-            // la ruta "habit?id={id}" de arriba en el mismo sentido — un solo composable, id nulo
-            // para crear — sin barra inferior, mismo patron de navegacion (push simple, sin
-            // popUpTo ni launchSingleTop: esos dos solo aparecen en las pestanas de la barra
-            // inferior mas abajo, nunca en las rutas de formulario). El "+" navega aqui sin id; el
-            // menu de fila de "tasks" navega con id.
-            composable(
-                "task?id={id}",
-                arguments =
-                    listOf(
-                        navArgument("id") {
-                            nullable = true
-                            defaultValue = null
-                        },
-                    ),
-            ) { entry ->
-                // El mismo calculo que el sheet global tenia (comentario que se fue con el): today
-                // sale de loadedSettings, probadamente no nulo en este punto, nunca de
-                // tasksViewModel.uiState.today, cuyo combine puede seguir a medias (today = 0 por
-                // defecto) cuando esta ruta compone por primera vez.
-                val today =
-                    remember {
-                        LogicalDays.logicalDayOf(System.currentTimeMillis(), loadedSettings.dayCutoffMinutes, ZoneId.systemDefault())
+                    popExitTransition = {
+                        sale(
+                            transicionDe(Momento.VUELVE_SALE, initialState.destination.route, targetState.destination.route, reducido),
+                            camara,
+                        ) { globalExit() }
+                    },
+                ) {
+                    // A fresh install's first-run flow, not a destination of Inicio — same
+                    // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
+                    // welcome + story screens (7a-7d) against OnboardingViewModel's state/callbacks; T7-T8
+                    // own the rest of the flow's content. This composable's own job stays just the spine:
+                    // instantiate the VM and leave once it reports done.
+                    composable("onboarding") {
+                        val onboardingVm: OnboardingViewModel = viewModel(factory = OnboardingViewModel.factory(container))
+                        val onboardingState by onboardingVm.uiState.collectAsStateWithLifecycle()
+                        LaunchedEffect(onboardingState.done) {
+                            if (onboardingState.done) {
+                                nav.navigate("today") { popUpTo("onboarding") { inclusive = true } }
+                            }
+                        }
+                        Box(Modifier.fillMaxSize().background(Papel).testTag("onboarding-screen")) {
+                            OnboardingScreen(onboardingVm)
+                        }
                     }
-                val id = entry.arguments?.getString("id")
-                if (id == null) {
-                    TaskFormScreen(
-                        initial = TaskFormState(),
-                        today = today,
-                        onSave = { saved ->
-                            tasksViewModel.create(saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(today))
-                            nav.popBackStack()
-                        },
-                        onBack = { nav.popBackStack() },
-                    )
-                } else {
-                    // A un solo elemento, el mismo que HabitFormViewModel.init{} hace para
-                    // "habit?id={id}" — a diferencia del viejo sheet de TasksScreen, esta ruta
-                    // puede componer sin que la lista haya corrido nunca (un enlace directo, un
-                    // reinicio a media edicion), asi que el estado inicial no puede salir de una
-                    // fila ya en memoria: hay que cargarlo. Un fotograma en blanco (mismo idioma
-                    // que las puertas de reconciled/settings de arriba) cubre ese hueco de una
-                    // consulta en vez de mostrar el formulario vacio y saltar luego a los campos
-                    // reales.
-                    var loaded by remember(id) { mutableStateOf<TaskFormState?>(null) }
-                    LaunchedEffect(id) {
-                        // La tarea pudo desaparecer entre el menu de la fila y que esta ruta
-                        // cargue (borrado desde otra pantalla, reinicio a media edicion): abrir
-                        // un formulario en blanco para ese id dejaria "Guardar" sin escribir nada
-                        // (TasksRepository.update sale por su propio `?: return@withTransaction`),
-                        // asi que se vuelve atras sin enseñar nada en vez de fingir que hay algo que editar.
-                        // Main.immediate por lo mismo que el `reconciled` de arriba: popBackStack
-                        // toca el LifecycleRegistry de la entrada y exige el hilo principal.
-                        withContext(Dispatchers.Main.immediate) {
-                            val entity = container.tasks.task(id)
-                            if (entity == null) {
-                                nav.popBackStack()
+                    composable("today") { entry ->
+                        val creado by entry.savedStateHandle.getStateFlow<String?>("creado", null).collectAsStateWithLifecycle()
+                        val ciclo by entry.lifecycle.currentStateAsState()
+                        CompositionLocalProvider(LocalAnimacionRuta provides this) {
+                            InicioScreen(
+                                hoy = viewModel(factory = TodayViewModel.factory(container)),
+                                camino = caminoViewModel,
+                                celebraciones = celebracionesViewModel,
+                                navegar =
+                                    NavegacionInicio(
+                                        abrirFicha = { nav.navigate("detail/$it") },
+                                        abrirAjustes = { nav.navigate("settings") },
+                                        abrirTienda = { nav.navigate("habi") { launchSingleTop = true } },
+                                        abrirRepaso = { nav.navigate("review") },
+                                        abrirTareas = { nav.navigate("tasks") },
+                                        crearHabito = { nav.navigate("habit") },
+                                        crearTarea = { nav.navigate("task") },
+                                        abrirRuta = { nav.navigate(it) { launchSingleTop = true } },
+                                    ),
+                                creado = creado,
+                                alCreadoVisto = { entry.savedStateHandle["creado"] = null },
+                                enPrimerPlano = ciclo.isAtLeast(Lifecycle.State.RESUMED),
+                            )
+                        }
+                    }
+                    composable(
+                        "habit?id={id}",
+                        arguments =
+                            listOf(
+                                navArgument("id") {
+                                    nullable = true
+                                    defaultValue = null
+                                },
+                            ),
+                    ) { entry ->
+                        HabitFormScreen(
+                            viewModel = viewModel(factory = HabitFormViewModel.factory(container, entry.arguments?.getString("id"))),
+                            onBack = { nav.popBackStack() },
+                            alCrear = { id -> dejarCreado(id) },
+                        )
+                    }
+                    composable(
+                        RUTA_FICHA,
+                        arguments =
+                            listOf(
+                                navArgument("lectura") {
+                                    type = NavType.BoolType
+                                    defaultValue = false
+                                },
+                            ),
+                    ) { entry ->
+                        val habitId = entry.arguments?.getString("habitId") ?: return@composable
+                        val lectura = entry.arguments?.getBoolean("lectura") ?: false
+                        CompositionLocalProvider(LocalAnimacionRuta provides this) {
+                            DetailScreen(
+                                viewModel = viewModel(factory = DetailViewModel.factory(container, habitId, lectura)),
+                                onBack = { nav.popBackStack() },
+                                onEdit = { nav.navigate("habit?id=$it") },
+                                onOpenHabi = { nav.navigate("habi") { launchSingleTop = true } },
+                            )
+                        }
+                    }
+                    composable("settings") {
+                        AjustesScreen(
+                            backupViewModel = viewModel(factory = BackupViewModel.factory(container)),
+                            settingsViewModel = viewModel(factory = SettingsViewModel.factory(container)),
+                            habiViewModel = habiViewModel,
+                            onBack = { nav.popBackStack() },
+                            onOpenArchived = { nav.navigate("archived") },
+                            onOpenIntro = { nav.navigate("onboarding_replay") },
+                            entrada = this,
+                        )
+                    }
+                    // Replay de la introducción desde Ajustes: mismos 7 pasos, nada se persiste — and
+                    // `persist = false` is what actually makes that true. The flow's language and
+                    // personality steps write to settings the moment they're tapped, not at the end, so
+                    // the closing callback alone never stopped a replay from editing real data.
+                    composable("onboarding_replay") {
+                        OnboardingScreen(
+                            viewModel = viewModel(factory = OnboardingViewModel.factory(container, persist = false)),
+                            replayOnClose = { nav.popBackStack() },
+                        )
+                    }
+                    composable("archived") {
+                        ArchivedScreen(
+                            viewModel = viewModel(factory = SettingsViewModel.factory(container)),
+                            onBack = { nav.popBackStack() },
+                            onOpenHabit = { nav.navigate("detail/$it?lectura=true") },
+                        )
+                    }
+                    composable("habi") {
+                        HabiScreen(viewModel = habiViewModel)
+                    }
+                    // The review is its own flow, a route that hangs from Inicio like the other secondary screens.
+                    composable("review") {
+                        ReviewScreen(
+                            viewModel = viewModel(factory = ReviewViewModel.factory(container)),
+                            onClose = { nav.popBackStack() },
+                        )
+                    }
+                    // D12 revocado: crear y editar una tarea son ahora una pantalla completa, calcada de
+                    // la ruta "habit?id={id}" de arriba en el mismo sentido — un solo composable, id nulo
+                    // para crear — mismo patron de navegacion (push simple, sin
+                    // popUpTo ni launchSingleTop: no hacen falta en una ruta de formulario). El "+" navega aqui sin id; el
+                    // menu de fila de "tasks" navega con id.
+                    composable(
+                        "task?id={id}",
+                        arguments =
+                            listOf(
+                                navArgument("id") {
+                                    nullable = true
+                                    defaultValue = null
+                                },
+                            ),
+                    ) { entry ->
+                        // El mismo calculo que el sheet global tenia (comentario que se fue con el): today
+                        // sale de loadedSettings, probadamente no nulo en este punto, nunca de
+                        // tasksViewModel.uiState.today, cuyo combine puede seguir a medias (today = 0 por
+                        // defecto) cuando esta ruta compone por primera vez.
+                        val today =
+                            remember {
+                                LogicalDays.logicalDayOf(
+                                    System.currentTimeMillis(),
+                                    loadedSettings.dayCutoffMinutes,
+                                    ZoneId.systemDefault(),
+                                )
+                            }
+                        val id = entry.arguments?.getString("id")
+                        if (id == null) {
+                            TaskFormScreen(
+                                initial = TaskFormState(),
+                                today = today,
+                                onSave = { saved ->
+                                    val id = tasksViewModel.create(saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(today))
+                                    dejarCreado(id)
+                                    nav.popBackStack()
+                                },
+                                onBack = { nav.popBackStack() },
+                            )
+                        } else {
+                            // A un solo elemento, el mismo que HabitFormViewModel.init{} hace para
+                            // "habit?id={id}" — a diferencia del viejo sheet de TasksScreen, esta ruta
+                            // puede componer sin que la lista haya corrido nunca (un enlace directo, un
+                            // reinicio a media edicion), asi que el estado inicial no puede salir de una
+                            // fila ya en memoria: hay que cargarlo. Un fotograma en blanco (mismo idioma
+                            // que las puertas de reconciled/settings de arriba) cubre ese hueco de una
+                            // consulta en vez de mostrar el formulario vacio y saltar luego a los campos
+                            // reales.
+                            var loaded by remember(id) { mutableStateOf<TaskFormState?>(null) }
+                            LaunchedEffect(id) {
+                                // La tarea pudo desaparecer entre el menu de la fila y que esta ruta
+                                // cargue (borrado desde otra pantalla, reinicio a media edicion): abrir
+                                // un formulario en blanco para ese id dejaria "Guardar" sin escribir nada
+                                // (TasksRepository.update sale por su propio `?: return@withTransaction`),
+                                // asi que se vuelve atras sin enseñar nada en vez de fingir que hay algo que editar.
+                                // Main.immediate por lo mismo que el `reconciled` de arriba: popBackStack
+                                // toca el LifecycleRegistry de la entrada y exige el hilo principal.
+                                withContext(Dispatchers.Main.immediate) {
+                                    val entity = container.tasks.task(id)
+                                    if (entity == null) {
+                                        nav.popBackStack()
+                                    } else {
+                                        loaded = entity.toFormState()
+                                    }
+                                }
+                            }
+                            val initial = loaded
+                            if (initial == null) {
+                                Box(Modifier.fillMaxSize().background(Papel).testTag("task-form-loading"))
                             } else {
-                                loaded = entity.toFormState()
+                                TaskFormScreen(
+                                    initial = initial,
+                                    today = today,
+                                    onSave = { saved ->
+                                        tasksViewModel.edit(id, saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(today))
+                                        nav.popBackStack()
+                                    },
+                                    onBack = { nav.popBackStack() },
+                                    onDelete = {
+                                        tasksViewModel.delete(id)
+                                        nav.popBackStack()
+                                    },
+                                )
                             }
                         }
                     }
-                    val initial = loaded
-                    if (initial == null) {
-                        Box(Modifier.fillMaxSize().background(Papel).testTag("task-form-loading"))
-                    } else {
-                        TaskFormScreen(
-                            initial = initial,
-                            today = today,
-                            onSave = { saved ->
-                                tasksViewModel.edit(id, saved.title, saved.firstStep, saved.dueKind, saved.resolvedDueDay(today))
-                                nav.popBackStack()
-                            },
+                    // La lista es un destino secundario colgado de Hoy, como review.
+                    composable("tasks") {
+                        TasksScreen(
+                            viewModel = viewModel(factory = TasksViewModel.factory(container)),
                             onBack = { nav.popBackStack() },
-                            onDelete = {
-                                tasksViewModel.delete(id)
-                                nav.popBackStack()
+                            onStartFocus = { nav.navigate("focus?taskId=$it") },
+                            onEditTask = { nav.navigate("task?id=$it") },
+                        )
+                    }
+                    // El argumento es opcional a proposito: sin defaultValue = null, navegar a "focus" a
+                    // secas (la notificacion permanente, y el sheet de conflicto de esta misma pantalla)
+                    // no casaria con este patron y navigate() lanzaria IllegalArgumentException. Sin barra
+                    // inferior, como "review" y "tasks" arriba — una sesion en marcha no es una pestana.
+                    // "focus" gana la allowlist de NavRequests (arriba en este fichero) precisamente para
+                    // que esa notificacion pueda pedirla.
+                    composable(
+                        "focus?taskId={taskId}",
+                        arguments =
+                            listOf(
+                                navArgument("taskId") {
+                                    type = NavType.StringType
+                                    nullable = true
+                                    defaultValue = null
+                                },
+                            ),
+                    ) { entry ->
+                        FocusScreen(
+                            viewModel =
+                                viewModel(factory = FocusViewModel.factory(container, context, entry.arguments?.getString("taskId"))),
+                            onClose = { nav.popBackStack() },
+                            // keepOther() no escribe nada — el conflicto se resuelve solo a favor de la
+                            // sesion viva, que este estado no lleva id (solo su titulo en busyWith). Volver
+                            // a la ruta desnuda es el mismo camino que ya usa la notificacion permanente
+                            // para resolver contra la sesion viva, sin anadir un id a FocusUiState. popUpTo
+                            // inclusive reemplaza esta entrada en vez de apilar una segunda "focus": sin
+                            // esto, ATRAS desde la sesion viva volvia a la pantalla del conflicto (con
+                            // busyWith todavia no nulo), que reabria la misma hoja y dejaba al usuario sin
+                            // salida mientras la otra sesion siguiera en marcha.
+                            onKeepOther = {
+                                nav.navigate("focus") {
+                                    popUpTo("focus?taskId={taskId}") { inclusive = true }
+                                    launchSingleTop = true
+                                }
                             },
                         )
                     }
+                    // M11: sin argumentos — el modo inicial sale de breathingLastMode. Fuera de la barra
+                    // inferior como review, tasks y focus: respirar no es una pestana. En la lista blanca de
+                    // NavRequests para que la notificacion del recordatorio la abra (en reposo: el sonido
+                    // y la vibracion no arrancan sin que el usuario lo pida). ViewModel por entrada: su
+                    // guardado no depende de este scope (va en NonCancellable) y onClose solo llega cuando
+                    // la escritura ya termino.
+                    composable("breathing") {
+                        BreathingScreen(
+                            viewModel = viewModel(factory = BreathingViewModel.factory(container) { AndroidBreathingMusic(context) }),
+                            onClose = { nav.popBackStack() },
+                        )
+                    }
                 }
-            }
-            // Sin barra inferior: la lista es un destino secundario colgado de Hoy, como review.
-            composable("tasks") {
-                TasksScreen(
-                    viewModel = viewModel(factory = TasksViewModel.factory(container)),
-                    onBack = { nav.popBackStack() },
-                    onStartFocus = { nav.navigate("focus?taskId=$it") },
-                    onEditTask = { nav.navigate("task?id=$it") },
-                )
-            }
-            // El argumento es opcional a proposito: sin defaultValue = null, navegar a "focus" a
-            // secas (la notificacion permanente, y el sheet de conflicto de esta misma pantalla)
-            // no casaria con este patron y navigate() lanzaria IllegalArgumentException. Sin barra
-            // inferior, como "review" y "tasks" arriba — una sesion en marcha no es una pestana.
-            // "focus" gana la allowlist de NavRequests (arriba en este fichero) precisamente para
-            // que esa notificacion pueda pedirla.
-            composable(
-                "focus?taskId={taskId}",
-                arguments =
-                    listOf(
-                        navArgument("taskId") {
-                            type = NavType.StringType
-                            nullable = true
-                            defaultValue = null
-                        },
-                    ),
-            ) { entry ->
-                FocusScreen(
-                    viewModel =
-                        viewModel(factory = FocusViewModel.factory(container, context, entry.arguments?.getString("taskId"))),
-                    onClose = { nav.popBackStack() },
-                    // keepOther() no escribe nada — el conflicto se resuelve solo a favor de la
-                    // sesion viva, que este estado no lleva id (solo su titulo en busyWith). Volver
-                    // a la ruta desnuda es el mismo camino que ya usa la notificacion permanente
-                    // para resolver contra la sesion viva, sin anadir un id a FocusUiState. popUpTo
-                    // inclusive reemplaza esta entrada en vez de apilar una segunda "focus": sin
-                    // esto, ATRAS desde la sesion viva volvia a la pantalla del conflicto (con
-                    // busyWith todavia no nulo), que reabria la misma hoja y dejaba al usuario sin
-                    // salida mientras la otra sesion siguiera en marcha.
-                    onKeepOther = {
-                        nav.navigate("focus") {
-                            popUpTo("focus?taskId={taskId}") { inclusive = true }
-                            launchSingleTop = true
-                        }
-                    },
-                )
-            }
-            // M11: sin argumentos — el modo inicial sale de breathingLastMode. Fuera de la barra
-            // inferior como review, tasks y focus: respirar no es una pestana. En la lista blanca de
-            // NavRequests para que la notificacion del recordatorio la abra (en reposo: el sonido
-            // y la vibracion no arrancan sin que el usuario lo pida). ViewModel por entrada: su
-            // guardado no depende de este scope (va en NonCancellable) y onClose solo llega cuando
-            // la escritura ya termino.
-            composable("breathing") {
-                BreathingScreen(
-                    viewModel = viewModel(factory = BreathingViewModel.factory(container) { AndroidBreathingMusic(context) }),
-                    onClose = { nav.popBackStack() },
-                )
             }
         }
 
@@ -562,70 +541,6 @@ fun BitoNavHost(container: AppContainer) {
         // a backup (which never enters onboarding) and updating an older install alike. Renders
         // nothing; see its own KDoc for why this is the moment.
         NotificationPermissionPrompt(container.settings, currentRoute)
-
-        // T12: the two global celebration sheets, overlaid above the NavHost everywhere except
-        // the `review` route — E2's SealedDayContent already owns that beat there (its own
-        // LaunchedEffect fires the cue and marks it celebrated) — the `onboarding` route, where a
-        // sheet popping up over the first-run flow would be jarring and the celebration hasn't
-        // been "seen" by a real user yet, and any frame where a NavRequest is still pending
-        // (`pendingRoute != null`): a request held behind onboarding fires its `nav.navigate`
-        // above in the SAME recomposition `currentRoute` first flips to "today", so without this
-        // a just-unlocked badge could cue and compose for that one frame before the pending route
-        // (e.g. "review") lands and suppresses it again — cued once, then rendered mute.
-        // Suppressed on BOTH the sheet and the cue below: cueing is idempotent per pending sheet
-        // ([CelebrationsViewModel.cue]'s own `lastCuedSignature` latch), so cueing it once here
-        // while hidden would mean it never cues again once the sheet actually shows on Today —
-        // the sound would fire silently behind the suppression and the sheet would then render
-        // mute. Suppressing both instead keeps the celebration genuinely pending: it shows AND
-        // cues the first time it's actually seen. The perfect day always wins first: dismissing
-        // it re-evaluates this `when`, and the badge sheet (if any) follows.
-        //
-        // `pendingRoute` is a LaunchedEffect key below, not just read inside the block: the
-        // pending-route LaunchedEffect above calls `NavRequests.consume()` without necessarily
-        // changing `currentRoute` (e.g. the pending route is already current), so a `pendingRoute
-        // != null -> null` transition that leaves `currentRoute` untouched must still re-run this
-        // effect — otherwise a cue newly un-suppressed by that transition would never actually
-        // fire.
-        val celebrations: CelebrationsViewModel = viewModel(factory = CelebrationsViewModel.factory(container))
-        val cState by celebrations.uiState.collectAsStateWithLifecycle()
-        val celebrationsSuppressed =
-            currentRoute == "review" || currentRoute == "onboarding" || currentRoute == "onboarding_replay" || pendingRoute != null
-        if (!celebrationsSuppressed) {
-            when {
-                cState.perfectDayPending -> PerfectDaySheet(cState, onDismiss = celebrations::dismissPerfectDay)
-                cState.newBadges.isNotEmpty() -> BadgeUnlockSheet(cState, onDismiss = celebrations::dismissBadges)
-            }
-        }
-        LaunchedEffect(cState.perfectDayPending, cState.newBadges.isNotEmpty(), currentRoute, pendingRoute) {
-            if (!celebrationsSuppressed && (cState.perfectDayPending || cState.newBadges.isNotEmpty())) {
-                celebrations.cue()
-            }
-        }
-
-        // T14: the "+" button's own choice sheet, global like the celebrations above — both
-        // choices now navigate (D12 revoked the task form's own global sheet, same as the habit
-        // one never had one).
-        if (showCreateChoice) {
-            CreateChoiceSheet(
-                onHabit = {
-                    showCreateChoice = false
-                    nav.navigate("habit")
-                },
-                onTask = {
-                    showCreateChoice = false
-                    nav.navigate("task")
-                },
-                onFocus = {
-                    showCreateChoice = false
-                    nav.navigate("focus")
-                },
-                onBreathing = {
-                    showCreateChoice = false
-                    nav.navigate("breathing") { launchSingleTop = true }
-                },
-                onDismiss = { showCreateChoice = false },
-            )
-        }
     }
 }
 
@@ -638,6 +553,9 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.entra(
         TipoTransicion.BAJA_ENTRA -> slideInVertically(camara) { it }
         TipoTransicion.SUBE_ENTRA -> slideInVertically(camara) { -it / 4 }
         TipoTransicion.FUNDIDO -> fadeIn(tween(Duraciones.REDUCIDO))
+        TipoTransicion.FICHA_FUNDIDO -> fadeIn(tween(220, easing = Curvas.out))
+        TipoTransicion.CAMARA_ENTRA -> slideInVertically(camara) { it * 24 / 100 } + fadeIn(tween(Duraciones.ENTRAR))
+        TipoTransicion.CAMARA_VUELVE_ENTRA -> fadeIn(tween(Duraciones.ENTRAR))
         else -> global()
     }
 
@@ -650,5 +568,8 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.sale(
         TipoTransicion.BAJA_SALE -> slideOutVertically(camara) { -it / 4 }
         TipoTransicion.SUBE_SALE -> slideOutVertically(camara) { it }
         TipoTransicion.FUNDIDO -> fadeOut(tween(Duraciones.REDUCIDO))
+        TipoTransicion.FICHA_FUNDIDO -> fadeOut(tween(160, easing = Curvas.out))
+        TipoTransicion.CAMARA_SALE -> fadeOut(tween(Duraciones.ENTRAR))
+        TipoTransicion.CAMARA_VUELVE_SALE -> slideOutVertically(camara) { it * 24 / 100 } + fadeOut(tween(Duraciones.SALIR))
         else -> global()
     }

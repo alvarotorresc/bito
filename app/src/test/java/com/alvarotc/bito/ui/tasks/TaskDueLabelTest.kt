@@ -13,7 +13,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
 /**
- * T13 only ever exercised [taskDueLabel]'s NONE branch (a loose task, via TodayScreenTest) — this
+ * T13 only ever exercised [taskDueLabel]'s NONE branch (a loose task, via the Today list tests) — this
  * fills in WEEK and DATE, plus [taskDueOverdue]'s own boolean, the one every row tints Peligro on.
  */
 @OptIn(ExperimentalTestApi::class)

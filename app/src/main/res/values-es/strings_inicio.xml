@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="inicio_tu_camino">Tu camino</string>
+    <string name="inicio_crear">Crear</string>
+    <string name="inicio_pildora_desc">Cambiar entre Hoy y Camino</string>
+</resources>

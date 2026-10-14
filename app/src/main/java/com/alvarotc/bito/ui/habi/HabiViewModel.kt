@@ -13,6 +13,7 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.model.CatalogItem
 import com.alvarotc.bito.domain.model.CustomizationCategory
@@ -92,9 +93,10 @@ class HabiViewModel(
                 previewItemId,
             ) { state, owned, balance, prefs, preview -> HabiInputs(state, owned, balance, prefs, preview) },
             rewards.observeBadges(),
+            rewards.observeRecentMovements(5),
             gardenOverride,
             clockTicks,
-        ) { inputs, badges, override, _ ->
+        ) { inputs, badges, recientes, override, _ ->
             val nowMillis = now()
             val zoneId = zone()
             val today = LogicalDays.logicalDayOf(nowMillis, inputs.prefs.dayCutoffMinutes, zoneId)
@@ -112,6 +114,7 @@ class HabiViewModel(
                 unlockedBadges = badges.mapTo(mutableSetOf()) { it.badgeId },
                 waterHighMark = inputs.prefs.gardenWaterHighMark,
                 gardenOverride = override,
+                movimientos = Movimientos.de(recientes, inputs.state, today),
             )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HabiUiState())

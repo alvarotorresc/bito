@@ -12,14 +12,19 @@ import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.PointsEvent
+import com.alvarotc.bito.domain.model.PointsLedgerEntry
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import java.time.LocalDate
 import java.util.UUID
 
 /** Points ledger, badges and Habi customization inventory. */
 class RewardsRepository(private val db: BitoDatabase) {
     fun observeBalance(): Flow<Int> = db.pointsLedgerDao().observeBalance()
+
+    fun observeRecentMovements(limit: Int): Flow<List<PointsLedgerEntry>> =
+        db.pointsLedgerDao().observeRecent(limit).map { filas -> filas.map { it.toDomain() } }
 
     /** Persists engine-derived grants as ledger movements. */
     suspend fun append(

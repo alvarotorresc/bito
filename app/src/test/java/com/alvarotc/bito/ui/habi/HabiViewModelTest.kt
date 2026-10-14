@@ -13,6 +13,8 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.EtiquetaMovimiento
+import com.alvarotc.bito.domain.FechaMovimiento
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.EconomyConfig
@@ -297,5 +299,71 @@ class HabiViewModelTest {
             vm.forceGarden(null)
             advanceUntilIdle()
             assertEquals(real, vm.uiState.value.garden)
+        }
+
+    @Test
+    fun `the five most recent movements come newest first, ties by id, with their labels`() =
+        runTest {
+            val ledger = db.pointsLedgerDao()
+            ledger.insertAll(
+                listOf(
+                    pointsLedgerEntity(id = "a", createdAtMillis = 10L, reason = PointsReason.HABIT_DONE, refId = null, logicalDay = today),
+                    pointsLedgerEntity(
+                        id = "b",
+                        createdAtMillis = 20L,
+                        reason = PointsReason.BUY_FREEZER,
+                        refId = null,
+                        logicalDay = today,
+                    ),
+                    pointsLedgerEntity(
+                        id = "c",
+                        createdAtMillis = 30L,
+                        reason = PointsReason.PERFECT_DAY,
+                        refId = "week:1",
+                        logicalDay = today - 1,
+                    ),
+                    pointsLedgerEntity(
+                        id = "d",
+                        createdAtMillis = 40L,
+                        reason = PointsReason.BUY_ITEM,
+                        refId = "body-lavanda",
+                        logicalDay = today,
+                    ),
+                    pointsLedgerEntity(
+                        id = "e",
+                        createdAtMillis = 50L,
+                        reason = PointsReason.PERFECT_DAY,
+                        refId = "day:1",
+                        logicalDay = today,
+                    ),
+                    pointsLedgerEntity(
+                        id = "f",
+                        createdAtMillis = 50L,
+                        reason = PointsReason.BUY_FREEZER,
+                        refId = null,
+                        logicalDay = today - 5,
+                    ),
+                ),
+            )
+            val vm = newViewModel()
+            backgroundScope.launch { vm.uiState.collect {} }
+            advanceUntilIdle()
+
+            val movimientos = vm.uiState.value.movimientos
+            assertEquals(listOf("f", "e", "d", "c", "b"), movimientos.map { it.id })
+            assertEquals(
+                listOf(
+                    EtiquetaMovimiento.Congelador,
+                    EtiquetaMovimiento.DiaCompleto,
+                    EtiquetaMovimiento.Articulo("body-lavanda"),
+                    EtiquetaMovimiento.SemanaCompleta,
+                    EtiquetaMovimiento.Congelador,
+                ),
+                movimientos.map { it.etiqueta },
+            )
+            assertEquals(
+                listOf(FechaMovimiento.FECHA, FechaMovimiento.HOY, FechaMovimiento.HOY, FechaMovimiento.AYER, FechaMovimiento.HOY),
+                movimientos.map { it.fecha },
+            )
         }
 }

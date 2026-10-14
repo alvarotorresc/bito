@@ -6,7 +6,9 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.EntryEntity
+import com.alvarotc.bito.data.db.HabitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -15,21 +17,36 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.Movimientos
+import com.alvarotc.bito.domain.StatsEngine
+import com.alvarotc.bito.domain.model.DomainState
+import com.alvarotc.bito.domain.model.EconomyConfig
+import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.LogicalDay
+import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.FuentePropuestas
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.ui.habi.HabiSound
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.habi.minuteTicks
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
 
@@ -49,25 +66,89 @@ class TodayViewModel(
     // Overridable so tests can swap in their TestDispatcher — buildTodayUiState off Main (perf)
     // must not race a runTest's virtual scheduler the way the real Dispatchers.Default would.
     defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    // La fuente de las propuestas de Habi (pieza 4); null en los tests que no la usan.
+    private val propuestas: FuentePropuestas? = null,
+    // Un tick por minuto para que la luz del jardín siga a la hora; por defecto uno solo (los tests
+    // con advanceUntilIdle no conviven con un bucle infinito). La fábrica pasa minuteTicks().
+    clockTicks: Flow<Unit> = flowOf(Unit),
+    private val economia: EconomyConfig = EconomyConfig(),
 ) : ViewModel() {
+    private val jardinForzado = MutableStateFlow<GardenState?>(null)
+
+    private data class Entradas(
+        val state: DomainState,
+        val entities: List<HabitEntity>,
+        val prefs: Settings,
+        val owned: List<CustomizationItemEntity>,
+        val saldo: Int,
+    )
+
     val uiState: StateFlow<TodayUiState> =
         combine(
-            domainState.observe(),
-            habits.observeHabits(),
-            settings.settings,
-            rewards.observeOwnedItems(),
-        ) { state, entities, prefs, owned ->
+            combine(
+                domainState.observe(),
+                habits.observeHabits(),
+                settings.settings,
+                rewards.observeOwnedItems(),
+                rewards.observeBalance(),
+            ) { state, entities, prefs, owned, saldo -> Entradas(state, entities, prefs, owned, saldo) },
+            rewards.observeBadges(),
+            rewards.observeRecentMovements(5),
+            jardinForzado,
+            clockTicks,
+        ) { entradas, badges, recientes, forzado, _ ->
+            val nowMillis = now()
+            val zoneId = zone()
+            val prefs = entradas.prefs
+            val hoy = LogicalDays.logicalDayOf(nowMillis, prefs.dayCutoffMinutes, zoneId)
+            val garden =
+                forzado
+                    ?: GardenEngine.gardenOf(
+                        entradas.state,
+                        hoy,
+                        LocalDateTime.ofInstant(Instant.ofEpochMilli(nowMillis), zoneId),
+                        StatsEngine.lastActivityDay(entradas.state),
+                        badges.mapTo(mutableSetOf()) { it.badgeId },
+                        prefs.gardenWaterHighMark,
+                    )
             buildTodayUiState(
-                state,
-                entities.associate { it.id to it.sortOrder },
-                todayOf(prefs),
+                entradas.state,
+                entradas.entities.associate { it.id to it.sortOrder },
+                hoy,
                 prefs.personality,
-                owned,
+                entradas.owned,
                 prefs.userName,
                 logHapticEnabled = prefs.logHapticEnabled,
+                balance = entradas.saldo,
+                garden = garden,
+                movimientos = Movimientos.de(recientes, entradas.state, hoy),
+                economia = economia,
             )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
+
+    /** La propuesta de Habi para Hoy; sin fuente, nunca hay. */
+    val propuesta: StateFlow<Propuesta?> =
+        propuestas?.propuesta(Ambito.HOY)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+            ?: MutableStateFlow<Propuesta?>(null)
+
+    fun responder(r: Respuesta) {
+        val id = propuesta.value?.id ?: return
+        viewModelScope.launch { propuestas?.responder(id, r) }
+    }
+
+    /** Solo para el panel de depuración: fuerza lo que pinta el jardín; null vuelve al motor. */
+    fun forzarJardin(garden: GardenState?) {
+        jardinForzado.value = garden
+    }
+
+    fun alTocarHabi() {
+        habiSounds?.play(HabiSound.GREETING)
+    }
+
+    fun alAcariciarHabi() {
+        habiSounds?.play(HabiSound.HAPPY)
+    }
 
     private val loggedEntry = MutableStateFlow<String?>(null)
     val lastLogged: StateFlow<String?> = loggedEntry.asStateFlow()
@@ -94,7 +175,6 @@ class TodayViewModel(
         val id = UUID.randomUUID().toString()
         journal.log(EntryEntity(id, habitId, today, value, nowMillis))
         loggedEntry.value = id
-        habiSounds?.play(HabiSound.LOG)
     }
 
     fun tapPrimary(card: HabitCardUi) {
@@ -110,6 +190,17 @@ class TodayViewModel(
                 }
             CardKind.COUNTER -> log(card.id, card.step)
             CardKind.DURATION, CardKind.ABSTINENCE -> Unit
+        }
+    }
+
+    /** Recaída de un hábito de abstinencia: una entrada de valor 1 hoy, que «Deshacer» quita. */
+    fun recaerHoy(card: HabitCardUi) {
+        if (card.kind != CardKind.ABSTINENCE) return
+        write { today, nowMillis ->
+            val id = UUID.randomUUID().toString()
+            journal.log(EntryEntity(id, card.id, today, 1, nowMillis))
+            loggedEntry.value = id
+            habiSounds?.play(HabiSound.SAD)
         }
     }
 
@@ -180,6 +271,8 @@ class TodayViewModel(
                         container.rewards,
                         habiSounds = container.habiSounds,
                         tasks = container.tasks,
+                        propuestas = container.propuestas,
+                        clockTicks = minuteTicks(),
                     )
                 }
             }

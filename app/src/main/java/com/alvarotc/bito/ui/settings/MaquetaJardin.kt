@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.testTag
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.habi.HabiSpec
@@ -28,7 +29,7 @@ import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.delay
 
-private const val ESCALA = 0.74f
+internal const val ESCALA_MAQUETA = 0.74f
 private const val PARALAJE = 0.55f
 private const val FUNDIDO_DESDE = 0.7f
 private const val CONTENTO_MS = 1200L
@@ -43,6 +44,8 @@ fun MaquetaJardin(
     spec: HabiSpec,
     scroll: ScrollState,
     modifier: Modifier = Modifier,
+    // Escala de la maqueta durante la cámara Hoy → Ajustes (1 en reposo); se lee en la fase de dibujo.
+    escala: () -> Float = { 1f },
 ) {
     val gesto = rememberGesto()
     var alto by remember { mutableIntStateOf(0) }
@@ -60,8 +63,13 @@ fun MaquetaJardin(
             .onSizeChanged { alto = it.height }
             .graphicsLayer {
                 translationY = scroll.value * PARALAJE
+                val e = escala()
+                scaleX = e
+                scaleY = e
+                transformOrigin = TransformOrigin(0.5f, 0f)
                 compositingStrategy = CompositingStrategy.Offscreen
-            }.drawWithContent {
+            }.testTag("maqueta-jardin")
+            .drawWithContent {
                 drawContent()
                 drawRect(
                     Brush.verticalGradient(
@@ -79,8 +87,8 @@ fun MaquetaJardin(
                 Modifier
                     .fillMaxWidth()
                     .graphicsLayer {
-                        scaleX = ESCALA
-                        scaleY = ESCALA
+                        scaleX = ESCALA_MAQUETA
+                        scaleY = ESCALA_MAQUETA
                         transformOrigin = TransformOrigin(0.5f, 1f)
                     },
             delighted = contento,

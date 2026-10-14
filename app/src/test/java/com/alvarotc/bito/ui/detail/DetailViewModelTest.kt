@@ -22,14 +22,22 @@ import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.FuentePropuestas
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.Respuesta
+import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -39,6 +47,7 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -78,20 +87,25 @@ class DetailViewModelTest {
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
 
-    private fun newViewModel(habitId: String = "h1") =
-        DetailViewModel(
-            habitId,
-            domainStateRepo,
-            habitsRepo,
-            journal,
-            rewardsRepo,
-            settingsRepo,
-            reconciler,
-            habiSounds,
-            now = { fixedNow },
-            zone = { utc },
-            defaultDispatcher = dispatcher,
-        )
+    private fun newViewModel(
+        habitId: String = "h1",
+        lectura: Boolean = false,
+        propuestas: FuentePropuestas? = null,
+    ) = DetailViewModel(
+        habitId,
+        domainStateRepo,
+        habitsRepo,
+        journal,
+        rewardsRepo,
+        settingsRepo,
+        reconciler,
+        habiSounds,
+        now = { fixedNow },
+        zone = { utc },
+        defaultDispatcher = dispatcher,
+        lectura = lectura,
+        propuestas = propuestas,
+    )
 
     @Before
     fun setUp() {
@@ -216,5 +230,150 @@ class DetailViewModelTest {
             advanceUntilIdle()
 
             assertEquals("neck-collar-flores", vm.uiState.value?.equipped?.neck)
+        }
+
+    private suspend fun entriesOf(habitId: String) = db.entryDao().all().filter { it.habitId == habitId }
+
+    @Test
+    fun `marcarHoy on a check creates today's entry and, pressed again, removes it`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today - 5))
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            vm.marcarHoy()
+            advanceUntilIdle()
+            assertEquals(listOf(today), entriesOf("h1").map { it.logicalDay })
+
+            vm.marcarHoy()
+            advanceUntilIdle()
+            assertTrue(entriesOf("h1").isEmpty())
+        }
+
+    @Test
+    fun `marcarHoy makes no sound of its own, the screen puts the catalogue one`() =
+        runTest {
+            val sonido = SonidoGrabado()
+            habiSounds = HabiSounds(sonido)
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today - 5))
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            vm.marcarHoy()
+            advanceUntilIdle()
+            vm.marcarHoy()
+            advanceUntilIdle()
+
+            assertTrue(sonido.snds().isEmpty())
+        }
+
+    @Test
+    fun `marcarHoy on a counter adds one step each time`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.COUNT, target = 8, step = 2, createdOnDay = today - 5))
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            vm.marcarHoy()
+            advanceUntilIdle()
+            vm.marcarHoy()
+            advanceUntilIdle()
+
+            assertEquals(listOf(2, 2), entriesOf("h1").map { it.value })
+            assertTrue(entriesOf("h1").all { it.logicalDay == today })
+        }
+
+    @Test
+    fun `marcarHoy writes nothing in read mode, on an archived habit or on an abstinence`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today - 5))
+            habitsRepo.create(habitEntity(id = "h2", metric = Metric.CHECK, target = 1, createdOnDay = today - 5))
+            habitsRepo.archive("h2", today = today, nowMillis = fixedNow)
+            habitsRepo.create(
+                habitEntity(id = "h3", metric = Metric.CHECK, direction = Direction.ZERO, period = Period.DAY, createdOnDay = today - 5),
+            )
+            val lecturaVm = newViewModel("h1", lectura = true)
+            val archivadoVm = newViewModel("h2")
+            val abstinenciaVm = newViewModel("h3")
+            advanceUntilIdle()
+
+            lecturaVm.marcarHoy()
+            archivadoVm.marcarHoy()
+            abstinenciaVm.marcarHoy()
+            advanceUntilIdle()
+
+            assertTrue(db.entryDao().all().isEmpty())
+        }
+
+    @Test
+    fun `the proposal comes from the source for the sheet of this habit`() =
+        runTest {
+            val respondidas = mutableListOf<Pair<String, Respuesta>>()
+            val pedidas = mutableListOf<Pair<Ambito, String?>>()
+            val fuente =
+                object : FuentePropuestas {
+                    override fun propuesta(
+                        ambito: Ambito,
+                        habitId: String?,
+                    ): Flow<Propuesta?> {
+                        pedidas += ambito to habitId
+                        return flowOf(Propuesta("p", TextoHabi(1), emptySet()))
+                    }
+
+                    override suspend fun responder(
+                        id: String,
+                        respuesta: Respuesta,
+                    ) {
+                        respondidas += id to respuesta
+                    }
+                }
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+
+            assertEquals("p", vm.propuesta.value?.id)
+            assertEquals(listOf(Ambito.FICHA to "h1"), pedidas)
+
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+            assertEquals(listOf("p" to Respuesta.VALE), respondidas)
+        }
+
+    @Test
+    fun `without a source there is never a proposal`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            assertNull(newViewModel().propuesta.value)
+        }
+
+    @Test
+    fun `previous month stops at the creation month`() =
+        runTest {
+            val creado = LocalDate.of(2025, 6, 10).toEpochDay().toInt()
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = creado))
+            val vm = newViewModel()
+            advanceUntilIdle()
+
+            repeat(3) {
+                vm.previousMonth()
+                advanceUntilIdle()
+            }
+
+            assertEquals(YearMonth.of(2025, 6), vm.month.value)
+        }
+
+    @Test
+    fun `previous month does not move a habit created this month`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val vm = newViewModel()
+            val inicial = vm.month.value
+            advanceUntilIdle()
+
+            vm.previousMonth()
+            advanceUntilIdle()
+
+            assertEquals(inicial, vm.month.value)
         }
 }

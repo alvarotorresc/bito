@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="jardin_etapa">Etapa %1$d de 5.</string>
+    <string name="jardin_crece_ahora">%1$s · Etapa %2$d de 5. Crece ahora con lo que marcas.</string>
+    <string name="jardin_llego_con">%1$s · Llegó con %2$s.</string>
+    <string name="jardin_especial_farolillo">Farolillo</string>
+    <string name="jardin_especial_caminito">Caminito</string>
+    <string name="jardin_especial_estanque">Estanque</string>
+    <string name="jardin_especial_setas">Setas</string>
+    <string name="jardin_especial_cerezo_grande">Cerezo grande</string>
+    <string name="jardin_especial_arbol_dorado">Árbol dorado</string>
+</resources>

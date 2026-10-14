@@ -1,7 +1,9 @@
 package com.alvarotc.bito.ui.sistema
 
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToNode
@@ -33,5 +35,12 @@ class GaleriaSistemaTest {
         }
         assertEquals(Snd.entries.filterNot { it.bucle }, sonido.snds())
         assertEquals(Haptica.entries.toList(), tacto.hapticas.takeLast(Haptica.entries.size))
+    }
+
+    @Test
+    fun `the gallery shows the thirty plates, six species by five stages`() {
+        rule.setContent { ConSistema(SonidoGrabado(), TactoGrabado()) { GaleriaSistema(alCerrar = {}) } }
+        rule.onNodeWithTag("galeria").performScrollToNode(hasTestTag("galeria-laminas"))
+        rule.onAllNodesWithTag("lamina").assertCountEquals(30)
     }
 }
