@@ -34,7 +34,11 @@ import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.model.GardenSpecies
+import com.alvarotc.bito.domain.model.GardenState
+import com.alvarotc.bito.domain.model.GrowthStage
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.habi.HabiVoice
@@ -47,6 +51,7 @@ import com.alvarotc.bito.ui.sistema.componentes.AvisoEstado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -559,6 +564,35 @@ class InicioScreenTest {
         rule.onNodeWithTag("pildora-camino").performClick()
         esperarAsentado()
         assertTrue("lo que sonaba termina al salir de Hoy", !hay("veta-SEMANA"))
+    }
+
+    @Test
+    fun `a cold start with a grown garden celebrates nothing from it`() {
+        // Hoy arranca en carga con el jardín inicial; si eso contara como jardín anterior, el real celebraría todo otra vez.
+        val pausado = StandardTestDispatcher(TestScope().testScheduler)
+        banco.preparar(dispatcherVM = pausado, marcaCero = true)
+        val inicial = GardenState.INITIAL
+        banco.hoy.forzarJardin(
+            inicial.copy(
+                plots =
+                    listOf(
+                        GardenPlot(inicial.plots[0].species, GrowthStage.TREE),
+                        GardenPlot(GardenSpecies.SUNFLOWERS, GrowthStage.SEED),
+                    ),
+                specials = setOf(GardenSpecial.LANTERN),
+            ),
+        )
+        val vistos = mutableListOf<Momento>()
+        val escucha = Job()
+        CoroutineScope(banco.dispatcher + escucha).launch { banco.celebraciones.actual.collect { it?.let(vistos::add) } }
+        rule.setContent { ConSistema { banco.Inicio(enPrimerPlano = true) } }
+        rule.waitForIdle()
+        pausado.scheduler.advanceUntilIdle()
+        rule.waitForIdle()
+        rule.mainClock.advanceTimeBy(2_000)
+        rule.waitForIdle()
+        escucha.cancel()
+        assertTrue("el arranque no celebra el jardín: $vistos", vistos.none { it is Momento.Especial || it is Momento.Etapa })
     }
 
     @Test

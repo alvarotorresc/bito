@@ -306,7 +306,8 @@ fun InicioScreen(
     }
 
     BackHandler(enabled = destino > 0f) { ir(0f) }
-    LaunchedEffect(estado.garden) { celebraciones.jardin(estado.garden) }
+    // El estado en carga trae el jardín inicial, no el tuyo: si contara como anterior, cada arranque celebraría todo el jardín.
+    LaunchedEffect(estado.garden, estado.loading) { if (!estado.loading) celebraciones.jardin(estado.garden) }
     val enHoyQuieto by remember { derivedStateOf { q.value == 0f } }
     DisposableEffect(enPrimerPlano, enHoyQuieto) {
         celebraciones.enHoy(enPrimerPlano && enHoyQuieto)
