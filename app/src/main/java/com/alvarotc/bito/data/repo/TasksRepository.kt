@@ -64,11 +64,19 @@ class TasksRepository(private val db: BitoDatabase) {
         nowMillis: Long,
     ) = addEvent(id, TaskEventKind.POSTPONED, today, nowMillis)
 
+    /** Devuelve el id del apunte, para que el Deshacer de «Traer a hoy» pueda quitarlo ([undoBring]). */
     suspend fun bringToToday(
         id: String,
         today: LogicalDay,
         nowMillis: Long,
-    ) = addEvent(id, TaskEventKind.BROUGHT, today, nowMillis)
+    ): String {
+        val eventId = UUID.randomUUID().toString()
+        db.taskEventDao().insert(TaskEventEntity(eventId, id, TaskEventKind.BROUGHT, today, nowMillis))
+        return eventId
+    }
+
+    /** El Deshacer de «Traer a hoy»: quita solo el apunte que acaba de escribir. */
+    suspend fun undoBring(eventId: String) = db.taskEventDao().delete(eventId)
 
     suspend fun recordAttempt(
         id: String,

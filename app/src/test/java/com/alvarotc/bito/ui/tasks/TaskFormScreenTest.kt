@@ -1,9 +1,11 @@
 package com.alvarotc.bito.ui.tasks
 
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.ExperimentalTestApi
-import androidx.compose.ui.test.assertIsEnabled
-import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -13,7 +15,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import com.alvarotc.bito.domain.model.DueKind
-import com.alvarotc.bito.ui.theme.BitoTheme
+import com.alvarotc.bito.ui.sistema.ConSistema
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -23,6 +25,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.time.LocalDate
 
 /**
  * Drives the real [TaskFormScreen] in isolation, the same way [com.alvarotc.bito.ui.habitform.HabitFormScreenTest]
@@ -34,12 +37,13 @@ import org.robolectric.annotation.Config
  */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [35], qualifiers = "w411dp-h891dp")
+@Config(sdk = [35], qualifiers = "es-w411dp-h891dp")
 class TaskFormScreenTest {
     @get:Rule
     val compose = createComposeRule()
 
-    private val today = 20_000
+    // Un jueves conocido, para que «vie 16» no dependa del día en que corra el test.
+    private val today = LocalDate.of(2026, 10, 15).toEpochDay().toInt()
 
     private var savedState: TaskFormState? = null
     private var saveCalls = 0
@@ -55,7 +59,7 @@ class TaskFormScreenTest {
         backCalled = false
         deleted = false
         compose.setContent {
-            BitoTheme {
+            ConSistema {
                 TaskFormScreen(
                     initial = initial,
                     today = today,
@@ -71,21 +75,32 @@ class TaskFormScreenTest {
         compose.waitForIdle()
     }
 
+    private fun escribirNombre(texto: String) {
+        compose.onAllNodes(hasSetTextAction())[0].performTextInput(texto)
+        compose.waitForIdle()
+    }
+
+    private fun escribirPaso(texto: String) {
+        compose.onAllNodes(hasSetTextAction())[1].performTextInput(texto)
+        compose.waitForIdle()
+    }
+
+    private val apagado = SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription)
+
     @Test
     fun `a blank title keeps save disabled`() {
         launchScreen(TaskFormState())
 
-        compose.onNodeWithTag("task-form-save").performScrollTo().assertIsNotEnabled()
+        compose.onNodeWithTag("task-form-save").performScrollTo().assert(apagado)
     }
 
     @Test
     fun `typing a title enables save and saving reports the new state`() {
         launchScreen(TaskFormState())
 
-        compose.onNodeWithTag("task-title-field").performScrollTo().performTextInput("Llamar al banco")
-        compose.waitForIdle()
+        escribirNombre("Llamar al banco")
 
-        compose.onNodeWithTag("task-form-save").performScrollTo().assertIsEnabled().performClick()
+        compose.onNodeWithTag("task-form-save").performScrollTo().assert(!apagado).performClick()
         compose.waitForIdle()
 
         assertEquals("Llamar al banco", savedState?.title)
@@ -96,8 +111,7 @@ class TaskFormScreenTest {
     fun `the first step travels into the saved state too`() {
         launchScreen(TaskFormState(title = "Llamar al banco"))
 
-        compose.onNodeWithTag("task-first-step-field").performScrollTo().performTextInput("Buscar el numero")
-        compose.waitForIdle()
+        escribirPaso("Buscar el numero")
         compose.onNodeWithTag("task-form-save").performScrollTo().performClick()
         compose.waitForIdle()
 
@@ -108,7 +122,7 @@ class TaskFormScreenTest {
     fun `choosing this week sets the week due kind`() {
         launchScreen(TaskFormState(title = "Llamar al banco"))
 
-        compose.onNodeWithText("This week").performScrollTo().performClick()
+        compose.onNodeWithText("Esta semana").performScrollTo().performClick()
         compose.waitForIdle()
         compose.onNodeWithTag("task-form-save").performScrollTo().performClick()
         compose.waitForIdle()
@@ -120,7 +134,7 @@ class TaskFormScreenTest {
     fun `editing preloads the existing fields under the edit title`() {
         launchScreen(TaskFormState(editingId = "t1", title = "Titulo original", firstStep = "Paso original"))
 
-        compose.onNodeWithText("Edit task").assertExists()
+        compose.onNodeWithText("Editar la tarea").assertExists()
         compose.onNodeWithText("Titulo original").assertExists()
         compose.onNodeWithText("Paso original").assertExists()
     }
@@ -129,8 +143,8 @@ class TaskFormScreenTest {
     fun `creating shows the new-task title, not the edit one`() {
         launchScreen(TaskFormState())
 
-        compose.onNodeWithText("New task").assertExists()
-        compose.onNodeWithText("Edit task").assertDoesNotExist()
+        compose.onNodeWithText("Nueva tarea").assertExists()
+        compose.onNodeWithText("Editar la tarea").assertDoesNotExist()
     }
 
     /**
@@ -145,8 +159,7 @@ class TaskFormScreenTest {
     fun `tapping save twice only calls onSave once`() {
         launchScreen(TaskFormState())
 
-        compose.onNodeWithTag("task-title-field").performScrollTo().performTextInput("Llamar al banco")
-        compose.waitForIdle()
+        escribirNombre("Llamar al banco")
 
         val saveAction =
             compose.onNodeWithTag("task-form-save").fetchSemanticsNode().config[SemanticsActions.OnClick].action
@@ -169,7 +182,7 @@ class TaskFormScreenTest {
         var restoredSave: TaskFormState? = null
         val restorationTester = StateRestorationTester(compose)
         restorationTester.setContent {
-            BitoTheme {
+            ConSistema {
                 TaskFormScreen(
                     initial = TaskFormState(),
                     today = today,
@@ -178,8 +191,8 @@ class TaskFormScreenTest {
                 )
             }
         }
-        compose.onNodeWithTag("task-title-field").performScrollTo().performTextInput("Llamar al banco")
-        compose.onNodeWithText("This week").performScrollTo().performClick()
+        escribirNombre("Llamar al banco")
+        compose.onNodeWithText("Esta semana").performScrollTo().performClick()
         compose.waitForIdle()
 
         restorationTester.emulateSavedInstanceStateRestore()
@@ -196,7 +209,7 @@ class TaskFormScreenTest {
     fun `the back chevron calls onBack without saving`() {
         launchScreen(TaskFormState(title = "Llamar al banco"))
 
-        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithContentDescription("Atrás").performClick()
         compose.waitForIdle()
 
         assertTrue(backCalled)
@@ -229,19 +242,12 @@ class TaskFormScreenTest {
         compose.onNodeWithTag("task-delete").performScrollTo().performClick()
         compose.waitForIdle()
 
-        // The confirmation sheet is up and nothing fired yet — same guard HabitFormScreen's own
-        // delete button carries.
-        compose.onNodeWithTag("task-delete-confirm").assertExists()
+        // El diálogo está puesto y todavía no ha pasado nada.
+        compose.onNodeWithText("¿Borrar esta tarea?").assertExists()
+        compose.onNodeWithText("Los bitos que ganaste son tuyos.").assertExists()
         assertFalse(deleted)
 
-        // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
-        // touch gestures under this Robolectric harness — invoking the node's own OnClick
-        // semantics action directly is what actually proves the tap wires through.
-        compose.onNodeWithTag("task-delete-confirm-yes")
-            .fetchSemanticsNode()
-            .config[SemanticsActions.OnClick]
-            .action
-            ?.invoke()
+        compose.onNodeWithText("Borrar").performClick()
         compose.waitForIdle()
 
         assertTrue(deleted)
@@ -253,14 +259,55 @@ class TaskFormScreenTest {
 
         compose.onNodeWithTag("task-delete").performScrollTo().performClick()
         compose.waitForIdle()
-        compose.onNodeWithText("Cancel")
-            .fetchSemanticsNode()
-            .config[SemanticsActions.OnClick]
-            .action
-            ?.invoke()
+        compose.onNodeWithText("Cancelar").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithTag("task-delete-confirm").assertDoesNotExist()
+        compose.onNodeWithText("¿Borrar esta tarea?").assertDoesNotExist()
         assertFalse(deleted)
+    }
+
+    @Test
+    fun `choosing a date replaces Fecha in the segmented`() {
+        launchScreen(TaskFormState(title = "Regalo de Lucía"))
+
+        compose.onNodeWithText("Fecha").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("16").performClick()
+        compose.onNodeWithText("Elegir").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("vie 16").assertExists()
+        compose.onNodeWithText("Fecha").assertDoesNotExist()
+        compose.onNodeWithTag("task-form-save").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertEquals(DueKind.DATE, savedState?.dueKind)
+        assertEquals(today + 1, savedState?.dueDay)
+    }
+
+    @Test
+    fun `cancelling the calendar leaves the deadline as it was`() {
+        launchScreen(TaskFormState(title = "Regalo de Lucía"))
+
+        compose.onNodeWithText("Fecha").performScrollTo().performClick()
+        compose.waitForIdle()
+        compose.onNodeWithText("16").performClick()
+        compose.onNodeWithText("Cancelar").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Fecha").assertExists()
+        compose.onNodeWithTag("task-form-save").performScrollTo().performClick()
+        compose.waitForIdle()
+        assertEquals(DueKind.NONE, savedState?.dueKind)
+    }
+
+    @Test
+    fun `pressing the disabled save says what is missing`() {
+        launchScreen(TaskFormState())
+
+        compose.onNodeWithTag("task-form-save").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithText("Falta el nombre.").assertExists()
+        assertEquals(0, saveCalls)
     }
 }

@@ -18,6 +18,7 @@ import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TaskEventKind
+import com.alvarotc.bito.domain.model.TaskStatus
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -130,6 +131,39 @@ class TasksViewModelTest {
             assertTrue(
                 db.taskEventDao().all().any { it.taskId == "t1" && it.kind == TaskEventKind.BROUGHT && it.logicalDay == today },
             )
+        }
+
+    @Test
+    fun `undoing a bring to today sends the task back and keeps the history clean`() =
+        runTest {
+            tasksRepo.create(taskEntity(id = "t1", dueKind = DueKind.DATE, dueDay = today + 10))
+            assertTrue(state().datedTasks.any { it.id == "t1" })
+            var apunte: String? = null
+            vm.bringToToday("t1") { apunte = it }
+            advanceUntilIdle()
+            assertTrue(state().todayTasks.any { it.id == "t1" })
+
+            vm.undoBring(apunte!!)
+            advanceUntilIdle()
+
+            val after = state()
+            assertTrue(after.todayTasks.none { it.id == "t1" })
+            assertTrue(after.datedTasks.any { it.id == "t1" })
+            assertTrue(db.taskEventDao().all().isEmpty())
+        }
+
+    @Test
+    fun `reopening a done task brings it back without taking its points away`() =
+        runTest {
+            tasksRepo.create(taskEntity(id = "t1"))
+            vm.markDone("t1")
+            advanceUntilIdle()
+
+            vm.reopen("t1")
+            advanceUntilIdle()
+
+            assertEquals(TaskStatus.OPEN, db.taskDao().byId("t1")?.status)
+            assertEquals(1, db.pointsLedgerDao().all().count { it.reason == PointsReason.TASK_DONE && it.refId == "task:t1" })
         }
 
     @Test
