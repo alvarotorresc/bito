@@ -5,10 +5,10 @@ import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
@@ -31,7 +31,6 @@ import androidx.glance.appwidget.GlanceAppWidgetReceiver
 import androidx.glance.appwidget.SizeMode
 import androidx.glance.appwidget.action.actionRunCallback
 import androidx.glance.appwidget.action.actionStartActivity
-import androidx.glance.appwidget.cornerRadius
 import androidx.glance.appwidget.provideContent
 import androidx.glance.background
 import androidx.glance.currentState
@@ -53,13 +52,8 @@ import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.LogicalDays
-import com.alvarotc.bito.ui.habi.renderHabiBitmap
-import com.alvarotc.bito.ui.theme.Brasa
-import com.alvarotc.bito.ui.theme.Hoja
-import com.alvarotc.bito.ui.theme.Papel
-import com.alvarotc.bito.ui.theme.Tarjeta
-import com.alvarotc.bito.ui.theme.Tinta
-import com.alvarotc.bito.ui.theme.TintaSuave
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.ui.sistema.BitoClaro
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.TodayUiState
 import com.alvarotc.bito.ui.today.buildTodayUiState
@@ -80,7 +74,7 @@ internal val HABI_MIN_WIDTH = 150.dp
 internal fun showsHabi(width: Dp): Boolean = width >= HABI_MIN_WIDTH
 
 /** Offscreen render size (px) for the mini Habi beside the habit name — same technique as [TodayWidget]. */
-private const val HABI_BITMAP_SIZE_PX = 96
+private const val HABI_BITMAP_SIZE_PX = 192
 
 /**
  * One habit, one tap (compact 2x1/2x2 sibling of [TodayWidget]). The chosen habit id lives in
@@ -116,18 +110,22 @@ class SingleHabitWidget : GlanceAppWidget() {
                         prefs.personality,
                         owned,
                     )
-                SingleHabitData(state, renderHabiBitmap(context, state.spec, HABI_BITMAP_SIZE_PX))
+                SingleHabitData(
+                    state,
+                    HabiWidgetCache.bitmap(context, state.spec, HABI_BITMAP_SIZE_PX),
+                    HabiWidgetCache.bitmap(context, state.spec.copy(mood = Mood.RADIANT), HABI_BITMAP_SIZE_PX),
+                )
             }.conflate().flowOn(Dispatchers.Default)
         val initial = dataFlow.first()
         provideContent {
             val data by dataFlow.collectAsState(initial = initial)
             val widgetPrefs = currentState<Preferences>()
             val model = buildSingleHabitModel(data.state, widgetPrefs[SingleHabitWidgetKeys.habitId])
-            SingleHabitContent(model, appWidgetId, data.habiBitmap)
+            SingleHabitContent(model, appWidgetId, data.habiBitmap, data.radiantBitmap)
         }
     }
 
-    private data class SingleHabitData(val state: TodayUiState, val habiBitmap: Bitmap)
+    private data class SingleHabitData(val state: TodayUiState, val habiBitmap: Bitmap, val radiantBitmap: Bitmap)
 
     companion object {
         /** 2x1: a one-line strip. */
@@ -161,22 +159,27 @@ private fun SingleHabitContent(
     model: SingleHabitModel,
     appWidgetId: Int,
     habiBitmap: Bitmap,
+    radiantBitmap: Bitmap,
 ) {
     val context = LocalContext.current
     when (model) {
         is SingleHabitModel.Missing ->
             MessageContent(
                 context.getString(R.string.widget_single_missing),
+                null,
                 reconfigureAction(context, appWidgetId),
                 habiBitmap,
+                R.drawable.widget_fondo,
             )
         is SingleHabitModel.Paused ->
             MessageContent(
-                context.getString(R.string.widget_single_paused, model.name),
+                model.name,
+                context.getString(R.string.widget2_paused_label),
                 actionStartActivity<MainActivity>(),
                 habiBitmap,
+                R.drawable.widget_fondo_pausa,
             )
-        is SingleHabitModel.Active -> ActiveContent(model, habiBitmap)
+        is SingleHabitModel.Active -> ActiveContent(model, habiBitmap, radiantBitmap)
     }
 }
 
@@ -184,16 +187,19 @@ private fun SingleHabitContent(
 @Composable
 private fun MessageContent(
     message: String,
+    caption: String?,
     action: Action,
     habiBitmap: Bitmap,
+    @DrawableRes fondo: Int,
 ) {
+    val colores = BitoClaro
     Row(
         modifier =
             GlanceModifier
                 .fillMaxSize()
-                .background(ColorProvider(Papel))
+                .background(ImageProvider(fondo))
                 .clickable(action)
-                .padding(12.dp),
+                .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         val withHabi = showsHabi(LocalSize.current.width)
@@ -201,17 +207,27 @@ private fun MessageContent(
             Image(
                 provider = ImageProvider(habiBitmap),
                 contentDescription = null,
-                modifier = GlanceModifier.size(28.dp),
+                modifier = GlanceModifier.size(36.dp),
             )
         }
-        Box(
+        Column(
             modifier = GlanceModifier.defaultWeight().padding(start = if (withHabi) 8.dp else 0.dp),
-            contentAlignment = Alignment.Center,
+            horizontalAlignment = if (withHabi) Alignment.Start else Alignment.CenterHorizontally,
         ) {
             Text(
                 text = message,
-                style = TextStyle(color = ColorProvider(TintaSuave), fontSize = 13.sp, textAlign = TextAlign.Center),
+                maxLines = 2,
+                style =
+                    TextStyle(
+                        color = ColorProvider(if (caption == null) colores.tintaSuave else colores.tinta),
+                        fontSize = if (caption == null) 14.sp else 16.sp,
+                        fontWeight = if (caption == null) FontWeight.Normal else FontWeight.Bold,
+                        textAlign = if (withHabi) TextAlign.Start else TextAlign.Center,
+                    ),
             )
+            if (caption != null) {
+                Text(text = caption, style = TextStyle(color = ColorProvider(colores.tintaSuave), fontSize = 14.sp))
+            }
         }
     }
 }
@@ -220,144 +236,167 @@ private fun MessageContent(
 private fun ActiveContent(
     model: SingleHabitModel.Active,
     habiBitmap: Bitmap,
+    radiantBitmap: Bitmap,
 ) {
     val context = LocalContext.current
-    val action =
-        if (model.tapLogs) {
-            actionRunCallback<LogHabitAction>(
-                actionParametersOf(
-                    LogHabitAction.HABIT_ID to model.habitId,
-                    LogHabitAction.AMOUNT to model.step,
-                ),
-            )
-        } else {
-            actionStartActivity<MainActivity>()
-        }
-    val description =
+    val colores = BitoClaro
+    val logAction =
+        actionRunCallback<LogHabitAction>(
+            actionParametersOf(
+                LogHabitAction.HABIT_ID to model.habitId,
+                LogHabitAction.AMOUNT to model.step,
+            ),
+        )
+    val ringAction = if (model.tapLogs) logAction else actionStartActivity<MainActivity>()
+    val ringDescription =
         if (model.tapLogs) {
             context.getString(R.string.widget_log_action, model.name)
         } else {
             context.getString(R.string.widget_open_action, model.name)
         }
+    val hecho = model.doneToday && model.kind != CardKind.ABSTINENCE
+    val fondo = if (hecho) R.drawable.widget_fondo_hecho else R.drawable.widget_fondo
+    val tall = LocalSize.current.height >= SingleHabitWidget.TALL.height
+    val ringSize = if (tall) 64.dp else 48.dp
     val root =
         GlanceModifier
             .fillMaxSize()
-            .background(ColorProvider(Papel))
-            .clickable(action)
-            .semantics { contentDescription = description }
-            .padding(12.dp)
-    if (LocalSize.current.height >= SingleHabitWidget.TALL.height) {
+            .background(ImageProvider(fondo))
+            .padding(if (tall) 12.dp else 6.dp)
+    val ring: @Composable () -> Unit = {
+        // Dos zonas: el círculo registra (o abre la app si ya no hay nada que registrar).
+        Box(
+            modifier =
+                GlanceModifier
+                    .size(ringSize)
+                    .clickable(ringAction)
+                    .semantics { contentDescription = ringDescription },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (hecho) {
+                Image(
+                    provider = ImageProvider(radiantBitmap),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(ringSize),
+                )
+            } else {
+                Image(
+                    provider = ImageProvider(aroDrawable(model.aro())),
+                    contentDescription = null,
+                    modifier = GlanceModifier.size(ringSize),
+                )
+                cifraOf(model)?.let { cifra ->
+                    Text(
+                        text = cifra,
+                        style =
+                            TextStyle(
+                                color = ColorProvider(colores.tinta),
+                                fontSize = if (tall) 16.sp else 14.sp,
+                                fontWeight = FontWeight.Bold,
+                            ),
+                    )
+                }
+            }
+        }
+    }
+    val openApp = actionStartActivity<MainActivity>()
+    val openDescription = context.getString(R.string.widget_open_action, model.name)
+    if (tall) {
         Column(
             modifier = root,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Image(
-                    provider = ImageProvider(habiBitmap),
-                    contentDescription = null,
-                    modifier = GlanceModifier.size(32.dp),
-                )
+            ring()
+            Column(
+                modifier =
+                    GlanceModifier
+                        .padding(top = 6.dp)
+                        .clickable(openApp)
+                        .semantics { contentDescription = openDescription },
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
                 Text(
                     text = model.name,
                     maxLines = 2,
                     style =
                         TextStyle(
-                            color = ColorProvider(Tinta),
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
+                            color = ColorProvider(colores.tinta),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Bold,
                             textAlign = TextAlign.Center,
                         ),
-                    modifier = GlanceModifier.padding(start = 6.dp),
                 )
-            }
-            captionOf(model)?.let { (caption, color) ->
-                Box(modifier = GlanceModifier.padding(top = 4.dp)) {
-                    Text(text = caption, style = TextStyle(color = ColorProvider(color), fontSize = 12.sp))
+                captionOf(model)?.let { (caption, color) ->
+                    Text(text = caption, style = TextStyle(color = ColorProvider(color), fontSize = 14.sp, textAlign = TextAlign.Center))
                 }
             }
-            StatusBubble(model, sizeDp = 32, modifier = GlanceModifier.padding(top = 8.dp))
         }
     } else {
         Row(
             modifier = root,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            val withHabi = showsHabi(LocalSize.current.width)
-            if (withHabi) {
-                Image(
-                    provider = ImageProvider(habiBitmap),
-                    contentDescription = null,
-                    modifier = GlanceModifier.size(28.dp),
-                )
-            }
-            Column(modifier = GlanceModifier.defaultWeight().padding(start = if (withHabi) 8.dp else 0.dp)) {
+            ring()
+            Column(
+                modifier =
+                    GlanceModifier
+                        .defaultWeight()
+                        .padding(start = 6.dp)
+                        .clickable(openApp)
+                        .semantics { contentDescription = openDescription },
+            ) {
                 Text(
                     text = model.name,
                     maxLines = 1,
-                    style = TextStyle(color = ColorProvider(Tinta), fontSize = 13.sp, fontWeight = FontWeight.Medium),
+                    style = TextStyle(color = ColorProvider(colores.tinta), fontSize = 16.sp, fontWeight = FontWeight.Bold),
                 )
                 captionOf(model)?.let { (caption, color) ->
-                    Text(text = caption, style = TextStyle(color = ColorProvider(color), fontSize = 11.sp))
+                    Text(text = caption, maxLines = 1, style = TextStyle(color = ColorProvider(color), fontSize = 14.sp))
                 }
             }
-            StatusBubble(model, sizeDp = 26, modifier = GlanceModifier.padding(start = 8.dp))
         }
     }
 }
+
+/** El número que va dentro del aro: lo hecho de un contador o de una duración; un check no lleva cifra. */
+private fun cifraOf(model: SingleHabitModel.Active): String? =
+    when (model.kind) {
+        CardKind.COUNTER, CardKind.DURATION -> model.progress.toString()
+        else -> null
+    }
 
 /**
  * One caption line per kind, or null when the name alone says it all (a pending CHECK).
- * Colors: quiet by default, [Hoja] for a clean abstinence day, [Brasa] for a failed one or a
- * blown AT_MOST limit — the same accents the Today cards use.
+ * Colors: quiet by default, [BitoColores.okTexto] for a clean abstinence day, [BitoColores.peligroTexto]
+ * for a failed one or a blown AT_MOST limit.
  */
 @Composable
-private fun captionOf(model: SingleHabitModel.Active): Pair<String, Color>? {
+private fun captionOf(model: SingleHabitModel.Active): Pair<String, androidx.compose.ui.graphics.Color>? {
     val context = LocalContext.current
+    val colores = BitoClaro
     return when (model.kind) {
-        CardKind.CHECK -> if (model.doneToday) context.getString(R.string.widget_single_done) to Hoja else null
+        CardKind.CHECK -> if (model.doneToday) context.getString(R.string.widget_single_done) to colores.okTexto else null
         CardKind.COUNTER ->
-            context.getString(R.string.widget_progress, model.progress, model.target) to
-                if (model.failed) Brasa else TintaSuave
+            if (model.doneToday) {
+                context.getString(R.string.widget_single_done) to colores.okTexto
+            } else {
+                context.getString(R.string.widget_progress, model.progress, model.target) to
+                    if (model.failed) colores.peligroTexto else colores.tintaSuave
+            }
         CardKind.DURATION ->
-            context.getString(R.string.widget_progress_min, model.progress, model.target) to
-                if (model.failed) Brasa else TintaSuave
+            if (model.doneToday) {
+                context.getString(R.string.widget_single_done) to colores.okTexto
+            } else {
+                context.getString(R.string.widget_progress_min, model.progress, model.target) to
+                    if (model.failed) colores.peligroTexto else colores.tintaSuave
+            }
         CardKind.ABSTINENCE ->
             if (model.failed) {
-                context.getString(R.string.relapse_today) to Brasa
+                context.getString(R.string.relapse_today) to colores.peligroTexto
             } else {
-                context.getString(R.string.clean_today) to Hoja
+                context.getString(R.string.clean_today) to colores.okTexto
             }
-    }
-}
-
-/** The trailing "+" (tap logs) or "✓" (nothing left today) circle; abstinence carries neither. */
-@Composable
-private fun StatusBubble(
-    model: SingleHabitModel.Active,
-    sizeDp: Int,
-    modifier: GlanceModifier,
-) {
-    val glyph =
-        when {
-            model.tapLogs -> "+"
-            model.doneToday && model.kind != CardKind.ABSTINENCE -> "✓"
-            else -> return
-        }
-    Box(modifier = modifier) {
-        Box(
-            modifier =
-                GlanceModifier
-                    .size(sizeDp.dp)
-                    .cornerRadius((sizeDp / 2).dp)
-                    .background(ColorProvider(Hoja)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text(
-                text = glyph,
-                style = TextStyle(color = ColorProvider(Tarjeta), fontSize = (sizeDp / 2).sp, fontWeight = FontWeight.Medium),
-            )
-        }
     }
 }
 

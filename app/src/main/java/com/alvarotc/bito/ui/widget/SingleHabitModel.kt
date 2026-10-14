@@ -53,14 +53,19 @@ fun buildSingleHabitModel(
             SingleHabitModel.Missing(state.spec)
         }
     }
-    val logsFromWidget = card.kind == CardKind.CHECK || card.kind == CardKind.COUNTER
+    val logsFromWidget = card.kind != CardKind.ABSTINENCE
     return SingleHabitModel.Active(
         habitId = card.id,
         name = card.name,
         kind = card.kind,
         progress = card.progress,
         target = card.target,
-        step = if (card.kind == CardKind.CHECK) 1 else card.step,
+        step =
+            when (card.kind) {
+                CardKind.CHECK -> 1
+                CardKind.DURATION -> MINUTOS_POR_TOQUE
+                else -> card.step
+            },
         doneToday = card.doneToday,
         failed = card.failed,
         tapLogs = logsFromWidget && !card.doneToday,
