@@ -55,12 +55,6 @@ private const val ACERCA = 4
 /** Lo que tarda el estrato en abrirse antes de subirlo a la vista. */
 private const val ESPERA_ABRIR_MS = 260L
 
-/**
- * Ajustes de la Bito 2 (spec §5.1): la maqueta del jardín arriba y cinco estratos de tierra debajo, uno abierto
- * cada vez. [habiViewModel] es el de la actividad: da el jardín de la maqueta y la personalidad de Habi.
- * [onBack] se conserva porque Ajustes es una pestaña y la llama el `NavHost`; aquí no hay flecha.
- */
-
 /** Escala de la cámara Hoy → Ajustes: `1/0,74` fuera de pantalla (el jardín a tamaño de Hoy) y `1` visible. */
 internal fun escalaCamara(visible: Boolean): Float = if (visible) 1f else 1f / ESCALA_MAQUETA
 
@@ -78,6 +72,11 @@ private fun escalaCamaraEntrada(
     return { escala }
 }
 
+/**
+ * Ajustes de la Bito 2 (spec §5.1): la maqueta del jardín arriba y cinco estratos de tierra debajo, uno abierto
+ * cada vez. [habiViewModel] es el de la actividad: da el jardín de la maqueta y la personalidad de Habi.
+ * [onBack] se conserva porque Ajustes es una pestaña y la llama el `NavHost`; aquí no hay flecha.
+ */
 @Suppress("UNUSED_PARAMETER")
 @Composable
 fun AjustesScreen(
