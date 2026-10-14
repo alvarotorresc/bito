@@ -9,4 +9,12 @@
         <item quantity="other">%1$d days in a row</item>
     </plurals>
     <string name="premios_mas_n">+%1$d</string>
+    <string name="premios_tus_bitos">Your bitos</string>
+    <string name="premios_regla_habito">for every habit you complete.</string>
+    <string name="premios_regla_tarea">for every task you finish (%1$d if it is within its deadline).</string>
+    <string name="premios_regla_dia">when you complete the whole day.</string>
+    <string name="premios_regla_semana">for a full week; +%1$d for a full month.</string>
+    <string name="premios_regla_racha">at 7 days in a row on a habit; %1$d at 30, %2$d at 100 and %3$d at a year.</string>
+    <string name="premios_nota_tuyo">What you earn is yours: unchecking something does not take bitos away.</string>
+    <string name="premios_ultimos">Latest movements</string>
 </resources>

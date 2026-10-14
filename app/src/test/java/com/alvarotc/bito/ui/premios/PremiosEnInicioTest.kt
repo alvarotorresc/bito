@@ -133,6 +133,13 @@ class PremiosEnInicioTest {
         throw AssertionError("la condición no llegó")
     }
 
+    /** Da tiempo real a que la base y los ajustes lleguen al modelo antes del siguiente paso. */
+    private fun dejarPasar() =
+        repeat(30) {
+            avanzar(16)
+            Thread.sleep(10)
+        }
+
     private fun hay(tag: String) = rule.onAllNodesWithTagCount(tag) > 0
 
     private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.onAllNodesWithTagCount(tag: String) =
@@ -235,9 +242,9 @@ class PremiosEnInicioTest {
         runBlocking {
             ajustes.update { it.copy(badgesSeenUntilMillis = 1_000) }
         }
-        avanzar(200)
+        dejarPasar()
         runBlocking { db.badgeDao().insert(BadgeEntity("streak-7", 500)) }
-        avanzar(200)
+        dejarPasar()
         insertar(fila("r", 11, PointsReason.STREAK_MILESTONE, "make-bed:7", 5))
         esperar { hay("veta-RACHA") }
         avanzar(200)

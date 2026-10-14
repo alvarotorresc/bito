@@ -9,4 +9,12 @@
         <item quantity="other">%1$d días seguidos</item>
     </plurals>
     <string name="premios_mas_n">+%1$d</string>
+    <string name="premios_tus_bitos">Tus bitos</string>
+    <string name="premios_regla_habito">por cada hábito que cumples.</string>
+    <string name="premios_regla_tarea">por cada tarea que terminas (%1$d si es dentro de su plazo).</string>
+    <string name="premios_regla_dia">cuando completas el día entero.</string>
+    <string name="premios_regla_semana">por una semana completa; +%1$d por un mes.</string>
+    <string name="premios_regla_racha">a los 7 días seguidos de un hábito; %1$d a los 30, %2$d a los 100 y %3$d al año.</string>
+    <string name="premios_nota_tuyo">Lo que ganas es tuyo: desmarcar algo no te quita bitos.</string>
+    <string name="premios_ultimos">Últimos movimientos</string>
 </resources>
