@@ -56,5 +56,11 @@ class ComprobarTest(unittest.TestCase):
         f = self.fallos(["nu_saludo\t0\t\tHola — qué tal 🙂\tHi."])
         self.assertTrue(any("lista negra" in x for x in f))
 
+class BolsasTest(unittest.TestCase):
+    def test_nombre_coincide_con_huecos(self):
+        for b in comprobar.comun.cargar_bolsas().values():
+            self.assertEqual(b["nombre"], "nombre" in b["huecos"], b["bolsa"])
+
+
 if __name__ == "__main__":
     unittest.main()

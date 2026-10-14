@@ -57,10 +57,10 @@
   {"bolsa": "cie_tareas_manana", "grupo": "E", "archivo": "cierre", "tipo": "SUELTA", "huecos": ["lista", "n"], "minimo": 3, "nombre": false},
   {"bolsa": "av_manana_titulo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": true},
   {"bolsa": "av_manana_titulo_gordo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": true},
-  {"bolsa": "av_recordatorio", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": false},
+  {"bolsa": "av_recordatorio", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": true},
   {"bolsa": "av_noche_titulo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": true},
-  {"bolsa": "av_noche_cuerpo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": false},
-  {"bolsa": "av_aceptado_titulo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["hora", "gordo"], "minimo": 6, "nombre": false},
-  {"bolsa": "av_aceptado_cuerpo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["hora", "gordo"], "minimo": 6, "nombre": false},
+  {"bolsa": "av_noche_cuerpo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": true},
+  {"bolsa": "av_aceptado_titulo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["hora", "gordo", "nombre"], "minimo": 6, "nombre": true},
+  {"bolsa": "av_aceptado_cuerpo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["hora", "gordo", "nombre"], "minimo": 6, "nombre": true},
   {"bolsa": "av_ausencia", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "hora", "gordo"], "minimo": 6, "nombre": true}
 ]
