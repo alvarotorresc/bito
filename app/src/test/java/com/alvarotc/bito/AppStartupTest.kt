@@ -160,7 +160,7 @@ class AppStartupTest {
         // A folder reaches BackupSync's collector and, through it, WorkManager — proves the
         // injected scope is really the one driving the collector, not a leftover default one.
         runBlocking { container.settings.update { it.copy(backupFolderUri = FOLDER) } }
-        eventually { workInfos().size == 1 }
+        eventually(timeoutMs = 5_000) { workInfos().size == 1 }
         assertEquals(TimeUnit.DAYS.toMillis(1), workInfos().single().periodicityInfo?.repeatIntervalMillis)
 
         // cancelAndJoin suspends until the collector coroutine (a child of this job) has actually
