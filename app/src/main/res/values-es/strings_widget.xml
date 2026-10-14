@@ -15,4 +15,6 @@
     <string name="widget_single_config_title">Elige un hábito</string>
     <string name="widget_single_config_body">Este widget sigue un solo hábito</string>
     <string name="widget_single_config_empty">Aún no tienes hábitos activos. Guarda igualmente y el widget te espera en la pantalla de inicio: tócalo para elegir uno cuando lo tengas.</string>
+    <string name="widget2_more">y %1$d más</string>
+    <string name="widget2_paused_label">En pausa</string>
 </resources>
