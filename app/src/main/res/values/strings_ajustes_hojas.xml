@@ -1,3 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Textos del bloque ajustes_hojas (spec pieza 2, §15.3). Solo los escribe su tarea, con el prefijo de su bloque. -->
-<resources />
+<resources>
+    <string name="hojas_estrato_general">General</string>
+    <string name="hojas_estrato_avisos">Reminders and breathing</string>
+    <string name="hojas_estrato_sonido">Sound and touch</string>
+    <string name="hojas_atras">Back</string>
+    <string name="hojas_dia_titulo">The day ends at</string>
+    <string name="hojas_dia_desc">For night owls: what you do before that time counts as today.</string>
+    <string name="hojas_dia_nota">Applies from now on; sealed days stay as they are.</string>
+    <string name="hojas_dia_reloj">Time the day ends</string>
+    <string name="hojas_rec_titulo">Reminders</string>
+    <string name="hojas_rec_desc">Habi writes to you at these times if something is left to check off.</string>
+    <string name="hojas_rec_vacio">No reminders. Habi won\'t write at any fixed time.</string>
+    <string name="hojas_rec_anadir">Add a time</string>
+    <string name="hojas_rec_hecho">Done</string>
+    <string name="hojas_rec_editar">Edit</string>
+    <string name="hojas_rec_quitar">Remove</string>
+    <string name="hojas_rec_editar_desc">Change the one at %1$s</string>
+    <string name="hojas_rec_quitar_desc">Remove the one at %1$s</string>
+    <string name="hojas_rec_nuevo">New reminder</string>
+    <string name="hojas_rec_uno">Reminder</string>
+    <string name="hojas_rec_reloj">Reminder time</string>
+    <string name="hojas_habi_titulo">Habi\'s nudges</string>
+    <string name="hojas_habi_desc">Two a day, always at the same time. In the morning, what\'s on today; at night, how it went.</string>
+    <string name="hojas_habi_manana">Morning</string>
+    <string name="hojas_habi_noche">Night</string>
+    <string name="hojas_habi_noche_nota">Replaces the daily review</string>
+    <string name="hojas_habi_rangos">The morning moves between 6:00 and 11:00; the night, between 19:00 and 23:30. If a reminder falls at the same time, Habi sends just one.</string>
+    <string name="hojas_habi_aviso_manana">Morning nudge</string>
+    <string name="hojas_habi_aviso_noche">Night nudge</string>
+    <string name="hojas_habi_reloj_manana">Morning nudge time</string>
+    <string name="hojas_habi_reloj_noche">Night nudge time</string>
+    <string name="hojas_nm_titulo">Do not disturb</string>
+    <string name="hojas_nm_desc">Between these times Habi stays quiet: no nudges, no sounds. Anything pending waits and arrives when it ends.</string>
+    <string name="hojas_nm_activar">Turn on</string>
+    <string name="hojas_nm_desde">From</string>
+    <string name="hojas_nm_hasta">Until</string>
+    <string name="hojas_nm_reloj_desde">Do not disturb from</string>
+    <string name="hojas_nm_reloj_hasta">Do not disturb until</string>
+    <string name="hojas_nm_permiso">Android won\'t let Bito respect Do not disturb without your permission. Without it, nudges sound anyway.</string>
+    <string name="hojas_nm_permitir">Allow</string>
+    <string name="hojas_pomo_titulo">Pomodoro</string>
+    <string name="hojas_pomo_desc">How a focus session is split.</string>
+    <string name="hojas_pomo_minutos">minutes</string>
+    <string name="hojas_pomo_foco">Focus</string>
+    <string name="hojas_pomo_corto">Short break</string>
+    <string name="hojas_pomo_largo">Long break</string>
+    <string name="hojas_pomo_rondas">Rounds until the long break</string>
+    <string name="hojas_pomo_solo">Start the break on its own</string>
+    <string name="hojas_pomo_solo_nota">Otherwise Habi waits for you to tap.</string>
+    <string name="hojas_fondo_titulo">Background sound</string>
+    <string name="hojas_fondo_desc">Plays while you focus or breathe. Its volume is the Ambient channel.</string>
+    <string name="hojas_fondo_lluvia">Rain</string>
+    <string name="hojas_fondo_lluvia_nota">On the leaves</string>
+    <string name="hojas_fondo_marron">Brown noise</string>
+    <string name="hojas_fondo_marron_nota">Low and steady</string>
+    <string name="hojas_fondo_cafe">Cafe</string>
+    <string name="hojas_fondo_cafe_nota">A distant murmur</string>
+    <string name="hojas_fondo_ninguno">None</string>
+    <string name="hojas_fondo_ninguno_nota">Just the timer</string>
+</resources>
