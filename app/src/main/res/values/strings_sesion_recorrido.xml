@@ -1,4 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- Textos del carril el recorrido de la sesión (prefijo sesr_). Antes de crear una clave, buscar en strings_sesion.xml. -->
+    <plurals name="sesr_anuncio_descanso">
+        <item quantity="one">Break of %1$d minute</item>
+        <item quantity="other">Break of %1$d minutes</item>
+    </plurals>
+    <string name="sesr_anuncio_terminada">Session finished</string>
 </resources>

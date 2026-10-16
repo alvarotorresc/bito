@@ -47,6 +47,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.ui.breathing.AndroidBreathingMusic
 import com.alvarotc.bito.ui.breathing.BreathingScreen
 import com.alvarotc.bito.ui.breathing.BreathingViewModel
@@ -58,6 +59,7 @@ import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.inicio.EntradaSesion
 import com.alvarotc.bito.ui.inicio.InicioScreen
 import com.alvarotc.bito.ui.inicio.LocalAnimacionRuta
 import com.alvarotc.bito.ui.inicio.LocalTransicionCompartida
@@ -67,6 +69,7 @@ import com.alvarotc.bito.ui.onboarding.OnboardingReconciler
 import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
+import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.settings.AjustesScreen
 import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
@@ -78,8 +81,6 @@ import com.alvarotc.bito.ui.sistema.LocalReducido
 import com.alvarotc.bito.ui.sistema.Muelles
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
-import com.alvarotc.bito.ui.tasks.FocusScreen
-import com.alvarotc.bito.ui.tasks.FocusViewModel
 import com.alvarotc.bito.ui.tasks.TaskFormScreen
 import com.alvarotc.bito.ui.tasks.TaskFormState
 import com.alvarotc.bito.ui.tasks.TasksScreen
@@ -304,6 +305,7 @@ fun BitoNavHost(
                                 cierreViewModel = viewModel(factory = CierreViewModel.factory(container)),
                                 gordo = gordo,
                                 alGordoVisto = { entry.savedStateHandle[GORDO_VISTO] = true },
+                                sesion = remember(container) { SesionInicio(container.motorSesion, container.aire, container.settings) },
                             )
                         }
                     }
@@ -473,45 +475,15 @@ fun BitoNavHost(
                         TasksScreen(
                             viewModel = viewModel(factory = TasksViewModel.factory(container)),
                             onBack = { nav.popBackStack() },
-                            onStartFocus = { nav.navigate("focus?taskId=$it") },
-                            onEditTask = { nav.navigate("task?id=$it") },
-                        )
-                    }
-                    // El argumento es opcional a proposito: sin defaultValue = null, navegar a "focus" a
-                    // secas (la notificacion permanente, y el sheet de conflicto de esta misma pantalla)
-                    // no casaria con este patron y navigate() lanzaria IllegalArgumentException. Sin barra
-                    // inferior, como "tasks" arriba — una sesion en marcha no es una pestana.
-                    // "focus" gana la allowlist de NavRequests (arriba en este fichero) precisamente para
-                    // que esa notificacion pueda pedirla.
-                    composable(
-                        "focus?taskId={taskId}",
-                        arguments =
-                            listOf(
-                                navArgument("taskId") {
-                                    type = NavType.StringType
-                                    nullable = true
-                                    defaultValue = null
-                                },
-                            ),
-                    ) { entry ->
-                        FocusScreen(
-                            viewModel =
-                                viewModel(factory = FocusViewModel.factory(container, context, entry.arguments?.getString("taskId"))),
-                            onClose = { nav.popBackStack() },
-                            // keepOther() no escribe nada — el conflicto se resuelve solo a favor de la
-                            // sesion viva, que este estado no lleva id (solo su titulo en busyWith). Volver
-                            // a la ruta desnuda es el mismo camino que ya usa la notificacion permanente
-                            // para resolver contra la sesion viva, sin anadir un id a FocusUiState. popUpTo
-                            // inclusive reemplaza esta entrada en vez de apilar una segunda "focus": sin
-                            // esto, ATRAS desde la sesion viva volvia a la pantalla del conflicto (con
-                            // busyWith todavia no nulo), que reabria la misma hoja y dejaba al usuario sin
-                            // salida mientras la otra sesion siguiera en marcha.
-                            onKeepOther = {
-                                nav.navigate("focus") {
-                                    popUpTo("focus?taskId={taskId}") { inclusive = true }
+                            // La sesión vive en Hoy: se pide con la tarea y se vuelve al Hoy que ya hay.
+                            onStartFocus = {
+                                EntradaSesion.pedir(Destino.Tarea(it))
+                                nav.navigate(NavRequests.destino("today")) {
+                                    popUpTo(RUTA_HOY)
                                     launchSingleTop = true
                                 }
                             },
+                            onEditTask = { nav.navigate("task?id=$it") },
                         )
                     }
                     // M11: sin argumentos — el modo inicial sale de breathingLastMode. Fuera de la barra
@@ -556,6 +528,8 @@ fun BitoNavHost(
         LaunchedEffect(pendingRoute, currentRoute) {
             val route = pendingRoute ?: return@LaunchedEffect
             if (currentRoute == null || currentRoute == "onboarding") return@LaunchedEffect
+            // La sesión en curso (o lo gordo) se abre dentro de Hoy: el Inicio atiende la petición.
+            if (route == "focus") EntradaSesion.pedir(null)
             when {
                 // El cierre y lo gordo sustituyen la entrada de Hoy por una nueva con su bandera: una sola Hoy en la
                 // pila. Sin `launchSingleTop`: con Hoy arriba reutilizaría la entrada vieja, cuyo estado guardado

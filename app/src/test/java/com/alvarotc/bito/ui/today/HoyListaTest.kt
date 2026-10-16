@@ -159,7 +159,7 @@ class HoyListaTest {
     }
 
     @Test
-    fun `a task row opens with start, not today and done, and start opens the focus of that task`() {
+    fun `a task row opens with start, not today and done, and start opens the session of that task`() {
         banco.preparar()
         runBlocking { TasksRepository(banco.db).create(taskEntity(id = "t1", createdOnDay = banco.hoy)) }
         runBlocking { TasksRepository(banco.db).create(taskEntity(id = "t2", title = "Otra", createdOnDay = banco.hoy)) }
@@ -171,7 +171,7 @@ class HoyListaTest {
         rule.onNodeWithTag("tarea-hoy-no-t1").assertIsDisplayed()
         rule.onNodeWithTag("tarea-hecha-t1").assertIsDisplayed()
         rule.onNodeWithTag("tarea-empezar-t1").performClick()
-        assertEquals(listOf("ruta:focus?taskId=t1"), banco.llamadas)
+        assertEquals(listOf("sesion:Tarea(id=t1)"), banco.llamadas)
     }
 
     @Test

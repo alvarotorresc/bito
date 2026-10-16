@@ -1,5 +1,9 @@
 package com.alvarotc.bito.ui.inicio
 
+import android.app.Activity
+import android.content.Context
+import android.content.ContextWrapper
+import android.content.pm.ActivityInfo
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
@@ -60,20 +64,32 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.BuildConfig
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.propuestas.Destino
+import com.alvarotc.bito.domain.sesion.Instante
+import com.alvarotc.bito.domain.sesion.PlanSesion
+import com.alvarotc.bito.domain.sesion.RegistroSesion
+import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.ui.camino.CaminoContenido
 import com.alvarotc.bito.ui.camino.CaminoViewModel
 import com.alvarotc.bito.ui.cierre.CierreContenido
@@ -91,6 +107,20 @@ import com.alvarotc.bito.ui.premios.Momento
 import com.alvarotc.bito.ui.premios.PremiosEnInicio
 import com.alvarotc.bito.ui.premios.RegistroAnclas
 import com.alvarotc.bito.ui.premios.TipoVeta
+import com.alvarotc.bito.ui.sesion.BloqueSesion
+import com.alvarotc.bito.ui.sesion.CabeceraSesion
+import com.alvarotc.bito.ui.sesion.Encuadre
+import com.alvarotc.bito.ui.sesion.LocalMotorSesion
+import com.alvarotc.bito.ui.sesion.LocalRegistroHoja
+import com.alvarotc.bito.ui.sesion.LocalRespiracionJardin
+import com.alvarotc.bito.ui.sesion.LocalSalidaSesion
+import com.alvarotc.bito.ui.sesion.RegistroHoja
+import com.alvarotc.bito.ui.sesion.SalidaSesion
+import com.alvarotc.bito.ui.sesion.SesionContenido
+import com.alvarotc.bito.ui.sesion.SesionInicio
+import com.alvarotc.bito.ui.sesion.estadoSesionUi
+import com.alvarotc.bito.ui.sesion.rememberAtrasSesion
+import com.alvarotc.bito.ui.sesion.rememberEstadoCamaraSesion
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
@@ -109,7 +139,10 @@ import com.alvarotc.bito.ui.today.ESPERA_CREADO_MS
 import com.alvarotc.bito.ui.today.HoyLista
 import com.alvarotc.bito.ui.today.TodayViewModel
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.math.min
@@ -281,6 +314,8 @@ fun InicioScreen(
     cierreViewModel: CierreViewModel? = null,
     gordo: Boolean = false,
     alGordoVisto: () -> Unit = {},
+    // La sesión (pieza 5) vive dentro del Inicio. Sin ella (las pruebas de Hoy) no hay modo sesión.
+    sesion: SesionInicio? = null,
 ) {
     val estado by hoy.uiState.collectAsStateWithLifecycle()
     val estadoCamino by camino.uiState.collectAsStateWithLifecycle()
@@ -351,6 +386,103 @@ fun InicioScreen(
     BackHandler(enabled = destino > 0f) { ir(0f) }
     // Después del de Camino: con el cierre abierto, atrás lo cierra a él.
     BackHandler(enabled = cierreAbierto) { moverCierre(0f) }
+
+    // ── La sesión vive aquí dentro (spec §4.2): el mismo jardín y la misma Habi, con la cámara. ──
+    val motor = sesion?.motor
+    val instante by remember(motor) { motor?.instante ?: MutableStateFlow<Instante?>(null) }.collectAsStateWithLifecycle()
+    val borrador by remember(motor) { motor?.borrador ?: MutableStateFlow<PlanSesion?>(null) }.collectAsStateWithLifecycle()
+    val registroSesion by remember(motor) { motor?.registro ?: MutableStateFlow<RegistroSesion?>(null) }.collectAsStateWithLifecycle()
+    var sesionActiva by rememberSaveable { mutableStateOf(false) }
+    var preparando by rememberSaveable { mutableStateOf(false) }
+    var saliendo by remember { mutableStateOf(false) }
+    var bloqueVisto by remember { mutableStateOf(false) }
+    val hojasSesion = remember { RegistroHoja() }
+    val camara = rememberEstadoCamaraSesion()
+    val altoContenido = remember { mutableIntStateOf(0) }
+    val respiracion = remember { mutableStateOf<(() -> Float)?>(null) }
+    val hoyAlfa by animateFloatAsState(
+        if (sesionActiva && !saliendo) 0f else 1f,
+        if (reducido) tween(Duraciones.REDUCIDO) else tween(160, easing = Curvas.out),
+        label = "hoy-sesion",
+    )
+    val estadoSesion = estadoSesionUi(instante, borrador, preparando, hojasSesion.abierta)
+    val estadoVista = if (saliendo) estadoSesion.copy(bloque = null) else estadoSesion
+
+    fun entrarEnSesion(vistaPreparar: Boolean) {
+        if (destino != 0f) {
+            destino = 0f
+            scope.launch { q.snapTo(0f) }
+        }
+        if (cierreEstado.c.value > 0f) scope.launch { cierreEstado.c.snapTo(0f) }
+        preparando = vistaPreparar
+        saliendo = false
+        sesionActiva = true
+    }
+
+    fun volverAHoy() {
+        if (sesionActiva) saliendo = true
+    }
+
+    fun abrirSesion(destinoSesion: Destino?) {
+        if (sesion == null) return
+        scope.launch { EntradaSesion.abrir(destinoSesion, AbrirSesion(sesion.motor, ::entrarEnSesion, navegar.abrirRuta)) }
+    }
+    val abrirSesionActual = rememberUpdatedState(::abrirSesion)
+
+    // La cámara sigue al bloque; al volver a Hoy llega a su encuadre y solo entonces se sale del modo sesión.
+    LaunchedEffect(sesionActiva, saliendo, estadoSesion.encuadre) {
+        if (!sesionActiva) return@LaunchedEffect
+        camara.ir(if (saliendo) Encuadre.HOY else estadoSesion.encuadre, gesto)
+        if (saliendo) {
+            sesionActiva = false
+            saliendo = false
+            preparando = false
+        }
+    }
+    // Una sesión que se acaba (Terminada contestada, sesión cerrada desde fuera) devuelve a Hoy sola.
+    LaunchedEffect(sesionActiva, estadoSesion.bloque) {
+        if (!sesionActiva) {
+            bloqueVisto = false
+        } else if (estadoSesion.bloque != null) {
+            bloqueVisto = true
+        } else if (bloqueVisto) {
+            saliendo = true
+        }
+    }
+    LaunchedEffect(sesionActiva) {
+        if (!sesionActiva) {
+            altoContenido.intValue = 0
+            respiracion.value = null
+        }
+    }
+    // Al abrir y en cada vuelta a primer plano la sesión se recupera del disco (cambio de día, app matada).
+    LaunchedEffect(motor) { motor?.recuperar() }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) { if (motor != null) scope.launch { motor.recuperar() } }
+    // Las peticiones de otras pantallas (Tareas, la notificación): se recupera primero para ver la sesión viva.
+    val peticion by EntradaSesion.pendiente.collectAsStateWithLifecycle()
+    LaunchedEffect(peticion, sesion) {
+        val p = peticion ?: return@LaunchedEffect
+        if (sesion == null) return@LaunchedEffect
+        EntradaSesion.consumir()
+        sesion.motor.recuperar()
+        abrirSesionActual.value(p.destino)
+    }
+    // Vertical mientras dura la sesión (§21.9).
+    val actividad = LocalContext.current.actividad()
+    DisposableEffect(sesionActiva, actividad) {
+        val bloqueada = sesionActiva
+        if (bloqueada) actividad?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        onDispose { if (bloqueada) actividad?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
+    }
+    val atrasSesion =
+        if (motor != null) {
+            rememberAtrasSesion(estadoVista, motor, hojasSesion, ::volverAHoy) { avisos.mostrar(it) }
+        } else {
+            null
+        }
+    val musicaEncendida by remember(sesion) {
+        sesion?.ajustes?.settings?.map { it.breathingMusicEnabled }?.distinctUntilChanged() ?: MutableStateFlow(false)
+    }.collectAsStateWithLifecycle(false)
     // La ruta pide el cierre: se abre sin animar (si no lo abrió ya al empezar) y la bandera se apaga.
     LaunchedEffect(cierre) {
         if (cierre) {
@@ -461,15 +593,16 @@ fun InicioScreen(
                         CaminoContenido(estadoCamino, scrollCamino, alVerEnJardin = ::verEnJardin, modifier = Modifier.fillMaxSize())
                     }
                 }
-                if (hoyVisible) {
+                if (hoyVisible && hoyAlfa > 0f) {
                     // inicio-hoy es de InicioScreen; inicio-camino lo pone CaminoContenido
                     Box(
                         Modifier
                             .bajoElJardin(borde)
                             .graphicsLayer {
                                 val p = progresoCamino(q.value)
-                                translationY = if (reducido) 0f else LISTA_BAJA * alto * q.value
-                                alpha = p.alfaLista
+                                translationY =
+                                    if (reducido) 0f else LISTA_BAJA * alto * q.value + SESION_SALE_DY.toPx() * (1f - hoyAlfa)
+                                alpha = p.alfaLista * hoyAlfa
                             }.nestedScroll(conexionHoy)
                             // Tapada del todo por el cierre, la lista sale del árbol de accesibilidad.
                             .then(if (hoyTapado) Modifier.clearAndSetSemantics {} else Modifier)
@@ -498,6 +631,7 @@ fun InicioScreen(
                             alCreadoVisto = alCreadoVisto,
                             abrirGordo = gordo,
                             alGordoVisto = alGordoVisto,
+                            abrirSesion = ::abrirSesion,
                             hundida = { cierreEstado.c.value.coerceIn(0f, 1f) },
                             vetaRachaDe = vetaRachaDe,
                             // Permiso resuelto: Habi salta. «Hecho» en la vuelta: el jardín que revive ya hace saltar a
@@ -512,6 +646,24 @@ fun InicioScreen(
                         )
                     }
                 }
+                if (sesionActiva && sesion != null) {
+                    val suelo = { camara.sueloEn(alto, altoContenido.intValue.toFloat()) }
+                    Box(
+                        Modifier
+                            .bajoElJardin(suelo)
+                            .graphicsLayer { alpha = camara.alfa }
+                            .background(BitoTema.colores.tAlta),
+                    ) {
+                        CompositionLocalProvider(
+                            LocalMotorSesion provides sesion.motor,
+                            LocalRegistroHoja provides hojasSesion,
+                            LocalSalidaSesion provides SalidaSesion(::volverAHoy),
+                            LocalRespiracionJardin provides respiracion,
+                        ) {
+                            SesionContenido(estadoVista, alAlto = { altoContenido.intValue = it })
+                        }
+                    }
+                }
                 JardinCompartido(
                     estado.garden,
                     estado.spec,
@@ -524,7 +676,10 @@ fun InicioScreen(
                     contento = contento,
                     animado = enPrimerPlano,
                     alTocarHabi = {
-                        if (selladoCargado) {
+                        if (sesionActiva) {
+                            // GardenScene ya hace el salto; aquí solo su voz y su tic.
+                            gesto(Snd.HABI, Haptica.TICK)
+                        } else if (selladoCargado) {
                             // Dormido no hay caricia que valga: cada toque es el aplastado y el aviso de que duerme.
                             hoy.alTocarHabi()
                         } else if (!contento) {
@@ -540,7 +695,7 @@ fun InicioScreen(
                             }
                         }
                     },
-                    alTocarFondo = { ir(1f) },
+                    alTocarFondo = { if (!sesionActiva) ir(1f) },
                     llegando = llegando,
                     creciendo = creciendo,
                     destacar = destacar,
@@ -551,6 +706,9 @@ fun InicioScreen(
                     subida = { subidaPx.floatValue },
                     // Ruling P22: con el cierre abierto sigue al anochecer; fuera, de noche solo con el día sellado.
                     noche = { cierreEstado.nocheDelJardin(selladoCargado) },
+                    camara = if (sesionActiva) camara else null,
+                    altoContenido = altoContenido,
+                    respiracion = respiracion.value,
                 )
                 if (caminoVisible) {
                     TituloCamino(
@@ -559,7 +717,21 @@ fun InicioScreen(
                         modifier = Modifier.align(Alignment.TopStart),
                     )
                 }
-                if (cabeceraVisible) {
+                if (sesionActiva && sesion != null) {
+                    val respira = estadoVista.bloque == BloqueSesion.RESPIRAR
+                    CabeceraSesion(
+                        atras = atrasSesion,
+                        musica = if (respira) musicaEncendida else null,
+                        alMusica = { on ->
+                            sesion.aire.musica(on)
+                            scope.launch { sesion.ajustes.update { it.copy(breathingMusicEnabled = on) } }
+                        },
+                        saldo = if (respira) null else estado.saldo,
+                        modifier = Modifier.align(Alignment.TopStart),
+                    )
+                    AnuncioTramo(instante, registroSesion)
+                }
+                if (cabeceraVisible && !sesionActiva) {
                     CabeceraHoy(
                         estado.today,
                         estado.saldo,
@@ -582,7 +754,7 @@ fun InicioScreen(
                 val aire = with(densidad) { Medidas.margen.toPx() }
                 val xPildora = min((ancho - anchoPildora) / 2f, ancho - mas - aire - anchoPildora).coerceAtLeast(0f)
                 // Con el cierre, la píldora y el + se van: el cierre tiene su propia salida.
-                if (!cierreEnPantalla) {
+                if (!cierreEnPantalla && !sesionActiva) {
                     Pildora(
                         q = qGeometria,
                         alHoy = { ir(0f) },
@@ -703,11 +875,11 @@ fun InicioScreen(
             },
             onFocus = {
                 crear = false
-                navegar.abrirRuta("focus")
+                abrirSesion(null)
             },
             onBreathing = {
                 crear = false
-                navegar.abrirRuta("breathing")
+                abrirSesion(Destino.Respirar)
             },
             onDismiss = { crear = false },
         )
@@ -736,6 +908,50 @@ private fun BotonMas(
             contentDescription = stringResource(R.string.nav_new_habit),
             tint = colores.contorno,
             modifier = Modifier.size(28.dp),
+        )
+    }
+}
+
+private val SESION_SALE_DY = 8.dp
+
+private fun Context.actividad(): Activity? {
+    var c: Context? = this
+    while (c is ContextWrapper) {
+        if (c is Activity) return c
+        c = c.baseContext
+    }
+    return null
+}
+
+/**
+ * La región viva educada de la sesión (spec §17): anuncia los cambios de tramo («Bloque 2 de 4», «Descanso de 5
+ * minutos», «Sesión terminada»), no la cifra cada segundo. No se ve ni se toca.
+ */
+@Composable
+private fun AnuncioTramo(
+    instante: Instante?,
+    registro: RegistroSesion?,
+) {
+    val recursos = LocalContext.current.resources
+    val texto =
+        remember(registro?.id, instante?.actual) {
+            val plan = registro?.plan
+            when (val actual = instante?.actual) {
+                is Tramo.Foco -> plan?.let { recursos.getString(R.string.ses_bloque_n_de_m, actual.bloque, it.bloques) }
+                is Tramo.Descanso -> recursos.getQuantityString(R.plurals.sesr_anuncio_descanso, actual.minutos, actual.minutos)
+                is Tramo.Respirar -> null
+                null -> if (instante != null) recursos.getString(R.string.sesr_anuncio_terminada) else null
+            }
+        }
+    if (texto != null) {
+        Box(
+            Modifier
+                .size(1.dp)
+                .testTag("ses-anuncio")
+                .semantics {
+                    liveRegion = LiveRegionMode.Polite
+                    contentDescription = texto
+                },
         )
     }
 }

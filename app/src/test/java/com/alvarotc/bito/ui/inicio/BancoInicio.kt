@@ -32,6 +32,7 @@ import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabiNulo
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.premios.RegistroAnclas
+import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
@@ -186,6 +187,7 @@ internal class BancoInicio(
         alCierreVisto: () -> Unit = {},
         gordo: Boolean = false,
         alGordoVisto: () -> Unit = {},
+        sesion: SesionInicio? = null,
     ) = CompositionLocalProvider(LocalSondaJardin provides sonda) {
         InicioScreen(
             hoy,
@@ -201,6 +203,7 @@ internal class BancoInicio(
             cierreViewModel = cierre,
             gordo = gordo,
             alGordoVisto = alGordoVisto,
+            sesion = sesion,
         )
     }
 }

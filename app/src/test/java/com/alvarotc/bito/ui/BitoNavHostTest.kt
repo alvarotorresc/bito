@@ -3,7 +3,6 @@ package com.alvarotc.bito.ui
 import android.app.Application
 import android.app.NotificationManager
 import android.os.Looper
-import android.os.SystemClock
 import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.OnBackPressedDispatcherOwner
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
@@ -39,14 +38,16 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
-import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.settings.MarcaLibro
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
-import com.alvarotc.bito.domain.sesion.FocusClock
+import com.alvarotc.bito.domain.propuestas.Destino
+import com.alvarotc.bito.domain.sesion.Entrada
+import com.alvarotc.bito.domain.sesion.Objetivo
+import com.alvarotc.bito.ui.inicio.EntradaSesion
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -349,13 +350,12 @@ class BitoNavHostTest {
 
     /** Antes iba también «review» → "review"; ahora abre el cierre dentro del Inicio (casos del cierre, más abajo). */
     @Test
-    fun `deep links to tasks, focus and breathing still work`() {
+    fun `deep links to tasks and breathing still work`() {
         lateinit var nav: NavHostController
         setContentWithNav { nav = it }
         val esperadas =
             mapOf(
                 "tasks" to "tasks",
-                "focus" to "focus?taskId={taskId}",
                 "breathing" to "breathing",
             )
         esperadas.forEach { (peticion, ruta) ->
@@ -365,6 +365,16 @@ class BitoNavHostTest {
             compose.runOnUiThread { nav.popBackStack() }
             compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == RUTA_HOY }
         }
+    }
+
+    @Test
+    fun `there is no focus route anymore`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+
+        val rutas = compose.runOnUiThread { nav.graph.map { it.route } }
+        assertTrue("sin ruta de foco: $rutas", rutas.none { it?.startsWith("focus") == true })
+        assertThrows(IllegalArgumentException::class.java) { compose.runOnUiThread { nav.navigate("focus?taskId=t1") } }
     }
 
     @Test
@@ -1016,34 +1026,21 @@ class BitoNavHostTest {
     }
 
     /**
-     * T19: the permanent notification's own path — "focus" bare, no id — must resolve against
-     * whatever session happens to be live, same guard shape as "a pending review request opens
-     * the review flow and hides the bar" above. Seeding the session BEFORE the FocusViewModel is
-     * ever built is what proves the bare route resolves against it, rather than just proving the
-     * screen doesn't crash on an absent one.
+     * La notificación de la sesión pide `focus`: abre Hoy en modo sesión, en el estado de la sesión que esté viva.
+     * La sesión se siembra antes de componer, así que la petición ya espera cuando el NavHost aparece.
      */
     @Test
-    fun `a pending focus request opens the focus screen against the live session`() {
+    fun `the focus request opens the live session`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
         runBlocking {
             completeOnboarding(container)
             container.tasks.create(taskEntity(id = "t1", title = "Llamar al banco", createdOnDay = today))
-            val now = System.currentTimeMillis()
-            val elapsed = android.os.SystemClock.elapsedRealtime()
-            container.focus.start(
-                FocusSession(
-                    taskId = "t1",
-                    startedAtMillis = now,
-                    endsAtMillis = now + 10 * 60_000L,
-                    endsAtElapsed = elapsed + 10 * 60_000L,
-                    bootMillis = FocusClock.bootSignatureOf(now, elapsed),
-                ),
-            )
+            container.settings.update { it.copy(sessionEntry = Entrada.DIRECTO) }
+            container.motorSesion.preparar(Destino.Tarea("t1"))
+            container.motorSesion.empezar()
         }
-        // Set BEFORE setContent, same reasoning as the review test above: the request must
-        // already be waiting the very first time BitoNavHost composes.
         NavRequests.open("focus")
 
         compose.setContent {
@@ -1054,8 +1051,10 @@ class BitoNavHostTest {
         compose.waitForIdle()
         waitPastLoadingGate()
 
-        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists()
+        esperarEtiqueta("ses-b-foco")
         assertNull(NavRequests.pending.value)
+        assertNull(EntradaSesion.pendiente.value)
+        runBlocking { container.motorSesion.loDejo() }
     }
 
     /** M11: la notificacion del recordatorio abre el ejercicio EN REPOSO. */
@@ -1080,25 +1079,20 @@ class BitoNavHostTest {
         esperarEtiqueta("breathing-screen")
     }
 
-    /**
-     * T19: antes comprobaba el «Empezar» de la fila de Hoy; esa fila la reescribe la Ola 2 (c2) y
-     * aquí no se prueba por sus textos. Lo que queda es el cableado de Inicio: `abrirRuta("focus")`
-     * desde la opción «Concentrarse» del «+» llega a la ruta de la sesión.
-     */
+    /** El «+» → Sesión ahora → Foco abre Preparar dentro del Inicio, sin cambiar de ruta. */
     @Test
-    fun `the focus option of the create sheet reaches the focus route`() {
+    fun `the focus option of the create sheet opens prepare in today`() {
         lateinit var nav: NavHostController
         setContentWithNav { nav = it }
         elegirSesion("create-focus")
-        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == "focus?taskId={taskId}" }
+
+        esperarEtiqueta("ses-b-prep")
+        assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
     }
 
-    /** T19 (M10 review round 1, minor #2): the same wiring proven from Today above, but through
-     * [com.alvarotc.bito.ui.tasks.TasksScreen]'s own "Empezar" — its `onStartFocus` reaching the
-     * same route with the row's own id, not just [com.alvarotc.bito.ui.tasks.TasksScreen]'s own
-     * callback in isolation ([com.alvarotc.bito.ui.tasks.TasksScreenTest]'s own coverage). */
+    /** Lo mismo desde el «Empezar» de Tareas: vuelve a Hoy y abre Preparar con esa tarea. */
     @Test
-    fun `starting a task from the tasks list opens the focus screen`() {
+    fun `starting a task from the tasks list opens prepare with that task`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         val container = AppContainer(app)
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
@@ -1122,12 +1116,9 @@ class BitoNavHostTest {
         compose.onNodeWithTag("task-menu-t1", useUnmergedTree = true).performClick()
         compose.waitForIdle()
         compose.onNodeWithText("Start", useUnmergedTree = true).performClick()
-        compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("focus-screen", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-        }
 
-        compose.onNodeWithTag("focus-screen", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText("Llamar al banco", useUnmergedTree = true).assertExists()
+        esperarEtiqueta("ses-b-prep")
+        assertEquals(Objetivo.Tarea("t1"), container.motorSesion.borrador.value?.objetivo)
     }
 
     /**
@@ -1266,83 +1257,5 @@ class BitoNavHostTest {
         }
         compose.onNodeWithTag("task-form-screen", useUnmergedTree = true).assertDoesNotExist()
         compose.onNodeWithTag("task-form-loading", useUnmergedTree = true).assertDoesNotExist()
-    }
-
-    /**
-     * M10 review round 1 (Important #1): without `popUpTo`, "seguir con la otra" pushed a SECOND
-     * "focus" entry on top of the conflict one instead of replacing it — system back from the
-     * live session then landed back on the conflict screen (`busyWith` still non-null), reopening
-     * the very same sheet with no way out while the other session stayed alive. Walks the exact
-     * reported path: tasks list -> `focus?taskId=t2` (conflict, t1's session already live) ->
-     * "seguir con la otra" -> `focus` (bare, now watching t1) -> ATRAS -> must land back on the
-     * tasks list, never on the conflict sheet again.
-     */
-    @Test
-    fun `keeping the other session during a conflict does not trap back navigation`() {
-        val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
-        val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
-        runBlocking {
-            completeOnboarding(container)
-            container.tasks.create(taskEntity(id = "t1", title = "Tarea uno", createdOnDay = today))
-            container.tasks.create(taskEntity(id = "t2", title = "Tarea dos", createdOnDay = today))
-            val now = System.currentTimeMillis()
-            val elapsed = SystemClock.elapsedRealtime()
-            container.focus.start(
-                FocusSession(
-                    taskId = "t1",
-                    startedAtMillis = now,
-                    endsAtMillis = now + 10 * 60_000L,
-                    endsAtElapsed = elapsed + 10 * 60_000L,
-                    bootMillis = FocusClock.bootSignatureOf(now, elapsed),
-                ),
-            )
-        }
-        NavRequests.open("tasks")
-        val backOwner = FakeBackDispatcherOwner()
-
-        compose.setContent {
-            BitoTheme {
-                CompositionLocalProvider(LocalOnBackPressedDispatcherOwner provides backOwner) {
-                    BitoNavHost(container)
-                }
-            }
-        }
-        compose.waitForIdle()
-        waitPastLoadingGate()
-        compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("task-menu-t2", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-        }
-
-        compose.onNodeWithTag("task-menu-t2", useUnmergedTree = true).performClick()
-        compose.waitForIdle()
-        compose.onNodeWithText("Start", useUnmergedTree = true).performClick()
-        compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("focus-busy-sheet", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
-        }
-        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertExists()
-
-        // Not performClick(): a button inside a ModalBottomSheet does not receive synthesized
-        // touch gestures under this Robolectric harness — invoking the node's own OnClick
-        // semantics action directly is what actually proves the tap wires through.
-        compose.onNodeWithTag("focus-busy-keep")
-            .fetchSemanticsNode()
-            .config[SemanticsActions.OnClick]
-            .action
-            ?.invoke()
-        compose.waitForIdle()
-
-        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists() // now watching t1's live session
-        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertDoesNotExist()
-
-        compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
-        compose.waitForIdle()
-
-        // Not trapped on the conflict: back from the live session lands on the tasks list, and
-        // the busy sheet — which a stacked (not replaced) conflict entry would have reopened —
-        // never comes back.
-        compose.onNodeWithTag("focus-busy-sheet", useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithTag("task-menu-t2", useUnmergedTree = true).assertExists()
     }
 }

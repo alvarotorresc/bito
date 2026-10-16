@@ -160,6 +160,15 @@ class MotorSesionAndroid(
             ResultadoAccion(bitos = 0, celebraciones = false, aviso = aviso)
         }
 
+    override suspend fun volverAPreparar() =
+        enCerrojo {
+            val (r, ahora, inst) = vivoAhora() ?: return@enCerrojo
+            if (inst.actual !is Tramo.Respirar) return@enCerrojo
+            // Todavía no hubo foco: cerrarAqui no escribe fila. Se calla el aire, se devuelve No molestar y se borra el registro.
+            cerrarAqui(r, inst, ahora, ResultadoSesion.SIN_RESPUESTA)
+            _borrador.value = r.plan
+        }
+
     override suspend fun pausar() =
         enCerrojo {
             val (r, ahora, inst) = vivoAhora() ?: return@enCerrojo

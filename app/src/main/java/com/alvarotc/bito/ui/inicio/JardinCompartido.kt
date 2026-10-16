@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
@@ -40,6 +41,8 @@ import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.garden.NOCHE_ABAJO
 import com.alvarotc.bito.ui.garden.NOCHE_ARRIBA
 import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.sesion.EstadoCamaraSesion
+import com.alvarotc.bito.ui.sesion.camaraSesion
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Escena
 import com.alvarotc.bito.ui.sistema.Medidas
@@ -179,6 +182,12 @@ fun JardinCompartido(
     aplastarHabi: Int = 0,
     // Habi duerme (día sellado): tocarlo lo aplasta en vez de hacerlo saltar.
     dormido: Boolean = false,
+    // La sesión: con cámara, la escena va arriba a la izquierda con su encuadre y el borde de abajo es el suelo.
+    camara: EstadoCamaraSesion? = null,
+    // El alto del bloque de la tierra (px): si no cabe bajo el suelo, el suelo sube (H1).
+    altoContenido: State<Int>? = null,
+    // El llenado de la respiración (0..1) para Habi en la sesión.
+    respiracion: (() -> Float)? = null,
 ) {
     val densidad = LocalDensity.current
     val colores = BitoTema.colores
@@ -191,7 +200,12 @@ fun JardinCompartido(
         val altoCamino = altoJardinCamino(alto, escenaAlto, extra)
         val costra = with(densidad) { Medidas.costra.toPx() }
         val astro = with(densidad) { MedidasInicio.ASTRO.toPx() }
-        val borde = { bordeJardin(q(), encogido(), alto, escenaAlto, extra, subida()) }
+        val borde =
+            if (camara != null) {
+                { camara.sueloEn(alto, (altoContenido?.value ?: 0).toFloat()) }
+            } else {
+                { bordeJardin(q(), encogido(), alto, escenaAlto, extra, subida()) }
+            }
 
         // Mide el borde de abajo del jardín sin pintar nada: lo miran los tests.
         Box(
@@ -244,18 +258,24 @@ fun JardinCompartido(
             GardenScene(
                 garden,
                 spec,
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .graphicsLayer {
-                        val s = escalaJardin(q(), encogido(), alto, escenaAlto)
-                        val pivote = pieY * escenaAlto
-                        transformOrigin = TransformOrigin(0.5f, pieY)
-                        scaleX = s
-                        scaleY = s
-                        // El pie de la escena queda en el borde de abajo del jardín.
-                        val fondo = altoCamino - escenaAlto + pivote + (escenaAlto - pivote) * s
-                        translationY = borde() - fondo
-                    },
+                if (camara != null) {
+                    Modifier
+                        .align(Alignment.TopStart)
+                        .camaraSesion(camara, with(densidad) { alto.toDp() }, ancho, escenaAlto, altoContenido)
+                } else {
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .graphicsLayer {
+                            val s = escalaJardin(q(), encogido(), alto, escenaAlto)
+                            val pivote = pieY * escenaAlto
+                            transformOrigin = TransformOrigin(0.5f, pieY)
+                            scaleX = s
+                            scaleY = s
+                            // El pie de la escena queda en el borde de abajo del jardín.
+                            val fondo = altoCamino - escenaAlto + pivote + (escenaAlto - pivote) * s
+                            translationY = borde() - fondo
+                        }
+                },
                 delighted = contento,
                 onHabiTap = alTocarHabi,
                 animated = animado,
@@ -269,6 +289,7 @@ fun JardinCompartido(
                 noche = noche,
                 aplastarHabi = aplastarHabi,
                 dormido = dormido,
+                respiracion = respiracion,
             )
         }
     }

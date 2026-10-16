@@ -317,6 +317,40 @@ class MotorSesionTest {
         }
 
     @Test
+    fun `back from breathing discards the start and brings prepare back`() =
+        runTest {
+            empezarTarea("t1")
+            val plan = motor.registro.value!!.plan
+            limpiarGrabaciones()
+
+            motor.volverAPreparar()
+
+            assertNull(banco.store.leer())
+            assertNull(motor.registro.value)
+            assertNull(motor.instante.value)
+            assertEquals(plan, motor.borrador.value)
+            assertEquals(listOf("parar"), g.aire.llamadas)
+            assertEquals(listOf(null), g.fuera.cambios)
+            assertTrue("sin fila ni intento", banco.db.sesionDao().all().isEmpty())
+            assertTrue(banco.db.taskEventDao().all().none { it.kind == TaskEventKind.ATTEMPT })
+            assertTrue("sin sonido ni aviso", g.sonido.sonidos.isEmpty())
+        }
+
+    @Test
+    fun `back to prepare does nothing once the focus has begun`() =
+        runTest {
+            directo()
+            empezarTarea("t1")
+            val viva = motor.registro.value
+
+            motor.volverAPreparar()
+
+            assertEquals(viva, motor.registro.value)
+            assertEquals(viva, banco.store.leer())
+            assertNull(motor.borrador.value)
+        }
+
+    @Test
     fun `a session that crosses the day cut waits for the answer`() =
         runTest {
             directo()

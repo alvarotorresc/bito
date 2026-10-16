@@ -240,6 +240,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                             alGordoVisto = alGordoVisto,
                             vetaRachaDe = vetaRachaDe,
                             alSaltoHabi = { saltos += it },
+                            abrirSesion = { llamadas += "sesion:$it" },
                         )
                     }
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
