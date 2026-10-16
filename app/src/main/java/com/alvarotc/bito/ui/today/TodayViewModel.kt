@@ -6,9 +6,11 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.EntryEntity
 import com.alvarotc.bito.data.db.HabitEntity
+import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
 import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
@@ -22,6 +24,7 @@ import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.StatsEngine
+import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
@@ -86,6 +89,8 @@ class TodayViewModel(
     private val economia: EconomyConfig = EconomyConfig(),
     // Lo gordo de cada día; null en los tests que no lo usan.
     private val gordo: LoGordoRepository? = null,
+    // Los «Vale, a las…» aceptados; null en los tests que no los usan.
+    private val aceptados: AvisosAceptadosRepository? = null,
 ) : ViewModel() {
     private val jardinForzado = MutableStateFlow<GardenState?>(null)
 
@@ -110,6 +115,29 @@ class TodayViewModel(
                 }
         }
 
+    /** La propuesta de Habi para Hoy; sin fuente, nunca hay. */
+    val propuesta: StateFlow<Propuesta?> =
+        propuestas?.propuesta(Ambito.HOY)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+            ?: MutableStateFlow<Propuesta?>(null)
+
+    // Los avisos aceptados de hoy, siguiendo al día lógico.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val avisosDeHoy: Flow<List<AvisoAceptado>> =
+        if (aceptados == null) {
+            flowOf(emptyList())
+        } else {
+            combine(settings.settings, clockTicks) { prefs, _ -> LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone()) }
+                .distinctUntilChanged()
+                .flatMapLatest { hoy -> aceptados.observeDe(hoy) }
+        }
+
+    private data class Extras(
+        val badges: List<BadgeEntity>,
+        val gordos: Pair<List<RefGordo>, List<RefGordo>>,
+        val avisos: List<AvisoAceptado>,
+        val propuesta: Propuesta?,
+    )
+
     val uiState: StateFlow<TodayUiState> =
         combine(
             combine(
@@ -119,11 +147,14 @@ class TodayViewModel(
                 rewards.observeOwnedItems(),
                 rewards.observeBalance(),
             ) { state, entities, prefs, owned, saldo -> Entradas(state, entities, prefs, owned, saldo) },
-            combine(rewards.observeBadges(), gordoDeDosDias) { badges, gordos -> badges to gordos },
+            combine(rewards.observeBadges(), gordoDeDosDias, avisosDeHoy, propuesta) { badges, gordos, avisos, p ->
+                Extras(badges, gordos, avisos, p)
+            },
             rewards.observeRecentMovements(5),
             jardinForzado,
             clockTicks,
-        ) { entradas, (badges, gordos), recientes, forzado, _ ->
+        ) { entradas, extras, recientes, forzado, _ ->
+            val (badges, gordos) = extras.badges to extras.gordos
             val nowMillis = now()
             val zoneId = zone()
             val prefs = entradas.prefs
@@ -152,14 +183,11 @@ class TodayViewModel(
                 economia = economia,
                 gordoHoy = gordos.first,
                 gordoAyer = gordos.second,
+                avisosHoy = extras.avisos,
+                diaDuro = diaDuroDe(extras.propuesta),
             )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
-
-    /** La propuesta de Habi para Hoy; sin fuente, nunca hay. */
-    val propuesta: StateFlow<Propuesta?> =
-        propuestas?.propuesta(Ambito.HOY)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-            ?: MutableStateFlow<Propuesta?>(null)
 
     private val efectosInternos = MutableSharedFlow<Efecto>(extraBufferCapacity = EFECTOS_EN_COLA)
 
@@ -187,12 +215,25 @@ class TodayViewModel(
         jardinForzado.value = garden
     }
 
+    private val habiDuermeInterno = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Se emite al tocar a Habi con el día sellado: la lista avisa de que duerme. */
+    val habiDuerme: SharedFlow<Unit> = habiDuermeInterno.asSharedFlow()
+
     fun alTocarHabi() {
-        habiSounds?.play(HabiSound.GREETING)
+        if (uiState.value.todaySealed) {
+            habiDuermeInterno.tryEmit(Unit)
+        } else {
+            habiSounds?.play(HabiSound.GREETING)
+        }
     }
 
     fun alAcariciarHabi() {
-        habiSounds?.play(HabiSound.HAPPY)
+        if (uiState.value.todaySealed) {
+            habiDuermeInterno.tryEmit(Unit)
+        } else {
+            habiSounds?.play(HabiSound.HAPPY)
+        }
     }
 
     private val loggedEntry = MutableStateFlow<String?>(null)
@@ -319,6 +360,7 @@ class TodayViewModel(
                         propuestas = container.propuestas,
                         clockTicks = minuteTicks(),
                         gordo = container.loGordo,
+                        aceptados = container.avisosAceptados,
                     )
                 }
             }

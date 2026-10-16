@@ -58,6 +58,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -89,6 +91,7 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private const val FILAS_HUECO = 4
+private const val ALFA_ESPERAN = 0.6f
 private val HUNDIDA_CIERRE = 48.dp
 private const val ESCALON_HUNDIDA_MS = 25
 private const val ESCALONES_HUNDIDA = 7
@@ -150,6 +153,8 @@ fun HoyLista(
     // Lo que se ha hundido la lista porque se abre el cierre (0 nada, 1 del todo); se lee al dibujar. Cada fila
     // lo recoge con su escalón de 25 ms ([hundidaDeFila]).
     hundida: () -> Float = { 0f },
+    // El hábito cuya veta de racha dura ahora: su «día N» sube y va en negrita.
+    vetaRachaDe: String? = null,
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -229,7 +234,15 @@ fun HoyLista(
     val textoLimite = stringResource(R.string.hoy_limite_pasado)
     val deshacer = stringResource(R.string.undo)
     val respaldo = stringResource(R.string.habi_name_fallback)
+    val textoCerrado = stringResource(R.string.habla_dia_cerrado)
+    val textoDuerme = stringResource(R.string.habla_habi_duerme)
+    val sellado = estado.todaySealed
     val textoTarea = stringResource(HabiVoice.taskDoneRes(estado.spec.personality), estado.userName.ifBlank { respaldo })
+
+    // Habi duerme con el día sellado: tocarla solo avisa.
+    LaunchedEffect(viewModel) {
+        viewModel.habiDuerme.collect { scope.launch { avisos.mostrar(textoDuerme) } }
+    }
 
     LaunchedEffect(logged) {
         if (logged != null) {
@@ -262,6 +275,8 @@ fun HoyLista(
             if (desde != -1 && hasta != -1) ordenadas.add(hasta, ordenadas.removeAt(desde))
         }
     val base = filasDe(estado.copy(cards = ordenadas.toList()))
+    val abrirLoGordo = { gordoAbierto = true }
+    val gordoDe = { tipo: TipoRefGordo, id: String -> RefGordo(tipo, id) in estado.gordo }
     // La fila saliente vuelve a su sitio dentro del bloque de tareas, no al final.
     val filas =
         base.toMutableList().also { lista ->
@@ -312,7 +327,14 @@ fun HoyLista(
         alCreadoVisto()
     }
 
+    // Con el día sellado las filas no se marcan: tocarlas solo dice que el día está cerrado.
+    fun avisarCerrado() {
+        gesto(h = Haptica.TICK)
+        scope.launch { avisos.mostrar(textoCerrado) }
+    }
+
     fun sumar(card: HabitCardUi) {
+        if (sellado) return avisarCerrado()
         val llega = card.direction == Direction.AT_LEAST && card.progress < card.target && card.progress + card.step >= card.target
         val pasa = card.direction == Direction.AT_MOST && !card.failed && card.progress + card.step > card.target
         viewModel.addAmount(card, card.step)
@@ -328,6 +350,7 @@ fun HoyLista(
     }
 
     fun alCirculo(card: HabitCardUi) {
+        if (sellado) return avisarCerrado()
         when (card.kind) {
             CardKind.CHECK -> {
                 if (card.doneToday) {
@@ -342,6 +365,34 @@ fun HoyLista(
             CardKind.COUNTER, CardKind.DURATION -> sumar(card)
             CardKind.ABSTINENCE -> Unit
         }
+    }
+
+    @Composable
+    fun FilaDeHabito(
+        card: HabitCardUi,
+        modifier: Modifier,
+        nombreModifier: Modifier = Modifier,
+    ) {
+        FilaHabito(
+            card,
+            alCirculo = { alCirculo(card) },
+            alPaso = { sumar(card) },
+            alExacto = {
+                if (sellado) {
+                    avisarCerrado()
+                } else {
+                    gesto(Snd.BROTE, Haptica.CLICK)
+                    exactFor = card
+                }
+            },
+            alAbrir = { navegar.abrirFicha(card.id) },
+            alRecaer = { if (sellado) avisarCerrado() else recaerFor = card },
+            modifier = modifier,
+            nombreModifier = nombreModifier,
+            rachaViva = vetaRachaDe == card.id,
+            esGordo = gordoDe(TipoRefGordo.HABITO, card.id),
+            alGordo = abrirLoGordo,
+        )
     }
 
     Box(modifier) {
@@ -400,25 +451,28 @@ fun HoyLista(
                     is FilaHoy.Habito -> {
                         val card = fila.card
                         ReorderableItem(reorderState, key = card.id) {
-                            FilaHabito(
+                            FilaDeHabito(
                                 card,
-                                alCirculo = { alCirculo(card) },
-                                alPaso = { sumar(card) },
-                                alExacto = {
-                                    gesto(Snd.BROTE, Haptica.CLICK)
-                                    exactFor = card
-                                },
-                                alAbrir = { navegar.abrirFicha(card.id) },
-                                alRecaer = { recaerFor = card },
-                                modifier = margen.then(aparece),
-                                nombreModifier =
-                                    Modifier.longPressDraggableHandle(
-                                        onDragStarted = { gesto(h = Haptica.CLICK) },
-                                        onDragStopped = { viewModel.reorder(ordenadas.map { it.id }) },
-                                    ),
+                                margen.then(aparece),
+                                Modifier.longPressDraggableHandle(
+                                    onDragStarted = { gesto(h = Haptica.CLICK) },
+                                    onDragStopped = { viewModel.reorder(ordenadas.map { it.id }) },
+                                ),
                             )
                         }
                     }
+                    is FilaHoy.Esperan ->
+                        Column(
+                            margen.then(colocar).testTag("esperan-sin-prisa"),
+                            verticalArrangement = Arrangement.spacedBy(Medidas.entreFilas),
+                        ) {
+                            Text(
+                                stringResource(R.string.habla_esperan_sin_prisa),
+                                style = BitoTema.tipos.t14.fuerte(),
+                                color = BitoTema.colores.tintaSuave,
+                            )
+                            fila.cards.forEach { card -> FilaDeHabito(card, Modifier.graphicsLayer { alpha = ALFA_ESPERAN }) }
+                        }
                     is FilaHoy.Tarea ->
                         FilaTarea(
                             fila.row,
@@ -436,6 +490,9 @@ fun HoyLista(
                             alEmpezar = { navegar.abrirRuta("focus?taskId=${fila.row.id}") },
                             alHoyNo = { viewModel.postponeTask(fila.row.id) },
                             modifier = margen.then(aparece).then(colocar),
+                            manana = sellado,
+                            esGordo = gordoDe(TipoRefGordo.TAREA, fila.row.id),
+                            alGordo = abrirLoGordo,
                         )
                     FilaHoy.TareasHechas ->
                         Text(

@@ -10,9 +10,12 @@ import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.Tasks
+import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.CandidatoGordo
+import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.LoGordo
 import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.SubtituloGordo
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.Direction
@@ -30,6 +33,7 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.ui.habi.HabiSpec
 
 /** Visual treatment of a habit card, derived from its metric/log mode/direction. */
@@ -49,6 +53,8 @@ data class HabitCardUi(
     val doneToday: Boolean,
     val failed: Boolean,
     val streak: Int,
+    // El minuto de su aviso aceptado de hoy («Vale, a las…») mientras siga pendiente; null si no hay.
+    val horaAceptada: Int? = null,
 )
 
 /**
@@ -113,6 +119,8 @@ data class TodayUiState(
     val candidatosGordo: List<CandidatoGordo> = emptyList(),
     val sugerenciaGordo: RefGordo? = null,
     val gordo: List<RefGordo> = emptyList(),
+    // Día duro (spec 5.10): el hábito que la tarjeta propone; el resto de pendientes espera sin prisa. null = día normal.
+    val diaDuro: String? = null,
 )
 
 /**
@@ -135,6 +143,8 @@ fun buildTodayUiState(
     economia: EconomyConfig = EconomyConfig(),
     gordoHoy: List<RefGordo> = emptyList(),
     gordoAyer: List<RefGordo> = emptyList(),
+    avisosHoy: List<AvisoAceptado> = emptyList(),
+    diaDuro: String? = null,
 ): TodayUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -142,7 +152,7 @@ fun buildTodayUiState(
     val cards =
         state.habits
             .filter { Compliance.isRequirableOn(state, it, today) }
-            .map { habit -> cardOf(state, habit, today) }
+            .map { habit -> cardOf(state, habit, today).conHoraDe(avisosHoy, today) }
             .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
     // Paused, not archived: a habit "counts" as paused either by its own status flag or by
     // carrying an open pause interval — the two are written together by
@@ -157,6 +167,7 @@ fun buildTodayUiState(
             }
             .sortedBy { sortOrder[it.id] ?: Int.MAX_VALUE }
             .map { PausedHabitUi(it.id, it.name) }
+    val sellado = Sealing.isSealed(state, today)
     val taskRows =
         Tasks.todayTasks(state, today)
             .sortedBy { it.slot.ordinal } // estable: dentro de cada franja queda el orden de Tasks.todayTasks
@@ -179,8 +190,9 @@ fun buildTodayUiState(
         cards = cards,
         pausedHabits = pausedHabits,
         pendingSealDays = Sealing.pendingSealDays(state, today),
-        todaySealed = Sealing.isSealed(state, today),
-        spec = HabiSpec(mood, personality, equippedSetOf(equippedIds)),
+        todaySealed = sellado,
+        // Con el día sellado Habi duerme: ojos cerrados y gorro.
+        spec = HabiSpec(mood, personality, equippedSetOf(equippedIds), closedEyes = sellado, sleepCap = sellado),
         userName = userName,
         logHapticEnabled = logHapticEnabled,
         tasks = taskRows,
@@ -193,6 +205,7 @@ fun buildTodayUiState(
         candidatosGordo = elegidosFueraDeCandidatos(state, gordoHoy, candidatosGordo) + candidatosGordo,
         sugerenciaGordo = LoGordo.sugerencia(candidatosGordo, gordoAyerSinHacer, state, today),
         gordo = gordoHoy,
+        diaDuro = diaDuro,
     )
 }
 
@@ -263,4 +276,24 @@ private fun elegidosFueraDeCandidatos(
                 state.habits.firstOrNull { it.id == ref.id }?.let { CandidatoGordo(ref, it.name, SubtituloGordo.Habito) }
         }
     }
+}
+
+/** Su aviso aceptado de hoy que sigue pendiente, si lo hay. */
+private fun HabitCardUi.conHoraDe(
+    avisos: List<AvisoAceptado>,
+    hoy: LogicalDay,
+): HabitCardUi {
+    val aviso = avisos.firstOrNull { it.habitId == id && it.dia == hoy && it.estado == EstadoAviso.PENDIENTE }
+    return if (aviso == null) this else copy(horaAceptada = aviso.minuto)
+}
+
+/**
+ * El hábito que propone la tarjeta en un día duro: el id de la propuesta es `DIA_DURO:<hábito>:<día>`.
+ * null si la propuesta no es de día duro o no nombra ningún hábito.
+ */
+fun diaDuroDe(propuesta: Propuesta?): String? {
+    val prefijo = "${Situacion.DIA_DURO.name}:"
+    val id = propuesta?.id ?: return null
+    if (!id.startsWith(prefijo)) return null
+    return id.removePrefix(prefijo).substringBeforeLast(':', "").ifBlank { null }
 }

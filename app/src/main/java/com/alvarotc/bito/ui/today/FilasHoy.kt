@@ -5,6 +5,7 @@ package com.alvarotc.bito.ui.today
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -71,6 +73,7 @@ import com.alvarotc.bito.ui.inicio.cantoCompartido
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.premios.anclaParticula
+import com.alvarotc.bito.ui.settings.hojas.hora
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
@@ -103,13 +106,19 @@ sealed interface FilaHoy {
 
     data class EnPausa(val paused: List<PausedHabitUi>) : FilaHoy
 
+    /** «Esperan sin prisa» (día duro): los pendientes que la tarjeta no propone, atenuados. */
+    data class Esperan(val cards: List<HabitCardUi>) : FilaHoy
+
     data class CerrarDia(val sellado: Boolean) : FilaHoy
 }
 
 /** El orden de la lista [spec §15.5]: hábitos (orden del usuario), tareas (por franja), «En pausa» y cerrar el día. */
 internal fun filasDe(estado: TodayUiState): List<FilaHoy> =
     buildList {
-        estado.cards.forEach { add(FilaHoy.Habito(it)) }
+        val espera =
+            if (estado.diaDuro == null) emptyList() else estado.cards.filter { !it.doneToday && it.id != estado.diaDuro }
+        estado.cards.filter { it !in espera }.forEach { add(FilaHoy.Habito(it)) }
+        if (espera.isNotEmpty()) add(FilaHoy.Esperan(espera))
         estado.tasks.forEach { add(FilaHoy.Tarea(it)) }
         if (estado.hasAnyTasks) {
             if (estado.tasks.isEmpty()) add(FilaHoy.TareasHechas)
@@ -126,6 +135,7 @@ internal fun FilaHoy.clave(): String =
         FilaHoy.VerTareas -> "ver-tareas"
         FilaHoy.TareasHechas -> "tareas-hechas"
         is FilaHoy.EnPausa -> "en-pausa"
+        is FilaHoy.Esperan -> "esperan-sin-prisa"
         is FilaHoy.CerrarDia -> "cerrar-dia"
     }
 
@@ -211,6 +221,26 @@ private fun CirculoAgua(
 }
 
 private val FormaFila = BitoFormas.canto
+private val SUBE_RACHA = 4.dp
+
+/** La etiqueta «lo gordo» de una fila: reabre la hoja. Zona de 44 dp. */
+@Composable
+private fun EtiquetaGordo(
+    id: String,
+    alToque: () -> Unit,
+) {
+    Text(
+        stringResource(R.string.habla_etiqueta_gordo),
+        style = BitoTema.tipos.t14.fuerte(),
+        color = BitoTema.colores.tinta,
+        modifier =
+            Modifier
+                .heightIn(min = Medidas.toqueMinimo)
+                .testTag("gordo-etiqueta-$id")
+                .clickable(role = Role.Button, onClick = alToque)
+                .padding(vertical = Medidas.e12),
+    )
+}
 
 @Composable
 internal fun FilaHabito(
@@ -222,6 +252,9 @@ internal fun FilaHabito(
     alRecaer: () -> Unit,
     modifier: Modifier = Modifier,
     nombreModifier: Modifier = Modifier,
+    rachaViva: Boolean = false,
+    esGordo: Boolean = false,
+    alGordo: () -> Unit = {},
 ) {
     val colores = BitoTema.colores
     val t = BitoTema.tipos
@@ -288,30 +321,42 @@ internal fun FilaHabito(
             }
         val subtitulo = listOfNotNull(base, rachaTexto).joinToString(" · ").ifEmpty { null }
         // Nombre y subtítulo son una sola zona pulsable (toque y mantener para reordenar) de al menos 44 dp.
-        Column(
-            Modifier
-                .weight(1f)
-                .then(nombreModifier)
-                .testTag("nombre-${card.id}")
-                .heightIn(min = Medidas.toqueMinimo)
-                .clickable(onClick = alAbrir),
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                card.name,
-                style = t.t16.fuerte(),
-                color = colores.tinta,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            if (subtitulo != null) {
+        Column(Modifier.weight(1f)) {
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .then(nombreModifier)
+                    .testTag("nombre-${card.id}")
+                    .heightIn(min = Medidas.toqueMinimo)
+                    .clickable(onClick = alAbrir),
+                verticalArrangement = Arrangement.Center,
+            ) {
                 Text(
-                    subtitulo,
-                    style = t.t14,
-                    color = colores.tintaSuave,
+                    card.name,
+                    style = t.t16.fuerte(),
+                    color = colores.tinta,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (subtitulo != null) {
+                    Text(
+                        subtitulo,
+                        style = if (rachaViva && rachaTexto != null) t.t14.fuerte() else t.t14,
+                        color = colores.tintaSuave,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            val minutoAviso = card.horaAceptada
+            val hayHora = minutoAviso != null && !card.doneToday
+            if (hayHora || esGordo) {
+                Row(horizontalArrangement = Arrangement.spacedBy(Medidas.e8), verticalAlignment = Alignment.CenterVertically) {
+                    if (hayHora) {
+                        Text(hora(minutoAviso!!), style = t.t14, color = colores.tintaSuave, modifier = Modifier.testTag("hora-${card.id}"))
+                    }
+                    if (esGordo) EtiquetaGordo(card.id, alGordo)
+                }
             }
         }
         when {
@@ -354,14 +399,21 @@ internal fun FilaHabito(
             }
             card.kind == CardKind.ABSTINENCE ->
                 if (!card.failed) BotonTexto(stringResource(R.string.hoy_he_recaido), alRecaer)
-            card.streak > 0 && card.period == Period.DAY ->
+            card.streak > 0 && card.period == Period.DAY -> {
+                // «día N» sube 4 dp y va en negrita mientras dura la veta de racha; con movimiento reducido solo cambia el peso.
+                val sube by animateDpAsState(
+                    if (rachaViva && !BitoTema.reducido) SUBE_RACHA else 0.dp,
+                    Muelles.marcar(),
+                    label = "diaNSube",
+                )
                 Text(
                     stringResource(R.string.hoy_dia_n, card.streak),
-                    style = t.t14,
+                    style = if (rachaViva) t.t14.fuerte() else t.t14,
                     color = colores.tintaSuave,
-                    modifier = Modifier.padding(end = Medidas.e8),
+                    modifier = Modifier.padding(end = Medidas.e8).offset(y = -sube).testTag("dia-n-${card.id}"),
                     maxLines = 1,
                 )
+            }
         }
     }
 }
@@ -376,6 +428,9 @@ internal fun FilaTarea(
     alEmpezar: () -> Unit,
     alHoyNo: () -> Unit,
     modifier: Modifier = Modifier,
+    manana: Boolean = false,
+    esGordo: Boolean = false,
+    alGordo: () -> Unit = {},
 ) {
     val colores = BitoTema.colores
     val t = BitoTema.tipos
@@ -440,6 +495,17 @@ internal fun FilaTarea(
                     val vencida = task.dueKind == DueKind.DATE && taskDueOverdue(task.dueKind, task.dueDay, hoy)
                     Text(plazo, style = t.t14, color = if (vencida) colores.peligroTexto else colores.tintaSuave, maxLines = 1)
                 }
+                // Con el día sellado, lo que queda de las tareas es de mañana.
+                if (manana) {
+                    Text(
+                        stringResource(R.string.habla_manana),
+                        style = t.t14,
+                        color = colores.tintaSuave,
+                        maxLines = 1,
+                        modifier = Modifier.testTag("manana-${task.id}"),
+                    )
+                }
+                if (esGordo) EtiquetaGordo(task.id, alGordo)
             }
         }
         AnimatedVisibility(

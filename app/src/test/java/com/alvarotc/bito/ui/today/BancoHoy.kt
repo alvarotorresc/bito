@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
@@ -15,6 +18,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
 import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
@@ -102,6 +106,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
     val registro = RegistroAnclas()
     val avisos = AvisoEstado()
     val llamadas = mutableListOf<String>()
+
+    /** El hábito cuya veta de racha dura ahora (el que Inicio pasa a la lista), si hay. */
+    var vetaRachaDe by mutableStateOf<String?>(null)
     var fichaAbierta: String? = null
     val navegar =
         NavegacionInicio(
@@ -148,6 +155,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                 propuestas = fuente,
                 clockTicks = ticks,
                 gordo = LoGordoRepository(db, now = { fixedNow }),
+                aceptados = AvisosAceptadosRepository(db),
             )
     }
 
@@ -211,6 +219,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                         creado = creado,
                         alCreadoVisto = alCreadoVisto,
                         abrirGordo = abrirGordo,
+                        vetaRachaDe = vetaRachaDe,
                     )
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
                 }
