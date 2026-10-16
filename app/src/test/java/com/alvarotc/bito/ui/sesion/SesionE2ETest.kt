@@ -56,6 +56,7 @@ import com.alvarotc.bito.ui.notifications.ReminderReceiver
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -614,11 +615,13 @@ class SesionE2ETest {
     }
 
     /**
-     * El fondo de verdad no puede sonar en Robolectric (no abre `SoundPool` ni `MediaPlayer`): se cambia por el grabador,
-     * que sí dice `sonando` al instante. Hay que hacerlo antes de que nadie pida el motor, que lo toma al crearse.
+     * El fondo de verdad no puede sonar en Robolectric (no abre `SoundPool` ni `MediaPlayer`): se cambia por el grabador.
+     * Como el de verdad, al pedirle sonar queda pendiente y `sonando` cambia después, en un `launch` aparte sobre el
+     * alcance de sesión del contenedor. Hay que hacerlo antes de que nadie pida el motor, que lo toma al crearse.
      */
     private fun conFondoGrabado(c: AppContainer): FondoGrabado {
-        val grabado = FondoGrabado()
+        val alcance = AppContainer::class.java.getDeclaredField("alcanceSesion").apply { isAccessible = true }.get(c) as CoroutineScope
+        val grabado = FondoGrabado(asincrono = alcance)
         ponerPerezoso(c, "fondo", grabado)
         ponerPerezoso(c, "sonido", sonido)
         ponerPerezoso(c, "tacto", tacto)
