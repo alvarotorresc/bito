@@ -78,6 +78,13 @@ interface MotorSesion {
 
     suspend fun otraDeCinco()
 
+    /**
+     * Atrás desde Respirar para entrar: la sesión que acaba de empezar se descarta (sin fila, sin intento, sin aviso,
+     * el aire se calla y No molestar se devuelve) y Preparar vuelve con el mismo plan. Fuera de Respirar no hace nada.
+     * Solo lo hace el motor real: por defecto no hace nada.
+     */
+    suspend fun volverAPreparar() = Unit
+
     /** Al abrir: lee el store y cierra por cambio de día. */
     suspend fun recuperar()
 }

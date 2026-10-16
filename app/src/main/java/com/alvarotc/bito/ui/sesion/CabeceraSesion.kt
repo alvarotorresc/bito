@@ -34,6 +34,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.icons.IconosSistema
+import com.alvarotc.bito.ui.premios.ClavesAncla
+import com.alvarotc.bito.ui.premios.anclaParticula
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
@@ -138,6 +140,7 @@ fun CabeceraSesion(
                     Modifier
                         .padding(start = if (musica != null) ENTRE_BOTONES else 0.dp)
                         .testTag("ses-saldo")
+                        .anclaParticula(ClavesAncla.SALDO)
                         .semantics(mergeDescendants = true) {}
                         .height(ALTO_SALDO)
                         .background(CantoSobreArte, BitoFormas.canto)

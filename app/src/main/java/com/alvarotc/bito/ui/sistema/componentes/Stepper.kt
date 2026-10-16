@@ -13,6 +13,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
@@ -45,6 +46,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.setProgress
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
@@ -73,6 +75,13 @@ fun Stepper(
     modifier: Modifier = Modifier,
     paso: Int = 1,
     formato: (Int) -> String = { it.toString() },
+    // Preparar: botones de 40 dp con las etiquetas de los lectores propias; los minutos: botones de 48, cifra de 48 sp.
+    tamano: Dp = Medidas.toqueMinimo,
+    etiquetaMenos: String? = null,
+    etiquetaMas: String? = null,
+    estiloCifra: TextStyle? = null,
+    anchoCifra: Dp = 56.dp,
+    separacion: Dp = 0.dp,
 ) {
     val gesto = rememberGesto()
     var empujones by remember { mutableIntStateOf(0) }
@@ -105,18 +114,20 @@ fun Stepper(
                     else -> false
                 }
             }.focusable(),
+        horizontalArrangement = Arrangement.spacedBy(separacion),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        BotonPaso(IconosSistema.Minus, stringResource(R.string.sistema_menos), enMin) { intentar(valor - paso) }
-        Box(Modifier.defaultMinSize(minWidth = 56.dp), contentAlignment = Alignment.Center) {
+        BotonPaso(IconosSistema.Minus, etiquetaMenos ?: stringResource(R.string.sistema_menos), enMin, tamano) { intentar(valor - paso) }
+        Box(Modifier.defaultMinSize(minWidth = anchoCifra), contentAlignment = Alignment.Center) {
             CifraRodillo(
                 valor,
                 Modifier.temblor(empujones),
+                estilo = estiloCifra ?: BitoTiposBase.t24.cifra(),
                 color = BitoTema.colores.tinta,
                 formato = formato,
             )
         }
-        BotonPaso(IconosSistema.Plus, stringResource(R.string.sistema_mas), enMax) { intentar(valor + paso) }
+        BotonPaso(IconosSistema.Plus, etiquetaMas ?: stringResource(R.string.sistema_mas), enMax, tamano) { intentar(valor + paso) }
     }
 }
 
@@ -125,13 +136,14 @@ private fun BotonPaso(
     icono: ImageVector,
     descripcion: String,
     tope: Boolean,
+    tamano: Dp,
     alPulsar: () -> Unit,
 ) {
     val colores = BitoTema.colores
     val fuente = remember { MutableInteractionSource() }
     Box(
         Modifier
-            .size(Medidas.toqueMinimo)
+            .size(tamano)
             .pulsar(fuente, redondo = true)
             .alpha(if (tope) OPACIDAD_TOPE else 1f)
             .clip(CircleShape)

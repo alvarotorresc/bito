@@ -166,6 +166,8 @@ class GardenSceneTest {
         dormido: Boolean = false,
         onHabiTap: () -> Unit = {},
         respiracion: (() -> Float)? = null,
+        animada: Boolean = false,
+        saltoAmplitud: Float? = null,
     ) {
         jardin = garden
         compose.setContent {
@@ -174,7 +176,7 @@ class GardenSceneTest {
                     GardenScene(
                         garden = jardin,
                         spec = spec,
-                        animated = false,
+                        animated = animada,
                         onHabiTap = onHabiTap,
                         modifier = Modifier.width(400.dp),
                         alTocarFondo = alTocarFondo,
@@ -186,6 +188,7 @@ class GardenSceneTest {
                         fiesta = fiesta,
                         dormido = dormido,
                         respiracion = respiracion,
+                        saltoAmplitud = saltoAmplitud,
                     )
                 }
             }
@@ -289,6 +292,35 @@ class GardenSceneTest {
 
         assertTrue(Snd.POSAR in sonido.snds())
         assertTrue(Haptica.THUD in tacto.hapticas)
+    }
+
+    @Test
+    fun `a hop with an amplitude rises that fraction of Habi and lands`() {
+        montar(animada = true, saltoAmplitud = 0.11f)
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(100)
+
+        compose.runOnUiThread { salto++ }
+        compose.mainClock.advanceTimeByFrame()
+        repeat(30) { compose.mainClock.advanceTimeBy(30) }
+
+        assertEquals("el pico es la amplitud pedida", 0.11f, sonda.salto.picoFraccion, 0.01f)
+        assertEquals("aterriza", 0f, sonda.salto.fraccion, 0.005f)
+        assertEquals(1, sonda.saltosHabi())
+    }
+
+    @Test
+    fun `a hop without amplitude keeps today's reaction and never uses the arc`() {
+        montar(animada = true)
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(100)
+
+        compose.runOnUiThread { salto++ }
+        compose.mainClock.advanceTimeByFrame()
+        repeat(30) { compose.mainClock.advanceTimeBy(30) }
+
+        assertEquals(0f, sonda.salto.picoFraccion, 0f)
+        assertEquals(1, sonda.saltosHabi())
     }
 
     @Test

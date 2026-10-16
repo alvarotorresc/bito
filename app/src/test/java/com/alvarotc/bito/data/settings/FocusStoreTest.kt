@@ -10,6 +10,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -50,6 +51,18 @@ class FocusStoreTest {
                 )
             focus.start(session)
             assertEquals(session, focus.session.first())
+        }
+
+    @Test
+    fun `an unrelated write to the same file does not re-emit the session`() =
+        runTest {
+            val ds = store("distinct")
+            val focus = FocusStore(ds)
+            val emisiones = mutableListOf<FocusSession?>()
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) { focus.session.collect { emisiones += it } }
+            ds.edit { it[androidx.datastore.preferences.core.stringPreferencesKey("otra")] = "x" }
+            job.cancel()
+            assertEquals(listOf<FocusSession?>(null), emisiones)
         }
 
     @Test

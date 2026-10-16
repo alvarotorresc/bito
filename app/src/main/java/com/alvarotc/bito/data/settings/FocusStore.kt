@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 
 /**
@@ -30,7 +31,7 @@ class FocusStore(private val dataStore: DataStore<Preferences>) {
         val bootMillis = longPreferencesKey("boot_millis")
     }
 
-    val session: Flow<FocusSession?> = dataStore.data.map { it.toSession() }
+    val session: Flow<FocusSession?> = dataStore.data.map { it.toSession() }.distinctUntilChanged()
 
     suspend fun start(session: FocusSession) {
         dataStore.edit { prefs ->
@@ -44,7 +45,7 @@ class FocusStore(private val dataStore: DataStore<Preferences>) {
 
     suspend fun clear() {
         dataStore.edit { prefs ->
-            // Solo sus claves: el archivo es compartido con la sesión y los avisos retenidos.
+            // Solo sus claves: el archivo es compartido con la sesión nueva. Los avisos retenidos viven aparte, en SharedPreferences (`sesion_fuera`).
             listOf(Keys.taskId, Keys.startedAtMillis, Keys.endsAtMillis, Keys.endsAtElapsed, Keys.bootMillis)
                 .forEach { prefs.remove(it) }
         }

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Las peticiones son nombres, no rutas: `review` sigue siendo el nombre que manda el aviso de la noche, pero ya no
  * hay ruta del repaso y abre el cierre dentro del Inicio; `gordo` (el aviso de la mañana) abre Hoy con la hoja de
- * lo gordo; `today` vuelve al Hoy que ya está abierto.
+ * lo gordo; `focus` abre Hoy en modo sesión (la sesión en curso, o lo gordo si no hay); `breathing` abre Hoy en la respiración suelta; `today` vuelve al Hoy que ya está abierto.
  */
 object NavRequests {
     /**
@@ -37,11 +37,14 @@ object NavRequests {
         when (peticion) {
             "review" -> "today?cierre=true"
             "gordo" -> "today?gordo=true"
+            // La sesión y la respiración suelta viven en Hoy: la petición abre Hoy y el Inicio la atiende (EntradaSesion.pendiente).
+            "focus", "breathing" -> "today"
             else -> peticion
         }
 
     /** Las peticiones que acaban en Hoy y no apilan otro Hoy encima del que hay. */
-    internal fun vaAHoy(peticion: String): Boolean = peticion == "review" || peticion == "gordo" || peticion == "today"
+    internal fun vaAHoy(peticion: String): Boolean =
+        peticion == "review" || peticion == "gordo" || peticion == "today" || peticion == "focus" || peticion == "breathing"
 
     fun consume() {
         _pending.value = null

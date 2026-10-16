@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.notifications
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -380,8 +381,88 @@ object Notifier {
         notify(context, FOCUS_ID, builder)
     }
 
-    /** Clears the focus tray. */
-    fun cancelFocus(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
+    /**
+     * Clears the old focus notice. Shares [FOCUS_ID] with the session notice, so it only cancels what is the old
+     * focus one (channel `reminders`): a session notice, or its end, is never taken down from here.
+     */
+    @SuppressLint("MissingPermission")
+    fun cancelFocus(context: Context) {
+        val manager = NotificationManagerCompat.from(context)
+        val activo = manager.activeNotifications.firstOrNull { it.id == FOCUS_ID } ?: return
+        if (activo.notification.channelId == NotificationChannels.REMINDERS) manager.cancel(FOCUS_ID)
+    }
+
+    /**
+     * El aviso fijo de la sesión (pieza 5): canal `sesion`, fijo, público, sin sonido ni botones. Con
+     * [finParedMillis] la cuenta atrás la pinta Android; sin él (en pausa) la cifra queda quieta en [cuerpo].
+     * Tocarla abre Hoy con la petición `focus`. La misma notificación es la del servicio de la sesión.
+     */
+    fun notificacionSesion(
+        context: Context,
+        titulo: String,
+        cuerpo: String,
+        finParedMillis: Long?,
+        personality: Personality,
+    ): Notification {
+        val builder =
+            baseBuilder(context, NotificationChannels.SESION)
+                .setContentTitle(titulo)
+                .setContentText(cuerpo)
+                .setLargeIcon(iconoHabi(context, personality))
+                .setContentIntent(contentIntent(context, "focus", 4))
+                .setAutoCancel(false)
+                .setOngoing(true)
+                .setSilent(true)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        if (finParedMillis != null) {
+            builder
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
+                .setShowWhen(true)
+                .setWhen(finParedMillis)
+        } else {
+            builder.setShowWhen(false)
+        }
+        return builder.build()
+    }
+
+    fun mostrarSesion(
+        context: Context,
+        titulo: String,
+        cuerpo: String,
+        finParedMillis: Long?,
+        personality: Personality,
+    ) = publicar(context, FOCUS_ID, notificacionSesion(context, titulo, cuerpo, finParedMillis, personality))
+
+    /** «Se acabó el tiempo»: Habi radiante, canal `habi` (suena), en el mismo id; tocarla abre la sesión terminada. */
+    fun mostrarSesionFin(
+        context: Context,
+        titulo: String,
+        personality: Personality,
+    ) {
+        val builder =
+            baseBuilder(context, NotificationChannels.HABI)
+                .setContentTitle(titulo)
+                .setContentText(context.getString(R.string.ses_notif_fin))
+                .setLargeIcon(iconoHabi(context, personality, mood = Mood.RADIANT))
+                .setContentIntent(contentIntent(context, "focus", 4))
+                // Comparte id con el aviso fijo: sin esto sustituiría al fijo sin avisar.
+                .setOnlyAlertOnce(false)
+        notify(context, FOCUS_ID, builder)
+    }
+
+    fun cancelarSesion(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
+
+    @SuppressLint("MissingPermission")
+    private fun publicar(
+        context: Context,
+        id: Int,
+        notification: Notification,
+    ) {
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return
+        manager.notify(id, notification)
+    }
 
     /** Lado en píxeles del icono grande: Habi sin accesorios (spec pieza 2 §5.6). */
     private const val ICONO_PX = 192

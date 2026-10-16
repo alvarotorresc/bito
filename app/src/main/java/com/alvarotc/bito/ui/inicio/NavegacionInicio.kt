@@ -9,5 +9,4 @@ data class NavegacionInicio(
     val abrirTareas: () -> Unit,
     val crearHabito: () -> Unit,
     val crearTarea: () -> Unit,
-    val abrirRuta: (String) -> Unit,
 )

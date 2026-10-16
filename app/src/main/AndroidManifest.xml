@@ -16,6 +16,10 @@
          de la app, no por el ajuste global de vibración al tacto. -->
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
+    <!-- La sesión: el servicio de sonido continuo con la app fuera y el cerrojo de energía de respirar. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
         android:name=".BitoApp"
@@ -90,6 +94,11 @@
         <receiver android:name=".ui.notifications.QuickActionReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.AvisoHabiReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.FocusReceiver" android:exported="false" />
+        <receiver android:name=".sesion.fuera.SesionReceiver" android:exported="false" />
+        <service
+            android:name=".sesion.fuera.ServicioSesion"
+            android:foregroundServiceType="mediaPlayback"
+            android:exported="false" />
         <receiver android:name=".ui.notifications.BootReceiver" android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />

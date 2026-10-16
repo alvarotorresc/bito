@@ -128,7 +128,6 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
             abrirTareas = { llamadas += "tareas" },
             crearHabito = { llamadas += "crearHabito" },
             crearTarea = { llamadas += "crearTarea" },
-            abrirRuta = { llamadas += "ruta:$it" },
         )
 
     private fun almacen(): DataStore<Preferences> =
@@ -240,6 +239,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                             alGordoVisto = alGordoVisto,
                             vetaRachaDe = vetaRachaDe,
                             alSaltoHabi = { saltos += it },
+                            abrirSesion = { llamadas += "sesion:$it" },
                         )
                     }
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))

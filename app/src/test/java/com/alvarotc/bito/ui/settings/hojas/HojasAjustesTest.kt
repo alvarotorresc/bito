@@ -19,6 +19,9 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import com.alvarotc.bito.data.settings.SessionBackground
+import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.sesion.BancoPermiso
+import com.alvarotc.bito.ui.sesion.habiCon
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -137,6 +140,48 @@ class HojasAjustesTest {
         assertEquals(90, p.foco)
         rule.onNodeWithContentDescription("Descanso corto").onChildren().filterToOne(hasContentDescription("Más")).performClick()
         assertEquals(6, p.corto)
+    }
+
+    @Test
+    fun `Pomodoro settings has the dnd row that asks for permission`() {
+        val permiso = BancoPermiso()
+        var activo by mutableStateOf(false)
+        val p = Pomodoro(25, 5, 15, 4, true)
+        rule.setContent {
+            ConSistema {
+                permiso.Con {
+                    HojaPomodoro(true, p, {}, {}, permiso.noMolestar, activo, { activo = it }, habiCon(Personality.NEUTRA))
+                }
+            }
+        }
+        rule.onNodeWithText("No molestar en las sesiones").assertIsDisplayed()
+        rule.onNodeWithText("No molestar en las sesiones").performClick()
+        rule.waitForIdle()
+        assertFalse(activo)
+        rule.onNodeWithText("No molestar durante la sesión").assertIsDisplayed()
+        permiso.concederAlLanzar = true
+        rule.onNodeWithText("Dar permiso").performClick()
+        rule.waitForIdle()
+        assertTrue(activo)
+        assertEquals(1, permiso.lanzados.size)
+    }
+
+    @Test
+    fun `Pomodoro settings turns the dnd row off when it already has permission`() {
+        val permiso = BancoPermiso()
+        permiso.conceder(true)
+        var activo by mutableStateOf(true)
+        val p = Pomodoro(25, 5, 15, 4, true)
+        rule.setContent {
+            ConSistema {
+                permiso.Con {
+                    HojaPomodoro(true, p, {}, {}, permiso.noMolestar, activo, { activo = it }, habiCon(Personality.NEUTRA))
+                }
+            }
+        }
+        rule.onNodeWithText("No molestar en las sesiones").performClick()
+        assertFalse(activo)
+        assertTrue(permiso.lanzados.isEmpty())
     }
 
     @Test

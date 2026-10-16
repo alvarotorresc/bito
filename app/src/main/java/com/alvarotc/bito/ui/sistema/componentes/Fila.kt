@@ -20,12 +20,15 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.LocalEstrato
+import com.alvarotc.bito.ui.sistema.LocalTacto
 import com.alvarotc.bito.ui.sistema.Medidas
+import com.alvarotc.bito.ui.sistema.fuerte
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 
@@ -39,6 +42,8 @@ private fun CuerpoFila(
     subtitulo: String?,
     habilitada: Boolean,
     derecha: (@Composable () -> Unit)?,
+    alto: Dp = ALTO_FILA,
+    relleno: Dp = Medidas.e8,
 ) {
     val estrato = LocalEstrato.current
     val tinta = estrato?.tinta ?: BitoTema.colores.tinta
@@ -48,12 +53,12 @@ private fun CuerpoFila(
         modifier
             .fillMaxWidth()
             .alpha(if (habilitada) 1f else 0.45f)
-            .heightIn(min = ALTO_FILA)
+            .heightIn(min = alto)
             .drawBehind {
                 val grosor = 1.dp.toPx()
                 val y = size.height - grosor / 2
                 drawLine(linea, Offset(0f, y), Offset(size.width, y), grosor)
-            }.padding(vertical = Medidas.e8),
+            }.padding(vertical = relleno),
         horizontalArrangement = Arrangement.spacedBy(Medidas.e12),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -73,11 +78,13 @@ fun Fila(
     subtitulo: String? = null,
     alPulsar: (() -> Unit)? = null,
     habilitada: Boolean = true,
+    alto: Dp = ALTO_FILA,
+    relleno: Dp = Medidas.e8,
     derecha: (@Composable () -> Unit)? = null,
 ) {
     val pulsable =
         if (alPulsar != null && habilitada) Modifier.clickable(role = Role.Button, onClick = alPulsar) else Modifier
-    CuerpoFila(etiqueta, modifier.then(pulsable), subtitulo, habilitada, derecha)
+    CuerpoFila(etiqueta, modifier.then(pulsable), subtitulo, habilitada, derecha, alto, relleno)
 }
 
 /** Toda la fila es el mando: la semántica de interruptor la lleva la fila, no el dibujo. */
@@ -89,8 +96,14 @@ fun FilaInterruptor(
     modifier: Modifier = Modifier,
     subtitulo: String? = null,
     habilitada: Boolean = true,
+    alto: Dp = ALTO_FILA,
+    relleno: Dp = Medidas.e8,
+    // Si [bloqueada] dice que el cambio no se puede (falta un permiso), el interruptor no se mueve: solo un tic y [alBloqueada].
+    bloqueada: (Boolean) -> Boolean = { false },
+    alBloqueada: () -> Unit = {},
 ) {
     val gesto = rememberGesto()
+    val tacto = LocalTacto.current
     val mando =
         Modifier.toggleable(
             value = activo,
@@ -99,10 +112,15 @@ fun FilaInterruptor(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
         ) {
-            gesto(if (it) Snd.INTERRUPTOR_ON else Snd.INTERRUPTOR_OFF, Haptica.TICK)
-            alCambiar(it)
+            if (bloqueada(it)) {
+                tacto.haptica(Haptica.TICK)
+                alBloqueada()
+            } else {
+                gesto(if (it) Snd.INTERRUPTOR_ON else Snd.INTERRUPTOR_OFF, Haptica.TICK)
+                alCambiar(it)
+            }
         }
-    CuerpoFila(etiqueta, modifier.then(mando), subtitulo, habilitada) { PistaInterruptor(activo) }
+    CuerpoFila(etiqueta, modifier.then(mando), subtitulo, habilitada, { PistaInterruptor(activo) }, alto, relleno)
 }
 
 @Composable
@@ -113,14 +131,21 @@ fun FilaValor(
     modifier: Modifier = Modifier,
     subtitulo: String? = null,
     habilitada: Boolean = true,
+    alto: Dp = ALTO_FILA,
+    relleno: Dp = Medidas.e8,
+    valorFuerte: Boolean = false,
 ) {
     val tinta2 = LocalEstrato.current?.tinta2 ?: BitoTema.colores.tintaSuave
-    Fila(etiqueta, modifier, subtitulo, alPulsar, habilitada) {
+    Fila(etiqueta, modifier, subtitulo, alPulsar, habilitada, alto = alto, relleno = relleno, derecha = {
         Row(horizontalArrangement = Arrangement.spacedBy(Medidas.e4), verticalAlignment = Alignment.CenterVertically) {
-            Text(valor, style = BitoTema.tipos.t16, color = tinta2)
+            Text(
+                valor,
+                style = if (valorFuerte) BitoTema.tipos.t16.fuerte() else BitoTema.tipos.t16,
+                color = if (valorFuerte) BitoTema.colores.tinta else tinta2,
+            )
             Icon(IconosSistema.CaretRight, contentDescription = null, Modifier.size(16.dp), tint = tinta2)
         }
-    }
+    })
 }
 
 /** [externo]: abre fuera de la app (lleva la flecha de enlace externo). */
