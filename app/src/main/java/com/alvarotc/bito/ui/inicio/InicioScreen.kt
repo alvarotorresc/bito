@@ -1088,17 +1088,16 @@ private fun AnuncioTramo(
                 null -> if (tramo != null) recursos.getString(R.string.sesr_anuncio_terminada) else null
             }
         }
-    if (texto != null) {
-        Box(
-            Modifier
-                .size(1.dp)
-                .testTag("ses-anuncio")
-                .semantics {
-                    liveRegion = LiveRegionMode.Polite
-                    contentDescription = texto
-                },
-        )
-    }
+    // Siempre montada: un nodo vivo que aparece de golpe puede no anunciarse; solo cambia su texto (vacío en Respirar).
+    Box(
+        Modifier
+            .size(1.dp)
+            .testTag("ses-anuncio")
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+                contentDescription = texto.orEmpty()
+            },
+    )
 }
 
 /** Cuando ya se pintó el cambio de tramo de la vuelta (dos fotogramas tras recuperar), el cambio siguiente es una frontera viva. */

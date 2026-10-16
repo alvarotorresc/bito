@@ -9,6 +9,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -390,6 +391,25 @@ class InicioSesionTest {
 
         assertTrue("sigue en la sesión", existe("ses-b-foco"))
         assertEquals("la cámara no suena el zoom de entrar", emptyList<Snd>(), banco.sonido.snds())
+    }
+
+    @Test
+    fun `the live region stays mounted through breathing and only its text changes`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 1_000L)
+        montar()
+        pedir(null)
+        asentar()
+
+        assertTrue("montada también en Respirar, donde no dice nada", existe("ses-anuncio"))
+        rule.onNodeWithTag("ses-anuncio", useUnmergedTree = true)
+            .assertContentDescriptionEquals("")
+
+        rule.runOnUiThread { motor.viva(planSesion(entrada = Entrada.RESPIRAR), 61_000L) }
+        rule.waitUntil(5_000) { existe("ses-b-foco") }
+        asentar()
+
+        assertTrue(existe("ses-anuncio"))
+        rule.onNodeWithTag("ses-anuncio", useUnmergedTree = true).assertContentDescriptionEquals("Bloque 1 de 4")
     }
 
     @Test
