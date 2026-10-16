@@ -55,6 +55,8 @@ fun Segmentado(
     relleno: Dp = Medidas.e4,
     ladosOpcion: Dp = Medidas.e16,
     alVolverAElegir: (Int) -> Unit = {},
+    /** Reparte el ancho a partes iguales entre las opciones (`.seg` a todo el ancho); por defecto cada una mide lo suyo. */
+    repartir: Boolean = false,
 ) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
@@ -89,12 +91,12 @@ fun Segmentado(
                     .background(colores.agua),
             )
         }
-        Row(Modifier.then(if (anchoCompleto) Modifier.fillMaxWidth() else Modifier).selectableGroup()) {
+        Row(Modifier.selectableGroup().then(if (anchoCompleto || repartir) Modifier.fillMaxWidth() else Modifier)) {
             opciones.forEachIndexed { i, texto ->
                 Box(
                     Modifier
                         .onGloballyPositioned { medidas[i] = it.positionInParent().x to it.size.width.toFloat() }
-                        .then(if (anchoCompleto) Modifier.weight(1f) else Modifier)
+                        .then(if (anchoCompleto || repartir) Modifier.weight(1f) else Modifier)
                         .height(altoOpcion)
                         .clip(BitoFormas.canto)
                         .selectable(
