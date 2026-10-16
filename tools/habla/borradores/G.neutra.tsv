@@ -12,6 +12,7 @@ se_entrar	9	[lunes]	Lunes, {nombre}. Ahora, solo esto: {tarea}.	Monday, {nombre}
 se_entrar	10	[finde]	Fin de semana, y aun así aquí estás. Yo también.	It's the weekend, and here you are anyway. Me too.
 se_entrar	11	[invierno]	Fuera hace frío. Aquí dentro, {minutos} min que son tuyos.	Cold out there. In here, {minutos} min that are yours.
 se_entrar	12	[tarde]	Media tarde, {nombre}. {minutos} min y luego, descanso.	Mid-afternoon, {nombre}. {minutos} min, then a break.
+se_entrar	13		Empezamos cuando quieras. Yo estoy aquí.	We start whenever you're ready. I'm here.
 de_habito	0		Te queda esto: {habito}. ¿Lo hacemos ahora, que es el descanso?	Still left today: {habito}. Shall we do it now, during the break?
 de_habito	1		Pendiente de hoy: {habito}. Si te apetece, cabe en este descanso.	Still open today: {habito}. If you feel like it, it fits in this break.
 de_habito	2		«{habito}» sigue sin marcar. Ahora es buen momento, si quieres.	“{habito}” is still unticked. Now is a good time, if you like.
@@ -30,6 +31,7 @@ de_habito_largo	3		Con {minutos} min de descanso, da para esto: {habito}.	With a
 de_habito_largo	4	[tarde]	Media tarde y descanso largo. Te propongo esto: {habito}.	Mid-afternoon and a long break. I'd suggest this: {habito}.
 de_habito_largo	5	[manana]	Descanso largo a media mañana. Pendiente: {habito}. Ahora o luego.	A long mid-morning break. Still open: {habito}. Now or later.
 de_habito_largo	6	[noche]	Descanso largo, y ya es de noche. Queda esto: {habito}.	A long break, and it's evening now. This is left: {habito}.
+de_habito_largo	7		Descanso largo y queda esto: {habito}. Hay tiempo de sobra.	A long break, and this is left: {habito}. Plenty of time.
 de_sin_pendientes	0		Hoy ya está todo regado. Levántate, estira las piernas y bebe un poco de agua.	Everything's watered for today. Get up, stretch your legs and drink some water.
 de_sin_pendientes	1		Nada que proponerte para este descanso. ¿Te levantas y estiras las piernas?	Nothing to suggest for this break. Get up and stretch your legs?
 de_sin_pendientes	2		Este descanso es solo tuyo, {nombre}. Un vaso de agua no vendría mal.	This break is all yours, {nombre}. A glass of water wouldn't hurt.
