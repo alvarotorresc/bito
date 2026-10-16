@@ -91,7 +91,10 @@ fun buildHabiUiState(
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
-    val garden = gardenOverride ?: GardenEngine.gardenOf(state, today, now, lastActivityDay, unlockedBadges, waterHighMark)
+    val placedObjects = owned.filter { it.category == CustomizationCategory.GARDEN_OBJECT && it.equipped }.map { it.itemId }
+    val garden =
+        gardenOverride
+            ?: GardenEngine.gardenOf(state, today, now, lastActivityDay, unlockedBadges, waterHighMark, placedObjects)
     val equippedIds = owned.filter { it.equipped }.map { it.itemId }
     val equipped = equippedSetOf(equippedIds)
     val ownedIds = owned.mapTo(mutableSetOf()) { it.itemId }

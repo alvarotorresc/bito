@@ -61,6 +61,8 @@ data class GardenState(
     val light: GardenLight,
     val season: GardenSeason,
     val specials: Set<GardenSpecial>,
+    // Objetos de jardín comprados (la clave es el id sin «garden-»: «banco», «regadera»).
+    val objects: Set<String> = emptySet(),
 ) {
     /** Las seis parcelas en árbol: a partir de aquí solo cambia la estación. */
     val full: Boolean get() = plots.size == GardenSpecies.entries.size && plots.all { it.stage == GrowthStage.TREE }

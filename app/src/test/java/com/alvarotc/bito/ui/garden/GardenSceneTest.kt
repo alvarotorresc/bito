@@ -36,6 +36,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSpecial
@@ -741,5 +742,71 @@ class GardenSceneTest {
         val vacio = habi()
         assertEquals(0.946f, vacio.height / reposo.height, 0.001f)
         assertEquals(pies, vacio.top + origen * vacio.height, 0.5f)
+    }
+
+    private val arteFalso =
+        object : FuenteObjetosJardin {
+            override fun pieza(clave: String) =
+                if (clave == "banco") GardenPiece(R.drawable.garden_setas, aspect = 2f, heightRatio = 1f) else null
+
+            override fun sitio(clave: String) = if (clave == "banco") GardenSpot(70f, 72.5f, 10f) else null
+        }
+
+    @Test
+    fun `owned objects are drawn by key at their spot`() {
+        val widthPx = 1339f
+        val heightPx = widthPx / GardenArt.SCENE_ASPECT
+        val conBanco = garden.copy(objects = setOf("banco", "sin-arte"))
+
+        val items = sceneItems(conBanco, widthPx, heightPx, arte = arteFalso)
+
+        val banco = items.filterIsInstance<SceneItem.Objeto>().single()
+        assertEquals("banco", banco.clave)
+        assertEquals(R.drawable.garden_setas, banco.res)
+        assertEquals(72.5f, banco.depth, 1e-3f)
+        assertEquals(spotRect(GardenSpot(70f, 72.5f, 10f), 10f, 2f, widthPx, heightPx), banco.rect)
+        assertEquals("un objeto sin arte no pinta nada", 1, items.count { it is SceneItem.Objeto })
+        assertEquals(items.map { it.depth }.sorted(), items.map { it.depth })
+        assertTrue(R.drawable.garden_setas in recursosDelJardin(conBanco, arte = arteFalso).map { it.first })
+    }
+
+    @Test
+    fun `an ephemeral object joins the owned ones without duplicating`() {
+        val items =
+            sceneItems(
+                garden.copy(objects = setOf("banco")),
+                1000f,
+                800f,
+                objetos = listOf(ObjetoJardin("banco", efimero = true)),
+                arte = arteFalso,
+            )
+        assertEquals(1, items.count { it is SceneItem.Objeto })
+    }
+
+    @Test
+    fun `without objects nothing changes`() {
+        val sin = sceneItems(garden, 1339f, 1000f, arte = arteFalso)
+        assertTrue(sin.none { it is SceneItem.Objeto })
+        assertEquals(sceneItems(garden, 1339f, 1000f), sin)
+    }
+
+    @Test
+    fun `the scene composes with objects and Habi is still tappable`() {
+        var taps = 0
+        compose.setContent {
+            BitoTheme {
+                GardenScene(
+                    garden = garden.copy(objects = setOf("banco")),
+                    spec = spec,
+                    animated = false,
+                    onHabiTap = { taps++ },
+                    modifier = Modifier.width(400.dp),
+                    objetos = listOf(ObjetoJardin("regadera", efimero = true)),
+                )
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Habi, doing okay").performClick()
+        assertEquals(1, taps)
     }
 }

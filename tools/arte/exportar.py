@@ -377,12 +377,18 @@ def exportar_jardin(manifiesto, ruta_manifiesto, dir_res, calidad):
         d = _pieza_jardin(manifiesto, ruta_manifiesto, e["archivo"], nombre_recurso(e["clave"], "garden_"), dir_res, escala, calidad)
         d["ratio"] = 1.0
         especiales[e["clave"]] = d
+    objetos = {}
+    for o in manifiesto.get("objetos", []):
+        d = _pieza_jardin(manifiesto, ruta_manifiesto, o["archivo"], nombre_recurso(o["clave"], "garden_"), dir_res, escala, calidad)
+        d["ratio"] = 1.0
+        objetos[o["clave"]] = d
     return {
         "aspecto": fondo.width / fondo.height,
         "parcelas": parcelas,
         "especies": especies,
         "claves_especies": [e["clave"] for e in manifiesto["especies"]],
         "especiales": especiales,
+        "objetos": objetos,
         "escena": manifiesto["escena"],
     }
 
@@ -615,12 +621,18 @@ def kotlin_jardin(datos):
     partes.append("        )\n\n")
     especiales = [_entrada_mapa(clave, "GardenPiece", _pieza_args(d)) for clave, d in datos["especiales"].items()]
     partes.append(_mapa("val specials: Map<String, GardenPiece>", especiales))
+    objetos = [_entrada_mapa(clave, "GardenPiece", _pieza_args(d)) for clave, d in datos.get("objetos", {}).items()]
+    partes.append("\n    /** Objetos de jardín de la tienda (banco, regadera): se compran y se colocan. */\n")
+    partes.append(_mapa("val objectPieces: Map<String, GardenPiece>", objetos))
     partes.append(f"\n    val habiSpot = {_sitio_kt(escena['habi'])}\n\n")
     partes.append("    val plotSpots: List<GardenSpot> =\n        listOf(\n")
     partes += [f"            {_sitio_kt(s)},\n" for s in escena["parcelas"]]
     partes.append("        )\n\n")
     sitios = [_entrada_mapa(clave, "GardenSpot", _sitio_args(s)) for clave, s in escena["especiales"].items()]
     partes.append(_mapa("val specialSpots: Map<String, GardenSpot>", sitios))
+    sitios_objetos = [_entrada_mapa(clave, "GardenSpot", _sitio_args(s)) for clave, s in escena.get("objetos", {}).items()]
+    partes.append("\n")
+    partes.append(_mapa("val objectSpots: Map<String, GardenSpot>", sitios_objetos))
     partes.append("}\n")
     return "".join(partes)
 
@@ -631,6 +643,7 @@ def claves_jardin(jardin):
     for especie in jardin["especies"]:
         claves += [(f"{especie['clave']}-{n + 1}", bool(especie.get("provisional"))) for n in range(len(especie["etapas"]))]
     claves += [(e["clave"], bool(e.get("provisional"))) for e in jardin["especiales"]]
+    claves += [(o["clave"], bool(o.get("provisional"))) for o in jardin.get("objetos", [])]
     return claves
 
 

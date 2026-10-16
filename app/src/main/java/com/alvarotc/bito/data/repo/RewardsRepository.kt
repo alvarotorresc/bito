@@ -81,7 +81,8 @@ class RewardsRepository(private val db: BitoDatabase) {
     suspend fun equip(itemId: String) =
         db.withTransaction {
             val item = db.customizationItemDao().byId(itemId) ?: return@withTransaction
-            db.customizationItemDao().unequipCategory(item.category)
+            // Los objetos de jardín conviven: poner uno no quita los demás.
+            if (item.category != CustomizationCategory.GARDEN_OBJECT) db.customizationItemDao().unequipCategory(item.category)
             db.customizationItemDao().upsert(item.copy(equipped = true))
         }
 
@@ -105,12 +106,32 @@ class RewardsRepository(private val db: BitoDatabase) {
             db.pointsLedgerDao().insert(
                 PointsLedgerEntity(UUID.randomUUID().toString(), -price, PointsReason.BUY_ITEM, item.id, day, nowMillis),
             )
-            db.customizationItemDao().unequipCategory(item.category)
+            // Comprar un objeto de jardín no desequipa la categoría: la regadera no quita el banco (D5).
+            if (item.category != CustomizationCategory.GARDEN_OBJECT) db.customizationItemDao().unequipCategory(item.category)
             db.customizationItemDao().upsert(CustomizationItemEntity(item.id, item.category, nowMillis, equipped = true))
             true
         }
 
-    suspend fun unequip(category: CustomizationCategory) = db.customizationItemDao().unequipCategory(category)
+    /** Los objetos de jardín no se quitan: la categoría entera no se desequipa. */
+    suspend fun unequip(category: CustomizationCategory) {
+        if (category != CustomizationCategory.GARDEN_OBJECT) db.customizationItemDao().unequipCategory(category)
+    }
+
+    /**
+     * Deshace la compra de un congelador (el aviso «Deshacer»): borra el asiento `BUY_FREEZER` de
+     * [refId] en una transacción, así el saldo y el contador (derivados del libro) vuelven solos.
+     * Devuelve false, sin escribir, si no existe o si ya se gastó: con los usos registrados no quedaría
+     * ningún congelador sin usar tras quitar esa compra.
+     */
+    suspend fun undoFreezerPurchase(refId: String): Boolean =
+        db.withTransaction {
+            val ledger = db.pointsLedgerDao().all()
+            if (ledger.none { it.reason == PointsReason.BUY_FREEZER && it.refId == refId }) return@withTransaction false
+            val compradas = ledger.count { it.reason == PointsReason.BUY_FREEZER }
+            val usos = db.freezerUseDao().all().size
+            if (usos > compradas - 1) return@withTransaction false
+            db.pointsLedgerDao().deleteByReasonRef(PointsReason.BUY_FREEZER, refId) > 0
+        }
 
     fun observeOwnedItems(): Flow<List<CustomizationItemEntity>> = db.customizationItemDao().observeAll()
 }
