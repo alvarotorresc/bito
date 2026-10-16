@@ -1,5 +1,6 @@
 package com.alvarotc.bito.domain.habla
 
+import com.alvarotc.bito.domain.model.BreathingMode
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
@@ -69,8 +70,8 @@ object Plantilla {
             is ValorHueco.Lista -> lista(v.v, idioma)
             is ValorHueco.DiaSemana -> dia(v.v, idioma, locale)
             is ValorHueco.Fecha -> fecha(v.epochDay, idioma, locale)
-            // El nombre del modo vive en los recursos: la pantalla lo cambia por un Texto antes de rellenar.
-            is ValorHueco.Modo -> v.modo.name.lowercase(locale)
+            // La pantalla suele cambiarlo por un Texto con los recursos; si llega aquí, nunca sale el identificador.
+            is ValorHueco.Modo -> modo(v.modo, idioma)
         }
 
     /** Une los trozos con un espacio, sin vacíos ni espacios dobles. */
@@ -79,6 +80,16 @@ object Plantilla {
             .map { it.trim() }
             .filter { it.isNotEmpty() }
             .joinToString(" ")
+
+    private fun modo(
+        m: BreathingMode,
+        idioma: Idioma,
+    ): String =
+        when (m) {
+            BreathingMode.CALM -> if (idioma == Idioma.ES) "Calmarme" else "Calm down"
+            BreathingMode.SLEEP -> if (idioma == Idioma.ES) "Dormir" else "Sleep"
+            BreathingMode.FOCUS -> if (idioma == Idioma.ES) "Centrarme" else "Focus"
+        }
 
     private fun hueco(clave: String): Hueco = requireNotNull(porClave[clave]) { "Hueco desconocido: {$clave}" }
 
