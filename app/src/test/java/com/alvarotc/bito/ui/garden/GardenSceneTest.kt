@@ -165,6 +165,7 @@ class GardenSceneTest {
         destacar: GardenSpecial? = null,
         dormido: Boolean = false,
         onHabiTap: () -> Unit = {},
+        respiracion: (() -> Float)? = null,
     ) {
         jardin = garden
         compose.setContent {
@@ -184,6 +185,7 @@ class GardenSceneTest {
                         saltoHabi = salto,
                         fiesta = fiesta,
                         dormido = dormido,
+                        respiracion = respiracion,
                     )
                 }
             }
@@ -640,4 +642,45 @@ class GardenSceneTest {
         a: Int,
         b: Int,
     ): Boolean = (0..3).any { abs((a shr (it * 8) and 0xFF) - (b shr (it * 8) and 0xFF)) > 2 }
+
+    @Test
+    fun `breathing closes the eyes and stretches from the feet`() {
+        var llenado by mutableStateOf(1f)
+        montar(respiracion = { llenado })
+
+        assertEquals(1f, sonda.ojosCerradosHabi(), 0f)
+        val lleno = sonda.estiramientoHabi()
+        assertEquals(1.054f, lleno.scaleY, 0.0001f)
+        assertEquals(0.973f, lleno.scaleX, 0.0001f)
+        // El origen son los pies de Habi (88 % de la escena), no el borde de abajo de su lienzo.
+        val widthPx = with(compose.density) { 400.dp.toPx() }
+        val sceneH = widthPx / GardenArt.SCENE_ASPECT
+        val caja = habiRect(widthPx, sceneH)
+        assertEquals((sceneH * 0.88f - caja.top) / caja.height, lleno.origenY, 0.0001f)
+
+        // Vacío: se encoge lo mismo hacia abajo. El llenado se lee al dibujar, sin recomponer.
+        llenado = 0f
+        val vacio = sonda.estiramientoHabi()
+        assertEquals(0.946f, vacio.scaleY, 0.0001f)
+        assertEquals(1.027f, vacio.scaleX, 0.0001f)
+    }
+
+    @Test
+    fun `breathing in reduced motion stretches half as much`() {
+        montar(reducido = true, respiracion = { 1f })
+
+        val lleno = sonda.estiramientoHabi()
+        assertEquals(1.027f, lleno.scaleY, 0.0001f)
+        assertEquals(0.9865f, lleno.scaleX, 0.0001f)
+    }
+
+    @Test
+    fun `without breathing nothing changes`() {
+        montar()
+
+        assertEquals(0f, sonda.ojosCerradosHabi(), 0f)
+        val quieto = sonda.estiramientoHabi()
+        assertEquals(1f, quieto.scaleX, 0f)
+        assertEquals(1f, quieto.scaleY, 0f)
+    }
 }
