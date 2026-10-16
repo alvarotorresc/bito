@@ -317,6 +317,27 @@ class MotorSesionTest {
         }
 
     @Test
+    fun `a session that crosses the day cut waits for the answer`() =
+        runTest {
+            directo()
+            val medianoche = banco.reloj.pared - banco.reloj.pared % (24 * 60 * MINUTO) + 24 * 60 * MINUTO
+            banco.reloj.pared = medianoche - 10 * MINUTO
+            banco.tasks.create(taskEntity(id = "t1"))
+            motor.preparar(Destino.Tarea("t1"))
+            motor.cambiarBorrador(motor.borrador.value!!.copy(bloques = 1))
+            assertNull(motor.empezar())
+            banco.reloj.avanzar(40 * MINUTO)
+            val otro = banco.motor()
+
+            otro.recuperar()
+
+            assertNotNull(banco.store.leer())
+            assertNull(otro.instante.value?.actual)
+            assertNotNull(otro.registro.value)
+            assertTrue(banco.db.sesionDao().all().isEmpty())
+        }
+
+    @Test
     fun `each transition plays its sound and haptic once`() =
         runTest {
             banco.settings.update { it.copy(sessionBackground = SessionBackground.BROWN) }

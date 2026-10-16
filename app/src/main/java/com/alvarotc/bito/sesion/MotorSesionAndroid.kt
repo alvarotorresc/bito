@@ -257,8 +257,9 @@ class MotorSesionAndroid(
             }
             val ahora = reloj()
             val inst = RelojSesion.en(r, ahora)
-            val hoy = hoyDe(ahora, settings.settings.first())
-            if (inst.actual == null && r.inicioDia != hoy) {
+            val ajustes = settings.settings.first()
+            val hoy = hoyDe(ahora, ajustes)
+            if (inst.actual == null && diaDeLlegada(r, ahora, ajustes) != hoy) {
                 efectos.intento(r.plan.objetivo, hoy, ahora.paredMillis)
                 cerrarAqui(r, inst, ahora, ResultadoSesion.SIN_RESPUESTA)
                 return@enCerrojo
@@ -494,6 +495,21 @@ class MotorSesionAndroid(
         ahora: Ahora,
         ajustes: Settings,
     ): LogicalDay = LogicalDays.logicalDayOf(ahora.paredMillis, ajustes.dayCutoffMinutes, zona())
+
+    /** El día lógico en que la sesión llegó a Terminada: Terminada espera hasta que ese día cambie. */
+    private fun diaDeLlegada(
+        r: RegistroSesion,
+        ahora: Ahora,
+        ajustes: Settings,
+    ): LogicalDay {
+        var bajo = 0L
+        var alto = RelojSesion.transcurrido(r, ahora)
+        while (bajo < alto) {
+            val medio = bajo + (alto - bajo) / 2
+            if (RelojSesion.enSesion(r, medio).actual == null) alto = medio else bajo = medio + 1
+        }
+        return LogicalDays.logicalDayOf(RelojSesion.paredDe(r, alto, ahora), ajustes.dayCutoffMinutes, zona())
+    }
 
     private suspend fun <T> enCerrojo(bloque: suspend () -> T): T = withContext(NonCancellable) { cerrojo.withLock { bloque() } }
 
