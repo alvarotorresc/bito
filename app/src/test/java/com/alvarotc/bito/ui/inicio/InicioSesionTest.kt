@@ -211,6 +211,55 @@ class InicioSesionTest {
         assertEquals(emptyList<String>(), motor.llamadas.filter { it != "recuperar" })
     }
 
+    private fun atrasDelSistema() {
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        asentar()
+        rule.waitForIdle()
+    }
+
+    private fun avisosSigueEnMarcha() =
+        rule.onAllNodes(androidx.compose.ui.test.hasText("Sigue en marcha", substring = true)).fetchSemanticsNodes().size
+
+    @Test
+    fun `in Today with a live focus back is not the session's and Camino closes first`() {
+        motor.viva(directo)
+        montar()
+        pedir(null)
+        atras()
+        assertEquals(1, avisosSigueEnMarcha())
+
+        assertFalse("en Hoy nadie atrapa Atrás", rule.activity.onBackPressedDispatcher.hasEnabledCallbacks())
+
+        rule.onNodeWithTag("pildora-camino").performClick()
+        asentar()
+        rule.waitForIdle()
+        rule.onNodeWithTag("inicio-camino").assertExists()
+        atrasDelSistema()
+        rule.onNodeWithTag("inicio-hoy").assertExists()
+        rule.onNodeWithTag("inicio-camino").assertDoesNotExist()
+    }
+
+    @Test
+    fun `back from prepare leaves no draft trapping back in Today`() {
+        montar()
+        pedir(Destino.Tarea("t1"))
+        atras()
+
+        assertFalse(existe("ses-tierra"))
+        assertFalse("el borrador no atrapa Atrás en Hoy", rule.activity.onBackPressedDispatcher.hasEnabledCallbacks())
+    }
+
+    @Test
+    fun `back from finished leaves nothing trapping back in Today`() {
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 60 * MINUTO)
+        montar()
+        pedir(null)
+        atras()
+
+        assertFalse(existe("ses-tierra"))
+        assertFalse("Terminada esperando no atrapa Atrás en Hoy", rule.activity.onBackPressedDispatcher.hasEnabledCallbacks())
+    }
+
     @Test
     fun `the session locks portrait and releases it`() {
         montar()
