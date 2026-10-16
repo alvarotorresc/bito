@@ -29,9 +29,10 @@ class HechosCache {
         memoria: Memoria,
         ctx: Contexto,
         recordatorios: Map<String, Int>,
+        empezadas: Set<String> = emptySet(),
     ): Hechos {
         val entradasPorHabito = state.entries.groupingBy { it.habitId }.eachCount()
-        return Hechos.deConCaros(state, memoria, ctx, recordatorios) { habit ->
+        return Hechos.deConCaros(state, memoria, ctx, recordatorios, empezadas) { habit ->
             val entradas = entradasPorHabito[habit.id] ?: 0
             val guardado = recuerdos[habit.id]
             if (guardado != null && guardado.vale(ctx, entradas)) {

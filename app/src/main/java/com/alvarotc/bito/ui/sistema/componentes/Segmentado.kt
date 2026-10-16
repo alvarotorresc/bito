@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -48,6 +49,14 @@ fun Segmentado(
     alElegir: (Int) -> Unit,
     modifier: Modifier = Modifier,
     habilitado: Boolean = true,
+    // Para las pantallas que lo piden más ancho o más bajo (Preparar): a todo el ancho, alto total, relleno y lados de cada opción.
+    anchoCompleto: Boolean = false,
+    alto: Dp? = null,
+    relleno: Dp = Medidas.e4,
+    ladosOpcion: Dp = Medidas.e16,
+    alVolverAElegir: (Int) -> Unit = {},
+    /** Reparte el ancho a partes iguales entre las opciones (`.seg` a todo el ancho); por defecto cada una mide lo suyo. */
+    repartir: Boolean = false,
 ) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
@@ -59,33 +68,36 @@ fun Segmentado(
     var listo by remember { mutableStateOf(false) }
     LaunchedEffect(actual != null) { if (actual != null) listo = true }
     val destinoX = with(densidad) { (actual?.first ?: 0f).toDp() }
+    val altoOpcion = if (alto != null) alto - Medidas.linea * 2 - relleno * 2 else Medidas.boton - Medidas.e4
     val destinoAncho = with(densidad) { (actual?.second ?: 0f).toDp() }
     val spec = if (listo) Muelles.indicador<Dp>(reducido) else snap()
     val x by animateDpAsState(destinoX, spec, label = "indicadorX")
     val ancho by animateDpAsState(destinoAncho, spec, label = "indicadorAncho")
     Box(
         modifier
+            .then(if (anchoCompleto) Modifier.fillMaxWidth() else Modifier)
             .clip(BitoFormas.canto)
             .background(colores.canto)
             .border(BorderStroke(Medidas.linea, colores.contorno), BitoFormas.canto)
-            .padding(Medidas.e4),
+            .padding(relleno),
     ) {
         if (actual != null) {
             Box(
                 Modifier
                     .offset(x = x)
                     .width(ancho)
-                    .height(Medidas.boton - Medidas.e4)
+                    .height(altoOpcion)
                     .clip(BitoFormas.canto)
                     .background(colores.agua),
             )
         }
-        Row(Modifier.selectableGroup()) {
+        Row(Modifier.selectableGroup().then(if (anchoCompleto || repartir) Modifier.fillMaxWidth() else Modifier)) {
             opciones.forEachIndexed { i, texto ->
                 Box(
                     Modifier
                         .onGloballyPositioned { medidas[i] = it.positionInParent().x to it.size.width.toFloat() }
-                        .height(Medidas.boton - Medidas.e4)
+                        .then(if (anchoCompleto || repartir) Modifier.weight(1f) else Modifier)
+                        .height(altoOpcion)
                         .clip(BitoFormas.canto)
                         .selectable(
                             selected = i == elegida,
@@ -97,8 +109,10 @@ fun Segmentado(
                             if (i != elegida) {
                                 gesto(Snd.TIC, Haptica.SEG)
                                 alElegir(i)
+                            } else {
+                                alVolverAElegir(i)
                             }
-                        }.padding(horizontal = Medidas.e16),
+                        }.padding(horizontal = ladosOpcion),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(

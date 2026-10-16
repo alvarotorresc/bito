@@ -69,11 +69,11 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.habi.HabiVoice
-import com.alvarotc.bito.ui.inicio.EntradaSesion
 import com.alvarotc.bito.ui.inicio.NavegacionInicio
 import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.premios.ClavesAncla
@@ -159,6 +159,8 @@ fun HoyLista(
     // El aviso de la mañana pide la hoja de lo gordo: la lista la abre y avisa de que lo vio.
     abrirGordo: Boolean = false,
     alGordoVisto: () -> Unit = {},
+    // Abre la sesión del Inicio con ese destino (Efecto.Sesion y «Empezar» de la fila).
+    abrirSesion: (Destino?) -> Unit = {},
     // Lo que se ha hundido la lista porque se abre el cierre (0 nada, 1 del todo); se lee al dibujar. Cada fila
     // lo recoge con su escalón de 25 ms ([hundidaDeFila]).
     hundida: () -> Float = { 0f },
@@ -231,7 +233,7 @@ fun HoyLista(
         viewModel.efectos.collect { efecto ->
             when (efecto) {
                 Efecto.Ninguno -> Unit
-                is Efecto.Sesion -> navegar.abrirRuta(EntradaSesion.ruta(efecto.destino))
+                is Efecto.Sesion -> abrirSesion(efecto.destino)
                 Efecto.AbrirCierre -> navegar.abrirRepaso()
                 Efecto.AbrirLoGordo -> gordoPedido++
                 is Efecto.ElegirHora -> {
@@ -542,7 +544,7 @@ fun HoyLista(
                                     saliendo = saliendo - row.id
                                 }
                             },
-                            alEmpezar = { navegar.abrirRuta("focus?taskId=${fila.row.id}") },
+                            alEmpezar = { abrirSesion(Destino.Tarea(fila.row.id)) },
                             alHoyNo = { viewModel.postponeTask(fila.row.id) },
                             modifier = margen.then(aparece).then(colocar),
                             manana = sellado,

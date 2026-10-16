@@ -1,5 +1,6 @@
 package com.alvarotc.bito.domain.habla
 
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.propuestas.Ambito
 
@@ -21,7 +22,8 @@ object Recuerdos {
 
     /**
      * El primero que se cumple en este orden: `re_racha_recuperada`, `re_vuelta`, `re_duro_pasado`,
-     * `re_gordo_hecho`, `re_cumpliste_hora`, `re_bien_ayer` y, solo con [enCierre], `re_patron_animo`.
+     * `re_gordo_hecho`, `re_cumpliste_hora`, `re_bien_ayer`, `re_respirar_mejor` y, solo con [enCierre],
+     * `re_patron_animo`.
      * Null si hoy ya se mencionó alguno.
      */
     fun elegible(
@@ -45,6 +47,7 @@ object Recuerdos {
             ?: gordoHecho(h, eventos)
             ?: cumplisteHora(h, eventos)
             ?: bienAyer(hoy, eventos)
+            ?: respirarMejor(hoy, eventos)
             ?: if (enCierre) patronAnimo(hoy, m.eventos, menciones, ctx) else null
     }
 
@@ -147,6 +150,20 @@ object Recuerdos {
         eventos
             .firstOrNull { it.tipo == TipoMemoria.ANIMO && it.valor == BIEN && it.dia == hoy - 1 }
             ?.let { Recuerdo(Bolsa.RE_BIEN_AYER, it.id, emptyMap()) }
+
+    /**
+     * Un «Mejor» de «¿Cómo estás ahora?» de ayer o antes (decisión 10 de §21): `ref` = el modo de respiración, que va
+     * en `{modo}`. Solo lo bueno; sin modo que decir no hay recuerdo.
+     */
+    private fun respirarMejor(
+        hoy: LogicalDay,
+        eventos: List<EventoMemoria>,
+    ): Recuerdo? =
+        eventos.firstNotNullOfOrNull { e ->
+            if (e.tipo != TipoMemoria.COMO_ESTAS || e.valor != BIEN || e.dia >= hoy) return@firstNotNullOfOrNull null
+            val modo = BreathingMode.entries.firstOrNull { it.name.equals(e.ref, ignoreCase = true) } ?: return@firstNotNullOfOrNull null
+            Recuerdo(Bolsa.RE_RESPIRAR_MEJOR, e.id, mapOf(Hueco.MODO to ValorHueco.Modo(modo)))
+        }
 
     /**
      * 3 o más de las 6 últimas veces de este día de la semana fueron duras. No tiene evento propio:

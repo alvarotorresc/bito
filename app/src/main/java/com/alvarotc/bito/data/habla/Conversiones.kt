@@ -19,6 +19,7 @@ import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.UsoTrozo
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.habla.reglas.ReglaDescanso
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Ambito
@@ -195,6 +196,8 @@ fun destinoDe(
         ref == null -> null
         situacion == Situacion.TAREA_VENCE -> Destino.Tarea(ref)
         situacion in SITUACIONES_DE_HABITO -> Destino.Habito(ref)
+        situacion == Situacion.DESCANSO_HABITO || situacion == Situacion.DESCANSO_HABITO_LARGO ->
+            ReglaDescanso.habitoDe(ref)?.let { Destino.Habito(it) }
         refAmbiguo(situacion) -> if (refEsTarea) Destino.Tarea(ref) else Destino.Habito(ref)
         else -> null
     }

@@ -109,6 +109,8 @@ class SettingsViewModel(
 
     fun setSessionBackground(background: SessionBackground) = write { it.copy(sessionBackground = background) }
 
+    fun setSessionDnd(enabled: Boolean) = write { it.copy(sessionDnd = enabled) }
+
     fun setReduceMotion(enabled: Boolean) = write { it.copy(reduceMotion = enabled) }
 
     /** Reactivar desde archivados (spec §5.4). */

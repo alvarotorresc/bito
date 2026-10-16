@@ -10,6 +10,7 @@ import com.alvarotc.bito.domain.datedTask
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
 import com.alvarotc.bito.domain.entryOn
+import com.alvarotc.bito.domain.habla.reglas.ReglaGordoSinEmpezar
 import com.alvarotc.bito.domain.millisOn
 import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.DomainState
@@ -496,5 +497,27 @@ class HechosTest {
         assertTrue(Hechos.quedanPendientes(domainState(habits = listOf(RealHabits.socialMedia, RealHabits.meditate)), TODAY))
         val hecho = domainState(habits = listOf(RealHabits.meditate), entries = listOf(entryOn(RealHabits.meditate, TODAY)))
         assertFalse(Hechos.quedanPendientes(hecho, TODAY))
+    }
+
+    @Test
+    fun `a closed session today counts as started`() {
+        val s = domainState(tasks = listOf(datedTask("t1", TODAY), datedTask("t2", TODAY)))
+        val h = Hechos.de(s, Memoria(), ctx(), emptyMap(), empezadas = setOf("t1"))
+        assertEquals(listOf(true, false), h.tareas.map { it.empezada })
+        assertFalse(de(s).tareas.first().empezada)
+    }
+
+    @Test
+    fun `a live session counts as started for the big thing`() {
+        val s = domainState(tasks = listOf(datedTask("t1", TODAY)))
+        val gordo = listOf(RefGordo(TipoRefGordo.TAREA, "t1"))
+        val m = Memoria(gordo = mapOf(TODAY to gordo), gordoElegidoMillis = ctx().ahoraMillis - 3 * 60 * 60_000L)
+        val sin = Hechos.de(s, m, ctx(), emptyMap())
+        // Sin sesión, lo gordo sigue sin empezar y Habi lo diría.
+        assertEquals(1, ReglaGordoSinEmpezar.candidatas(sin, m, ctx()).size)
+        // Con la sesión viva de esa tarea, la misma cuenta que la fuente aplica a sus hechos, ya no.
+        val con = sin.conEmpezadas(setOf("t1"))
+        assertTrue(con.tareas.single().empezada)
+        assertTrue(ReglaGordoSinEmpezar.candidatas(con, m, ctx()).isEmpty())
     }
 }
