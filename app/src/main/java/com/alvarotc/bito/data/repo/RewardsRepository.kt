@@ -87,6 +87,39 @@ class RewardsRepository(private val db: BitoDatabase) {
         }
 
     /**
+     * Pone [itemId] quitando antes el disfraz, en una sola transacción: la tienda lo usa al tocar una pieza
+     * de una ranura que el disfraz tapa. Lo demás que llevaba Habi se queda puesto.
+     */
+    suspend fun equipOverCostume(itemId: String) =
+        db.withTransaction {
+            val catalogo = HabiCatalog.byId(itemId) ?: return@withTransaction
+            db.customizationItemDao().unequipCategory(CustomizationCategory.COSTUME)
+            db.customizationItemDao().unequipCategory(catalogo.category)
+            // Una pieza de serie no tiene fila: con la categoría desequipada ya es la que se ve.
+            db.customizationItemDao().byId(itemId)?.let { db.customizationItemDao().upsert(it.copy(equipped = true)) }
+        }
+
+    /**
+     * Compra un congelador: comprueba el saldo y escribe el asiento `BUY_FREEZER` con un [refId] propio en una
+     * sola transacción. Devuelve ese `refId` (lo que luego recibe [undoFreezerPurchase]) o null, sin escribir,
+     * si el saldo no llega a [price].
+     */
+    suspend fun buyFreezer(
+        price: Int,
+        day: LogicalDay,
+        nowMillis: Long,
+    ): String? =
+        db.withTransaction {
+            val ledger = db.pointsLedgerDao().all().map { it.toDomain() }
+            if (!PointsEngine.canSpend(ledger, price)) return@withTransaction null
+            val refId = UUID.randomUUID().toString()
+            db.pointsLedgerDao().insert(
+                PointsLedgerEntity(UUID.randomUUID().toString(), -price, PointsReason.BUY_FREEZER, refId, day, nowMillis),
+            )
+            refId
+        }
+
+    /**
      * Buys [item] atomically: ledger spend + acquired row, equipped on the spot
      * (docs/05 §4). Returns false — writing nothing — when the item is not
      * purchasable, is already owned, is out of season, or the balance does not cover it.
