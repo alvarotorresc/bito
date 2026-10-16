@@ -29,8 +29,11 @@ class ReglaTodoHechoTest {
     }
 
     @Test
-    fun `a day with nothing required also waits for the close`() =
-        assertEquals(1, ReglaTodoHecho.candidatas(hechos(habitos = emptyList()), Memoria(), ctx()).size)
+    fun `a day with nothing required to do does not come out`() {
+        assertTrue(ReglaTodoHecho.candidatas(hechos(habitos = emptyList()), Memoria(), ctx()).isEmpty())
+        val noToca = hechos(habitos = listOf(habito("b", exigibleHoy = false)))
+        assertTrue(ReglaTodoHecho.candidatas(noToca, Memoria(), ctx()).isEmpty())
+    }
 
     @Test
     fun `a pending habit keeps it away`() =

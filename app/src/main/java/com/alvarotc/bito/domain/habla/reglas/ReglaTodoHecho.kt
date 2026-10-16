@@ -12,7 +12,8 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
 /**
  * §5.1 n.º 5: no queda nada exigible hoy y el día no está sellado (Habi esperando). Un límite o
  * un dejar sin fallar cuentan como hechos (`HabitoHoy.hechoHoy`); uno fallado (recaída, límite
- * pasado) ya no espera nada, como en la fase. Sin huecos (HUECOS.md).
+ * pasado) ya no espera nada, como en la fase. Solo si hoy había algo que hacer (`tuDiaTotal > 0`):
+ * un día sin exigibles deja paso a lo gordo y a las tareas. Sin huecos (HUECOS.md).
  */
 object ReglaTodoHecho : Regla {
     override fun candidatas(
@@ -20,7 +21,7 @@ object ReglaTodoHecho : Regla {
         m: Memoria,
         ctx: Contexto,
     ): List<Candidata> {
-        if (h.diaSellado || h.habitos.any { it.pendienteHoy() }) return emptyList()
+        if (h.diaSellado || h.tuDiaTotal == 0 || h.habitos.any { it.pendienteHoy() }) return emptyList()
         return listOf(
             Candidata(
                 situacion = Situacion.TODO_HECHO,
