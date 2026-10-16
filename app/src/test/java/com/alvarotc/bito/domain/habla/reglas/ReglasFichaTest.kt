@@ -1,7 +1,9 @@
 package com.alvarotc.bito.domain.habla.reglas
 
 import com.alvarotc.bito.domain.TODAY
+import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.Candidata
+import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.HabitoHoy
 import com.alvarotc.bito.domain.habla.Hueco
 import com.alvarotc.bito.domain.habla.Memoria
@@ -53,6 +55,19 @@ class ReglasFichaTest {
         assertEquals(ValorHueco.Hora(14 * 60 + 30), c.huecos[Hueco.HORA])
         assertEquals(listOf(Respuesta.VALE, Respuesta.HOY_NO), c.acciones)
         assertEquals(Destino.Habito("h1"), c.destino)
+    }
+
+    @Test
+    fun `with two accepted notices today the pending note does not come out`() {
+        fun aviso(
+            id: String,
+            dia: Int = TODAY,
+        ) = AvisoAceptado(id, dia, "hx", 18 * 60, 0, EstadoAviso.PENDIENTE, "p-$id", 1L)
+        val h = habito(racha = 5, mejorRacha = 9)
+        assertEquals(Situacion.FI_HOY_FALTA, nota(h, Memoria(avisos = listOf(aviso("a"))))!!.situacion)
+        assertEquals(Situacion.FI_RACHA_VS_MEJOR, nota(h, Memoria(avisos = listOf(aviso("a"), aviso("b"))))!!.situacion)
+        val deAyer = Memoria(avisos = listOf(aviso("a", TODAY - 1), aviso("b", TODAY - 1)))
+        assertEquals(Situacion.FI_HOY_FALTA, nota(h, deAyer)!!.situacion)
     }
 
     @Test

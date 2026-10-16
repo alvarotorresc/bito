@@ -101,7 +101,8 @@ object Motor {
 
     /**
      * §5.7: la primera nota de la ficha que «No hace falta» no haya descartado en los últimos 7 días
-     * (esa situación en ese hábito). Archivado o sin hábito, nada.
+     * (esa situación en ese hábito). Archivado o sin hábito, nada. Con 2 avisos aceptados hoy (§5.2)
+     * no sale `FI_HOY_FALTA`: solo existe «con hora posible» y sin hora no tiene acciones propias.
      */
     private fun elegirFicha(
         h: Hechos,
@@ -114,7 +115,12 @@ object Motor {
                 .filter { it.tipo == TipoMemoria.RESPUESTA && respuestaDe(it) == Respuesta.HOY_NO && ctx.hoy - it.dia < FICHA_OCULTA_DIAS }
                 .mapNotNull { it.ref?.substringBeforeLast(':') }
                 .toSet()
-        val validas = ReglasFicha.candidatas(h, m, ctx, habitId).filter { "${it.situacion.name}:${it.ref.orEmpty()}" !in ocultas }
+        val topeAvisos = dosAvisosHoy(m, ctx)
+        val validas =
+            ReglasFicha
+                .candidatas(h, m, ctx, habitId)
+                .filter { "${it.situacion.name}:${it.ref.orEmpty()}" !in ocultas }
+                .filterNot { topeAvisos && it.situacion == Situacion.FI_HOY_FALTA }
         return primeraPorPrioridad(Prioridades.FICHA, validas)
     }
 
@@ -207,6 +213,12 @@ object Motor {
         return corta.copy(nucleo = Bolsa.NU_REGULAR)
     }
 
+    /** §5.2: como mucho 2 avisos aceptados al día. La misma cuenta para Hoy y para la ficha. */
+    private fun dosAvisosHoy(
+        m: Memoria,
+        ctx: Contexto,
+    ): Boolean = m.avisos.count { it.dia == ctx.hoy } >= Ritmo.TOPE_ACEPTADOS_DIA
+
     /** §5.2: con 2 avisos aceptados hoy, una propuesta con hora sale sin ella y sin «Vale». */
     private fun sinHoraSiHayDosAvisos(
         c: Candidata,
@@ -214,7 +226,7 @@ object Motor {
         ctx: Contexto,
     ): Candidata {
         if (!c.situacion.cuentaTope || c.hora == null) return c
-        if (m.avisos.count { it.dia == ctx.hoy } < Ritmo.TOPE_ACEPTADOS_DIA) return c
+        if (!dosAvisosHoy(m, ctx)) return c
         val acciones = c.acciones.map { if (it == Respuesta.VALE) Respuesta.AHORA else it }.distinct()
         return c.copy(acciones = acciones, hora = null, huecos = c.huecos - Hueco.HORA)
     }
