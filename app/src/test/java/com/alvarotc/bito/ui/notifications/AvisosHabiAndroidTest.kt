@@ -17,6 +17,8 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.TODAY
 import com.alvarotc.bito.domain.habla.AvisoAceptado
+import com.alvarotc.bito.domain.habla.Bolsa
+import com.alvarotc.bito.domain.habla.ClaveTrozo
 import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.Hechos
 import com.alvarotc.bito.domain.habla.Hueco
@@ -39,6 +41,7 @@ import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
+import com.alvarotc.bito.ui.habla.BolsasRecursos
 import com.alvarotc.bito.ui.inicio.resolverTextoHabi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -212,6 +215,22 @@ class AvisosHabiAndroidTest {
 
     private fun Notification.titulo() = extras.getCharSequence(Notification.EXTRA_TITLE)?.toString()
 
+    /** La bolsa del núcleo de una frase de aviso: se afirma por bolsa, no por el texto volcado. */
+    private fun nucleo(texto: TextoHabi): Bolsa = assertIs<TextoHabi.Frase>(texto).trozos.last().bolsa
+
+    /** [titulo] acaba en uno de los trozos de [bolsa] en la voz de la prueba con [huecos] (puede llevar apertura delante). */
+    private fun assertTitulo(
+        bolsa: Bolsa,
+        huecos: Map<Hueco, ValorHueco>,
+        titulo: String?,
+    ) {
+        val voz = ctx().voz
+        val n = context.resources.getStringArray(BolsasRecursos.array(bolsa, voz)).size
+        val posibles = (0 until n).map { resolverTextoHabi(TextoHabi.Frase(listOf(ClaveTrozo(bolsa, voz, it)), huecos), context.resources) }
+        assertNotNull(titulo)
+        assertTrue(posibles.any { titulo.endsWith(it) }, "$titulo no sale de $bolsa")
+    }
+
     // Planificar
 
     @Test
@@ -324,7 +343,7 @@ class AvisosHabiAndroidTest {
 
             assertEquals(vigente, outcome.propuesta)
             assertEquals(Slot(SlotKind.HABI_MANANA, "manana", 8 * 60 + 30), outcome.slot)
-            assertEquals("Good morning.", resolverTextoHabi(outcome.titulo, context.resources))
+            assertEquals(Bolsa.AV_MANANA_TITULO, nucleo(outcome.titulo))
         }
 
     @Test
@@ -369,8 +388,10 @@ class AvisosHabiAndroidTest {
             hechosHoy = hechos(habitos = listOf(habito()), tareas = listOf(informe), sugerenciaGordo = RefGordo(TipoRefGordo.TAREA, "t1"))
             val conSugerencia = assertIs<ReminderUseCase.Outcome.Manana>(avisos.evaluar(SlotKind.HABI_MANANA, "manana"))
 
-            assertEquals("Today's big thing: El informe.", resolverTextoHabi(conGordo.titulo, context.resources))
-            assertEquals("Today's big thing: El informe.", resolverTextoHabi(conSugerencia.titulo, context.resources))
+            assertEquals(Bolsa.AV_MANANA_TITULO_GORDO, nucleo(conGordo.titulo))
+            assertEquals(Bolsa.AV_MANANA_TITULO_GORDO, nucleo(conSugerencia.titulo))
+            assertTrue(resolverTextoHabi(conGordo.titulo, context.resources).contains("El informe"))
+            assertTrue(resolverTextoHabi(conSugerencia.titulo, context.resources).contains("El informe"))
         }
 
     @Test
@@ -380,7 +401,7 @@ class AvisosHabiAndroidTest {
 
             val outcome = assertIs<ReminderUseCase.Outcome.Manana>(avisos.evaluar(SlotKind.HABI_MANANA, "manana"))
 
-            assertEquals("I'm here whenever you like.", resolverTextoHabi(outcome.titulo, context.resources))
+            assertEquals(Bolsa.AV_AUSENCIA, nucleo(outcome.titulo))
         }
 
     @Test
@@ -401,7 +422,7 @@ class AvisosHabiAndroidTest {
             val cuerpo = assertIs<TextoHabi.Frase>(noche.cuerpo)
             assertEquals(ValorHueco.Numero(1), cuerpo.huecos[Hueco.HECHOS])
             assertEquals(ValorHueco.Numero(2), cuerpo.huecos[Hueco.TOTAL])
-            assertEquals("Before bed.", resolverTextoHabi(noche.titulo, context.resources))
+            assertEquals(Bolsa.AV_NOCHE_TITULO, nucleo(noche.titulo))
 
             hechosHoy = hechos(habitos = listOf(habito()), diaSellado = true)
             val sellado = assertIs<ReminderUseCase.Outcome.Silent>(avisos.evaluar(SlotKind.HABI_NOCHE, "noche"))
@@ -446,7 +467,7 @@ class AvisosHabiAndroidTest {
 
             assertEquals(listOf<Triple<String, Respuesta, Int?>>(Triple(vigente.id, Respuesta.VALE, hora)), fuente.respuestas)
             val n = assertNotNull(publicada(Notifier.MANANA_ID))
-            assertEquals("I'll remind you at 14:30.", n.titulo())
+            assertTitulo(Bolsa.AV_ACEPTADO_TITULO, mapOf(Hueco.HORA to ValorHueco.Hora(hora)), n.titulo())
             assertTrue(n.actions.isNullOrEmpty())
             assertEquals(millisOn(TODAY, 14, 30), alarma(SlotKind.ACEPTADO, "${vigente.id}:$hora")?.millis)
         }
@@ -590,7 +611,11 @@ class AvisosHabiAndroidTest {
             avisos.replanificar()
 
             assertEquals(millisOn(TODAY, 15, 30), alarma(SlotKind.ACEPTADO, "${vigente.id}:$hora")?.millis)
-            assertEquals("I'll remind you at 15:30.", publicada(Notifier.MANANA_ID)?.titulo())
+            assertTitulo(
+                Bolsa.AV_ACEPTADO_TITULO,
+                mapOf(Hueco.HORA to ValorHueco.Hora(15 * 60 + 30)),
+                publicada(Notifier.MANANA_ID)?.titulo(),
+            )
         }
 
     @Test

@@ -165,7 +165,12 @@ class FuentePropuestasHabiTest {
             Candidata(
                 Situacion.AYER_SE_ESCAPO,
                 leer.id,
-                mapOf(Hueco.HABITO to ValorHueco.Texto(leer.nombre), Hueco.HORA to ValorHueco.Hora(A_LAS_1430)),
+                // Con los minutos, como la regla de verdad para un hábito de duración: los textos volcados los piden.
+                mapOf(
+                    Hueco.HABITO to ValorHueco.Texto(leer.nombre),
+                    Hueco.MINUTOS to ValorHueco.Numero(10),
+                    Hueco.HORA to ValorHueco.Hora(A_LAS_1430),
+                ),
                 listOf(Respuesta.VALE, Respuesta.AHORA, Respuesta.HOY_NO),
                 destino = Destino.Habito(leer.id),
                 hora = A_LAS_1430,
