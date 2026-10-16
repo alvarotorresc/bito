@@ -184,7 +184,7 @@ internal fun BloqueDeSesion(bloque: BloqueSesion) {
         BloqueSesion.PREPARAR -> PrepararDeSesion()
         BloqueSesion.RESPIRAR -> Unit
         BloqueSesion.FOCO -> Unit
-        BloqueSesion.DESCANSO -> Unit
+        BloqueSesion.DESCANSO -> DescansoContenido()
         BloqueSesion.TERMINADA -> Unit
     }
 }

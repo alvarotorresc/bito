@@ -614,4 +614,5 @@ private fun sesionInicioDe(container: AppContainer): SesionInicio =
             val hoy = LogicalDays.logicalDayOf(System.currentTimeMillis(), ajustes.dayCutoffMinutes, ZoneId.systemDefault())
             Tasks.todayTasks(container.domainState.snapshot(), hoy).map { OpcionTarea(it.task.id, it.task.title, it.task.firstStep) }
         },
+        contextoDelDia = container::contextoDelDia,
     )
