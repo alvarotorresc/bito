@@ -1,76 +1,331 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
 <resources>
-    <!-- Bolsas provisionales de Habi, un item por bolsa y voz. Se sustituyen enteras al volcar los textos definitivos. -->
     <string-array name="habla_nu_saludo_sargento">
-        <item>En marcha, {nombre}.</item>
+        <item>Hola, {nombre}. A trabajar.</item>
+        <item>{nombre}. Nada que proponerte ahora. Sigue a lo tuyo.</item>
+        <item>Hoy: {hechos} de {total}. Falta lo que falta, sin atajos.</item>
+        <item>{hechos} de {total}. Lo siguiente, cuando tú digas.</item>
+        <item>Aquí estoy, {nombre}. Vas {hechos} de {total}. Sigue.</item>
+        <item>Haz lo tuyo, {nombre}. Si veo algo, te lo digo claro.</item>
+        <item>Sin propuestas por ahora. La lista de Hoy es toda tuya.</item>
+        <item>[manana] A primera hora se gana el día. Llevas {hechos} de {total}.</item>
+        <item>[mediodia] Mediodía. {hechos} de {total}. La tarde está para el resto.</item>
+        <item>[tarde] Media tarde, {nombre}. {hechos} de {total}. Aún hay tiempo.</item>
+        <item>[noche] Es de noche. Hoy: {hechos} de {total}. Lo que falte, sin agobio.</item>
+        <item>[lunes] Lunes. La semana se empieza hoy: {hechos} de {total}.</item>
+        <item>[viernes] Viernes. Cuenta igual que un lunes. {hechos} de {total}.</item>
+        <item>[finde] Fin de semana. Mismo sitio, otro ritmo: {hechos} de {total}.</item>
+        <item>[invierno] Fuera hace frío. Aquí dentro se trabaja: {hechos} de {total}.</item>
     </string-array>
     <string-array name="habla_nu_saludo_cheerleader">
-        <item>Hola, {nombre}. ¡A por hoy!</item>
+        <item>¡Hola, {nombre}! Qué bien verte.</item>
+        <item>Hola, {nombre}. Nada que proponerte ahora, así que a lo tuyo. ¡Lo llevas bien!</item>
+        <item>Hoy: {hechos} de {total}. ¡Cada uno suma!</item>
+        <item>{hechos} de {total} por ahora. Lo siguiente, cuando te apetezca.</item>
+        <item>Aquí estoy, {nombre}. ¡Vas por {hechos} de {total}!</item>
+        <item>Te animo desde aquí, {nombre}. Tú haces, yo aplaudo.</item>
+        <item>Nada que proponer por ahora. Estoy aquí por si me necesitas.</item>
+        <item>[manana] ¡Buenos días! Llevas {hechos} de {total}, y el día acaba de arrancar.</item>
+        <item>[mediodia] Mediodía: {hechos} de {total}. ¡Y la tarde por delante para el resto!</item>
+        <item>[tarde] Media tarde, {nombre}: {hechos} de {total}, ¡y sumando!</item>
+        <item>[noche] Ya es de noche. Hoy: {hechos} de {total}. Lo que falte, sin agobios.</item>
+        <item>[lunes] ¡Lunes! Primera vuelta de la semana: {hechos} de {total}.</item>
+        <item>[viernes] Viernes, {nombre}. ¡{hechos} de {total}, a rematar la semana!</item>
+        <item>[finde] Fin de semana. Lo de hoy, a su ritmo: {hechos} de {total}, ¡y a disfrutar!</item>
+        <item>[invierno] Fuera hace frío, aquí vamos por {hechos} de {total}. ¡Qué bien se está!</item>
     </string-array>
     <string-array name="habla_nu_saludo_neutra">
         <item>Hola, {nombre}.</item>
+        <item>Hola, {nombre}. Ahora mismo no tengo nada que proponerte.</item>
+        <item>Hoy: {hechos} de {total}. El resto, a tu ritmo.</item>
+        <item>{hechos} de {total} por ahora. Lo siguiente, cuando te venga bien.</item>
+        <item>Aquí sigo, {nombre}. Hoy vas por {hechos} de {total}.</item>
+        <item>Te dejo hacer, {nombre}. Si veo algo, te lo digo.</item>
+        <item>Nada que proponer por ahora. La lista de Hoy va a tu ritmo.</item>
+        <item>[manana] Empieza el día: {hechos} de {total} hasta ahora.</item>
+        <item>[mediodia] Mediodía. Llevas {hechos} de {total}, y la tarde tiene sitio para el resto.</item>
+        <item>[tarde] Media tarde, {nombre}. Así vamos: {hechos} de {total}.</item>
+        <item>[noche] Ya es de noche. Hoy: {hechos} de {total}. Lo que falte, sin prisa.</item>
+        <item>[lunes] Lunes. Primera vuelta de la semana: {hechos} de {total}.</item>
+        <item>[viernes] Viernes. Hoy cuenta igual que el lunes: {hechos} de {total} por ahora.</item>
+        <item>[finde] Fin de semana. Lo de hoy, a su ritmo: {hechos} de {total}.</item>
+        <item>[invierno] Fuera hace frío. Aquí dentro vamos por {hechos} de {total}.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_sargento">
-        <item>Mi día está hecho. Cierra el tuyo cuando toque.</item>
+        <item>[esperando] Mi día está cumplido. Espero a que cumplas el tuyo.</item>
+        <item>Todo hecho por hoy. Cierra el día cuando quieras.</item>
+        <item>Hábitos de hoy: completos. Solo falta el cierre, y es corto.</item>
+        <item>Nada pendiente. El cierre espera, sin prisa.</item>
+        <item>Lo de hoy, hecho. Queda cerrar el día y punto.</item>
+        <item>[esperando] Yo ya he cumplido. Aquí espero a que cierres el día.</item>
+        <item>[esperando] Mi jornada se acabó. Cierras la tuya y descansamos.</item>
+        <item>[manana] Todo hecho antes de comer. El cierre, esta noche.</item>
+        <item>[tarde] Todo hecho y aún es de tarde. El resto del día es tuyo.</item>
+        <item>[noche] Todo hecho. Un minuto para cerrar y a descansar.</item>
+        <item>[viernes] Viernes y todo hecho. Cierra y que empiece el finde.</item>
+        <item>[domingo] Domingo, todo hecho. La semana termina cuando cierres hoy.</item>
+        <item>[invierno] Todo hecho, y fuera ya oscurece. Cierra cuando quieras.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_cheerleader">
-        <item>Lo mío ya está hecho. ¡Me quedo contigo hasta cerrar!</item>
+        <item>[esperando] Lo mío ya está hecho. ¡Me quedo contigo hasta cerrar!</item>
+        <item>¡Todo hecho por hoy! Cuando quieras, cierras el día.</item>
+        <item>Los hábitos de hoy, hechos. Solo queda el cierre, y es cortísimo.</item>
+        <item>Ningún hábito pendiente. ¡El cierre puede esperar a que te apetezca!</item>
+        <item>Lo de hoy, hecho de principio a fin. Cerrar el día es lo único que falta.</item>
+        <item>[esperando] Yo ya he acabado lo mío. Te espero aquí hasta que cierres el día.</item>
+        <item>[esperando] Mi día ha terminado, y el tuyo casi. ¡Cierra y descansamos los dos!</item>
+        <item>[manana] ¡Todo hecho antes de comer! El cierre puede esperar a la noche.</item>
+        <item>[tarde] Todo hecho y aún es de tarde. El resto del día es tuyo, ¡disfrútalo!</item>
+        <item>[noche] Todo hecho. Un minuto para cerrar el día y a descansar, ¡te lo has ganado!</item>
+        <item>[viernes] ¡Viernes, todo hecho! Solo queda cerrar el día.</item>
+        <item>[domingo] Domingo, todo hecho. La semana termina con el cierre de hoy, ¡y con buen pie!</item>
+        <item>[invierno] Todo hecho, y fuera ya oscurece. El cierre, cuando quieras.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_neutra">
-        <item>He terminado mi día. Aquí me quedo, esperando el tuyo.</item>
+        <item>[esperando] He terminado mi día. Aquí me quedo, esperando el tuyo.</item>
+        <item>Todo hecho por hoy. Cuando quieras, cierras el día.</item>
+        <item>Los hábitos de hoy, hechos. Solo queda el cierre, y es corto.</item>
+        <item>Ningún hábito pendiente. El cierre puede esperar a que te venga bien.</item>
+        <item>Lo de hoy está hecho. Cerrar el día es lo único que falta.</item>
+        <item>[esperando] Yo ya he acabado lo mío. Espero aquí hasta que cierres el día.</item>
+        <item>[esperando] Mi día también ha terminado. Cuando cierres el tuyo, descansamos los dos.</item>
+        <item>[manana] Todo hecho antes de comer. El cierre puede esperar a la noche.</item>
+        <item>[tarde] Todo hecho, y aún es de tarde. El resto del día es tuyo.</item>
+        <item>[noche] Todo hecho. Un minuto para cerrar el día y a descansar.</item>
+        <item>[viernes] Viernes, todo hecho. Queda cerrar el día.</item>
+        <item>[domingo] Domingo, todo hecho. La semana termina con el cierre de hoy.</item>
+        <item>[invierno] Todo hecho, y fuera ya oscurece. El cierre, cuando quieras.</item>
     </string-array>
     <string-array name="habla_nu_cerrar_dia_sargento">
-        <item>Queda cerrar el día.</item>
+        <item>A cerrar el día. Por decidir: {n|cosa|cosas}.</item>
+        <item>Por decidir: {n|cosa|cosas}. Un minuto y el día queda sellado.</item>
+        <item>Hora de cerrar: {n|cosa|cosas} y a dormir.</item>
+        <item>El cierre de hoy tiene {n|cosa|cosas}. Resuélvelo y se acabó.</item>
+        <item>Antes de dormir, el cierre: {n|cosa|cosas}. Nada se decide solo.</item>
+        <item>Lo que queda de hoy cabe en el cierre: {n|cosa|cosas}.</item>
+        <item>[noche] Es de noche. Cerrar lleva un minuto: {n|cosa|cosas}.</item>
+        <item>[madrugada] Se ha hecho tarde. Cierra el día: {n|cosa|cosas}, y a dormir.</item>
+        <item>[lunes] Primer cierre de la semana: {n|cosa|cosas}. Empieza bien.</item>
+        <item>[viernes] Viernes por la noche. Cierra con {n|cosa|cosas} y el finde es tuyo.</item>
+        <item>[domingo] Domingo. Cerrar hoy deja la semana en orden: {n|cosa|cosas}.</item>
+        <item>[invierno] Noche larga de invierno. El cierre, en un minuto: {n|cosa|cosas}.</item>
     </string-array>
     <string-array name="habla_nu_cerrar_dia_cheerleader">
-        <item>Queda cerrar el día.</item>
+        <item>¿Cerramos el día? Solo {n|cosa|cosas} por decidir.</item>
+        <item>Por decidir: {n|cosa|cosas}. ¡Un minuto y el día queda sellado!</item>
+        <item>Hora de cerrar el día: {n|cosa|cosas} y a dormir.</item>
+        <item>En el cierre de hoy hay {n|cosa|cosas}. Lo hacemos cuando digas.</item>
+        <item>Antes de dormir, el cierre: ¡{n|cosa|cosas} y listo el día!</item>
+        <item>Lo que queda de hoy cabe en el cierre: {n|cosa|cosas}.</item>
+        <item>[noche] Ya es de noche. Cerrar el día lleva un minuto: {n|cosa|cosas}.</item>
+        <item>[madrugada] Se ha hecho tarde. Para cerrar el día: {n|cosa|cosas}, y a dormir.</item>
+        <item>[lunes] ¡Primer cierre de la semana! {n|cosa|cosas} por decidir.</item>
+        <item>[viernes] Viernes por la noche. Cerramos el día con {n|cosa|cosas}, ¡y empieza el finde!</item>
+        <item>[domingo] Domingo. Cerrar hoy deja la semana en orden: {n|cosa|cosas} por decidir.</item>
+        <item>[invierno] Noche larga de invierno. El cierre lleva un minuto: {n|cosa|cosas}.</item>
     </string-array>
     <string-array name="habla_nu_cerrar_dia_neutra">
-        <item>Queda cerrar el día.</item>
+        <item>¿Cerramos el día? Por decidir: {n|cosa|cosas}.</item>
+        <item>Por decidir: {n|cosa|cosas}. Un minuto y el día queda sellado.</item>
+        <item>Es hora de cerrar el día: {n|cosa|cosas} y a dormir.</item>
+        <item>En el cierre de hoy hay {n|cosa|cosas}. Lo hacemos cuando digas.</item>
+        <item>Antes de dormir, el cierre: {n|cosa|cosas} por decidir.</item>
+        <item>Lo que queda de hoy cabe en el cierre: {n|cosa|cosas}.</item>
+        <item>[noche] Ya es de noche. Cerrar el día lleva un minuto: {n|cosa|cosas}.</item>
+        <item>[madrugada] Se ha hecho tarde. Para cerrar el día: {n|cosa|cosas}, y a dormir.</item>
+        <item>[lunes] Primer cierre de la semana: {n|cosa|cosas} por decidir.</item>
+        <item>[viernes] Viernes por la noche. Cerramos el día con {n|cosa|cosas} y empieza el fin de semana.</item>
+        <item>[domingo] Domingo. Cerrar hoy deja la semana en orden: {n|cosa|cosas} por decidir.</item>
+        <item>[invierno] Noche larga de invierno. El cierre, en un minuto: {n|cosa|cosas}.</item>
     </string-array>
     <string-array name="habla_nu_noche_sargento">
-        <item>Me duermo. Tú también deberías.</item>
+        <item>[durmiendo] Día cerrado. Buenas noches.</item>
+        <item>Día cerrado. Mañana empezamos por «{tarea}».</item>
+        <item>[durmiendo] Me duermo. Mañana, a primera hora.</item>
+        <item>El día está sellado. A descansar.</item>
+        <item>Hoy está contado y bien contado. Descansa.</item>
+        <item>[durmiendo] Cierro los ojos. Mañana, aquí mismo.</item>
+        <item>[noche] Día cerrado. Lo que queda de noche es para descansar.</item>
+        <item>[madrugada] Es tarde y el día está cerrado. A dormir, ya.</item>
+        <item>[viernes] Viernes cerrado. Buenas noches.</item>
+        <item>[domingo] Domingo cerrado. Mañana, semana nueva.</item>
+        <item>[invierno] Noche de invierno, día cerrado. Buenas noches.</item>
+        <item>[verano] Aún queda luz, pero el día está cerrado. Buenas noches.</item>
+        <item>«{tarea}», mañana a primera hora. Ahora, descansa.</item>
     </string-array>
     <string-array name="habla_nu_noche_cheerleader">
-        <item>Me duermo feliz. ¡Hasta mañana!</item>
+        <item>[durmiendo] Día cerrado. Me duermo feliz, hasta mañana.</item>
+        <item>Día cerrado. ¡Mañana empezamos por «{tarea}»!</item>
+        <item>[durmiendo] Me duermo. Mañana seguimos, tú y yo.</item>
+        <item>El día está sellado. ¡Hasta mañana!</item>
+        <item>Hoy ya está contado, y bien contado. Descansa.</item>
+        <item>[durmiendo] Cierro los ojos feliz. Mañana, aquí mismo.</item>
+        <item>[noche] Día cerrado. Lo que queda de noche es para descansar.</item>
+        <item>[madrugada] Es tarde y el día está cerrado. ¡A dormir!</item>
+        <item>[viernes] ¡Viernes cerrado! Buenas noches.</item>
+        <item>[domingo] Domingo cerrado. Mañana empieza otra semana, y la empezamos a la vez.</item>
+        <item>[invierno] Noche de invierno, día cerrado. Buenas noches, ¡a abrigarse!</item>
+        <item>[verano] Aún queda algo de luz, pero el día está cerrado. ¡Buenas noches!</item>
+        <item>«{tarea}», mañana a primera hora. Ahora, a descansar.</item>
     </string-array>
     <string-array name="habla_nu_noche_neutra">
-        <item>Día cerrado. Buenas noches.</item>
+        <item>[durmiendo] Día cerrado. Buenas noches.</item>
+        <item>Día cerrado. Mañana empezamos por «{tarea}».</item>
+        <item>[durmiendo] Me duermo. Mañana seguimos.</item>
+        <item>El día está sellado. Hasta mañana.</item>
+        <item>Hoy ya está contado. Descansa.</item>
+        <item>[durmiendo] Cierro los ojos. Mañana, aquí mismo.</item>
+        <item>[noche] Día cerrado. Lo que queda de noche es para descansar.</item>
+        <item>[madrugada] Es tarde y el día está cerrado. A dormir.</item>
+        <item>[viernes] Viernes cerrado. Buenas noches.</item>
+        <item>[domingo] Domingo cerrado. Mañana empieza otra semana.</item>
+        <item>[invierno] Noche de invierno, día cerrado. Buenas noches.</item>
+        <item>[verano] Aún queda algo de luz, pero el día está cerrado. Buenas noches.</item>
+        <item>«{tarea}», mañana a primera hora. Ahora, a descansar.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_sargento">
-        <item>Vale, mañana será.</item>
+        <item>Vale. Si cambias de idea, aquí sigo.</item>
+        <item>Entendido. Cuando quieras, me lo dices.</item>
+        <item>De acuerdo. Lo dejamos aquí.</item>
+        <item>Anotado. Lo demás sigue en pie.</item>
+        <item>Tú decides el ritmo. Yo sigo aquí.</item>
+        <item>Vale, lo aparco. Pero no lo pierdo de vista.</item>
+        <item>Entendido. No hace falta decidirlo todo ahora.</item>
+        <item>[manana] De acuerdo. Queda mucho día por delante.</item>
+        <item>[tarde] Vale. La tarde sigue siendo tuya.</item>
+        <item>[noche] Entendido. A estas horas, sin prisas.</item>
+        <item>[finde] Anotado. El fin de semana tiene su ritmo.</item>
+        <item>[lunes] Vale. Los lunes cuesta arrancar. Arranca igual, cuando puedas.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_cheerleader">
-        <item>Vale, mañana será.</item>
+        <item>Vale, sin problema. ¡Aquí sigo para cuando quieras!</item>
+        <item>Entendido. Cuando quieras, aquí estoy.</item>
+        <item>De acuerdo. Lo dejamos aquí, sin dramas.</item>
+        <item>Anotado. Lo demás sigue igual, ¡y sigue contando!</item>
+        <item>Sin problema. Tú marcas el ritmo, yo voy a tu lado.</item>
+        <item>Vale, lo aparco. Sigo por aquí.</item>
+        <item>Entendido. No hace falta decidirlo todo ahora.</item>
+        <item>[manana] De acuerdo. ¡Queda mucho día por delante!</item>
+        <item>[tarde] Vale. La tarde sigue siendo tuya.</item>
+        <item>[noche] Entendido. A estas horas, mejor sin prisas.</item>
+        <item>[finde] Anotado. El fin de semana tiene su propio ritmo, ¡y me gusta!</item>
+        <item>[lunes] Vale. Los lunes cuesta arrancar, lo sé.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_neutra">
-        <item>Vale, mañana será.</item>
+        <item>Vale. Si cambias de idea, aquí sigo.</item>
+        <item>Entendido. Cuando quieras, aquí sigo.</item>
+        <item>De acuerdo. Lo dejamos aquí.</item>
+        <item>Anotado. Lo demás sigue igual.</item>
+        <item>Sin problema. Tú marcas el ritmo.</item>
+        <item>Vale, lo aparco. Sigo por aquí.</item>
+        <item>Entendido. No hace falta decidirlo todo ahora.</item>
+        <item>[manana] De acuerdo. Queda mucho día por delante.</item>
+        <item>[tarde] Vale. La tarde sigue siendo tuya.</item>
+        <item>[noche] Entendido. A estas horas, mejor sin prisas.</item>
+        <item>[finde] Anotado. El fin de semana tiene su propio ritmo.</item>
+        <item>[lunes] Vale. Los lunes cuesta arrancar.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_sargento">
-        <item>Hecho, te aviso a las {hora}.</item>
+        <item>Hecho: te aviso a las {hora}. Contesta cuando suene.</item>
+        <item>Anotado. A las {hora} te lo recuerdo.</item>
+        <item>A las {hora}, entonces. Yo aviso, tú cumples.</item>
+        <item>Queda para las {hora}. Hasta entonces, a otra cosa.</item>
+        <item>Vale, anotado.</item>
+        <item>Hecho. Queda apuntado.</item>
+        <item>[manana] A las {hora} te aviso. Aprovecha la mañana.</item>
+        <item>[tarde] A las {hora}. Te aviso, y hasta entonces, a lo tuyo.</item>
+        <item>[noche] A las {hora}, antes de cerrar el día. Te aviso.</item>
+        <item>[finde] Hecho: {hora}. Es fin de semana, pero la hora es la hora.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_cheerleader">
-        <item>Hecho, te aviso a las {hora}.</item>
+        <item>¡Hecho! Te aviso a las {hora}.</item>
+        <item>Anotado. A las {hora} te lo recuerdo.</item>
+        <item>A las {hora}, entonces. ¡Yo me acuerdo por los dos!</item>
+        <item>Queda para las {hora}. Hasta entonces, no hace falta acordarse.</item>
+        <item>Vale, anotado.</item>
+        <item>De acuerdo. Queda apuntado, ¡cuenta conmigo!</item>
+        <item>[manana] Hecho: a las {hora} te aviso. La mañana, a tu aire.</item>
+        <item>[tarde] A las {hora}. Te aviso, y hasta entonces, sin prisa.</item>
+        <item>[noche] A las {hora}, antes de cerrar el día. ¡Te aviso!</item>
+        <item>[finde] Hecho: te aviso a las {hora}. Sin prisa, que es fin de semana.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_neutra">
-        <item>Hecho, te aviso a las {hora}.</item>
+        <item>Hecho: te aviso a las {hora}.</item>
+        <item>Anotado. A las {hora} te lo recuerdo.</item>
+        <item>A las {hora}, entonces. Yo te aviso.</item>
+        <item>Queda para las {hora}. Hasta entonces, no hace falta acordarse.</item>
+        <item>Vale, anotado.</item>
+        <item>De acuerdo. Queda apuntado.</item>
+        <item>[manana] Hecho: a las {hora} te aviso. La mañana, a tu aire.</item>
+        <item>[tarde] A las {hora}. Te aviso, y hasta entonces, sin prisa.</item>
+        <item>[noche] A las {hora}, antes de cerrar el día. Te aviso.</item>
+        <item>[finde] Hecho: te aviso a las {hora}. Sin prisa, que es fin de semana.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_sargento">
-        <item>Te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+        <item>Hecho: te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+        <item>Anotado para las {hora}. Lo gordo no se mueve: {gordo}.</item>
+        <item>A las {hora}, entonces. Ahora hay hueco para lo gordo: {gordo}.</item>
+        <item>Queda para las {hora}. Hasta entonces, una sesión con lo gordo: {gordo}.</item>
+        <item>Hecho: {hora}. Y mientras, 25 minutos con lo gordo: {gordo}.</item>
+        <item>Vale, anotado. Lo gordo de hoy sigue siendo esto: {gordo}.</item>
+        <item>[manana] Te aviso a las {hora}. La mañana es buena para lo gordo: {gordo}.</item>
+        <item>[tarde] A las {hora}, hecho. Aún hay tarde para lo gordo: {gordo}.</item>
+        <item>[lunes] Anotado: {hora}. Para abrir la semana, lo gordo: {gordo}.</item>
+        <item>[viernes] Hecho: {hora}. Lo gordo del viernes: {gordo}.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_cheerleader">
-        <item>Te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+        <item>¡Hecho! Te aviso a las {hora}. Mientras tanto, lo gordo: {gordo}.</item>
+        <item>Anotado para las {hora}. Hasta entonces, lo gordo sigue ahí: {gordo}.</item>
+        <item>A las {hora}, entonces. Ahora hay hueco para lo gordo: {gordo}.</item>
+        <item>Queda para las {hora}. Si te apetece una sesión, lo gordo: {gordo}.</item>
+        <item>Hecho: {hora}. Entre tanto, 25 minutos con lo gordo: {gordo}. ¡Tú puedes!</item>
+        <item>Vale, anotado. Lo gordo de hoy sigue siendo esto: {gordo}.</item>
+        <item>[manana] Te aviso a las {hora}. ¡La mañana es buen momento para lo gordo: {gordo}!</item>
+        <item>[tarde] A las {hora}, hecho. Aún queda tarde para lo gordo: {gordo}.</item>
+        <item>[lunes] Anotado: {hora}. ¡Para empezar la semana, lo gordo: {gordo}!</item>
+        <item>[viernes] Hecho: {hora}. Lo gordo del viernes: {gordo}. ¡Vamos a por ello!</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_neutra">
-        <item>Te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+        <item>Hecho: te aviso a las {hora}. Mientras tanto, lo gordo: {gordo}.</item>
+        <item>Anotado para las {hora}. Hasta entonces, lo gordo sigue ahí: {gordo}.</item>
+        <item>A las {hora}, entonces. Ahora hay hueco para lo gordo: {gordo}.</item>
+        <item>Queda para las {hora}. Si te apetece una sesión, lo gordo: {gordo}.</item>
+        <item>Hecho: {hora}. Y entre tanto, 25 minutos con lo gordo: {gordo}.</item>
+        <item>Vale, anotado. Lo gordo de hoy sigue siendo esto: {gordo}.</item>
+        <item>[manana] Te aviso a las {hora}. La mañana es buen momento para lo gordo: {gordo}.</item>
+        <item>[tarde] A las {hora}, hecho. Aún queda tarde para lo gordo: {gordo}.</item>
+        <item>[lunes] Anotado: {hora}. Para empezar la semana, lo gordo: {gordo}.</item>
+        <item>[viernes] Hecho: {hora}. Lo gordo del viernes: {gordo}.</item>
     </string-array>
     <string-array name="habla_nu_gordo_elegido_sargento">
-        <item>Lo gordo de hoy queda así: {gordo}.</item>
+        <item>Lo gordo de hoy: {gordo}. Primer paso: {primer_paso}. Empieza por ahí.</item>
+        <item>Lo gordo de hoy: {gordo}. Una sesión de 25 minutos. Sin excusas.</item>
+        <item>Elegido. Lo gordo: {gordo}. Lo demás cuenta igual.</item>
+        <item>Lo gordo, decidido: {gordo}. Basta con empezar.</item>
+        <item>Lo gordo: {gordo}. Para arrancar: {primer_paso}.</item>
+        <item>[manana] Lo gordo de hoy: {gordo}. Toda la mañana por delante.</item>
+        <item>[lunes] Lo gordo del lunes: {gordo}. Primer paso: {primer_paso}. Ya.</item>
+        <item>[viernes] Lo gordo del viernes: {gordo}. Una sesión y la semana cierra más ligera.</item>
     </string-array>
     <string-array name="habla_nu_gordo_elegido_cheerleader">
-        <item>Lo gordo de hoy queda así: {gordo}.</item>
+        <item>¡Lo gordo de hoy: {gordo}! Primer paso: {primer_paso}.</item>
+        <item>Lo gordo de hoy: {gordo}. Una sesión de 25 minutos es un gran comienzo.</item>
+        <item>Elegido. Lo gordo: {gordo}. Lo demás cuenta igual de bien.</item>
+        <item>Lo gordo, decidido: {gordo}. ¡Con empezar, ya es mucho!</item>
+        <item>Lo gordo: {gordo}. Para arrancar: {primer_paso}.</item>
+        <item>[manana] Lo gordo de hoy: {gordo}. Toda la mañana por delante, ¡y yo contigo!</item>
+        <item>[lunes] Lo gordo del lunes: {gordo}. Primer paso: {primer_paso}.</item>
+        <item>[viernes] Lo gordo del viernes: {gordo}. Una sesión y la semana termina más ligera, ¡ya verás!</item>
     </string-array>
     <string-array name="habla_nu_gordo_elegido_neutra">
-        <item>Lo gordo de hoy queda así: {gordo}.</item>
+        <item>Lo gordo de hoy: {gordo}. Primer paso: {primer_paso}. Con eso basta.</item>
+        <item>Lo gordo de hoy: {gordo}. Una sesión de 25 minutos es buen comienzo.</item>
+        <item>Elegido. Lo gordo: {gordo}. Lo demás cuenta igual.</item>
+        <item>Lo gordo, decidido: {gordo}. Con empezar, basta.</item>
+        <item>Lo gordo: {gordo}. Para arrancar: {primer_paso}.</item>
+        <item>[manana] Lo gordo de hoy: {gordo}. Toda la mañana por delante.</item>
+        <item>[lunes] Lo gordo del lunes: {gordo}. Primer paso: {primer_paso}.</item>
+        <item>[viernes] Lo gordo del viernes: {gordo}. Una sesión y la semana termina más ligera.</item>
     </string-array>
 </resources>

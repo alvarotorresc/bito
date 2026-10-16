@@ -15,6 +15,7 @@ import com.alvarotc.bito.domain.habla.Hueco
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.TextoHabi
+import com.alvarotc.bito.ui.habla.BolsasRecursos
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -71,6 +72,16 @@ class TextoHabiUiTest {
         compose.onNodeWithTag("t").assertTextEquals("Hola, Álvaro.")
     }
 
+    /** Item `indice` de la bolsa en la voz Neutra, con el hueco `{nombre}` relleno: se afirma por bolsa e índice, no por texto. */
+    private fun item(
+        bolsa: Bolsa,
+        indice: Int,
+    ): String {
+        val resources = (RuntimeEnvironment.getApplication() as Context).resources
+        val crudo = resources.getStringArray(BolsasRecursos.array(bolsa, Personality.NEUTRA))[indice]
+        return crudo.replace(Regex("^\\[[^\\]]*\\]\\s*"), "").replace("{nombre}", "Álvaro")
+    }
+
     @Test
     fun `pieces are joined with one space in order`() {
         pinta(
@@ -80,7 +91,7 @@ class TextoHabiUiTest {
                 huecos = mapOf(Hueco.NOMBRE to ValorHueco.Texto("Álvaro")),
             ),
         )
-        compose.onNodeWithTag("t").assertTextEquals("Buenos días. Hola, Álvaro.")
+        compose.onNodeWithTag("t").assertTextEquals("${item(Bolsa.AP_MANANA, 0)} ${item(Bolsa.NU_SALUDO, 0)}")
     }
 
     @Test
@@ -104,8 +115,14 @@ class TextoHabiUiTest {
     @Test
     fun `a fallback piece missing a gap is skipped without crashing`() {
         // El item 0 de nu_ayer_escapo pide {habito}, que esta frase no trae.
-        pinta(frase(clave(Bolsa.AP_MANANA, 0), clave(Bolsa.NU_AYER_ESCAPO, 999)))
-        compose.onNodeWithTag("t").assertTextEquals("Buenos días.")
+        pinta(
+            frase(
+                clave(Bolsa.AP_MANANA, 0),
+                clave(Bolsa.NU_AYER_ESCAPO, 999),
+                huecos = mapOf(Hueco.NOMBRE to ValorHueco.Texto("Álvaro")),
+            ),
+        )
+        compose.onNodeWithTag("t").assertTextEquals(item(Bolsa.AP_MANANA, 0))
     }
 
     @Test

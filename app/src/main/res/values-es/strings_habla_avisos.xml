@@ -1,76 +1,320 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
 <resources>
-    <!-- Bolsas provisionales de Habi, un item por bolsa y voz. Se sustituyen enteras al volcar los textos definitivos. -->
     <string-array name="habla_av_manana_titulo_sargento">
-        <item>Buenos días.</item>
+        <item>Arriba, {nombre}. Hoy hay trabajo.</item>
+        <item>Buenos días. A empezar.</item>
+        <item>Nuevo día, {nombre}. Se empieza ya.</item>
+        <item>Arriba. El día no se hace solo.</item>
+        <item>{nombre}, buenos días. Sin excusas.</item>
+        <item>Buenos días. Primera tarea, ya.</item>
+        <item>Despierta el día. Despierta tú.</item>
+        <item>Hoy se juega con lo de hoy.</item>
+        <item>{nombre}, hoy empieza ahora.</item>
+        <item>[lunes] Lunes. Se arranca la semana.</item>
+        <item>[viernes] Viernes. Última vuelta de la semana.</item>
+        <item>[finde] Fin de semana. Los hábitos no libran.</item>
+        <item>[invierno] Hace frío. Razón de más para moverse.</item>
+        <item>[primavera] Primavera. Buen día para ir en serio.</item>
     </string-array>
     <string-array name="habla_av_manana_titulo_cheerleader">
-        <item>Buenos días.</item>
+        <item>¡Buenos días, {nombre}!</item>
+        <item>Buenos días, {nombre}. Día nuestro.</item>
+        <item>Ya amanece y aquí estoy, {nombre}.</item>
+        <item>¡Arriba, {nombre}! Hay plan.</item>
+        <item>Un día nuevo, {nombre}. Tú y yo.</item>
+        <item>[lunes] ¡Lunes, {nombre}! Semana nueva.</item>
+        <item>[viernes] Viernes, {nombre}. Último empujón.</item>
+        <item>[finde] Mañana de finde, {nombre}.</item>
+        <item>[invierno] ¡Calentamos motores, {nombre}!</item>
+        <item>Buenos días. Tengo una idea para hoy.</item>
+        <item>{nombre}, ¿empezamos el día?</item>
+        <item>Buen día, {nombre}. Te esperaba.</item>
     </string-array>
     <string-array name="habla_av_manana_titulo_neutra">
-        <item>Buenos días.</item>
+        <item>Buenos días</item>
+        <item>Buenos días, {nombre}</item>
+        <item>Un día nuevo</item>
+        <item>[lunes] Lunes por la mañana</item>
+        <item>[viernes] Viernes, buenos días</item>
+        <item>[finde] Buena mañana de fin de semana</item>
+        <item>Buenos días. Esto es lo de hoy.</item>
+        <item>Ya es de día, {nombre}</item>
+        <item>[invierno] Mañana fría. Buenos días.</item>
+        <item>Tu día empieza aquí</item>
+        <item>Una propuesta para esta mañana</item>
+        <item>Hola, {nombre}</item>
+        <item>Un vistazo a Hoy</item>
     </string-array>
     <string-array name="habla_av_manana_titulo_gordo_sargento">
-        <item>Lo gordo de hoy: {gordo}.</item>
+        <item>Lo gordo de hoy: {gordo}</item>
+        <item>Primero: {gordo}</item>
+        <item>Hoy se hace: {gordo}</item>
+        <item>Sin rodeos: {gordo}</item>
+        <item>Empieza por: {gordo}</item>
+        <item>Hoy pesa esto: {gordo}</item>
+        <item>El día va de esto: {gordo}</item>
+        <item>A por lo gordo: {gordo}</item>
+        <item>Lo difícil primero: {gordo}</item>
+        <item>Sin excusas: {gordo}</item>
+        <item>Vamos, {nombre}: {gordo}</item>
+        <item>[lunes] Lunes. Lo gordo: {gordo}</item>
+        <item>[viernes] Viernes. Remata: {gordo}</item>
+        <item>[finde] Finde, pero hoy toca: {gordo}</item>
     </string-array>
     <string-array name="habla_av_manana_titulo_gordo_cheerleader">
-        <item>Lo gordo de hoy: {gordo}.</item>
+        <item>Hoy, a por lo gordo: {gordo}</item>
+        <item>¡Hoy nos toca: {gordo}!</item>
+        <item>Buenos días. Hoy: {gordo}</item>
+        <item>Lo gordo de hoy: {gordo}</item>
+        <item>Tú y yo, hoy: {gordo}</item>
+        <item>[lunes] Lunes, y empezamos fuerte: {gordo}</item>
+        <item>[viernes] Viernes. Para cerrar: {gordo}</item>
+        <item>[finde] Finde, y una cosa gorda: {gordo}</item>
+        <item>Buen día para: {gordo}</item>
+        <item>Mi propuesta para hoy: {gordo}</item>
+        <item>[invierno] Frío fuera, plan dentro: {gordo}</item>
+        <item>Arrancamos con lo gordo: {gordo}</item>
     </string-array>
     <string-array name="habla_av_manana_titulo_gordo_neutra">
-        <item>Lo gordo de hoy: {gordo}.</item>
+        <item>Lo gordo de hoy: {gordo}</item>
+        <item>{nombre}, hoy: {gordo}</item>
+        <item>Buenos días. Hoy toca: {gordo}</item>
+        <item>[lunes] Lunes. Lo gordo: {gordo}</item>
+        <item>Lo primero de hoy: {gordo}</item>
+        <item>Lo que pesa hoy: {gordo}</item>
+        <item>[viernes] Viernes. Lo gordo: {gordo}</item>
+        <item>Buenos días. Lo gordo: {gordo}</item>
+        <item>Hoy empezamos por: {gordo}</item>
+        <item>Para hoy: {gordo}</item>
+        <item>[finde] Fin de semana. Lo gordo: {gordo}</item>
+        <item>Lo importante hoy: {gordo}</item>
+        <item>[invierno] Día frío. Lo gordo: {gordo}</item>
     </string-array>
     <string-array name="habla_av_recordatorio_sargento">
-        <item>Queda algo por hacer hoy.</item>
+        <item>Es la hora que acordamos. Ahora.</item>
+        <item>Como quedamos: ahora.</item>
+        <item>Hora pactada. Hazlo y lo tachas.</item>
+        <item>Dijiste ahora. Es ahora.</item>
+        <item>Lo dejamos para este momento. Vamos.</item>
+        <item>{nombre}, es la hora. Puedes con esto.</item>
+        <item>Sin darle más vueltas: ahora.</item>
+        <item>Llegó la hora acordada. Empieza y el resto viene solo.</item>
+        <item>Hoy llevas {hechos} de {total}. Este suma uno más.</item>
+        <item>Un rato ahora y te lo quitas de encima.</item>
+        <item>Lo acordado es lo acordado. A ello.</item>
+        <item>[noche] Queda poco día. Que sea ahora.</item>
     </string-array>
     <string-array name="habla_av_recordatorio_cheerleader">
-        <item>Queda algo por hacer hoy.</item>
+        <item>Lo dejamos para ahora, como quedamos. ¡Vamos a ello!</item>
+        <item>Esta es la hora que dijimos. Cuando quieras, empezamos.</item>
+        <item>{nombre}, es ahora. Yo ya estoy aquí.</item>
+        <item>Ahora, como quedamos. Un ratito y lo tienes.</item>
+        <item>Es la hora acordada. Tú y yo, ahora.</item>
+        <item>Dijimos ahora, y ahora es. Aquí te espero.</item>
+        <item>Es el momento que elegiste. Te acompaño.</item>
+        <item>[noche] Ya es de noche, pero quedamos en esto. Un último empujón, tú y yo.</item>
+        <item>[lunes] Lunes y a la hora acordada. ¡Así se empieza la semana!</item>
+        <item>Lo que dejamos para ahora ya está aquí. Poco a poco, conmigo.</item>
+        <item>Hora de lo acordado, {nombre}. Cuando estés, empezamos.</item>
+        <item>[finde] Es finde, pero esta hora la guardamos para esto. ¡Vamos!</item>
     </string-array>
     <string-array name="habla_av_recordatorio_neutra">
-        <item>Queda algo por hacer hoy.</item>
+        <item>Lo dejamos para ahora, como quedamos.</item>
+        <item>Es la hora que acordamos. Cuando puedas.</item>
+        <item>Ahora, como quedamos. Si no puede ser, lo pasas a más tarde.</item>
+        <item>Tocaba ahora. Un momento y queda hecho.</item>
+        <item>Aquí está lo que dejamos para esta hora.</item>
+        <item>Hora acordada. Si no es buen momento, pásalo a más tarde.</item>
+        <item>Quedamos en ahora, y aquí estoy.</item>
+        <item>Hoy: {hechos} de {total}. Este sería el siguiente.</item>
+        <item>Es la hora. Lo demás de hoy puede esperar.</item>
+        <item>Un momento para esto y sigues con lo tuyo.</item>
+        <item>[noche] Ya es tarde, pero este era para ahora. Aún llegas.</item>
+        <item>[manana] Buena hora para esto, como acordamos.</item>
+        <item>{nombre}, ahora toca esto, como quedamos.</item>
     </string-array>
     <string-array name="habla_av_noche_titulo_sargento">
-        <item>Antes de dormir.</item>
+        <item>Hora de cerrar el día.</item>
+        <item>Cierre del día, {nombre}.</item>
+        <item>Toca cerrar. Hoy ya es historia.</item>
+        <item>Un minuto y el día queda cerrado.</item>
+        <item>Se acaba el día. Ciérralo.</item>
+        <item>El día pide su cierre.</item>
+        <item>Último trámite del día: el cierre.</item>
+        <item>Cuenta lo de hoy y a dormir.</item>
+        <item>{nombre}, el cierre te espera.</item>
+        <item>Queda el cierre. Es corto.</item>
+        <item>[viernes] Viernes. Cierra y descansa.</item>
+        <item>[domingo] Domingo. Cierra la semana en un minuto.</item>
+        <item>[invierno] Fuera hace frío. Dentro, el cierre.</item>
     </string-array>
     <string-array name="habla_av_noche_titulo_cheerleader">
-        <item>Antes de dormir.</item>
+        <item>¡A cerrar el día, {nombre}!</item>
+        <item>Toca el cierre, y es corto. Vamos.</item>
+        <item>Queda el cierre y descansamos.</item>
+        <item>¿Cerramos el día, {nombre}?</item>
+        <item>Última curva del día, {nombre}.</item>
+        <item>[viernes] ¡Viernes! Cerramos el día y a descansar.</item>
+        <item>[domingo] Domingo de cierre, {nombre}.</item>
+        <item>Un minuto y el día queda sellado.</item>
+        <item>[invierno] Noche de invierno. A cerrar y a la manta.</item>
+        <item>A cerrar, {nombre}. Estoy contigo.</item>
+        <item>El cierre te espera, {nombre}.</item>
+        <item>[lunes] Primer cierre de la semana, {nombre}.</item>
     </string-array>
     <string-array name="habla_av_noche_titulo_neutra">
-        <item>Antes de dormir.</item>
+        <item>Cerrar el día</item>
+        <item>Hoy: {hechos} de {total}</item>
+        <item>Un minuto para cerrar el día</item>
+        <item>Cierre del día, {nombre}</item>
+        <item>El día se acaba</item>
+        <item>Ya anochece, {nombre}</item>
+        <item>[domingo] Domingo: cierre de la semana</item>
+        <item>[viernes] Viernes. Toca cerrar el día</item>
+        <item>Es hora del cierre</item>
+        <item>[lunes] Primer cierre de la semana</item>
+        <item>Queda el cierre de hoy</item>
+        <item>Van {hechos} de {total}</item>
+        <item>Antes de dormir, el cierre</item>
     </string-array>
     <string-array name="habla_av_noche_cuerpo_sargento">
-        <item>Si quieres, cierra el día.</item>
+        <item>Hoy: {hechos} de {total}. Un minuto para cerrar el día.</item>
+        <item>Hoy: {hechos} de {total}. Mañana empezamos por «{tarea}».</item>
+        <item>Un minuto, repasas y cierras. Mañana, otra vez.</item>
+        <item>{hechos} de {total}. Lo que falte lo vemos en el cierre.</item>
+        <item>Un minuto y se acaba. Mañana arrancamos con «{tarea}».</item>
+        <item>Repasa lo de hoy y cierra. Mañana toca «{tarea}».</item>
+        <item>Hoy son {hechos} de {total}. Dilo en el cierre y punto.</item>
+        <item>Un minuto. Con el día no se discute: se cierra.</item>
+        <item>{nombre}, {hechos} de {total}. Cierra y mañana seguimos.</item>
+        <item>Lo pendiente pasa a mañana, sin drama. Ciérralo.</item>
+        <item>Un minuto en el cierre y mañana arrancas con ventaja.</item>
+        <item>[viernes] Viernes: {hechos} de {total}. Ciérralo y descansa el finde.</item>
+        <item>[domingo] Domingo: {hechos} de {total}. Ciérralo y la semana empieza limpia.</item>
     </string-array>
     <string-array name="habla_av_noche_cuerpo_cheerleader">
-        <item>Si quieres, cierra el día.</item>
+        <item>Hoy: {hechos} de {total}. Un minuto para cerrar el día y a descansar.</item>
+        <item>Mañana empezamos por «{tarea}». Ahora, un minuto para cerrar el día.</item>
+        <item>Gracias por el día, {nombre}. Cerramos y descansamos los dos.</item>
+        <item>Llevas {hechos} de {total}. Lo que falte, mañana tiene sitio.</item>
+        <item>Un cierre rápido y mañana arrancamos con la cabeza despejada.</item>
+        <item>[viernes] Viernes: {hechos} de {total}. Cierra el día y el finde empieza ya.</item>
+        <item>[domingo] Domingo. Un cierre y la semana queda en orden. ¡Mañana, página nueva!</item>
+        <item>{hechos} de {total} hoy. Lo contamos, lo cerramos y seguimos mañana. ¡Tú y yo!</item>
+        <item>Mañana empieza con «{tarea}», pero eso es mañana. Esta noche, solo el cierre.</item>
+        <item>[invierno] Noche de frío. Un minuto de cierre y a la manta, {nombre}.</item>
+        <item>{nombre}, ¿cerramos el día? Yo te acompaño en el cierre.</item>
+        <item>Tu lista de hoy: {hechos} de {total}. Ahora el cierre, que es corto.</item>
     </string-array>
     <string-array name="habla_av_noche_cuerpo_neutra">
-        <item>Si quieres, cierra el día.</item>
+        <item>Hoy: {hechos} de {total}. Un minuto para cerrar el día.</item>
+        <item>Hoy: {hechos} de {total}. Mañana empezamos por: {tarea}.</item>
+        <item>Un minuto para cerrar el día. Lo que falte, lo decides tú ahí.</item>
+        <item>Llevas {hechos} de {total}. El cierre es corto y deja el día sellado.</item>
+        <item>Cuando quieras, cerramos el día. Sin prisa.</item>
+        <item>{hechos} de {total} hoy. Lo demás se decide en el cierre, en un minuto.</item>
+        <item>Queda el cierre. Después, a descansar.</item>
+        <item>Antes de dormir: un minuto para cerrar el día y dejar mañana despejado.</item>
+        <item>Mañana, para empezar: {tarea}. Hoy se cierra en un minuto.</item>
+        <item>Has completado {hechos} de {total}. El resto puede esperar a mañana.</item>
+        <item>[domingo] Domingo. Cerrar hoy deja la semana en orden.</item>
+        <item>[viernes] Viernes: {hechos} de {total}. Un minuto de cierre y empieza el fin de semana.</item>
+        <item>[lunes] Primer día de la semana. Un minuto de cierre y queda guardado.</item>
+        <item>Si hoy no ha salido todo, el cierre también sirve para eso.</item>
     </string-array>
     <string-array name="habla_av_aceptado_titulo_sargento">
-        <item>Te aviso a las {hora}.</item>
+        <item>Anotado: a las {hora}.</item>
+        <item>Trato hecho, {nombre}.</item>
+        <item>Acordado. A las {hora}.</item>
+        <item>Queda para las {hora}.</item>
+        <item>Palabra dada. A las {hora}.</item>
+        <item>Cuento contigo a las {hora}.</item>
+        <item>Vale, {nombre}. Anotado.</item>
+        <item>Trato hecho.</item>
     </string-array>
     <string-array name="habla_av_aceptado_titulo_cheerleader">
-        <item>Te aviso a las {hora}.</item>
+        <item>¡Vale, a las {hora}!</item>
+        <item>Quedamos a las {hora}.</item>
+        <item>A las {hora}, tú y yo.</item>
+        <item>Apuntado para las {hora}.</item>
+        <item>¡Trato hecho, {nombre}!</item>
+        <item>A las {hora}, sin falta.</item>
+        <item>Cuenta conmigo a las {hora}.</item>
+        <item>Anotado, {nombre}. Ahí estaré.</item>
     </string-array>
     <string-array name="habla_av_aceptado_titulo_neutra">
-        <item>Te aviso a las {hora}.</item>
+        <item>Anotado: a las {hora}</item>
+        <item>Quedamos a las {hora}</item>
+        <item>Vale, a las {hora}</item>
+        <item>A las {hora}, entonces</item>
+        <item>Te aviso a las {hora}</item>
+        <item>Lo dejamos para las {hora}</item>
+        <item>{nombre}: a las {hora}</item>
+        <item>Aviso a las {hora}</item>
+        <item>Trato hecho</item>
+        <item>Anotado</item>
     </string-array>
     <string-array name="habla_av_aceptado_cuerpo_sargento">
-        <item>Quedamos a las {hora}.</item>
+        <item>Aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>
+        <item>Hora apuntada. Ahora, lo gordo: {gordo}. Que no se enfríe.</item>
+        <item>{gordo}. Es tuyo hasta que lo termines.</item>
+        <item>Hoy tu prioridad es esta: {gordo}. Lo demás, detrás.</item>
+        <item>Te aviso a las {hora}. Hasta entonces, a lo tuyo.</item>
+        <item>Lo acordado: a las {hora}. Lo gordo: {gordo}.</item>
+        <item>{nombre}, ya está en marcha. Te aviso a las {hora}.</item>
+        <item>Te lo recuerdo a las {hora}. Ni un minuto más tarde.</item>
     </string-array>
     <string-array name="habla_av_aceptado_cuerpo_cheerleader">
-        <item>Quedamos a las {hora}.</item>
+        <item>Lo gordo de hoy: {gordo}. Yo te aviso cuando llegue la hora.</item>
+        <item>¡Apuntado! A las {hora} te aviso yo; tú, a lo tuyo.</item>
+        <item>Hora puesta. Hasta entonces, lo gordo: {gordo}.</item>
+        <item>Ya está: a las {hora}. Mientras, lo gordo: {gordo}. Buen plan, {nombre}.</item>
+        <item>Apuntado: a las {hora}, yo me acuerdo. Tú, a lo gordo: {gordo}.</item>
+        <item>Lo gordo, sin prisa: {gordo}. A las {hora}, estaré a tu lado.</item>
+        <item>{nombre}, a las {hora} te aviso. ¡Cuenta conmigo!</item>
+        <item>Una cosa gorda, bien elegida: {gordo}. Nos vemos a las {hora}.</item>
     </string-array>
     <string-array name="habla_av_aceptado_cuerpo_neutra">
-        <item>Quedamos a las {hora}.</item>
+        <item>Te aviso a esa hora. Mientras, el día sigue a tu ritmo.</item>
+        <item>Lo gordo de hoy: {gordo}. A la hora acordada, te aviso.</item>
+        <item>A las {hora} te lo recuerdo. Hasta entonces, sin prisa.</item>
+        <item>Queda guardado. Si cambia el plan, lo mueves desde Hoy.</item>
+        <item>Para hoy: {gordo}. A las {hora} te aviso.</item>
+        <item>Hecho, cuenta conmigo. A la hora acordada lo retomamos.</item>
+        <item>Hora anotada. Lo gordo sigue en pie: {gordo}.</item>
+        <item>Nada más por ahora. A la hora que dijiste, aquí estaré.</item>
+        <item>{nombre}, queda acordado. Te lo recuerdo a las {hora}.</item>
     </string-array>
     <string-array name="habla_av_ausencia_sargento">
-        <item>Aquí sigo, cuando quieras.</item>
+        <item>Aquí sigo, {nombre}. Hoy basta con una cosa pequeña.</item>
+        <item>Nadie lleva cuentas. Un hábito hoy y se retoma.</item>
+        <item>Hace días que no hablamos. Empieza por el más fácil.</item>
+        <item>Una cosa hoy. La más pequeña que tengas.</item>
+        <item>El camino sigue donde lo dejaste. Da un paso.</item>
+        <item>Sin sermón: abre Hoy y elige un hábito.</item>
+        <item>{nombre}, el primer registro es el más duro. Hazlo pequeño.</item>
+        <item>Cuando quieras. Un solo hábito y seguimos.</item>
     </string-array>
     <string-array name="habla_av_ausencia_cheerleader">
-        <item>Aquí sigo, cuando quieras.</item>
+        <item>{nombre}, te echo de menos por aquí. Cuando quieras, un hábito pequeño y seguimos.</item>
+        <item>Han pasado unos días y aquí sigo, con la puerta abierta. Hoy basta con uno.</item>
+        <item>Hola, {nombre}. Sin cuentas pendientes: me alegraría verte hoy.</item>
+        <item>Te he guardado el sitio. Un solo hábito hoy y empezamos otra vez, tú y yo.</item>
+        <item>Echo de menos nuestras mañanas. ¿Probamos con algo pequeño hoy?</item>
+        <item>¡Qué ganas de verte, {nombre}! Hoy, con una cosa pequeña ya vale.</item>
+        <item>Aquí sigo, {nombre}. Volver cuesta un poco, lo sé; yo te acompaño.</item>
+        <item>Cuando te venga bien, sin prisa: estoy aquí con lo de hoy preparado.</item>
     </string-array>
     <string-array name="habla_av_ausencia_neutra">
-        <item>Aquí sigo, cuando quieras.</item>
+        <item>Aquí sigo. Cuando quieras, empezamos con algo pequeño.</item>
+        <item>Hoy puede ser un día de un solo hábito. Con uno basta.</item>
+        <item>Hace unos días que no nos vemos. Un hábito hoy basta para retomar.</item>
+        <item>{nombre}, la puerta sigue abierta. Entra cuando te venga bien.</item>
+        <item>No hay nada que recuperar, solo lo de hoy. Empieza por lo más fácil.</item>
+        <item>Lo que hiciste antes sigue contando. Hoy, con algo pequeño, basta.</item>
+        <item>Cuando te venga bien, algo pequeño. Tú eliges cuál.</item>
+        <item>[lunes] Es lunes, buen punto para un comienzo pequeño.</item>
+        <item>Sin prisa y sin cuentas pendientes. Un hábito, y el día está en marcha.</item>
     </string-array>
 </resources>
