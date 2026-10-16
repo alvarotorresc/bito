@@ -177,6 +177,8 @@ fun JardinCompartido(
     noche: () -> Float = { 0f },
     // Cada incremento, Habi se aplasta para dormirse («Hasta mañana»).
     aplastarHabi: Int = 0,
+    // Habi duerme (día sellado): tocarlo lo aplasta en vez de hacerlo saltar.
+    dormido: Boolean = false,
 ) {
     val densidad = LocalDensity.current
     val colores = BitoTema.colores
@@ -266,6 +268,7 @@ fun JardinCompartido(
                 fiesta = fiesta,
                 noche = noche,
                 aplastarHabi = aplastarHabi,
+                dormido = dormido,
             )
         }
     }

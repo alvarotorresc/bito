@@ -163,6 +163,8 @@ class GardenSceneTest {
         llegando: GardenSpecial? = null,
         creciendo: Int? = null,
         destacar: GardenSpecial? = null,
+        dormido: Boolean = false,
+        onHabiTap: () -> Unit = {},
     ) {
         jardin = garden
         compose.setContent {
@@ -172,7 +174,7 @@ class GardenSceneTest {
                         garden = jardin,
                         spec = spec,
                         animated = false,
-                        onHabiTap = {},
+                        onHabiTap = onHabiTap,
                         modifier = Modifier.width(400.dp),
                         alTocarFondo = alTocarFondo,
                         globitoPlanta = globitoPlanta,
@@ -181,10 +183,19 @@ class GardenSceneTest {
                         destacar = destacar,
                         saltoHabi = salto,
                         fiesta = fiesta,
+                        dormido = dormido,
                     )
                 }
             }
         }
+    }
+
+    /** Un toque en el centro del cuerpo de Habi, por la capa de delante (como el dedo). */
+    private fun tocarHabi() {
+        val widthPx = with(compose.density) { 400.dp.toPx() }
+        val cuerpo = habiBodyRect(widthPx, widthPx / GardenArt.SCENE_ASPECT)
+        tapCenter(cuerpo)
+        compose.waitForIdle()
     }
 
     private fun rectOf(
@@ -339,6 +350,32 @@ class GardenSceneTest {
 
         assertEquals(0f, sonda.wiltDibujado(), 0f)
         assertEquals(0, sonda.saltosHabi())
+    }
+
+    @Test
+    fun `tapping Habi by day makes Habi jump`() {
+        var toques = 0
+        montar(onHabiTap = { toques++ })
+        compose.waitForIdle()
+
+        tocarHabi()
+
+        assertEquals(1, toques)
+        assertEquals(1, sonda.saltosHabi())
+        assertEquals(0, sonda.aplastadosHabi())
+    }
+
+    @Test
+    fun `tapping Habi asleep only squashes Habi, without a jump`() {
+        var toques = 0
+        montar(dormido = true, onHabiTap = { toques++ })
+        compose.waitForIdle()
+
+        tocarHabi()
+
+        assertEquals(1, toques)
+        assertEquals(0, sonda.saltosHabi())
+        assertEquals(1, sonda.aplastadosHabi())
     }
 
     @Test

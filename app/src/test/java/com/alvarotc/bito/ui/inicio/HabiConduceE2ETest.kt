@@ -8,11 +8,14 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelStore
@@ -42,6 +45,7 @@ import com.alvarotc.bito.ui.camino.CaminoViewModel
 import com.alvarotc.bito.ui.cierre.CierreViewModel
 import com.alvarotc.bito.ui.garden.LocalSondaJardin
 import com.alvarotc.bito.ui.garden.SondaJardin
+import com.alvarotc.bito.ui.garden.habiBodyRect
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabiAndroid
 import com.alvarotc.bito.ui.notifications.QuickActionUseCase
@@ -425,6 +429,16 @@ class HabiConduceE2ETest {
         tocar("circulo-meditar")
         rule.waitForIdle()
         assertEquals("una fila sellada no marca", antes, runBlocking { c.database.entryDao().all() }.size)
+
+        // Tocar a Habi dormido (G17): se aplasta y no salta.
+        val saltos = sonda.saltosHabi()
+        val aplastados = sonda.aplastadosHabi()
+        rule.onNodeWithTag("garden-scene", useUnmergedTree = true).performTouchInput {
+            val cuerpo = habiBodyRect(width.toFloat(), height.toFloat())
+            click(Offset(cuerpo.left + cuerpo.width / 2f, cuerpo.top + cuerpo.height / 2f))
+        }
+        hasta { sonda.aplastadosHabi() > aplastados }
+        assertEquals("dormido no salta", saltos, sonda.saltosHabi())
 
         // Al día siguiente, tras «Duro»: el día duro y «Esperan sin prisa».
         reabrir(en(dia + 1, 10))

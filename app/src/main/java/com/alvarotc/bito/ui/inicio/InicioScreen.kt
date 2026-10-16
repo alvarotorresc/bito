@@ -524,7 +524,10 @@ fun InicioScreen(
                     contento = contento,
                     animado = enPrimerPlano,
                     alTocarHabi = {
-                        if (!contento) {
+                        if (selladoCargado) {
+                            // Dormido no hay caricia que valga: cada toque es el aplastado y el aviso de que duerme.
+                            hoy.alTocarHabi()
+                        } else if (!contento) {
                             val ahora = System.currentTimeMillis()
                             caricias.addLast(ahora)
                             while (caricias.isNotEmpty() && ahora - caricias.first() > CARICIAS_MS) caricias.removeFirst()
@@ -543,6 +546,7 @@ fun InicioScreen(
                     destacar = destacar,
                     saltoHabi = salto,
                     aplastarHabi = aplastar,
+                    dormido = selladoCargado,
                     fiesta = fiesta,
                     subida = { subidaPx.floatValue },
                     // Ruling P22: con el cierre abierto sigue al anochecer; fuera, de noche solo con el día sellado.

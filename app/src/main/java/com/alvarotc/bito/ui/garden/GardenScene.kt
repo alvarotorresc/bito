@@ -299,6 +299,8 @@ fun GardenScene(
     noche: () -> Float = { 0f },
     // Cada incremento, Habi se aplasta un 4 % desde los pies y vuelve: «Hasta mañana», justo antes de dormirse (§7.5).
     aplastarHabi: Int = 0,
+    // Habi duerme (Hoy de noche, día sellado): tocarlo lo aplasta un 4 % en vez de hacerlo saltar (G17, §5.10).
+    dormido: Boolean = false,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -490,19 +492,25 @@ fun GardenScene(
     }
     val listoAhora by rememberUpdatedState(listo)
 
-    // «Hasta mañana»: un aplastado corto antes del sueño (que llega con el día sellado). Reducido, sin escala.
+    // «Hasta mañana» y el toque a Habi dormido: un aplastado corto desde los pies. Reducido, sin escala.
     val aplastado = remember { Animatable(1f) }
     var ultimoAplastado by remember { mutableIntStateOf(aplastarHabi) }
     var aplastados by remember { mutableIntStateOf(0) }
+
+    fun aplastarHabiAhora() {
+        aplastados++
+        if (reducido) return
+        scope.launch {
+            aplastado.animateTo(1f - APLASTADO_DORMIR, tween(APLASTAR_DORMIR_MS, easing = Curvas.out))
+            aplastado.animateTo(1f, Muelles.marcar())
+        }
+    }
     LaunchedEffect(aplastarHabi) {
         val sube = aplastarHabi > ultimoAplastado
         ultimoAplastado = aplastarHabi
-        if (!sube) return@LaunchedEffect
-        aplastados++
-        if (reducido) return@LaunchedEffect
-        aplastado.animateTo(1f - APLASTADO_DORMIR, tween(APLASTAR_DORMIR_MS, easing = Curvas.out))
-        aplastado.animateTo(1f, Muelles.marcar())
+        if (sube) aplastarHabiAhora()
     }
+    val dormidoAhora by rememberUpdatedState(dormido)
 
     SideEffect {
         sonda?.wiltDibujado = { wiltAnim.value }
@@ -652,7 +660,8 @@ fun GardenScene(
                                             ((action.x - habi.left) / habi.width).coerceIn(0f, 1f),
                                             ((action.y - habi.top) / habi.height).coerceIn(0f, 1f),
                                         )
-                                    habiNudge++
+                                    // Dormido (G17) solo se aplasta: el tick y el aviso los da quien recibe el toque.
+                                    if (dormidoAhora) aplastarHabiAhora() else habiNudge++
                                     alTocarHabi()
                                 }
                             is SceneTap.Sway -> {
