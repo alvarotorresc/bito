@@ -129,7 +129,9 @@ class FondoGrabado : Fondo {
         _sonando.value = null
     }
 
-    override fun muestra(tipo: SessionBackground) = Unit
+    override fun muestra(tipo: SessionBackground) {
+        llamadas += "muestra:$tipo"
+    }
 }
 
 class FueraGrabada : FueraDeLaApp {

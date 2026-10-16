@@ -47,6 +47,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.ui.breathing.AndroidBreathingMusic
@@ -71,6 +72,7 @@ import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.sesion.DatosObjetivo
+import com.alvarotc.bito.ui.sesion.OpcionTarea
 import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.settings.AjustesScreen
 import com.alvarotc.bito.ui.settings.ArchivedScreen
@@ -92,6 +94,7 @@ import com.alvarotc.bito.ui.tasks.toFormState
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.today.TodayViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import java.time.ZoneId
 
@@ -606,4 +609,9 @@ private fun sesionInicioDe(container: AppContainer): SesionInicio =
             }
         },
         catalogo = container.catalogoHabla,
+        tareasHoy = {
+            val ajustes = container.settings.settings.first()
+            val hoy = LogicalDays.logicalDayOf(System.currentTimeMillis(), ajustes.dayCutoffMinutes, ZoneId.systemDefault())
+            Tasks.todayTasks(container.domainState.snapshot(), hoy).map { OpcionTarea(it.task.id, it.task.title, it.task.firstStep) }
+        },
     )
