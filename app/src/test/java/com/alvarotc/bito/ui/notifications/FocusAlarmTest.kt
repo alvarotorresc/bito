@@ -133,6 +133,15 @@ class FocusAlarmTest {
         assertNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
     }
 
+    @Test
+    fun `cancelFocus leaves a session notice alone`() {
+        Notifier.mostrarSesion(context, "Leer", "En marcha", null, com.alvarotc.bito.domain.model.Personality.NEUTRA)
+
+        Notifier.cancelFocus(context)
+
+        assertNotNull(shadowOf(notificationManager).getNotification(Notifier.FOCUS_ID))
+    }
+
     @Config(application = BitoApp::class)
     @Test
     fun `a fired alarm with a live session posts the time's up notification`() {
