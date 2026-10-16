@@ -9,6 +9,7 @@ import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.GrowthStage
+import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.domain.model.LogicalDay
@@ -37,6 +38,8 @@ object GardenEngine {
         lastActivityDay: LogicalDay?,
         unlockedBadges: Set<String>,
         waterHighMark: Double,
+        // Ids de los objetos de jardín colocados (`customization_items`, categoría GARDEN_OBJECT, equipped).
+        placedObjectIds: Collection<String> = emptyList(),
     ): GardenState {
         val water = maxOf(totalWater(state, today), waterHighMark)
         return GardenState(
@@ -46,8 +49,15 @@ object GardenEngine {
             light = lightAt(now.toLocalTime()),
             season = seasonOf(now.toLocalDate()),
             specials = specialsOf(unlockedBadges),
+            objects = objectKeysOf(placedObjectIds),
         )
     }
+
+    /** La clave del arte de cada objeto («garden-banco» es «banco»); lo que no está en el catálogo de jardín se ignora. */
+    fun objectKeysOf(ids: Collection<String>): Set<String> =
+        HabiCatalog.garden.map { it.id }.filter { it in ids }.mapTo(linkedSetOf()) { it.removePrefix(GARDEN_ID_PREFIX) }
+
+    private const val GARDEN_ID_PREFIX = "garden-"
 
     /**
      * Los hábitos semanales que se cumplen justo en [day] (decisión del arquitecto, 2026-10-13): un

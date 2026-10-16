@@ -80,6 +80,9 @@ internal object GardenArt {
             "arbol-dorado" to GardenPiece(R.drawable.garden_arbol_dorado, aspect = 0.4943f, heightRatio = 1.0000f),
         )
 
+    /** Objetos de jardín de la tienda (banco, regadera): se compran y se colocan. */
+    val objectPieces: Map<String, GardenPiece> = emptyMap()
+
     val habiSpot = GardenSpot(50.0f, 88.0f, 40.0f)
 
     val plotSpots: List<GardenSpot> =
@@ -101,4 +104,6 @@ internal object GardenArt {
             "cerezo-grande" to GardenSpot(60.0f, 43.0f, 21.0f),
             "arbol-dorado" to GardenSpot(44.0f, 41.0f, 20.0f),
         )
+
+    val objectSpots: Map<String, GardenSpot> = emptyMap()
 }

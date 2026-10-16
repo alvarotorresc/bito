@@ -170,6 +170,8 @@ private fun tapAction(
         StoreItemState.Affordable, is StoreItemState.MissingPoints -> onPreview(entry.item.id)
         is StoreItemState.Locked -> Unit
         StoreItemState.OutOfSeason -> Unit
+        // La tienda antigua no pinta objetos ni especiales de jardín (los trae la nueva).
+        StoreItemState.OwnedInGarden, is StoreItemState.FromBadge -> Unit
     }
 }
 
@@ -177,7 +179,7 @@ private fun tapAction(
  * so a dead tap never even attaches a clickable (better a11y than a handler that does nothing). */
 private fun isTappable(entry: StoreEntry): Boolean =
     when (entry.state) {
-        is StoreItemState.Locked, StoreItemState.OutOfSeason -> false
+        is StoreItemState.Locked, StoreItemState.OutOfSeason, StoreItemState.OwnedInGarden, is StoreItemState.FromBadge -> false
         StoreItemState.Equipped -> entry.item.category in UNPINNABLE_AXES
         else -> true
     }
@@ -305,6 +307,7 @@ private fun StoreItemFooter(entry: StoreEntry) {
                 color = TintaSuave,
                 textAlign = TextAlign.Center,
             )
+        StoreItemState.OwnedInGarden, is StoreItemState.FromBadge -> Unit
         is StoreItemState.Locked ->
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
                 Icon(BitoIcons.Lock, contentDescription = null, tint = TintaSuave, modifier = Modifier.size(11.dp))
@@ -393,6 +396,8 @@ private fun axisLabelRes(category: CustomizationCategory): Int =
         CustomizationCategory.NECK -> R.string.store_axis_neck
         CustomizationCategory.FEET -> R.string.store_axis_feet
         CustomizationCategory.COSTUME -> R.string.store_axis_costumes
+        // La tienda antigua no tiene eje de jardín; se borra con la nueva (pieza 6, tarea 20).
+        CustomizationCategory.GARDEN_OBJECT -> error("la tienda antigua no pinta objetos de jardín")
     }
 
 /** Nombres por id, solo en ui/ (docs/05 §2). */

@@ -115,4 +115,29 @@ class CustomizationTest {
         assertTrue(set.worn.containsAll(listOf("head-boina", "neck-bufanda", "costume-reno", "body-salvia", "eyes-tinta")))
         assertEquals("head-boina", set.copy(costume = null).head)
     }
+
+    @Test
+    fun `all stays the wardrobe and garden has the two objects`() {
+        // El armario son 34 artículos (la spec y el plan dicen 31 por error de recuento); no cambia.
+        assertEquals(34, HabiCatalog.all.size)
+        assertTrue(HabiCatalog.all.none { it.category == CustomizationCategory.GARDEN_OBJECT })
+        assertEquals(listOf("garden-banco" to 80, "garden-regadera" to 25), HabiCatalog.garden.map { it.id to it.price })
+        HabiCatalog.garden.forEach {
+            assertEquals(CustomizationCategory.GARDEN_OBJECT, it.category)
+            assertNull(it.season)
+            assertNull(it.requiredStreak)
+            assertTrue(!it.default)
+        }
+    }
+
+    @Test
+    fun `byId finds the wardrobe and the garden`() {
+        assertEquals("garden-banco", HabiCatalog.byId("garden-banco")?.id)
+        assertEquals("head-boina", HabiCatalog.byId("head-boina")?.id)
+    }
+
+    @Test
+    fun `a garden object is never part of the equipped set`() {
+        assertEquals(EquippedSet(), equippedSetOf(listOf("garden-banco", "garden-regadera")))
+    }
 }

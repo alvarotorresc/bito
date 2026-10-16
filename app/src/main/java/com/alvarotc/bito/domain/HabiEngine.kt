@@ -1,8 +1,10 @@
 package com.alvarotc.bito.domain
 
 import com.alvarotc.bito.domain.model.CatalogItem
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import java.time.LocalDate
@@ -21,6 +23,12 @@ sealed interface StoreItemState {
 
     /** Un artículo de temporada que no se tiene y hoy no está a la venta (§7). */
     data object OutOfSeason : StoreItemState
+
+    /** Un objeto de jardín que ya es tuyo: está en el jardín, nunca «puesto» en Habi. */
+    data object OwnedInGarden : StoreItemState
+
+    /** Un especial de jardín que da un logro y no se compra. */
+    data class FromBadge(val badgeId: String) : StoreItemState
 }
 
 /**
@@ -55,6 +63,7 @@ object HabiEngine {
     ): StoreItemState {
         val owned = item.default || item.id in ownedIds
         return when {
+            item.category == CustomizationCategory.GARDEN_OBJECT && owned -> StoreItemState.OwnedInGarden
             item.id in equipped.worn -> StoreItemState.Equipped
             owned -> StoreItemState.Owned
             !HabiCatalog.isOnSale(item, date) -> StoreItemState.OutOfSeason
@@ -63,4 +72,7 @@ object HabiEngine {
             else -> StoreItemState.Locked(item.requiredStreak!!)
         }
     }
+
+    /** Un especial de jardín se gana con su logro: la tienda lo enseña con el nombre del logro. */
+    fun storeStateOfEspecial(special: GardenSpecial): StoreItemState = StoreItemState.FromBadge(special.badgeId)
 }

@@ -3,7 +3,7 @@ package com.alvarotc.bito.domain.model
 import java.time.LocalDate
 
 /** Eje de personalización (pieza 1 §4.1). Viaja por nombre en Room y en la copia de seguridad. */
-enum class CustomizationCategory { BODY_COLOR, EYE_COLOR, HEAD, FACE, NECK, FEET, COSTUME }
+enum class CustomizationCategory { BODY_COLOR, EYE_COLOR, HEAD, FACE, NECK, FEET, COSTUME, GARDEN_OBJECT }
 
 /** Cuándo se puede comprar un artículo de temporada. Lo comprado se usa todo el año (D5). */
 sealed interface SaleWindow {
@@ -113,7 +113,14 @@ object HabiCatalog {
             CatalogItem("costume-reno", CustomizationCategory.COSTUME, price = COSTUME_PRICE, season = SaleWindow.Fixed(12, 1, 1, 6)),
             CatalogItem("costume-dinosaurio", CustomizationCategory.COSTUME, price = COSTUME_PRICE, season = SaleWindow.Carnival),
         )
-    private val byId = all.associateBy { it.id }
+
+    /** Objetos del jardín (pieza 6): se compran en la tienda y no se «llevan puestos». No entran en [all]. */
+    val garden: List<CatalogItem> =
+        listOf(
+            CatalogItem("garden-banco", CustomizationCategory.GARDEN_OBJECT, price = 80),
+            CatalogItem("garden-regadera", CustomizationCategory.GARDEN_OBJECT, price = 25),
+        )
+    private val byId = (all + garden).associateBy { it.id }
     val exclusives: List<CatalogItem> = all.filter { it.requiredStreak != null }
 
     fun byId(id: String): CatalogItem? = byId[id]
@@ -156,6 +163,8 @@ fun equippedSetOf(equippedIds: Collection<String>): EquippedSet {
                 CustomizationCategory.NECK -> set.copy(neck = id)
                 CustomizationCategory.FEET -> set.copy(feet = id)
                 CustomizationCategory.COSTUME -> set.copy(costume = id)
+                // Los objetos de jardín no se llevan puestos: viven en el jardín, no en Habi.
+                CustomizationCategory.GARDEN_OBJECT -> set
             }
     }
     return set

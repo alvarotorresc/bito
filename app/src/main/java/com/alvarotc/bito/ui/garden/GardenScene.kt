@@ -345,6 +345,8 @@ fun GardenScene(
     respiracion: (() -> Float)? = null,
     // La amplitud (fracción del alto de Habi) del salto de cada incremento de [saltoHabi]; null = el salto de siempre.
     saltoAmplitud: Float? = null,
+    // Objetos de jardín que se pintan además de los de [garden] (el que se prueba en la tienda).
+    objetos: List<ObjetoJardin> = emptyList(),
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -358,7 +360,7 @@ fun GardenScene(
             if (llegando != null && llegando !in garden.specials) garden.copy(specials = garden.specials + llegando) else garden
         }
     val vieja = remember(garden, creciendo) { etapaVieja(garden, creciendo) }
-    val listo = rememberArte(art, remember(pintado, creciendo) { recursosDelJardin(pintado, creciendo) })
+    val listo = rememberArte(art, remember(pintado, creciendo, objetos) { recursosDelJardin(pintado, creciendo, objetos) })
 
     val balanceo = remember { mutableStateMapOf<Int, Animatable<Float, AnimationVector1D>>() }
     val brillo = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
@@ -603,7 +605,7 @@ fun GardenScene(
     ) {
         val sceneW = constraints.maxWidth.toFloat()
         val sceneH = constraints.maxHeight.toFloat()
-        val items = remember(pintado, sceneW, sceneH) { sceneItems(pintado, sceneW, sceneH) }
+        val items = remember(pintado, sceneW, sceneH, objetos) { sceneItems(pintado, sceneW, sceneH, objetos) }
         val habiDepth = GardenArt.habiSpot.yPct
         // De noche (la del reloj o la del cierre), el farolillo encendido se pinta encima de la luz y no se oscurece.
         val overLight =
@@ -843,8 +845,15 @@ internal fun etapaVieja(
 internal fun recursosDelJardin(
     garden: GardenState,
     creciendo: Int? = null,
+    objetos: List<ObjetoJardin> = emptyList(),
+    arte: FuenteObjetosJardin = ArteObjetosJardin,
 ): List<Pair<Int, Int>> =
-    (listOf(GardenArt.background) + sceneItems(garden, 1f, 1f).map { it.res } + listOfNotNull(etapaVieja(garden, creciendo)?.res))
+    (
+        listOf(GardenArt.background) +
+            sceneItems(garden, 1f, 1f, objetos, arte).map {
+                it.res
+            } + listOfNotNull(etapaVieja(garden, creciendo)?.res)
+    )
         .distinct()
         .map { it to 1 }
 
