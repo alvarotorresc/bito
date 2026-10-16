@@ -264,7 +264,7 @@ class MotorSesionArreglosTest {
             g.fuera.cambios.clear()
             banco.delante = false
 
-            motor.alPerderseElFondo()
+            motor.alCambiarElAudio()
 
             assertEquals(emptyList<Any?>(), g.fuera.cambios.toList())
         }

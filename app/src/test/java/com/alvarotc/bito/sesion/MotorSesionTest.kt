@@ -18,12 +18,8 @@ import com.alvarotc.bito.domain.sesion.ResultadoSesion
 import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -108,12 +104,6 @@ class MotorSesionTest {
             assertEquals(r.id, banco.store.leer()?.id)
         }
 
-    /** El motor reacciona en su propio hilo: se espera, sin dormir, a que fuera reciba [n] llamadas más. */
-    private suspend fun esperarFuera(n: Int) {
-        val meta = g.fuera.cuenta.value + n
-        withContext(Dispatchers.Default) { withTimeout(5_000) { g.fuera.cuenta.first { it >= meta } } }
-    }
-
     @Test
     fun `losing the background for good tells the outside it is not sounding`() =
         runTest {
@@ -123,9 +113,9 @@ class MotorSesionTest {
             limpiarGrabaciones()
             g.fuera.sonandos.clear()
 
-            val meta = g.fuera.cuenta.value + 1
             g.fondo.perder()
-            withContext(Dispatchers.Default) { withTimeout(5_000) { g.fuera.cuenta.first { it >= meta } } }
+            // Lo mismo que hace el colector del motor al verlo, llamado a mano: sin hilos ni esperas.
+            motor.alCambiarElAudio()
 
             assertEquals(listOf(false), g.fuera.sonandos)
             assertEquals(motor.registro.value, g.fuera.cambios.single())
@@ -141,9 +131,9 @@ class MotorSesionTest {
 
             motor.pausar()
             // Lo mismo que hace el colector del fondo al callarse, llamado a mano: sin dormir ni esperar a otro hilo.
-            motor.alPerderseElFondo()
+            motor.alCambiarElAudio()
             seguirYLlegarAlDescanso()
-            motor.alPerderseElFondo()
+            motor.alCambiarElAudio()
 
             assertEquals("solo los cambios de la pausa y el seguir", listOf(false, true, false), g.fuera.sonandos.toList())
         }

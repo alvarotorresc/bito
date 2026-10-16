@@ -117,7 +117,7 @@ class FueraAndroid internal constructor(
 
     /**
      * Hay servicio mientras suena algo continuo. Arranca solo con la app delante y se mantiene durante los descansos
-     * si la sesión tiene fondo; sin fondo ni sonido, sale. Ningún receptor llega aquí.
+     * si la sesión tiene fondo; fuera de ellos, sin sonido, sale. Ningún receptor llega aquí.
      */
     private suspend fun gestionarServicio(
         r: RegistroSesion,
@@ -128,7 +128,9 @@ class FueraAndroid internal constructor(
         val servicio = entorno.servicio
         val estabaVivo = servicio.vivo()
         val hayFondo = r.plan.fondo != SessionBackground.NONE
-        val quiero = instante.actual != null && (sonando || (estabaVivo && hayFondo))
+        // Fuera de los descansos manda lo que suena: un foco sin sonido (pérdida del foco de audio, Bito callado) no sostiene el servicio.
+        val enDescanso = instante.actual is Tramo.Descanso
+        val quiero = instante.actual != null && (sonando || (enDescanso && estabaVivo && hayFondo))
         when {
             !quiero -> if (estabaVivo) servicio.parar()
             !estabaVivo && entorno.visible() -> {

@@ -28,12 +28,15 @@ import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -97,31 +100,39 @@ class MotorSesionAndroid(
     /** El último guardado en Ajustes de lo que se cambió en Preparar. */
     private var guardadoBorrador: Job? = null
 
+    /** Lo que se dijo a lo de fuera la última vez sobre si suena algo; null = nada dicho de esta sesión. */
+    private var ultimoSonando: Boolean? = null
+
     init {
-        // Si el fondo deja de sonar sin que el motor lo haya callado (pérdida permanente del foco de audio), lo de fuera
-        // de la app lo sabe: el foco sin pausa ya no está sonando.
-        alcance.launch {
-            var antes = fondo.sonando.value
-            fondo.sonando.collect { ahora ->
-                if (antes != null && ahora == null) alPerderseElFondo()
-                antes = ahora
-            }
+        // El fondo tarda en sonar (toma el foco de audio y abre la pista en su hilo) y el aire tarda en callarse: lo de
+        // fuera se entera cuando el sonido cambia de verdad, no cuando el motor lo pide. Empieza sin despachar para no
+        // perder el primer cambio.
+        alcance.launch(start = CoroutineStart.UNDISPATCHED) {
+            combine(fondo.sonando, aire.sonando) { f, a -> f != null || a }
+                .distinctUntilChanged()
+                .collect { alCambiarElAudio() }
         }
     }
 
     /**
-     * Con la sesión en un foco sin pausa, un fondo que sigue callado es una pérdida: se avisa a lo de fuera. Se mira al
-     * entrar en el cerrojo, no al emitirse: el motor cambia de tramo (calla y suena de nuevo) antes de que esto corra.
+     * Con la sesión en un tramo con tiempo, si lo que suena ya no es lo que se dijo a lo de fuera (el fondo empezó a
+     * sonar, se perdió el foco para siempre o el aire acabó de callarse), se le avisa. Se mira al entrar en el cerrojo,
+     * no al emitirse: el motor puede haber cambiado de tramo (calla y suena de nuevo) antes de que esto corra.
      */
-    internal suspend fun alPerderseElFondo() =
+    internal suspend fun alCambiarElAudio() =
         enCerrojo {
             // Con la app fuera, lo de fuera lo lleva el receptor y el instante de aquí sería viejo (el tic no lo actualiza).
             if (!delante()) return@enCerrojo
             val r = _registro.value ?: return@enCerrojo
-            // El último tramo anunciado, no el del reloj: es el que el fondo acompaña (el tic aún puede no haber cruzado la frontera).
-            val inst = _instante.value ?: return@enCerrojo
-            if (inst.actual is Tramo.Foco && !inst.pausado && fondo.sonando.value == null) fuera.alCambiar(r, sonando())
+            if (_instante.value?.actual == null) return@enCerrojo
+            if (sonando() != ultimoSonando) avisarFuera(r)
         }
+
+    private suspend fun avisarFuera(r: RegistroSesion?) {
+        val suena = r != null && sonando()
+        ultimoSonando = if (r == null) null else suena
+        fuera.alCambiar(r, suena)
+    }
 
     override suspend fun preparar(desde: Destino?) {
         val ajustes = settings.settings.first()
@@ -207,7 +218,7 @@ class MotorSesionAndroid(
             val r2 = conEvento(r, Evento.Pausa(inst.transcurridoMillis), ahora)
             fondo.callar()
             sonar(Snd.INTERRUPTOR_OFF, Haptica.TICK)
-            fuera.alCambiar(r2, sonando())
+            avisarFuera(r2)
         }
 
     override suspend fun seguir() =
@@ -217,7 +228,7 @@ class MotorSesionAndroid(
             val r2 = conEvento(r, Evento.Seguir(inst.transcurridoMillis), ahora)
             fondo.sonar(r.plan.fondo)
             sonar(Snd.INTERRUPTOR_ON, Haptica.TICK)
-            fuera.alCambiar(r2, sonando())
+            avisarFuera(r2)
         }
 
     override suspend fun sumar(minutos: Int) =
@@ -226,7 +237,7 @@ class MotorSesionAndroid(
             if (inst.actual !is Tramo.Foco || minutos <= 0) return@enCerrojo
             val r2 = conEvento(r, Evento.Sumar(inst.transcurridoMillis, minutos), ahora)
             sonar(Snd.TIC, Haptica.SEG)
-            fuera.alCambiar(r2, sonando())
+            avisarFuera(r2)
         }
 
     override suspend fun saltar() =
@@ -247,7 +258,7 @@ class MotorSesionAndroid(
             val (r, ahora, inst) = vivoAhora() ?: return@enCerrojo
             if (!inst.esperandoDescanso) return@enCerrojo
             val r2 = conEvento(r, Evento.EmpezarDescanso(inst.transcurridoMillis), ahora)
-            fuera.alCambiar(r2, sonando())
+            avisarFuera(r2)
         }
 
     override suspend fun heTerminado(): ResultadoAccion = enCerrojo { terminarAqui(Haptica.FALL) }
@@ -308,7 +319,7 @@ class MotorSesionAndroid(
             publicar(r, inst)
             // El motor solo suena con la app delante; fuera lo lleva el receptor, y al volver se reconcilia.
             val vigente = if (delante()) reconciliar(r, inst) else r
-            fuera.alCambiar(vigente, sonando())
+            avisarFuera(vigente)
         }
 
     /**
@@ -325,7 +336,7 @@ class MotorSesionAndroid(
                 store.borrar()
             }
             limpiar()
-            if (r != null) fuera.alCambiar(null, false)
+            if (r != null) avisarFuera(null)
         }
 
     /** Un paso del tic: anuncia la frontera cruzada con la app delante; con la app fuera, solo apunta adoptar. */
@@ -346,7 +357,7 @@ class MotorSesionAndroid(
                 anunciado = r.id to inst.tramo
                 // Sin sonar la frontera, pero el audio y lo de fuera se ponen como pide el tramo en que se vuelve.
                 val vigente = reconciliar(r, inst)
-                fuera.alCambiar(vigente, sonando())
+                avisarFuera(vigente)
             } else if (inst.tramo != ultimo) {
                 anunciar(r, ultimo, inst)
             }
@@ -398,7 +409,7 @@ class MotorSesionAndroid(
             else -> Unit
         }
         sonar(Snd.BROTE, Haptica.CONFIRM)
-        fuera.alCambiar(r, sonando())
+        avisarFuera(r)
     }
 
     private suspend fun terminarAqui(haptica: Haptica): ResultadoAccion {
@@ -445,7 +456,7 @@ class MotorSesionAndroid(
         efectos.guardarFila(r, inst, ahora.paredMillis, resultado)
         store.borrar()
         if (sigue) return
-        fuera.alCambiar(null, false)
+        avisarFuera(null)
         if (borradorTras != null) _borrador.value = borradorTras
         limpiar()
     }
@@ -459,30 +470,19 @@ class MotorSesionAndroid(
     ) {
         val previo = Tramos.de(r.plan).getOrNull(desde)
         var vigente = r
-        when (inst.actual) {
-            is Tramo.Foco ->
-                if (previo is Tramo.Respirar) {
-                    aire.parar()
-                    fondo.sonar(r.plan.fondo)
-                    sonar(Snd.ALEJAR, gesto ?: Haptica.TICK)
-                } else {
-                    fondo.sonar(r.plan.fondo)
-                    sonar(Snd.BROTE, gesto ?: Haptica.RISE)
-                }
-            is Tramo.Descanso -> {
-                fondo.callar()
-                sonar(Snd.CAMPANILLA, gesto ?: Haptica.CLICK)
+        // Respirar solo abre la sesión: no se llega a él por una frontera.
+        if (inst.actual !is Tramo.Respirar) {
+            val salida = SonidoFrontera.de(previo, inst.actual)
+            if (salida.pararAire) aire.parar()
+            when (salida.fondo) {
+                AccionFondo.SONAR -> fondo.sonar(r.plan.fondo)
+                AccionFondo.CALLAR -> fondo.callar()
             }
-            null -> {
-                if (previo is Tramo.Respirar) aire.parar()
-                fondo.callar()
-                vigente = devolverNoMolestar(r)
-                sonar(Snd.CAMPANILLA, gesto ?: Haptica.CONFIRM)
-            }
-            is Tramo.Respirar -> Unit
+            if (inst.actual == null) vigente = devolverNoMolestar(r)
+            sonar(salida.snd, gesto ?: salida.haptica)
         }
         anunciado = r.id to inst.tramo
-        fuera.alCambiar(vigente, sonando())
+        avisarFuera(vigente)
     }
 
     /**

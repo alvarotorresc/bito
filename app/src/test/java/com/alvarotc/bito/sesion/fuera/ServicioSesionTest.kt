@@ -139,6 +139,22 @@ class ServicioSesionTest {
     }
 
     @Test
+    fun `screen off after breathing with no background the receiver releases the service`() {
+        b.visible = true
+        val r = registroDeDosBloques(entrada = Entrada.RESPIRAR, fondo = SessionBackground.NONE)
+        cambia(r, 0, sonando = true)
+        assertTrue(b.servicio.vivo())
+        b.visible = false
+        runBlocking {
+            b.store.guardar(r)
+            b.ahora = ahoraA(61_000L)
+            SesionReceiver.procesar(b.entorno, b.audio, 0)
+        }
+        assertFalse(b.servicio.vivo())
+        assertEquals(1, b.servicio.paradas)
+    }
+
+    @Test
     fun `closing the session releases the service the notice and the wake lock`() {
         b.visible = true
         val r = registroDeDosBloques(entrada = Entrada.RESPIRAR)

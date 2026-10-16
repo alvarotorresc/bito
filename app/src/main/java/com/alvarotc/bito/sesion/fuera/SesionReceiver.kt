@@ -3,11 +3,12 @@ package com.alvarotc.bito.sesion.fuera
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.domain.sesion.RelojSesion
 import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.domain.sesion.Tramos
-import com.alvarotc.bito.ui.sistema.Haptica
-import com.alvarotc.bito.ui.sistema.sonido.Snd
+import com.alvarotc.bito.sesion.AccionFondo
+import com.alvarotc.bito.sesion.SonidoFrontera
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -62,34 +63,23 @@ class SesionReceiver : BroadcastReceiver() {
         private fun sonarFrontera(
             e: EntornoFuera,
             audio: AudioFrontera,
-            fondo: com.alvarotc.bito.data.settings.SessionBackground,
+            fondo: SessionBackground,
             previo: Tramo,
             nuevo: Tramo?,
         ) {
-            when (previo) {
-                is Tramo.Foco -> {
-                    audio.fondo.callar()
-                    if (nuevo != null) {
-                        audio.sonido.play(Snd.CAMPANILLA)
-                        e.tacto().haptica(Haptica.CLICK)
-                    }
-                }
-                is Tramo.Descanso -> {
-                    if (nuevo != null) {
-                        audio.fondo.sonar(fondo)
-                        audio.sonido.play(Snd.BROTE)
-                        e.tacto().haptica(Haptica.RISE)
-                    }
-                }
-                is Tramo.Respirar -> {
-                    audio.aire.parar()
-                    if (nuevo != null) {
-                        audio.fondo.sonar(fondo)
-                        audio.sonido.play(Snd.ALEJAR)
-                        e.tacto().haptica(Haptica.TICK)
-                    }
-                }
+            val salida = SonidoFrontera.de(previo, nuevo)
+            if (salida.pararAire) audio.aire.parar()
+            when (salida.fondo) {
+                AccionFondo.SONAR -> if (nuevo != null) audio.fondo.sonar(fondo)
+                AccionFondo.CALLAR -> audio.fondo.callar()
             }
+            // Al acabar no suena nada: avisa la notificación de fin.
+            if (nuevo != null) {
+                audio.sonido.play(salida.snd)
+                e.tacto().haptica(salida.haptica)
+            }
+            // Parar el servicio sí se puede desde segundo plano; arrancarlo no.
+            if (!SonidoFrontera.servicioSigue(nuevo, fondo)) soltarServicio(e)
         }
     }
 }

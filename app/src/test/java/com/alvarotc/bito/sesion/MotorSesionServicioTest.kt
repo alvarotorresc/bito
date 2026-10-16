@@ -89,9 +89,10 @@ class MotorSesionServicioTest {
         fondo: SessionBackground = SessionBackground.RAIN,
     ) = banco.settings.update { it.copy(sessionEntry = entrada, sessionBackground = fondo) }
 
-    private suspend fun MotorSesionAndroid.empezarTarea() {
+    private suspend fun MotorSesionAndroid.empezarTarea(bloques: Int? = null) {
         banco.tasks.create(taskEntity(id = "t1"))
         preparar(Destino.Tarea("t1"))
+        if (bloques != null) cambiarBorrador(borrador.value!!.copy(bloques = bloques))
         assertNull(empezar())
     }
 
@@ -117,11 +118,10 @@ class MotorSesionServicioTest {
             val fondo = FondoAsincrono()
             val motor = motor(fondo)
             ajustes(Entrada.DIRECTO)
-            motor.empezarTarea()
+            motor.empezarTarea(bloques = 1)
             fondo.completar()
             runCurrent()
             // La sesión acaba con la app delante: el servicio se va y el fondo se calla.
-            motor.cambiarBorrador(motor.registro.value!!.plan.copy(bloques = 1))
             banco.reloj.avanzar(26 * MINUTO)
             motor.tic()
             runCurrent()
@@ -214,5 +214,23 @@ class MotorSesionServicioTest {
             assertTrue(motor.instante.value?.actual is Tramo.Descanso)
             assertTrue(servicio.vivo())
             assertEquals(0, servicio.paradas)
+        }
+
+    @Test
+    fun `the engine hears by itself that the background is lost, without waiting for anything`() =
+        runTest {
+            alcance = CoroutineScope(SupervisorJob() + StandardTestDispatcher(testScheduler))
+            val g = Grabadores()
+            val motor = banco.motor(g, alcanceMotor = alcance)
+            ajustes(Entrada.DIRECTO)
+            motor.empezarTarea()
+            runCurrent()
+            assertTrue(g.fuera.sonandos.last())
+            g.fuera.sonandos.clear()
+
+            g.fondo.perder()
+            runCurrent()
+
+            assertEquals(listOf(false), g.fuera.sonandos.toList())
         }
 }
