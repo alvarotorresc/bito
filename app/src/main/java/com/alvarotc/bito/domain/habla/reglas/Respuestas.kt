@@ -1,31 +1,61 @@
 package com.alvarotc.bito.domain.habla.reglas
 
+import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.Candidata
 import com.alvarotc.bito.domain.habla.Hechos
 import com.alvarotc.bito.domain.habla.Hueco
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
 
 /**
  * Las candidatas que salen como respuesta y no por prioridad (spec §5.1, segunda tabla).
- * Provisional: candidatas mínimas de su situación; la Tarea 14 escribe los cuerpos.
  */
 object Respuestas {
-    /** Tras «Vale, a las…». Con lo gordo sin hacer, sesión o luego; sin él, solo «Otra hora». */
+    /**
+     * Tras «Vale, a las…». Con lo gordo sin hacer, ofrece la sesión de lo gordo o luego (`{gordo}` es
+     * lo que queda por hacer; la hora es la del hábito, nunca la de lo gordo); sin él, solo «Otra hora».
+     */
     fun confirmaVale(
         c: Candidata,
         hora: Int?,
         h: Hechos,
-    ): Candidata =
-        Candidata(
+    ): Candidata {
+        val huecos = hora?.let { mapOf(Hueco.HORA to ValorHueco.Hora(it)) }.orEmpty()
+        val pendientes = h.gordo.filter { it !in h.gordoHecho }
+        if (pendientes.isEmpty()) {
+            return Candidata(
+                situacion = Situacion.CONFIRMA_VALE,
+                ref = c.ref,
+                huecos = huecos,
+                acciones = listOf(Respuesta.OTRA_HORA),
+                hora = hora,
+                nucleo = Bolsa.NU_CONFIRMA_VALE,
+            )
+        }
+        val nombres = pendientes.mapNotNull { nombreDeGordo(it, h) }
+        return Candidata(
             situacion = Situacion.CONFIRMA_VALE,
             ref = c.ref,
-            huecos = if (hora == null) emptyMap() else mapOf(Hueco.HORA to ValorHueco.Hora(hora)),
-            acciones = if (h.gordo.isEmpty()) listOf(Respuesta.OTRA_HORA) else listOf(Respuesta.AHORA, Respuesta.LUEGO),
+            huecos = if (nombres.isEmpty()) huecos else huecos + (Hueco.GORDO to ValorHueco.Lista(nombres)),
+            acciones = listOf(Respuesta.AHORA, Respuesta.LUEGO),
+            destino = Destino.LoGordo,
             hora = hora,
+            nucleo = Bolsa.NU_CONFIRMA_VALE_GORDO,
         )
+    }
+
+    private fun nombreDeGordo(
+        ref: RefGordo,
+        h: Hechos,
+    ): String? =
+        when (ref.tipo) {
+            TipoRefGordo.TAREA -> h.tareas.firstOrNull { it.id == ref.id }?.titulo
+            TipoRefGordo.HABITO -> h.habitos.firstOrNull { it.id == ref.id }?.nombre
+        }
 
     /** Tras guardar la hoja de lo gordo. */
     fun gordoElegido(h: Hechos): Candidata = Candidata(Situacion.GORDO_ELEGIDO, null, emptyMap(), listOf(Respuesta.AHORA, Respuesta.LUEGO))
