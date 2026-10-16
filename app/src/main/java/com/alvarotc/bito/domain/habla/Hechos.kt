@@ -21,6 +21,7 @@ import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import java.time.DayOfWeek
+import java.time.ZoneId
 
 /** Tipo de hábito tal como lo nombra Habi. */
 enum class TipoHabito { CHECK, CONTADOR, DURACION, LIMITE, DEJAR }
@@ -136,6 +137,21 @@ data class Hechos(
         ): Hechos = deConCaros(state, memoria, ctx, recordatorios) { habit -> CarosDeHabito.calcular(state, habit, ctx) }
 
         /**
+         * Los días fuera si un registro en [dia] (con [state] aún sin él) es el primero tras la ausencia (spec §5.11):
+         * `dia - última actividad`, con la misma cuenta que la tarjeta de vuelta. Null si no hubo ausencia o si ya hubo
+         * actividad ese día.
+         */
+        fun diasFueraAlVolver(
+            state: DomainState,
+            dia: LogicalDay,
+            corteDia: Int,
+            zona: ZoneId,
+        ): Int? {
+            val ultima = ultimaActividadAntesDeVolver(state, dia, corteDia, zona) ?: return null
+            return (dia - ultima).takeIf { it >= Ritmo.DIAS_AUSENCIA }
+        }
+
+        /**
          * Si queda algo pendiente hoy, con la misma cuenta que `pendienteHoy()` de las reglas (exigible, sin hacer y
          * sin fallar): un límite o un dejar limpio ya no espera nada, aunque su periodo siga PENDING hasta sellar. Es
          * lo que decide la fase (`Contextos.de`, ESPERANDO) y lo que mira «Todo hecho», así que van siempre juntas.
@@ -169,7 +185,7 @@ data class Hechos(
                     ref.tipo == TipoRefGordo.TAREA && state.tasks.any { it.id == ref.id && it.status == TaskStatus.OPEN }
                 }
             val candidatos = LoGordo.candidatos(state, hoy)
-            val ultimaActividad = ultimaActividadAntesDeVolver(state, ctx)
+            val ultimaActividad = ultimaActividadAntesDeVolver(state, ctx.hoy, ctx.corteDia, ctx.zona)
             val diasSinActividad = ultimaActividad?.let { (hoy - it - 1).coerceAtLeast(0) } ?: 0
             val animoAyer =
                 memoria.eventos
@@ -213,11 +229,13 @@ data class Hechos(
          */
         private fun ultimaActividadAntesDeVolver(
             state: DomainState,
-            ctx: Contexto,
+            hoy: LogicalDay,
+            corteDia: Int,
+            zona: ZoneId,
         ): LogicalDay? {
             val sellosDeAntes =
                 state.daySeals.filterNot {
-                    it.logicalDay < ctx.hoy && LogicalDays.logicalDayOf(it.sealedAtMillis, ctx.corteDia, ctx.zona) >= ctx.hoy
+                    it.logicalDay < hoy && LogicalDays.logicalDayOf(it.sealedAtMillis, corteDia, zona) >= hoy
                 }
             return StatsEngine.lastActivityDay(state.copy(daySeals = sellosDeAntes))
         }

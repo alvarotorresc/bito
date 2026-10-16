@@ -15,6 +15,7 @@ import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.habla.PermisosAvisos
 import com.alvarotc.bito.data.habla.PropuestaVigenteStore
+import com.alvarotc.bito.data.habla.VueltaAlRegistrar
 import com.alvarotc.bito.data.habla.ticksDeMinuto
 import com.alvarotc.bito.data.repo.BreathingRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
@@ -35,13 +36,13 @@ import com.alvarotc.bito.ui.sistema.crearTacto
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 
 /** Hand-built DI (tech doc §1.4: no framework — constructors). */
 class AppContainer(context: Context) {
     val database: BitoDatabase = BitoDatabase.build(context)
     val habits = HabitsRepository(database)
-    val journal = JournalRepository(database)
     val rewards = RewardsRepository(database)
     val domainState = DomainStateRepository(database)
     val tasks = TasksRepository(database)
@@ -55,6 +56,17 @@ class AppContainer(context: Context) {
             PreferenceDataStoreFactory.create {
                 context.filesDir.resolve("settings.preferences_pb")
             },
+        )
+
+    // El diario anota la vuelta con el primer registro tras la ausencia, venga de donde venga.
+    val journal =
+        JournalRepository(
+            database,
+            VueltaAlRegistrar(
+                estado = { domainState.snapshot() },
+                memoria = memoria,
+                corteDia = { settings.settings.first().dayCutoffMinutes },
+            ),
         )
     val focus =
         FocusStore(
