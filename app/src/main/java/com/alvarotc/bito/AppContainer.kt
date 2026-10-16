@@ -27,6 +27,7 @@ import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.sesion.SesionStore
 import com.alvarotc.bito.data.sesion.SesionesRepository
 import com.alvarotc.bito.data.sesion.ahoraDelSistema
+import com.alvarotc.bito.data.sesion.tareasEmpezadasHoy
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
@@ -177,19 +178,18 @@ class AppContainer(context: Context) {
             registrar = { habitId, cantidad -> registrarVuelta.log(habitId, cantidad) },
             // Con la app abierta, la tarjeta cambia sola con la hora (la noche, las caducidades).
             ticks = ticksDeMinuto(System::currentTimeMillis),
-            empezadas = tareasEmpezadasHoy(),
+            // Las tareas con una sesión hoy, cerrada o viva: para Habi, algo en lo que ya se está no está «sin empezar».
+            empezadas =
+                tareasEmpezadasHoy(
+                    ajustes = settings.settings,
+                    ticks = ticksDeMinuto(System::currentTimeMillis),
+                    ahora = System::currentTimeMillis,
+                    zona = ZoneId::systemDefault,
+                    cerradasDe = sesiones::deDia,
+                    viva = sesionStore.registro,
+                ),
         )
     }
-
-    /** Las tareas con una sesión hoy, cerrada o viva: para Habi, algo en lo que ya se está no está «sin empezar». */
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun tareasEmpezadasHoy(): Flow<Set<String>> =
-        settings.settings
-            .map { LogicalDays.logicalDayOf(System.currentTimeMillis(), it.dayCutoffMinutes, ZoneId.systemDefault()) }
-            .distinctUntilChanged()
-            .flatMapLatest { dia ->
-                combine(sesiones.deDia(dia), sesionStore.registro) { cerradas, viva -> TareasEmpezadas.de(cerradas, viva) }
-            }
 
     private val registrarVuelta by lazy { QuickActionUseCase(journal, reconciler, domainState, habits, settings) }
 
