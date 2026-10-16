@@ -99,6 +99,9 @@ class FuentePropuestasHabiTest {
     /** Con [conTope], el motor da un saludo en cuanto hoy se ha mostrado una propuesta que cuenta para el tope (§5.2). */
     private var conTope = false
 
+    /** Con [alarmas], el motor pide en Hoy el permiso de las alarmas exactas. */
+    private var alarmas = false
+
     /** Cuántos usos con situación (redacciones) veía el motor en cada elección de la ficha. */
     private val usosVistosFicha = mutableListOf<Int>()
 
@@ -125,7 +128,9 @@ class FuentePropuestasHabiTest {
         ElegirCandidata { ambito, h, m, _, habitId ->
             when (ambito) {
                 Ambito.HOY ->
-                    if (conTope && m.mostradasHoy.any { it.situacion.cuentaTope }) {
+                    if (alarmas) {
+                        Candidata(Situacion.PERMISO_AVISOS, null, emptyMap(), listOf(Respuesta.VALE), nucleo = Bolsa.NU_PERMISO_ALARMAS)
+                    } else if (conTope && m.mostradasHoy.any { it.situacion.cuentaTope }) {
                         Candidata(Situacion.SALUDO, null, emptyMap(), emptyList())
                     } else {
                         candidataHoy(h)
@@ -215,6 +220,7 @@ class FuentePropuestasHabiTest {
     private fun fuente(
         estado: Flow<DomainState>,
         nombre: String = "Álvaro",
+        permisos: PermisosAvisos = PermisosAvisos(notificaciones = true, alarmasExactas = true),
     ) = FuentePropuestasHabi(
         estado = estado,
         ajustes = flowOf(Settings(userName = nombre, personality = Personality.NEUTRA)),
@@ -225,7 +231,7 @@ class FuentePropuestasHabiTest {
         aceptados = aceptados,
         catalogo = { catalogo },
         avisos = avisos,
-        permisos = { PermisosAvisos(notificaciones = true, alarmasExactas = true) },
+        permisos = { permisos },
         now = { ahora },
         zone = { testZone },
         registrar = { id, cantidad -> registros += id to cantidad },
@@ -560,5 +566,14 @@ class FuentePropuestasHabiTest {
             ficha.await()
 
             assertEquals(1, usosVistosFicha.first())
+        }
+
+    @Test
+    fun `asking for exact alarms is shown when notifications are already allowed`() =
+        prueba {
+            alarmas = true
+            val f = fuente(estadoCon(agua), permisos = PermisosAvisos(notificaciones = true, alarmasExactas = false))
+            val p = f.propuesta(Ambito.HOY).first()
+            assertTrue(p?.id.orEmpty(), p?.id?.startsWith("PERMISO_AVISOS:") == true)
         }
 }

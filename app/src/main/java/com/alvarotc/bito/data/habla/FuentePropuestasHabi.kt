@@ -9,6 +9,7 @@ import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.Candidata
 import com.alvarotc.bito.domain.habla.CatalogoHabla
+import com.alvarotc.bito.domain.habla.ClaveTrozo
 import com.alvarotc.bito.domain.habla.Contexto
 import com.alvarotc.bito.domain.habla.Contextos
 import com.alvarotc.bito.domain.habla.ElegirCandidata
@@ -274,13 +275,29 @@ class FuentePropuestasHabi(
         )
     }
 
-    /** La vigente que sería [c] antes de redactarla: sin trozos, para mirar su validez. */
+    /**
+     * La vigente que sería [c] antes de redactarla, para mirar su validez. Lleva solo el núcleo, con el
+     * índice 0: la validez lo necesita para distinguir variantes (el permiso de alarmas) y ese índice
+     * siempre pasa por existente.
+     */
     private fun sinRedactar(
         c: Candidata,
         ambito: Ambito,
         clave: String,
         ctx: Contexto,
-    ) = PropuestaVigente(ambito, clave, ctx.hoy, c.situacion, c.ref, emptyList(), c.huecos, c.acciones, c.destino, c.hora, ctx.ahoraMillis)
+    ) = PropuestaVigente(
+        ambito = ambito,
+        habitId = clave,
+        dia = ctx.hoy,
+        situacion = c.situacion,
+        ref = c.ref,
+        trozos = listOfNotNull(c.nucleo?.let { ClaveTrozo(it, ctx.voz, 0) }),
+        huecos = c.huecos,
+        acciones = c.acciones,
+        destino = c.destino,
+        hora = c.hora,
+        creadoMillis = ctx.ahoraMillis,
+    )
 
     /** Redacta [c], la guarda como vigente y anota los usos y el recuerdo mencionado. */
     private suspend fun redactarYGuardar(
