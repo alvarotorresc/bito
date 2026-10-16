@@ -10,6 +10,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
+import com.alvarotc.bito.data.habla.LoGordoRepository
+import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -22,9 +25,11 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.ui.camino.CaminoViewModel
 import com.alvarotc.bito.ui.cierre.CierreViewModel
+import com.alvarotc.bito.ui.cierre.FuentePropuestasNula
 import com.alvarotc.bito.ui.garden.LocalSondaJardin
 import com.alvarotc.bito.ui.garden.SondaJardin
 import com.alvarotc.bito.ui.habi.HabiSounds
+import com.alvarotc.bito.ui.notifications.AvisosHabiNulo
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.premios.RegistroAnclas
 import com.alvarotc.bito.ui.review.ReviewViewModel
@@ -143,20 +148,37 @@ internal class BancoInicio(
         reconciler: PointsReconciler,
         dispatcherVM: CoroutineDispatcher,
     ): CierreViewModel =
-        CierreViewModel {
-            ReviewViewModel(
-                domainState,
-                habits,
-                journal,
-                settings,
-                reconciler,
-                rewards,
-                HabiSounds(MotorSonidoMudo),
-                now = { fixedNow },
-                zone = { utc },
-                defaultDispatcher = dispatcherVM,
-            )
-        }
+        CierreViewModel(
+            domainState,
+            habits,
+            journal,
+            settings,
+            reconciler,
+            rewards,
+            HabiSounds(MotorSonidoMudo),
+            MemoriaRepository(db) { fixedNow },
+            LoGordoRepository(db) { fixedNow },
+            AvisosAceptadosRepository(db),
+            AvisosHabiNulo,
+            FuentePropuestasNula,
+            crearRepaso = {
+                ReviewViewModel(
+                    domainState,
+                    habits,
+                    journal,
+                    settings,
+                    reconciler,
+                    rewards,
+                    HabiSounds(MotorSonidoMudo),
+                    now = { fixedNow },
+                    zone = { utc },
+                    defaultDispatcher = dispatcherVM,
+                )
+            },
+            now = { fixedNow },
+            zone = { utc },
+            defaultDispatcher = dispatcherVM,
+        )
 
     fun sembrar(
         id: String,
