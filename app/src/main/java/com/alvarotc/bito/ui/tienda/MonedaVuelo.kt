@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -141,7 +140,7 @@ fun CapaMoneda(
     modifier: Modifier = Modifier,
 ) {
     val reducido = BitoTema.reducido
-    SideEffect { vuelo.reducido = reducido }
+    vuelo.reducido = reducido // se lee al volar, que puede llegar en el mismo fotograma
     val densidad = LocalDensity.current.density
     var raiz by remember { mutableStateOf(Offset.Zero) }
     Box(
