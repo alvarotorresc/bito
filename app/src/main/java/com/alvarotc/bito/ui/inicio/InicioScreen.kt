@@ -548,8 +548,17 @@ fun InicioScreen(
     // Volver de crear: el Inicio guarda su copia, porque la lista borra la señal al desplazarse.
     var creadoVisto by remember { mutableStateOf<String?>(null) }
     var salto by remember { mutableIntStateOf(0) }
+    var saltoAmplitud by remember { mutableStateOf<Float?>(null) }
     // El saltito de Habi que piden los bloques; la amplitud la pone la reacción de Habi (hoy, la de un toque).
-    val saltarHabi: (Float) -> Unit = remember(reducido) { { _ -> if (!reducido) salto++ } }
+    val saltarHabi: (Float) -> Unit =
+        remember(reducido) {
+            { amplitud ->
+                if (!reducido) {
+                    saltoAmplitud = amplitud
+                    salto++
+                }
+            }
+        }
     var aplastar by remember { mutableIntStateOf(0) }
     var fiesta by remember { mutableIntStateOf(0) }
     var frase by remember { mutableStateOf<Int?>(null) }
@@ -590,7 +599,10 @@ fun InicioScreen(
                     snapshotFlow { estadoActual.value }.first { s -> s.cards.any { it.id == id } || s.tasks.any { it.id == id } }
                 }
             if (e != null) {
-                if (!reducido) salto++
+                if (!reducido) {
+                    saltoAmplitud = null
+                    salto++
+                }
                 val rect = registro.posiciones[ClavesAncla.HABI]
                 val visible = rect != null && qGeometria() == 0f && rect.center.y > 0f && rect.center.y < borde()
                 puntoGlobito = if (visible) Offset(rect!!.center.x, rect.top) else null
@@ -664,6 +676,7 @@ fun InicioScreen(
                                 if (conVoz) {
                                     gesto(Snd.HABI)
                                 } else if (!reducido) {
+                                    saltoAmplitud = null
                                     salto++
                                 }
                             },
@@ -737,6 +750,7 @@ fun InicioScreen(
                     camara = if (sesionActiva) camara else null,
                     altoContenido = altoContenido,
                     respiracion = respiracion.value,
+                    saltoAmplitud = saltoAmplitud,
                 )
                 if (caminoVisible) {
                     TituloCamino(

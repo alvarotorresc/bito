@@ -188,6 +188,8 @@ fun JardinCompartido(
     altoContenido: State<Int>? = null,
     // El llenado de la respiración (0..1) para Habi en la sesión.
     respiracion: (() -> Float)? = null,
+    // La amplitud del salto de cada incremento de [saltoHabi]; null = el salto de siempre.
+    saltoAmplitud: Float? = null,
 ) {
     val densidad = LocalDensity.current
     val colores = BitoTema.colores
@@ -290,6 +292,7 @@ fun JardinCompartido(
                 aplastarHabi = aplastarHabi,
                 dormido = dormido,
                 respiracion = respiracion,
+                saltoAmplitud = saltoAmplitud,
             )
         }
     }

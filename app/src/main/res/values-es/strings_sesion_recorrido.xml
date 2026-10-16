@@ -6,4 +6,13 @@
         <item quantity="other">Descanso de %1$d minutos</item>
     </plurals>
     <string name="sesr_anuncio_terminada">Sesión terminada</string>
+    <plurals name="sesr_lectura_minutos">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minutos</item>
+    </plurals>
+    <plurals name="sesr_lectura_segundos">
+        <item quantity="one">%1$d segundo</item>
+        <item quantity="other">%1$d segundos</item>
+    </plurals>
+    <string name="sesr_lectura_cifra">%1$s %2$s de %3$d</string>
 </resources>

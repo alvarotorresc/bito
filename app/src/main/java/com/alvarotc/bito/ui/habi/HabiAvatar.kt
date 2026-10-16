@@ -113,6 +113,14 @@ internal fun breathScales(
 
 private const val IDLE_GESTURE_MIN_DELAY_MS = 5000L
 private const val IDLE_GESTURE_MAX_DELAY_MS = 11000L
+
+// `jump(amp)` del mock (cuando se pide una amplitud): agacharse, aire y asentar.
+private const val JUMP_CROUCH = 0.8f
+private const val JUMP_CROUCH_MS = 120
+private const val JUMP_AIR_MS = 500
+private const val JUMP_LAND = 0.7f
+private const val JUMP_LAND_MS = 180
+
 private const val SQUASH_SCALE_X = 0.10f
 private const val SQUASH_SCALE_Y = 0.14f
 private const val TAP_HOP_DP = 8f
@@ -151,7 +159,9 @@ private data class FaceKey(
  * esquina de Hoy). [nudge] repite la reacción al toque desde fuera (el foco, el jardín), con la
  * mirada hacia [nudgeTouch] (0..1 en el lienzo) si viene; si no, hacia el último toque. [breath], si no es
  * null, sustituye la respiración de reposo por la guiada y cierra los ojos con la pieza pintada; al
- * volver a null se abren con un fundido de LID_RELEASE_MS.
+ * volver a null se abren con un fundido de LID_RELEASE_MS. Con [nudgeSalto] (fracción del alto de Habi, 0,11 el
+ * saltito de Foco) el [nudge] es un salto de esa altura (`jump(amp)` del mock) en vez de la reacción al toque;
+ * [sondaSalto] solo lo usan las pruebas.
  */
 @Composable
 fun HabiAvatar(
@@ -163,6 +173,8 @@ fun HabiAvatar(
     nudge: Int = 0,
     breath: HabiBreath? = null,
     nudgeTouch: Offset? = null,
+    nudgeSalto: Float? = null,
+    sondaSalto: SondaSalto? = null,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -178,6 +190,7 @@ fun HabiAvatar(
     // eleva, tilt balancea sobre los pies, gaze mueve la cara. Gestos y toques los comparten: el
     // último animateTo gana, que es como debe interrumpirse una mascota.
     var squashValue = 0f
+    var saltoValue = 0f
     var hopValue = 0f
     var tiltValue = 0f
     var gazeValue = Offset.Zero
@@ -272,11 +285,13 @@ fun HabiAvatar(
 
         val squash = remember { Animatable(0f) }
         val hop = remember { Animatable(0f) }
+        val salto = remember { Animatable(0f) }
         val tilt = remember { Animatable(0f) }
         val gazeX = remember { Animatable(0f) }
         val gazeY = remember { Animatable(0f) }
         squashValue = squash.value
         hopValue = hop.value
+        saltoValue = salto.value
         tiltValue = tilt.value
         gazeValue = Offset(gazeX.value, gazeY.value)
 
@@ -374,12 +389,35 @@ fun HabiAvatar(
 
         // Recuerda el valor ya contestado, sembrado con el que traiga `nudge` al componer: una
         // recreación de la actividad (rotación) que conserve el ViewModel no repite la reacción.
+        val saltoJob = remember { arrayOfNulls<Job>(1) }
+        val saltoScope = rememberCoroutineScope()
         var lastAnsweredNudge by remember { mutableIntStateOf(nudge) }
         LaunchedEffect(nudge) {
             if (nudge > lastAnsweredNudge) {
-                nudgeTouch?.let { lastTouch = it }
-                tapBlinkPulse?.invoke()
-                tapReactionPulse?.invoke()
+                if (nudgeSalto != null) {
+                    // `jump(amp)` del mock: se agacha 120 ms, sube y baja en 500 ms con un arco y asienta en 180 ms.
+                    saltoJob[0]?.cancel()
+                    saltoJob[0] =
+                        saltoScope.launch {
+                            squash.animateTo(JUMP_CROUCH, tween(JUMP_CROUCH_MS, easing = LinearOutSlowInEasing))
+                            coroutineScope {
+                                launch {
+                                    salto.animateTo(nudgeSalto, tween(JUMP_AIR_MS / 2, easing = LinearOutSlowInEasing))
+                                    salto.animateTo(0f, tween(JUMP_AIR_MS / 2, easing = FastOutLinearInEasing))
+                                }
+                                launch {
+                                    squash.animateTo(-JUMP_CROUCH, tween(JUMP_AIR_MS / 2, easing = LinearOutSlowInEasing))
+                                    squash.animateTo(0f, tween(JUMP_AIR_MS / 2, easing = FastOutLinearInEasing))
+                                }
+                            }
+                            squash.animateTo(JUMP_LAND, tween(JUMP_LAND_MS / 2, easing = LinearOutSlowInEasing))
+                            squash.animateTo(0f, JellySpring)
+                        }
+                } else {
+                    nudgeTouch?.let { lastTouch = it }
+                    tapBlinkPulse?.invoke()
+                    tapReactionPulse?.invoke()
+                }
             }
             lastAnsweredNudge = nudge
         }
@@ -492,7 +530,13 @@ fun HabiAvatar(
             .graphicsLayer {
                 // Anclado en los pies: una criatura con peso, no un globo que escala desde el centro.
                 transformOrigin = TransformOrigin(0.5f, 1f)
-                translationY = -breathLiftPx * breathing.liftFactor - hopPx * hopValue
+                val saltoPx = size.height * saltoValue
+                sondaSalto?.let {
+                    it.pixeles = saltoPx
+                    it.fraccion = saltoValue
+                    if (saltoValue > it.picoFraccion) it.picoFraccion = saltoValue
+                }
+                translationY = -breathLiftPx * breathing.liftFactor - hopPx * hopValue - saltoPx
                 rotationZ = tiltValue
                 this.scaleX = scaleX * (1f + SQUASH_SCALE_X * squashValue) * breathing.scaleX
                 this.scaleY = scaleY * (1f - SQUASH_SCALE_Y * squashValue) * breathing.scaleY
@@ -588,4 +632,11 @@ private fun DrawScope.drawHearts(phase: Float) {
             drawPath(heart, color = Mofletes, alpha = alpha)
         }
     }
+}
+
+/** Lo que se ve del salto pedido con amplitud, para las pruebas: lo que sube ahora y lo más que ha subido, como fracción del alto de Habi. */
+class SondaSalto {
+    var pixeles: Float = 0f
+    var fraccion: Float = 0f
+    var picoFraccion: Float = 0f
 }
