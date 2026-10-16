@@ -68,7 +68,6 @@ import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -360,7 +359,6 @@ class FuentePropuestasHabiTest {
         }
 
     // «Ayer se escapó» de un hábito de marcar: la Neutra aún no tiene frases sin {minutos} que valgan cualquier día.
-    @Ignore("hasta el volcado de las frases de la T33c")
     @Test
     fun `the morning notice and the card share the current proposal`() =
         prueba {
@@ -576,7 +574,6 @@ class FuentePropuestasHabiTest {
         }
 
     // «Ayer se escapó» de un hábito de marcar: la Neutra aún no tiene frases sin {minutos} que valgan cualquier día.
-    @Ignore("hasta el volcado de las frases de la T33c")
     @Test
     fun `the current proposal is kept and counted once against the daily cap`() =
         prueba {
@@ -620,7 +617,6 @@ class FuentePropuestasHabiTest {
         }
 
     // «Ayer se escapó» de un hábito de marcar: la Neutra aún no tiene frases sin {minutos} que valgan cualquier día.
-    @Ignore("hasta el volcado de las frases de la T33c")
     @Test
     fun `a draft reads the memory inside the lock and sees what another scope just wrote`() =
         prueba {
