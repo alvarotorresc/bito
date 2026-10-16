@@ -2,14 +2,18 @@ package com.alvarotc.bito.sesion.sonido
 
 import android.content.Context
 import android.media.AudioManager
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.SessionBackground
-import com.alvarotc.bito.ui.sistema.sonido.AjustesSonido
-import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoAndroid
-import com.alvarotc.bito.ui.sistema.sonido.Reproductor
+import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.ui.sistema.sonido.Bucle
+import com.alvarotc.bito.ui.sistema.sonido.BucleMudo
+import com.alvarotc.bito.ui.sistema.sonido.Canal
+import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -21,7 +25,9 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
@@ -91,6 +97,9 @@ class FondoSesionTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val audio = context.getSystemService(AudioManager::class.java)
     private var ganancia = 1f
+
+    @get:Rule
+    val carpeta = TemporaryFolder()
 
     private fun cambiar(cambio: Int) = shadowOf(audio).lastAudioFocusRequest.listener.onAudioFocusChange(cambio)
 
@@ -177,24 +186,27 @@ class FondoSesionTest {
             advanceTimeBy(2_000)
             val fuente = m.salida.cortos.single().second
 
-            // El motor de sonido de la app sí funde sus bucles al salir de la app.
-            val pool = ReproductorGrabado()
-            val motor =
-                MotorSonidoAndroid(
-                    pool,
-                    recursoDe = { 1 },
-                    ajustes = { AjustesSonido(true, true, true, 6, 6, 10) },
-                    timbreNormal = { true },
-                    scope = CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined),
-                )
-            motor.bucle(Snd.FONDO_LLUVIA).empezar()
-            motor.segundoPlano()
-
+            // El motor de sonido de la app funde sus bucles al salir de la app; el fondo de la sesión no depende de él.
             advanceTimeBy(2_000)
             assertEquals(SessionBackground.BROWN, m.fondo.sonando.value)
             assertFalse(fuente.cerrada)
             assertTrue(fuente.ultimo > 0.99f)
         }
+
+    @Test
+    fun `the real factory never goes through the app loops`() {
+        val sonido = MotorSonidoQueGraba()
+        val almacen =
+            PreferenceDataStoreFactory.create(scope = CoroutineScope(Dispatchers.Unconfined)) {
+                carpeta.newFile("ajustes.preferences_pb")
+            }
+        val fondo = crearFondo(context, sonido, SettingsRepository(almacen))
+        fondo.sonar(SessionBackground.RAIN)
+        fondo.muestra(SessionBackground.CAFE)
+        fondo.callar()
+        // El `Bucle` del motor de sonido se funde en `segundoPlano()`: el fondo de la sesión no puede pasar por él.
+        assertEquals(0, sonido.bucles)
+    }
 
     @Test
     fun `temporary loss fades and returns, permanent stops and clears sonando`() =
@@ -321,28 +333,25 @@ class FondoSesionTest {
         }
 }
 
-internal class ReproductorGrabado : Reproductor {
-    val parados = mutableListOf<Int>()
-    val volumenes = mutableListOf<Float>()
-
-    override fun cargar(recurso: Int) = 1
-
-    override fun listo(id: Int) = true
+internal class MotorSonidoQueGraba : MotorSonido {
+    var bucles = 0
 
     override fun play(
-        id: Int,
-        volumen: Float,
-        bucle: Boolean,
-    ) = 7
+        snd: Snd,
+        intensidad: Float,
+    ) = Unit
 
-    override fun volumen(
-        stream: Int,
-        volumen: Float,
-    ) {
-        volumenes += volumen
+    override fun bucle(snd: Snd): Bucle {
+        bucles++
+        return BucleMudo
     }
 
-    override fun parar(stream: Int) {
-        parados += stream
-    }
+    override fun probar(
+        canal: Canal,
+        nivel: Int,
+    ) = Unit
+
+    override fun ganancia(canal: Canal): Float = 1f
+
+    override fun segundoPlano() = Unit
 }
