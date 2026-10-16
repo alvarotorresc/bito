@@ -192,6 +192,9 @@ class FuentePropuestasHabi(
             }
             Situacion.SALUDO -> Franja.de(minutoDe(v.creadoMillis, ctx.zona)) != ctx.franja
             Situacion.PERMISO_AVISOS -> if (pideAlarmas(v)) ctx.alarmasExactas else ctx.permisoAvisos
+            // Las que salen como respuesta duran la espera tras responder (§5.2): después vuelve a decidir el motor.
+            Situacion.TRAS_HOY_NO, Situacion.GORDO_ELEGIDO, Situacion.CONFIRMA_VALE ->
+                ctx.ahoraMillis - v.creadoMillis >= Ritmo.ESPERA_TRAS_RESPONDER_MIN * MILLIS_POR_MINUTO
             else -> false
         }
 
@@ -492,6 +495,8 @@ class FuentePropuestasHabi(
     ): Int = LogicalDays.logicalDayOf(ahora, prefs.dayCutoffMinutes, zone())
 
     private companion object {
+        const val MILLIS_POR_MINUTO = 60_000L
+
         /** Las que proponen hacer su ref: si se hace desde la lista, el widget o un aviso, la tarjeta se cierra. */
         val PROPONEN_HACER =
             setOf(

@@ -489,4 +489,16 @@ class FuentePropuestasHabiTest {
             val mostradas = memoria.observe(flowOf(TODAY)).first().mostradasHoy
             assertEquals(listOf(Situacion.AYER_SE_ESCAPO), mostradas.map { it.situacion })
         }
+
+    @Test
+    fun `an answer lasts the wait after answering and then the motor decides again`() =
+        runTest {
+            val f = fuente(estadoCon(leerFalladoAyer))
+            val p = f.hoy()
+            f.responder(p.id, Respuesta.HOY_NO)
+            ahora += 89 * 60_000L
+            assertTrue(f.hoy().id.startsWith("TRAS_HOY_NO:"))
+            ahora += 60_000L
+            assertEquals(p.id, f.hoy().id)
+        }
 }
