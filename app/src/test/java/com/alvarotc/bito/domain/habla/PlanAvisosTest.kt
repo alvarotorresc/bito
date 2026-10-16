@@ -107,20 +107,38 @@ class PlanAvisosTest {
     }
 
     @Test
-    fun `no more than two accepted notices a day, counting every state`() {
+    fun `no more than two accepted notices a day, counting every state but cancelled`() {
         val m =
             Memoria(
                 avisos =
                     listOf(
-                        aceptado(id = "tercero", minuto = 13 * 60).copy(creadoMillis = 3L),
-                        aceptado(id = "cancelado", estado = EstadoAviso.CANCELADO).copy(creadoMillis = 1L),
-                        aceptado(id = "segundo", minuto = 16 * 60).copy(creadoMillis = 2L),
+                        aceptado(id = "tercero", minuto = 13 * 60).copy(creadoMillis = 4L),
+                        aceptado(id = "lanzado", estado = EstadoAviso.LANZADO).copy(creadoMillis = 1L),
+                        aceptado(id = "cancelado", estado = EstadoAviso.CANCELADO).copy(creadoMillis = 2L),
+                        aceptado(id = "segundo", minuto = 16 * 60).copy(creadoMillis = 3L),
                     ),
             )
 
         val claves = PlanAvisos.de(conAlgo, m, ctx()).filter { it.tipo == TipoAviso.ACEPTADO }.map { it.clave }
 
         assertEquals(listOf("segundo"), claves)
+    }
+
+    @Test
+    fun `OK then another time twice keeps the last one planned`() {
+        val m =
+            Memoria(
+                avisos =
+                    listOf(
+                        aceptado(id = "vale", estado = EstadoAviso.CANCELADO).copy(creadoMillis = 1L),
+                        aceptado(id = "otra1", minuto = 15 * 60, estado = EstadoAviso.CANCELADO).copy(creadoMillis = 2L),
+                        aceptado(id = "otra2", minuto = 16 * 60).copy(creadoMillis = 3L),
+                    ),
+            )
+
+        val claves = PlanAvisos.de(conAlgo, m, ctx()).filter { it.tipo == TipoAviso.ACEPTADO }.map { it.clave }
+
+        assertEquals(listOf("otra2"), claves)
     }
 
     @Test

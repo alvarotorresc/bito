@@ -27,7 +27,10 @@ object PlanAvisos {
     const val CLAVE_MANANA = "manana"
     const val CLAVE_NOCHE = "noche"
 
-    /** Los avisos de Habi de hoy que aún no han pasado: mañana, noche y aceptados (los [Ritmo.TOPE_ACEPTADOS_DIA] primeros del día). */
+    /**
+     * Los avisos de Habi de hoy que aún no han pasado: mañana, noche y aceptados (los [Ritmo.TOPE_ACEPTADOS_DIA] primeros
+     * del día que no están cancelados).
+     */
     fun de(
         h: Hechos,
         m: Memoria,
@@ -38,9 +41,9 @@ object PlanAvisos {
         minutoNoche(h, ctx)?.let { plan += AvisoPlan(TipoAviso.NOCHE, CLAVE_NOCHE, it, ctx.hoy) }
         if (!h.diaSellado) {
             val pendientes = h.habitos.filterNot { it.hechoHoy }.map { it.id }.toSet()
-            // Tope de §5.2: cuentan los de hoy en cualquier estado, en el orden en que se aceptaron.
+            // Tope de §5.2: cuentan los de hoy en cualquier estado menos cancelado, en el orden en que se aceptaron.
             m.avisos
-                .filter { it.dia == ctx.hoy }
+                .filter { it.dia == ctx.hoy && cuentaParaElTope(it) }
                 .sortedBy { it.creadoMillis }
                 .take(Ritmo.TOPE_ACEPTADOS_DIA)
                 .filter { it.estado == EstadoAviso.PENDIENTE && it.habitId in pendientes }
@@ -48,6 +51,9 @@ object PlanAvisos {
         }
         return plan.filterNot { yaPasado(it.minuto, ctx) }
     }
+
+    /** Un aviso cancelado (por «Otra hora», por ejemplo) no suena: no gasta el tope de [Ritmo.TOPE_ACEPTADOS_DIA]. */
+    fun cuentaParaElTope(aviso: AvisoAceptado): Boolean = aviso.estado != EstadoAviso.CANCELADO
 
     /**
      * El minuto de un aviso que se conserva (franjas, hábito, tareas, respirar) con el silencio (§6.3):

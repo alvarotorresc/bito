@@ -138,16 +138,16 @@ class AvisosHabiAndroid(
     }
 
     /**
-     * «Vale» desde la mañana. Con [Ritmo.TOPE_ACEPTADOS_DIA] avisos ya hoy (en cualquier estado) no se acepta otro. Si
-     * tras responder no hay aviso nuevo de esa propuesta (id de otro día, RF4, o día duro sin hora), solo se quita la
-     * notificación; si lo hay, la mañana pasa a ser la del aceptado y se programa su alarma.
+     * «Vale» desde la mañana. Con [Ritmo.TOPE_ACEPTADOS_DIA] avisos ya hoy (en cualquier estado menos cancelado) no se
+     * acepta otro. Si tras responder no hay aviso nuevo de esa propuesta (id de otro día, RF4, o día duro sin hora),
+     * solo se quita la notificación; si lo hay, la mañana pasa a ser la del aceptado y se programa su alarma.
      */
     private suspend fun vale(intent: Intent) {
         val propuestaId = intent.getStringExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID) ?: return
         val hora = intent.getIntExtra(AvisoHabiReceiver.EXTRA_HORA, Notifier.SIN_HORA).takeIf { it != Notifier.SIN_HORA }
         val p = plan()
         val repo = aceptados()
-        if (repo.observeDe(p.ctx.hoy).first().size >= Ritmo.TOPE_ACEPTADOS_DIA) {
+        if (repo.observeDe(p.ctx.hoy).first().count(PlanAvisos::cuentaParaElTope) >= Ritmo.TOPE_ACEPTADOS_DIA) {
             Notifier.cancelManana(context)
             return
         }

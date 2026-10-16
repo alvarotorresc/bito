@@ -435,7 +435,7 @@ class AvisosHabiAndroidTest {
     @Test
     fun `a third accepted notice of the day is not taken`() =
         runTest(dispatcher) {
-            aceptado(id = "a1", estado = EstadoAviso.CANCELADO)
+            aceptado(id = "a1", estado = EstadoAviso.LANZADO)
             aceptado(id = "a2", minuto = 12 * 60, creado = 2L)
             Notifier.showManana(context, vigente, TextoHabi(R.string.habla_ahora), ctx().voz, hechosHoy.animoSemana)
 
@@ -449,6 +449,37 @@ class AvisosHabiAndroidTest {
             assertTrue(fuente.respuestas.isEmpty())
             assertNull(publicada(Notifier.MANANA_ID))
             assertEquals(2, repo.observeDe(TODAY).first().size)
+        }
+
+    @Test
+    fun `cancelled notices do not use up the daily cap`() =
+        runTest(dispatcher) {
+            aceptado(id = "a1", estado = EstadoAviso.CANCELADO)
+            aceptado(id = "a2", minuto = 12 * 60, estado = EstadoAviso.CANCELADO, creado = 2L)
+
+            avisos.accion(
+                accion(AvisoHabiReceiver.ACTION_VALE) {
+                    putExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID, vigente.id)
+                    putExtra(AvisoHabiReceiver.EXTRA_HORA, hora)
+                },
+            )
+
+            assertEquals(listOf<Triple<String, Respuesta, Int?>>(Triple(vigente.id, Respuesta.VALE, hora)), fuente.respuestas)
+            assertEquals(millisOn(TODAY, 14, 30), alarma(SlotKind.ACEPTADO, "${vigente.id}:$hora")?.millis)
+        }
+
+    @Test
+    fun `OK then another time twice keeps the last notice scheduled`() =
+        runTest(dispatcher) {
+            ahoraMin = 9 * 60
+            aceptado(id = "vale", estado = EstadoAviso.CANCELADO)
+            aceptado(id = "otra1", minuto = 15 * 60, estado = EstadoAviso.CANCELADO, creado = 2L)
+            aceptado(id = "otra2", minuto = 16 * 60, creado = 3L)
+
+            avisos.replanificar()
+
+            assertEquals(millisOn(TODAY, 16, 0), alarma(SlotKind.ACEPTADO, "otra2")?.millis)
+            assertNull(alarma(SlotKind.ACEPTADO, "vale"))
         }
 
     @Test
