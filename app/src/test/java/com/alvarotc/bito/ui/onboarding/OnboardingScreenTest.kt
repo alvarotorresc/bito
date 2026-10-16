@@ -125,7 +125,7 @@ class OnboardingScreenTest {
      * no `Espresso.pressBack()` and no exposed `.activity`, so the only way to trigger
      * [androidx.activity.compose.BackHandler]'s callback deterministically is to hand the
      * composition our OWN dispatcher instance and invoke it ourselves from outside the
-     * composition. Same recipe as `ReviewScreenTest`'s own copy — [lifecycle] only exists to
+     * composition. Same recipe the old review screen test used — [lifecycle] only exists to
      * satisfy the interface, [BackHandler] actually reads `LocalLifecycleOwner`, which the compose
      * test host already provides and resumes.
      */

@@ -13,6 +13,7 @@ import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
 import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.habla.MemoriaRepository
+import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -454,5 +455,28 @@ class CierreViewModelTest {
             advanceUntilIdle()
 
             assertEquals(fixedNow, settingsRepo.settings.first().badgesSeenUntilMillis)
+        }
+
+    /** Del repaso (`pointsToday` y `newBadges`): lo que el sello cuenta. */
+    @Test
+    fun `the seal counts today's bitos and lists only unseen badges in catalog order`() =
+        runTest {
+            db.pointsLedgerDao().insertAll(
+                listOf(
+                    pointsLedgerEntity("a", 5, PointsReason.HABIT_DONE, "h1:$today", today, 1),
+                    pointsLedgerEntity("b", -3, PointsReason.BUY_ITEM, "item", today, 2),
+                    pointsLedgerEntity("c", 10, PointsReason.PERFECT_DAY, "day:${today - 1}", today - 1, 3),
+                ),
+            )
+            db.badgeDao().insertAll(
+                listOf(BadgeEntity("first-habit", 30L), BadgeEntity("streak-7", 30L), BadgeEntity("perfect-day-1", 5L)),
+            )
+            settingsRepo.update { it.copy(badgesSeenUntilMillis = 10L) }
+
+            val ui = state()
+
+            assertEquals(5, ui.bitosHoy)
+            // El orden del catálogo (streak-7 antes que first-habit), no el de la lista; el ya visto no sale.
+            assertEquals(listOf("streak-7", "first-habit"), ui.logrosNuevos.map { it.id })
         }
 }
