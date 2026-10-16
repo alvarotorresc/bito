@@ -91,6 +91,9 @@ class MotorSesionAndroid(
 
     private var ticker: Job? = null
 
+    /** El tic corre (solo con la app delante; al volver lo levanta `recuperar`). */
+    internal val tickerActivo: Boolean get() = ticker?.isActive == true
+
     /** El último guardado en Ajustes de lo que se cambió en Preparar. */
     private var guardadoBorrador: Job? = null
 
@@ -329,7 +332,10 @@ class MotorSesionAndroid(
         enCerrojo {
             val r = _registro.value ?: return@enCerrojo
             if (!delante()) {
+                // Sin app delante el tic no tiene nada que hacer: se para y al volver `recuperar` lo levanta (y adopta el tramo).
                 adoptarAlVolver = true
+                ticker?.cancel()
+                ticker = null
                 return@enCerrojo
             }
             val inst = RelojSesion.en(r, reloj())

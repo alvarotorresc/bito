@@ -5,6 +5,7 @@ import android.view.Choreographer
 import com.alvarotc.bito.data.backup.BackupSync
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.sesion.fuera.SesionSync
+import com.alvarotc.bito.ui.AppVisibility
 import com.alvarotc.bito.ui.notifications.FocusSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
@@ -104,6 +105,17 @@ object AppStartup {
                 // La purga es de mantenimiento: si falla, se reintenta en el proximo arranque.
             }
         }
+    }
+
+    /**
+     * Trae la sesión viva al motor al abrir o volver a la app, sea cual sea la pantalla (si no, el tic y el sonido solo
+     * los levantaba el Inicio). Solo con la app delante: el motor suena, y con la app fuera suena el receptor. Sin
+     * sesión guardada no crea el motor.
+     */
+    internal suspend fun recuperarMotor(container: AppContainer) {
+        if (!AppVisibility.visible) return
+        if (container.sesionStore.leer() == null) return
+        container.motorSesion.recuperar()
     }
 
     /** Memoria de Habi: 400 dias de eventos y 60 de usos. El dia logico sale de los ajustes. */

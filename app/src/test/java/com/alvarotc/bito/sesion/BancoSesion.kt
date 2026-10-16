@@ -261,7 +261,10 @@ class BancoSesion(
 
     fun ponerFiltro(filtro: Int) = manager.setInterruptionFilter(filtro)
 
-    fun motor(g: Grabadores = Grabadores()): MotorSesionAndroid =
+    fun motor(
+        g: Grabadores = Grabadores(),
+        conTicker: Boolean = false,
+    ): MotorSesionAndroid =
         MotorSesionAndroid(
             store = store,
             efectos = EfectosSesion(tasks, habits, domainState, sesiones, reconciler, acciones),
@@ -279,7 +282,7 @@ class BancoSesion(
             alcance = alcance,
             zona = { zona },
             delante = { delante },
-            conTicker = false,
+            conTicker = conTicker,
         )
 
     fun cerrar() {

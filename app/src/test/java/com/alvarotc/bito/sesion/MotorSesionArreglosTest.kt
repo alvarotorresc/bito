@@ -284,4 +284,21 @@ class MotorSesionArreglosTest {
 
             assertNull(resultado.aviso)
         }
+
+    @Test
+    fun `with the app out the ticker stops and coming back brings it up again`() =
+        runTest {
+            motor = banco.motor(g, conTicker = true)
+            directo()
+            empezarTarea()
+            assertTrue("con la app delante el tic corre", motor.tickerActivo)
+
+            banco.delante = false
+            motor.tic()
+            assertTrue("con la app fuera el tic se para", !motor.tickerActivo)
+
+            banco.delante = true
+            motor.recuperar()
+            assertTrue("al volver, recuperar lo levanta", motor.tickerActivo)
+        }
 }
