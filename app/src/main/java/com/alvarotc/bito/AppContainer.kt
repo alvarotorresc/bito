@@ -9,6 +9,7 @@ import com.alvarotc.bito.data.backup.BackupKeyStore
 import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
+import com.alvarotc.bito.data.habla.CatalogoRecursos
 import com.alvarotc.bito.data.habla.FuentePropuestasHabi
 import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.habla.MemoriaRepository
@@ -23,7 +24,6 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
-import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabi
@@ -72,7 +72,13 @@ class AppContainer(context: Context) {
     val reconciler = PointsReconciler(domainState, rewards, settings = settings, despachador = Dispatchers.Default)
 
     // Los avisos de Habi. Perezoso: la restauración y la fuente lo piden, el arranque no.
-    val avisosHabi: AvisosHabi by lazy { AvisosHabiAndroid(context.applicationContext, contenedor = { this }) }
+    val avisosHabi: AvisosHabi by lazy {
+        AvisosHabiAndroid(context.applicationContext, contenedor = { this }, catalogo = { catalogoHabla })
+    }
+
+    // Las bolsas de Habi del idioma activo. AppStartup lo precarga tras el primer fotograma; si algo lo pide
+    // antes, lee esa bolsa en el momento (nunca queda vacío).
+    val catalogoHabla: CatalogoRecursos by lazy { CatalogoRecursos { appContext.resources } }
 
     private val appContext = context.applicationContext
 
@@ -85,8 +91,7 @@ class AppContainer(context: Context) {
             vigentes = propuestaVigente,
             gordo = loGordo,
             aceptados = avisosAceptados,
-            // La Tarea 32 pasa el catálogo de los recursos.
-            catalogo = { CatalogoHablaVacio },
+            catalogo = { catalogoHabla },
             avisos = avisosHabi,
             permisos = { permisosAvisos() },
             // «Hecho» de la vuelta: la misma escritura que las acciones rápidas de los recordatorios.

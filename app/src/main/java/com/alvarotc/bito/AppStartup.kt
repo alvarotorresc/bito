@@ -1,6 +1,7 @@
 package com.alvarotc.bito
 
 import android.app.Application
+import android.view.Choreographer
 import com.alvarotc.bito.data.backup.BackupSync
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.notifications.FocusSync
@@ -74,6 +75,21 @@ object AppStartup {
         ReminderSync.start(app, container, scope)
         BackupSync.start(app, container, scope)
         FocusSync.start(app, container, scope)
+        // Las bolsas de Habi se analizan una vez por idioma fuera del hilo principal y tras el primer fotograma
+        // (spec §11): el arranque no las espera.
+        Choreographer.getInstance().postFrameCallback {
+            scope.launch {
+                try {
+                    container.catalogoHabla.precargar()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") e: Exception,
+                ) {
+                    // Sin precarga, cada bolsa se lee la primera vez que se pide.
+                }
+            }
+        }
         scope.launch {
             try {
                 purgarMemoria(container, now)

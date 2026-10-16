@@ -192,6 +192,19 @@ class AppStartupTest {
         eventually(5_000) { runBlocking { container.database.hablaDao().todosEventos() }.map { it.id } == listOf("reciente") }
     }
 
+    @Test
+    fun `start loads the catalog of Habi after the first frame and the source uses it`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+
+        AppStartup.start(app, container, testScope())
+        assertTrue(container.catalogoHabla.idiomasCargados().isEmpty())
+
+        // El primer fotograma: corre la llamada de Choreographer y la carga sigue en otro hilo.
+        shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(100))
+        eventually(5_000) { container.catalogoHabla.idiomasCargados().isNotEmpty() }
+    }
+
     // ReminderSync/BackupSync/WidgetRefresher, los otros tres colectores que AppStartup.start
     // lanza a la vez, programan sus propias alarmas ajenas al foco — filtrar por el componente
     // del PendingIntent es lo unico que distingue "hay una alarma de foco" de "hay CUALQUIER
