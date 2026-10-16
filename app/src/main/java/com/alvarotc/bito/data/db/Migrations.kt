@@ -123,7 +123,7 @@ val MIGRATION_4_5 =
     }
 
 /**
- * 5 -> 6 (pieza 5): la tabla de sesiones de foco y su indice. Solo CREA — ninguna fila existente
+ * 5 -> 6 (pieza 5): la tabla de sesiones de foco y su indice. Solo CREA: ninguna fila existente
  * se toca, ninguna columna cambia.
  *
  * El DDL esta copiado LITERAL de app/schemas/.../6.json (sustituyendo `${TABLE_NAME}` por el

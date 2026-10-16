@@ -3,6 +3,8 @@ package com.alvarotc.bito.data.settings
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.alvarotc.bito.domain.sesion.FocusClock
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -65,6 +67,25 @@ class FocusStoreTest {
             focus.start(session)
             focus.clear()
             assertNull(focus.session.first())
+        }
+
+    @Test
+    fun `clearing the old focus keeps the session and the held notices`() =
+        runTest {
+            val ds = store("shared")
+            val sesion = stringPreferencesKey("sesion_v1")
+            val avisos = stringPreferencesKey("avisos_retenidos")
+            ds.edit {
+                it[sesion] = "{}"
+                it[avisos] = "[]"
+            }
+            val focus = FocusStore(ds)
+            focus.start(FocusSession("t1", 1L, 2L, 3L, 4L))
+            focus.clear()
+            assertNull(focus.session.first())
+            val prefs = ds.data.first()
+            assertEquals("{}", prefs[sesion])
+            assertEquals("[]", prefs[avisos])
         }
 
     @Test

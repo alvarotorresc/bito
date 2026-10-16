@@ -131,6 +131,64 @@ class RelojSesionTest {
     }
 
     @Test
+    fun `a pause just after the boundary does not freeze the break`() {
+        val plan = planSesion(bloques = 2, entrada = Entrada.DIRECTO)
+        // La pantalla aún enseña el foco; la Pausa llega 100 ms dentro del descanso.
+        val r = registroSesion(plan, listOf(Evento.Pausa(25 * min + 100)))
+        val descanso = RelojSesion.enSesion(r, 27 * min)
+        assertEquals(Descanso(1, false, 5), descanso.actual)
+        assertFalse(descanso.pausado)
+        assertEquals(3 * min, descanso.restaMillis)
+        assertEquals(30 * min, descanso.finTramoEnSesion)
+
+        val foco2 = RelojSesion.enSesion(r, 31 * min)
+        assertEquals(Foco(2, 25), foco2.actual)
+        assertFalse(foco2.pausado)
+        assertEquals(24 * min, foco2.restaMillis)
+    }
+
+    @Test
+    fun `a pause exactly at the boundary is ignored`() {
+        val plan = planSesion(bloques = 2, entrada = Entrada.DIRECTO)
+        val r = registroSesion(plan, listOf(Evento.Pausa(25 * min)))
+        val descanso = RelojSesion.enSesion(r, 26 * min)
+        assertEquals(Descanso(1, false, 5), descanso.actual)
+        assertFalse(descanso.pausado)
+        assertEquals(30 * min, descanso.finTramoEnSesion)
+    }
+
+    @Test
+    fun `a pause while breathing is ignored`() {
+        val r = registroSesion(planSesion(bloques = 1), listOf(Evento.Pausa(10_000L)))
+        val respirando = RelojSesion.enSesion(r, 20_000L)
+        assertFalse(respirando.pausado)
+        assertEquals(60_000L, respirando.finTramoEnSesion)
+        assertEquals(Foco(1, 25), RelojSesion.enSesion(r, 60_000L).actual)
+    }
+
+    @Test
+    fun `a pause in the break then skip starts the next focus running`() {
+        val plan = planSesion(bloques = 2, entrada = Entrada.DIRECTO)
+        val r = registroSesion(plan, listOf(Evento.Pausa(25 * min + 100), Evento.Saltar(26 * min)))
+        val foco2 = RelojSesion.enSesion(r, 30 * min)
+        assertEquals(Foco(2, 25), foco2.actual)
+        assertFalse(foco2.pausado)
+        assertEquals(21 * min, foco2.restaMillis)
+        assertEquals(51 * min, foco2.finTramoEnSesion)
+    }
+
+    @Test
+    fun `skip on a waiting break goes to the next focus`() {
+        val plan = planSesion(bloques = 2, entrada = Entrada.DIRECTO, descansoSolo = false)
+        val r = registroSesion(plan, listOf(Evento.Saltar(40 * min)))
+        val foco2 = RelojSesion.enSesion(r, 41 * min)
+        assertEquals(Foco(2, 25), foco2.actual)
+        assertFalse(foco2.esperandoDescanso)
+        assertEquals(24 * min, foco2.restaMillis)
+        assertEquals(65 * min, foco2.finTramoEnSesion)
+    }
+
+    @Test
     fun `four default blocks give 1 h 40 min of focus`() {
         val fin = RelojSesion.enSesion(registroSesion(), 10 * 60 * min)
         assertNull(fin.actual)
@@ -159,6 +217,44 @@ class RelojSesionTest {
         // Sesión empezada a los dos minutos de encender; tras reiniciar el elapsed ya pasó el ancla.
         val temprano = registroSesion(anclaElapsed = 2 * min)
         assertEquals(40 * min, RelojSesion.transcurrido(temprano, Ahora(INICIO_PARED + 40 * min, 5 * min)))
+    }
+
+    @Test
+    fun `a forward jump larger than the uptime at start reads as a reboot without the counter`() {
+        // Sesión empezada a los 2 min de encender; la hora de red adelanta una hora sin reiniciar.
+        val r = registroSesion(anclaElapsed = 2 * min)
+        val adelanto = Ahora(INICIO_PARED + 10 * min + 60 * min, 2 * min + 10 * min)
+        assertEquals(70 * min, RelojSesion.transcurrido(r, adelanto))
+    }
+
+    @Test
+    fun `with the boot counter a big forward jump keeps the same boot`() {
+        val r = registroSesion(anclaElapsed = 2 * min, arranques = 7)
+        val adelanto = Ahora(INICIO_PARED + 10 * min + 60 * min, 2 * min + 10 * min, arranques = 7)
+        assertEquals(10 * min, RelojSesion.transcurrido(r, adelanto))
+        assertEquals(10 * min, RelojSesion.en(r, adelanto).transcurridoMillis)
+    }
+
+    @Test
+    fun `with the boot counter a reboot with the clock behind reads the wall clock`() {
+        // Han pasado 30 min y el móvil se reinició sin red: la pared va 15 min atrasada y el
+        // elapsed nuevo (20 min) ya pasó el ancla, así que la heurística lo tomaría por el mismo arranque.
+        val sinContador = registroSesion(anclaElapsed = 2 * min)
+        val trasReiniciar = Ahora(INICIO_PARED + 15 * min, 20 * min)
+        assertEquals(18 * min, RelojSesion.transcurrido(sinContador, trasReiniciar))
+
+        val conContador = registroSesion(anclaElapsed = 2 * min, arranques = 7)
+        assertEquals(15 * min, RelojSesion.transcurrido(conContador, trasReiniciar.copy(arranques = 8)))
+    }
+
+    @Test
+    fun `the counter only decides when both sides have it`() {
+        val r = registroSesion(arranques = 7)
+        val adelante = Ahora(INICIO_PARED + 10 * min + 60 * min, ANCLA_ELAPSED + 10 * min)
+        assertEquals(10 * min, RelojSesion.transcurrido(r, adelante))
+        val trasReiniciar = Ahora(INICIO_PARED + 28 * min, 30_000L)
+        assertEquals(28 * min, RelojSesion.transcurrido(r, trasReiniciar))
+        assertEquals(28 * min, RelojSesion.transcurrido(registroSesion(), trasReiniciar.copy(arranques = 8)))
     }
 
     @Test

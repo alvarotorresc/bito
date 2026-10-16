@@ -17,9 +17,14 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -49,6 +54,7 @@ class SesionStoreTest {
         objetivo: Objetivo,
         eventos: List<Evento> = emptyList(),
         filtroPrevio: Int? = null,
+        arranques: Int? = null,
     ) = RegistroSesion(
         id = "7f1c3a52-9a4e-4a43-8a8e-2f7c1d0b9e11",
         plan =
@@ -70,6 +76,7 @@ class SesionStoreTest {
         arranque = 1_799_950_000_000L,
         filtroPrevio = filtroPrevio,
         inicioDia = 20_123,
+        arranques = arranques,
     )
 
     private val todosLosEventos =
@@ -90,11 +97,26 @@ class SesionStoreTest {
         }
 
     @Test
+    fun `a write to another key of the shared file does not re-emit the record`() =
+        runTest {
+            val ds = dataStore("distinct")
+            val store = SesionStore(ds)
+            store.guardar(registro(Objetivo.Libre))
+            val emitidos = mutableListOf<RegistroSesion?>()
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) { store.registro.toList(emitidos) }
+            ds.edit { it[stringPreferencesKey("avisos_retenidos")] = "x" }
+            ds.edit { it[stringPreferencesKey("avisos_retenidos")] = "y" }
+            job.cancelAndJoin()
+            assertEquals(1, emitidos.size)
+            assertTrue(emitidos.single() != null)
+        }
+
+    @Test
     fun `a record round-trips with every event and every goal`() =
         runTest {
             val store = SesionStore(dataStore("roundtrip"))
             for (r in listOf(
-                registro(Objetivo.Tarea("t1"), todosLosEventos, filtroPrevio = 1),
+                registro(Objetivo.Tarea("t1"), todosLosEventos, filtroPrevio = 1, arranques = 41),
                 registro(Objetivo.Habito("h9"), todosLosEventos.take(2)),
                 registro(Objetivo.Libre),
             )) {
@@ -111,6 +133,20 @@ class SesionStoreTest {
             SesionStore(ds).guardar(registro(Objetivo.Libre))
             val json = ds.data.first()[clave]!!
             assertTrue(json, json.contains("\"v\":1"))
+        }
+
+    @Test
+    fun `a record saved without the boot counter still reads`() =
+        runTest {
+            val ds = dataStore("sincontador")
+            val store = SesionStore(ds)
+            store.guardar(registro(Objetivo.Libre, arranques = 41))
+            val guardado = Json.parseToJsonElement(ds.data.first()[clave]!!).jsonObject
+            assertTrue(guardado.containsKey("arranques"))
+            val viejo = JsonObject(guardado - "arranques").toString()
+            ds.edit { it[clave] = viejo }
+            assertEquals(registro(Objetivo.Libre), store.leer())
+            assertTrue(viejo, viejo.contains("\"v\":1"))
         }
 
     @Test

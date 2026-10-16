@@ -1,5 +1,6 @@
 package com.alvarotc.bito.domain.habla
 
+import com.alvarotc.bito.domain.model.BreathingMode
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -73,6 +74,16 @@ class PlantillaTest {
         assertEquals("14:30", Plantilla.valor(ValorHueco.Hora(870), Idioma.ES, es))
         assertEquals("Leer", Plantilla.valor(ValorHueco.Texto("Leer"), Idioma.ES, es))
         assertEquals("a y b", Plantilla.valor(ValorHueco.Lista(listOf("a", "b")), Idioma.ES, es))
+    }
+
+    @Test
+    fun `a breathing mode prints its screen name, never its identifier`() {
+        assertEquals("Calmarme", Plantilla.valor(ValorHueco.Modo(BreathingMode.CALM), Idioma.ES, es))
+        assertEquals("Dormir", Plantilla.valor(ValorHueco.Modo(BreathingMode.SLEEP), Idioma.ES, es))
+        assertEquals("Centrarme", Plantilla.valor(ValorHueco.Modo(BreathingMode.FOCUS), Idioma.ES, es))
+        assertEquals("Calm down", Plantilla.valor(ValorHueco.Modo(BreathingMode.CALM), Idioma.EN, Locale.ENGLISH))
+        assertEquals("Sleep", Plantilla.valor(ValorHueco.Modo(BreathingMode.SLEEP), Idioma.EN, Locale.ENGLISH))
+        assertEquals("Focus", Plantilla.valor(ValorHueco.Modo(BreathingMode.FOCUS), Idioma.EN, Locale.ENGLISH))
     }
 
     @Test
