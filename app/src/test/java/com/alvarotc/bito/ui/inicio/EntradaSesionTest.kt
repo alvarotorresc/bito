@@ -14,8 +14,9 @@ import org.junit.Test
 class EntradaSesionTest {
     private val motor = MotorSesionFalso()
     private val entradas = mutableListOf<Boolean>()
-    private val rutas = mutableListOf<String>()
-    private val inicio = AbrirSesion(motor, { entradas += it }, { rutas += it })
+    private var sueltas = 0
+    private var ocupados = 0
+    private val inicio = AbrirSesion(motor, { entradas += it }, { sueltas++ }, { ocupados++ })
 
     @After
     fun tearDown() = EntradaSesion.consumir()
@@ -27,7 +28,6 @@ class EntradaSesionTest {
 
             assertEquals(listOf("preparar:Tarea(id=t1)"), motor.llamadas)
             assertEquals(listOf(true), entradas)
-            assertEquals(emptyList<String>(), rutas)
         }
 
     @Test
@@ -67,13 +67,20 @@ class EntradaSesionTest {
         }
 
     @Test
-    fun `breathing keeps its route until the loose breathing is integrated`() =
+    fun `breathing opens the loose one without a draft and a live session asks first`() =
         runTest {
             EntradaSesion.abrir(Destino.Respirar, inicio)
 
-            assertEquals(listOf("breathing"), rutas)
-            assertEquals(emptyList<String>(), motor.llamadas)
+            assertEquals(listOf("preparar:Respirar"), motor.llamadas)
+            assertEquals(1, sueltas)
+            assertEquals(0, ocupados)
             assertEquals(emptyList<Boolean>(), entradas)
+
+            motor.viva(planSesion(entrada = Entrada.DIRECTO))
+            EntradaSesion.abrir(Destino.Respirar, inicio)
+
+            assertEquals(1, sueltas)
+            assertEquals(1, ocupados)
         }
 
     @Test

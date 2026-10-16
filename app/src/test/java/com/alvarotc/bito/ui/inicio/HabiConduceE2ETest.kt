@@ -236,7 +236,6 @@ class HabiConduceE2ETest {
             abrirTareas = {},
             crearHabito = {},
             crearTarea = {},
-            abrirRuta = {},
         )
 
     private fun montar() {

@@ -8,13 +8,15 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Lo que el Inicio ofrece para abrir la sesión: el motor, cómo poner el Inicio en modo sesión ([entrar] con
- * `preparando` si lo que toca ver es Preparar y no el estado de la sesión en curso) y cómo llegar a una ruta que aún
- * no vive dentro de él (la respiración suelta, hasta que se integre).
+ * `preparando` si lo que toca ver es Preparar y no el estado de la sesión en curso), cómo ponerlo en modo respiración
+ * suelta ([entrarSuelta]) y cómo preguntar qué hacer con la sesión viva antes de respirar ([ocupado], la hoja
+ * «Ya tienes algo en marcha»).
  */
 class AbrirSesion(
     val motor: MotorSesion,
     val entrar: (preparando: Boolean) -> Unit,
-    val abrirRuta: (String) -> Unit,
+    val entrarSuelta: () -> Unit,
+    val ocupado: () -> Unit = {},
 )
 
 /** Una petición de abrir la sesión que llega de otra pantalla; [destino] null = la sesión en curso o lo gordo. */
@@ -24,7 +26,7 @@ data class PeticionSesion(val destino: Destino?, val numero: Long)
 object EntradaSesion {
     /**
      * Prepara el plan del [destino] y pone el Inicio en modo sesión. Sin destino y con una sesión viva, lleva a su
-     * estado. La respiración suelta sigue en su ruta de hoy.
+     * estado. Respirar abre la respiración suelta (elegir) y, con una sesión viva, pregunta antes (H11).
      */
     suspend fun abrir(
         destino: Destino?,
@@ -32,7 +34,11 @@ object EntradaSesion {
     ) {
         val motor = inicio.motor
         when {
-            destino == Destino.Respirar -> inicio.abrirRuta("breathing")
+            destino == Destino.Respirar -> {
+                // Sin borrador: si se deja la viva, no debe arrancar ninguna Preparar que se quedó a medias.
+                motor.preparar(Destino.Respirar)
+                if (motor.registro.value != null) inicio.ocupado() else inicio.entrarSuelta()
+            }
             destino == null && motor.registro.value != null -> inicio.entrar(false)
             else -> {
                 motor.preparar(destino)

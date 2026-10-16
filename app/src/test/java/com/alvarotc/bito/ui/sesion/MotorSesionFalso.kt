@@ -33,7 +33,8 @@ class MotorSesionFalso : MotorSesion {
 
     override suspend fun preparar(desde: Destino?) {
         llamadas += "preparar:$desde"
-        borrador.value = planAlPreparar
+        // Como el real: respirar suelta no prepara nada y deja sin borrador.
+        borrador.value = if (desde == Destino.Respirar) null else planAlPreparar
     }
 
     override fun cambiarBorrador(plan: PlanSesion) {

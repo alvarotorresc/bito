@@ -1,16 +1,22 @@
 package com.alvarotc.bito.ui.sesion
 
+import com.alvarotc.bito.data.habla.MemoriaRepository
+import com.alvarotc.bito.data.repo.BreathingRepository
 import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.habla.CatalogoHabla
 import com.alvarotc.bito.domain.habla.Contexto
+import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.domain.sesion.RegistroSesion
 import com.alvarotc.bito.sesion.Aire
 import com.alvarotc.bito.sesion.Fondo
 import com.alvarotc.bito.sesion.FondoMudo
+import com.alvarotc.bito.sesion.FueraDeLaApp
+import com.alvarotc.bito.sesion.FueraMuda
 import com.alvarotc.bito.sesion.MotorSesion
 import com.alvarotc.bito.sesion.NoMolestar
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.StateFlow
 
 /** El nombre de un objetivo y, si lo tiene, su primer paso (los hábitos no tienen). */
@@ -22,7 +28,9 @@ data class DatosObjetivo(
 /**
  * Lo que el Inicio necesita para vivir la sesión y lo que los bloques leen de él por [LocalSesionInicio]: el motor,
  * el aire (la música de la cabecera), los ajustes (nombre y voz de quien usa la app), el fondo que suena, No molestar,
- * el nombre y primer paso del objetivo, el catálogo de frases y el contexto del día.
+ * el nombre y primer paso del objetivo, el catálogo de frases y el contexto del día. Para la respiración suelta, que
+ * también vive en el Inicio: lo de fuera de la app, las sesiones de respirar, la memoria de Habi y el estado del día;
+ * sin [breathing] y [memoria] (las pruebas de Hoy) no hay respiración suelta.
  */
 class SesionInicio(
     val motor: MotorSesion,
@@ -34,6 +42,10 @@ class SesionInicio(
     val catalogo: CatalogoHabla? = null,
     private val contextoDelDia: suspend () -> Contexto? = { null },
     private val tareasHoy: suspend () -> List<OpcionTarea> = { emptyList() },
+    val fuera: FueraDeLaApp = FueraMuda,
+    val breathing: BreathingRepository? = null,
+    val memoria: MemoriaRepository? = null,
+    val estadoDominio: Flow<DomainState>? = null,
 ) {
     /** El fondo que suena ahora; null con Bito callado o con el foco perdido. */
     val fondoSonando: StateFlow<SessionBackground?> get() = fondo.sonando

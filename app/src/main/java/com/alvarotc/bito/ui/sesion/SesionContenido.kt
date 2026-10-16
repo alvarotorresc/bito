@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -21,12 +22,17 @@ import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Medidas
 import kotlinx.coroutines.delay
+import kotlin.math.ceil
 
 // `mostrar()` del mock: lo que se va se hunde 8 dp en 160 ms; lo nuevo entra 140 ms después, cada pieza desde 12 dp
 // abajo en 260 ms con 60 ms + 40 ms por pieza de retraso.
@@ -187,4 +193,47 @@ internal fun BloqueDeSesion(bloque: BloqueSesion) {
         BloqueSesion.DESCANSO -> DescansoContenido()
         BloqueSesion.TERMINADA -> TerminadaContenido()
     }
+}
+
+private const val MILIS_POR_MINUTO = 60_000L
+
+/**
+ * H11: con una sesión viva, abrir la respiración suelta saca «Ya tienes algo en marcha». «Seguir con…» vuelve a la
+ * viva y «Dejarla y empezar esta» la cierra como intento; en los dos casos manda quien monta la hoja. El nombre, lo
+ * que queda y los minutos del plan salen de la sesión viva de [motor].
+ */
+@Composable
+fun HojaOcupadaPorSuelta(
+    abierta: Boolean,
+    sesion: SesionInicio,
+    alSeguir: () -> Unit,
+    alDejar: () -> Unit,
+    alCerrar: () -> Unit,
+) {
+    val registro by sesion.motor.registro.collectAsStateWithLifecycle()
+    val instante by sesion.motor.instante.collectAsStateWithLifecycle()
+    // Mientras la hoja se va, la sesión ya puede estar cerrada: se queda con lo último que vio.
+    val visto = remember { arrayOfNulls<com.alvarotc.bito.domain.sesion.RegistroSesion>(1) }
+    val restaVista = remember { longArrayOf(0L) }
+    registro?.let { visto[0] = it }
+    instante?.let { restaVista[0] = it.restaMillis }
+    val plan = visto[0]?.plan
+    val libre = stringResource(R.string.ses_solo_foco)
+    val objetivo = plan?.objetivo
+    val nombre by produceState(libre, objetivo, libre) {
+        value =
+            when (objetivo) {
+                null, Objetivo.Libre -> libre
+                else -> sesion.objetivo(objetivo)?.nombre.orEmpty()
+            }
+    }
+    HojaOcupado(
+        abierta = abierta && plan != null,
+        nombre = nombre,
+        quedan = ceil(restaVista[0] / MILIS_POR_MINUTO.toDouble()).toInt(),
+        deMin = plan?.minutosFoco ?: 0,
+        alSeguir = alSeguir,
+        alDejar = alDejar,
+        alCerrar = alCerrar,
+    )
 }

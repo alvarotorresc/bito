@@ -128,7 +128,6 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
             abrirTareas = { llamadas += "tareas" },
             crearHabito = { llamadas += "crearHabito" },
             crearTarea = { llamadas += "crearTarea" },
-            abrirRuta = { llamadas += "ruta:$it" },
         )
 
     private fun almacen(): DataStore<Preferences> =

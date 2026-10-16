@@ -89,7 +89,6 @@ internal class BancoInicio(
             abrirTareas = { llamadas += "tareas" },
             crearHabito = { llamadas += "crearHabito" },
             crearTarea = { llamadas += "crearTarea" },
-            abrirRuta = { llamadas += "ruta:$it" },
         )
 
     private fun almacen(nombre: String): DataStore<Preferences> =

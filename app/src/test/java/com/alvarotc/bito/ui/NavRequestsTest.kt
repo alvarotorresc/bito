@@ -102,10 +102,10 @@ class NavRequestsTest {
     }
 
     @Test
-    fun `focus opens Today where the session lives and breathing keeps its route`() {
+    fun `focus and breathing open Today where the session and the loose breathing live`() {
         assertEquals("today", NavRequests.destino("focus"))
         assertEquals(true, NavRequests.vaAHoy("focus"))
-        assertEquals("breathing", NavRequests.destino("breathing"))
-        assertEquals(false, NavRequests.vaAHoy("breathing"))
+        assertEquals("today", NavRequests.destino("breathing"))
+        assertEquals(true, NavRequests.vaAHoy("breathing"))
     }
 }

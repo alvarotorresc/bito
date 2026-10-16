@@ -350,14 +350,11 @@ class BitoNavHostTest {
 
     /** Antes iba también «review» → "review"; ahora abre el cierre dentro del Inicio (casos del cierre, más abajo). */
     @Test
-    fun `deep links to tasks and breathing still work`() {
+    fun `the deep link to tasks still works`() {
         lateinit var nav: NavHostController
         setContentWithNav { nav = it }
         val esperadas =
-            mapOf(
-                "tasks" to "tasks",
-                "breathing" to "breathing",
-            )
+            mapOf("tasks" to "tasks")
         esperadas.forEach { (peticion, ruta) ->
             NavRequests.open(peticion)
             compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == ruta }
@@ -365,6 +362,16 @@ class BitoNavHostTest {
             compose.runOnUiThread { nav.popBackStack() }
             compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == RUTA_HOY }
         }
+    }
+
+    @Test
+    fun `there is no breathing route anymore`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+
+        val rutas = compose.runOnUiThread { nav.graph.map { it.route } }
+        assertTrue("sin ruta de respirar: $rutas", rutas.none { it == "breathing" })
+        assertThrows(IllegalArgumentException::class.java) { compose.runOnUiThread { nav.navigate("breathing") } }
     }
 
     @Test
@@ -1057,26 +1064,28 @@ class BitoNavHostTest {
         runBlocking { container.motorSesion.loDejo() }
     }
 
-    /** M11: la notificacion del recordatorio abre el ejercicio EN REPOSO. */
+    /** El aviso diario de respirar abre la respiración suelta en Hoy, en reposo (elegir), con el último modo. */
     @Test
-    fun `a pending breathing request opens the exercise at rest`() {
+    fun `a pending breathing request opens the loose breathing at rest in today`() {
+        lateinit var nav: NavHostController
         NavRequests.open("breathing")
 
-        setContent()
+        setContentWithNav { nav = it }
 
-        // `breathing-start` cuelga de la carga del ejercicio (Room y DataStore en hilos reales): se espera a esa condición.
-        esperarEtiqueta("breathing-start")
-        compose.onNodeWithTag("breathing-phase", useUnmergedTree = true).assertDoesNotExist()
+        esperarEtiqueta("r-empezar")
+        compose.onNodeWithTag("e-fase", useUnmergedTree = true).assertDoesNotExist()
+        assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
         assertNull(NavRequests.pending.value)
+        assertNull(EntradaSesion.pendiente.value)
     }
 
     /** D2: antes el icono de Hoy; ahora la opción «Respirar» del «+». */
     @Test
-    fun `the breathing option of the create sheet opens the exercise`() {
+    fun `the breathing option of the create sheet opens the loose breathing`() {
         setContent()
         elegirSesion("create-breathing")
 
-        esperarEtiqueta("breathing-screen")
+        esperarEtiqueta("r-empezar")
     }
 
     /** El «+» → Sesión ahora → Foco abre Preparar dentro del Inicio, sin cambiar de ruta. */

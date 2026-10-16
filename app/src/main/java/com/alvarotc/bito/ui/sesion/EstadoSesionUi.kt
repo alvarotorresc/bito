@@ -65,6 +65,18 @@ class BloqueRetenido {
 
 val LocalBloqueRetenido = compositionLocalOf { BloqueRetenido() }
 
+/**
+ * La cara de Habi en la escena de la sesión. [radiante] la pone feliz (Terminada y el «Hecha» de Foco); el Inicio la lee
+ * al pintar el jardín y la apaga al volver a Hoy.
+ */
+@Stable
+class CaraHabi {
+    var radiante: Boolean by mutableStateOf(false)
+}
+
+/** La cara de Habi que el Inicio provee a los bloques; fuera del Inicio no se ve en ninguna escena. */
+val LocalCaraHabi = compositionLocalOf { CaraHabi() }
+
 /** Hace saltar a Habi en la escena de la sesión con esa [amplitud] (0,11 el saltito de Foco); fuera del Inicio no hace nada. */
 val LocalSaltoHabi = compositionLocalOf<(Float) -> Unit> { {} }
 

@@ -50,9 +50,6 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.sesion.Objetivo
-import com.alvarotc.bito.ui.breathing.AndroidBreathingMusic
-import com.alvarotc.bito.ui.breathing.BreathingScreen
-import com.alvarotc.bito.ui.breathing.BreathingViewModel
 import com.alvarotc.bito.ui.camino.CaminoViewModel
 import com.alvarotc.bito.ui.cierre.CierreViewModel
 import com.alvarotc.bito.ui.detail.DetailScreen
@@ -300,7 +297,6 @@ fun BitoNavHost(
                                         abrirTareas = { nav.navigate("tasks") },
                                         crearHabito = { nav.navigate("habit") },
                                         crearTarea = { nav.navigate("task") },
-                                        abrirRuta = { nav.navigate(it) { launchSingleTop = true } },
                                     ),
                                 creado = creado,
                                 alCreadoVisto = { entry.savedStateHandle["creado"] = null },
@@ -491,18 +487,6 @@ fun BitoNavHost(
                             onEditTask = { nav.navigate("task?id=$it") },
                         )
                     }
-                    // M11: sin argumentos — el modo inicial sale de breathingLastMode. Fuera de la barra
-                    // inferior como tasks y focus: respirar no es una pestana. En la lista blanca de
-                    // NavRequests para que la notificacion del recordatorio la abra (en reposo: el sonido
-                    // y la vibracion no arrancan sin que el usuario lo pida). ViewModel por entrada: su
-                    // guardado no depende de este scope (va en NonCancellable) y onClose solo llega cuando
-                    // la escritura ya termino.
-                    composable("breathing") {
-                        BreathingScreen(
-                            viewModel = viewModel(factory = BreathingViewModel.factory(container) { AndroidBreathingMusic(context) }),
-                            onClose = { nav.popBackStack() },
-                        )
-                    }
                 }
             }
         }
@@ -535,6 +519,8 @@ fun BitoNavHost(
             if (currentRoute == null || currentRoute == "onboarding") return@LaunchedEffect
             // La sesión en curso (o lo gordo) se abre dentro de Hoy: el Inicio atiende la petición.
             if (route == "focus") EntradaSesion.pedir(null)
+            // La respiración suelta también vive en Hoy: el Inicio la atiende (último modo, o la pregunta de la sesión viva).
+            if (route == "breathing") EntradaSesion.pedir(Destino.Respirar)
             when {
                 // El cierre y lo gordo sustituyen la entrada de Hoy por una nueva con su bandera: una sola Hoy en la
                 // pila. Sin `launchSingleTop`: con Hoy arriba reutilizaría la entrada vieja, cuyo estado guardado
@@ -615,4 +601,8 @@ private fun sesionInicioDe(container: AppContainer): SesionInicio =
             Tasks.todayTasks(container.domainState.snapshot(), hoy).map { OpcionTarea(it.task.id, it.task.title, it.task.firstStep) }
         },
         contextoDelDia = container::contextoDelDia,
+        fuera = container.fuera,
+        breathing = container.breathing,
+        memoria = container.memoria,
+        estadoDominio = container.domainState.observe(),
     )

@@ -112,9 +112,12 @@ import com.alvarotc.bito.ui.sesion.BloqueDeSesion
 import com.alvarotc.bito.ui.sesion.BloqueRetenido
 import com.alvarotc.bito.ui.sesion.BloqueSesion
 import com.alvarotc.bito.ui.sesion.CabeceraSesion
+import com.alvarotc.bito.ui.sesion.CaraHabi
 import com.alvarotc.bito.ui.sesion.Encuadre
+import com.alvarotc.bito.ui.sesion.HojaOcupadaPorSuelta
 import com.alvarotc.bito.ui.sesion.LocalApoyoDescanso
 import com.alvarotc.bito.ui.sesion.LocalBloqueRetenido
+import com.alvarotc.bito.ui.sesion.LocalCaraHabi
 import com.alvarotc.bito.ui.sesion.LocalMotorSesion
 import com.alvarotc.bito.ui.sesion.LocalRegistroHoja
 import com.alvarotc.bito.ui.sesion.LocalRespiracionJardin
@@ -128,6 +131,8 @@ import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.sesion.estadoSesionUi
 import com.alvarotc.bito.ui.sesion.rememberAtrasSesion
 import com.alvarotc.bito.ui.sesion.rememberEstadoCamaraSesion
+import com.alvarotc.bito.ui.sesion.respirar.GestosHabi
+import com.alvarotc.bito.ui.sesion.texto
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
@@ -403,6 +408,12 @@ fun InicioScreen(
     val registroSesion by remember(motor) { motor?.registro ?: MutableStateFlow<RegistroSesion?>(null) }.collectAsStateWithLifecycle()
     var sesionActiva by rememberSaveable { mutableStateOf(false) }
     var preparando by rememberSaveable { mutableStateOf(false) }
+    // La respiración suelta es otro modo del Inicio (spec §4.2): con su propia tierra y su propia cabecera.
+    var sueltaActiva by rememberSaveable { mutableStateOf(false) }
+    var sueltaSaliendo by remember { mutableStateOf(false) }
+    var ocupadoPorSuelta by remember { mutableStateOf(false) }
+    val gestosHabi = remember(sueltaActiva) { GestosHabi() }
+    val caraHabi = remember { CaraHabi() }
     var saliendo by remember { mutableStateOf(false) }
     var bloqueVisto by remember { mutableStateOf(false) }
     val hojasSesion = remember { RegistroHoja() }
@@ -419,7 +430,7 @@ fun InicioScreen(
             )
         }
     val hoyAlfa by animateFloatAsState(
-        if (sesionActiva && !saliendo) 0f else 1f,
+        if ((sesionActiva && !saliendo) || (sueltaActiva && !sueltaSaliendo)) 0f else 1f,
         if (reducido) tween(Duraciones.REDUCIDO) else tween(160, easing = Curvas.out),
         label = "hoy-sesion",
     )
@@ -435,7 +446,22 @@ fun InicioScreen(
         if (cierreEstado.c.value > 0f) scope.launch { cierreEstado.c.snapTo(0f) }
         preparando = vistaPreparar
         saliendo = false
+        sueltaActiva = false
+        sueltaSaliendo = false
         sesionActiva = true
+    }
+
+    fun entrarSuelta() {
+        if (destino != 0f) {
+            destino = 0f
+            scope.launch { q.snapTo(0f) }
+        }
+        if (cierreEstado.c.value > 0f) scope.launch { cierreEstado.c.snapTo(0f) }
+        sesionActiva = false
+        saliendo = false
+        preparando = false
+        sueltaSaliendo = false
+        sueltaActiva = true
     }
 
     fun volverAHoy() {
@@ -444,7 +470,9 @@ fun InicioScreen(
 
     fun abrirSesion(destinoSesion: Destino?) {
         if (sesion == null) return
-        scope.launch { EntradaSesion.abrir(destinoSesion, AbrirSesion(sesion.motor, ::entrarEnSesion, navegar.abrirRuta)) }
+        scope.launch {
+            EntradaSesion.abrir(destinoSesion, AbrirSesion(sesion.motor, ::entrarEnSesion, ::entrarSuelta, { ocupadoPorSuelta = true }))
+        }
     }
     val abrirSesionActual = rememberUpdatedState(::abrirSesion)
     val salidaSesion = remember { SalidaSesion(::volverAHoy) { texto -> scope.launch { avisos.mostrar(texto) } } }
@@ -474,7 +502,16 @@ fun InicioScreen(
             retenido.soltar()
             altoContenido.intValue = 0
             respiracion.value = null
+            caraHabi.radiante = false
         }
+    }
+    // Al salir de la respiración suelta, la cámara llega a Hoy (la pantalla sigue montada hasta entonces) y se sale del modo.
+    LaunchedEffect(sueltaSaliendo) {
+        if (!sueltaSaliendo) return@LaunchedEffect
+        camara.ir(Encuadre.HOY, null)
+        sueltaActiva = false
+        sueltaSaliendo = false
+        respiracion.value = null
     }
     // Al abrir y en cada vuelta a primer plano la sesión se recupera del disco (cambio de día, app matada).
     LaunchedEffect(motor) { motor?.recuperar() }
@@ -490,8 +527,8 @@ fun InicioScreen(
     }
     // Vertical mientras dura la sesión (§21.9).
     val actividad = LocalContext.current.actividad()
-    DisposableEffect(sesionActiva, actividad) {
-        val bloqueada = sesionActiva
+    DisposableEffect(sesionActiva, sueltaActiva, actividad) {
+        val bloqueada = sesionActiva || sueltaActiva
         if (bloqueada) actividad?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
         onDispose { if (bloqueada) actividad?.requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED }
     }
@@ -524,10 +561,10 @@ fun InicioScreen(
     // El estado en carga trae el jardín inicial, no el tuyo: si contara como anterior, cada arranque celebraría todo el jardín.
     LaunchedEffect(estado.garden, estado.loading) { if (!estado.loading) celebraciones.jardin(estado.garden) }
     val enHoyQuieto by remember { derivedStateOf { q.value == 0f } }
-    DisposableEffect(enPrimerPlano, enHoyQuieto, cierreAbierto, sesionActiva) {
+    DisposableEffect(enPrimerPlano, enHoyQuieto, cierreAbierto, sesionActiva, sueltaActiva) {
         // Primero el cierre y luego Hoy: así no se suelta un momento que el cierre retiene en el mismo paso. Dentro de
         // la sesión pasa lo mismo que con el cierre: solo salen las monedas y el resto espera a volver a Hoy (G14).
-        celebraciones.retenerCierre(cierreAbierto || sesionActiva)
+        celebraciones.retenerCierre(cierreAbierto || sesionActiva || sueltaActiva)
         celebraciones.enHoy(enPrimerPlano && enHoyQuieto)
         onDispose { celebraciones.enHoy(false) }
     }
@@ -559,6 +596,8 @@ fun InicioScreen(
                 }
             }
         }
+    // Cada «Mejor» de «¿Cómo estás ahora?» hace saltar a Habi un 0,24.
+    LaunchedEffect(gestosHabi.saltos) { if (gestosHabi.saltos > 0) saltarHabi(SALTO_ANIMO) }
     var aplastar by remember { mutableIntStateOf(0) }
     var fiesta by remember { mutableIntStateOf(0) }
     var frase by remember { mutableStateOf<Int?>(null) }
@@ -699,6 +738,7 @@ fun InicioScreen(
                             LocalApoyoDescanso provides apoyoDescanso,
                             LocalBloqueRetenido provides retenido,
                             LocalSaltoHabi provides saltarHabi,
+                            LocalCaraHabi provides caraHabi,
                             LocalSesionInicio provides sesion,
                         ) {
                             SesionContenido(estadoVista, alAlto = { altoContenido.intValue = it }, contenido = contenidoSesion)
@@ -714,10 +754,10 @@ fun InicioScreen(
                         Modifier.fillMaxSize().graphicsLayer {
                             if (!reducido) translationY = -SUBIDA_CIERRE.toPx() * cierreEstado.c.value.coerceIn(0f, 1f)
                         },
-                    contento = contento,
+                    contento = contento || caraHabi.radiante || gestosHabi.alegre,
                     animado = enPrimerPlano,
                     alTocarHabi = {
-                        if (sesionActiva) {
+                        if (sesionActiva || sueltaActiva) {
                             // GardenScene ya hace el salto; aquí solo su voz y su tic.
                             gesto(Snd.HABI, Haptica.TICK)
                         } else if (selladoCargado) {
@@ -736,7 +776,7 @@ fun InicioScreen(
                             }
                         }
                     },
-                    alTocarFondo = { if (!sesionActiva) ir(1f) },
+                    alTocarFondo = { if (!sesionActiva && !sueltaActiva) ir(1f) },
                     llegando = llegando,
                     creciendo = creciendo,
                     destacar = destacar,
@@ -747,7 +787,7 @@ fun InicioScreen(
                     subida = { subidaPx.floatValue },
                     // Ruling P22: con el cierre abierto sigue al anochecer; fuera, de noche solo con el día sellado.
                     noche = { cierreEstado.nocheDelJardin(selladoCargado) },
-                    camara = if (sesionActiva) camara else null,
+                    camara = if (sesionActiva || sueltaActiva) camara else null,
                     altoContenido = altoContenido,
                     respiracion = respiracion.value,
                     saltoAmplitud = saltoAmplitud,
@@ -773,7 +813,10 @@ fun InicioScreen(
                     )
                     AnuncioTramo(instante, registroSesion)
                 }
-                if (cabeceraVisible && !sesionActiva) {
+                if (sueltaActiva && sesion != null) {
+                    SueltaEnInicio(sesion, camara, respiracion, gestosHabi) { sueltaSaliendo = true }
+                }
+                if (cabeceraVisible && !sesionActiva && !sueltaActiva) {
                     CabeceraHoy(
                         estado.today,
                         estado.saldo,
@@ -796,7 +839,7 @@ fun InicioScreen(
                 val aire = with(densidad) { Medidas.margen.toPx() }
                 val xPildora = min((ancho - anchoPildora) / 2f, ancho - mas - aire - anchoPildora).coerceAtLeast(0f)
                 // Con el cierre, la píldora y el + se van: el cierre tiene su propia salida.
-                if (!cierreEnPantalla && !sesionActiva) {
+                if (!cierreEnPantalla && !sesionActiva && !sueltaActiva) {
                     Pildora(
                         q = qGeometria,
                         alHoy = { ir(0f) },
@@ -888,6 +931,27 @@ fun InicioScreen(
             }
         }
     }
+    val recursos = LocalContext.current.resources
+    if (sesion != null) {
+        HojaOcupadaPorSuelta(
+            abierta = ocupadoPorSuelta,
+            sesion = sesion,
+            alSeguir = {
+                scope.launch {
+                    sesion.motor.seguirConLaViva()
+                    entrarEnSesion(false)
+                }
+            },
+            alDejar = {
+                scope.launch {
+                    val resultado = sesion.motor.dejarlaYEmpezar()
+                    resultado.aviso?.let { avisos.mostrar(it.texto(recursos)) }
+                    entrarSuelta()
+                }
+            },
+            alCerrar = { ocupadoPorSuelta = false },
+        )
+    }
     HojaSaldo(
         saldoAbierto,
         estado.saldo,
@@ -955,6 +1019,9 @@ private fun BotonMas(
 }
 
 private val SESION_SALE_DY = 8.dp
+
+// `habi.jump(.24)` al elegir «Mejor» en «¿Cómo estás ahora?».
+private const val SALTO_ANIMO = 0.24f
 
 private fun Context.actividad(): Activity? {
     var c: Context? = this
