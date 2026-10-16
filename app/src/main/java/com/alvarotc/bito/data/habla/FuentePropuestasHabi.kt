@@ -522,19 +522,9 @@ class FuentePropuestasHabi(
             permisoAvisos = p.notificaciones,
             alarmasExactas = p.alarmasExactas,
             diaSellado = Sealing.isSealed(state, hoy),
-            quedanExigibles = quedanExigibles(state, hoy),
+            quedanExigibles = Hechos.quedanPendientes(state, hoy),
         )
     }
-
-    private fun quedanExigibles(
-        state: DomainState,
-        hoy: Int,
-    ): Boolean =
-        state.habits.any { h ->
-            h.status == HabitStatus.ACTIVE &&
-                Compliance.isRequirableOn(state, h, hoy) &&
-                Compliance.complianceOf(state, h, LogicalDays.periodKeyOf(hoy, h.period), hoy) == ComplianceStatus.PENDING
-        }
 
     private fun diaDe(
         prefs: Settings,

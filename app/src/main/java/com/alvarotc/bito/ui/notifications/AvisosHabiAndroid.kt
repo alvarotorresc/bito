@@ -4,8 +4,6 @@ import android.content.Context
 import android.content.Intent
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
-import com.alvarotc.bito.domain.Compliance
-import com.alvarotc.bito.domain.ComplianceStatus
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.habla.AvisoAceptado
@@ -30,8 +28,6 @@ import com.alvarotc.bito.domain.habla.TipoAviso
 import com.alvarotc.bito.domain.habla.TipoHabito
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.ValorHueco
-import com.alvarotc.bito.domain.model.DomainState
-import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.propuestas.Ambito
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -386,18 +382,8 @@ internal suspend fun planDeHoyDe(
             permisoAvisos = permisos.notificaciones,
             alarmasExactas = permisos.alarmasExactas,
             diaSellado = Sealing.isSealed(state, hoy),
-            quedanExigibles = quedanExigibles(state, hoy),
+            quedanExigibles = Hechos.quedanPendientes(state, hoy),
         )
     val recordatorios = contenedor.habits.observeHabits().first().mapNotNull { h -> h.reminderMinutes?.let { h.id to it } }.toMap()
     return PlanDeHoy(HechosCache().hechos(state, memoria, ctx, recordatorios), memoria, ctx)
 }
-
-private fun quedanExigibles(
-    state: DomainState,
-    hoy: Int,
-): Boolean =
-    state.habits.any { h ->
-        h.status == HabitStatus.ACTIVE &&
-            Compliance.isRequirableOn(state, h, hoy) &&
-            Compliance.complianceOf(state, h, LogicalDays.periodKeyOf(hoy, h.period), hoy) == ComplianceStatus.PENDING
-    }

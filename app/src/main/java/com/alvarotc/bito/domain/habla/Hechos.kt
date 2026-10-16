@@ -131,6 +131,19 @@ data class Hechos(
             recordatorios: Map<String, Int>,
         ): Hechos = deConCaros(state, memoria, ctx, recordatorios) { habit -> CarosDeHabito.calcular(state, habit, ctx) }
 
+        /**
+         * Si queda algo pendiente hoy, con la misma cuenta que `pendienteHoy()` de las reglas (exigible, sin hacer y
+         * sin fallar): un límite o un dejar limpio ya no espera nada, aunque su periodo siga PENDING hasta sellar. Es
+         * lo que decide la fase (`Contextos.de`, ESPERANDO) y lo que mira «Todo hecho», así que van siempre juntas.
+         */
+        fun quedanPendientes(
+            state: DomainState,
+            hoy: LogicalDay,
+        ): Boolean =
+            state.habits
+                .filter { it.status != HabitStatus.ARCHIVED && Compliance.isAliveOn(it, hoy) }
+                .any { estadoDeHoy(state, it, hoy).pendiente }
+
         internal fun deConCaros(
             state: DomainState,
             memoria: Memoria,
@@ -272,6 +285,35 @@ data class Hechos(
                 else -> TipoHabito.DURACION
             }
 
+        /** Exigible, hecho y fallado hoy: lo que comparten [HabitoHoy] y [quedanPendientes]. */
+        private class EstadoDeHoy(
+            val exigible: Boolean,
+            val hecho: Boolean,
+            val fallado: Boolean,
+        ) {
+            val pendiente: Boolean get() = exigible && !hecho && !fallado
+        }
+
+        private fun estadoDeHoy(
+            state: DomainState,
+            habit: Habit,
+            hoy: LogicalDay,
+        ): EstadoDeHoy {
+            val clave = LogicalDays.periodKeyOf(hoy, habit.period)
+            val compliance = Compliance.complianceOf(state, habit, clave, hoy)
+            val enPausa = habit.status == HabitStatus.PAUSED || Compliance.isPausedOn(state, habit.id, hoy)
+            val fallado = compliance == ComplianceStatus.FAILED
+            // La misma cuenta que la tarjeta de Hoy (`cardOf`): lo que no exige nada más hoy cuenta como hecho.
+            val hecho =
+                when (habit.direction) {
+                    Direction.AT_LEAST ->
+                        compliance == ComplianceStatus.FULFILLED ||
+                            (habit.period != Period.DAY && state.entries.any { it.habitId == habit.id && it.logicalDay == hoy })
+                    Direction.AT_MOST, Direction.ZERO -> !fallado
+                }
+            return EstadoDeHoy(!enPausa && Compliance.isRequirableOn(state, habit, hoy), hecho, fallado)
+        }
+
         private fun habitoHoy(
             state: DomainState,
             habit: Habit,
@@ -287,15 +329,10 @@ data class Hechos(
             val diasExigibles = Compliance.requirableDaysOf(state, habit, clave)
             val entradas = state.entries.filter { it.habitId == habit.id && it.logicalDay in diasExigibles }
             val enPausa = habit.status == HabitStatus.PAUSED || Compliance.isPausedOn(state, habit.id, hoy)
-            val exigibleHoy = !enPausa && Compliance.isRequirableOn(state, habit, hoy)
-            val fallado = compliance == ComplianceStatus.FAILED
-            // La misma cuenta que la tarjeta de Hoy (`cardOf`): lo que no exige nada más hoy cuenta como hecho.
-            val hecho =
-                when (habit.direction) {
-                    Direction.AT_LEAST ->
-                        compliance == ComplianceStatus.FULFILLED || (!diario && entradas.any { it.logicalDay == hoy })
-                    Direction.AT_MOST, Direction.ZERO -> !fallado
-                }
+            val estado = estadoDeHoy(state, habit, hoy)
+            val exigibleHoy = estado.exigible
+            val fallado = estado.fallado
+            val hecho = estado.hecho
             val racha = Streaks.streaksOf(state, habit, hoy)
             val juzgados = juzgadosRecientes(state, habit, hoy)
             val creadoHaceDias = (hoy - habit.createdOnDay).coerceAtLeast(0)

@@ -480,4 +480,13 @@ class HechosTest {
         assertEquals(100, de(domainState(habits = listOf(leer), entries = estaSemana)).deltaSemanaPct)
         assertNull(de(domainState()).deltaSemanaPct)
     }
+
+    @Test
+    fun `what is left today counts like pending in the rules`() {
+        // Un límite y un dejar limpios ya no esperan nada (la fase pasa a ESPERANDO como «Todo hecho»).
+        assertFalse(Hechos.quedanPendientes(domainState(habits = listOf(RealHabits.socialMedia, RealHabits.noSmoking)), TODAY))
+        assertTrue(Hechos.quedanPendientes(domainState(habits = listOf(RealHabits.socialMedia, RealHabits.meditate)), TODAY))
+        val hecho = domainState(habits = listOf(RealHabits.meditate), entries = listOf(entryOn(RealHabits.meditate, TODAY)))
+        assertFalse(Hechos.quedanPendientes(hecho, TODAY))
+    }
 }
