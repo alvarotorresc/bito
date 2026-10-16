@@ -104,6 +104,45 @@ class MotorSesionTest {
             assertEquals(r.id, banco.store.leer()?.id)
         }
 
+    /** El motor reacciona en su propio hilo: se espera a que lo esperado llegue. */
+    private fun esperar(condicion: () -> Boolean) {
+        repeat(200) {
+            if (condicion()) return
+            Thread.sleep(10)
+        }
+        assertTrue("no llegó a tiempo", condicion())
+    }
+
+    @Test
+    fun `losing the background for good tells the outside it is not sounding`() =
+        runTest {
+            directo()
+            empezarTarea()
+            assertTrue(g.fuera.sonandos.last())
+            limpiarGrabaciones()
+            g.fuera.sonandos.clear()
+
+            g.fondo.perder()
+
+            esperar { g.fuera.sonandos.isNotEmpty() }
+            assertEquals(listOf(false), g.fuera.sonandos)
+            assertEquals(motor.registro.value, g.fuera.cambios.single())
+        }
+
+    @Test
+    fun `pausing and leaving focus do not count as losing the background`() =
+        runTest {
+            directo()
+            empezarTarea()
+            limpiarGrabaciones()
+            g.fuera.sonandos.clear()
+
+            motor.pausar()
+            Thread.sleep(100)
+
+            assertEquals("solo el cambio de la pausa", listOf(false), g.fuera.sonandos)
+        }
+
     @Test
     fun `a direct start plays the background instead of breathing`() =
         runTest {

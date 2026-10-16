@@ -134,16 +134,25 @@ class FondoGrabado : Fondo {
     override fun muestra(tipo: SessionBackground) {
         llamadas += "muestra:$tipo"
     }
+
+    /** El foco de audio se perdió para siempre: el fondo deja de sonar sin que nadie lo haya callado. */
+    fun perder() {
+        _sonando.value = null
+    }
 }
 
 class FueraGrabada : FueraDeLaApp {
     val cambios: MutableList<RegistroSesion?> = Collections.synchronizedList(mutableListOf())
+
+    /** El `sonando` de cada cambio, en el mismo orden que [cambios]. */
+    val sonandos: MutableList<Boolean> = Collections.synchronizedList(mutableListOf())
 
     override suspend fun alCambiar(
         r: RegistroSesion?,
         sonando: Boolean,
     ) {
         cambios += r
+        sonandos += sonando
     }
 
     override fun respirando(

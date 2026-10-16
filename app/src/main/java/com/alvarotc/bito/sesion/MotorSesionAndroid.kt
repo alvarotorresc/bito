@@ -94,6 +94,29 @@ class MotorSesionAndroid(
     /** El último guardado en Ajustes de lo que se cambió en Preparar. */
     private var guardadoBorrador: Job? = null
 
+    init {
+        // Si el fondo deja de sonar sin que el motor lo haya callado (pérdida permanente del foco de audio), lo de fuera
+        // de la app lo sabe: el foco sin pausa ya no está sonando.
+        alcance.launch {
+            var antes = fondo.sonando.value
+            fondo.sonando.collect { ahora ->
+                if (antes != null && ahora == null) alPerderseElFondo()
+                antes = ahora
+            }
+        }
+    }
+
+    /**
+     * Con la sesión en un foco sin pausa, un fondo que sigue callado es una pérdida: se avisa a lo de fuera. Se mira al
+     * entrar en el cerrojo, no al emitirse: el motor cambia de tramo (calla y suena de nuevo) antes de que esto corra.
+     */
+    private suspend fun alPerderseElFondo() =
+        enCerrojo {
+            val r = _registro.value ?: return@enCerrojo
+            val inst = _instante.value ?: return@enCerrojo
+            if (inst.actual is Tramo.Foco && !inst.pausado && fondo.sonando.value == null) fuera.alCambiar(r, sonando())
+        }
+
     override suspend fun preparar(desde: Destino?) {
         val ajustes = settings.settings.first()
         val hoy = hoyDe(reloj(), ajustes)
