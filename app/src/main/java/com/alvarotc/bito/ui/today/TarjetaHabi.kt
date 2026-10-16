@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.propuestas.Accion
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -197,7 +198,7 @@ fun TarjetaHabi(
                                                 when {
                                                     accion.respuesta == Respuesta.HOY_NO || accion.respuesta == Respuesta.LUEGO ->
                                                         gesto(Snd.HUNDIR, Haptica.FALL)
-                                                    accion.respuesta == Respuesta.VALE && p.hora == null -> {
+                                                    accion.respuesta == Respuesta.VALE && esDiaDuro(p) -> {
                                                         valeDuro = true
                                                         gesto(Snd.TIC, Haptica.CONFIRM)
                                                     }
@@ -221,6 +222,9 @@ fun TarjetaHabi(
         }
     }
 }
+
+/** Si la propuesta es la de un día duro: su id estable empieza por la situación (`SITUACION:ref:día`). */
+internal fun esDiaDuro(propuesta: Propuesta): Boolean = propuesta.id.startsWith("${Situacion.DIA_DURO.name}:")
 
 /** Los botones de la propuesta, en fila y en su orden: el principal relleno, los demás como texto. */
 @Composable

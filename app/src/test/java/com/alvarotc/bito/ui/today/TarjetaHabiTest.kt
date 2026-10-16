@@ -267,7 +267,7 @@ class TarjetaHabiTest {
     fun `a Vale without an hour is the hard day one with tic and confirm`() {
         val sonido = SonidoGrabado()
         val tacto = TactoGrabado()
-        val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habi_name_fallback), todas, hora = null))
+        val fuente = FuenteFalsa(Propuesta("DIA_DURO:h1:20251 ", texto(R.string.habi_name_fallback), todas, hora = null))
         montarConTacto(fuente, sonido, tacto)
         rule.onNodeWithTag("habi-vale").performClick()
         assertTrue(Snd.TIC in sonido.snds())
@@ -305,5 +305,16 @@ class TarjetaHabiTest {
         rule.onNodeWithTag("tarjeta-habi").assertExists()
         rule.onAllNodesWithText("campeón").assertCountEquals(0)
         rule.onAllNodesWithTag("habi-hecho").assertCountEquals(0)
+    }
+
+    @Test
+    fun `a Vale without an hour in another situation does not fold the buttons`() {
+        val sonido = SonidoGrabado()
+        val tacto = TactoGrabado()
+        val fuente = FuenteFalsa(Propuesta("HABITO:h1:20251015", texto(R.string.habi_name_fallback), todas, hora = null))
+        montarConTacto(fuente, sonido, tacto)
+        rule.onNodeWithTag("habi-vale").performClick()
+        assertTrue(Snd.TIC !in sonido.snds())
+        assertTrue(Haptica.CONFIRM !in tacto.hapticas)
     }
 }
