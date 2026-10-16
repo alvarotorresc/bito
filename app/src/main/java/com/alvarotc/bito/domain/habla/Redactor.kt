@@ -21,9 +21,9 @@ data class Redaccion(
  */
 object Redactor {
     /**
-     * [forzarApertura]: los títulos de aviso siempre abren, sea cual sea el núcleo. [recuerdo]: el que
-     * la fuente eligió con `Recuerdos.elegible`; los avisos pasan null. Sin ningún núcleo elegible, el
-     * índice 0 de su bolsa, solo y sin uso anotado.
+     * [forzarApertura]: los títulos de aviso siempre abren, sea cual sea el núcleo, salvo delante de un
+     * saludo. [recuerdo]: el que la fuente eligió con `Recuerdos.elegible`; los avisos pasan null. Sin
+     * ningún núcleo elegible, el índice 0 de su bolsa, solo y sin uso anotado.
      */
     fun redactar(
         c: Candidata,
@@ -133,8 +133,8 @@ object Redactor {
     private val SELLOS = setOf(Bolsa.CIE_SELLO, Bolsa.CIE_SELLO_PERFECTO)
 
     /**
-     * Solo en Hoy, con núcleo de tipo NUCLEO y nunca delante de un saludo (que ya saluda). Los títulos
-     * de aviso la fuerzan.
+     * Nunca delante de un saludo (que ya saluda), ni forzada. Si no, solo en Hoy y con núcleo de tipo
+     * NUCLEO; los títulos de aviso la fuerzan.
      */
     private fun llevaApertura(
         c: Candidata,
@@ -142,12 +142,15 @@ object Redactor {
         forzar: Boolean,
         azar: Random,
     ): Boolean =
-        forzar ||
+        bolsaNucleo != Bolsa.NU_SALUDO &&
+            c.situacion != Situacion.SALUDO &&
             (
-                c.situacion.ambito == Ambito.HOY &&
-                    bolsaNucleo.tipo == TipoTrozo.NUCLEO &&
-                    c.situacion != Situacion.SALUDO &&
-                    azar.nextDouble() < Ritmo.PROB_APERTURA_TARJETA
+                forzar ||
+                    (
+                        c.situacion.ambito == Ambito.HOY &&
+                            bolsaNucleo.tipo == TipoTrozo.NUCLEO &&
+                            azar.nextDouble() < Ritmo.PROB_APERTURA_TARJETA
+                    )
             )
 
     private fun aperturaDe(franja: Franja): Bolsa =

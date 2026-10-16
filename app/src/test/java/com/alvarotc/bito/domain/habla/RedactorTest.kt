@@ -224,6 +224,7 @@ class RedactorTest {
             assertNull(Redactor.redactar(saludo, ctx(), cat, Memoria(), Random(semilla)).indice(Bolsa.AP_MANANA))
             assertNull(Redactor.redactar(ficha, ctx(), cat, Memoria(), Random(semilla)).indice(Bolsa.AP_MANANA))
         }
+        assertNull(Redactor.redactar(saludo, ctx(), cat, Memoria(), Random(1), forzarApertura = true).indice(Bolsa.AP_MANANA))
         val conNucleo = catalogoFalso(Bolsa.NU_AYER_ESCAPO to nucleos, Bolsa.AP_MANANA to lisos(5))
         assertTrue((0 until 100).any { Redactor.redactar(cand, ctx(), conNucleo, Memoria(), Random(it)).indice(Bolsa.AP_MANANA) != null })
     }
