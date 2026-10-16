@@ -36,7 +36,6 @@ import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.cifra
 import com.alvarotc.bito.ui.sistema.componentes.Boton
-import com.alvarotc.bito.ui.sistema.componentes.BotonTexto
 import com.alvarotc.bito.ui.sistema.componentes.EstiloBoton
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -216,11 +215,17 @@ private fun Piezas(d: DatosDescanso) {
         alcance.launch { motor.saltar() }
         Unit
     }
-    BotonTexto(
-        stringResource(R.string.ses_saltar_descanso),
-        saltar,
-        Modifier.fillMaxWidth().padding(top = ARRIBA_BOTONES.dp).testTag("d-saltar"),
-    )
+    // `.pill.ghost` centrada (`.btnrow.ses-centro`), como Saltar de Respirar para entrar.
+    Row(Modifier.fillMaxWidth().padding(top = ARRIBA_BOTONES.dp), horizontalArrangement = Arrangement.Center) {
+        Boton(
+            stringResource(R.string.ses_saltar_descanso),
+            saltar,
+            Modifier.testTag("d-saltar"),
+            estilo = EstiloBoton.FANTASMA,
+            alto = ALTO_SALTAR,
+            pildoraMock = true,
+        )
+    }
     if (espera) {
         Boton(
             stringResource(R.string.ses_empezar_descanso),
@@ -235,6 +240,9 @@ private fun Piezas(d: DatosDescanso) {
 }
 
 private const val MILLIS_MINUTO = 60_000L
+
+// El alto de la píldora fantasma del mock (el mismo de Saltar en Respirar para entrar).
+private val ALTO_SALTAR = 40.dp
 
 // Sin token: lo que lleva el descanso en marcha para contarlo como recién llegado, y los saltos de Habi del mock.
 private const val LLEGADA_VIVA_MS = 2_000L

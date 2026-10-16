@@ -456,7 +456,7 @@ class MotorSesionTest {
         }
 
     @Test
-    fun `skipping the break plays the return with a tick`() =
+    fun `skipping the break plays the usual return, the tick is the screen's`() =
         runTest {
             directo()
             empezarTarea()
@@ -465,7 +465,7 @@ class MotorSesionTest {
             motor.saltar()
             assertEquals(Tramo.Foco(2, 25), motor.instante.value?.actual)
             assertEquals(listOf(Snd.BROTE), g.sonido.sonidos)
-            assertEquals(listOf(Haptica.TICK), g.tacto.hapticas)
+            assertEquals(listOf(Haptica.RISE), g.tacto.hapticas)
             motor.tic()
             assertEquals(listOf(Snd.BROTE), g.sonido.sonidos)
         }
