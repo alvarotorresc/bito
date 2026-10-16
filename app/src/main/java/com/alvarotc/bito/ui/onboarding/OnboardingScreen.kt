@@ -640,7 +640,7 @@ private fun NameStepContent(
 
 /**
  * 7f: headline, big Habi wearing the SELECTED personality's face, a live bubble speaking that
- * personality's own voice ([HabiVoice.greetingRes] at [Mood.NORMAL] — a fresh Habi has no data
+ * personality's own voice ([HabiVoice.onboardingPreviewRes] — a fresh Habi has no data
  * behind it yet, same reasoning as [HabiHeroCircle]) with the user's name interpolated, then the
  * three personality cards (mini-Habi + label each), selectable, hoja-bordered when active.
  */

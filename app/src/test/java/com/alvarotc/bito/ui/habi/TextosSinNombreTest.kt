@@ -64,13 +64,12 @@ class TextosSinNombreTest {
     }
 
     @Test
-    fun `greetings, perfect day sheets and onboarding previews have a nameless twin`() {
+    fun `perfect day sheets and onboarding previews have a nameless twin`() {
         val textos =
             Personality.entries.flatMap { p ->
-                Mood.entries.map { m -> HabiVoice.greetingRes(m, p) } +
-                    listOf(HabiVoice.perfectDayRes(p), HabiVoice.onboardingPreviewRes(p))
+                listOf(HabiVoice.perfectDayRes(p), HabiVoice.onboardingPreviewRes(p))
             }
-        assertEquals(18, textos.size)
+        assertEquals(6, textos.size)
         val campeon = Regex("campe[oó]n\\w*|champ\\w*", RegexOption.IGNORE_CASE)
         for (res in textos) {
             val gemelo = HabiVoice.sinNombre(res)

@@ -1,6 +1,5 @@
 package com.alvarotc.bito.ui.notifications
 
-import com.alvarotc.bito.ui.habla.reviewRowsOf
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.TodayUiState
 
@@ -66,7 +65,3 @@ fun buildReminderPayload(state: TodayUiState): ReminderPayload? {
         totalCount = state.cards.count { !it.failed },
     )
 }
-
-/** Review owed: a past day unsealed, or today unsealed with something to act on. Sealing today closes the review for the day. */
-fun reviewIsPending(state: TodayUiState): Boolean =
-    state.pendingSealDays.isNotEmpty() || (!state.todaySealed && reviewRowsOf(state.cards, state.todaySealed).isNotEmpty())

@@ -17,13 +17,8 @@ import com.alvarotc.bito.domain.propuestas.TextoHabi
  *   mockup gives it its own playful, name-addressed voice ("¿Me has traído algo, %1$s?").
  *   [bubbleRes] now backs Stats alone.
  * - [homeRes] — the Habi screen bubble, playful home-context lines, `%1$s` = the user's name.
- * - [greetingRes] — the Hoy corner (consumed by T14), short, `%1$s` = the user's name.
  * - [freezerInfoRes] — the freezers ⓘ sheet body, personality-only (no mood), `%1$s` = the
  *   user's name. Deliberately never bakes the freezer price in — that lives in [com.alvarotc.bito.domain.model.EconomyConfig].
- * - [reviewRes] — the E1 review mini-bubble, personality-only, `%1$s` = the user's name.
- * - [reviewClearRes] — the E1 celebratory empty-review state, personality-only, `%1$s` = the
- *   user's name.
- * - [sealedRes] — the E2 normal day-sealed sheet, personality-only, `%1$s` = the user's name.
  * - [perfectDayRes] — the E2 perfect-day in-app sheet, personality-only, `%1$s` = the user's name.
  * - [perfectDayNotifRes] — the perfect-day notification body, personality-only, `%1$s` = the
  *   user's name.
@@ -101,64 +96,11 @@ object HabiVoice {
         }
 
     @StringRes
-    fun greetingRes(
-        mood: Mood,
-        personality: Personality,
-    ): Int =
-        when (personality) {
-            Personality.SARGENTO ->
-                when (mood) {
-                    Mood.RADIANT -> R.string.habi_greeting_sargento_radiant
-                    Mood.NORMAL -> R.string.habi_greeting_sargento_normal
-                    Mood.WILTED -> R.string.habi_greeting_sargento_wilted
-                    Mood.DRAMATIC -> R.string.habi_greeting_sargento_dramatic
-                }
-            Personality.CHEERLEADER ->
-                when (mood) {
-                    Mood.RADIANT -> R.string.habi_greeting_cheerleader_radiant
-                    Mood.NORMAL -> R.string.habi_greeting_cheerleader_normal
-                    Mood.WILTED -> R.string.habi_greeting_cheerleader_wilted
-                    Mood.DRAMATIC -> R.string.habi_greeting_cheerleader_dramatic
-                }
-            Personality.NEUTRA ->
-                when (mood) {
-                    Mood.RADIANT -> R.string.habi_greeting_neutra_radiant
-                    Mood.NORMAL -> R.string.habi_greeting_neutra_normal
-                    Mood.WILTED -> R.string.habi_greeting_neutra_wilted
-                    Mood.DRAMATIC -> R.string.habi_greeting_neutra_dramatic
-                }
-        }
-
-    @StringRes
     fun freezerInfoRes(personality: Personality): Int =
         when (personality) {
             Personality.SARGENTO -> R.string.freezer_info_sargento
             Personality.CHEERLEADER -> R.string.freezer_info_cheerleader
             Personality.NEUTRA -> R.string.freezer_info_neutra
-        }
-
-    @StringRes
-    fun reviewRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.string.habi_review_sargento
-            Personality.CHEERLEADER -> R.string.habi_review_cheerleader
-            Personality.NEUTRA -> R.string.habi_review_neutra
-        }
-
-    @StringRes
-    fun reviewClearRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.string.habi_review_clear_sargento
-            Personality.CHEERLEADER -> R.string.habi_review_clear_cheerleader
-            Personality.NEUTRA -> R.string.habi_review_clear_neutra
-        }
-
-    @StringRes
-    fun sealedRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.string.habi_sealed_sargento
-            Personality.CHEERLEADER -> R.string.habi_sealed_cheerleader
-            Personality.NEUTRA -> R.string.habi_sealed_neutra
         }
 
     @StringRes
@@ -270,18 +212,6 @@ object HabiVoice {
             R.string.freezer_info_neutra to R.string.freezer_info_neutra_sin_nombre,
             R.string.habi_task_done_neutra to R.string.habi_task_done_neutra_sin_nombre,
             R.string.habi_perfect_notif_neutra to R.string.habi_perfect_notif_neutra_sin_nombre,
-            R.string.habi_greeting_sargento_radiant to R.string.habi_greeting_sargento_radiant_sin_nombre,
-            R.string.habi_greeting_sargento_normal to R.string.habi_greeting_sargento_normal_sin_nombre,
-            R.string.habi_greeting_sargento_wilted to R.string.habi_greeting_sargento_wilted_sin_nombre,
-            R.string.habi_greeting_sargento_dramatic to R.string.habi_greeting_sargento_dramatic_sin_nombre,
-            R.string.habi_greeting_cheerleader_radiant to R.string.habi_greeting_cheerleader_radiant_sin_nombre,
-            R.string.habi_greeting_cheerleader_normal to R.string.habi_greeting_cheerleader_normal_sin_nombre,
-            R.string.habi_greeting_cheerleader_wilted to R.string.habi_greeting_cheerleader_wilted_sin_nombre,
-            R.string.habi_greeting_cheerleader_dramatic to R.string.habi_greeting_cheerleader_dramatic_sin_nombre,
-            R.string.habi_greeting_neutra_radiant to R.string.habi_greeting_neutra_radiant_sin_nombre,
-            R.string.habi_greeting_neutra_normal to R.string.habi_greeting_neutra_normal_sin_nombre,
-            R.string.habi_greeting_neutra_wilted to R.string.habi_greeting_neutra_wilted_sin_nombre,
-            R.string.habi_greeting_neutra_dramatic to R.string.habi_greeting_neutra_dramatic_sin_nombre,
             R.string.habi_perfect_sargento to R.string.habi_perfect_sargento_sin_nombre,
             R.string.habi_perfect_cheerleader to R.string.habi_perfect_cheerleader_sin_nombre,
             R.string.habi_perfect_neutra to R.string.habi_perfect_neutra_sin_nombre,

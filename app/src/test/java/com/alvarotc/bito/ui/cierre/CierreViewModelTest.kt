@@ -451,46 +451,6 @@ class CierreViewModelTest {
             assertEquals(0, avisos.replanificados)
         }
 
-    @Test
-    fun `markCelebrated and markBadgesSeen write the settings markers`() =
-        runTest {
-            vm.markCelebrated()
-            advanceUntilIdle()
-            assertEquals(today, settingsRepo.settings.first().perfectDayCelebratedDay)
-
-            vm.markBadgesSeen()
-            advanceUntilIdle()
-            assertEquals(fixedNow, settingsRepo.settings.first().badgesSeenUntilMillis)
-        }
-
-    @Test
-    fun `markBadgesSeen records the latest shown unlock, not the wall clock`() =
-        runTest {
-            db.badgeDao().insert(BadgeEntity(badgeId = "first-habit", unlockedAtMillis = fixedNow - 20_000))
-            db.badgeDao().insert(BadgeEntity(badgeId = "streak-7", unlockedAtMillis = fixedNow - 5_000))
-
-            vm.markBadgesSeen()
-            advanceUntilIdle()
-
-            assertEquals(fixedNow - 5_000, settingsRepo.settings.first().badgesSeenUntilMillis)
-        }
-
-    @Test
-    fun `markBadgesSeen does not lose a higher mark committed while it is still computing`() =
-        runTest {
-            db.badgeDao().insert(BadgeEntity(badgeId = "first-habit", unlockedAtMillis = fixedNow - 20_000))
-            state()
-
-            vm.markBadgesSeen()
-            launch {
-                settingsRepo.settings.first()
-                settingsRepo.update { it.copy(badgesSeenUntilMillis = fixedNow) }
-            }
-            advanceUntilIdle()
-
-            assertEquals(fixedNow, settingsRepo.settings.first().badgesSeenUntilMillis)
-        }
-
     /** Del repaso (`pointsToday` y `newBadges`): lo que el sello cuenta. */
     @Test
     fun `the seal counts today's bitos and lists only unseen badges in catalog order`() =

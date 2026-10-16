@@ -34,7 +34,7 @@ class TextoHabiUiTest {
     @Test
     fun `a nested text argument is resolved, not left as a placeholder`() {
         val context = RuntimeEnvironment.getApplication() as Context
-        val saludo = R.string.habi_greeting_neutra_normal
+        val saludo = R.string.habi_home_neutra_normal
         val esperado = context.getString(saludo, context.getString(R.string.habi_balance_points))
         assertTrue(!esperado.contains("%1\$s"))
 

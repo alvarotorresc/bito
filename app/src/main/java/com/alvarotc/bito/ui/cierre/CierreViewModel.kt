@@ -268,22 +268,6 @@ class CierreViewModel internal constructor(
             buildTodayUiState(estado, emptyMap(), hoy).pendingSealDays.forEach { journal.sealDay(it, ahora) }
         }
 
-    fun markCelebrated() = escribir { hoy, _ -> settings.update { it.copy(perfectDayCelebratedDay = hoy) } }
-
-    /**
-     * Marca como vistos los logros que se enseñan. La marca es el último desbloqueo mostrado, no el reloj, y el
-     * suelo se lee dentro de la transacción de `update` para no pisar una marca más alta que llegue a la vez.
-     */
-    fun markBadgesSeen() =
-        escribir { _, ahora ->
-            val actual = settings.settings.first().badgesSeenUntilMillis
-            val ultimo =
-                rewards.observeBadges().first()
-                    .filter { it.unlockedAtMillis > actual }
-                    .maxOfOrNull { it.unlockedAtMillis }
-            settings.update { it.copy(badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, ultimo ?: ahora)) }
-        }
-
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {

@@ -14,15 +14,11 @@
 
     <!--
         Textos con voz de personalidad de Habi (T13/T8, HabiVoice) — M9 draft copy — pending
-        architect validation (docs/07). Diez contextos:
+        architect validation (docs/07). Seis contextos:
         habi_bubble_* — comentarista de Stats, solo por ánimo (sin nombre).
         habi_home_*   — globo propio de la pantalla Habi, tono jugador de hogar, %1$s = nombre.
-        habi_greeting_* — esquina de Habi en Hoy, corto, %1$s = nombre (lo consume T14).
         freezer_info_* — cuerpo de la hoja ⓘ de congeladores, %1$s = nombre. El precio nunca se
         hardcodea aquí a propósito — vive en EconomyConfig.
-        habi_review_* — mini-globo del repaso E1, %1$s = nombre.
-        habi_review_clear_* — estado celebratorio de repaso vacío E1, %1$s = nombre.
-        habi_sealed_* — hoja de día sellado E2 normal, %1$s = nombre.
         habi_perfect_* — hoja in-app de día perfecto E2, %1$s = nombre.
         habi_perfect_notif_* — cuerpo de la notificación de día perfecto, %1$s = nombre.
         habi_badge_* — hoja de logro desbloqueado, %1$s = nombre, %2$s = nombre del badge.
@@ -65,30 +61,6 @@
     <string name="habi_home_neutra_dramatic">Hace días que no te veía, %1$s. Me alegra que estés aquí.</string>
     <string name="habi_home_neutra_dramatic_sin_nombre">Hace días que no te veía. Me alegra que estés aquí.</string>
 
-    <string name="habi_greeting_sargento_radiant">Buen nivel, %1$s. Mantenlo.</string>
-    <string name="habi_greeting_sargento_radiant_sin_nombre">Buen nivel. Mantenlo.</string>
-    <string name="habi_greeting_sargento_normal">En marcha, %1$s.</string>
-    <string name="habi_greeting_sargento_normal_sin_nombre">En marcha.</string>
-    <string name="habi_greeting_sargento_wilted">%1$s, esos hábitos no se hacen solos.</string>
-    <string name="habi_greeting_sargento_wilted_sin_nombre">Esos hábitos no se hacen solos.</string>
-    <string name="habi_greeting_sargento_dramatic">%1$s, se acabó el descanso.</string>
-    <string name="habi_greeting_sargento_dramatic_sin_nombre">Se acabó el descanso.</string>
-    <string name="habi_greeting_cheerleader_radiant">¡Vas que vuelas, %1$s!</string>
-    <string name="habi_greeting_cheerleader_radiant_sin_nombre">¡Vas que vuelas!</string>
-    <string name="habi_greeting_cheerleader_normal">Hola, %1$s. ¡A por hoy!</string>
-    <string name="habi_greeting_cheerleader_normal_sin_nombre">¡Hola! ¡A por hoy!</string>
-    <string name="habi_greeting_cheerleader_wilted">Ánimo, %1$s. Hoy remontamos.</string>
-    <string name="habi_greeting_cheerleader_wilted_sin_nombre">Ánimo. Hoy remontamos.</string>
-    <string name="habi_greeting_cheerleader_dramatic">¡Te echaba de menos, %1$s!</string>
-    <string name="habi_greeting_cheerleader_dramatic_sin_nombre">¡Te echaba de menos!</string>
-    <string name="habi_greeting_neutra_radiant">Buena inercia, %1$s.</string>
-    <string name="habi_greeting_neutra_radiant_sin_nombre">Buena inercia.</string>
-    <string name="habi_greeting_neutra_normal">Hola, %1$s.</string>
-    <string name="habi_greeting_neutra_normal_sin_nombre">Hola.</string>
-    <string name="habi_greeting_neutra_wilted">%1$s, hoy es un buen día para retomar.</string>
-    <string name="habi_greeting_neutra_wilted_sin_nombre">Hoy es un buen día para retomar.</string>
-    <string name="habi_greeting_neutra_dramatic">%1$s, qué bien verte de vuelta.</string>
-    <string name="habi_greeting_neutra_dramatic_sin_nombre">Qué bien verte de vuelta.</string>
 
     <string name="freezer_info_sargento">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes, %1$s.</string>
     <string name="freezer_info_sargento_sin_nombre">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes.</string>
@@ -97,17 +69,8 @@
     <string name="freezer_info_neutra">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día en rojo en el calendario y elige «Usar congelador». Se compran en la tienda de Habi, %1$s.</string>
     <string name="freezer_info_neutra_sin_nombre">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día en rojo en el calendario y elige «Usar congelador». Se compran en la tienda de Habi.</string>
 
-    <string name="habi_review_sargento">Cerremos el día, %1$s. Sin excusas.</string>
-    <string name="habi_review_cheerleader">¡Hora de cerrar el día, %1$s! Lo que falte, lo hacemos ya.</string>
-    <string name="habi_review_neutra">Repaso del día, %1$s. Solo lo que queda.</string>
 
-    <string name="habi_review_clear_sargento">Nada pendiente. Hoy no tengo quejas, %1$s.</string>
-    <string name="habi_review_clear_cheerleader">¡%1$s, lo tienes todo hecho! Sella y a descansar.</string>
-    <string name="habi_review_clear_neutra">Nada pendiente, %1$s. Puedes sellar el día.</string>
 
-    <string name="habi_sealed_sargento">Día cerrado, %1$s. Mañana, más.</string>
-    <string name="habi_sealed_cheerleader">¡Otro día en el bolsillo, %1$s! Qué bien sienta, ¿eh? Mañana seguimos.</string>
-    <string name="habi_sealed_neutra">Día sellado, %1$s. Hasta mañana.</string>
 
     <string name="habi_perfect_sargento">Día perfecto, %1$s. Así se hace. No te relajes.</string>
     <string name="habi_perfect_sargento_sin_nombre">Día perfecto. Así se hace. No te relajes.</string>

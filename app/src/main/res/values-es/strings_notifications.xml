@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="channel_reminders">Recordatorios</string>
-    <string name="channel_review">Repaso del día</string>
     <string name="channel_celebrations">Celebraciones</string>
 
     <!--
@@ -82,32 +81,6 @@
     <string name="notif_action_done">Hecho</string>
     <string name="notif_target_done">Hecho: %1$s</string>
 
-    <!--
-        Aviso de REPASO con la voz de Habi. Títulos: %1$s = nombre del usuario. Cuerpos: plurals
-        por filas del repaso de hoy aún por decidir (%1$d). La variante seal-only cubre un repaso
-        pendiente sin nada que decidir hoy — solo días pasados sin sellar.
-    -->
-    <string name="notif_review_title_sargento">Cierre del día, %1$s.</string>
-    <string name="notif_review_title_cheerleader">¡A cerrar el día, %1$s!</string>
-    <string name="notif_review_title_neutra">Repaso del día, %1$s.</string>
-    <plurals name="notif_review_body_sargento">
-        <item quantity="one">Queda %1$d por decidir. Ciérralo y mañana más.</item>
-        <item quantity="many">Quedan %1$d por decidir. Un minuto y el día queda cerrado. Sin excusas.</item>
-        <item quantity="other">Quedan %1$d por decidir. Un minuto y el día queda cerrado. Sin excusas.</item>
-    </plurals>
-    <plurals name="notif_review_body_cheerleader">
-        <item quantity="one">Solo queda %1$d por decidir. ¡Sella y a descansar!</item>
-        <item quantity="many">Quedan %1$d por decidir. ¡Un repaso rápido y a descansar!</item>
-        <item quantity="other">Quedan %1$d por decidir. ¡Un repaso rápido y a descansar!</item>
-    </plurals>
-    <plurals name="notif_review_body_neutra">
-        <item quantity="one">Queda %1$d por decidir. Un minuto y el día queda sellado.</item>
-        <item quantity="many">Quedan %1$d por decidir. Un minuto y el día queda sellado.</item>
-        <item quantity="other">Quedan %1$d por decidir. Un minuto y el día queda sellado.</item>
-    </plurals>
-    <string name="notif_review_seal_sargento">Tienes días sin sellar. Ponlos en orden.</string>
-    <string name="notif_review_seal_cheerleader">Hay días esperando su sello. ¡Un toque y listo!</string>
-    <string name="notif_review_seal_neutra">Hay días anteriores sin sellar. Un toque y quedan cerrados.</string>
 
     <string name="notif_perfect_day_title">Día perfecto</string>
 

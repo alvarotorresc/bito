@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="channel_reminders">Reminders</string>
-    <string name="channel_review">Daily review</string>
     <string name="channel_celebrations">Celebrations</string>
 
     <!--
@@ -77,29 +76,6 @@
     <string name="notif_target_done">Done: %1$s</string>
     <string name="notif_target_add" translatable="false">+%1$d %2$s · %3$d/%4$d</string>
 
-    <!--
-        REVIEW nudge, in Habi's voice. Titles: %1$s = the user's name. Bodies: plurals keyed by
-        how many rows today's review still has to decide (%1$d). The seal-only variant covers a
-        review owed with nothing to decide today — only past days left unsealed.
-    -->
-    <string name="notif_review_title_sargento">Day\'s close, %1$s.</string>
-    <string name="notif_review_title_cheerleader">Let\'s close the day, %1$s!</string>
-    <string name="notif_review_title_neutra">Day review, %1$s.</string>
-    <plurals name="notif_review_body_sargento">
-        <item quantity="one">%1$d left to settle. Close it out.</item>
-        <item quantity="other">%1$d left to settle. One minute and the day is closed. No excuses.</item>
-    </plurals>
-    <plurals name="notif_review_body_cheerleader">
-        <item quantity="one">Just %1$d left to settle. Seal it and rest up!</item>
-        <item quantity="other">%1$d left to settle. A quick review and off to rest!</item>
-    </plurals>
-    <plurals name="notif_review_body_neutra">
-        <item quantity="one">%1$d left to settle. One minute and the day is sealed.</item>
-        <item quantity="other">%1$d left to settle. One minute and the day is sealed.</item>
-    </plurals>
-    <string name="notif_review_seal_sargento">There are unsealed days on the books. Put them in order.</string>
-    <string name="notif_review_seal_cheerleader">A few days are waiting for their seal. One tap and done!</string>
-    <string name="notif_review_seal_neutra">Some earlier days are still unsealed. One tap closes them.</string>
 
     <string name="notif_perfect_day_title">Perfect day</string>
 

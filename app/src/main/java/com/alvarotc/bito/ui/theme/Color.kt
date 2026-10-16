@@ -16,7 +16,6 @@ val HojaTinte = BitoClaro.hielo
 val Brasa = Escena.rachas.anillo
 val BrasaTinte = Escena.rachas.disco
 val Peligro = BitoClaro.peligro
-val PeligroTinte = BitoClaro.peligroFondo
 
 // Piel de Habi y mofletes: son del arte, no de la interfaz; no cambian.
 val HabiSalvia = Color(0xFFA9C9A1)
