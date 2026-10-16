@@ -204,7 +204,7 @@ object Notifier {
                 .setContentText(texto)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(texto))
                 .setLargeIcon(iconoHabi(context, personality, Mood.RADIANT))
-                .setContentIntent(contentIntent(context, "today", PETICION_MANANA))
+                .setContentIntent(contentIntent(context, "today", PETICION_ACEPTADO))
         notify(context, MANANA_ID, builder)
     }
 
@@ -229,7 +229,7 @@ object Notifier {
                 .setContentTitle(nombre)
                 .setContentText(texto)
                 .setLargeIcon(iconoHabi(context, personality))
-                .setContentIntent(contentIntent(context, "today", PETICION_MANANA))
+                .setContentIntent(contentIntent(context, "today", PETICION_RECORDATORIO + indice))
         if (target != null) {
             builder.addAction(0, etiquetaAccion(context, target), quickActionIntent(context, target.habitId, target.amount, id))
         }
@@ -376,10 +376,15 @@ object Notifier {
 
     /**
      * Códigos de petición de las aperturas de la app desde los avisos de Habi, distintos de los de las rutas de
-     * siempre (0, 2, 3, 4 y 5): [Intent.filterEquals] no mira los extras.
+     * siempre (0, 2, 3, 4 y 5): [Intent.filterEquals] no mira los extras y `FLAG_UPDATE_CURRENT` cambiaría la ruta de
+     * otra notificación viva. Uno por apertura: el toque de la mañana, el del aceptado, cada acción de la mañana que
+     * abre la app (base más su índice) y el toque de cada recordatorio aceptado (base más su índice del día). El
+     * cierre comparte el 2 porque su ruta es siempre la misma.
      */
     private const val PETICION_MANANA = 70
-    private const val PETICION_AHORA = 71
+    private const val PETICION_ACEPTADO = 73
+    private const val PETICION_AHORA = 90
+    private const val PETICION_RECORDATORIO = 100
     private const val PETICION_CIERRE = 2
 
     /** Una acción de la vigente en el aviso de la mañana: al receptor si se responde ahí, a la app si hay que ir. */
@@ -408,8 +413,8 @@ object Notifier {
                 difusion(context, intent, MANANA_ID * 10 + indice)
             }
             Respuesta.CERRAR_DIA -> contentIntent(context, "review", PETICION_CIERRE)
-            Respuesta.ELEGIR_GORDO -> contentIntent(context, "gordo", PETICION_AHORA)
-            else -> contentIntent(context, rutaDe(propuesta.destino), PETICION_AHORA)
+            Respuesta.ELEGIR_GORDO -> contentIntent(context, "gordo", PETICION_AHORA + indice)
+            else -> contentIntent(context, rutaDe(propuesta.destino), PETICION_AHORA + indice)
         }
 
     /** Adónde lleva «Ahora» desde la bandeja: solo rutas de la lista blanca de [com.alvarotc.bito.ui.NavRequests]. */

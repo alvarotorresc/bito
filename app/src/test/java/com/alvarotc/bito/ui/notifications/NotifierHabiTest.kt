@@ -101,6 +101,37 @@ class NotifierHabiTest {
     }
 
     @Test
+    fun `an accepted reminder does not change where the morning notice opens`() {
+        Notifier.showManana(context, vigente(Situacion.ELEGIR_GORDO), TextoHabi(R.string.habla_mas_tarde), Personality.NEUTRA, Mood.NORMAL)
+
+        Notifier.showRecordatorioAceptado(context, "a1", 0, "Leer", TextoHabi(R.string.habla_hecho), null, false, Personality.NEUTRA)
+
+        val manana = assertNotNull(shadowOf(manager).getNotification(Notifier.MANANA_ID))
+        assertEquals("gordo", shadowOf(manana.contentIntent).savedIntent.getStringExtra(Notifier.EXTRA_OPEN_ROUTE))
+        val recordatorio = assertNotNull(shadowOf(manager).getNotification(Notifier.aceptadoId(0)))
+        assertEquals("today", shadowOf(recordatorio.contentIntent).savedIntent.getStringExtra(Notifier.EXTRA_OPEN_ROUTE))
+    }
+
+    @Test
+    fun `two morning actions that open the app keep their own route`() {
+        val propuesta =
+            vigente().copy(
+                acciones =
+                    listOf(
+                        Accion(Respuesta.AHORA, TextoHabi(R.string.habla_ahora)),
+                        Accion(Respuesta.ELEGIR_GORDO, TextoHabi(R.string.habla_mas_tarde)),
+                    ),
+                destino = Destino.Respirar,
+            )
+
+        Notifier.showManana(context, propuesta, TextoHabi(R.string.habla_mas_tarde), Personality.NEUTRA, Mood.NORMAL)
+
+        val n = assertNotNull(shadowOf(manager).getNotification(Notifier.MANANA_ID))
+        val rutas = n.actions.map { shadowOf(it.actionIntent).savedIntent.getStringExtra(Notifier.EXTRA_OPEN_ROUTE) }
+        assertEquals(listOf("breathing", "gordo"), rutas)
+    }
+
+    @Test
     fun `the accepted notice takes the place of the morning one quietly`() {
         Notifier.showManana(context, vigente(), TextoHabi(R.string.habla_mas_tarde), Personality.NEUTRA, Mood.NORMAL)
 
