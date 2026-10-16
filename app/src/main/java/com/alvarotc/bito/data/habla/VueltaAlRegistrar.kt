@@ -6,6 +6,7 @@ import com.alvarotc.bito.domain.habla.EventoMemoria
 import com.alvarotc.bito.domain.habla.Hechos
 import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.model.DomainState
+import kotlinx.coroutines.CancellationException
 import java.time.ZoneId
 
 /**
@@ -23,19 +24,34 @@ class VueltaAlRegistrar(
         entrada: EntryEntity,
         escribir: suspend () -> Unit,
     ) {
+        // La vuelta es opcional: si su cálculo o su anotación fallan, el registro del usuario se escribe igual.
+        // Se mira antes de escribir porque después el registro ya contaría como día con actividad.
+        val dias = tolerante { diasDeVuelta(entrada) }
+        escribir()
+        if (dias != null) {
+            val dia = entrada.logicalDay
+            tolerante {
+                memoria.anotar(EventoMemoria("VUELTA:$dia", TipoMemoria.VUELTA, dia, entrada.habitId, dias, entrada.createdAtMillis))
+            }
+        }
+    }
+
+    private suspend fun diasDeVuelta(entrada: EntryEntity): Int? {
         val corte = corteDia()
         val z = zona()
         val dia = entrada.logicalDay
-        val dias =
-            Hechos.diasFueraAlVolver(
-                estado(),
-                dia,
-                corte,
-                z,
-            ).takeIf { LogicalDays.logicalDayOf(entrada.createdAtMillis, corte, z) == dia }
-        escribir()
-        if (dias != null) {
-            memoria.anotar(EventoMemoria("VUELTA:$dia", TipoMemoria.VUELTA, dia, entrada.habitId, dias, entrada.createdAtMillis))
-        }
+        return Hechos
+            .diasFueraAlVolver(estado(), dia, corte, z)
+            .takeIf { LogicalDays.logicalDayOf(entrada.createdAtMillis, corte, z) == dia }
     }
+
+    /** Como `runCatching`, pero la cancelación de la corrutina sigue su camino. */
+    private suspend fun <T> tolerante(bloque: suspend () -> T): T? =
+        try {
+            bloque()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            null
+        }
 }
