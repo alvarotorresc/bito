@@ -68,6 +68,16 @@ Hora local con el formato del sistema (ES 24 h «14:30»; EN «2:30 PM» o «14:
 | `av_aceptado_titulo`, `av_aceptado_cuerpo` | la hora aceptada para el **hábito** de la propuesta. Nunca la hora de lo gordo: lo gordo no tiene «Vale, a las…» (§5.1). Mal: «Lo gordo, a las {hora}», «{gordo}, a las {hora}», «Lo gordo ya tiene hora». Bien: «Te aviso a las {hora}. Mientras, lo gordo: {gordo}.» |
 | `re_cumpliste_hora` | el minuto aceptado ayer (`ACEPTADO_CUMPLIDO`) |
 
+**Cuándo falta `{hora}`.** Es opcional (no está en `obligatorios`) en estas bolsas, y cada voz necesita trozos que se entiendan sin ella:
+
+- `nu_ayer_escapo`: falta si no hay hora posible (§5.3) o si ya hay dos avisos aceptados hoy: el motor la quita y el «Vale, a las…» pasa a «Ahora» (§5.2).
+- `nu_hora_habitual`: hoy el motor la pasa siempre (es la hora habitual, no una propuesta). Sigue siendo opcional en el contrato.
+- `nu_dia_flojo` y `nu_racha_cerca`: estas bolsas no tienen el hueco `{hora}`. La hora propuesta solo va en el botón «Vale, a las…», y con dos avisos aceptados el botón pasa a «Ahora».
+- `fi_hoy_falta`: la nota solo sale con hora posible, y con dos avisos aceptados el motor no la saca (§5.2). En la práctica llega con hora, pero el contrato no lo exige.
+- `nu_confirma_vale`: falta tras un «Vale» sin hora (el día duro, o con dos avisos ya aceptados). La confirmación sale igual (§5.2), sin botones: no hay aviso programado, así que los trozos sin `{hora}` no prometen avisar.
+
+En `nu_confirma_vale_gordo`, `{hora}` es obligatorio: un «Vale» sin hora confirma siempre con `nu_confirma_vale`, aunque quede lo gordo sin hacer.
+
 **Decisión de coherencia:** `av_aceptado_cuerpo` se envía **siempre**, haya o no lo gordo; `{gordo}` solo se pasa si queda lo gordo sin hacer. Cada voz necesita trozos sin `{gordo}` que se entiendan solos.
 
 ### `{minutos}`
