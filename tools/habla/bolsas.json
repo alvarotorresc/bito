@@ -62,5 +62,16 @@
   {"bolsa": "av_noche_cuerpo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "gordo", "hechos", "total", "tarea"], "minimo": 10, "nombre": true},
   {"bolsa": "av_aceptado_titulo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["hora", "gordo", "nombre"], "minimo": 6, "nombre": true},
   {"bolsa": "av_aceptado_cuerpo", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["hora", "gordo", "nombre"], "minimo": 6, "nombre": true},
-  {"bolsa": "av_ausencia", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "hora", "gordo"], "minimo": 6, "nombre": true}
+  {"bolsa": "av_ausencia", "grupo": "F", "archivo": "avisos", "tipo": "SUELTA", "huecos": ["nombre", "hora", "gordo"], "minimo": 6, "nombre": true},
+  {"bolsa": "se_entrar", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": ["nombre", "tarea", "habito", "minutos"], "minimo": 10, "nombre": true},
+  {"bolsa": "de_habito", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": ["habito", "minutos"], "minimo": 10, "nombre": false},
+  {"bolsa": "de_habito_largo", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": ["habito", "minutos"], "minimo": 6, "nombre": false},
+  {"bolsa": "de_sin_pendientes", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": ["nombre"], "minimo": 10, "nombre": true},
+  {"bolsa": "se_hecha_tarea", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": ["nombre"], "minimo": 8, "nombre": true},
+  {"bolsa": "se_hecha_habito", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": ["nombre"], "minimo": 8, "nombre": true},
+  {"bolsa": "ce_mejor", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": [], "minimo": 6, "nombre": false},
+  {"bolsa": "ce_igual", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": [], "minimo": 6, "nombre": false},
+  {"bolsa": "ce_cuesta", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": [], "minimo": 6, "nombre": false},
+  {"bolsa": "re_fin_respirar", "grupo": "G", "archivo": "sesion", "tipo": "SUELTA", "huecos": ["nombre"], "minimo": 8, "nombre": true},
+  {"bolsa": "re_respirar_mejor", "grupo": "G", "archivo": "sesion", "tipo": "RECUERDO", "huecos": ["modo"], "minimo": 5, "nombre": false}
 ]
