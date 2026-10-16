@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,9 +65,11 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.CatalogoHabla
+import com.alvarotc.bito.domain.habla.Contexto
 import com.alvarotc.bito.domain.habla.Hueco
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.domain.sesion.FormatoSesion
 import com.alvarotc.bito.domain.sesion.Instante
 import com.alvarotc.bito.domain.sesion.Objetivo
@@ -98,7 +101,7 @@ import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -715,27 +718,39 @@ internal fun FocoBloque(alMasOtro: () -> Unit = {}) {
             Objetivo.Libre -> DatosFoco(null, null)
             else -> DatosFoco(datosObjetivo?.nombre.orEmpty(), datosObjetivo?.primerPaso)
         }
-    val ajustes by remember(sesion) { sesion?.ajustes?.settings ?: emptyFlow() }.collectAsStateWithLifecycle(null)
     val fondo by remember(sesion) { sesion?.fondo?.sonando ?: MutableStateFlow(null) }.collectAsStateWithLifecycle()
     val anclas = LocalAnclas.current
     val recursos = LocalContext.current.resources
 
-    val nombre = ajustes?.userName?.trim()?.takeIf { it.isNotEmpty() }
-    val voz = ajustes?.personality ?: Personality.NEUTRA
-    val catalogo = sesion?.catalogo
-    val minutos = (instante.duracionTramoMillis / MILLIS_POR_MINUTO).toInt()
-    val entrada = frase(catalogo, SE_ENTRADA, voz, nombre, registro.inicioPared, objetivo, datosObjetivo, minutos)
-    val hecha =
-        frase(
-            catalogo,
-            if (objetivo is Objetivo.Habito) Bolsa.SE_HECHA_HABITO else Bolsa.SE_HECHA_TAREA,
-            voz,
-            nombre,
-            registro.inicioPared,
-            null,
-            null,
-            minutos,
+    // Las frases se eligen una sola vez, con los datos ya cargados (voz, nombre, objetivo y contexto del día): no cambian al llegar.
+    val minutosAhora = rememberUpdatedState((instante.duracionTramoMillis / MILLIS_POR_MINUTO).toInt())
+    val elegidas by produceState<FrasesElegidas?>(null, sesion, registro.id, objetivo) {
+        val catalogo = sesion?.catalogo
+        if (sesion == null || catalogo == null) {
+            value = FrasesElegidas(null, null)
+            return@produceState
+        }
+        val datosDelObjetivo = sesion.objetivo(objetivo)
+        val ajustes = sesion.ajustes.settings.first()
+        val contexto = sesion.contexto()
+        val nombre = ajustes.userName.trim().takeIf { it.isNotEmpty() }
+        val minutos = minutosAhora.value
+        val voz = ajustes.personality
+        val semilla = registro.inicioPared
+        val bolsaHecha = if (objetivo is Objetivo.Habito) Bolsa.SE_HECHA_HABITO else Bolsa.SE_HECHA_TAREA
+        value =
+            FrasesElegidas(
+                entrada = fraseDe(catalogo, SE_ENTRADA, voz, nombre, semilla, objetivo, datosDelObjetivo, minutos, contexto),
+                hecha = fraseDe(catalogo, bolsaHecha, voz, nombre, semilla, null, null, minutos, contexto),
+            )
+    }
+    val frases =
+        FrasesFoco(
+            entrada = elegidas?.entrada?.let { textoHabi(it) },
+            hecha = if (objetivo == Objetivo.Libre) null else elegidas?.hecha?.let { textoHabi(it) },
         )
+
+    val noMolestar = remember(registro, instante.tramo) { sesion?.noMolestarActivo(registro) == true }
 
     val entorno =
         EntornoFoco(
@@ -759,18 +774,24 @@ internal fun FocoBloque(alMasOtro: () -> Unit = {}) {
         plan = registro.plan,
         datos = datos,
         fondoSonando = fondo,
-        noMolestar = sesion?.noMolestarActivo(registro) == true,
+        // Se pregunta al sistema una vez por tramo, no con cada tic.
+        noMolestar = noMolestar,
         entorno = entorno,
-        frases = FrasesFoco(entrada, if (objetivo == Objetivo.Libre) null else hecha),
+        frases = frases,
     )
 }
 
 private val SE_ENTRADA = Bolsa.SE_ENTRAR
 
-/** Una frase suelta de la bolsa con los huecos de la sesión, ya resuelta; null sin catálogo. */
-@Composable
-private fun frase(
-    catalogo: CatalogoHabla?,
+/** Las dos frases de Foco ya elegidas, sin resolver a texto. */
+private class FrasesElegidas(
+    val entrada: TextoHabi.Frase?,
+    val hecha: TextoHabi.Frase?,
+)
+
+/** Una frase suelta de la bolsa con los huecos de la sesión y las etiquetas del [contexto] del día. */
+private fun fraseDe(
+    catalogo: CatalogoHabla,
     bolsa: Bolsa,
     voz: Personality,
     nombre: String?,
@@ -778,8 +799,8 @@ private fun frase(
     objetivo: Objetivo?,
     datos: DatosObjetivo?,
     minutos: Int,
-): String? {
-    if (catalogo == null) return null
+    contexto: Contexto?,
+): TextoHabi.Frase {
     val huecos =
         buildMap<Hueco, ValorHueco> {
             put(Hueco.MINUTOS, ValorHueco.Numero(minutos))
@@ -792,7 +813,5 @@ private fun frase(
                 }
             }
         }
-    val frase =
-        remember(catalogo, bolsa, voz, nombre, semilla, huecos) { FraseSuelta.elegir(bolsa, voz, nombre, semilla, catalogo, huecos) }
-    return textoHabi(frase)
+    return FraseSuelta.elegir(bolsa, voz, nombre, semilla, catalogo, huecos, contexto)
 }

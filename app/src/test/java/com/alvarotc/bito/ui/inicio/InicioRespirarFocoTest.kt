@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.inicio
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.remember
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
@@ -10,7 +11,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.sesion.ANCLA_ELAPSED
+import com.alvarotc.bito.domain.sesion.Ahora
 import com.alvarotc.bito.domain.sesion.Entrada
+import com.alvarotc.bito.domain.sesion.INICIO_PARED
+import com.alvarotc.bito.domain.sesion.RelojSesion
 import com.alvarotc.bito.domain.sesion.planSesion
 import com.alvarotc.bito.sesion.AireGrabado
 import com.alvarotc.bito.sesion.AvisoSesion
@@ -68,12 +73,12 @@ class InicioRespirarFocoTest {
         assertTrue("no llegó a tiempo", condicion())
     }
 
-    private fun montar() {
+    private fun montar(sesion: () -> SesionInicio = { SesionInicio(motor, aire, banco.ajustes) }) {
         banco.preparar()
         rule.mainClock.autoAdvance = false
         rule.setContent {
             ConSistema(banco.sonido, banco.tacto) {
-                banco.Inicio(sesion = SesionInicio(motor, aire, banco.ajustes), enPrimerPlano = true)
+                banco.Inicio(sesion = remember { sesion() }, enPrimerPlano = true)
             }
         }
         rule.mainClock.advanceTimeBy(100)
@@ -260,5 +265,78 @@ class InicioRespirarFocoTest {
         esperar { existe("d-empezar") }
 
         assertPildoraOscura("d-empezar")
+    }
+
+    @Test
+    fun `the focus greeting waits for the day context and asks for it once`() {
+        val contexto = kotlinx.coroutines.CompletableDeferred<com.alvarotc.bito.domain.habla.Contexto?>()
+        var pedidos = 0
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 1_000L)
+        banco.preparar()
+        rule.mainClock.autoAdvance = false
+        val recursos = rule.activity.resources
+        rule.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(
+                    sesion =
+                        SesionInicio(
+                            motor,
+                            aire,
+                            banco.ajustes,
+                            catalogo = com.alvarotc.bito.data.habla.CatalogoRecursos { recursos },
+                            contextoDelDia = {
+                                pedidos++
+                                contexto.await()
+                            },
+                        ),
+                    enPrimerPlano = true,
+                )
+            }
+        }
+        rule.mainClock.advanceTimeBy(100)
+        EntradaSesion.pedir(null)
+        esperar { existe("f-hecho") }
+
+        rule.mainClock.advanceTimeBy(2_000)
+        assertFalse("sin el contexto del día no se elige la frase", existe("globito"))
+        assertTrue("se pidió el contexto", pedidos >= 1)
+
+        contexto.complete(null)
+        esperar { existe("globito") }
+
+        assertEquals("y una sola vez", 1, pedidos)
+    }
+
+    @Test
+    fun `the do not disturb label is asked of the system once per stretch and not on every tick`() {
+        var lecturas = 0
+        val filtro =
+            object : com.alvarotc.bito.sesion.FiltroAndroid {
+                override fun permitido() = true
+
+                override fun actual(): Int {
+                    lecturas++
+                    return android.app.NotificationManager.INTERRUPTION_FILTER_PRIORITY
+                }
+
+                override fun poner(filtro: Int) = Unit
+            }
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 1_000L)
+        motor.registro.value = motor.registro.value!!.copy(filtroPrevio = android.app.NotificationManager.INTERRUPTION_FILTER_ALL)
+        montar { SesionInicio(motor, aire, banco.ajustes, noMolestar = com.alvarotc.bito.sesion.NoMolestar(filtro)) }
+        esperar { existe("f-hecho") }
+        assertTrue("con No molestar puesto sale su etiqueta", existe("f-et-dnd"))
+        val registro = motor.registro.value!!
+        val antes = lecturas
+
+        repeat(20) { i ->
+            val ms = 2_000L + 250L * i
+            rule.runOnUiThread {
+                motor.instante.value = RelojSesion.en(registro, Ahora(INICIO_PARED + ms, ANCLA_ELAPSED + ms))
+            }
+            rule.mainClock.advanceTimeBy(50)
+        }
+
+        assertEquals("el sistema no se pregunta con cada tic", antes, lecturas)
     }
 }
