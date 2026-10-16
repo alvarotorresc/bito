@@ -26,7 +26,50 @@ data class EstadoSesionUi(
     val hojaAbierta: Boolean = false,
 ) {
     val encuadre: Encuadre get() = bloque?.encuadre ?: Encuadre.HOY
+
+    /** Sin bloque por haberse cerrado la sesión, sigue el [retenido] (si hay uno). */
+    fun conRetenido(retenido: BloqueSesion?): EstadoSesionUi = if (bloque == null && retenido != null) copy(bloque = retenido) else this
 }
+
+/**
+ * Un bloque que sigue montado después de que la sesión se cierre en el motor (el «Hecha» de Foco, 2200 ms; el de
+ * Terminada, 1500 ms). El bloque llama a [retener] antes de cerrar la sesión y a [soltar] al acabar; la escena
+ * también suelta al irse a Hoy.
+ */
+@Stable
+class BloqueRetenido {
+    var bloque: BloqueSesion? by mutableStateOf(null)
+        private set
+
+    fun retener(b: BloqueSesion) {
+        bloque = b
+    }
+
+    fun soltar() {
+        bloque = null
+    }
+
+    /** Retiene [b] [ms] milisegundos y lo suelta. */
+    suspend fun conservar(
+        b: BloqueSesion,
+        ms: Long,
+    ) {
+        retener(b)
+        try {
+            kotlinx.coroutines.delay(ms)
+        } finally {
+            soltar()
+        }
+    }
+}
+
+val LocalBloqueRetenido = compositionLocalOf { BloqueRetenido() }
+
+/** Hace saltar a Habi en la escena de la sesión con esa [amplitud] (0,11 el saltito de Foco); fuera del Inicio no hace nada. */
+val LocalSaltoHabi = compositionLocalOf<(Float) -> Unit> { {} }
+
+/** Lo que el Inicio sabe de la sesión (motor, fondo, No molestar, objetivo, voz); null fuera del Inicio. */
+val LocalSesionInicio = compositionLocalOf<SesionInicio?> { null }
 
 /**
  * De lo que dice el motor a lo que se ve. [preparando] es la vista: Preparar manda sobre una sesión viva mientras el
@@ -89,9 +132,13 @@ val LocalMotorSesion = compositionLocalOf<MotorSesion?> { null }
 
 /** La salida de la sesión hacia Hoy (cámara incluida) para los bloques. */
 @Stable
-class SalidaSesion(val volverAHoy: () -> Unit)
+class SalidaSesion(
+    val volverAHoy: () -> Unit,
+    /** Un aviso breve del Inicio (G9), con su texto ya resuelto. */
+    val avisar: (String) -> Unit = {},
+)
 
-val LocalSalidaSesion = compositionLocalOf { SalidaSesion {} }
+val LocalSalidaSesion = compositionLocalOf { SalidaSesion({}) }
 
 /** El llenado de la respiración de Habi: el bloque que respira pone aquí su lectura y el Inicio se la pasa a la escena. */
 val LocalRespiracionJardin = compositionLocalOf<MutableState<(() -> Float)?>?> { null }
