@@ -121,7 +121,25 @@ object Motor {
                 .candidatas(h, m, ctx, habitId)
                 .filter { "${it.situacion.name}:${it.ref.orEmpty()}" !in ocultas }
                 .filterNot { topeAvisos && it.situacion == Situacion.FI_HOY_FALTA }
+                .filterNot { respondidaHaceNada(it, m, ctx) }
         return primeraPorPrioridad(Prioridades.FICHA, validas)
+    }
+
+    /**
+     * §5.2 en la ficha: tras responder a una nota (esa situación con esa ref), espera
+     * [Ritmo.ESPERA_TRAS_RESPONDER_MIN] como en Hoy, o «Vale» la traería de vuelta enseguida.
+     */
+    private fun respondidaHaceNada(
+        c: Candidata,
+        m: Memoria,
+        ctx: Contexto,
+    ): Boolean {
+        val id = idPropuesta(c.situacion, c.ref, ctx.hoy)
+        return m.eventos.any {
+            it.tipo == TipoMemoria.RESPUESTA &&
+                it.ref == id &&
+                ctx.ahoraMillis - it.creadoMillis < Ritmo.ESPERA_TRAS_RESPONDER_MIN * MILLIS_MIN
+        }
     }
 
     /** La primera situación de [prioridades] con candidatas y, dentro de ella, la de más peso (empate: `ref`). */

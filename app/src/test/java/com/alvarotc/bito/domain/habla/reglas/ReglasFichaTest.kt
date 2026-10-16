@@ -90,6 +90,17 @@ class ReglasFichaTest {
     }
 
     @Test
+    fun `after answering a note it waits like Today before coming back`() {
+        // M12: tras «Vale» la nota del objetivo no vuelve enseguida (el hábito sigue igual); pasada la espera, sí.
+        val h = habito(hechoHoy = true, pct30 = 30, juzgados30 = 20, objetivo = 8, paso = 1)
+        val ahora = ctx().ahoraMillis
+        val reciente = Memoria(eventos = listOf(respuesta(Situacion.FI_OBJETIVO, h.id, Respuesta.VALE, ahora - 10 * 60_000L)))
+        assertEquals(Situacion.FI_CONSTANCIA, nota(h, reciente)!!.situacion)
+        val pasada = Memoria(eventos = listOf(respuesta(Situacion.FI_OBJETIVO, h.id, Respuesta.VALE, ahora - 91 * 60_000L)))
+        assertEquals(Situacion.FI_OBJETIVO, nota(h, pasada)!!.situacion)
+    }
+
+    @Test
     fun `the suggested objective is half rounded down with the step as minimum`() {
         fun sugerido(
             objetivo: Int,
