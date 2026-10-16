@@ -13,6 +13,7 @@ import android.os.SystemClock
 import androidx.core.app.ServiceCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.IntentCompat
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.notifications.Notifier
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -29,6 +30,7 @@ class ServicioSesion : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        instancia = this
         vivo.set(true)
     }
 
@@ -37,23 +39,35 @@ class ServicioSesion : Service() {
         flags: Int,
         startId: Int,
     ): Int {
-        val aviso = intent?.let { IntentCompat.getParcelableExtra(it, EXTRA_AVISO, Notification::class.java) }
-        if (aviso == null) {
-            stopSelf()
+        val recibido = intent?.let { IntentCompat.getParcelableExtra(it, EXTRA_AVISO, Notification::class.java) }
+        // Sin aviso también hay que entrar en primer plano (si no, Android se queja) y salir enseguida.
+        val aviso = recibido ?: Notifier.notificacionSesion(this, "", "", null, Personality.NEUTRA)
+        ServiceCompat.startForeground(this, Notifier.FOCUS_ID, aviso, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+        if (recibido == null) {
+            soltar()
             return START_NOT_STICKY
         }
-        ServiceCompat.startForeground(this, Notifier.FOCUS_ID, aviso, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         manejador.removeCallbacksAndMessages(null)
         val fin = intent.getLongExtra(EXTRA_FIN_ELAPSED, SIN_FIN)
         // La respiración suelta se suelta sola al acabar; la sesión la suelta quien la cierra.
-        if (fin != SIN_FIN) manejador.postDelayed({ stopSelf() }, (fin - SystemClock.elapsedRealtime() + MARGEN_MILLIS).coerceAtLeast(0L))
+        if (fin != SIN_FIN) manejador.postDelayed({ soltar() }, (fin - SystemClock.elapsedRealtime() + MARGEN_MILLIS).coerceAtLeast(0L))
         return START_NOT_STICKY
+    }
+
+    /**
+     * Suelta su propio aviso y se para. Es el servicio quien lo quita: con un aviso en primer plano, Android ignora el
+     * `cancel()` de la app. Quien publique después (p. ej. «Se acabó el tiempo») lo hace tras llamar a [parar].
+     */
+    private fun soltar() {
+        manejador.removeCallbacksAndMessages(null)
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        vivo.set(false)
+        stopSelf()
     }
 
     override fun onDestroy() {
         manejador.removeCallbacksAndMessages(null)
-        // El aviso lo cancela quien cierra la sesión: si el servicio se lo llevara, «Se acabó el tiempo» desaparecería.
-        stopForeground(STOP_FOREGROUND_DETACH)
+        if (instancia === this) instancia = null
         vivo.set(false)
         super.onDestroy()
     }
@@ -65,6 +79,8 @@ class ServicioSesion : Service() {
         internal const val MARGEN_MILLIS = 2_000L
 
         internal val vivo = AtomicBoolean(false)
+
+        @Volatile private var instancia: ServicioSesion? = null
 
         fun arrancar(
             context: Context,
@@ -78,7 +94,9 @@ class ServicioSesion : Service() {
             ContextCompat.startForegroundService(context, intent)
         }
 
+        /** El servicio quita su aviso y se para; si no está vivo, es un `stopService` que no hace nada. */
         fun parar(context: Context) {
+            instancia?.soltar()
             context.stopService(Intent(context, ServicioSesion::class.java))
         }
     }
@@ -97,20 +115,17 @@ internal interface ControlServicio {
 }
 
 internal class ServicioAndroid(private val context: Context) : ControlServicio {
-    private val arrancado = AtomicBoolean(false)
-
-    override fun vivo(): Boolean = arrancado.get()
+    override fun vivo(): Boolean = ServicioSesion.vivo.get()
 
     override fun arrancar(
         aviso: Notification,
         finElapsed: Long?,
     ) {
         // Arrancar desde segundo plano no está permitido: si falla, la sesión sigue con su aviso y sus alarmas.
-        runCatching { ServicioSesion.arrancar(context, aviso, finElapsed) }.onSuccess { arrancado.set(true) }
+        runCatching { ServicioSesion.arrancar(context, aviso, finElapsed) }
     }
 
     override fun parar() {
-        arrancado.set(false)
         runCatching { ServicioSesion.parar(context) }
     }
 }

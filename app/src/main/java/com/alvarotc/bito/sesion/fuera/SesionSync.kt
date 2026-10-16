@@ -130,29 +130,52 @@ object SesionSync {
         }
         AlarmaSesion.cancelar(e.context)
         e.despierto.liberar()
+        // Primero el servicio suelta su aviso; solo entonces se publica o se cancela algo en ese id.
+        val habiaServicio = soltarServicio(e)
         if (e.visible()) {
-            PresenciaSesion.cancelar(e.context)
-        } else if (!e.marcas.avisado(r.id)) {
+            if (!habiaServicio) PresenciaSesion.cancelar(e.context)
+        } else if (e.marcas.marcarFinSiNuevo(r.id)) {
             PresenciaSesion.mostrarFin(e.context, e.titulo(r.plan.objetivo), e.voz())
-            e.marcas.marcar(r.id)
             e.tacto().haptica(Haptica.RISE)
         }
-        if (restaurarDnd) e.noMolestar.restaurar(r.filtroPrevio)
+        if (restaurarDnd && e.marcas.marcarDndSiNuevo(r.id)) e.noMolestar.restaurar(r.filtroPrevio)
         // Acabó la parte con tiempo: los avisos de Bito que esperaban salen ahora, no tras la respuesta.
         e.retenidos.soltar()
     }
 }
 
+/** Quita el servicio si está vivo y dice si lo estaba: su aviso lo quita él, no un `cancel()` de la app. */
+internal fun soltarServicio(e: EntornoFuera): Boolean {
+    val vivo = e.servicio.vivo()
+    if (vivo) e.servicio.parar()
+    return vivo
+}
+
 /** Qué sesión ya avisó de su fin: una vez por sesión, aunque la app se abra y se cierre. */
 internal class MarcaFin(context: Context) {
-    private val prefs = context.applicationContext.getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE)
+    private val prefs = context.applicationContext.getSharedPreferences(ARCHIVO_FUERA, Context.MODE_PRIVATE)
 
-    fun avisado(id: String): Boolean = prefs.getString(CLAVE, null) == id
+    /** true solo la primera vez que se pregunta por [id]: quien lo recibe publica el fin. */
+    fun marcarFinSiNuevo(id: String): Boolean = marcarSiNuevo(CLAVE_FIN, id)
 
-    fun marcar(id: String) = prefs.edit().putString(CLAVE, id).apply()
+    /** true solo la primera vez por [id]: No molestar se devuelve una vez por sesión, no en cada arranque. */
+    fun marcarDndSiNuevo(id: String): Boolean = marcarSiNuevo(CLAVE_DND, id)
+
+    @Synchronized
+    private fun marcarSiNuevo(
+        clave: String,
+        id: String,
+    ): Boolean {
+        if (prefs.getString(clave, null) == id) return false
+        prefs.edit().putString(clave, id).commit()
+        return true
+    }
 
     private companion object {
-        const val ARCHIVO = "sesion_fuera"
-        const val CLAVE = "fin_avisado"
+        const val CLAVE_FIN = "fin_avisado"
+        const val CLAVE_DND = "dnd_restaurado"
     }
 }
+
+/** El archivo de preferencias de lo de fuera: las marcas y los avisos retenidos. */
+internal const val ARCHIVO_FUERA = "sesion_fuera"

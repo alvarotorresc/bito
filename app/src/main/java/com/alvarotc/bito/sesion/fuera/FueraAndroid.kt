@@ -55,8 +55,8 @@ class FueraAndroid internal constructor(
         if (r == null) {
             AlarmaSesion.cancelar(context)
             entorno.despierto.liberar()
-            entorno.servicio.parar()
-            PresenciaSesion.cancelar(context)
+            // Con servicio vivo el aviso es suyo y lo quita él; un cancel desde aquí no valdría.
+            if (!soltarServicio(entorno)) PresenciaSesion.cancelar(context)
             entorno.retenidos.soltar()
             return
         }
@@ -69,18 +69,26 @@ class FueraAndroid internal constructor(
         SesionSync.aplicar(entorno, r, ahora, restaurarDnd = false)
     }
 
-    /** Respirar suelta con la pantalla apagada: el servicio con su aviso (H18) y el cerrojo hasta el fin del ejercicio. */
+    /**
+     * Respirar suelta: el servicio con su aviso (H18) y el cerrojo hasta el fin del ejercicio. Lo llama quien empieza la
+     * respiración, con la app delante: arrancar un servicio desde segundo plano no está permitido, así que sin la app
+     * visible no hace nada. `true` y `false` se ordenan: un `false` que llega mientras un `true` se prepara lo anula.
+     */
     override fun respirando(
         activo: Boolean,
         finElapsed: Long?,
     ) {
         val context = entorno.context
         if (!activo) {
-            entorno.servicio.parar()
-            entorno.despierto.liberar()
-            PresenciaSesion.cancelar(context)
+            synchronized(candadoRespirar) {
+                generacion++
+                entorno.servicio.parar()
+                entorno.despierto.liberar()
+            }
             return
         }
+        if (!entorno.visible()) return
+        val mia = synchronized(candadoRespirar) { ++generacion }
         alcance.launch {
             NotificationChannels.ensure(context)
             val aviso =
@@ -91,10 +99,16 @@ class FueraAndroid internal constructor(
                     finParedMillis = null,
                     personality = entorno.voz(),
                 )
-            entorno.servicio.arrancar(aviso, finElapsed)
-            if (finElapsed != null) entorno.despierto.retener((finElapsed - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
+            synchronized(candadoRespirar) {
+                if (mia != generacion) return@launch
+                entorno.servicio.arrancar(aviso, finElapsed)
+                if (finElapsed != null) entorno.despierto.retener((finElapsed - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
+            }
         }
     }
+
+    private val candadoRespirar = Any()
+    private var generacion = 0
 
     /** Respirar para entrar: cerrojo solo lo que dura el tramo; en cualquier otro tramo, suelto. */
     private fun gestionarCerrojo(instante: Instante) {

@@ -25,7 +25,7 @@ internal class AvisosRetenidos(
     private val diaDeHoy: suspend () -> LogicalDay,
     private val publicar: suspend (clase: String, clave: String) -> Unit,
 ) {
-    private val prefs = context.applicationContext.getSharedPreferences(ARCHIVO, Context.MODE_PRIVATE)
+    private val prefs = context.applicationContext.getSharedPreferences(ARCHIVO_FUERA, Context.MODE_PRIVATE)
 
     /** true = con una sesión viva, el aviso queda apuntado y quien llama no lo publica. */
     suspend fun retenerSiHaySesion(
@@ -58,7 +58,6 @@ internal class AvisosRetenidos(
     }
 
     private companion object {
-        const val ARCHIVO = "sesion_fuera"
         const val CLAVE = "avisos_retenidos"
         const val SEP = "|"
         val CANDADO = Any()
@@ -76,7 +75,7 @@ internal fun avisosRetenidosReales(
     return AvisosRetenidos(
         context = app,
         sesionViva = { store.leer()?.let { RelojSesion.en(it, ahora()).actual != null } == true },
-        diaDeHoy = { LogicalDays.logicalDayOf(System.currentTimeMillis(), corteDia(), ZoneId.systemDefault()) },
+        diaDeHoy = { LogicalDays.logicalDayOf(ahora().paredMillis, corteDia(), ZoneId.systemDefault()) },
         publicar = { clase, clave ->
             (app as? BitoApp)?.container?.let { ReminderReceiver.reevaluar(app, it, clase, clave) }
         },

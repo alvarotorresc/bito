@@ -28,6 +28,7 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.android.controller.ServiceController
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowPowerManager
 
@@ -50,7 +51,18 @@ class ServicioSesionTest {
     }
 
     @After
-    fun tearDown() = b.cerrar()
+    fun tearDown() {
+        ServicioSesion.vivo.set(false)
+        b.cerrar()
+    }
+
+    /** El servicio de verdad, en primer plano con el aviso de la sesión. */
+    private fun servicioReal(finElapsed: Long? = null): ServiceController<ServicioSesion> {
+        val aviso = Notifier.notificacionSesion(context, "Leer", "En marcha", null, Personality.NEUTRA)
+        val intent = Intent(context, ServicioSesion::class.java).putExtra(ServicioSesion.EXTRA_AVISO, aviso)
+        if (finElapsed != null) intent.putExtra(ServicioSesion.EXTRA_FIN_ELAPSED, finElapsed)
+        return Robolectric.buildService(ServicioSesion::class.java, intent).create().also { it.startCommand(0, 1) }
+    }
 
     private fun cambia(
         r: com.alvarotc.bito.domain.sesion.RegistroSesion?,
@@ -169,6 +181,7 @@ class ServicioSesionTest {
 
     @Test
     fun `screen-off free breathing posts the Respirar notice and releases it`() {
+        b.visible = true
         val fin = android.os.SystemClock.elapsedRealtime() + 60_000L
         fuera.respirando(true, fin)
 
@@ -186,6 +199,110 @@ class ServicioSesionTest {
         assertEquals(1, b.servicio.paradas)
         assertFalse(ShadowPowerManager.getLatestWakeLock().isHeld)
         assertEquals(0, shadowOf(b.manager).size())
+    }
+
+    @Test
+    fun `closing the session makes the real service drop its own notice`() {
+        val controlador = servicioReal()
+        val fueraReal = FueraAndroid(b.entornoCon(ServicioAndroid(context)), CoroutineScope(Dispatchers.Unconfined))
+        b.visible = true
+
+        runBlocking { fueraReal.alCambiar(null, false) }
+
+        val sombra = shadowOf(controlador.get())
+        assertTrue(sombra.isForegroundStopped)
+        assertTrue(sombra.notificationShouldRemoved)
+        assertFalse(PresenciaSesion.hayAvisoFijo(context))
+    }
+
+    @Test
+    fun `the end with the app away stops the real service before posting time is up`() {
+        val r = registroDeDosBloques()
+        runBlocking { b.store.guardar(r) }
+        val controlador = servicioReal()
+
+        runBlocking {
+            b.ahora = ahoraA(55 * MIN + 1_000)
+            SesionReceiver.procesar(b.entornoCon(ServicioAndroid(context)), b.audio, 2)
+        }
+
+        val sombra = shadowOf(controlador.get())
+        assertTrue(sombra.isForegroundStopped)
+        assertTrue(sombra.notificationShouldRemoved)
+        assertEquals(NotificationChannels.HABI, shadowOf(b.manager).getNotification(Notifier.FOCUS_ID).channelId)
+        assertFalse(PresenciaSesion.hayAvisoFijo(context))
+    }
+
+    @Test
+    fun `the end with the app away releases the service first and then posts time is up`() {
+        val r = registroDeDosBloques()
+        b.visible = true
+        cambia(r, 0, sonando = true)
+        b.visible = false
+        runBlocking {
+            b.store.guardar(r)
+            b.ahora = ahoraA(55 * MIN + 1_000)
+            SesionReceiver.procesar(b.entorno, b.audio, 2)
+        }
+        assertEquals(1, b.servicio.paradas)
+        assertEquals(NotificationChannels.SESION, b.servicio.canalAlParar)
+        assertEquals(NotificationChannels.HABI, shadowOf(b.manager).getNotification(Notifier.FOCUS_ID).channelId)
+    }
+
+    @Test
+    fun `the end with the app in front releases the service and leaves no notice`() {
+        val r = registroDeDosBloques()
+        b.visible = true
+        cambia(r, 0, sonando = true)
+        cambia(r, 56 * MIN, sonando = false)
+        assertEquals(1, b.servicio.paradas)
+        assertNull(shadowOf(b.manager).getNotification(Notifier.FOCUS_ID))
+    }
+
+    @Test
+    fun `the service is alive only while the service really is`() {
+        val android = ServicioAndroid(context)
+        assertFalse(android.vivo())
+        android.arrancar(Notifier.notificacionSesion(context, "Leer", "En marcha", null, Personality.NEUTRA), null)
+        // Arrancar no basta: vivo es lo que dice el servicio al crearse y al destruirse.
+        assertFalse(android.vivo())
+        val controlador = servicioReal()
+        assertTrue(android.vivo())
+        controlador.destroy()
+        assertFalse(android.vivo())
+    }
+
+    @Test
+    fun `a free breathing service that stops by itself removes its notice`() {
+        val fin = android.os.SystemClock.elapsedRealtime() + 1_000L
+        val controlador = servicioReal(finElapsed = fin)
+        val sombra = shadowOf(controlador.get())
+        assertFalse(sombra.isForegroundStopped)
+
+        shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofSeconds(4))
+
+        assertTrue(sombra.isForegroundStopped)
+        assertTrue(sombra.notificationShouldRemoved)
+        assertFalse(ServicioSesion.vivo.get())
+    }
+
+    @Test
+    fun `free breathing only starts the service with the app in front`() {
+        b.visible = false
+        fuera.respirando(true, android.os.SystemClock.elapsedRealtime() + 60_000L)
+        assertTrue(b.servicio.arrancados.isEmpty())
+        assertFalse(ShadowPowerManager.getLatestWakeLock()?.isHeld == true)
+    }
+
+    @Test
+    fun `stopping free breathing wins over a start that was still preparing`() {
+        b.visible = true
+        b.puertaVoz = kotlinx.coroutines.CompletableDeferred()
+        fuera.respirando(true, android.os.SystemClock.elapsedRealtime() + 60_000L)
+        fuera.respirando(false, null)
+        b.puertaVoz!!.complete(Unit)
+        assertTrue(b.servicio.arrancados.isEmpty())
+        assertFalse(b.servicio.vivo())
     }
 
     @Test

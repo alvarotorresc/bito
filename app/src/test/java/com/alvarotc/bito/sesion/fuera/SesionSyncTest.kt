@@ -104,6 +104,20 @@ class SesionSyncTest {
     }
 
     @Test
+    fun `do not disturb is given back once per session, not on every start`() {
+        shadowOf(b.manager).setNotificationPolicyAccessGranted(true)
+        b.manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        guardar(registroDeDosBloques(filtroPrevio = NotificationManager.INTERRUPTION_FILTER_ALL))
+        recuperar(ahoraA(56 * MIN))
+        assertEquals(NotificationManager.INTERRUPTION_FILTER_ALL, b.manager.currentInterruptionFilter)
+
+        // Más tarde la persona lo pone a mano; otro arranque con la misma sesión terminada no se lo quita.
+        b.manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        recuperar(ahoraA(300 * MIN))
+        assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, b.manager.currentInterruptionFilter)
+    }
+
+    @Test
     fun `with the app in front an ended session posts nothing`() {
         guardar(registroDeDosBloques())
         b.visible = true

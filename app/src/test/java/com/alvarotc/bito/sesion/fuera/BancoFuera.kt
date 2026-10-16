@@ -20,6 +20,7 @@ import com.alvarotc.bito.domain.sesion.registroSesion
 import com.alvarotc.bito.sesion.Aire
 import com.alvarotc.bito.sesion.Fondo
 import com.alvarotc.bito.sesion.NoMolestar
+import com.alvarotc.bito.ui.notifications.Notifier
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
 import kotlinx.coroutines.CoroutineScope
@@ -70,11 +71,15 @@ class AireGrabado : Aire {
     }
 }
 
-/** Un servicio que apunta lo que le piden: vivo desde que arranca hasta que se para. */
-internal class ServicioGrabado : ControlServicio {
+/**
+ * Un servicio que apunta lo que le piden: vivo desde que arranca hasta que se para. Al pararse suelta su aviso como el
+ * de verdad (quita lo que haya en la bandeja con el id de la sesión) y anota de qué canal era lo que quitó.
+ */
+internal class ServicioGrabado(private val manager: NotificationManager? = null) : ControlServicio {
     val arrancados = mutableListOf<android.app.Notification>()
     val finesElapsed = mutableListOf<Long?>()
     var paradas = 0
+    var canalAlParar: String? = null
     private var activo = false
 
     override fun vivo() = activo
@@ -90,6 +95,10 @@ internal class ServicioGrabado : ControlServicio {
 
     override fun parar() {
         paradas++
+        if (activo && manager != null) {
+            canalAlParar = manager.activeNotifications.firstOrNull { it.id == Notifier.FOCUS_ID }?.notification?.channelId
+            manager.cancel(Notifier.FOCUS_ID)
+        }
         activo = false
     }
 }
@@ -127,7 +136,8 @@ internal class BancoFuera(val context: Context, carpeta: File) {
     var visible = false
     var ahora: Ahora = ahoraA(0)
 
-    val servicio = ServicioGrabado()
+    val servicio = ServicioGrabado(manager)
+    var puertaVoz: kotlinx.coroutines.CompletableDeferred<Unit>? = null
     var dia = 20_000
 
     /** Lo que habría publicado un aviso de Bito retenido al soltarse: (clase, clave). */
@@ -140,12 +150,17 @@ internal class BancoFuera(val context: Context, carpeta: File) {
             publicar = { clase, clave -> publicados += clase to clave },
         )
 
-    val entorno =
+    val entorno = entornoCon(servicio)
+
+    fun entornoCon(servicio: ControlServicio) =
         EntornoFuera(
             context = context,
             store = store,
             noMolestar = noMolestar,
-            voz = { Personality.NEUTRA },
+            voz = {
+                puertaVoz?.await()
+                Personality.NEUTRA
+            },
             titulo = { o ->
                 when (o) {
                     is Objetivo.Tarea -> "Leer"
@@ -160,6 +175,7 @@ internal class BancoFuera(val context: Context, carpeta: File) {
             despierto = RetenDespierto(context),
             retenidos = retenidos,
         )
+
     val audio = AudioFrontera(fondo, aire, sonido)
 
     fun cerrar() = job.cancel()
