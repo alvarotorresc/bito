@@ -1,5 +1,6 @@
 package com.alvarotc.bito.sesion.fuera
 
+import android.app.Notification
 import android.content.Context
 import androidx.core.app.NotificationManagerCompat
 import com.alvarotc.bito.R
@@ -25,18 +26,40 @@ object PresenciaSesion {
         titulo: String,
         voz: Personality,
     ) {
-        val instante = RelojSesion.en(r, ahora)
-        val tramo = instante.actual ?: return
-        val nombreTramo =
-            context.getString(if (tramo is Tramo.Descanso) R.string.ses_notif_descanso else R.string.ses_notif_en_marcha)
-        val (cuerpo, finPared) =
-            when {
-                instante.pausado -> quieto(context, R.string.ses_notif_en_pausa, instante.restaMillis) to null
-                instante.esperandoDescanso -> quieto(context, R.string.ses_notif_descanso, instante.restaMillis) to null
-                else -> nombreTramo to RelojSesion.paredDe(r, instante.finTramoEnSesion ?: instante.transcurridoMillis, ahora)
-            }
+        val (cuerpo, finPared) = texto(context, r, ahora) ?: return
         NotificationChannels.ensure(context)
         Notifier.mostrarSesion(context, titulo, cuerpo, finPared, voz)
+    }
+
+    /** El mismo aviso sin publicarlo: es el del servicio en primer plano. */
+    fun construir(
+        context: Context,
+        r: RegistroSesion,
+        ahora: Ahora,
+        titulo: String,
+        voz: Personality,
+    ): Notification? {
+        val (cuerpo, finPared) = texto(context, r, ahora) ?: return null
+        NotificationChannels.ensure(context)
+        return Notifier.notificacionSesion(context, titulo, cuerpo, finPared, voz)
+    }
+
+    /** El cuerpo y el fin (pared) de la cuenta atrás del aviso; null si la sesión ya terminó. */
+    private fun texto(
+        context: Context,
+        r: RegistroSesion,
+        ahora: Ahora,
+    ): Pair<String, Long?>? {
+        val instante = RelojSesion.en(r, ahora)
+        val tramo = instante.actual ?: return null
+        return when {
+            instante.pausado -> quieto(context, R.string.ses_notif_en_pausa, instante.restaMillis) to null
+            instante.esperandoDescanso -> quieto(context, R.string.ses_notif_descanso, instante.restaMillis) to null
+            else -> {
+                val cuerpo = context.getString(if (tramo is Tramo.Descanso) R.string.ses_notif_descanso else R.string.ses_notif_en_marcha)
+                cuerpo to instante.finTramoEnSesion?.let { RelojSesion.paredDe(r, it, ahora) }
+            }
+        }
     }
 
     fun mostrarFin(

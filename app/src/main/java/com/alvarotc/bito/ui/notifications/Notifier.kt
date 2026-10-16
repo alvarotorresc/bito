@@ -445,6 +445,7 @@ object Notifier {
 
     fun cancelarSesion(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
 
+    @SuppressLint("MissingPermission")
     private fun publicar(
         context: Context,
         id: Int,

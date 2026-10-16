@@ -33,6 +33,9 @@ internal class EntornoFuera(
     val ahora: () -> Ahora = { ahoraDelSistema(context) },
     val tacto: () -> Tacto,
     val marcas: MarcaFin = MarcaFin(context),
+    val servicio: ControlServicio = ServicioAndroid(context),
+    val despierto: RetenDespierto = RetenDespierto(context),
+    val retenidos: AvisosRetenidos,
 )
 
 /** El audio del contenedor, que el receptor mueve en cada frontera con la app fuera. */
@@ -62,6 +65,7 @@ internal object PuertaFuera {
             voz = { contenedor.settings.settings.first().personality },
             titulo = { tituloDe(app, it) },
             tacto = { contenedor.tacto },
+            retenidos = avisosRetenidosReales(app, contenedor.sesionStore, { contenedor.settings.settings.first().dayCutoffMinutes }),
         )
     }
 
@@ -101,6 +105,7 @@ object SesionSync {
             // Solo el aviso fijo de la sesión: el del foco viejo va por otro canal y no es de aquí.
             AlarmaSesion.cancelar(e.context)
             if (PresenciaSesion.hayAvisoFijo(e.context)) PresenciaSesion.cancelar(e.context)
+            e.retenidos.soltar()
             return
         }
         aplicar(e, r, e.ahora(), restaurarDnd = true)
@@ -124,6 +129,7 @@ object SesionSync {
             return
         }
         AlarmaSesion.cancelar(e.context)
+        e.despierto.liberar()
         if (e.visible()) {
             PresenciaSesion.cancelar(e.context)
         } else if (!e.marcas.avisado(r.id)) {
@@ -132,6 +138,8 @@ object SesionSync {
             e.tacto().haptica(Haptica.RISE)
         }
         if (restaurarDnd) e.noMolestar.restaurar(r.filtroPrevio)
+        // Acabó la parte con tiempo: los avisos de Bito que esperaban salen ahora, no tras la respuesta.
+        e.retenidos.soltar()
     }
 }
 

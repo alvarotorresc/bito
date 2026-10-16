@@ -1,21 +1,35 @@
 package com.alvarotc.bito.sesion.fuera
 
 import android.content.Context
+import android.os.SystemClock
 import com.alvarotc.bito.BitoApp
+import com.alvarotc.bito.R
 import com.alvarotc.bito.data.sesion.SesionStore
+import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.sesion.Ahora
+import com.alvarotc.bito.domain.sesion.Instante
 import com.alvarotc.bito.domain.sesion.RegistroSesion
+import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.sesion.FueraDeLaApp
 import com.alvarotc.bito.sesion.NoMolestar
 import com.alvarotc.bito.ui.notifications.NotificationChannels
+import com.alvarotc.bito.ui.notifications.Notifier
 import com.alvarotc.bito.ui.sistema.TactoMudo
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
- * Lo que pasa fuera de la pantalla, sobre Android: el aviso fijo, la alarma de la siguiente frontera
- * (y, con sonido continuo, el servicio de la sesión).
+ * Lo que pasa fuera de la pantalla, sobre Android: el aviso fijo, la alarma de la siguiente frontera, el servicio en
+ * primer plano mientras suena algo continuo y el cerrojo de energía de respirar (spec pieza 5 §11.2, §11.3).
  */
-class FueraAndroid internal constructor(private val entorno: EntornoFuera) : FueraDeLaApp {
+class FueraAndroid internal constructor(
+    private val entorno: EntornoFuera,
+    private val alcance: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+) : FueraDeLaApp {
     constructor(
         context: Context,
         store: SesionStore,
@@ -29,6 +43,7 @@ class FueraAndroid internal constructor(private val entorno: EntornoFuera) : Fue
             voz = { settings.settings.first().personality },
             titulo = { tituloDe(context.applicationContext, it) },
             tacto = { (context.applicationContext as? BitoApp)?.container?.tacto ?: TactoMudo },
+            retenidos = avisosRetenidosReales(context.applicationContext, store, { settings.settings.first().dayCutoffMinutes }),
         ),
     )
 
@@ -39,15 +54,73 @@ class FueraAndroid internal constructor(private val entorno: EntornoFuera) : Fue
         val context = entorno.context
         if (r == null) {
             AlarmaSesion.cancelar(context)
+            entorno.despierto.liberar()
+            entorno.servicio.parar()
             PresenciaSesion.cancelar(context)
+            entorno.retenidos.soltar()
             return
         }
         NotificationChannels.ensure(context)
-        SesionSync.aplicar(entorno, r, entorno.ahora(), restaurarDnd = false)
+        val ahora = entorno.ahora()
+        val instante =
+            com.alvarotc.bito.domain.sesion.RelojSesion.en(r, ahora)
+        gestionarCerrojo(instante)
+        gestionarServicio(r, instante, ahora, sonando)
+        SesionSync.aplicar(entorno, r, ahora, restaurarDnd = false)
     }
 
+    /** Respirar suelta con la pantalla apagada: el servicio con su aviso (H18) y el cerrojo hasta el fin del ejercicio. */
     override fun respirando(
         activo: Boolean,
         finElapsed: Long?,
-    ) = Unit
+    ) {
+        val context = entorno.context
+        if (!activo) {
+            entorno.servicio.parar()
+            entorno.despierto.liberar()
+            PresenciaSesion.cancelar(context)
+            return
+        }
+        alcance.launch {
+            NotificationChannels.ensure(context)
+            val aviso =
+                Notifier.notificacionSesion(
+                    context,
+                    context.getString(R.string.breathing_title),
+                    context.getString(R.string.ses_notif_en_marcha),
+                    finParedMillis = null,
+                    personality = entorno.voz(),
+                )
+            entorno.servicio.arrancar(aviso, finElapsed)
+            if (finElapsed != null) entorno.despierto.retener((finElapsed - SystemClock.elapsedRealtime()).coerceAtLeast(0L))
+        }
+    }
+
+    /** Respirar para entrar: cerrojo solo lo que dura el tramo; en cualquier otro tramo, suelto. */
+    private fun gestionarCerrojo(instante: Instante) {
+        if (instante.actual is Tramo.Respirar) entorno.despierto.retener(instante.restaMillis) else entorno.despierto.liberar()
+    }
+
+    /**
+     * Hay servicio mientras suena algo continuo. Arranca solo con la app delante y se mantiene durante los descansos
+     * si la sesión tiene fondo; sin fondo ni sonido, sale. Ningún receptor llega aquí.
+     */
+    private suspend fun gestionarServicio(
+        r: RegistroSesion,
+        instante: Instante,
+        ahora: Ahora,
+        sonando: Boolean,
+    ) {
+        val servicio = entorno.servicio
+        val estabaVivo = servicio.vivo()
+        val hayFondo = r.plan.fondo != SessionBackground.NONE
+        val quiero = instante.actual != null && (sonando || (estabaVivo && hayFondo))
+        when {
+            !quiero -> if (estabaVivo) servicio.parar()
+            !estabaVivo && entorno.visible() -> {
+                val aviso = PresenciaSesion.construir(entorno.context, r, ahora, entorno.titulo(r.plan.objetivo), entorno.voz())
+                if (aviso != null) servicio.arrancar(aviso, null)
+            }
+        }
+    }
 }
