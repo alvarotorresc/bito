@@ -244,8 +244,8 @@ class MotorSesionAndroid(
         enCerrojo {
             val (r, ahora, inst) = vivoAhora() ?: return@enCerrojo
             if (inst.actual !is Tramo.Respirar && inst.actual !is Tramo.Descanso) return@enCerrojo
-            val r2 = r.copy(eventos = r.eventos + Evento.Saltar(inst.transcurridoMillis))
-            store.guardar(r2)
+            val salto = Evento.Saltar(inst.transcurridoMillis)
+            val r2 = store.actualizar(r.id) { it.copy(eventos = it.eventos + salto) } ?: r.copy(eventos = r.eventos + salto)
             _registro.value = r2
             val nuevo = RelojSesion.en(r2, ahora)
             _instante.value = nuevo
@@ -454,7 +454,7 @@ class MotorSesionAndroid(
         fondo.callar(seco = true)
         noMolestar.restaurar(r.filtroPrevio)
         efectos.guardarFila(r, inst, ahora.paredMillis, resultado)
-        store.borrar()
+        store.actualizar(r.id) { null }
         if (sigue) return
         avisarFuera(null)
         if (borradorTras != null) _borrador.value = borradorTras
@@ -529,7 +529,8 @@ class MotorSesionAndroid(
         val previo = r.filtroPrevio ?: return r
         noMolestar.restaurar(previo)
         val devuelto = r.copy(filtroPrevio = null)
-        store.guardar(devuelto)
+        // Sobre lo guardado ahora: lo de fuera pudo devolverlo ya, o la sesión cerrarse, y esta copia sería vieja.
+        store.actualizar(r.id) { it.copy(filtroPrevio = null) }
         if (_registro.value?.id == r.id) _registro.value = devuelto
         return devuelto
     }
@@ -547,8 +548,8 @@ class MotorSesionAndroid(
         evento: Evento,
         ahora: Ahora,
     ): RegistroSesion {
-        val r2 = r.copy(eventos = r.eventos + evento)
-        store.guardar(r2)
+        // Sobre lo guardado ahora: otro escritor pudo cambiar el registro (devolver No molestar) desde que se leyó.
+        val r2 = store.actualizar(r.id) { it.copy(eventos = it.eventos + evento) } ?: r.copy(eventos = r.eventos + evento)
         publicar(r2, RelojSesion.en(r2, ahora))
         return r2
     }

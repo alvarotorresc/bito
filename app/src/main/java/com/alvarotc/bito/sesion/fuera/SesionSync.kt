@@ -141,7 +141,8 @@ object SesionSync {
         if (restaurarDnd && e.marcas.marcarDndSiNuevo(r.id)) {
             e.noMolestar.restaurar(r.filtroPrevio)
             // Devuelto una vez: el registro ya no lo lleva, o el motor lo devolvería otra vez al volver (pisando lo que se pusiera a mano).
-            if (r.filtroPrevio != null) e.store.guardar(r.copy(filtroPrevio = null))
+            // Sobre lo guardado ahora, no sobre esta copia: si el motor cerró la sesión o añadió un evento, no se pisa.
+            if (r.filtroPrevio != null) e.store.actualizar(r.id) { it.copy(filtroPrevio = null) }
         }
         // Acabó la parte con tiempo: los avisos de Bito que esperaban salen ahora, no tras la respuesta.
         e.retenidos.soltar()
