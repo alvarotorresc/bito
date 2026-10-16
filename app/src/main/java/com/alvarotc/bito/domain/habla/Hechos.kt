@@ -46,6 +46,7 @@ data class HabitoHoy(
     val creadoHaceDias: Int,
     val semanasHistoria: Int,
     val falladoAyer: Boolean,
+    /** Cumplidos de los tres días anteriores a ayer (hoy-2..hoy-4), spec §5.1 n.º 8. */
     val cumplidosTresAnteriores: Int,
     /** Cumplimiento de los últimos 30 días juzgados (0–100). */
     val pct30: Int?,
@@ -320,7 +321,7 @@ data class Hechos(
                 semanasHistoria = creadoHaceDias / DIAS_SEMANA,
                 falladoAyer = diario && estadoDelDia(state, habit, hoy - 1, hoy) == ComplianceStatus.FAILED,
                 cumplidosTresAnteriores =
-                    if (diario) (1..3).count { estadoDelDia(state, habit, hoy - it, hoy) == ComplianceStatus.FULFILLED } else 0,
+                    if (diario) (2..4).count { estadoDelDia(state, habit, hoy - it, hoy) == ComplianceStatus.FULFILLED } else 0,
                 pct30 = pctDe(juzgados.first, juzgados.second),
                 juzgados30 = juzgados.second,
                 pctHoySemana = caros.pctHoySemana,

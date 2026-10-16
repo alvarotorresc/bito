@@ -265,7 +265,11 @@ class HechosTest {
         assertEquals(2, h.cumplidosTresAnteriores)
         val bien = primero(domainState(habits = listOf(leer), entries = entriesOn(leer, (TODAY - 3)..(TODAY - 1))))
         assertFalse(bien.falladoAyer)
-        assertEquals(3, bien.cumplidosTresAnteriores)
+        // Los tres días anteriores a ayer: hoy-2..hoy-4. Ayer no entra.
+        assertEquals(2, bien.cumplidosTresAnteriores)
+        val soloHoyMenos4 = primero(domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 4))))
+        assertTrue(soloHoyMenos4.falladoAyer)
+        assertEquals(1, soloHoyMenos4.cumplidosTresAnteriores)
     }
 
     @Test
