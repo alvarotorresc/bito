@@ -235,6 +235,7 @@ class SesionE2ETest {
         lanzarReceptor()
         hasta { textoAviso() == "En marcha" }
         assertSuena(marca, Snd.BROTE, Haptica.RISE, "vuelta al foco")
+        hasta { fondo.sonando.value == SessionBackground.RAIN }
         assertEquals("el fondo vuelve con el foco", SessionBackground.RAIN, fondo.sonando.value)
         assertTrue(ServicioSesion.vivo.get())
         assertNull("ningún receptor arranca el servicio", shadowOf(app).peekNextStartedService())
@@ -267,6 +268,7 @@ class SesionE2ETest {
         tic()
         hasta { hay("ses-b-foco") }
         assertSuena(marca, Snd.BROTE, Haptica.RISE, "vuelta al foco con la app delante")
+        hasta { fondo.sonando.value == SessionBackground.RAIN }
         assertEquals(SessionBackground.RAIN, fondo.sonando.value)
         irA(86 * MINUTO + SEGUNDO)
         tic()
@@ -513,6 +515,7 @@ class SesionE2ETest {
         tic()
         pulsar("f-pausa")
         hasta { textoAviso() == "En marcha" }
+        hasta { fondo.sonando.value == SessionBackground.RAIN }
         assertEquals(SessionBackground.RAIN, fondo.sonando.value)
         assertAlarma(cero + 35 * MINUTO)
         assertEquals(
@@ -552,6 +555,7 @@ class SesionE2ETest {
         hasta { hay("ses-b-foco") }
         assertEquals(Tramo.Foco(2, 25), container.motorSesion.instante.value?.actual)
         assertSuena(marca, Snd.BROTE, Haptica.TICK, "saltar el descanso")
+        hasta { fondo.sonando.value == SessionBackground.RAIN }
         assertEquals(SessionBackground.RAIN, fondo.sonando.value)
         assertAlarma(SystemClock.elapsedRealtime() + 25 * MINUTO)
     }
