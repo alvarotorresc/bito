@@ -115,6 +115,20 @@ class ServicioSesionTest {
     }
 
     @Test
+    fun `losing the background for good in focus releases the service even if the session has background`() {
+        b.visible = true
+        val r = registroDeDosBloques()
+        cambia(r, 0, sonando = true)
+        assertTrue(b.servicio.vivo())
+
+        // Otra app puso su música: dentro del foco, sin sonido no hay servicio.
+        cambia(r, 10 * MIN, sonando = false)
+
+        assertEquals(1, b.servicio.paradas)
+        assertFalse(b.servicio.vivo())
+    }
+
+    @Test
     fun `the service is released when the sound is gone and there is no background`() {
         b.visible = true
         val r = registroDeDosBloques(entrada = Entrada.RESPIRAR, fondo = SessionBackground.NONE)

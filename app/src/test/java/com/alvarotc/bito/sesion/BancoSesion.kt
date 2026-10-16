@@ -141,6 +141,76 @@ class FondoGrabado : Fondo {
     }
 }
 
+/**
+ * Un [Fondo] que suena como el de verdad: [sonar] solo pide, y `sonando` cambia DESPUÉS, cuando el test llama a
+ * [completar] (el real lo cambia en su hilo, tras tomar el foco de audio y abrir la pista). [callar] sí es inmediato,
+ * como el real. Con [silencioso], completar no hace sonar nada: Bito callado.
+ */
+class FondoAsincrono(private val silencioso: Boolean = false) : Fondo {
+    val llamadas: MutableList<String> = Collections.synchronizedList(mutableListOf())
+    private val _sonando = MutableStateFlow<SessionBackground?>(null)
+    override val sonando: StateFlow<SessionBackground?> = _sonando
+
+    @Volatile
+    private var pedido: SessionBackground? = null
+
+    override fun sonar(tipo: SessionBackground) {
+        llamadas += "sonar:$tipo"
+        pedido = tipo.takeIf { it != SessionBackground.NONE }
+        if (pedido == null) _sonando.value = null
+    }
+
+    override fun callar(seco: Boolean) {
+        llamadas += if (seco) "callar:seco" else "callar"
+        pedido = null
+        _sonando.value = null
+    }
+
+    override fun muestra(tipo: SessionBackground) {
+        llamadas += "muestra:$tipo"
+    }
+
+    /** Lo pedido por fin suena. */
+    fun completar() {
+        if (!silencioso) _sonando.value = pedido
+    }
+
+    /** El foco de audio se perdió para siempre. */
+    fun perder() {
+        pedido = null
+        _sonando.value = null
+    }
+}
+
+/** Un [Aire] que, como el real, empieza al instante y para DESPUÉS: [parar] solo pide y [completarParada] lo hace efectivo. */
+class AireAsincrono : Aire {
+    val llamadas: MutableList<String> = Collections.synchronizedList(mutableListOf())
+    private val _sonando = MutableStateFlow(false)
+    override val sonando: StateFlow<Boolean> = _sonando
+
+    override fun respirar(
+        modo: BreathingMode,
+        anclaElapsed: Long,
+        ciclos: Int,
+        musica: Boolean,
+    ) {
+        llamadas += "respirar:$modo:$ciclos"
+        _sonando.value = true
+    }
+
+    override fun musica(encendida: Boolean) {
+        llamadas += "musica:$encendida"
+    }
+
+    override fun parar() {
+        llamadas += "parar"
+    }
+
+    fun completarParada() {
+        _sonando.value = false
+    }
+}
+
 class FueraGrabada : FueraDeLaApp {
     val cambios: MutableList<RegistroSesion?> = Collections.synchronizedList(mutableListOf())
 
@@ -264,6 +334,10 @@ class BancoSesion(
     fun motor(
         g: Grabadores = Grabadores(),
         conTicker: Boolean = false,
+        fuera: FueraDeLaApp = g.fuera,
+        fondo: Fondo = g.fondo,
+        aire: Aire = g.aire,
+        alcanceMotor: CoroutineScope = alcance,
     ): MotorSesionAndroid =
         MotorSesionAndroid(
             store = store,
@@ -272,14 +346,14 @@ class BancoSesion(
             loGordo = loGordo,
             acciones = acciones,
             settings = settings,
-            aire = g.aire,
-            fondo = g.fondo,
-            fuera = g.fuera,
+            aire = aire,
+            fondo = fondo,
+            fuera = fuera,
             noMolestar = noMolestar,
             sonido = g.sonido,
             tacto = g.tacto,
             reloj = { reloj.ahora() },
-            alcance = alcance,
+            alcance = alcanceMotor,
             zona = { zona },
             delante = { delante },
             conTicker = conTicker,
