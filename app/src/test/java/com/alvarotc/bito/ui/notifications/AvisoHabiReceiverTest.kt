@@ -101,7 +101,7 @@ class AvisoHabiReceiverTest {
     }
 
     @Test
-    fun `an unknown action leaves the morning notice alone`() {
+    fun `the receiver drops an unknown action before doing anything`() {
         Notifier.showManana(context, vigente, TextoHabi(R.string.habla_ahora), Personality.NEUTRA, Mood.NORMAL)
 
         AvisoHabiReceiver().onReceive(
@@ -110,8 +110,23 @@ class AvisoHabiReceiverTest {
         )
 
         assertNotNull(shadowOf(manager).getNotification(Notifier.MANANA_ID))
-        assertTrue(respuestas.isEmpty())
     }
+
+    @Test
+    fun `an unknown action leaves the morning notice alone`() =
+        runTest {
+            Notifier.showManana(context, vigente, TextoHabi(R.string.habla_ahora), Personality.NEUTRA, Mood.NORMAL)
+
+            avisos.accion(Intent("com.alvarotc.bito.accion.desconocida").putExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID, vigente.id))
+
+            assertNotNull(shadowOf(manager).getNotification(Notifier.MANANA_ID))
+            assertTrue(respuestas.isEmpty())
+
+            avisos.accion(Intent(AvisoHabiReceiver.ACTION_HOY_NO).putExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID, vigente.id))
+
+            assertNull(shadowOf(manager).getNotification(Notifier.MANANA_ID))
+            assertEquals(1, respuestas.size)
+        }
 
     @Test
     fun `the morning actions carry what the receiver reads`() =
