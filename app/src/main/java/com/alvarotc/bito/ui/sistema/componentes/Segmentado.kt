@@ -8,6 +8,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
@@ -48,6 +49,8 @@ fun Segmentado(
     alElegir: (Int) -> Unit,
     modifier: Modifier = Modifier,
     habilitado: Boolean = true,
+    /** Reparte el ancho a partes iguales entre las opciones (`.seg` a todo el ancho); por defecto cada una mide lo suyo. */
+    repartir: Boolean = false,
 ) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
@@ -80,10 +83,11 @@ fun Segmentado(
                     .background(colores.agua),
             )
         }
-        Row(Modifier.selectableGroup()) {
+        Row(Modifier.selectableGroup().then(if (repartir) Modifier.fillMaxWidth() else Modifier)) {
             opciones.forEachIndexed { i, texto ->
                 Box(
                     Modifier
+                        .then(if (repartir) Modifier.weight(1f) else Modifier)
                         .onGloballyPositioned { medidas[i] = it.positionInParent().x to it.size.width.toFloat() }
                         .height(Medidas.boton - Medidas.e4)
                         .clip(BitoFormas.canto)

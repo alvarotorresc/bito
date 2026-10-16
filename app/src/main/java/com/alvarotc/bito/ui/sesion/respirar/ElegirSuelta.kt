@@ -96,6 +96,7 @@ fun ElegirSuelta(
             elegida = MODOS.indexOf(modo),
             alElegir = { alModo(MODOS[it]) },
             modifier = Modifier.padding(top = ARRIBA_SEGMENTADO).fillMaxWidth().testTag("r-modo"),
+            repartir = true,
         )
         TextoRodillo(
             stringResource(ritmoDeModo(modo)),
