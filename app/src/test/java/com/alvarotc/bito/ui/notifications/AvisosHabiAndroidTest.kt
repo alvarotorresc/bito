@@ -44,8 +44,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -110,10 +112,13 @@ class AvisosHabiAndroidTest {
     private inner class FuenteFalsa : FuentePropuestas {
         val respuestas = mutableListOf<Triple<String, Respuesta, Int?>>()
 
+        /** Lo que emite para Hoy; por defecto, la vigente. */
+        var hoy: Flow<Propuesta?> = flowOf(vigente)
+
         override fun propuesta(
             ambito: Ambito,
             habitId: String?,
-        ): Flow<Propuesta?> = flowOf(if (ambito == Ambito.HOY) vigente else null)
+        ): Flow<Propuesta?> = if (ambito == Ambito.HOY) hoy else flowOf(null)
 
         override suspend fun responder(
             id: String,
@@ -320,6 +325,38 @@ class AvisosHabiAndroidTest {
             assertEquals(vigente, outcome.propuesta)
             assertEquals(Slot(SlotKind.HABI_MANANA, "manana", 8 * 60 + 30), outcome.slot)
             assertEquals("Good morning.", resolverTextoHabi(outcome.titulo, context.resources))
+        }
+
+    @Test
+    fun `the morning waits past a passing null for the current proposal`() =
+        runTest(dispatcher) {
+            fuente.hoy = flowOf(null, vigente)
+
+            val outcome = assertIs<ReminderUseCase.Outcome.Manana>(avisos.evaluar(SlotKind.HABI_MANANA, "manana"))
+
+            assertEquals(vigente, outcome.propuesta)
+        }
+
+    @Test
+    fun `the morning stays quiet when no proposal arrives in time`() =
+        runTest(dispatcher) {
+            fuente.hoy =
+                flow {
+                    emit(null)
+                    awaitCancellation()
+                }
+
+            val outcome = assertIs<ReminderUseCase.Outcome.Silent>(avisos.evaluar(SlotKind.HABI_MANANA, "manana"))
+
+            assertEquals(Slot(SlotKind.HABI_MANANA, "manana", 8 * 60 + 30), outcome.slot)
+        }
+
+    @Test
+    fun `the morning stays quiet when the source ends without a proposal`() =
+        runTest(dispatcher) {
+            fuente.hoy = flowOf(null)
+
+            assertIs<ReminderUseCase.Outcome.Silent>(avisos.evaluar(SlotKind.HABI_MANANA, "manana"))
         }
 
     @Test

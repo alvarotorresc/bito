@@ -34,10 +34,14 @@ import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.propuestas.Ambito
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
+import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
 import java.time.ZoneId
 import kotlin.random.Random
@@ -113,7 +117,7 @@ class AvisosHabiAndroid(
         if (orden(aviso.minuto, ctx) > orden(ctx.ahoraMin, ctx)) return ReminderUseCase.Outcome.Silent(slot)
         return when (tipo) {
             TipoAviso.MANANA -> {
-                val vigente = fuente().propuesta(Ambito.HOY).first() ?: return ReminderUseCase.Outcome.Silent(slot)
+                val vigente = vigenteDeHoy() ?: return ReminderUseCase.Outcome.Silent(slot)
                 ReminderUseCase.Outcome.Manana(slot, vigente, tituloManana(p), ctx.voz, p.hechos.animoSemana)
             }
             TipoAviso.NOCHE ->
@@ -126,6 +130,14 @@ class AvisosHabiAndroid(
             TipoAviso.ACEPTADO -> aceptado(slot, p) ?: ReminderUseCase.Outcome.Stale
         }
     }
+
+    /**
+     * La vigente de Hoy. La fuente puede emitir un null de paso (al borrar una vigente hecha, o una candidata que nace
+     * sin valer), así que se espera a una que no lo sea, como mucho [ESPERA_VIGENTE_MS]. Si no llega, null: la mañana
+     * de hoy se calla y su cadena sigue mañana (sin propuesta no hay nada que decir).
+     */
+    private suspend fun vigenteDeHoy(): Propuesta? =
+        withTimeoutOrNull(ESPERA_VIGENTE_MS) { fuente().propuesta(Ambito.HOY).filterNotNull().firstOrNull() }
 
     /** Las acciones de los avisos (Vale, Hoy no o Luego, Más tarde, Mañana). Una acción desconocida no hace nada. */
     suspend fun accion(intent: Intent) {
@@ -342,6 +354,9 @@ class AvisosHabiAndroid(
 
     private companion object {
         const val MINUTOS_DIA = 24 * 60
+
+        /** Corto: se espera dentro del `goAsync` del receptor, que tiene unos 10 s. */
+        const val ESPERA_VIGENTE_MS = 3_000L
     }
 }
 
