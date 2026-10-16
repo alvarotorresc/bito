@@ -13,6 +13,9 @@ import com.alvarotc.bito.domain.habla.reglas.ReglaSaludo
 import com.alvarotc.bito.domain.habla.reglas.ReglaTareaVence
 import com.alvarotc.bito.domain.habla.reglas.ReglaTodoHecho
 import com.alvarotc.bito.domain.habla.reglas.ReglaVuelta
+import com.alvarotc.bito.domain.habla.reglas.ReglasCamino
+import com.alvarotc.bito.domain.habla.reglas.ReglasCierre
+import com.alvarotc.bito.domain.habla.reglas.ReglasFicha
 import com.alvarotc.bito.domain.habla.reglas.Respuestas
 import com.alvarotc.bito.domain.propuestas.Ambito
 import com.alvarotc.bito.domain.propuestas.Destino
@@ -20,8 +23,8 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
 
 /**
  * Elige qué dice Habi en un ámbito (spec §4.3, §5.2): la primera situación de [Prioridades] con
- * candidatas que pase los enfriamientos. Hoy es real; la ficha, Camino y el cierre siguen
- * provisionales (la constancia, el comentario normal y el sencillo) y el descanso no dice nada.
+ * candidatas que pase los enfriamientos. La ficha, Camino y el cierre salen de sus reglas; el
+ * descanso no dice nada.
  */
 object Motor {
     fun elegir(
@@ -33,9 +36,9 @@ object Motor {
     ): Candidata? =
         when (ambito) {
             Ambito.HOY -> elegirHoy(h, m, ctx)
-            Ambito.FICHA -> Candidata(Situacion.FI_CONSTANCIA, habitId, emptyMap(), emptyList())
-            Ambito.CAMINO -> Candidata(Situacion.CA_NORMAL, null, emptyMap(), emptyList())
-            Ambito.CIERRE -> Candidata(Situacion.CIE_SENCILLO, null, emptyMap(), emptyList())
+            Ambito.FICHA -> elegirFicha(h, m, ctx, habitId)
+            Ambito.CAMINO -> primeraPorPrioridad(Prioridades.CAMINO, ReglasCamino.candidatas(h, m, ctx))
+            Ambito.CIERRE -> primeraPorPrioridad(Prioridades.CIERRE, ReglasCierre.candidatas(h, m, ctx))
             Ambito.DESCANSO -> null
         }
 
@@ -58,6 +61,7 @@ object Motor {
         )
 
     private const val MILLIS_MIN = 60_000L
+    private const val FICHA_OCULTA_DIAS = 7
     private const val ANIMO_REGULAR = 1
     private val POR_PESO = compareByDescending<Candidata> { it.peso }.thenBy { it.ref }
     private val RESPUESTAS_QUE_ESPERAN = setOf(Respuesta.VALE, Respuesta.AHORA, Respuesta.LUEGO, Respuesta.HOY_NO)
@@ -93,6 +97,31 @@ object Motor {
         return reglas[Situacion.SALUDO]?.candidatas(h, m, ctx)?.firstOrNull()
             ?: Candidata(Situacion.SALUDO, null, emptyMap(), emptyList())
     }
+
+    /**
+     * §5.7: la primera nota de la ficha que «No hace falta» no haya descartado en los últimos 7 días
+     * (esa situación en ese hábito). Archivado o sin hábito, nada.
+     */
+    private fun elegirFicha(
+        h: Hechos,
+        m: Memoria,
+        ctx: Contexto,
+        habitId: String?,
+    ): Candidata? {
+        val ocultas =
+            m.eventos
+                .filter { it.tipo == TipoMemoria.RESPUESTA && respuestaDe(it) == Respuesta.HOY_NO && ctx.hoy - it.dia < FICHA_OCULTA_DIAS }
+                .mapNotNull { it.ref?.substringBeforeLast(':') }
+                .toSet()
+        val validas = ReglasFicha.candidatas(h, m, ctx, habitId).filter { "${it.situacion.name}:${it.ref.orEmpty()}" !in ocultas }
+        return primeraPorPrioridad(Prioridades.FICHA, validas)
+    }
+
+    /** La primera situación de [prioridades] con candidatas y, dentro de ella, la de más peso (empate: `ref`). */
+    private fun primeraPorPrioridad(
+        prioridades: List<Situacion>,
+        candidatas: List<Candidata>,
+    ): Candidata? = prioridades.firstNotNullOfOrNull { s -> candidatas.filter { it.situacion == s }.minWithOrNull(POR_PESO) }
 
     /** §5.2 y §5.5: 4 propuestas con botones al día; 2 en un día duro. */
     private fun topeAlcanzado(

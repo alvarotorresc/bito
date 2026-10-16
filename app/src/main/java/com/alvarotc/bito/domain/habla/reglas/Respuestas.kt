@@ -48,7 +48,7 @@ object Respuestas {
         )
     }
 
-    private fun nombreDeGordo(
+    internal fun nombreDeGordo(
         ref: RefGordo,
         h: Hechos,
     ): String? =
