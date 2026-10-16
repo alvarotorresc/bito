@@ -394,6 +394,7 @@ fun InicioScreen(
     // Volver de crear: el Inicio guarda su copia, porque la lista borra la señal al desplazarse.
     var creadoVisto by remember { mutableStateOf<String?>(null) }
     var salto by remember { mutableIntStateOf(0) }
+    var aplastar by remember { mutableIntStateOf(0) }
     var fiesta by remember { mutableIntStateOf(0) }
     var frase by remember { mutableStateOf<Int?>(null) }
     var enTarjeta by remember { mutableStateOf(false) }
@@ -537,6 +538,7 @@ fun InicioScreen(
                     creciendo = creciendo,
                     destacar = destacar,
                     saltoHabi = salto,
+                    aplastarHabi = aplastar,
                     fiesta = fiesta,
                     subida = { subidaPx.floatValue },
                     // Ruling P22: con el cierre abierto sigue al anochecer; fuera, de noche solo con el día sellado.
@@ -602,7 +604,11 @@ fun InicioScreen(
                         cierreEstado,
                         cierreViewModel,
                         alCerrar = { moverCierre(0f) },
-                        alBuenasNoches = { moverCierre(0f) },
+                        alBuenasNoches = {
+                            // «Hasta mañana»: Habi se aplasta un 4 % y se duerme mientras la cámara baja (§7.5).
+                            aplastar++
+                            moverCierre(0f)
+                        },
                         modifier = Modifier.fillMaxSize(),
                         celebraciones = celebraciones,
                     )

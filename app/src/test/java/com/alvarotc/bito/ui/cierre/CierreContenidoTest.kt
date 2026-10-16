@@ -128,6 +128,20 @@ class CierreContenidoTest {
     }
 
     @Test
+    fun `until tomorrow squashes Habi before sleeping`() {
+        banco.preparar(habitos = 1)
+        rule.setContent { ConSistema(banco.sonido, banco.tacto) { banco.Inicio() } }
+        rule.onNodeWithTag("cerrar-dia").performClick()
+        esperar("cierre-buenas-noches")
+        rule.onNodeWithTag("cierre-buenas-noches").performClick()
+        rule.mainClock.advanceTimeBy(2_600)
+        rule.waitUntil(10_000) { hay("cierre-hasta-manana") }
+        assertEquals(0, banco.sonda.aplastadosHabi())
+        rule.onNodeWithTag("cierre-hasta-manana").performClick()
+        rule.waitUntil(5_000) { banco.sonda.aplastadosHabi() == 1 }
+    }
+
+    @Test
     fun `opening with the route does not play the descent twice`() {
         banco.preparar(habitos = 1)
         montarAbierto()

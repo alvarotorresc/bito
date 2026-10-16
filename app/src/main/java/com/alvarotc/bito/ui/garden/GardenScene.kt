@@ -50,6 +50,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.withTransform
@@ -150,8 +151,8 @@ private val GlowCore = Color(0xBFFFBE6E)
 // G40: el tinte de noche que el anochecer multiplica sobre el jardín (el de la fase NOCHE de la tabla de luz). El
 // farolillo «se enciende tarde»: su brillo empieza a subir con la noche a 0,45 y llega a 1 con la noche entera; de la
 // mitad de la noche en adelante se pinta encima de la luz.
-private val NOCHE_ARRIBA = Color(GardenLookTable.light.getValue("NOCHE").first)
-private val NOCHE_ABAJO = Color(GardenLookTable.light.getValue("NOCHE").second)
+internal val NOCHE_ARRIBA = Color(GardenLookTable.light.getValue("NOCHE").first)
+internal val NOCHE_ABAJO = Color(GardenLookTable.light.getValue("NOCHE").second)
 private const val FAROL_DESDE = 0.45f
 private const val FAROL_ENCIMA = 0.5f
 
@@ -171,10 +172,17 @@ internal fun brilloFarolillo(
 
 private val GlowMid = Color(0x38FFA050)
 
+// «Hasta mañana» (spec §7.5, §9): Habi se aplasta un 4 % en 200 ms. Sin token propio, con nombre aquí.
+private const val APLASTADO_DORMIR = 0.04f
+private const val APLASTAR_DORMIR_MS = 200
+
 /** Lo que las pruebas miran del jardín sin cambiar su firma: el mustio que se dibuja y cuántos saltos ha dado Habi. */
 internal class SondaJardin {
     var wiltDibujado: () -> Float = { 0f }
     var saltosHabi: () -> Int = { 0 }
+
+    /** Cuántas veces se ha aplastado Habi para dormirse («Hasta mañana»). */
+    var aplastadosHabi: () -> Int = { 0 }
 
     /** El brillo del farolillo que se pinta, de 0 a 1 (G40). */
     var brilloFarolillo: () -> Float = { 0f }
@@ -286,6 +294,8 @@ fun GardenScene(
     fiesta: Int = 0,
     // 0 de día, 1 de noche (G40). Lambda para leerla al dibujar sin recomponer en cada fotograma.
     noche: () -> Float = { 0f },
+    // Cada incremento, Habi se aplasta un 4 % desde los pies y vuelve: «Hasta mañana», justo antes de dormirse (§7.5).
+    aplastarHabi: Int = 0,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -477,9 +487,24 @@ fun GardenScene(
     }
     val listoAhora by rememberUpdatedState(listo)
 
+    // «Hasta mañana»: un aplastado corto antes del sueño (que llega con el día sellado). Reducido, sin escala.
+    val aplastado = remember { Animatable(1f) }
+    var ultimoAplastado by remember { mutableIntStateOf(aplastarHabi) }
+    var aplastados by remember { mutableIntStateOf(0) }
+    LaunchedEffect(aplastarHabi) {
+        val sube = aplastarHabi > ultimoAplastado
+        ultimoAplastado = aplastarHabi
+        if (!sube) return@LaunchedEffect
+        aplastados++
+        if (reducido) return@LaunchedEffect
+        aplastado.animateTo(1f - APLASTADO_DORMIR, tween(APLASTAR_DORMIR_MS, easing = Curvas.out))
+        aplastado.animateTo(1f, Muelles.marcar())
+    }
+
     SideEffect {
         sonda?.wiltDibujado = { wiltAnim.value }
         sonda?.saltosHabi = { habiNudge }
+        sonda?.aplastadosHabi = { aplastados }
         sonda?.arteListo = { listoAhora }
         sonda?.filtracion = { filtracion.value }
         sonda?.brilloFarolillo = {
@@ -576,7 +601,13 @@ fun GardenScene(
             modifier =
                 Modifier
                     .offset { IntOffset(habi.left.roundToInt(), habi.top.roundToInt()) }
-                    .size(with(density) { habi.width.toDp() }, with(density) { habi.height.toDp() }),
+                    .size(with(density) { habi.width.toDp() }, with(density) { habi.height.toDp() })
+                    .graphicsLayer {
+                        val a = aplastado.value
+                        transformOrigin = TransformOrigin(0.5f, 1f)
+                        scaleY = a
+                        scaleX = 2f - a
+                    },
             animated = animated,
             // Los toques de verdad los recoge la capa de delante; esto deja la reacción preparada
             // (y el toque de accesibilidad, que no pasa por la capa).
