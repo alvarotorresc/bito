@@ -12,6 +12,7 @@ import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.domain.sesion.PlanSesion
 import com.alvarotc.bito.domain.sesion.RegistroSesion
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.SerialName
@@ -24,7 +25,7 @@ import kotlinx.serialization.json.Json
  * al leerlo. [borrar] quita solo su clave: en el mismo archivo viven otras.
  */
 class SesionStore(private val dataStore: DataStore<Preferences>) {
-    val registro: Flow<RegistroSesion?> = dataStore.data.map { prefs -> prefs[CLAVE]?.let(::decodificar) }
+    val registro: Flow<RegistroSesion?> = dataStore.data.map { prefs -> prefs[CLAVE]?.let(::decodificar) }.distinctUntilChanged()
 
     suspend fun leer(): RegistroSesion? {
         val texto = dataStore.data.first()[CLAVE] ?: return null

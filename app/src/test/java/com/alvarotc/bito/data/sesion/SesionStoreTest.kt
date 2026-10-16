@@ -17,6 +17,8 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -87,6 +89,21 @@ class SesionStoreTest {
             val store = SesionStore(dataStore("fresh"))
             assertNull(store.registro.first())
             assertNull(store.leer())
+        }
+
+    @Test
+    fun `a write to another key of the shared file does not re-emit the record`() =
+        runTest {
+            val ds = dataStore("distinct")
+            val store = SesionStore(ds)
+            store.guardar(registro(Objetivo.Libre))
+            val emitidos = mutableListOf<RegistroSesion?>()
+            val job = launch(UnconfinedTestDispatcher(testScheduler)) { store.registro.toList(emitidos) }
+            ds.edit { it[stringPreferencesKey("avisos_retenidos")] = "x" }
+            ds.edit { it[stringPreferencesKey("avisos_retenidos")] = "y" }
+            job.cancelAndJoin()
+            assertEquals(1, emitidos.size)
+            assertTrue(emitidos.single() != null)
         }
 
     @Test
