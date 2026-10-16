@@ -15,6 +15,8 @@ import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.currentTime
@@ -185,7 +187,10 @@ class FondoSesionTest {
             PreferenceDataStoreFactory.create(scope = CoroutineScope(Dispatchers.Unconfined)) {
                 carpeta.newFile("ajustes.preferences_pb")
             }
-        val fondo = crearFondo(context, sonido, SettingsRepository(almacen))
+        val ajustes = SettingsRepository(almacen)
+        // El DataStore crea su fichero al leer: que lo haga ahora y no cuando la carpeta temporal ya no esté.
+        runBlocking { ajustes.settings.first() }
+        val fondo = crearFondo(context, sonido, ajustes)
         assertTrue("el fondo real es FondoSesion, no un mudo", fondo is FondoSesion)
         fondo.sonar(SessionBackground.RAIN)
         fondo.muestra(SessionBackground.CAFE)
