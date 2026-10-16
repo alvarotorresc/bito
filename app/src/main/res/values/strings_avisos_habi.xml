@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Habi's notices: the morning, the night and the accepted ones. The texts come from the av_* bags. -->
+    <string name="avisohabi_canal">Habi\'s notices</string>
+</resources>

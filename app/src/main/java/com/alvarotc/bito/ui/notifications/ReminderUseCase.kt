@@ -5,7 +5,10 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Tasks
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.buildTodayUiState
@@ -23,7 +26,13 @@ class ReminderUseCase(
     private val settings: SettingsRepository,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
+    // Los avisos de Habi (AvisosHabiAndroid.evaluar); sin ese parámetro no hay plan y sus alarmas no dicen nada.
+    private val habi: suspend (SlotKind, String) -> Outcome = { _, _ -> Outcome.Stale },
 ) {
+    private companion object {
+        val HABI = setOf(SlotKind.HABI_MANANA, SlotKind.HABI_NOCHE, SlotKind.ACEPTADO)
+    }
+
     /** What [evaluate] decided to do about a fired (kindName, key) reminder alarm. */
     sealed interface Outcome {
         /** The slot no longer exists — self-heal: no notification, no reschedule. */
@@ -47,16 +56,36 @@ class ReminderUseCase(
          */
         data class RemindHabit(val name: String, val target: QuickTarget?, val slot: Slot) : Outcome
 
-        /**
-         * The REVIEW slot found something unsealed or still open today. [pendingCount] is how
-         * many rows today's review still has to decide (zero = only past days owed a seal);
-         * [personality] and [userName] voice the nudge.
-         */
-        data class Review(
+        /** El aviso de la mañana de Habi: la vigente de Hoy y el título ya elegido (spec §6.1). */
+        data class Manana(
             val slot: Slot,
-            val pendingCount: Int,
+            val propuesta: Propuesta,
+            val titulo: TextoHabi,
             val personality: Personality,
-            val userName: String,
+            val mood: Mood,
+        ) : Outcome
+
+        /** El aviso de la noche: título y cuerpo ya elegidos. */
+        data class Noche(
+            val slot: Slot,
+            val titulo: TextoHabi,
+            val cuerpo: TextoHabi,
+            val personality: Personality,
+        ) : Outcome
+
+        /**
+         * El recordatorio de un «Vale, a las…». [indice] es su orden entre los aceptados del día (el id de la
+         * notificación); [target], la acción rápida honesta o `null`; [masTarde], si aún se puede posponer.
+         */
+        data class Aceptado(
+            val slot: Slot,
+            val avisoId: String,
+            val indice: Int,
+            val nombre: String,
+            val cuerpo: TextoHabi,
+            val target: QuickTarget?,
+            val masTarde: Boolean,
+            val personality: Personality,
         ) : Outcome
 
         /** Nothing to say, but the slot is still live — reprogram it without notifying. */
@@ -66,7 +95,7 @@ class ReminderUseCase(
          * The TASKS slot found something to notice (D8). [titles] carries up to
          * [ReminderVoice.MAX_NAMED_PENDING] titles, nearest deadline first; [pendingCount] is the
          * total notice count, which is what picks the plural — it may exceed `titles.size`.
-         * [personality] and [userName] voice the nudge, same shape as [Remind] and [Review].
+         * [personality] and [userName] voice the nudge, same shape as [Remind].
          */
         data class Tasks(
             val slot: Slot,
@@ -92,6 +121,9 @@ class ReminderUseCase(
         kindName: String,
         key: String,
     ): Outcome {
+        // Los avisos de Habi se resuelven contra su plan, no contra los slots de siempre.
+        val habiKind = SlotKind.entries.find { it.name == kindName }?.takeIf { it in HABI }
+        if (habiKind != null) return habi(habiKind, key)
         val prefs = settings.settings.first()
         val entities = habits.observeHabits().first()
         val slot =
@@ -117,12 +149,6 @@ class ReminderUseCase(
                     Outcome.RemindHabit(card.name, quickTargetOf(card), slot)
                 }
             }
-            SlotKind.HABI_NOCHE ->
-                if (reviewIsPending(state)) {
-                    Outcome.Review(slot, reviewPendingCount(state), prefs.personality, prefs.userName)
-                } else {
-                    Outcome.Silent(slot)
-                }
             SlotKind.TASKS -> {
                 val notices = Tasks.noticesOn(snapshot, today)
                 if (notices.isEmpty()) {
@@ -138,8 +164,8 @@ class ReminderUseCase(
                 }
             }
             SlotKind.BREATHING -> Outcome.Breathing(slot, prefs.personality, prefs.userName)
-            // Sin plan todavía: el carril de avisos los rellena.
-            SlotKind.HABI_MANANA, SlotKind.ACEPTADO -> Outcome.Stale
+            // Ya resueltos arriba; slotsOf no los da sin plan.
+            SlotKind.HABI_MANANA, SlotKind.HABI_NOCHE, SlotKind.ACEPTADO -> Outcome.Stale
         }
     }
 }

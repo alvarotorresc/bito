@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.alvarotc.bito.BitoApp
+import com.alvarotc.bito.domain.habla.EstadoAviso
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -42,7 +43,9 @@ class ReminderReceiver : BroadcastReceiver() {
         val key = intent.getStringExtra(ReminderScheduler.EXTRA_KEY) ?: return
         NotificationChannels.ensure(context)
         val container = (context.applicationContext as BitoApp).container
-        val useCase = ReminderUseCase(container.domainState, container.habits, container.settings)
+        val avisos = AvisosHabiAndroid(context.applicationContext, contenedor = { container })
+        val useCase =
+            ReminderUseCase(container.domainState, container.habits, container.settings) { kind, key -> avisos.evaluar(kind, key) }
         when (val outcome = useCase.evaluate(kindName, key)) {
             is ReminderUseCase.Outcome.Stale -> Unit
             is ReminderUseCase.Outcome.Remind -> {
@@ -61,11 +64,29 @@ class ReminderReceiver : BroadcastReceiver() {
                 Notifier.showSingleHabit(context, outcome.slot.key, outcome.name, outcome.target)
                 reschedule(context, outcome.slot)
             }
-            is ReminderUseCase.Outcome.Review -> {
-                Notifier.showReview(context, outcome.personality, outcome.userName, outcome.pendingCount)
+            is ReminderUseCase.Outcome.Silent -> reschedule(context, outcome.slot)
+            is ReminderUseCase.Outcome.Manana -> {
+                Notifier.showManana(context, outcome.propuesta, outcome.titulo, outcome.personality, outcome.mood)
                 reschedule(context, outcome.slot)
             }
-            is ReminderUseCase.Outcome.Silent -> reschedule(context, outcome.slot)
+            is ReminderUseCase.Outcome.Noche -> {
+                Notifier.showNoche(context, outcome.titulo, outcome.cuerpo, outcome.personality)
+                reschedule(context, outcome.slot)
+            }
+            // Un aceptado suena una vez: no se reprograma, queda LANZADO. «Más tarde» lo vuelve a poner pendiente.
+            is ReminderUseCase.Outcome.Aceptado -> {
+                Notifier.showRecordatorioAceptado(
+                    context,
+                    outcome.avisoId,
+                    outcome.indice,
+                    outcome.nombre,
+                    outcome.cuerpo,
+                    outcome.target,
+                    outcome.masTarde,
+                    outcome.personality,
+                )
+                container.avisosAceptados.cambiarEstado(outcome.avisoId, EstadoAviso.LANZADO)
+            }
             is ReminderUseCase.Outcome.Tasks -> {
                 Notifier.showTasks(context, outcome.titles, outcome.pendingCount, outcome.personality, outcome.userName)
                 reschedule(context, outcome.slot)

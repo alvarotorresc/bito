@@ -52,7 +52,8 @@ object TrayRefresher {
         val entities = habits.observeHabits().first()
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
         val state = buildTodayUiState(domainState.snapshot(), entities.associate { it.id to it.sortOrder }, today)
-        if (!reviewIsPending(state)) Notifier.cancelReview(context)
+        // La noche se envía mientras el día no está sellado (spec §6.2): solo el sello la quita.
+        if (state.todaySealed) Notifier.cancelNoche(context)
         val payload = buildReminderPayload(state)
         if (payload == null) {
             Notifier.cancelReminder(context)

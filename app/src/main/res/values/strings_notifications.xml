@@ -99,13 +99,22 @@
     <string name="notif_focus_over">Time\'s up</string>
 
     <!--
-        Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name. The body itself is
+        Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name, %2$d = how many tasks. The body itself is
         the named titles joined by the caller, not a resource — this plural is only the "and N
         more" tail, appended when some notices are left unnamed. No personality variation.
     -->
-    <string name="notif_tasks_title_sargento">%1$s, something\'s waiting.</string>
-    <string name="notif_tasks_title_cheerleader">Shall we, %1$s?</string>
-    <string name="notif_tasks_title_neutra">You have a task, %1$s.</string>
+    <plurals name="notif_tasks_title_sargento">
+        <item quantity="one">%1$s, something\'s waiting.</item>
+        <item quantity="other">%1$s, %2$d things are waiting.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_cheerleader">
+        <item quantity="one">Shall we, %1$s?</item>
+        <item quantity="other">Shall we, %1$s? There are %2$d.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_neutra">
+        <item quantity="one">You have a task, %1$s.</item>
+        <item quantity="other">You have %2$d tasks, %1$s.</item>
+    </plurals>
     <!-- notif_breathing_* — M11, the optional daily breathing reminder. %1$s = user name. -->
     <string name="notif_breathing_title_sargento">%1$s, two minutes.</string>
     <string name="notif_breathing_title_cheerleader">Shall we breathe for a bit, %1$s?</string>

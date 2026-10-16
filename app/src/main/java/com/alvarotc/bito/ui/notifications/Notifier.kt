@@ -10,11 +10,18 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.alvarotc.bito.MainActivity
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.propuestas.Accion
+import com.alvarotc.bito.domain.propuestas.Destino
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.Respuesta
+import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.renderHabiBitmap
+import com.alvarotc.bito.ui.inicio.resolverTextoHabi
 import com.alvarotc.bito.ui.sistema.BitoClaro
 import java.util.concurrent.ConcurrentHashMap
 
@@ -27,11 +34,19 @@ import java.util.concurrent.ConcurrentHashMap
  */
 object Notifier {
     const val REMINDER_ID = 1
-    const val REVIEW_ID = 2
     const val CELEBRATION_ID = 3
     const val TASKS_ID = 4
     const val FOCUS_ID = 5
     const val BREATHING_ID = 6
+
+    /** El aviso de la noche ocupa el id que tenía el del repaso. */
+    const val NOCHE_ID = 2
+
+    /** El aviso de la mañana; el del aceptado lo sustituye con el mismo id. */
+    const val MANANA_ID = 7
+
+    /** El primer recordatorio aceptado del día; el segundo es el siguiente. */
+    const val ACEPTADO_ID = 8
 
     /** Extra keys carried by [quickActionIntent] and read back in [QuickActionReceiver]. */
     const val EXTRA_HABIT_ID = "habitId"
@@ -112,36 +127,6 @@ object Notifier {
     }
 
     /**
-     * The REVIEW nudge: something is still unsealed or open, on its own channel, in
-     * [personality]'s voice. [pendingCount] is how many rows today's review still has to decide;
-     * zero means the debt is only past days left unsealed, and the body says so. Tapping it
-     * deep-links straight into the review flow rather than opening Today bare (T11).
-     */
-    fun showReview(
-        context: Context,
-        personality: Personality,
-        userName: String,
-        pendingCount: Int,
-    ) {
-        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
-        val title = context.getString(ReminderVoice.reviewTitleRes(personality), name)
-        val body =
-            if (pendingCount > 0) {
-                context.resources.getQuantityString(ReminderVoice.reviewBodyRes(personality), pendingCount, pendingCount)
-            } else {
-                context.getString(ReminderVoice.reviewSealOnlyRes(personality))
-            }
-        val builder =
-            baseBuilder(context, NotificationChannels.REVIEW)
-                .setContentTitle(title)
-                .setContentText(body)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(body))
-                .setLargeIcon(iconoHabi(context, personality, dormido = true))
-                .setContentIntent(contentIntent(context, "review", 2))
-        notify(context, REVIEW_ID, builder)
-    }
-
-    /**
      * The CELEBRATIONS nudge: [PerfectDayNotifier] already decided this write is worth
      * announcing outside the app — this just renders [body] under its own channel and id.
      * Tapping it opens Today bare, the same default [contentIntent] every other route falls
@@ -163,8 +148,122 @@ object Notifier {
     /** Clears a stale reminder notification (e.g. its habit got logged some other way). */
     fun cancelReminder(context: Context) = NotificationManagerCompat.from(context).cancel(REMINDER_ID)
 
-    /** Clears a stale review nudge (e.g. the day just got sealed in-app) — mejoras-qa M7 #3. */
-    fun cancelReview(context: Context) = NotificationManagerCompat.from(context).cancel(REVIEW_ID)
+    /** Quita el aviso de la noche (el día se acaba de sellar, o «Mañana» desde el propio aviso). */
+    fun cancelNoche(context: Context) = NotificationManagerCompat.from(context).cancel(NOCHE_ID)
+
+    /** Quita el aviso de la mañana (respondido desde la bandeja, o una acción de otro día). */
+    fun cancelManana(context: Context) = NotificationManagerCompat.from(context).cancel(MANANA_ID)
+
+    /** Quita el recordatorio aceptado número [indice] del día. */
+    fun cancelAceptado(
+        context: Context,
+        indice: Int,
+    ) = NotificationManagerCompat.from(context).cancel(aceptadoId(indice))
+
+    /** El id del recordatorio del aviso aceptado número [indice] del día. */
+    fun aceptadoId(indice: Int): Int = ACEPTADO_ID + indice
+
+    /**
+     * El aviso de la mañana (spec §6.1): [titulo] ya elegido, el cuerpo es el texto de [propuesta], la vigente de Hoy, y
+     * sus acciones (como mucho [MAX_ACTIONS]). «Vale», «Hoy no» y «Luego» van a [AvisoHabiReceiver]; el resto abre la app.
+     * Tocarlo abre Hoy, con la hoja de lo gordo si la vigente es elegirlo.
+     */
+    fun showManana(
+        context: Context,
+        propuesta: Propuesta,
+        titulo: TextoHabi,
+        personality: Personality,
+        mood: Mood,
+    ) {
+        val cuerpo = resolverTextoHabi(propuesta.texto, context.resources)
+        val ruta = if (propuesta.id.startsWith("${Situacion.ELEGIR_GORDO.name}:")) "gordo" else "today"
+        val builder =
+            baseBuilder(context, NotificationChannels.HABI)
+                .setContentTitle(resolverTextoHabi(titulo, context.resources))
+                .setContentText(cuerpo)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(cuerpo))
+                .setLargeIcon(iconoHabi(context, personality, mood))
+                .setContentIntent(contentIntent(context, ruta, PETICION_MANANA))
+        propuesta.acciones.take(MAX_ACTIONS).forEachIndexed { i, accion ->
+            builder.addAction(0, resolverTextoHabi(accion.etiqueta, context.resources), accionManana(context, propuesta, accion, i))
+        }
+        notify(context, MANANA_ID, builder)
+    }
+
+    /** El aviso aceptado: sustituye al de la mañana con su mismo id, sin volver a sonar (spec §6.1). */
+    fun showAceptado(
+        context: Context,
+        titulo: TextoHabi,
+        cuerpo: TextoHabi,
+        personality: Personality,
+    ) {
+        val texto = resolverTextoHabi(cuerpo, context.resources)
+        val builder =
+            baseBuilder(context, NotificationChannels.HABI)
+                .setContentTitle(resolverTextoHabi(titulo, context.resources))
+                .setContentText(texto)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(texto))
+                .setLargeIcon(iconoHabi(context, personality, Mood.RADIANT))
+                .setContentIntent(contentIntent(context, "today", PETICION_ACEPTADO))
+        notify(context, MANANA_ID, builder)
+    }
+
+    /**
+     * El recordatorio de un aviso aceptado, a su hora: el nombre del hábito, «Hecho» o «+1» por [QuickActionReceiver]
+     * (como los recordatorios de siempre) y «Más tarde» mientras [masTarde] (spec §6.2, decisión 1 de §15).
+     */
+    fun showRecordatorioAceptado(
+        context: Context,
+        avisoId: String,
+        indice: Int,
+        nombre: String,
+        cuerpo: TextoHabi,
+        target: QuickTarget?,
+        masTarde: Boolean,
+        personality: Personality,
+    ) {
+        val id = aceptadoId(indice)
+        val texto = resolverTextoHabi(cuerpo, context.resources)
+        val builder =
+            baseBuilder(context, NotificationChannels.HABI)
+                .setContentTitle(nombre)
+                .setContentText(texto)
+                .setLargeIcon(iconoHabi(context, personality))
+                .setContentIntent(contentIntent(context, "today", PETICION_RECORDATORIO + indice))
+        if (target != null) {
+            builder.addAction(0, etiquetaAccion(context, target), quickActionIntent(context, target.habitId, target.amount, id))
+        }
+        if (masTarde) {
+            val intent =
+                Intent(context, AvisoHabiReceiver::class.java)
+                    .setAction(AvisoHabiReceiver.ACTION_MAS_TARDE)
+                    .putExtra(AvisoHabiReceiver.EXTRA_AVISO_ID, avisoId)
+            builder.addAction(0, context.getString(R.string.habla_mas_tarde), difusion(context, intent, id))
+        }
+        notify(context, id, builder)
+    }
+
+    /** El aviso de la noche: «Cerrar el día» abre el cierre y «Mañana» lo quita. Habi duerme con gorro (D9). */
+    fun showNoche(
+        context: Context,
+        titulo: TextoHabi,
+        cuerpo: TextoHabi,
+        personality: Personality,
+    ) {
+        val texto = resolverTextoHabi(cuerpo, context.resources)
+        val cerrar = contentIntent(context, "review", PETICION_CIERRE)
+        val manana = Intent(context, AvisoHabiReceiver::class.java).setAction(AvisoHabiReceiver.ACTION_MANANA)
+        val builder =
+            baseBuilder(context, NotificationChannels.HABI)
+                .setContentTitle(resolverTextoHabi(titulo, context.resources))
+                .setContentText(texto)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(texto))
+                .setLargeIcon(iconoHabi(context, personality, dormido = true))
+                .setContentIntent(cerrar)
+                .addAction(0, context.getString(R.string.habla_cerrar_dia), cerrar)
+                .addAction(0, context.getString(R.string.habla_manana_quitar), difusion(context, manana, NOCHE_ID))
+        notify(context, NOCHE_ID, builder)
+    }
 
     /**
      * El aviso de tareas de mediodia: una sola notificacion agrupada, con hasta tres titulos y el
@@ -183,7 +282,7 @@ object Notifier {
         userName: String,
     ) {
         val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
-        val title = context.getString(ReminderVoice.tasksTitleRes(personality), name)
+        val title = context.resources.getQuantityString(ReminderVoice.tasksTitleRes(personality), pendingCount, name, pendingCount)
         val named = titles.take(ReminderVoice.MAX_NAMED_PENDING)
         val remaining = pendingCount - named.size
         val body =
@@ -274,6 +373,74 @@ object Notifier {
     /** Lado en píxeles del icono grande: Habi sin accesorios (spec pieza 2 §5.6). */
     private const val ICONO_PX = 192
     private const val MAX_ACTIONS = 3
+
+    /**
+     * Códigos de petición de las aperturas de la app desde los avisos de Habi, distintos de los de las rutas de
+     * siempre (0, 2, 3, 4 y 5): [Intent.filterEquals] no mira los extras y `FLAG_UPDATE_CURRENT` cambiaría la ruta de
+     * otra notificación viva. Uno por apertura: el toque de la mañana, el del aceptado, cada acción de la mañana que
+     * abre la app (base más su índice) y el toque de cada recordatorio aceptado (base más su índice del día). El
+     * cierre comparte el 2 porque su ruta es siempre la misma.
+     */
+    private const val PETICION_MANANA = 70
+    private const val PETICION_ACEPTADO = 73
+    private const val PETICION_AHORA = 90
+    private const val PETICION_RECORDATORIO = 100
+    private const val PETICION_CIERRE = 2
+
+    /** Una acción de la vigente en el aviso de la mañana: al receptor si se responde ahí, a la app si hay que ir. */
+    private fun accionManana(
+        context: Context,
+        propuesta: Propuesta,
+        accion: Accion,
+        indice: Int,
+    ): PendingIntent =
+        when (accion.respuesta) {
+            Respuesta.VALE -> {
+                val intent =
+                    Intent(context, AvisoHabiReceiver::class.java)
+                        .setAction(AvisoHabiReceiver.ACTION_VALE)
+                        .putExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID, propuesta.id)
+                        .putExtra(AvisoHabiReceiver.EXTRA_HORA, propuesta.hora ?: SIN_HORA)
+                difusion(context, intent, MANANA_ID)
+            }
+            Respuesta.HOY_NO, Respuesta.LUEGO -> {
+                // Comparten acción del receptor: el código de petición lleva el índice para no pisarse.
+                val intent =
+                    Intent(context, AvisoHabiReceiver::class.java)
+                        .setAction(AvisoHabiReceiver.ACTION_HOY_NO)
+                        .putExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID, propuesta.id)
+                        .putExtra(AvisoHabiReceiver.EXTRA_RESPUESTA, accion.respuesta.name)
+                difusion(context, intent, MANANA_ID * 10 + indice)
+            }
+            Respuesta.CERRAR_DIA -> contentIntent(context, "review", PETICION_CIERRE)
+            Respuesta.ELEGIR_GORDO -> contentIntent(context, "gordo", PETICION_AHORA + indice)
+            else -> contentIntent(context, rutaDe(propuesta.destino), PETICION_AHORA + indice)
+        }
+
+    /** Adónde lleva «Ahora» desde la bandeja: solo rutas de la lista blanca de [com.alvarotc.bito.ui.NavRequests]. */
+    private fun rutaDe(destino: Destino?): String =
+        when (destino) {
+            is Destino.Tarea -> "tasks"
+            Destino.Respirar -> "breathing"
+            Destino.Cierre -> "review"
+            Destino.LoGordo -> "gordo"
+            is Destino.Habito, null -> "today"
+        }
+
+    /** Sin hora en el «Vale» (día duro): el receptor lo lee como null. */
+    const val SIN_HORA = -1
+
+    private fun difusion(
+        context: Context,
+        intent: Intent,
+        requestCode: Int,
+    ): PendingIntent =
+        PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
 
     /** Habi pintada una vez por voz y expresión; los receptores ya trabajan fuera del hilo principal. */
     private val iconos = ConcurrentHashMap<Triple<Personality, Mood, Boolean>, Bitmap>()
