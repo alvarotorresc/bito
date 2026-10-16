@@ -40,8 +40,6 @@
     <string name="ses_x_de_y">%1$d de %2$d</string>
     <string name="ses_saltar">Saltar</string>
     <string name="ses_saltar_y_volver">Saltar y volver a preparar</string>
-    <string name="ses_musica_poner">Poner música de fondo</string>
-    <string name="ses_musica_quitar">Quitar la música</string>
     <!-- Foco -->
     <string name="ses_de_min">de %1$d min</string>
     <string name="ses_en_pausa">en pausa</string>
