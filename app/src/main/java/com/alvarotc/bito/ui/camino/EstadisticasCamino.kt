@@ -52,9 +52,6 @@ import com.alvarotc.bito.domain.DayDot
 import com.alvarotc.bito.domain.HabitRecord
 import com.alvarotc.bito.domain.WeekRow
 import com.alvarotc.bito.domain.model.Period
-import com.alvarotc.bito.domain.propuestas.Propuesta
-import com.alvarotc.bito.domain.propuestas.TextoHabi
-import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
@@ -89,11 +86,7 @@ internal fun EstadisticasCamino(
 ) {
     val stats = estado.stats
     Column(modifier.fillMaxWidth().padding(horizontal = Medidas.margen).padding(top = 18.dp, bottom = 22.dp)) {
-        val comentario =
-            remember(stats.mood, stats.personality) {
-                Propuesta("comentario", TextoHabi(HabiVoice.bubbleRes(stats.mood, stats.personality)), emptyList())
-            }
-        TarjetaHabi(comentario, alResponder = {}, modifier = Modifier.fillMaxWidth().testTag("camino-comentario"))
+        TarjetaHabi(estado.comentario, alResponder = {}, modifier = Modifier.fillMaxWidth().testTag("camino-comentario"))
         DiasPerfectos(stats.perfectDays.thisMonth, stats.perfectDays.thisYear)
         TuSemana(estado)
         RachasActivas(estado)

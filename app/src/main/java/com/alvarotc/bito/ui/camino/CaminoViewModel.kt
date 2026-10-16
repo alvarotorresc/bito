@@ -10,12 +10,16 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import java.time.ZoneId
 
@@ -28,6 +32,8 @@ class CaminoViewModel(
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     // Reemplazable para que los tests usen su TestDispatcher y no compitan con el Default real.
     defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
+    // La fuente de las propuestas de Habi; sin ella, Camino no comenta.
+    propuestas: FuentePropuestas? = null,
 ) : ViewModel() {
     val uiState: StateFlow<CaminoUiState> =
         combine(
@@ -35,10 +41,12 @@ class CaminoViewModel(
             settings.settings,
             rewards.observeOwnedItems(),
             rewards.observeBadges(),
-        ) { state, prefs, owned, badges ->
+            // Camino no espera al comentario: arranca sin él y lo añade cuando llega.
+            (propuestas?.propuesta(Ambito.CAMINO) ?: flowOf(null)).onStart { emit(null) },
+        ) { state, prefs, owned, badges, comentario ->
             val zoneId = zone()
             val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zoneId)
-            buildCaminoUiState(state, prefs.personality, today, owned, badges, prefs.dayCutoffMinutes, zoneId)
+            buildCaminoUiState(state, prefs.personality, today, owned, badges, prefs.dayCutoffMinutes, zoneId).copy(comentario = comentario)
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), CaminoUiState())
 
@@ -46,7 +54,7 @@ class CaminoViewModel(
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    CaminoViewModel(container.domainState, container.settings, container.rewards)
+                    CaminoViewModel(container.domainState, container.settings, container.rewards, propuestas = container.propuestas)
                 }
             }
     }
