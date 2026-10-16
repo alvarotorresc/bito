@@ -6,7 +6,6 @@ import com.alvarotc.bito.data.backup.BackupSync
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.sesion.fuera.SesionSync
 import com.alvarotc.bito.ui.AppVisibility
-import com.alvarotc.bito.ui.notifications.FocusSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
 import com.alvarotc.bito.ui.widget.WidgetRefresher
@@ -76,7 +75,6 @@ object AppStartup {
         WidgetRefresher.start(app, container, scope)
         ReminderSync.start(app, container, scope)
         BackupSync.start(app, container, scope)
-        FocusSync.start(app, container, scope)
         // La sesión de la pieza 5: rearma el aviso y la alarma si el proceso nació con una en marcha.
         scope.launch { runCatching { SesionSync.recuperar(app) }.onFailure { if (it is CancellationException) throw it } }
         // Las bolsas de Habi se analizan una vez por idioma fuera del hilo principal y tras el primer fotograma

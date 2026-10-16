@@ -2,10 +2,6 @@
 <resources>
     <!-- M11 Respiracion (spec §10). Borrador hasta que el arquitecto lo valide en el PR. -->
     <string name="breathing_title">Respirar</string>
-    <string name="breathing_open_cd">Respirar con Habi</string>
-    <string name="breathing_mode_calm">Calmarme</string>
-    <string name="breathing_mode_sleep">Dormir</string>
-    <string name="breathing_mode_focus">Centrarme</string>
     <string name="breathing_rhythm_calm">4 dentro · 6 fuera · 2 min</string>
     <string name="breathing_rhythm_sleep">4 dentro · 7 mantén · 8 fuera · 6 ciclos</string>
     <string name="breathing_rhythm_focus">4 dentro · 4 mantén · 4 fuera · 4 mantén · 2 min</string>
@@ -16,7 +12,6 @@
     <string name="breathing_start">Empezar</string>
     <string name="breathing_stop">Parar</string>
     <string name="breathing_again">Otra vez</string>
-    <string name="breathing_done">Listo</string>
     <string name="breathing_music_on_cd">Quitar la música</string>
     <string name="breathing_music_off_cd">Poner música de fondo</string>
     <string name="breathing_week">Esta semana: %1$s · %2$d min</string>

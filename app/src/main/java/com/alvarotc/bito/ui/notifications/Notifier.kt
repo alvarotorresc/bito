@@ -339,60 +339,6 @@ object Notifier {
     }
 
     /**
-     * El temporizador de foco, mientras dura. La cuenta atras la pinta SystemUI, no Bito: el
-     * proceso puede morir y el reloj sigue bajando. setAutoCancel(false) es obligatorio — lo
-     * hereda en true de baseBuilder, y una permanente que se borra al tocarla no es permanente.
-     */
-    fun showFocus(
-        context: Context,
-        taskTitle: String,
-        endsAtMillis: Long,
-    ) {
-        val builder =
-            baseBuilder(context, NotificationChannels.REMINDERS)
-                .setContentTitle(taskTitle)
-                .setContentText(context.getString(R.string.notif_focus_running))
-                .setContentIntent(contentIntent(context, "focus", 4))
-                .setAutoCancel(false)
-                .setOngoing(true)
-                .setSilent(true)
-                .setUsesChronometer(true)
-                .setChronometerCountDown(true)
-                .setShowWhen(true)
-                .setWhen(endsAtMillis)
-        notify(context, FOCUS_ID, builder)
-    }
-
-    /** «Se acabo el tiempo»: ya no es permanente y se va al tocarla. */
-    fun showFocusOver(
-        context: Context,
-        taskTitle: String,
-    ) {
-        val builder =
-            baseBuilder(context, NotificationChannels.REMINDERS)
-                .setContentTitle(taskTitle)
-                .setContentText(context.getString(R.string.notif_focus_over))
-                .setContentIntent(contentIntent(context, "focus", 4))
-                // setOnlyAlertOnce(false) es obligatorio — lo hereda en true de baseBuilder, y esta
-                // notificacion postea bajo el mismo FOCUS_ID que ya ocupa la permanente; sin esto,
-                // sustituye a showFocus en silencio (sin sonido, sin vibracion, sin heads-up), y un
-                // aviso de fin que no avisa no es un aviso de fin.
-                .setOnlyAlertOnce(false)
-        notify(context, FOCUS_ID, builder)
-    }
-
-    /**
-     * Clears the old focus notice. Shares [FOCUS_ID] with the session notice, so it only cancels what is the old
-     * focus one (channel `reminders`): a session notice, or its end, is never taken down from here.
-     */
-    @SuppressLint("MissingPermission")
-    fun cancelFocus(context: Context) {
-        val manager = NotificationManagerCompat.from(context)
-        val activo = manager.activeNotifications.firstOrNull { it.id == FOCUS_ID } ?: return
-        if (activo.notification.channelId == NotificationChannels.REMINDERS) manager.cancel(FOCUS_ID)
-    }
-
-    /**
      * El aviso fijo de la sesión (pieza 5): canal `sesion`, fijo, público, sin sonido ni botones. Con
      * [finParedMillis] la cuenta atrás la pinta Android; sin él (en pausa) la cifra queda quieta en [cuerpo].
      * Tocarla abre Hoy con la petición `focus`. La misma notificación es la del servicio de la sesión.

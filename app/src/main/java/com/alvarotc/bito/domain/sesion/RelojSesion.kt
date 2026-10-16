@@ -1,6 +1,5 @@
 package com.alvarotc.bito.domain.sesion
 
-import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.domain.BreathingRhythm
 import com.alvarotc.bito.domain.model.BreathingMode
 import kotlin.math.abs
@@ -18,20 +17,6 @@ object FocusClock {
         nowMillis: Long,
         elapsedMillis: Long,
     ): Long = nowMillis - elapsedMillis
-
-    /**
-     * La cuenta de la sesion vieja. Es la unica razon de que el dominio importe [FocusSession]: se
-     * va con `FocusSession` y `FocusStore` cuando la sesion nueva los sustituya del todo.
-     */
-    fun remainingMillis(
-        session: FocusSession,
-        nowMillis: Long,
-        elapsedMillis: Long,
-    ): Long {
-        val sameBoot = abs(bootSignatureOf(nowMillis, elapsedMillis) - session.bootMillis) <= BOOT_TOLERANCE_MILLIS
-        val remaining = if (sameBoot) session.endsAtElapsed - elapsedMillis else session.endsAtMillis - nowMillis
-        return remaining.coerceAtLeast(0L)
-    }
 }
 
 /**

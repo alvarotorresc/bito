@@ -12,7 +12,7 @@ import com.alvarotc.bito.domain.sesion.RelojSesion
 /**
  * La alarma de la siguiente frontera de la sesión (spec pieza 5 §11.3): una sola, siempre la próxima.
  * Se calcula en `elapsedRealtime` (`ELAPSED_REALTIME_WAKEUP`): un cambio de hora después de programarla no
- * la mueve. Código de petición propio, distinto del de `FocusAlarm` (51 001).
+ * la mueve. Código de petición propio, distinto del de la alarma de foco antigua (51 001).
  */
 object AlarmaSesion {
     private const val RC = 51_002

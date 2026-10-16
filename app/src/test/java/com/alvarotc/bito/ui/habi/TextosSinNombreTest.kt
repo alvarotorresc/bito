@@ -30,8 +30,6 @@ class TextosSinNombreTest {
             Mood.entries.map { m -> HabiVoice.homeRes(m, p) } +
                 listOf(
                     HabiVoice.badgeUnlockedRes(p),
-                    HabiVoice.taskFocusRes(p),
-                    HabiVoice.breathingDoneRes(p),
                     HabiVoice.freezerInfoRes(p),
                     HabiVoice.taskDoneRes(p),
                     HabiVoice.perfectDayNotifRes(p),
@@ -50,7 +48,7 @@ class TextosSinNombreTest {
     @Test
     fun `every name text has a nameless twin`() {
         val gemelos = gemelos()
-        assertEquals(30, gemelos.size)
+        assertEquals(24, gemelos.size)
         assertEquals("cada gemelo es propio", gemelos.size, gemelos.toSet().size)
         for ((res, gemelo) in conNombre.zip(gemelos)) {
             assertEquals("${nombre(res)}_sin_nombre", nombre(gemelo))
@@ -104,7 +102,7 @@ class TextosSinNombreTest {
         for (qualifiers in listOf("en", "es")) {
             val ctx = contextoEn(qualifiers)
             for (gemelo in gemelos()) {
-                val texto = ctx.getString(gemelo, "", if (nombre(gemelo).contains("task_focus")) 5 else "X")
+                val texto = ctx.getString(gemelo, "", "X")
                 val id = "[$qualifiers] ${nombre(gemelo)}"
                 assertFalse("$id campeon", campeon.containsMatchIn(texto))
                 assertFalse("$id raya larga", texto.contains('—'))

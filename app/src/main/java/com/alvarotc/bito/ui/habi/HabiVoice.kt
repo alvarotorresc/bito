@@ -26,11 +26,6 @@ import com.alvarotc.bito.domain.propuestas.TextoHabi
  *   `%2$s` = the badge name.
  * - [taskDoneRes] — the Today task row's undo-snackbar text (T13), personality-only, `%1$s` =
  *   the user's name — except `habi_task_done_sargento`, which deliberately carries no name.
- * - [breathingDoneRes] — the closing line after breathing (M11), personality-only, `%1$s` = the
- *   user's name, the same line for a completed session as for a stopped one.
- * - [taskFocusRes] — [com.alvarotc.bito.ui.tasks.FocusScreen]'s entrance line, spoken once a
- *   session starts (T19), personality-only, `%1$s` = the user's name and `%2$d` = the chosen
- *   minutes — only `habi_task_focus_sargento` uses the second placeholder; the other two ignore it.
  * - [labelRes] — the speaker label ("SARGENTO"/"CHEERLEADER"/"NEUTRA") every `SpeechBubble` shows
  *   next to "HABI · ". Single source, replacing the seven identical private copies each screen
  *   used to keep.
@@ -135,23 +130,6 @@ object HabiVoice {
             Personality.NEUTRA -> R.string.habi_task_done_neutra
         }
 
-    /** M11: la frase de cierre tras respirar, igual para una sesion completa que para una parada. */
-    @StringRes
-    fun breathingDoneRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.string.habi_breathing_done_sargento
-            Personality.CHEERLEADER -> R.string.habi_breathing_done_cheerleader
-            Personality.NEUTRA -> R.string.habi_breathing_done_neutra
-        }
-
-    @StringRes
-    fun taskFocusRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.string.habi_task_focus_sargento
-            Personality.CHEERLEADER -> R.string.habi_task_focus_cheerleader
-            Personality.NEUTRA -> R.string.habi_task_focus_neutra
-        }
-
     /**
      * Decision 9: la variante de un texto con `%1$s` para quien no ha dado su nombre. Tabla
      * explicita; `null` si el texto no tiene gemelo (los contextos que no llevan nombre, o los
@@ -195,20 +173,14 @@ object HabiVoice {
             R.string.habi_home_neutra_wilted to R.string.habi_home_neutra_wilted_sin_nombre,
             R.string.habi_home_neutra_dramatic to R.string.habi_home_neutra_dramatic_sin_nombre,
             R.string.habi_badge_sargento to R.string.habi_badge_sargento_sin_nombre,
-            R.string.habi_task_focus_sargento to R.string.habi_task_focus_sargento_sin_nombre,
-            R.string.habi_breathing_done_sargento to R.string.habi_breathing_done_sargento_sin_nombre,
             R.string.freezer_info_sargento to R.string.freezer_info_sargento_sin_nombre,
             R.string.habi_task_done_sargento to R.string.habi_task_done_sargento_sin_nombre,
             R.string.habi_perfect_notif_sargento to R.string.habi_perfect_notif_sargento_sin_nombre,
             R.string.habi_badge_cheerleader to R.string.habi_badge_cheerleader_sin_nombre,
-            R.string.habi_task_focus_cheerleader to R.string.habi_task_focus_cheerleader_sin_nombre,
-            R.string.habi_breathing_done_cheerleader to R.string.habi_breathing_done_cheerleader_sin_nombre,
             R.string.freezer_info_cheerleader to R.string.freezer_info_cheerleader_sin_nombre,
             R.string.habi_task_done_cheerleader to R.string.habi_task_done_cheerleader_sin_nombre,
             R.string.habi_perfect_notif_cheerleader to R.string.habi_perfect_notif_cheerleader_sin_nombre,
             R.string.habi_badge_neutra to R.string.habi_badge_neutra_sin_nombre,
-            R.string.habi_task_focus_neutra to R.string.habi_task_focus_neutra_sin_nombre,
-            R.string.habi_breathing_done_neutra to R.string.habi_breathing_done_neutra_sin_nombre,
             R.string.freezer_info_neutra to R.string.freezer_info_neutra_sin_nombre,
             R.string.habi_task_done_neutra to R.string.habi_task_done_neutra_sin_nombre,
             R.string.habi_perfect_notif_neutra to R.string.habi_perfect_notif_neutra_sin_nombre,

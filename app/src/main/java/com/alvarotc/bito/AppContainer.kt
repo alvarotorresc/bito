@@ -28,7 +28,6 @@ import com.alvarotc.bito.data.sesion.SesionStore
 import com.alvarotc.bito.data.sesion.SesionesRepository
 import com.alvarotc.bito.data.sesion.ahoraDelSistema
 import com.alvarotc.bito.data.sesion.tareasEmpezadasHoy
-import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Sealing
@@ -92,12 +91,11 @@ class AppContainer(context: Context) {
             ),
         )
 
-    // Un solo DataStore por archivo: el foco viejo y la sesión nueva comparten `focus.preferences_pb`.
+    // Un solo DataStore por archivo: la sesión (`focus.preferences_pb`) es el único dueño de ese archivo.
     private val focusDataStore =
         PreferenceDataStoreFactory.create {
             context.filesDir.resolve("focus.preferences_pb")
         }
-    val focus = FocusStore(focusDataStore)
 
     // La sesión (pieza 5). Perezosos: el arranque no los toca.
     val sesionStore: SesionStore by lazy { SesionStore(focusDataStore) }

@@ -93,7 +93,6 @@
         <receiver android:name=".ui.notifications.ReminderReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.QuickActionReceiver" android:exported="false" />
         <receiver android:name=".ui.notifications.AvisoHabiReceiver" android:exported="false" />
-        <receiver android:name=".ui.notifications.FocusReceiver" android:exported="false" />
         <receiver android:name=".sesion.fuera.SesionReceiver" android:exported="false" />
         <service
             android:name=".sesion.fuera.ServicioSesion"
