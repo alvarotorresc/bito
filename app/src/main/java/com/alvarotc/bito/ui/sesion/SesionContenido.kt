@@ -189,7 +189,7 @@ internal fun BloqueDeSesion(bloque: BloqueSesion) {
     when (bloque) {
         BloqueSesion.PREPARAR -> PrepararDeSesion()
         BloqueSesion.RESPIRAR -> RespirarEntrarBloque()
-        BloqueSesion.FOCO -> FocoBloque()
+        BloqueSesion.FOCO -> FocoConHojaMas()
         BloqueSesion.DESCANSO -> DescansoContenido()
         BloqueSesion.TERMINADA -> TerminadaContenido()
     }

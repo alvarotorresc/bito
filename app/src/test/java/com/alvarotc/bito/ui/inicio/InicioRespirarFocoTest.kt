@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -166,5 +167,25 @@ class InicioRespirarFocoTest {
         esperar { banco.sonda.moodHabi() == Mood.RADIANT }
 
         assertEquals(Mood.RADIANT, banco.sonda.moodHabi())
+    }
+
+    @Test
+    fun `plus Otro opens the more minutes sheet, Sumar adds them and Back closes it first`() {
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-otro") }
+
+        rule.onNodeWithTag("f-otro").performClick()
+        esperar { rule.onAllNodes(hasText("¿Cuántos minutos más?")).fetchSemanticsNodes().isNotEmpty() }
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        esperar { rule.onAllNodes(hasText("¿Cuántos minutos más?")).fetchSemanticsNodes().isEmpty() }
+        assertTrue("Atrás solo cerró la hoja", existe("f-hecho"))
+
+        rule.onNodeWithTag("f-otro").performClick()
+        esperar { rule.onAllNodes(hasText("Sumar")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Sumar").performClick()
+        esperar { "sumar:10" in motor.llamadas }
+
+        assertTrue("sumar:10" in motor.llamadas)
     }
 }

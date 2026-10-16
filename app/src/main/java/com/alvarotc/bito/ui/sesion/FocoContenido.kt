@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -644,6 +645,29 @@ private fun PiezaHecha(
             textAlign = TextAlign.Start,
         )
     }
+}
+
+/**
+ * Foco con su hoja «¿Cuántos minutos más?» (`+ Otro`): Sumar los añade a lo que queda y Atrás la cierra antes que
+ * nada, por el registro de hojas del Inicio.
+ */
+@Composable
+internal fun FocoConHojaMas() {
+    val motor = LocalMotorSesion.current
+    val hojas = LocalRegistroHoja.current
+    val alcance = rememberCoroutineScope()
+    var abierta by remember { mutableStateOf(false) }
+    DisposableEffect(abierta) {
+        if (abierta) hojas.abrir { abierta = false }
+        onDispose { if (abierta) hojas.soltar() }
+    }
+    FocoBloque(alMasOtro = { abierta = true })
+    HojaMinutos(
+        abierta = abierta,
+        alGuardar = { minutos -> alcance.launch { motor?.sumar(minutos) } },
+        alCerrar = { abierta = false },
+        mas = true,
+    )
 }
 
 /**
