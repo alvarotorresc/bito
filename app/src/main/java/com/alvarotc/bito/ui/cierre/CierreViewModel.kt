@@ -23,6 +23,7 @@ import com.alvarotc.bito.domain.PerfectDays
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Tasks
+import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.EventoMemoria
 import com.alvarotc.bito.domain.habla.LoGordo
 import com.alvarotc.bito.domain.habla.RefGordo
@@ -221,8 +222,10 @@ class CierreViewModel internal constructor(
 
     /**
      * Sella el día con lo decidido y escribe la memoria: `ANIMO` si lo hay, `GORDO_HECHO` si lo gordo se hizo y
-     * `ACEPTADO_CUMPLIDO` por cada aviso aceptado cuyo hábito se cumplió. Después replanifica los avisos. Con el
-     * estado aún en carga no hace nada. La escritura no se cancela.
+     * `ACEPTADO_CUMPLIDO` por cada hábito cumplido con un aviso aceptado. Un aviso cancelado no cuenta («Otra hora»
+     * cancela el aviso y crea otro) y de cada hábito vale uno solo: el último creado (a igualdad, el de minuto más
+     * tardío), porque Recuerdos lee su minuto. Después replanifica los avisos. Con el estado aún en carga no hace nada.
+     * La escritura no se cancela.
      */
     fun buenasNoches(): Job? {
         val visto = uiState.value
@@ -240,6 +243,9 @@ class CierreViewModel internal constructor(
                     memoria.anotar(evento(TipoMemoria.GORDO_HECHO, hoy, null, hechos * 10 + gordo.size, ahora))
                 }
                 aceptados.observeDe(hoy).first()
+                    .filter { it.estado != EstadoAviso.CANCELADO }
+                    .groupBy { it.habitId }
+                    .map { (_, delHabito) -> delHabito.maxWith(compareBy({ it.creadoMillis }, { it.minuto })) }
                     .filter { LoGordo.hecho(RefGordo(TipoRefGordo.HABITO, it.habitId), estado, hoy) }
                     .forEach { memoria.anotar(evento(TipoMemoria.ACEPTADO_CUMPLIDO, hoy, it.habitId, it.minuto, ahora)) }
                 avisos.replanificar()

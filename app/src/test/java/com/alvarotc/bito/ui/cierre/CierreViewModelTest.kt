@@ -338,6 +338,40 @@ class CierreViewModelTest {
             assertEquals(1, avisos.replanificados)
         }
 
+    /** I2 de la revisión del carril: «Otra hora» cancela el aviso y crea otro; Recuerdos lee el minuto del vigente. */
+    @Test
+    fun `good night ignores a cancelled notice and keeps the one at the other time`() =
+        runTest {
+            sembrarCheck("h1")
+            journal.log(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
+            aceptados.crear(AvisoAceptado("a1", today, "h1", 600, 0, EstadoAviso.CANCELADO, "p1", 1L))
+            aceptados.crear(AvisoAceptado("a2", today, "h1", 720, 0, EstadoAviso.HECHO, "p2", 2L))
+            state()
+
+            vm.buenasNoches()
+            advanceUntilIdle()
+
+            val cumplido = eventos().filter { it.tipo == "ACEPTADO_CUMPLIDO" }.single()
+            assertEquals("h1", cumplido.ref)
+            assertEquals(720, cumplido.valor)
+        }
+
+    @Test
+    fun `good night writes one accepted fulfilled per habit, the last one created`() =
+        runTest {
+            sembrarCheck("h1")
+            journal.log(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
+            aceptados.crear(AvisoAceptado("a1", today, "h1", 600, 0, EstadoAviso.LANZADO, "p1", 5L))
+            aceptados.crear(AvisoAceptado("a2", today, "h1", 900, 0, EstadoAviso.LANZADO, "p2", 3L))
+            state()
+
+            vm.buenasNoches()
+            advanceUntilIdle()
+
+            val cumplido = eventos().filter { it.tipo == "ACEPTADO_CUMPLIDO" }.single()
+            assertEquals("el último creado, aunque su minuto sea anterior", 600, cumplido.valor)
+        }
+
     @Test
     fun `good night without a mood writes no mood`() =
         runTest {
