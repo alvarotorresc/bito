@@ -642,15 +642,17 @@ fun GardenScene(
         // Los pies de Habi dentro de su lienzo: el origen del estiramiento de la respiración.
         val piesHabi = (sceneH * habiDepth / 100f - habi.top) / habi.height
         val respira = respiracion
+        // Lo que se le pasa a HabiAvatar: la sonda lee este mismo valor, no una copia.
+        val respiraHabi = if (respira != null) RESPIRA_OJOS_CERRADOS else null
         SideEffect {
             sonda?.estiramientoHabi = {
                 respira?.let { estiramientoRespiracion(it(), reducido, piesHabi) } ?: EstiramientoHabi(1f, 1f, piesHabi)
             }
-            sonda?.ojosCerradosHabi = { if (respira != null) RESPIRA_OJOS_CERRADOS.eyeClosure else 0f }
+            sonda?.ojosCerradosHabi = { respiraHabi?.eyeClosure ?: 0f }
         }
         HabiAvatar(
             spec = spec,
-            breath = if (respira != null) RESPIRA_OJOS_CERRADOS else null,
+            breath = respiraHabi,
             modifier =
                 Modifier
                     .offset { IntOffset(habi.left.roundToInt(), habi.top.roundToInt()) }
