@@ -94,6 +94,19 @@ internal fun datosSello(ui: CierreUiState): DatosSello =
     )
 
 /**
+ * El sello ya fijado con lo que llega después y concede el propio sellado (el reconcile del sello se escribe tras el
+ * día sellado y la pantalla lo recibe más tarde): los bitos y las rachas solo suben (el libro solo crece), el día
+ * perfecto no se pierde y los logros se suman sin quitar ninguno, aunque pasen a vistos al celebrarse.
+ */
+internal fun DatosSello.con(ui: CierreUiState): DatosSello =
+    copy(
+        perfecto = perfecto || ui.perfecto,
+        bitos = maxOf(bitos, ui.bitosHoy),
+        rachas = maxOf(rachas, ui.rachasAvanzan),
+        logros = logros + ui.logrosNuevos.filterNot { it in logros },
+    )
+
+/**
  * La capa que brota cuando termina [m]: la racha y el logro, la suya; el especial y la etapa (lo último de la cadena),
  * la de las rachas si aún no estaba. El día perfecto ya está en el título y las monedas no son de la cadena.
  */

@@ -5,12 +5,17 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.alvarotc.bito.data.db.BadgeEntity
+import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.settings.MarcaLibro
+import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.inicio.BancoInicio
 import com.alvarotc.bito.ui.premios.Momento
@@ -194,6 +199,92 @@ class CadenaCierreTest {
         rule.mainClock.advanceTimeBy(400)
         rule.waitForIdle()
         assertTrue("el sello guarda lo ganado aunque ya esté visto", hay("cierre-sello-logros"))
+    }
+
+    /** Un hábito de dejar sin recaídas: solo se cumple al sellar, así que el día perfecto lo gana el propio «Buenas noches». */
+    private fun sembrarDejar() =
+        runBlocking {
+            banco.habits.create(
+                habitEntity(
+                    id = "d0",
+                    name = "Dejar",
+                    metric = Metric.CHECK,
+                    direction = Direction.ZERO,
+                    target = 0,
+                    unit = null,
+                    createdOnDay = banco.hoyLogico,
+                ),
+            )
+        }
+
+    /**
+     * I1 de la revisión del carril: lo que concede el sellado (los bitos del día perfecto y «perfect-day-1») se escribe
+     * después de «Buenas noches», en el reconcile del sello. El sello tiene que esperarlo: los bitos con la bonificación
+     * y la capa de logros, que brota cuando termina su logro y no con el sello.
+     */
+    @Test
+    fun `what the seal itself wins is in the seal and its layer waits for its moment`() {
+        banco.preparar(marcaCero = true)
+        sembrarDejar()
+        montar()
+        val antes = runBlocking { banco.db.pointsLedgerDao().all() }
+        assertTrue("nada ganado antes de sellar", antes.none { it.reason == PointsReason.PERFECT_DAY })
+
+        buenasNochesHastaLaCadena()
+        val libro = runBlocking { banco.db.pointsLedgerDao().all() }.filter { it.logicalDay == banco.hoyLogico }
+        assertTrue("el sellado concede el día perfecto", libro.any { it.reason == PointsReason.PERFECT_DAY })
+        rule.onNodeWithTag("cierre-sello-bitos").assertExists()
+        rule.onNodeWithText("+${libro.sumOf { it.delta }}").assertExists()
+        assertFalse("el logro aún no ha sonado", hay("cierre-sello-logros"))
+
+        rule.waitUntil(5_000) { banco.celebraciones.actual.value != null }
+        while (banco.celebraciones.actual.value !is Momento.Logro) {
+            banco.celebraciones.terminado(banco.celebraciones.actual.value!!)
+            avanzarCola()
+            rule.waitUntil(5_000) { banco.celebraciones.actual.value != null }
+        }
+        assertFalse("la capa espera a que termine su logro", hay("cierre-sello-logros"))
+        banco.celebraciones.terminado(banco.celebraciones.actual.value!!)
+        avanzarCola()
+        esperar("cierre-sello-logros")
+    }
+
+    /**
+     * I1 de la revisión del carril, como pasa en el teléfono: el sello se fija con el día ya sellado, pero lo que concede
+     * el propio sellado (el día perfecto en el libro, «perfect-day-1») llega a la pantalla después. El sello lo recoge: los
+     * bitos con la bonificación y la capa de logros, que brota cuando termina su logro y no con el sello.
+     */
+    @Test
+    fun `what the seal wins after it is fixed still reaches the seal`() {
+        banco.preparar(habitos = 1, marcaCero = true)
+        montar()
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("cierre-buenas-noches").performClick()
+        rule.mainClock.advanceTimeBy(1_300)
+        rule.waitUntil(5_000) { sellado() }
+        rule.mainClock.advanceTimeBy(100)
+        rule.waitForIdle()
+        assertTrue("el sello ya está", hay("cierre-sello"))
+
+        ganadoEstaNoche()
+        rule.mainClock.advanceTimeBy(1_200)
+        rule.waitForIdle()
+        rule.mainClock.autoAdvance = true
+        esperar("cierre-hasta-manana")
+        rule.waitUntil(5_000) { rule.onAllNodesWithText("+3").fetchSemanticsNodes().isNotEmpty() }
+        assertFalse("el logro aún no ha sonado", hay("cierre-sello-logros"))
+
+        avanzarCola()
+        rule.waitUntil(5_000) { banco.celebraciones.actual.value != null }
+        while (banco.celebraciones.actual.value !is Momento.Logro) {
+            banco.celebraciones.terminado(banco.celebraciones.actual.value!!)
+            avanzarCola()
+            rule.waitUntil(5_000) { banco.celebraciones.actual.value != null }
+        }
+        assertFalse("la capa espera a que termine su logro", hay("cierre-sello-logros"))
+        banco.celebraciones.terminado(banco.celebraciones.actual.value!!)
+        avanzarCola()
+        esperar("cierre-sello-logros")
     }
 
     @Test

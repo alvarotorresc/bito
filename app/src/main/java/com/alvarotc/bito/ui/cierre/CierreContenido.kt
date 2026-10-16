@@ -190,6 +190,17 @@ fun CierreContenido(
     }
     BackHandler { cerrar() }
 
+    /**
+     * Las capas que brotan cuando termine su celebración: las de lo que está en la cola y, con algún logro nuevo, la de
+     * los logros (un logro sin ver siempre acaba en la cola, aunque la cola aún no lo haya recibido). Si no llega a
+     * sonar, la cadena la hace brotar al quedarse quieta.
+     */
+    fun esperan(d: DatosSello): Set<CapaSello> {
+        if (celebraciones == null) return emptySet()
+        val enCola = celebraciones.enCola.mapNotNullTo(mutableSetOf(), ::capaDe)
+        return if (d.logros.isNotEmpty()) enCola + CapaSello.LOGROS else enCola
+    }
+
     fun buenasNoches() {
         if (fase != Fase.CIERRE || ui.loading) return
         // Abierto con el día ya sellado (la ruta, el enlace): no hay nada que sellar, se vuelve a Hoy.
@@ -203,14 +214,28 @@ fun CierreContenido(
             val noche = launch { estado.noche.animateTo(1f, tween(ANOCHECER_MS, easing = Curvas.io)) }
             delay(SELLA_A_MS)
             viewModel.buenasNoches()?.join()
-            // El sello se fija con el día ya sellado (y el libro reconciliado): lo que se celebre después no lo cambia.
+            // El sello se fija en cuanto la pantalla ve el día sellado. Lo que concede el propio sellado (los bitos del
+            // día perfecto, los días limpios de dejar, sus logros) se escribe en el reconcile del sello y llega después:
+            // se suma abajo. Lo que se celebre después no quita nada.
             val sellado = withTimeoutOrNull(ESPERA_SELLADO_MS) { viewModel.uiState.first { it.sellado && !it.loading } }
             val d = datosSello(sellado ?: viewModel.uiState.value)
-            // Las capas cuya celebración espera en la cola brotan cuando termine; las demás ya están.
-            val esperan = celebraciones?.enCola.orEmpty().mapNotNullTo(mutableSetOf(), ::capaDe)
-            capas = d.capas - esperan
+            capas = d.capas - esperan(d)
             datos = d
             fase = Fase.SELLO
+            // Lo que concede el sellado, durante [ESPERA_SELLADO_MS] desde que se fija el sello. Una capa que aparece
+            // así brota ya, salvo que su celebración vaya a sonar (entonces espera a que termine, como las demás).
+            launch {
+                withTimeoutOrNull(ESPERA_SELLADO_MS) {
+                    viewModel.uiState.collect { u ->
+                        val antes = datos ?: return@collect
+                        if (!u.sellado || u.loading || u.hoy != antes.dia) return@collect
+                        val ahora = antes.con(u)
+                        if (ahora == antes) return@collect
+                        datos = ahora
+                        capas = if (fase == Fase.FIN) ahora.capas else capas + (ahora.capas - antes.capas - esperan(ahora))
+                    }
+                }
+            }
             launch { hundida.animateTo(1f, tween(if (reducido) Duraciones.REDUCIDO else HUNDIR_MS, easing = Curvas.out)) }
             launch { sello.animateTo(1f, tween(if (reducido) Duraciones.REDUCIDO else BLOQUE_MS, easing = Curvas.out)) }
             noche.join()
