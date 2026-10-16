@@ -202,6 +202,16 @@ class MotorTest {
     }
 
     @Test
+    fun `a cancelled accepted notice does not count for the cap of two`() {
+        // «Vale» y «Otra hora»: el primero queda CANCELADO y solo suena uno (PlanAvisos.cuentaParaElTope).
+        val h = hechos(habitos = listOf(escapado()))
+        val conCancelado = Memoria(avisos = listOf(aviso("a").copy(estado = EstadoAviso.CANCELADO), aviso("b")))
+        val c = elegir(h, conCancelado)
+        assertEquals(14 * 60 + 30, c.hora)
+        assertEquals(listOf(Respuesta.VALE, Respuesta.AHORA, Respuesta.HOY_NO), c.acciones)
+    }
+
+    @Test
     fun `with two accepted notices an offer with only Vale gets Now instead`() {
         val dos = Memoria(avisos = listOf(aviso("a"), aviso("b")))
         val reglas = mapOf(Situacion.AYER_SE_ESCAPO to reglaQuePropone("h1"))

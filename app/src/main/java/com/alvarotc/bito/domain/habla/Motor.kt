@@ -213,11 +213,14 @@ object Motor {
         return corta.copy(nucleo = Bolsa.NU_REGULAR)
     }
 
-    /** §5.2: como mucho 2 avisos aceptados al día. La misma cuenta para Hoy y para la ficha. */
-    private fun dosAvisosHoy(
+    /**
+     * §5.2: como mucho 2 avisos aceptados al día. La misma cuenta para Hoy, la ficha y el plan de avisos
+     * ([PlanAvisos.cuentaParaElTope]): un aviso cancelado por «Otra hora» no gasta el tope.
+     */
+    internal fun dosAvisosHoy(
         m: Memoria,
         ctx: Contexto,
-    ): Boolean = m.avisos.count { it.dia == ctx.hoy } >= Ritmo.TOPE_ACEPTADOS_DIA
+    ): Boolean = m.avisos.count { it.dia == ctx.hoy && PlanAvisos.cuentaParaElTope(it) } >= Ritmo.TOPE_ACEPTADOS_DIA
 
     /** §5.2: con 2 avisos aceptados hoy, una propuesta con hora sale sin ella y sin «Vale». */
     private fun sinHoraSiHayDosAvisos(

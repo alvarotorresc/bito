@@ -52,6 +52,12 @@ class ReglaPermisoAvisosTest {
     }
 
     @Test
+    fun `a cancelled accepted reminder does not ask for exact alarms`() {
+        val cancelado = aceptado().copy(estado = EstadoAviso.CANCELADO)
+        assertTrue(ReglaPermisoAvisos.candidatas(hechos(), Memoria(avisos = listOf(cancelado)), ctx(alarmasExactas = false)).isEmpty())
+    }
+
+    @Test
     fun `missing both, notifications come first`() =
         assertEquals(
             Bolsa.NU_PERMISO_AVISOS,
