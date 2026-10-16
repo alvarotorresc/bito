@@ -8,6 +8,7 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.sesion.Entrada
 import com.alvarotc.bito.domain.sesion.planSesion
 import com.alvarotc.bito.sesion.AireGrabado
@@ -151,5 +152,19 @@ class InicioRespirarFocoTest {
         rule.mainClock.advanceTimeBy(1_500)
         esperar { existe("pildora-hoy") }
         rule.onNodeWithText("Informe, hecho.").assertExists()
+    }
+
+    @Test
+    fun `Habi is radiant in the finished block and plain in focus`() {
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-hecho") }
+        assertEquals(Mood.NORMAL, banco.sonda.moodHabi())
+
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 25 * 60_000L + 1_000L)
+        esperar { existe("t-preg") }
+        esperar { banco.sonda.moodHabi() == Mood.RADIANT }
+
+        assertEquals(Mood.RADIANT, banco.sonda.moodHabi())
     }
 }

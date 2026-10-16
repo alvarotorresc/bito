@@ -85,6 +85,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.BuildConfig
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.sesion.Instante
 import com.alvarotc.bito.domain.sesion.PlanSesion
@@ -747,14 +748,15 @@ fun InicioScreen(
                 }
                 JardinCompartido(
                     estado.garden,
-                    estado.spec,
+                    // Terminada y el «Hecha» de Foco: Habi radiante, y en cuanto se vuelve a Hoy, el ánimo del día.
+                    if (caraHabi.radiante) estado.spec.copy(mood = Mood.RADIANT) else estado.spec,
                     q = qGeometria,
                     encogido = encogido,
                     modifier =
                         Modifier.fillMaxSize().graphicsLayer {
                             if (!reducido) translationY = -SUBIDA_CIERRE.toPx() * cierreEstado.c.value.coerceIn(0f, 1f)
                         },
-                    contento = contento || caraHabi.radiante || gestosHabi.alegre,
+                    contento = contento || gestosHabi.alegre,
                     animado = enPrimerPlano,
                     alTocarHabi = {
                         if (sesionActiva || sueltaActiva) {

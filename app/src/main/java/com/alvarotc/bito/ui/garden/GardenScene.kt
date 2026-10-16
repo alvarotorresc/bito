@@ -76,6 +76,7 @@ import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.GrowthStage
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.ui.habi.ColorTint
 import com.alvarotc.bito.ui.habi.HabiArt
 import com.alvarotc.bito.ui.habi.HabiAvatar
@@ -209,6 +210,9 @@ internal class SondaJardin {
 
     /** El cierre de los ojos que se le pide a Habi: 1 mientras respira, 0 si no. */
     var ojosCerradosHabi: () -> Float = { 0f }
+
+    /** El ánimo con el que se pinta a Habi (radiante en Terminada, el del día fuera de ella). */
+    var moodHabi: () -> Mood = { Mood.NORMAL }
 }
 
 /** La escala de Habi que respira, con su origen vertical (fracción de su lienzo) en los pies. */
@@ -567,6 +571,7 @@ fun GardenScene(
     SideEffect {
         sonda?.wiltDibujado = { wiltAnim.value }
         sonda?.saltosHabi = { habiNudge }
+        sonda?.moodHabi = { spec.mood }
         sonda?.aplastadosHabi = { aplastados }
         sonda?.noche = { nocheAhora() }
         sonda?.arteListo = { listoAhora }

@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -97,6 +98,7 @@ fun TerminadaContenido(sonda: SondaTerminada? = null) {
     val salida = LocalSalidaSesion.current
     val retenido = LocalBloqueRetenido.current
     val saltarHabi = LocalSaltoHabi.current
+    val cara = LocalCaraHabi.current
     val sesion = LocalSesionInicio.current
     val reducido = BitoTema.reducido
     val scope = rememberCoroutineScope()
@@ -121,6 +123,12 @@ fun TerminadaContenido(sonda: SondaTerminada? = null) {
     var respondida by remember { mutableStateOf(false) }
     var dichoQueSi by remember { mutableStateOf(false) }
     val alfaBotones = remember { Animatable(1f) }
+
+    // Habi llega radiante (`expresion('radiante')`) y lo deja de estar al irse el bloque.
+    DisposableEffect(Unit) {
+        cara.radiante = true
+        onDispose { cara.radiante = false }
+    }
 
     // Llega radiante y salta; en reducido, de inmediato (el mock: 420 ms, 0 en reducido).
     LaunchedEffect(Unit) {
