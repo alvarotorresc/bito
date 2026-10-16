@@ -45,6 +45,7 @@ enum class EstiloBoton { PRINCIPAL, NORMAL, FANTASMA, PELIGRO, BORRAR }
 /**
  * Píldora (G32). [apagado] no deshabilita: se puede pulsar y llama a [alPulsarApagado] para que la
  * pantalla explique qué falta (D13). [progreso] (0 a 1) pinta un relleno de agua de izquierda a derecha.
+ * [llena] estira la píldora al ancho que le da quien la contiene (`.btnrow.llena .pill{flex:1}`).
  */
 @Composable
 fun Boton(
@@ -57,6 +58,7 @@ fun Boton(
     icono: ImageVector? = null,
     alto: Dp = Medidas.boton,
     progreso: () -> Float = { 0f },
+    llena: Boolean = false,
 ) {
     val colores = BitoTema.colores
     val tacto = LocalTacto.current
@@ -93,6 +95,7 @@ fun Boton(
     ) {
         Row(
             Modifier
+                .then(if (llena) Modifier.fillMaxWidth() else Modifier)
                 .pulsar(interaccion)
                 .heightIn(min = alto)
                 .clip(BitoFormas.canto)
