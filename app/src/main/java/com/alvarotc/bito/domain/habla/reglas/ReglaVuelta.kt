@@ -15,7 +15,7 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
 
 /**
  * §5.1 n.º 2 y §5.6: el primer día tras la ausencia, una sola cosa pequeña. Solo CHECK y
- * CONTADOR, porque «Hecho» marca o suma un paso.
+ * CONTADOR, porque «Hecho» marca o suma un paso. `{dia_semana}` es hoy (HUECOS.md).
  */
 object ReglaVuelta : Regla {
     private val TIPOS = setOf(TipoHabito.CHECK, TipoHabito.CONTADOR)
@@ -36,6 +36,7 @@ object ReglaVuelta : Regla {
                         Hueco.HABITO to ValorHueco.Texto(habito.nombre),
                         // Días fuera = hoy - última actividad; `diasSinActividad` solo cuenta los vacíos de en medio.
                         Hueco.DIAS_FUERA to ValorHueco.Numero(h.diasSinActividad + 1),
+                        Hueco.DIA_SEMANA to ValorHueco.DiaSemana(ctx.diaSemana),
                     ),
                 acciones = listOf(Respuesta.HECHO, Respuesta.HOY_NO),
                 destino = Destino.Habito(habito.id),

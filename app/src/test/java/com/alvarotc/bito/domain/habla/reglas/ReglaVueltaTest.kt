@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.DayOfWeek
 
 class ReglaVueltaTest {
     @Test
@@ -132,5 +133,15 @@ class ReglaVueltaTest {
                     ctx(),
                 ).single()
         assertEquals("ok", c.ref)
+    }
+
+    @Test
+    fun `the return names today's day of the week`() {
+        val c =
+            ReglaVuelta
+                .candidatas(hechos(diasSinActividad = 3, primerDiaTrasAusencia = true, habitos = listOf(habito())), Memoria(), ctx())
+                .single()
+        // TODAY es viernes.
+        assertEquals(ValorHueco.DiaSemana(DayOfWeek.FRIDAY), c.huecos[Hueco.DIA_SEMANA])
     }
 }
