@@ -102,7 +102,6 @@
     <string name="habi_task_done_neutra">Hecha, %1$s.</string>
     <string name="habi_task_done_neutra_sin_nombre">Hecha.</string>
 
-    <string name="store_title">Tienda</string>
     <string name="store_axis_colors">Colores</string>
     <string name="store_axis_eyes">Ojos</string>
     <string name="store_axis_head">Cabeza</string>
@@ -121,7 +120,6 @@
     <string name="store_balance_after">saldo después: %1$d bitos</string>
     <string name="store_your_balance">tu saldo: %1$d bitos</string>
     <string name="store_missing_pts">te faltan %1$d bitos</string>
-    <string name="store_freezer_buy">comprar · %1$d bitos</string>
 
     <string name="item_body_salvia">Salvia</string>
     <string name="item_body_vainilla">Vainilla</string>
