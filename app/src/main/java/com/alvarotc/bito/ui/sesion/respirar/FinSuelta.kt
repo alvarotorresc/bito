@@ -67,7 +67,7 @@ fun FinSuelta(
         if (semana != null) {
             Text(
                 textoSemana(semana),
-                style = BitoTema.tipos.t16,
+                style = BitoTema.tipos.t16.cifras(),
                 color = colores.tintaSuave,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.escalon(1).padding(top = ARRIBA_SEMANA).fillMaxWidth().testTag("sf-semana"),
@@ -80,7 +80,7 @@ fun FinSuelta(
                     pluralStringResource(R.plurals.breathing_sessions, total.sessions, total.sessions),
                     total.minutes,
                 ),
-                style = BitoTema.tipos.t16,
+                style = BitoTema.tipos.t16.cifras(),
                 color = colores.tintaSuave,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.escalon(2).fillMaxWidth().testTag("sf-total"),

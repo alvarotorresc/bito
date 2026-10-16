@@ -41,6 +41,7 @@ import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.Muelles
 import com.alvarotc.bito.ui.sistema.componentes.Boton
 import com.alvarotc.bito.ui.sistema.componentes.EstiloBoton
+import com.alvarotc.bito.ui.sistema.componentes.pulsar
 import com.alvarotc.bito.ui.sistema.fuerte
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -150,9 +151,11 @@ private fun Opcion(
         }
     }
     val forma = RoundedCornerShape(RADIO_OPCION)
+    val interaccion = remember { MutableInteractionSource() }
     Box(
         Modifier
             .testTag(etiqueta)
+            .pulsar(interaccion)
             .fillMaxWidth()
             .height(ALTO_OPCION)
             .graphicsLayer {
@@ -161,7 +164,7 @@ private fun Opcion(
             }.clip(forma)
             .background(colores.canto, forma)
             .semantics { selected = estado == true }
-            .clickable(remember { MutableInteractionSource() }, indication = null, role = Role.RadioButton, onClick = alPulsar),
+            .clickable(interaccion, indication = null, role = Role.RadioButton, onClick = alPulsar),
         contentAlignment = Alignment.CenterStart,
     ) {
         Box(

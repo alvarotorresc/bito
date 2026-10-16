@@ -3,6 +3,7 @@ package com.alvarotc.bito.ui.sesion.respirar
 import android.content.Context
 import android.os.PowerManager
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
@@ -267,6 +268,17 @@ class RespirarSueltaTest {
         assertEquals(2, m.aire.arranques.size)
         assertEquals(BreathingMode.CALM, m.aire.arranques.last().modo)
         assertFalse(existe("r-empezar"))
+        // «Otra vez» confirma igual que «Empezar» (`empezarSuelta()` del mock hace `B.haptica('confirm')`).
+        assertEquals(2, m.tacto.hapticas.count { it == Haptica.CONFIRM })
+    }
+
+    @Test
+    fun `Sleep at 7_5 s shows Mantén and Habi full on screen`() {
+        montar { runBlocking { settings.update { it.copy(breathingLastMode = BreathingMode.SLEEP) } } }
+        empezar()
+        m.avanzar(compose, 7_500)
+        compose.onNodeWithTag("s-fase").assertTextContains("Mantén", substring = true)
+        assertEquals(1f, m.respiracion.value!!.invoke(), 0.001f)
     }
 
     @Test

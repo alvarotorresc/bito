@@ -19,7 +19,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.em
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.BreathingStats
 import com.alvarotc.bito.domain.model.BreathingMode
@@ -41,7 +40,6 @@ private val ARRIBA_RITMO = 10.dp
 private val ARRIBA_FILAS = 8.dp
 private val ARRIBA_BOTONES = 12.dp
 private val ARRIBA_CUENTA = 6.dp
-private val ALTO_LINEA_RITMO = 1.4.em
 
 internal val MODOS = BreathingMode.entries
 
@@ -123,7 +121,7 @@ fun ElegirSuelta(
         if (semana != null) {
             Text(
                 textoSemana(semana),
-                style = BitoTema.tipos.t16,
+                style = BitoTema.tipos.t16.cifras(),
                 color = BitoTema.colores.tintaSuave,
                 textAlign = TextAlign.Center,
                 modifier = Modifier.escalon(5).padding(top = ARRIBA_CUENTA).fillMaxWidth().testTag("r-semana"),
@@ -153,6 +151,6 @@ private fun TextoRodillo(
         },
         label = "ritmoRodillo",
     ) { t ->
-        Text(t, style = BitoTema.tipos.t16.copy(lineHeight = ALTO_LINEA_RITMO), color = BitoTema.colores.tintaSuave)
+        Text(t, style = BitoTema.tipos.t16.cifras(), color = BitoTema.colores.tintaSuave)
     }
 }

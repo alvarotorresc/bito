@@ -12,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.em
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.BreathingRhythm
 import com.alvarotc.bito.ui.sesion.FaseRespiracion
@@ -28,6 +30,9 @@ private val ARRIBA_CICLO = 6.dp
 private val ARRIBA_PARAR = 12.dp
 
 private const val MARCA_RESTA = "\u0000"
+
+/** `.ses-sub` y `.ses-ritmo`: cifras tabulares (el «1:11 a 1:10» no cambia de ancho) y alto de línea 1,4. */
+internal fun TextStyle.cifras(): TextStyle = copy(fontFeatureSettings = "tnum", lineHeight = 1.4.em)
 
 /** «m:ss» de lo que queda, redondeado hacia arriba (`mmss`). */
 internal fun mmss(segundos: Int): String = String.format(Locale.ROOT, "%d:%02d", segundos / 60, segundos % 60)
@@ -57,9 +62,9 @@ fun EnMarchaSuelta(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(antes, style = BitoTema.tipos.t16, color = colores.tintaSuave, modifier = Modifier.testTag("s-ciclo"))
-            Text(resta, style = BitoTema.tipos.t16, color = colores.tintaSuave, modifier = Modifier.testTag("s-resta"))
-            if (despues.isNotEmpty()) Text(despues, style = BitoTema.tipos.t16, color = colores.tintaSuave)
+            Text(antes, style = BitoTema.tipos.t16.cifras(), color = colores.tintaSuave, modifier = Modifier.testTag("s-ciclo"))
+            Text(resta, style = BitoTema.tipos.t16.cifras(), color = colores.tintaSuave, modifier = Modifier.testTag("s-resta"))
+            if (despues.isNotEmpty()) Text(despues, style = BitoTema.tipos.t16.cifras(), color = colores.tintaSuave)
         }
         Row(Modifier.escalon(2).fillMaxWidth().padding(top = ARRIBA_PARAR), horizontalArrangement = Arrangement.Center) {
             Boton(

@@ -428,7 +428,10 @@ fun RespirarSuelta(
                                     frase = f?.let { textoHabi(it) }.orEmpty(),
                                     semana = semana,
                                     total = total,
-                                    alOtraVez = ::comenzar,
+                                    alOtraVez = {
+                                        gesto(h = Haptica.CONFIRM)
+                                        comenzar()
+                                    },
                                     alListo = ::volverAHoy,
                                 )
                             }
