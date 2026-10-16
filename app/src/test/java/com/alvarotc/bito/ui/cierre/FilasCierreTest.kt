@@ -1,6 +1,11 @@
 package com.alvarotc.bito.ui.cierre
 
 import androidx.activity.ComponentActivity
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -9,6 +14,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Period
+import com.alvarotc.bito.ui.premios.ClavesAncla
+import com.alvarotc.bito.ui.premios.EventoGota
+import com.alvarotc.bito.ui.premios.LocalAnclas
+import com.alvarotc.bito.ui.premios.RegistroAnclas
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
@@ -16,7 +25,12 @@ import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.today.CardKind
 import com.alvarotc.bito.ui.today.HabitCardUi
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -134,5 +148,54 @@ class FilasCierreTest {
     fun `an undecided row is not dimmed`() {
         montar(carta(CardKind.CHECK))
         assertEquals(false, hay("cierre-atenuada-h"))
+    }
+
+    @Test
+    fun `marking done sends the drop to the plot from its circle and gives the anchor back`() {
+        val registro = RegistroAnclas()
+        val hoy = Rect(0f, 900f, 40f, 940f) // el círculo de la fila de Hoy, hundida debajo
+        registro.poner(ClavesAncla.fila("h"), hoy)
+        val gotas = mutableListOf<EventoGota>()
+        val escucha = CoroutineScope(Dispatchers.Unconfined)
+        escucha.launch { registro.gotas.collect { gotas += it } }
+        var abierto by mutableStateOf(true)
+        rule.setContent {
+            CompositionLocalProvider(LocalAnclas provides registro) {
+                ConSistema(sonido, tacto) {
+                    if (abierto) {
+                        FilaCierre(carta(CardKind.CHECK), false, {}, {}, {}, {}, {}, {}, {})
+                    }
+                }
+            }
+        }
+        rule.waitForIdle()
+        assertNotEquals("el cierre presta el ancla a su fila", hoy, registro.posiciones[ClavesAncla.fila("h")])
+        rule.onNodeWithTag("cierre-hecho-h").performClick()
+        assertEquals(listOf<EventoGota>(EventoGota.Sale(ClavesAncla.fila("h"))), gotas)
+        abierto = false
+        rule.waitForIdle()
+        assertEquals("al irse, Hoy recupera su ancla", hoy, registro.posiciones[ClavesAncla.fila("h")])
+        escucha.cancel()
+    }
+
+    @Test
+    fun `reaching the target on a counter sends the drop, adding below it does not`() {
+        val registro = RegistroAnclas()
+        val gotas = mutableListOf<EventoGota>()
+        val escucha = CoroutineScope(Dispatchers.Unconfined)
+        escucha.launch { registro.gotas.collect { gotas += it } }
+        var card by mutableStateOf(carta(CardKind.COUNTER, progress = 0, target = 2, step = 1))
+        rule.setContent {
+            CompositionLocalProvider(LocalAnclas provides registro) {
+                ConSistema(sonido, tacto) { FilaCierre(card, false, {}, {}, {}, {}, {}, {}, {}) }
+            }
+        }
+        rule.onNodeWithTag("cierre-mas-h").performClick()
+        assertEquals(emptyList<EventoGota>(), gotas)
+        card = carta(CardKind.COUNTER, progress = 1, target = 2, step = 1)
+        rule.waitForIdle()
+        rule.onNodeWithTag("cierre-mas-h").performClick()
+        assertEquals(listOf<EventoGota>(EventoGota.Sale(ClavesAncla.fila("h"))), gotas)
+        escucha.cancel()
     }
 }

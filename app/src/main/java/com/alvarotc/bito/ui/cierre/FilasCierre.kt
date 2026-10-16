@@ -26,17 +26,21 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.boundsInRoot
+import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.platform.ViewConfiguration
 import androidx.compose.ui.platform.testTag
@@ -49,6 +53,8 @@ import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.ui.icons.IconosSistema
+import com.alvarotc.bito.ui.premios.ClavesAncla
+import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
@@ -112,11 +118,19 @@ internal fun FilaCierre(
     LaunchedEffect(meta) { nivel.animateTo(meta, if (reducido) tween(Duraciones.REDUCIDO) else Muelles.marcar()) }
     val atenuacion by animateFloatAsState(if (decidida) ATENUADA else 1f, tween(Duraciones.COLOR), label = "cierreAtenuada")
 
+    // Marcar en el cierre da solo la gota hacia la parcela y su bito (§7.4): las celebraciones se guardan.
+    val registro = LocalAnclas.current
+
+    fun gota() = registro?.gota(ClavesAncla.fila(card.id))
+
     fun sumar(cantidad: Int) {
         val llega = !limite && card.progress < card.target && card.progress + cantidad >= card.target
         val pasa = limite && !card.failed && card.progress + cantidad > card.target
         when {
-            llega -> gesto(Snd.GORGOTEO, Haptica.TICKS)
+            llega -> {
+                gota()
+                gesto(Snd.GORGOTEO, Haptica.TICKS)
+            }
             pasa -> gesto(Snd.VACIAR, Haptica.LOW)
             else -> gesto(Snd.TIC, Haptica.TICK)
         }
@@ -161,6 +175,7 @@ internal fun FilaCierre(
             Box(
                 Modifier
                     .size(28.dp)
+                    .anclaPrestada(ClavesAncla.fila(card.id))
                     .clip(CircleShape)
                     .drawBehind {
                         val n = nivel.value.coerceIn(0f, 1f)
@@ -229,6 +244,7 @@ internal fun FilaCierre(
                             Boton(
                                 stringResource(R.string.add_target),
                                 {
+                                    if (card.progress < card.target) gota()
                                     gesto(Snd.GORGOTEO, Haptica.TICKS)
                                     alFijar(max(card.progress, card.target))
                                 },
@@ -250,6 +266,7 @@ internal fun FilaCierre(
                         Boton(
                             stringResource(R.string.review_done),
                             {
+                                gota()
                                 gesto(Snd.GORGOTEO, Haptica.TICKS)
                                 alHecho()
                             },
@@ -320,3 +337,18 @@ private fun BotonMas(
 
 /** Un botón del cierre mide como mínimo 44 dp también de ancho (un «Hecho» corto no se queda en 40). */
 private fun Modifier.tocable(etiqueta: String): Modifier = defaultMinSize(minWidth = Medidas.toqueMinimo).testTag(etiqueta)
+
+/**
+ * El círculo de la fila de Hoy que el cierre tapa tiene la misma clave: el cierre la toma prestada mientras está abierto
+ * (de aquí sale la gota) y al irse se la devuelve, porque la lista de Hoy se hunde con `graphicsLayer` y no vuelve a
+ * registrarse sola.
+ */
+private fun Modifier.anclaPrestada(clave: String): Modifier =
+    composed {
+        val registro = LocalAnclas.current ?: return@composed this
+        val previa = remember(registro, clave) { registro.posiciones[clave] }
+        DisposableEffect(registro, clave) {
+            onDispose { if (previa != null) registro.poner(clave, previa) else registro.quitar(clave) }
+        }
+        onGloballyPositioned { registro.poner(clave, it.boundsInRoot()) }
+    }

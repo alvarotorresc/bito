@@ -69,6 +69,16 @@ class ColaCelebraciones(
     val actual: StateFlow<Momento?> = _actual.asStateFlow()
     val pendientes: List<Momento> get() = cola.toList()
     private var pausada = false
+
+    /**
+     * Retenida (el cierre del día abierto, pieza 4 §7.5): lo que llega se guarda y solo salen las monedas de cada
+     * marca. Al soltarla, sale lo guardado en el orden de G14.
+     */
+    var retener: Boolean = false
+        set(valor) {
+            field = valor
+            if (!valor && _actual.value == null && espera == null) siguiente()
+        }
     private var espera: Job? = null
 
     fun encolar(nuevos: List<Momento>) {
@@ -111,7 +121,12 @@ class ColaCelebraciones(
 
     private fun siguiente() {
         if (pausada) return
-        _actual.value = cola.removeFirstOrNull()
+        _actual.value =
+            if (retener) {
+                cola.firstOrNull { it is Momento.Monedas }?.also { cola.remove(it) }
+            } else {
+                cola.removeFirstOrNull()
+            }
     }
 
     private fun juntarMonedas(lista: List<Momento>): List<Momento> {

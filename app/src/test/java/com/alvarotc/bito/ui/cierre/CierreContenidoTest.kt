@@ -189,8 +189,12 @@ class CierreContenidoTest {
         esperar("cierre-buenas-noches")
         rule.onNodeWithTag("cierre-buenas-noches").assertIsEnabled()
         rule.onNodeWithTag("cierre-buenas-noches").performClick()
-        rule.waitUntil(5_000) { noches.intValue == 1 }
         rule.waitUntil(5_000) { runBlocking { banco.cierre.uiState.first { !it.loading }.sellado } }
+        // Sellar no vuelve a Hoy: brota el sello y, al acabar de anochecer, «Hasta mañana».
+        assertEquals(0, noches.intValue)
+        esperar("cierre-hasta-manana")
+        rule.onNodeWithTag("cierre-hasta-manana").performClick()
+        rule.waitUntil(5_000) { noches.intValue == 1 }
     }
 
     @Test
@@ -215,6 +219,8 @@ class CierreContenidoTest {
         rule.onNodeWithTag("cierre-hecho-h0").performClick()
         rule.waitUntil(5_000) { !hay("cierre-hecho-h0") }
         rule.onNodeWithTag("cierre-buenas-noches").performClick()
+        esperar("cierre-hasta-manana")
+        rule.onNodeWithTag("cierre-hasta-manana").performClick()
         rule.waitUntil(5_000) { noches.intValue == 1 }
         assertTrue(Snd.TIC in banco.sonido.snds())
     }

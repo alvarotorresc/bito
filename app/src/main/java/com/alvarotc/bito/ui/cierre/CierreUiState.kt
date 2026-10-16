@@ -32,4 +32,6 @@ data class CierreUiState(
     val diasPendientes: List<LogicalDay> = emptyList(),
     /** La voz de Habi con la que se redactan las frases sueltas del cierre (la línea de tareas, la respuesta al ánimo). */
     val voz: Personality = Personality.NEUTRA,
+    /** El nombre con el que Habi te llama (el hueco `{nombre}` del sello). */
+    val nombre: String = "",
 )

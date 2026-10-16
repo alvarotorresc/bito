@@ -10,4 +10,8 @@
     <string name="cierre_animo_bien">Bien</string>
     <string name="cierre_animo_regular">Regular</string>
     <string name="cierre_animo_duro">Duro</string>
+    <!-- El sello del cierre: «Día sellado», «Hasta mañana», las rachas y los logros nuevos se reutilizan de strings_review.xml. -->
+    <string name="cierre_sello_perfecto">Día perfecto</string>
+    <string name="cierre_sello_bitos">Bitos de hoy</string>
+    <string name="cierre_sello_gordo">Mañana empezamos por %1$s</string>
 </resources>

@@ -152,6 +152,7 @@ class CierreViewModel internal constructor(
             loading = false,
             diasPendientes = delDia.pendingSealDays,
             voz = ajustes.personality,
+            nombre = ajustes.userName,
         )
     }
 
