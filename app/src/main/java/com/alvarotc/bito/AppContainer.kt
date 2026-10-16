@@ -56,6 +56,7 @@ import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.time.ZoneId
@@ -97,12 +98,19 @@ class AppContainer(context: Context) {
             context.filesDir.resolve("focus.preferences_pb")
         }
 
+    // Todo lo vivo de la sesión (el tic del motor, los colectores de ajustes del audio, lo de fuera) cuelga de este alcance:
+    // [cerrarSesion] lo cancela entero, sin que nada quede corriendo para otro contenedor.
+    private val alcanceSesion = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    /** Para todo lo que corre en segundo plano por la sesión. Los tests lo llaman al acabar. */
+    fun cerrarSesion() = alcanceSesion.cancel()
+
     // La sesión (pieza 5). Perezosos: el arranque no los toca.
     val sesionStore: SesionStore by lazy { SesionStore(focusDataStore) }
     val noMolestar: NoMolestar by lazy { NoMolestar(context.applicationContext) }
-    val aire: Aire by lazy { crearAire(context.applicationContext, sonido, tacto, settings) }
-    val fondo: Fondo by lazy { crearFondo(context.applicationContext, sonido, settings) }
-    val fuera: FueraDeLaApp by lazy { crearFuera(context.applicationContext, sesionStore, noMolestar, settings) }
+    val aire: Aire by lazy { crearAire(context.applicationContext, sonido, tacto, settings, alcanceSesion) }
+    val fondo: Fondo by lazy { crearFondo(context.applicationContext, sonido, settings, alcanceSesion) }
+    val fuera: FueraDeLaApp by lazy { crearFuera(context.applicationContext, sesionStore, noMolestar, settings, alcanceSesion) }
 
     // El motor de la sesión, uno por proceso. La restauración de una copia lo usa para cerrar antes la sesión viva.
     private val motorSesionAndroid: MotorSesionAndroid by lazy {
@@ -120,7 +128,7 @@ class AppContainer(context: Context) {
             sonido = sonido,
             tacto = tacto,
             reloj = { ahoraDelSistema(appContext) },
-            alcance = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+            alcance = alcanceSesion,
         )
     }
     val motorSesion: MotorSesion get() = motorSesionAndroid

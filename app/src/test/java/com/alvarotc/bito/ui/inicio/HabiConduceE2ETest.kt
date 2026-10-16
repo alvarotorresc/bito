@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ContenedoresDeSesion
 import com.alvarotc.bito.data.db.HablaDao
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
@@ -94,6 +95,9 @@ import java.time.ZoneOffset
 @Config(sdk = [35], qualifiers = "w411dp-h891dp", application = Application::class)
 class HabiConduceE2ETest {
     @get:Rule
+    val sesiones = ContenedoresDeSesion()
+
+    @get:Rule
     val rule = createComposeRule()
 
     private val app get() = ApplicationProvider.getApplicationContext<Application>()
@@ -138,7 +142,7 @@ class HabiConduceE2ETest {
     fun setUp() {
         ShadowAlarmManager.reset()
         ShadowAlarmManager.setCanScheduleExactAlarms(true)
-        c = AppContainer(app)
+        c = sesiones.registrar(AppContainer(app))
         runBlocking { c.settings.update { it.copy(onboardingDone = true, userName = "Álvaro") } }
     }
 

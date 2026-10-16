@@ -12,6 +12,7 @@ import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicReference
 
@@ -28,10 +29,12 @@ fun crearAire(
     sonido: MotorSonido,
     tacto: Tacto,
     settings: SettingsRepository,
+    alcance: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): Aire {
     val ajustes = AtomicReference(SIN_AJUSTES)
-    CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-        settings.settings.collect { ajustes.set(AjustesSonido.de(it)) }
+    alcance.launch {
+        // Un fallo al leer los ajustes deja el último estado; no sale por el alcance sin que nadie lo recoja.
+        settings.settings.catch { }.collect { ajustes.set(AjustesSonido.de(it)) }
     }
     return MotorAire(
         audio = context.getSystemService(AudioManager::class.java),
@@ -47,9 +50,9 @@ fun crearFondo(
     context: Context,
     sonido: MotorSonido,
     settings: SettingsRepository,
+    scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): Fondo {
     val ajustes = AtomicReference(SIN_AJUSTES)
-    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val fondo =
         FondoSesion(
             salida = SalidaFondoAndroid(context.applicationContext),
@@ -58,7 +61,7 @@ fun crearFondo(
             scope = scope,
         )
     scope.launch {
-        settings.settings.collect {
+        settings.settings.catch { }.collect {
             ajustes.set(AjustesSonido.de(it))
             fondo.alCambiarGanancia()
         }

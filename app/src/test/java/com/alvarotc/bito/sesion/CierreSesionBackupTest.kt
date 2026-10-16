@@ -34,6 +34,7 @@ class CierreSesionBackupTest {
 
     @After
     fun tearDown() {
+        container.cerrarSesion()
         container.database.close()
         AppStartup.quiesceForTests()
     }

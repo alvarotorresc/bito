@@ -34,6 +34,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ContenedoresDeSesion
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.habitEntity
@@ -76,6 +77,9 @@ import java.time.ZoneId
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp", application = Application::class)
 class BitoNavHostTest {
+    @get:Rule
+    val sesiones = ContenedoresDeSesion()
+
     @get:Rule
     val compose = createComposeRule()
 
@@ -178,7 +182,7 @@ class BitoNavHostTest {
         seed: suspend AppContainer.() -> Unit = {},
         alNav: (NavHostController) -> Unit,
     ) {
-        container = AppContainer(ApplicationProvider.getApplicationContext<Application>())
+        container = sesiones.registrar(AppContainer(ApplicationProvider.getApplicationContext<Application>()))
         runBlocking {
             completeOnboarding(container)
             container.seed()
@@ -196,7 +200,7 @@ class BitoNavHostTest {
 
     /** Monta la app con un despachador de «atrás» propio, que el test pulsa desde fuera. */
     private fun setContentWithBack(backOwner: FakeBackDispatcherOwner) {
-        container = AppContainer(ApplicationProvider.getApplicationContext<Application>())
+        container = sesiones.registrar(AppContainer(ApplicationProvider.getApplicationContext<Application>()))
         runBlocking { completeOnboarding(container) }
         compose.setContent {
             BitoTheme {
@@ -211,7 +215,7 @@ class BitoNavHostTest {
 
     private fun setContent() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        container = AppContainer(app)
+        container = sesiones.registrar(AppContainer(app))
         runBlocking { completeOnboarding(container) }
         compose.setContent {
             BitoTheme {
@@ -225,7 +229,7 @@ class BitoNavHostTest {
     /** Like [setContent], but [seed] runs against the container's real database first. */
     private fun setContentSeeded(seed: suspend AppContainer.() -> Unit) {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
+        val container = sesiones.registrar(AppContainer(app))
         runBlocking {
             completeOnboarding(container)
             container.seed()
@@ -714,7 +718,7 @@ class BitoNavHostTest {
     @Test
     fun `a fresh install opens on the onboarding route, not today`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        val container = sesiones.registrar(AppContainer(app)) // onboardingDone defaults to false: nothing seeded here
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
@@ -749,7 +753,7 @@ class BitoNavHostTest {
     fun `landing on a real route asks for the notification permission once`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         shadowOf(app.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
-        val container = AppContainer(app)
+        val container = sesiones.registrar(AppContainer(app))
         runBlocking { completeOnboarding(container) }
         compose.setContent {
             BitoTheme {
@@ -770,7 +774,7 @@ class BitoNavHostTest {
     fun `the onboarding flow is never interrupted by the notification prompt`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
         shadowOf(app.getSystemService(NotificationManager::class.java)).setNotificationsEnabled(false)
-        val container = AppContainer(app) // onboardingDone defaults to false: opens on onboarding
+        val container = sesiones.registrar(AppContainer(app)) // onboardingDone defaults to false: opens on onboarding
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
@@ -797,7 +801,7 @@ class BitoNavHostTest {
     @Test
     fun `a restorer with habits and onboarding not done lands on today, not onboarding`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        val container = sesiones.registrar(AppContainer(app)) // onboardingDone defaults to false: nothing seeded here
         runBlocking { container.database.habitDao().upsert(habitEntity(id = "restored-habit")) }
         compose.setContent {
             BitoTheme {
@@ -828,7 +832,7 @@ class BitoNavHostTest {
     @Test
     fun `a pending review request stays held behind onboarding and opens once onboarding hands off`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        val container = sesiones.registrar(AppContainer(app)) // onboardingDone defaults to false: nothing seeded here
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
@@ -881,7 +885,7 @@ class BitoNavHostTest {
     @Test
     fun `the first habit step creates and lands on today`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app) // onboardingDone defaults to false: nothing seeded here
+        val container = sesiones.registrar(AppContainer(app)) // onboardingDone defaults to false: nothing seeded here
         compose.setContent {
             BitoTheme {
                 BitoNavHost(container)
@@ -921,7 +925,7 @@ class BitoNavHostTest {
         onboardingHecho: Boolean = true,
         alNav: (NavHostController) -> Unit = {},
     ) {
-        container = AppContainer(ApplicationProvider.getApplicationContext<Application>())
+        container = sesiones.registrar(AppContainer(ApplicationProvider.getApplicationContext<Application>()))
         runBlocking {
             if (onboardingHecho) completeOnboarding(container)
             container.settings.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
@@ -1039,7 +1043,7 @@ class BitoNavHostTest {
     @Test
     fun `the focus request opens the live session`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
+        val container = sesiones.registrar(AppContainer(app))
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
         runBlocking {
             completeOnboarding(container)
@@ -1103,7 +1107,7 @@ class BitoNavHostTest {
     @Test
     fun `starting a task from the tasks list opens prepare with that task`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
+        val container = sesiones.registrar(AppContainer(app))
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
         runBlocking {
             completeOnboarding(container)
@@ -1143,7 +1147,7 @@ class BitoNavHostTest {
     @Test
     fun `editing a task from the tasks list reaches the full-screen form with the task preloaded`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
+        val container = sesiones.registrar(AppContainer(app))
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
         runBlocking {
             completeOnboarding(container)
@@ -1184,7 +1188,7 @@ class BitoNavHostTest {
     @Test
     fun `deleting a task from its own edit screen removes it and returns to the tasks list`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
+        val container = sesiones.registrar(AppContainer(app))
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
         runBlocking {
             completeOnboarding(container)
@@ -1236,7 +1240,7 @@ class BitoNavHostTest {
     @Test
     fun `editing a task that vanished before the route loads it just goes back`() {
         val app = ApplicationProvider.getApplicationContext<Application>()
-        val container = AppContainer(app)
+        val container = sesiones.registrar(AppContainer(app))
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, ZoneId.systemDefault())
         runBlocking {
             completeOnboarding(container)

@@ -56,8 +56,6 @@ import com.alvarotc.bito.ui.notifications.ReminderReceiver
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.theme.BitoTheme
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -154,8 +152,8 @@ class SesionE2ETest {
 
     @After
     fun tearDown() {
-        (container.motorSesion as MotorSesionAndroid).matar()
-        contenedoresAparte.forEach { (it.motorSesion as MotorSesionAndroid).matar() }
+        container.cerrarSesion()
+        contenedoresAparte.forEach { it.cerrarSesion() }
         servicios.clear()
         ServicioSesion.vivo.set(false)
         AppVisibility.visible = false
@@ -665,7 +663,7 @@ class SesionE2ETest {
      */
     private fun procesoNuevo(): AppContainer {
         val viejo = container
-        (viejo.motorSesion as MotorSesionAndroid).matar()
+        viejo.cerrarSesion()
         fondo.callar(seco = true)
         viejo.aire.parar()
         // El disco queda al día (el proceso viejo no se cierra: la app de prueba sigue usando su contenedor para los títulos).
@@ -813,11 +811,5 @@ class SesionE2ETest {
     private fun pulsarTexto(texto: String) {
         compose.onNodeWithText(texto).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
         fotogramas()
-    }
-
-    /** El proceso de la prueba "muere": el motor deja de contar y de anunciar. */
-    private fun MotorSesionAndroid.matar() {
-        val campo = MotorSesionAndroid::class.java.getDeclaredField("alcance").apply { isAccessible = true }
-        (campo.get(this) as CoroutineScope).cancel()
     }
 }

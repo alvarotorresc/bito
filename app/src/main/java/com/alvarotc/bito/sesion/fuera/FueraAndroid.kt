@@ -17,8 +17,6 @@ import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.Notifier
 import com.alvarotc.bito.ui.sistema.TactoMudo
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -28,13 +26,14 @@ import kotlinx.coroutines.launch
  */
 class FueraAndroid internal constructor(
     private val entorno: EntornoFuera,
-    private val alcance: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val alcance: CoroutineScope,
 ) : FueraDeLaApp {
     constructor(
         context: Context,
         store: SesionStore,
         noMolestar: NoMolestar,
         settings: SettingsRepository,
+        alcance: CoroutineScope,
     ) : this(
         EntornoFuera(
             context = context.applicationContext,
@@ -45,6 +44,7 @@ class FueraAndroid internal constructor(
             tacto = { (context.applicationContext as? BitoApp)?.container?.tacto ?: TactoMudo },
             retenidos = avisosRetenidosReales(context.applicationContext, store, { settings.settings.first().dayCutoffMinutes }),
         ),
+        alcance,
     )
 
     override suspend fun alCambiar(

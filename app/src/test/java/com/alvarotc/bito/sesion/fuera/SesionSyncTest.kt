@@ -162,7 +162,7 @@ class SesionSyncTest {
 
     @Test
     fun `fuera android publishes on change and cancels on close`() {
-        val fuera = FueraAndroid(b.entorno)
+        val fuera = FueraAndroid(b.entorno, kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined))
         val r = registroDeDosBloques()
         runBlocking {
             b.ahora = ahoraA(0)
@@ -178,7 +178,7 @@ class SesionSyncTest {
 
     @Test
     fun `fuera android with the app in front and the session over only clears the notice`() {
-        val fuera = FueraAndroid(b.entorno)
+        val fuera = FueraAndroid(b.entorno, kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Unconfined))
         val r = registroDeDosBloques()
         runBlocking {
             b.ahora = ahoraA(0)
