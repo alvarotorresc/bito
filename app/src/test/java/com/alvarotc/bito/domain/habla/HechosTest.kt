@@ -450,6 +450,14 @@ class HechosTest {
     }
 
     @Test
+    fun `the first task of yesterday's big thing that is done is named`() {
+        assertEquals("Llamar al banco", de(estadoGordo(), memoriaGordo()).tareaGordoAyerHecha)
+        assertNull(de(estadoGordo()).tareaGordoAyerHecha)
+        val soloHabito = Memoria(gordo = mapOf(TODAY - 1 to listOf(RefGordo(TipoRefGordo.HABITO, leer.id))))
+        assertNull(de(estadoGordo(), soloHabito).tareaGordoAyerHecha)
+    }
+
+    @Test
     fun `the big thing sheet is counted once`() {
         val h = de(estadoGordo(), memoriaGordo())
         assertEquals(2, h.candidatosGordo)

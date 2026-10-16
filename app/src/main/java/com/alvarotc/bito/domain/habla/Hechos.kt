@@ -114,6 +114,8 @@ data class Hechos(
     val sugerenciaGordo: RefGordo? = null,
     /** Lo gordo de hoy que ya está hecho ([LoGordo.hecho]). */
     val gordoHecho: List<RefGordo> = emptyList(),
+    /** El título de la primera tarea de lo gordo de ayer que está hecha; null si no hay (`re_gordo_hecho`). */
+    val tareaGordoAyerHecha: String? = null,
 ) {
     companion object {
         private const val DIAS_SEMANA = 7
@@ -193,6 +195,11 @@ data class Hechos(
                 candidatosGordo = candidatos.size,
                 sugerenciaGordo = LoGordo.sugerencia(candidatos, gordoAyerSinHacer, state, hoy),
                 gordoHecho = gordo.filter { LoGordo.hecho(it, state, hoy) },
+                tareaGordoAyerHecha =
+                    memoria.gordo[hoy - 1]
+                        .orEmpty()
+                        .filter { it.tipo == TipoRefGordo.TAREA }
+                        .firstNotNullOfOrNull { ref -> state.tasks.firstOrNull { it.id == ref.id && it.status == TaskStatus.DONE }?.title },
             )
         }
 

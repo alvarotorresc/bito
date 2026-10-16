@@ -34,6 +34,9 @@ class RecuerdosTest {
     private val enRacha = habito(id = "h2", nombre = "Correr", racha = 7)
     private val recuperada = habito().copy(racha = 8, rachaRotaRecuperada = true)
 
+    /** Lo gordo de ayer tenía una tarea, ya hecha. */
+    private fun conTareaAyer(h: Hechos = hechos()) = h.copy(tareaGordoAyerHecha = "El informe")
+
     private fun elegible(
         h: Hechos = hechos(),
         eventos: List<EventoMemoria> = emptyList(),
@@ -91,8 +94,17 @@ class RecuerdosTest {
     @Test
     fun `the big thing done yesterday is recalled`() {
         val gordo = ev("gordo", TipoMemoria.GORDO_HECHO, TODAY - 1, 22)
-        assertEquals(Recuerdo(Bolsa.RE_GORDO_HECHO, "gordo", emptyMap()), elegible(eventos = listOf(gordo)))
-        assertNull(elegible(eventos = listOf(gordo.copy(dia = TODAY - 2))))
+        assertEquals(
+            Recuerdo(Bolsa.RE_GORDO_HECHO, "gordo", mapOf(Hueco.TAREA to ValorHueco.Texto("El informe"))),
+            elegible(conTareaAyer(), listOf(gordo)),
+        )
+        assertNull(elegible(conTareaAyer(), listOf(gordo.copy(dia = TODAY - 2))))
+    }
+
+    @Test
+    fun `the big thing of yesterday without a task is not recalled`() {
+        val gordo = ev("gordo", TipoMemoria.GORDO_HECHO, TODAY - 1, 11)
+        assertNull(elegible(eventos = listOf(gordo)))
     }
 
     @Test
@@ -136,7 +148,7 @@ class RecuerdosTest {
 
     @Test
     fun `the order of preference`() {
-        val h = hechos(habitos = listOf(recuperada, enRacha))
+        val h = conTareaAyer(hechos(habitos = listOf(recuperada, enRacha)))
         val eventos =
             listOf(
                 vuelta(20),
@@ -177,9 +189,9 @@ class RecuerdosTest {
     fun `an event mentioned once is never mentioned again`() {
         val gordo = ev("gordo", TipoMemoria.GORDO_HECHO, TODAY - 1, 11)
         val bien = animo("bien", 1, 0)
-        assertEquals(Bolsa.RE_GORDO_HECHO, elegible(eventos = listOf(gordo, bien))?.bolsa)
-        assertEquals(Bolsa.RE_BIEN_AYER, elegible(eventos = listOf(gordo, bien, mencion("gordo")))?.bolsa)
-        assertNull(elegible(eventos = listOf(gordo, bien, mencion("gordo"), mencion("bien", 60))))
+        assertEquals(Bolsa.RE_GORDO_HECHO, elegible(conTareaAyer(), listOf(gordo, bien))?.bolsa)
+        assertEquals(Bolsa.RE_BIEN_AYER, elegible(conTareaAyer(), listOf(gordo, bien, mencion("gordo")))?.bolsa)
+        assertNull(elegible(conTareaAyer(), listOf(gordo, bien, mencion("gordo"), mencion("bien", 60))))
         val h = hechos(habitos = listOf(recuperada))
         assertNull(elegible(h, listOf(mencion("racha:h1:$TODAY"))))
     }
@@ -200,7 +212,7 @@ class RecuerdosTest {
                 ev("nada", TipoMemoria.GORDO_HECHO, TODAY - 1, 2),
                 animo("regular", 1, 1),
             )
-        val sinHacer = hechos(habitos = listOf(habito(), habito(id = "h2", falladoAyer = true)))
+        val sinHacer = conTareaAyer(hechos(habitos = listOf(habito(), habito(id = "h2", falladoAyer = true))))
         assertNull(elegible(sinHacer, aceptadoSinCumplir, enCierre = true))
         val completo = ev("completo", TipoMemoria.GORDO_HECHO, TODAY - 1, 22)
         assertEquals(Bolsa.RE_GORDO_HECHO, elegible(sinHacer, aceptadoSinCumplir + completo, enCierre = true)?.bolsa)

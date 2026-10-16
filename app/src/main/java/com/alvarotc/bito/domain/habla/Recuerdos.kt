@@ -42,7 +42,7 @@ object Recuerdos {
         return rachaRecuperada(h, mencionados)
             ?: vuelta(h, eventos, m)
             ?: duroPasado(h, eventos, m)
-            ?: gordoHecho(hoy, eventos)
+            ?: gordoHecho(h, eventos)
             ?: cumplisteHora(h, eventos)
             ?: bienAyer(hoy, eventos)
             ?: if (enCierre) patronAnimo(hoy, m.eventos, menciones, ctx) else null
@@ -105,15 +105,20 @@ object Recuerdos {
         return if (bien || perfecto) Recuerdo(Bolsa.RE_DURO_PASADO, evento.id, emptyMap()) else null
     }
 
-    /** Lo gordo de ayer, entero: `valor` = hechos * 10 + total. Un parcial no se recuerda. */
+    /**
+     * Lo gordo de ayer, entero: `valor` = hechos * 10 + total. Un parcial no se recuerda. `{tarea}` es la primera
+     * tarea de lo gordo hecha ayer (HUECOS.md); si lo gordo de ayer no tenía tareas, no hay recuerdo.
+     */
     private fun gordoHecho(
-        hoy: LogicalDay,
+        h: Hechos,
         eventos: List<EventoMemoria>,
-    ): Recuerdo? =
-        eventos
+    ): Recuerdo? {
+        val tarea = h.tareaGordoAyerHecha ?: return null
+        return eventos
             .firstOrNull { e ->
-                e.tipo == TipoMemoria.GORDO_HECHO && e.dia == hoy - 1 && e.valor.let { it == null || (it / 10 > 0 && it / 10 == it % 10) }
-            }?.let { Recuerdo(Bolsa.RE_GORDO_HECHO, it.id, emptyMap()) }
+                e.tipo == TipoMemoria.GORDO_HECHO && e.dia == h.hoy - 1 && e.valor.let { it == null || (it / 10 > 0 && it / 10 == it % 10) }
+            }?.let { Recuerdo(Bolsa.RE_GORDO_HECHO, it.id, mapOf(Hueco.TAREA to ValorHueco.Texto(tarea))) }
+    }
 
     /** Un aviso aceptado de ayer que se cumplió: `valor` = minuto, `ref` = hábito si sigue aquí. */
     private fun cumplisteHora(
