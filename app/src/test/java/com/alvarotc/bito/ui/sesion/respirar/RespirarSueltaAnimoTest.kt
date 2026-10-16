@@ -164,9 +164,43 @@ class RespirarSueltaAnimoTest {
         pulsar("a-saltar")
         esperar("sf-txt")
         assertTrue(recuerdos().isEmpty())
-        compose.onNodeWithTag("sf-txt").assertTextEquals(textoFin())
+        compose.onNodeWithTag("sf-txt").assertTextEquals(YA_ESTA)
         assertEquals(Encuadre.SUELTA_FIN, m.camara.destino)
         assertFalse(Snd.GORGOTEO in m.sonido.snds())
+    }
+
+    @Test
+    fun `skipping the moment it can be clicked still says the plain line and Habi still cheers`() {
+        hastaLaPregunta()
+        // Sin dejar pasar los 560 ms de la llegada (el bloque viejo ya se fue): lo que pulsa el que tiene prisa.
+        m.avanzar(compose, 200)
+        assertFalse(m.gestos.alegre)
+        compose.onNodeWithTag("a-saltar").performClick()
+        compose.mainClock.advanceTimeByFrame()
+        esperar("sf-txt")
+        assertFalse(m.gestos.alegre)
+        assertEquals(YA_ESTA, textoFin())
+        assertTrue(recuerdos().isEmpty())
+        // El mock lanza la alegría con su `setTimeout` igualmente, también sobre la tarjeta del fin.
+        val llegada = cuantoTarda { m.gestos.alegre }
+        assertTrue("alegría a los $llegada ms", llegada in 0L..560L)
+        assertEquals(YA_ESTA, textoFin())
+    }
+
+    @Test
+    fun `starting again before the cheer arrives cancels it`() {
+        hastaLaPregunta()
+        m.avanzar(compose, 200)
+        compose.onNodeWithTag("a-saltar").performClick()
+        compose.mainClock.advanceTimeByFrame()
+        esperar("sf-otra")
+        pulsar("sf-otra")
+        m.avanzar(compose, 2_000)
+        assertFalse(m.gestos.alegre)
+    }
+
+    private companion object {
+        const val YA_ESTA = "Ya está."
     }
 
     private fun textoFin(): String =

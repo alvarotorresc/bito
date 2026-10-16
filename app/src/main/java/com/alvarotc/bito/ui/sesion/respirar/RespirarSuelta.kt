@@ -310,26 +310,31 @@ fun RespirarSuelta(
     }
     BackHandler { atras() }
 
-    // Llegada a «¿Cómo estás ahora?»: campanilla, y a los 560 ms Habi se alegra y dice «Ya está».
+    // Llegada a «¿Cómo estás ahora?»: la frase se elige ya (así el fin la tiene aunque se salte enseguida), suena la
+    // campanilla, y a los 560 ms Habi se alegra y lo dice. Esto último sale de `alcance` porque el mock lo lanza con
+    // un `setTimeout` que sigue vivo aunque se salte la pregunta; solo lo corta empezar otra respiración.
     val ciclo = LocalLifecycleOwner.current.lifecycle
     LaunchedEffect(reglas.etapa == EtapaSuelta.COMO_ESTAS, ronda, pendiente) {
-        if (reglas.etapa != EtapaSuelta.COMO_ESTAS) return@LaunchedEffect
-        ciclo.withResumed { }
-        gesto(Snd.CAMPANILLA, Haptica.CLICK)
-        delay(if (reducido) LLEGADA_REDUCIDO_MS else LLEGADA_MS)
         if (reglas.etapa != EtapaSuelta.COMO_ESTAS) return@LaunchedEffect
         // El estado ya está cargado desde que se abrió la pantalla; solo si no, se espera a él.
         val c = contextoDe(a, dominio ?: flujoEstado.first(), entorno)
         contextoDia = c
         fraseYaEsta = frase(Bolsa.RE_FIN_RESPIRAR, c)
-        gestos.alegre = true
-        globo = true
+        val esta = ronda
         alcance.launch {
-            delay(ALEGRIA_MS)
-            gestos.alegre = false
+            delay(if (reducido) LLEGADA_REDUCIDO_MS else LLEGADA_MS)
+            if (ronda != esta) return@launch
+            gestos.alegre = true
+            globo = true
+            launch {
+                delay(ALEGRIA_MS)
+                if (ronda == esta) gestos.alegre = false
+            }
+            delay(GLOBITO_MS)
+            if (ronda == esta) globo = false
         }
-        delay(GLOBITO_MS)
-        globo = false
+        ciclo.withResumed { }
+        gesto(Snd.CAMPANILLA, Haptica.CLICK)
     }
 
     val sesiones =
