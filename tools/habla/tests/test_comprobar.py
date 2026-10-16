@@ -78,6 +78,58 @@ class ComprobarTest(unittest.TestCase):
         f = self.fallos(["nu_ayer_escapo\t0\t\tAyer quedó «{habito}». Hoy, {minutos} min.\tYesterday “{habito}” waited. Today, {minutos} min."])
         self.assertEqual([], f)
 
+def tsv_g(lineas):
+    d = tempfile.mkdtemp()
+    ruta = os.path.join(d, "G.neutra.tsv")
+    with open(ruta, "w", encoding="utf-8") as f:
+        f.write(CAB + "".join(l + "\n" for l in lineas))
+    return ruta
+
+
+def fila(bolsa, i, es, en=None):
+    return f"{bolsa}\t{i}\t\t{es}\t{en or es}"
+
+
+class SesionTest(unittest.TestCase):
+    def fallos(self, lineas, minimos=False):
+        return comprobar.comprobar([tsv_g(lineas)], minimos=minimos)
+
+    def test_grupo_g_cuenta_minimos(self):
+        f = comprobar.comprobar([tsv_g([fila("se_entrar", 0, "Aqui estoy.")])], minimos=True)
+        self.assertTrue(any("falta la bolsa de_habito" in x for x in f), f)
+        self.assertTrue(any("se_entrar tiene 1 y necesita 10" in x for x in f), f)
+
+    def test_globito_de_noventa(self):
+        self.assertTrue(any("longitud" in f for f in self.fallos([fila("se_entrar", 0, "a" * 95)])))
+        self.assertEqual([], self.fallos([fila("se_entrar", 0, "a" * 85)]))
+        self.assertEqual([], self.fallos([fila("se_entrar", 0, "a" * 90)]))
+
+    def test_descanso_y_hecha_de_noventa(self):
+        for b in ("de_habito", "de_habito_largo", "de_sin_pendientes", "re_fin_respirar",
+                  "se_hecha_tarea", "se_hecha_habito"):
+            self.assertTrue(any("longitud" in f for f in self.fallos([fila(b, 0, "a" * 95)])), b)
+
+    def test_respuesta_de_cien(self):
+        self.assertTrue(any("longitud" in f for f in self.fallos([fila("ce_mejor", 0, "a" * 101)])))
+        self.assertEqual([], self.fallos([fila("ce_mejor", 0, "a" * 100)]))
+
+    def test_hermano_sin_nombre(self):
+        todos = [fila("re_fin_respirar", i, f"Ya esta {i}, {{nombre}}.", f"Done {i}, {{nombre}}.") for i in range(3)]
+        self.assertTrue(any("hermano" in f for f in self.fallos(todos)))
+        mixto = todos[:2] + [fila("re_fin_respirar", 2, "Ya esta 2.", "Done 2."),
+                             fila("re_fin_respirar", 3, "Ya esta 3.", "Done 3.")]
+        self.assertEqual([], self.fallos(mixto))
+        de_mas = todos[:1] + [fila("re_fin_respirar", 1, "Ya esta 1.", "Done 1.")] + \
+            [fila("re_fin_respirar", i, f"Ya esta {i}, {{nombre}}.", f"Done {i}, {{nombre}}.") for i in (2, 3)]
+        self.assertTrue(any("hermano" in f for f in self.fallos(de_mas)))
+
+    def test_hueco_modo(self):
+        ok = fila("re_respirar_mejor", 0, "Tras {modo} sueles ir mejor.", "After {modo} you tend to feel better.")
+        self.assertEqual([], self.fallos([ok]))
+        mal = fila("re_respirar_mejor", 0, "Tras {habito} sueles ir mejor.", "After {habito} you tend to feel better.")
+        self.assertTrue(any("no permitido" in f for f in self.fallos([mal])))
+
+
 class BolsasTest(unittest.TestCase):
     def test_nombre_coincide_con_huecos(self):
         for b in comprobar.comun.cargar_bolsas().values():

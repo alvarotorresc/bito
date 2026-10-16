@@ -1,0 +1,97 @@
+bolsa	indice	etiquetas	es	en
+se_entrar	0		Aquí estoy, {nombre}. Tú a lo tuyo.	I'm here, {nombre}. Go ahead.
+se_entrar	1		Aquí estoy. Tú a lo tuyo.	I'm here. Go ahead.
+se_entrar	2		{minutos} min por delante. Yo me quedo aquí, sin hacer ruido.	{minutos} min ahead. I'll stay here, quietly.
+se_entrar	3		Ahora toca esto: {tarea}. Te dejo con ello.	This one now: {tarea}. I'll leave you to it.
+se_entrar	4		Ahora toca esto: {habito}. Aquí sigo, en silencio.	This one now: {habito}. I'm here, quietly.
+se_entrar	5		Empezamos, {nombre}. Si necesitas algo, estoy al lado.	Here we go, {nombre}. If you need anything, I'm right here.
+se_entrar	6		Un bloque cada vez. El resto puede esperar.	One block at a time. The rest can wait.
+se_entrar	7	[manana]	La mañana es buena para concentrarse. Aquí estoy.	Mornings are good for focusing. I'm here.
+se_entrar	8	[noche]	Ya es de noche. Sin prisa: yo me quedo aquí.	It's evening now. No rush: I'm staying right here.
+se_entrar	9	[lunes]	Lunes, {nombre}. Ahora, solo esto: {tarea}.	Monday, {nombre}. For now, just this: {tarea}.
+se_entrar	10	[finde]	Fin de semana, y aun así aquí estás. Yo también.	It's the weekend, and here you are anyway. Me too.
+se_entrar	11	[invierno]	Fuera hace frío. Aquí dentro, {minutos} min que son tuyos.	Cold out there. In here, {minutos} min that are yours.
+se_entrar	12	[tarde]	Media tarde, {nombre}. {minutos} min y luego, descanso.	Mid-afternoon, {nombre}. {minutos} min, then a break.
+se_entrar	13		Empezamos cuando quieras. Yo estoy aquí.	We start whenever you're ready. I'm here.
+de_habito	0		Te queda esto: {habito}. ¿Lo hacemos ahora, que es el descanso?	Still left today: {habito}. Shall we do it now, during the break?
+de_habito	1		Pendiente de hoy: {habito}. Si te apetece, cabe en este descanso.	Still open today: {habito}. If you feel like it, it fits in this break.
+de_habito	2		«{habito}» sigue sin marcar. Ahora es buen momento, si quieres.	“{habito}” is still unticked. Now is a good time, if you like.
+de_habito	3		Para este descanso te propongo esto: {habito}.	For this break, I'd suggest this: {habito}.
+de_habito	4		Hay {minutos} min de descanso. Da tiempo a esto: {habito}.	You've got a {minutos} min break. Time enough for this: {habito}.
+de_habito	5		Cambiar de tarea también descansa: {habito}. ¿Lo hacemos?	Switching tasks is a kind of rest too: {habito}. Shall we?
+de_habito	6	[manana]	Aún es por la mañana y queda esto: {habito}. Ahora o luego, como veas.	Still morning, and this is left: {habito}. Now or later, as you like.
+de_habito	7	[tarde]	La tarde avanza y queda esto: {habito}. Este descanso puede servir.	The afternoon is moving on and this is left: {habito}. This break could do.
+de_habito	8	[noche]	Antes de que acabe el día: {habito}. Si te cuadra, ahora.	Before the day ends: {habito}. Now, if it suits you.
+de_habito	9	[finde]	Fin de semana, y queda esto: {habito}. ¿Aprovechamos el descanso?	It's the weekend, and this is still open: {habito}. Use the break for it?
+de_habito	10	[lunes]	Lunes. Queda esto de hoy: {habito}. ¿Lo hacemos en el descanso?	Monday. Still left today: {habito}. Do it during the break?
+de_habito_largo	0		Te queda esto: {habito}. Hay {minutos} min por delante.	Still left today: {habito}. There are {minutos} min ahead.
+de_habito_largo	1		Descanso largo. Buen hueco para esto: {habito}.	A long break. A good slot for this: {habito}.
+de_habito_largo	2		Este descanso es largo y queda esto: {habito}. ¿Lo hacemos?	This break is a long one, and this is left: {habito}. Shall we?
+de_habito_largo	3		Con {minutos} min de descanso, da para esto: {habito}.	With a {minutos} min break, there's room for this: {habito}.
+de_habito_largo	4	[tarde]	Media tarde y descanso largo. Te propongo esto: {habito}.	Mid-afternoon and a long break. I'd suggest this: {habito}.
+de_habito_largo	5	[manana]	Descanso largo a media mañana. Pendiente: {habito}. Ahora o luego.	A long mid-morning break. Still open: {habito}. Now or later.
+de_habito_largo	6	[noche]	Descanso largo, y ya es de noche. Queda esto: {habito}.	A long break, and it's evening now. This is left: {habito}.
+de_habito_largo	7		Descanso largo y queda esto: {habito}. Hay tiempo de sobra.	A long break, and this is left: {habito}. Plenty of time.
+de_sin_pendientes	0		Hoy ya está todo regado. Levántate, estira las piernas y bebe un poco de agua.	Everything's watered for today. Get up, stretch your legs and drink some water.
+de_sin_pendientes	1		Nada que proponerte para este descanso. ¿Te levantas y estiras las piernas?	Nothing to suggest for this break. Get up and stretch your legs?
+de_sin_pendientes	2		Este descanso es solo tuyo, {nombre}. Un vaso de agua no vendría mal.	This break is all yours, {nombre}. A glass of water wouldn't hurt.
+de_sin_pendientes	3		Para este descanso, nada de la lista. ¿Un poco de agua y mirar lejos un rato?	Nothing from the list for this break. Some water, and a look at something far away?
+de_sin_pendientes	4		Descansa la vista: un minuto mirando algo lejano.	Rest your eyes: a minute looking at something far away.
+de_sin_pendientes	5		Sin nada que proponerte, {nombre}. ¿Te pones de pie y mueves los hombros?	Nothing to suggest, {nombre}. Stand up and roll your shoulders?
+de_sin_pendientes	6	[manana]	Descanso de media mañana. Un poco de agua y estirar la espalda.	A mid-morning break. Some water and a back stretch.
+de_sin_pendientes	7	[tarde]	La tarde pesa en la espalda. ¿Te levantas y estiras un poco?	Afternoons weigh on the back. Get up and stretch a little?
+de_sin_pendientes	8	[noche]	Ya es de noche, {nombre}. Unos minutos lejos de la pantalla sientan bien.	It's evening, {nombre}. A few minutes away from the screen will do you good.
+de_sin_pendientes	9	[verano]	Verano. Un vaso de agua fresca y estirar las piernas.	Summer. A glass of cool water and a leg stretch.
+de_sin_pendientes	10	[invierno]	En invierno también hace falta agua. ¿Te levantas y bebes un poco?	Winter needs water too. Get up and have a little?
+se_hecha_tarea	0		Hecha, {nombre}.	Done, {nombre}.
+se_hecha_tarea	1		Hecha.	Done.
+se_hecha_tarea	2		Una menos, {nombre}.	One down, {nombre}.
+se_hecha_tarea	3		Una menos.	One down.
+se_hecha_tarea	4		Terminada. Bien hecho.	Finished. Well done.
+se_hecha_tarea	5		Hecha. Ya puedes quitártela de la cabeza.	Done. You can let it go now.
+se_hecha_tarea	6	[noche]	Hecha, {nombre}. Esta noche se duerme mejor.	Done, {nombre}. Tonight you'll sleep easier.
+se_hecha_tarea	7	[lunes]	Hecha. La semana empieza con una menos.	Done. The week starts one lighter.
+se_hecha_tarea	8	[viernes]	Hecha. El fin de semana llega más ligero.	Done. The weekend arrives lighter.
+se_hecha_habito	0		Hecho, {nombre}.	Done, {nombre}.
+se_hecha_habito	1		Hecho.	Done.
+se_hecha_habito	2		Uno menos, {nombre}.	One down, {nombre}.
+se_hecha_habito	3		Uno menos para hoy.	One down for today.
+se_hecha_habito	4		Hecho. Hoy ya cuenta.	Done. It counts for today.
+se_hecha_habito	5		Hecho. Uno más de hoy.	Done. One more for today.
+se_hecha_habito	6	[manana]	Hecho, {nombre}, y aún es temprano.	Done, {nombre}, and it's still early.
+se_hecha_habito	7	[noche]	Hecho. Hoy queda un poco más completo.	Done. Today is a little fuller.
+ce_mejor	0		Me alegro. Aquí sigo cuando quieras.	Glad to hear it. I'm here whenever you want.
+ce_mejor	1		Bien. Unos minutos han bastado.	Good. A few minutes was enough.
+ce_mejor	2		Me alegro. Lo apunto, por si otro día hace falta.	Glad to hear it. I'll remember that, in case another day needs it.
+ce_mejor	3		Bien. A veces basta con parar un poco.	Good. Sometimes stopping for a bit is enough.
+ce_mejor	4	[noche]	Me alegro. Que descanses esta noche.	Glad to hear it. Sleep well tonight.
+ce_mejor	5	[manana]	Me alegro. La mañana sigue mejor así.	Glad to hear it. The morning goes better like this.
+ce_mejor	6	[tarde]	Bien. La tarde se lleva mejor así.	Good. The afternoon is easier like this.
+ce_igual	0		Vale. A veces hace falta otra vuelta.	Okay. Sometimes it takes another round.
+ce_igual	1		Vale. No siempre se nota a la primera.	Okay. It doesn't always show the first time.
+ce_igual	2		Entendido. Respirar no siempre cambia algo, y está bien así.	Understood. Breathing doesn't always shift things, and that's fine.
+ce_igual	3		Vale. Si quieres, otro ritmo puede ir distinto.	Okay. If you like, another rhythm might feel different.
+ce_igual	4		De acuerdo. Por lo menos has parado un rato.	Fair enough. At least you stopped for a while.
+ce_igual	5	[noche]	Vale. De noche cuesta más soltar el día.	Okay. At night the day is harder to let go of.
+ce_cuesta	0		Sin prisa. ¿Otra vez, más despacio? Dormir es el ritmo más largo.	No rush. Again, more slowly? Sleep is the longest rhythm.
+ce_cuesta	1		Sin prisa. Hay días en que cuesta más, y no pasa nada.	No rush. Some days it's harder, and that's okay.
+ce_cuesta	2		Entendido. Podemos repetir o dejarlo aquí. Las dos cosas valen.	Understood. We can go again or leave it here. Either is fine.
+ce_cuesta	3		Vale. Aquí sigo, por si quieres otra vuelta.	Okay. I'm still here if you want another round.
+ce_cuesta	4		Lo tengo en cuenta para lo próximo que te proponga hoy.	I'll keep that in mind for the next thing I suggest today.
+ce_cuesta	5	[noche]	Sin prisa. De noche todo pesa un poco más.	No rush. At night everything weighs a little more.
+ce_cuesta	6	[manana]	Sin prisa. Aún queda mucha mañana.	No rush. There's plenty of morning left.
+re_fin_respirar	0		Ya está, {nombre}.	There, {nombre}.
+re_fin_respirar	1		Ya está.	There we go.
+re_fin_respirar	2		Ya está, {nombre}. Unos minutos para ti.	There, {nombre}. A few minutes just for you.
+re_fin_respirar	3		Ya está. Unos minutos solo para ti.	That's it. A few minutes just for you.
+re_fin_respirar	4		Ya está. El cuerpo lo agradece.	That's it. Your body will thank you.
+re_fin_respirar	5	[noche]	Ya está. Si es hora de dormir, buenas noches.	That's it. If it's bedtime, good night.
+re_fin_respirar	6	[manana]	Ya está, {nombre}. La mañana sigue a tu ritmo.	That's it, {nombre}. The morning carries on at your pace.
+re_fin_respirar	7	[tarde]	Ya está. Una pausa en mitad de la tarde.	That's it. A pause in the middle of the afternoon.
+re_fin_respirar	8	[finde]	Ya está. El fin de semana también es para esto.	That's it. Weekends are for this too.
+re_respirar_mejor	0		Ayer respirar te sentó bien. «{modo}» sigue aquí.	Yesterday breathing did you good. “{modo}” is still here.
+re_respirar_mejor	1		Hace poco, «{modo}» te sentó bien. Sigue a un toque.	Not long ago, “{modo}” did you good. It's still one tap away.
+re_respirar_mejor	2		Una vez, «{modo}» te dejó mejor. Lo tienes cuando quieras.	Once, “{modo}” left you feeling better. It's there whenever you want.
+re_respirar_mejor	3		Recuerdo que «{modo}» te sentó bien. Por si hoy hace falta.	I remember “{modo}” did you good. In case today needs it.
+re_respirar_mejor	4		«{modo}» ya te ha funcionado alguna vez. Ahí sigue.	“{modo}” has worked for you before. It's still there.
+re_respirar_mejor	5	[noche]	Por si esta noche cuesta: «{modo}» ya te sentó bien una vez.	In case tonight is hard: “{modo}” helped you once before.

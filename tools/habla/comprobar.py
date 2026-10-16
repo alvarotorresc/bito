@@ -20,6 +20,10 @@ PERCENT_SUELTO = re.compile(r"(?<!\} )%")
 TITULOS = {"av_manana_titulo", "av_manana_titulo_gordo", "av_noche_titulo", "av_aceptado_titulo"}
 CUERPOS = {"av_recordatorio", "av_noche_cuerpo", "av_aceptado_cuerpo", "av_ausencia"}
 LIBRES = {"habito", "tarea"}
+# Globito y tarjeta del descanso (viven 2,2 a 2,6 s) y respuestas de «¿Cómo estás?» de la sesión.
+GLOBITOS_SESION = {"se_entrar", "de_habito", "de_habito_largo", "de_sin_pendientes",
+                   "re_fin_respirar", "se_hecha_tarea", "se_hecha_habito"}
+RESPUESTAS_SESION = {"ce_mejor", "ce_igual", "ce_cuesta"}
 # HUECOS.md: un hueco opcional puede no llegar y entonces solo valen los trozos que no lo usan.
 # Cada bolsa y voz necesita este número de trozos sin etiqueta que usen solo sus huecos
 # obligatorios (`obligatorios` en bolsas.json), o el de su mínimo si es menor.
@@ -27,6 +31,10 @@ MINIMO_SIN_OPCIONALES = 3
 
 
 def limite(bolsa):
+    if bolsa["bolsa"] in GLOBITOS_SESION:
+        return 90
+    if bolsa["bolsa"] in RESPUESTAS_SESION:
+        return 100
     if bolsa["bolsa"] in TITULOS:
         return 50
     if bolsa["bolsa"] in CUERPOS:
@@ -149,6 +157,12 @@ def comprobar(rutas, minimos=True):
                 fallos.append(f"{ruta}:{fs[0]['linea']}: índices: {nombre} debe usar 0..{len(fs) - 1} sin huecos ni repetidos")
             if minimos and len(fs) < bolsas[nombre]["minimo"]:
                 fallos.append(f"{ruta}:{fs[0]['linea']}: mínimo: {nombre} tiene {len(fs)} y necesita {bolsas[nombre]['minimo']}")
+            b = bolsas[nombre]
+            if b["grupo"] == "G" and b["nombre"]:
+                con = sum(1 for f in fs if "nombre" in comun.huecos_de(f["es"]) or "nombre" in comun.huecos_de(f["en"]))
+                sin = len(fs) - con
+                if sin == 0 or sin < con:
+                    fallos.append(f"{ruta}:{fs[0]['linea']}: hermano: {nombre} necesita al menos tantos items sin {{nombre}} como con él ({con} con, {sin} sin)")
             if minimos:
                 obligatorios = set(bolsas[nombre].get("obligatorios", []))
                 pide = min(MINIMO_SIN_OPCIONALES, bolsas[nombre]["minimo"])
