@@ -45,7 +45,7 @@ class FocusStore(private val dataStore: DataStore<Preferences>) {
 
     suspend fun clear() {
         dataStore.edit { prefs ->
-            // Solo sus claves: el archivo es compartido con la sesión y los avisos retenidos.
+            // Solo sus claves: el archivo es compartido con la sesión nueva. Los avisos retenidos viven aparte, en SharedPreferences (`sesion_fuera`).
             listOf(Keys.taskId, Keys.startedAtMillis, Keys.endsAtMillis, Keys.endsAtElapsed, Keys.bootMillis)
                 .forEach { prefs.remove(it) }
         }

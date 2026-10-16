@@ -306,7 +306,8 @@ class MotorSesionAndroid(
                 return@enCerrojo
             }
             publicar(r, inst)
-            val vigente = reconciliar(r, inst)
+            // El motor solo suena con la app delante; fuera lo lleva el receptor, y al volver se reconcilia.
+            val vigente = if (delante()) reconciliar(r, inst) else r
             fuera.alCambiar(vigente, sonando())
         }
 
@@ -612,7 +613,8 @@ class MotorSesionAndroid(
                 inst.esperandoDescanso -> primerMomento(r, ahora) { it.tramo >= inst.tramo }
                 inst.pausado -> {
                     val entrada = primerMomento(r, ahora) { it.tramo >= inst.tramo }
-                    val pausa = r.eventos.filter { it is Evento.Pausa && it.enMillis <= inst.transcurridoMillis }.maxOfOrNull { it.enMillis }
+                    val pausas = r.eventos.filter { it is Evento.Pausa && it.enMillis <= inst.transcurridoMillis }
+                    val pausa = pausas.maxOfOrNull { it.enMillis }
                     maxOf(entrada, pausa ?: entrada)
                 }
                 else -> return null

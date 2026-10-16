@@ -352,4 +352,19 @@ class MotorSesionArreglosTest {
             otro.recuperar()
             assertTrue(otro.instante.value?.pausado == true)
         }
+
+    @Test
+    fun `recovering with the app out does not make the engine sound`() =
+        runTest {
+            directo()
+            empezarTarea(bloques = 2)
+            val g2 = Grabadores()
+            val otro = banco.motor(g2)
+            banco.delante = false
+
+            otro.recuperar()
+
+            assertTrue("el fondo no suena desde fuera: ${g2.fondo.llamadas}", g2.fondo.llamadas.isEmpty())
+            assertTrue(g2.aire.llamadas.isEmpty())
+        }
 }
