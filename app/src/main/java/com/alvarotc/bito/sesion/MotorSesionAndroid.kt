@@ -112,10 +112,11 @@ class MotorSesionAndroid(
      */
     internal suspend fun alPerderseElFondo() =
         enCerrojo {
-            // Con la app fuera, lo de fuera lo lleva el receptor: aquí el instante sería viejo.
+            // Con la app fuera, lo de fuera lo lleva el receptor y el instante de aquí sería viejo (el tic no lo actualiza).
             if (!delante()) return@enCerrojo
             val r = _registro.value ?: return@enCerrojo
-            val inst = RelojSesion.en(r, reloj())
+            // El último tramo anunciado, no el del reloj: es el que el fondo acompaña (el tic aún puede no haber cruzado la frontera).
+            val inst = _instante.value ?: return@enCerrojo
             if (inst.actual is Tramo.Foco && !inst.pausado && fondo.sonando.value == null) fuera.alCambiar(r, sonando())
         }
 

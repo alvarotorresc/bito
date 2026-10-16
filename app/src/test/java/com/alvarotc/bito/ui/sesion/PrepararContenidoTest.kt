@@ -62,12 +62,18 @@ class PrepararContenidoTest {
     private fun montar(
         plan: PlanSesion = planSesion(objetivo = Objetivo.Tarea("t0")),
         personalidad: Personality = Personality.NEUTRA,
+        ampliacionDeMaterial: Boolean = true,
     ) {
         motor.borrador.value = plan
         compose.setContent {
             ConSistema(sonido, tacto) {
                 permiso.Con {
-                    CompositionLocalProvider(LocalRegistroHoja provides hojas) {
+                    // Sin la ampliación automática de Material a 48 dp: lo que mide cada mando es cosa de la app.
+                    val minimo = if (ampliacionDeMaterial) androidx.compose.ui.unit.Dp.Unspecified else 0.dp
+                    CompositionLocalProvider(
+                        LocalRegistroHoja provides hojas,
+                        androidx.compose.material3.LocalMinimumInteractiveComponentSize provides minimo,
+                    ) {
                         val datos = datosMock(fondo, permiso.noMolestar, personalidad, avisos)
                         val actual by motor.borrador.collectAsState()
                         Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
@@ -337,8 +343,8 @@ class PrepararContenidoTest {
     }
 
     @Test
-    fun `every tappable is at least 44dp`() {
-        montar()
+    fun `every tappable is at least 44dp by its own and not by Material's enlargement`() {
+        montar(ampliacionDeMaterial = false)
         compose.waitForIdle()
         val tocables = compose.onAllNodes(hasClickAction() or hasContentDescription("Un bloque menos")).fetchSemanticsNodes()
         assertTrue("hay mandos", tocables.size >= 9)

@@ -13,6 +13,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -150,8 +152,7 @@ class MotorSesionArreglosTest {
             val vigila = VigilaHuecos(motor).also { it.armado = true }
 
             val vuelta = launch(Dispatchers.Unconfined) { motor.volverAPreparar() }
-            repeat(500) { if (!g.fuera.esperandoLaPuerta) Thread.sleep(10) }
-            assertTrue(g.fuera.esperandoLaPuerta)
+            withContext(Dispatchers.Default) { withTimeout(5_000) { g.fuera.llegoALaPuerta.await() } }
             assertEquals("mientras se avisa fuera, la UI sigue en la sesión", emptyList<String>(), vigila.huecos.toList())
             puerta.complete(Unit)
             vuelta.join()
