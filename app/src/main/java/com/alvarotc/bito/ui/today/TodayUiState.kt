@@ -14,9 +14,11 @@ import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.CandidatoGordo
 import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.LoGordo
+import com.alvarotc.bito.domain.habla.Memoria
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.SubtituloGordo
+import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
@@ -119,7 +121,8 @@ data class TodayUiState(
     val candidatosGordo: List<CandidatoGordo> = emptyList(),
     val sugerenciaGordo: RefGordo? = null,
     val gordo: List<RefGordo> = emptyList(),
-    // Día duro (spec 5.10): el hábito que la tarjeta propone; el resto de pendientes espera sin prisa. null = día normal.
+    // Día duro (spec 5.5, 7.3): el hábito que la tarjeta propuso; el resto de pendientes espera sin prisa todo el día.
+    // "" si se sabe que es día duro pero no qué hábito; null = día normal.
     val diaDuro: String? = null,
 )
 
@@ -296,4 +299,30 @@ fun diaDuroDe(propuesta: Propuesta?): String? {
     val id = propuesta?.id ?: return null
     if (!id.startsWith(prefijo)) return null
     return id.removePrefix(prefijo).substringBeforeLast(':', "").ifBlank { null }
+}
+
+/**
+ * El día duro de [hoy] (spec §5.5, §7.3): dura todo el día lógico, aunque la tarjeta pase a la confirmación, a lo
+ * propuesto ya hecho o a otra situación. Se sabe por la propuesta de ahora y por lo que Habi recuerda de hoy: la vigente
+ * de `DIA_DURO`, la respuesta a una de ellas (su id es `DIA_DURO:<hábito>:<día>`) o, en [vista], el último hábito de
+ * día duro que la tarjeta propuso en esta sesión. Si hoy se mostró uno pero ya no se sabe cuál, "": todo pendiente
+ * espera. null en un día normal.
+ */
+fun diaDuroDeHoy(
+    propuesta: Propuesta?,
+    memoria: Memoria,
+    hoy: LogicalDay,
+    vista: String? = null,
+): String? {
+    val sufijo = ":$hoy"
+    val prefijo = "${Situacion.DIA_DURO.name}:"
+    return propuesta?.takeIf { it.id.endsWith(sufijo) }?.let(::diaDuroDe)
+        ?: memoria.vigentes.firstOrNull { it.situacion == Situacion.DIA_DURO && it.dia == hoy && !it.ref.isNullOrBlank() }?.ref
+        ?: vista
+        ?: memoria.eventos
+            .filter { it.tipo == TipoMemoria.RESPUESTA && it.dia == hoy && it.ref?.startsWith(prefijo) == true }
+            .maxByOrNull { it.creadoMillis }
+            ?.ref
+            ?.let { id -> id.removePrefix(prefijo).substringBeforeLast(':', "").ifBlank { null } }
+        ?: "".takeIf { memoria.mostradasHoy.any { it.situacion == Situacion.DIA_DURO } }
 }

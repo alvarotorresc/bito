@@ -12,6 +12,7 @@ import com.alvarotc.bito.data.db.EntryEntity
 import com.alvarotc.bito.data.db.HabitEntity
 import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
 import com.alvarotc.bito.data.habla.LoGordoRepository
+import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -25,7 +26,10 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.habla.AvisoAceptado
+import com.alvarotc.bito.domain.habla.Memoria
 import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.Situacion
+import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.GardenState
@@ -65,6 +69,17 @@ import java.util.UUID
 
 private const val EFECTOS_EN_COLA = 8
 
+/** Lo de [hoy] que dice si es día duro: respuestas y vigentes de `DIA_DURO` y si se llegó a mostrar uno. */
+private fun Memoria.soloDiaDuro(hoy: LogicalDay): Memoria =
+    Memoria(
+        eventos =
+            eventos.filter {
+                it.tipo == TipoMemoria.RESPUESTA && it.dia == hoy && it.ref?.startsWith("${Situacion.DIA_DURO.name}:") == true
+            },
+        vigentes = vigentes.filter { it.situacion == Situacion.DIA_DURO && it.dia == hoy },
+        mostradasHoy = mostradasHoy.filter { it.situacion == Situacion.DIA_DURO }.take(1),
+    )
+
 /** Backs the Today screen: derives its state and runs every registration action. */
 class TodayViewModel(
     domainState: DomainStateRepository,
@@ -91,6 +106,8 @@ class TodayViewModel(
     private val gordo: LoGordoRepository? = null,
     // Los «Vale, a las…» aceptados; null en los tests que no los usan.
     private val aceptados: AvisosAceptadosRepository? = null,
+    // Lo que Habi recuerda: de ahí sale que hoy es día duro aunque la propuesta cambie. null en los tests que no la usan.
+    private val memoria: MemoriaRepository? = null,
 ) : ViewModel() {
     private val jardinForzado = MutableStateFlow<GardenState?>(null)
 
@@ -131,11 +148,36 @@ class TodayViewModel(
                 .flatMapLatest { hoy -> aceptados.observeDe(hoy) }
         }
 
+    // De la memoria de hoy, solo lo que dice si es día duro: así una escritura cualquiera no rehace Hoy.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val memoriaDiaDuro: Flow<Memoria> =
+        if (memoria == null) {
+            flowOf(Memoria())
+        } else {
+            combine(settings.settings, clockTicks) { prefs, _ -> LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone()) }
+                .distinctUntilChanged()
+                .flatMapLatest { hoy -> memoria.observe(flowOf(hoy)).map { it.soloDiaDuro(hoy) } }
+                .distinctUntilChanged()
+        }
+
+    // El último hábito de día duro que propuso la tarjeta hoy, por si la vigente se reemplaza sin respuesta.
+    @Volatile private var diaDuroVisto: Pair<LogicalDay, String>? = null
+
+    private fun resolverDiaDuro(
+        propuesta: Propuesta?,
+        memoriaHoy: Memoria,
+        hoy: LogicalDay,
+    ): String? {
+        diaDuroDe(propuesta)?.takeIf { propuesta?.id?.endsWith(":$hoy") == true }?.let { diaDuroVisto = hoy to it }
+        return diaDuroDeHoy(propuesta, memoriaHoy, hoy, diaDuroVisto?.takeIf { it.first == hoy }?.second)
+    }
+
     private data class Extras(
         val badges: List<BadgeEntity>,
         val gordos: Pair<List<RefGordo>, List<RefGordo>>,
         val avisos: List<AvisoAceptado>,
         val propuesta: Propuesta?,
+        val memoria: Memoria,
     )
 
     val uiState: StateFlow<TodayUiState> =
@@ -147,8 +189,8 @@ class TodayViewModel(
                 rewards.observeOwnedItems(),
                 rewards.observeBalance(),
             ) { state, entities, prefs, owned, saldo -> Entradas(state, entities, prefs, owned, saldo) },
-            combine(rewards.observeBadges(), gordoDeDosDias, avisosDeHoy, propuesta) { badges, gordos, avisos, p ->
-                Extras(badges, gordos, avisos, p)
+            combine(rewards.observeBadges(), gordoDeDosDias, avisosDeHoy, propuesta, memoriaDiaDuro) { badges, gordos, avisos, p, m ->
+                Extras(badges, gordos, avisos, p, m)
             },
             rewards.observeRecentMovements(5),
             jardinForzado,
@@ -184,7 +226,7 @@ class TodayViewModel(
                 gordoHoy = gordos.first,
                 gordoAyer = gordos.second,
                 avisosHoy = extras.avisos,
-                diaDuro = diaDuroDe(extras.propuesta),
+                diaDuro = resolverDiaDuro(extras.propuesta, extras.memoria, hoy),
             )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
@@ -361,6 +403,7 @@ class TodayViewModel(
                         clockTicks = minuteTicks(),
                         gordo = container.loGordo,
                         aceptados = container.avisosAceptados,
+                        memoria = container.memoria,
                     )
                 }
             }

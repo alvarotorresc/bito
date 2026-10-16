@@ -20,6 +20,7 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
 import com.alvarotc.bito.data.habla.LoGordoRepository
+import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -156,6 +157,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                 clockTicks = ticks,
                 gordo = LoGordoRepository(db, now = { fixedNow }),
                 aceptados = AvisosAceptadosRepository(db),
+                memoria = MemoriaRepository(db, now = { fixedNow }),
             )
     }
 
@@ -206,6 +208,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         alCreadoVisto: () -> Unit = {},
         reducido: Boolean = false,
         abrirGordo: Boolean = false,
+        alGordoVisto: () -> Unit = {},
     ) {
         ConSistema(sonido, tacto, reducido) {
             CompositionLocalProvider(LocalAnclas provides registro) {
@@ -219,6 +222,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                         creado = creado,
                         alCreadoVisto = alCreadoVisto,
                         abrirGordo = abrirGordo,
+                        alGordoVisto = alGordoVisto,
                         vetaRachaDe = vetaRachaDe,
                     )
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
