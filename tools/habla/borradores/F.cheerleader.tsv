@@ -1,0 +1,91 @@
+bolsa	indice	etiquetas	es	en
+av_manana_titulo	0		¡Buenos días, {nombre}!	Good morning, {nombre}!
+av_manana_titulo	1		Buenos días, {nombre}. Día nuestro.	Morning, {nombre}. Our day.
+av_manana_titulo	2		Ya amanece y aquí estoy, {nombre}.	Dawn's here and so am I, {nombre}.
+av_manana_titulo	3		¡Arriba, {nombre}! Hay plan.	Up we get, {nombre}! We've a plan.
+av_manana_titulo	4		Un día nuevo, {nombre}. Tú y yo.	New day, {nombre}. You and me.
+av_manana_titulo	5	[lunes]	¡Lunes, {nombre}! Semana nueva.	Monday, {nombre}! Fresh week.
+av_manana_titulo	6	[viernes]	Viernes, {nombre}. Último empujón.	Friday, {nombre}. One last push.
+av_manana_titulo	7	[finde]	Mañana de finde, {nombre}.	Weekend morning, {nombre}.
+av_manana_titulo	8	[invierno]	¡Calentamos motores, {nombre}!	Warming up, {nombre}!
+av_manana_titulo	9		Buenos días. Tengo una idea para hoy.	Good morning. I have an idea for today.
+av_manana_titulo	10		{nombre}, ¿empezamos el día?	{nombre}, shall we start the day?
+av_manana_titulo	11		Buen día, {nombre}. Te esperaba.	Good day, {nombre}. I've been waiting.
+av_manana_titulo	12		¡Buenos días! Hoy pinta bien.	Good morning! Today looks good.
+av_manana_titulo	13		Un día nuevo. Tú y yo.	New day. You and me.
+av_manana_titulo_gordo	0		Hoy, a por lo gordo: {gordo}	Today, the big thing: {gordo}
+av_manana_titulo_gordo	1		¡Hoy nos toca: {gordo}!	Today's plan: {gordo}!
+av_manana_titulo_gordo	2		Buenos días. Hoy: {gordo}	Good morning. Today: {gordo}
+av_manana_titulo_gordo	3		Lo gordo de hoy: {gordo}	The big thing today: {gordo}
+av_manana_titulo_gordo	4		Tú y yo, hoy: {gordo}	You and me today: {gordo}
+av_manana_titulo_gordo	5	[lunes]	Lunes, y empezamos fuerte: {gordo}	Monday, and we start strong: {gordo}
+av_manana_titulo_gordo	6	[viernes]	Viernes. Para cerrar: {gordo}	Friday. To finish off: {gordo}
+av_manana_titulo_gordo	7	[finde]	Finde, y una cosa gorda: {gordo}	Weekend, one big thing: {gordo}
+av_manana_titulo_gordo	8		Buen día para: {gordo}	Good day for: {gordo}
+av_manana_titulo_gordo	9		Mi propuesta para hoy: {gordo}	My pick for today: {gordo}
+av_manana_titulo_gordo	10	[invierno]	Frío fuera, plan dentro: {gordo}	Cold out, plan in: {gordo}
+av_manana_titulo_gordo	11		Arrancamos con lo gordo: {gordo}	We start with the big thing: {gordo}
+av_recordatorio	0		Lo dejamos para ahora, como quedamos. ¡Vamos a ello!	We left it for now, as we agreed. Let's go!
+av_recordatorio	1		Esta es la hora que dijimos. Cuando quieras, empezamos.	This is the time we said. Start whenever you like.
+av_recordatorio	2		{nombre}, es ahora. Yo ya estoy aquí.	{nombre}, it's time. I'm already here.
+av_recordatorio	3		Ahora, como quedamos. Un ratito y lo tienes.	Now, like we said. A little while and it's done.
+av_recordatorio	4		Es la hora acordada. Tú y yo, ahora.	It's the time we agreed on. You and me, right now.
+av_recordatorio	5		Dijimos ahora, y ahora es. Aquí te espero.	We said now, and now is here. I'm waiting.
+av_recordatorio	6		Es el momento que elegiste. Te acompaño.	This is the moment you picked. I'm right here with you.
+av_recordatorio	7	[noche]	Ya es de noche, pero quedamos en esto. Un último empujón, tú y yo.	It's night, but we made a deal. One last push, you and me.
+av_recordatorio	8	[lunes]	Lunes y a la hora acordada. ¡Así se empieza la semana!	Monday, right on time. That's how a week starts!
+av_recordatorio	9		Lo que dejamos para ahora ya está aquí. Poco a poco, conmigo.	What we saved for now is here. Little by little, with me.
+av_recordatorio	10		Hora de lo acordado, {nombre}. Cuando estés, empezamos.	Time for what we agreed, {nombre}. Whenever you're ready, we start.
+av_recordatorio	11	[finde]	Es finde, pero esta hora la guardamos para esto. ¡Vamos!	It's the weekend, but we saved this hour for it. Let's go!
+av_noche_titulo	0		¡A cerrar el día, {nombre}!	Time to close the day, {nombre}!
+av_noche_titulo	1		Toca el cierre, y es corto. Vamos.	Close time, and it's a short one. Let's go.
+av_noche_titulo	2		Queda el cierre y descansamos.	Just the close, then we rest.
+av_noche_titulo	3		¿Cerramos el día, {nombre}?	Shall we close the day, {nombre}?
+av_noche_titulo	4		Última curva del día, {nombre}.	Last stretch of the day, {nombre}.
+av_noche_titulo	5	[viernes]	¡Viernes! Cerramos el día y a descansar.	Friday! We close up and rest.
+av_noche_titulo	6	[domingo]	Domingo de cierre, {nombre}.	Sunday close, {nombre}.
+av_noche_titulo	7		Un minuto y el día queda sellado.	One minute and the day is sealed.
+av_noche_titulo	8	[invierno]	Noche de invierno. A cerrar y a la manta.	Winter night. Close up, blanket time.
+av_noche_titulo	9		A cerrar, {nombre}. Estoy contigo.	Closing time, {nombre}. I'm with you.
+av_noche_titulo	10		El cierre te espera, {nombre}.	The close is waiting, {nombre}.
+av_noche_titulo	11	[lunes]	Primer cierre de la semana, {nombre}.	First close of the week, {nombre}.
+av_noche_cuerpo	0		Hoy: {hechos} de {total}. Un minuto para cerrar el día y a descansar.	Today: {hechos} of {total}. One minute to close the day, then rest.
+av_noche_cuerpo	1		Mañana empezamos por «{tarea}». Ahora, un minuto para cerrar el día.	Tomorrow we start with “{tarea}”. For now, one minute to close the day.
+av_noche_cuerpo	2		Gracias por el día, {nombre}. Cerramos y descansamos los dos.	Thanks for today, {nombre}. We close up and both get some rest.
+av_noche_cuerpo	3		Llevas {hechos} de {total}. Lo que falte, mañana tiene sitio.	{hechos} of {total} so far. Whatever's left, tomorrow has room.
+av_noche_cuerpo	4		Un cierre rápido y mañana arrancamos con la cabeza despejada.	A quick close and tomorrow we start with a clear head.
+av_noche_cuerpo	5	[viernes]	Viernes: {hechos} de {total}. Cierra el día y el finde empieza ya.	Friday: {hechos} of {total}. Close the day and the weekend starts now.
+av_noche_cuerpo	6	[domingo]	Domingo. Un cierre y la semana queda en orden. ¡Mañana, página nueva!	Sunday. One close and the week is in order. Tomorrow, a fresh page!
+av_noche_cuerpo	7		{hechos} de {total} hoy. Lo contamos, lo cerramos y seguimos mañana. ¡Tú y yo!	{hechos} of {total} today. We count it, close it, and carry on tomorrow. You and me!
+av_noche_cuerpo	8		Mañana empieza con «{tarea}», pero eso es mañana. Esta noche, solo el cierre.	Tomorrow begins with “{tarea}”, but that's tomorrow. Tonight, just the close.
+av_noche_cuerpo	9	[invierno]	Noche de frío. Un minuto de cierre y a la manta, {nombre}.	Cold night. A minute to close, then under the blanket, {nombre}.
+av_noche_cuerpo	10		{nombre}, ¿cerramos el día? Yo te acompaño en el cierre.	{nombre}, shall we close the day? I'll be with you through it.
+av_noche_cuerpo	11		Tu lista de hoy: {hechos} de {total}. Ahora el cierre, que es corto.	Your list for today: {hechos} of {total}. Now the close, which is short.
+av_noche_cuerpo	12		¡Se acaba el día! Un minuto de cierre y a descansar.	The day's wrapping up! One minute to close, then rest.
+av_noche_cuerpo	13		Cerramos el día y mañana seguimos, tú y yo.	We close the day and carry on tomorrow, you and me.
+av_aceptado_titulo	0		¡Vale, a las {hora}!	Okay, {hora} it is!
+av_aceptado_titulo	1		Quedamos a las {hora}.	See you at {hora}.
+av_aceptado_titulo	2		A las {hora}, tú y yo.	At {hora}, you and me.
+av_aceptado_titulo	3		Apuntado para las {hora}.	Down for {hora}.
+av_aceptado_titulo	4		¡Trato hecho, {nombre}!	It's a deal, {nombre}!
+av_aceptado_titulo	5		A las {hora}, sin falta.	{hora}, without fail.
+av_aceptado_titulo	6		Cuenta conmigo a las {hora}.	Count me in for {hora}.
+av_aceptado_titulo	7		Anotado, {nombre}. Ahí estaré.	Noted, {nombre}. I'll be there.
+av_aceptado_cuerpo	0		Lo gordo de hoy: {gordo}. Yo te aviso cuando llegue la hora.	The big thing today: {gordo}. I'll remind you when it's time.
+av_aceptado_cuerpo	1		¡Apuntado! A las {hora} te aviso yo; tú, a lo tuyo.	Noted! I'll remind you at {hora}; you carry on.
+av_aceptado_cuerpo	2		Hora puesta. Hasta entonces, lo gordo: {gordo}.	Time set. Until then, the big thing: {gordo}.
+av_aceptado_cuerpo	3		Ya está: a las {hora}. Mientras, lo gordo: {gordo}. Buen plan, {nombre}.	All set: {hora}. Meanwhile, the big thing: {gordo}. Good plan, {nombre}.
+av_aceptado_cuerpo	4		Apuntado: a las {hora}, yo me acuerdo. Tú, a lo gordo: {gordo}.	Noted: {hora}, I'll remember. You, on to the big thing: {gordo}.
+av_aceptado_cuerpo	5		Lo gordo, sin prisa: {gordo}. A las {hora}, estaré a tu lado.	The big thing, no rush: {gordo}. At {hora}, I'll be right beside you.
+av_aceptado_cuerpo	6		{nombre}, a las {hora} te aviso. ¡Cuenta conmigo!	{nombre}, I'll remind you at {hora}. Count on me!
+av_aceptado_cuerpo	7		Una cosa gorda, bien elegida: {gordo}. Nos vemos a las {hora}.	One big thing, well chosen: {gordo}. See you at {hora}.
+av_aceptado_cuerpo	8		A las {hora} te aviso yo. ¡Mientras, a lo tuyo!	I'll remind you at {hora}. Meanwhile, carry on!
+av_aceptado_cuerpo	9		Hecho: a las {hora} me acuerdo por ti.	Done: at {hora}, I'll remember for you.
+av_ausencia	0		{nombre}, te echo de menos por aquí. Cuando quieras, un hábito pequeño y seguimos.	{nombre}, I miss having you around. Whenever you like, one small habit and we pick up.
+av_ausencia	1		Han pasado unos días y aquí sigo, con la puerta abierta. Hoy basta con uno.	A few days have gone by and I'm still here, door open. Today, one is enough.
+av_ausencia	2		Hola, {nombre}. Sin cuentas pendientes: me alegraría verte hoy.	Hi, {nombre}. No tallies owed: I'd be glad to see you today.
+av_ausencia	3		Te he guardado el sitio. Un solo hábito hoy y empezamos otra vez, tú y yo.	I saved your spot. Just one habit today and we start again, you and me.
+av_ausencia	4		Echo de menos nuestras mañanas. ¿Probamos con algo pequeño hoy?	I miss our mornings. Shall we try something small today?
+av_ausencia	5		¡Qué ganas de verte, {nombre}! Hoy, con una cosa pequeña ya vale.	I can't wait to see you, {nombre}! One small thing today is plenty.
+av_ausencia	6		Aquí sigo, {nombre}. Volver cuesta un poco, lo sé; yo te acompaño.	Still here, {nombre}. Coming back takes some effort, I know; I'll go with you.
+av_ausencia	7		Cuando te venga bien, sin prisa: estoy aquí con lo de hoy preparado.	Whenever suits you, no rush: I'm here with today all set up.

@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -51,12 +53,15 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.DayDot
 import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogicalDay
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.ui.habi.HabiAvatar
@@ -104,9 +109,20 @@ fun DetailScreen(
     onBack: () -> Unit,
     onEdit: (String) -> Unit,
     onOpenHabi: () -> Unit,
+    // Editar con el objetivo que sugiere Habi (Tarea 29); sin él, editar a secas.
+    alEditarConObjetivo: (String, Int) -> Unit = { id, _ -> onEdit(id) },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val propuesta by viewModel.propuesta.collectAsStateWithLifecycle()
+    // «Editar con el objetivo que sugiere Habi»: el efecto llega por el flujo, no por el estado.
+    val editarConObjetivo by rememberUpdatedState(alEditarConObjetivo)
+    LaunchedEffect(viewModel) {
+        viewModel.efectos.collect { efecto ->
+            if (efecto is Efecto.EditarHabito) editarConObjetivo(efecto.habitId, efecto.objetivoSugerido)
+        }
+    }
+    // Al volver de Editar, la nota espera al estado nuevo antes de pintarse.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.alVolver() }
     // `uiState` arranca en `null` antes de su primera emisión Y cuando el hábito no existe: por tipo no se distinguen.
     // `hasLoaded` separa el único caso que importa: un hábito borrado (desde Ajustes o al importar) con su ficha
     // abierta vuelve atrás una vez visto; un `null` de arranque en frío nunca llama a onBack. `remember` a secas, no
@@ -428,23 +444,22 @@ private fun NotaDeHabi(
             Modifier.size(76.dp, 84.dp),
             animated = !BitoTema.reducido,
         )
-        Column(Modifier.weight(1f)) {
-            Crossfade(propuesta, animationSpec = tween(Duraciones.RELEVO_ENTRA), label = "nota-habi") { p ->
+        // El relevo (G33): la frase y sus botones se funden juntos cuando la propuesta cambia, sin que quede un botón huérfano.
+        val fundido = if (BitoTema.reducido) Duraciones.REDUCIDO else Duraciones.RELEVO_ENTRA
+        Crossfade(propuesta, Modifier.weight(1f), animationSpec = tween(fundido), label = "nota-habi") { p ->
+            Column {
                 Text(textoHabi(p.texto), style = BitoTema.tipos.t16.copy(lineHeight = 22.sp), color = colores.tinta)
-            }
-            if (propuesta.acciones.isNotEmpty()) {
-                Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
-                    if (Respuesta.VALE in propuesta.acciones) {
-                        val etiqueta = propuesta.etiquetaVale?.let { textoHabi(it) } ?: stringResource(R.string.ficha_vale)
-                        Boton(etiqueta, { alResponder(Respuesta.VALE) }, Modifier.testTag("habi-vale"), estilo = EstiloBoton.PRINCIPAL)
-                    }
-                    if (Respuesta.HOY_NO in propuesta.acciones) {
-                        Boton(
-                            stringResource(R.string.ficha_no_hace_falta),
-                            { alResponder(Respuesta.HOY_NO) },
-                            Modifier.testTag("habi-no"),
-                            estilo = EstiloBoton.FANTASMA,
-                        )
+                if (p.acciones.isNotEmpty()) {
+                    Row(Modifier.padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
+                        p.acciones.forEach { accion ->
+                            Boton(
+                                textoHabi(accion.etiqueta),
+                                { alResponder(accion.respuesta) },
+                                // 44 dp también de ancho: «Vale» es corto (review final de la pieza 3, M2).
+                                Modifier.widthIn(min = Medidas.toqueMinimo).testTag("habi-${accion.respuesta.name.lowercase()}"),
+                                estilo = if (accion.principal) EstiloBoton.PRINCIPAL else EstiloBoton.FANTASMA,
+                            )
+                        }
                     }
                 }
             }

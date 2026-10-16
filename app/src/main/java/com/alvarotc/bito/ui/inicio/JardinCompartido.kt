@@ -37,6 +37,8 @@ import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.garden.GardenLook
 import com.alvarotc.bito.ui.garden.GardenScene
+import com.alvarotc.bito.ui.garden.NOCHE_ABAJO
+import com.alvarotc.bito.ui.garden.NOCHE_ARRIBA
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Escena
@@ -171,6 +173,12 @@ fun JardinCompartido(
     saltoHabi: Int = 0,
     subida: () -> Float = { 0f },
     fiesta: Int = 0,
+    // 0 de día, 1 de noche: se pasa tal cual a la escena y oscurece también el cielo bajo la cabecera.
+    noche: () -> Float = { 0f },
+    // Cada incremento, Habi se aplasta para dormirse («Hasta mañana»).
+    aplastarHabi: Int = 0,
+    // Habi duerme (día sellado): tocarlo lo aplasta en vez de hacerlo saltar.
+    dormido: Boolean = false,
 ) {
     val densidad = LocalDensity.current
     val colores = BitoTema.colores
@@ -212,6 +220,12 @@ fun JardinCompartido(
                     drawRect(cielo, size = Size(size.width, b), alpha = qq)
                     val tinte = luzDe(luz)
                     if (tinte.alpha > 0f) drawRect(tinte, size = Size(size.width, b), alpha = qq, blendMode = BlendMode.Multiply)
+                    // El anochecer del cierre (G40) también oscurece este cielo, con el mismo tinte que la escena.
+                    val n = noche().coerceIn(0f, 1f)
+                    if (n > 0f) {
+                        val oscuro = Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO), startY = inicio, endY = b)
+                        drawRect(oscuro, size = Size(size.width, b), alpha = qq * n, blendMode = BlendMode.Multiply)
+                    }
                     val a = astroDe(luz)
                     val centro = Offset(size.width * a.x, inicio + (altoCamino - escenaAlto) * a.y)
                     if (a.sol > 0.01f) {
@@ -252,6 +266,9 @@ fun JardinCompartido(
                 destacar = destacar,
                 saltoHabi = saltoHabi,
                 fiesta = fiesta,
+                noche = noche,
+                aplastarHabi = aplastarHabi,
+                dormido = dormido,
             )
         }
     }

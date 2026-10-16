@@ -61,7 +61,7 @@ internal fun resumenAvisos(
         } else {
             unirHoras(settings.globalReminderMinutes, resources)
         }
-    val habi = unirHoras(listOf(settings.habiMorningMinutes, settings.reviewTimeMinutes), resources)
+    val habi = unirHoras(listOf(settings.habiMorningMinutes, settings.habiNightMinutes), resources)
     return resources.getString(R.string.ajustes_resumen_avisos, recordatorios, habi)
 }
 
@@ -148,7 +148,7 @@ fun ContenidoAvisos(
         FilaValor(
             etiqueta = stringResource(R.string.ajustes_avisos_habi),
             subtitulo = stringResource(R.string.ajustes_avisos_habi_sub),
-            valor = unirHoras(listOf(settings.habiMorningMinutes, settings.reviewTimeMinutes), context.resources),
+            valor = unirHoras(listOf(settings.habiMorningMinutes, settings.habiNightMinutes), context.resources),
             alPulsar = { hoja = HojaAvisos.HABI },
         )
         FilaValor(
@@ -228,7 +228,7 @@ fun ContenidoAvisos(
     HojaAvisosHabi(
         abierta = hoja == HojaAvisos.HABI,
         manana = settings.habiMorningMinutes,
-        noche = settings.reviewTimeMinutes,
+        noche = settings.habiNightMinutes,
         alGuardarManana = settingsViewModel::setHabiMorning,
         alGuardarNoche = settingsViewModel::setHabiNight,
         alCerrar = { hoja = null },

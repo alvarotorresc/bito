@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
@@ -15,6 +18,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
+import com.alvarotc.bito.data.habla.LoGordoRepository
+import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -23,8 +29,10 @@ import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -57,6 +65,10 @@ import java.time.ZoneId
 class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
     val flujo = MutableStateFlow(inicial)
     val respuestas = mutableListOf<Respuesta>()
+    val horas = mutableListOf<Int?>()
+
+    /** Lo que devuelve la siguiente respuesta; por defecto, nada que hacer. */
+    var efecto: Efecto = Efecto.Ninguno
 
     override fun propuesta(
         ambito: Ambito,
@@ -66,8 +78,17 @@ class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
     override suspend fun responder(
         id: String,
         respuesta: Respuesta,
-    ) {
+        hora: Int?,
+    ): Efecto {
         respuestas += respuesta
+        horas += hora
+        return efecto
+    }
+
+    val gordoGuardado = mutableListOf<List<RefGordo>>()
+
+    override suspend fun guardarGordo(refs: List<RefGordo>) {
+        gordoGuardado += refs
     }
 }
 
@@ -86,6 +107,15 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
     val registro = RegistroAnclas()
     val avisos = AvisoEstado()
     val llamadas = mutableListOf<String>()
+
+    /** El hábito cuya veta de racha dura ahora (el que Inicio pasa a la lista), si hay. */
+    var vetaRachaDe by mutableStateOf<String?>(null)
+
+    /** Los saltos de Habi que la lista pide al Inicio (true: con su voz, el de la vuelta). */
+    val saltos = mutableListOf<Boolean>()
+
+    /** Si no es null, los permisos que pide Hoy se resuelven con este registro (el diálogo del sistema). */
+    var registroResultados: androidx.activity.result.ActivityResultRegistry? = null
     var fichaAbierta: String? = null
     val navegar =
         NavegacionInicio(
@@ -131,6 +161,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                 defaultDispatcher = dispatcherVM,
                 propuestas = fuente,
                 clockTicks = ticks,
+                gordo = LoGordoRepository(db, now = { fixedNow }),
+                aceptados = AvisosAceptadosRepository(db),
+                memoria = MemoriaRepository(db, now = { fixedNow }),
             )
     }
 
@@ -169,8 +202,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         reducido: Boolean = false,
+        abrirGordo: Boolean = false,
     ) {
-        rule.setContent { Contenido(creado, alCreadoVisto, reducido) }
+        rule.setContent { Contenido(creado, alCreadoVisto, reducido, abrirGordo) }
         rule.waitForIdle()
     }
 
@@ -179,19 +213,33 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         reducido: Boolean = false,
+        abrirGordo: Boolean = false,
+        alGordoVisto: () -> Unit = {},
     ) {
         ConSistema(sonido, tacto, reducido) {
             CompositionLocalProvider(LocalAnclas provides registro) {
                 Box(Modifier.fillMaxSize()) {
-                    HoyLista(
-                        vm,
-                        navegar,
-                        rememberLazyListState(),
-                        avisos,
-                        encabezado = {},
-                        creado = creado,
-                        alCreadoVisto = alCreadoVisto,
-                    )
+                    val registroOwner =
+                        registroResultados?.let { r ->
+                            object : androidx.activity.result.ActivityResultRegistryOwner {
+                                override val activityResultRegistry = r
+                            }
+                        } ?: androidx.activity.compose.LocalActivityResultRegistryOwner.current
+                    CompositionLocalProvider(androidx.activity.compose.LocalActivityResultRegistryOwner provides registroOwner!!) {
+                        HoyLista(
+                            vm,
+                            navegar,
+                            rememberLazyListState(),
+                            avisos,
+                            encabezado = {},
+                            creado = creado,
+                            alCreadoVisto = alCreadoVisto,
+                            abrirGordo = abrirGordo,
+                            alGordoVisto = alGordoVisto,
+                            vetaRachaDe = vetaRachaDe,
+                            alSaltoHabi = { saltos += it },
+                        )
+                    }
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
                 }
             }

@@ -2,11 +2,11 @@ package com.alvarotc.bito.ui.notifications
 
 import android.content.Context
 import com.alvarotc.bito.AppContainer
-import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.ui.AppVisibility
 import com.alvarotc.bito.ui.celebration.CelebrationGate
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.inicio.resolverTextoHabi
 import kotlinx.coroutines.flow.first
 
 /**
@@ -32,7 +32,9 @@ object PerfectDayNotifier {
         context: Context,
         prefs: Settings,
     ): String {
-        val name = prefs.userName.ifBlank { context.getString(R.string.habi_name_fallback) }
-        return context.getString(HabiVoice.perfectDayNotifRes(prefs.personality), name)
+        return resolverTextoHabi(
+            HabiVoice.conNombre(HabiVoice.perfectDayNotifRes(prefs.personality), prefs.userName),
+            context.resources,
+        )
     }
 }

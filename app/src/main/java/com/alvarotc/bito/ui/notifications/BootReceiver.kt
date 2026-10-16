@@ -4,6 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import com.alvarotc.bito.BitoApp
+import com.alvarotc.bito.data.repo.HabitsRepository
+import com.alvarotc.bito.data.settings.SettingsRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -35,14 +37,7 @@ class BootReceiver : BroadcastReceiver() {
 
     private suspend fun handle(context: Context) {
         val container = (context.applicationContext as BitoApp).container
-        val prefs = container.settings.settings.first()
-        val entities = container.habits.observeHabits().first()
-        ReminderScheduler.scheduleAll(
-            context,
-            ReminderScheduler.slotsOf(prefs, entities),
-            System.currentTimeMillis(),
-            ZoneId.systemDefault(),
-        )
+        reprogramar(context, container.settings, container.habits, container.avisosHabi)
 
         // Tras reiniciar, las alarmas y las notificaciones se pierden las dos. Una sesion de foco
         // cuyo fin sigue en el futuro se reprograma y se vuelve a postear; una que ya paso se
@@ -57,6 +52,27 @@ class BootReceiver : BroadcastReceiver() {
                 container.focus.clear()
                 Notifier.cancelFocus(context)
             }
+        }
+    }
+
+    companion object {
+        /** Lo que se reprograma tras reiniciar: los recordatorios de siempre y los avisos de Habi. La costura que prueban los tests. */
+        internal suspend fun reprogramar(
+            context: Context,
+            settings: SettingsRepository,
+            habits: HabitsRepository,
+            avisos: AvisosHabi,
+        ) {
+            val prefs = settings.settings.first()
+            val entities = habits.observeHabits().first()
+            ReminderScheduler.scheduleAll(
+                context,
+                ReminderScheduler.slotsOf(prefs, entities),
+                System.currentTimeMillis(),
+                ZoneId.systemDefault(),
+            )
+            // Los avisos de Habi de hoy, con los aceptados pendientes (spec §6.4); los de otros días pierden su alarma.
+            avisos.replanificar()
         }
     }
 }

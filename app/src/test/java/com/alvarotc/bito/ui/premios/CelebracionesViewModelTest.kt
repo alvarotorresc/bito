@@ -249,6 +249,46 @@ class CelebracionesViewModelTest {
             assertEquals(MarcaLibro(11, "r"), marca())
         }
 
+    /** Cerrar el cierre sin sellar (✕ o atrás): lo retenido sale en Hoy. */
+    @Test
+    fun `while the day close is open nothing plays and it resumes when the close goes down`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.enHoy(true)
+            vm.retenerCierre(true)
+            advanceUntilIdle()
+            db.pointsLedgerDao().insertAll(listOf(fila("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5)))
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            // Hoy vuelve a decir que se ve (cambia el primer plano): el cierre sigue mandando.
+            vm.enHoy(true)
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+
+            vm.retenerCierre(false)
+            advanceUntilIdle()
+            assertEquals(TipoVeta.RACHA, (vm.actual.value as Momento.Veta).tipo)
+        }
+
+    /** Montar Hoy dice «cierre cerrado» antes que «Hoy visible»: eso no puede apagar lo que ya suena. */
+    @Test
+    fun `saying the close is shut while something plays does not stop it`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            insertar("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5)
+            vm = crear()
+            advanceUntilIdle()
+            val sonando = vm.actual.value
+
+            vm.retenerCierre(false)
+            vm.enHoy(true)
+            advanceUntilIdle()
+
+            assertEquals(TipoVeta.RACHA, (sonando as Momento.Veta).tipo)
+            assertEquals(sonando, vm.actual.value)
+        }
+
     @Test
     fun `after a restore nothing old is celebrated`() =
         runTest(dispatcher) {
@@ -458,5 +498,196 @@ class CelebracionesViewModelTest {
             vm.terminado(vm.actual.value!!)
             advanceUntilIdle()
             assertEquals(700L, visto())
+        }
+
+    // --- El cierre del día: cadena retenida, soltada tras sellar y apuntada con «Hasta mañana» (pieza 4, §7.5) ---
+
+    private val conEspecialYEtapa =
+        GardenState.INITIAL.let { g0 ->
+            g0.copy(specials = setOf(GardenSpecial.LANTERN), plots = g0.plots + GardenPlot(GardenSpecies.SUNFLOWERS, GrowthStage.SEED))
+        }
+
+    @Test
+    fun `the queue is held while the close is open`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.pointsLedgerDao().insertAll(
+                listOf(fila("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5), fila("a", 12, PointsReason.HABIT_DONE, "h1:$hoy")),
+            )
+            advanceUntilIdle()
+            // La marca de una fila en el cierre da su moneda; la veta espera.
+            val monedas = vm.actual.value as Momento.Monedas
+            vm.terminado(monedas)
+            advanceUntilIdle()
+            assertNull("la veta de racha sigue retenida", vm.actual.value)
+        }
+
+    @Test
+    fun `after sealing the chain plays in G14 order`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            vm.jardin(GardenState.INITIAL)
+            advanceUntilIdle()
+            db.badgeDao().insert(BadgeEntity("first-habit", 500))
+            db.pointsLedgerDao().insertAll(
+                listOf(fila("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5), fila("d", 10, PointsReason.PERFECT_DAY, "day:$hoy", 3)),
+            )
+            vm.jardin(conEspecialYEtapa)
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+
+            vm.soltarCadena()
+            val vistos = mutableListOf<Momento>()
+            repeat(5) {
+                val m = vm.actual.value!!
+                vistos += m
+                vm.terminado(m)
+                advanceUntilIdle()
+            }
+            assertEquals(listOf(2, 5, 6, 7, 8), vistos.map { it.orden })
+            assertNull(vm.actual.value)
+        }
+
+    @Test
+    fun `see you tomorrow in the middle of the chain advances the celebrated ledger mark`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            vm.jardin(GardenState.INITIAL)
+            advanceUntilIdle()
+            db.badgeDao().insert(BadgeEntity("first-habit", 500))
+            db.pointsLedgerDao().insertAll(
+                listOf(fila("d", 10, PointsReason.PERFECT_DAY, "day:$hoy", 3), fila("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5)),
+            )
+            vm.jardin(conEspecialYEtapa)
+            advanceUntilIdle()
+            vm.soltarCadena()
+            assertEquals(TipoVeta.DIA, (vm.actual.value as Momento.Veta).tipo)
+
+            vm.apuntarSinCelebrar()
+            assertNull("lo que suena termina", vm.actual.value)
+            vm.retenerCierre(false) // la cámara baja: nada de lo apuntado sale en Hoy
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            assertEquals(MarcaLibro(11, "r"), marca())
+            assertTrue(visto() >= 500)
+            assertEquals(hoy, settingsRepo.settings.first().perfectDayCelebratedDay)
+        }
+
+    @Test
+    fun `see you tomorrow before the chain has arrived still notes everything`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insert(BadgeEntity("first-habit", 500))
+            db.pointsLedgerDao().insertAll(listOf(fila("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5)))
+            vm.soltarCadena()
+            vm.apuntarSinCelebrar() // el libro aún no ha llegado al modelo
+            vm.retenerCierre(false)
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            assertEquals(MarcaLibro(11, "r"), marca())
+            assertTrue(visto() >= 500)
+        }
+
+    @Test
+    fun `nothing is celebrated again the next morning`() =
+        runTest(dispatcher) {
+            settingsRepo.update { it.copy(celebratedLedgerMark = MarcaLibro(0, "")) }
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insertAll(listOf(BadgeEntity("first-habit", 500), BadgeEntity("perfect-day-1", 500)))
+            db.pointsLedgerDao().insertAll(
+                listOf(fila("d", 10, PointsReason.PERFECT_DAY, "day:$hoy", 3), fila("r", 11, PointsReason.STREAK_MILESTONE, "h1:7", 5)),
+            )
+            advanceUntilIdle()
+            vm.soltarCadena()
+            vm.apuntarSinCelebrar()
+            vm.retenerCierre(false)
+            advanceUntilIdle()
+
+            // A la mañana siguiente, un proceso nuevo con el mismo libro.
+            val manana = crear()
+            manana.enHoy(true)
+            manana.jardin(conEspecialYEtapa)
+            advanceUntilIdle()
+            manana.jardin(conEspecialYEtapa)
+            advanceUntilIdle()
+            assertNull(manana.actual.value)
+        }
+
+    @Test
+    fun `two badges at the same instant are both celebrated`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insertAll(listOf(BadgeEntity("perfect-day-1", 500), BadgeEntity("first-habit", 500)))
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            vm.soltarCadena()
+            val primero = vm.actual.value as Momento.Logro
+            vm.terminado(primero)
+            advanceUntilIdle()
+            val segundo = vm.actual.value as Momento.Logro
+            assertEquals(listOf("first-habit", "perfect-day-1"), listOf(primero.badgeId, segundo.badgeId))
+            vm.terminado(segundo)
+            advanceUntilIdle()
+            assertTrue(visto() >= 500)
+        }
+
+    @Test
+    fun `see you tomorrow on the first of two simultaneous badges marks both as seen`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            advanceUntilIdle()
+            db.badgeDao().insertAll(listOf(BadgeEntity("perfect-day-1", 500), BadgeEntity("first-habit", 500)))
+            advanceUntilIdle()
+            vm.soltarCadena()
+            assertEquals("first-habit", (vm.actual.value as Momento.Logro).badgeId)
+            vm.apuntarSinCelebrar()
+            vm.retenerCierre(false)
+            advanceUntilIdle()
+            assertNull(vm.actual.value)
+            assertTrue(visto() >= 500)
+        }
+
+    @Test
+    fun `after the close a new process only notes its first garden`() =
+        runTest(dispatcher) {
+            vm = crear()
+            vm.retenerCierre(true)
+            vm.enHoy(true)
+            vm.jardin(GardenState.INITIAL)
+            vm.jardin(conEspecialYEtapa)
+            advanceUntilIdle()
+            vm.soltarCadena()
+            vm.apuntarSinCelebrar()
+            vm.retenerCierre(false)
+            advanceUntilIdle()
+
+            // Arranque en frío: el primer jardín que llega (ya cargado) solo se apunta.
+            val frio = crear()
+            frio.enHoy(true)
+            frio.jardin(conEspecialYEtapa)
+            advanceUntilIdle()
+            assertNull(frio.actual.value)
         }
 }

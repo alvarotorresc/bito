@@ -12,17 +12,16 @@ import com.alvarotc.bito.domain.model.Personality
 enum class ReminderFlavor { MORNING, AFTERNOON, EVENING }
 
 /**
- * Resolves what a reminder or review notification says, by [Personality] and — for the GLOBAL
+ * Resolves what a reminder notification says, by [Personality] and — for the GLOBAL
  * reminder — [ReminderFlavor]. A pure lookup table in the [com.alvarotc.bito.ui.habi.HabiVoice]
  * mold: this decides WHICH string speaks; [Notifier] renders it. Copy lives in
  * `res/values{,-es}/strings_notifications.xml`, written in each personality's docs/07 register.
  *
  * Placeholder contracts (every sibling key keeps the same one so the render call is uniform):
- * - [titleRes] / [reviewTitleRes] / [tasksTitleRes] — `%1$s` = the user's name.
+ * - [titleRes] — `%1$s` = the user's name.
+ * - [tasksTitleRes] — plurals keyed by the notice count: `%1$s` = the user's name, `%2$d` = that count.
  * - [bodyRes] — plurals keyed by the pending count: `%1$d` = pending count, `%2$s` = up to
  *   [MAX_NAMED_PENDING] pending names joined, `%3$d` = done today, `%4$d` = total today.
- * - [reviewBodyRes] — plurals keyed by the still-to-decide count: `%1$d` = that count.
- * - [reviewSealOnlyRes] — no placeholders: nothing to decide today, only past days unsealed.
  *
  * The TASKS body has no personality-voiced resolver here: [Notifier.showTasks] joins the named
  * titles itself and appends `R.plurals.notif_tasks_more` directly, the same way it reaches for
@@ -74,6 +73,33 @@ object ReminderVoice {
                 }
         }
 
+    /** [titleRes] para quien no ha dado su nombre: la misma frase sin apodo y sin `%1$s`. */
+    @StringRes
+    fun titleSinNombreRes(
+        personality: Personality,
+        flavor: ReminderFlavor,
+    ): Int =
+        when (personality) {
+            Personality.SARGENTO ->
+                when (flavor) {
+                    ReminderFlavor.MORNING -> R.string.notif_reminder_title_sargento_morning_sin_nombre
+                    ReminderFlavor.AFTERNOON -> R.string.notif_reminder_title_sargento_afternoon_sin_nombre
+                    ReminderFlavor.EVENING -> R.string.notif_reminder_title_sargento_evening_sin_nombre
+                }
+            Personality.CHEERLEADER ->
+                when (flavor) {
+                    ReminderFlavor.MORNING -> R.string.notif_reminder_title_cheerleader_morning_sin_nombre
+                    ReminderFlavor.AFTERNOON -> R.string.notif_reminder_title_cheerleader_afternoon_sin_nombre
+                    ReminderFlavor.EVENING -> R.string.notif_reminder_title_cheerleader_evening_sin_nombre
+                }
+            Personality.NEUTRA ->
+                when (flavor) {
+                    ReminderFlavor.MORNING -> R.string.notif_reminder_title_neutra_morning_sin_nombre
+                    ReminderFlavor.AFTERNOON -> R.string.notif_reminder_title_neutra_afternoon_sin_nombre
+                    ReminderFlavor.EVENING -> R.string.notif_reminder_title_neutra_evening_sin_nombre
+                }
+        }
+
     @PluralsRes
     fun bodyRes(
         personality: Personality,
@@ -100,36 +126,22 @@ object ReminderVoice {
                 }
         }
 
-    @StringRes
-    fun reviewTitleRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.string.notif_review_title_sargento
-            Personality.CHEERLEADER -> R.string.notif_review_title_cheerleader
-            Personality.NEUTRA -> R.string.notif_review_title_neutra
-        }
-
+    /** Plural por el número de avisos de tareas (spec §8.6): `%1$s` = nombre, `%2$d` = cuántas. */
     @PluralsRes
-    fun reviewBodyRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.plurals.notif_review_body_sargento
-            Personality.CHEERLEADER -> R.plurals.notif_review_body_cheerleader
-            Personality.NEUTRA -> R.plurals.notif_review_body_neutra
-        }
-
-    @StringRes
-    fun reviewSealOnlyRes(personality: Personality): Int =
-        when (personality) {
-            Personality.SARGENTO -> R.string.notif_review_seal_sargento
-            Personality.CHEERLEADER -> R.string.notif_review_seal_cheerleader
-            Personality.NEUTRA -> R.string.notif_review_seal_neutra
-        }
-
-    @StringRes
     fun tasksTitleRes(personality: Personality): Int =
         when (personality) {
-            Personality.SARGENTO -> R.string.notif_tasks_title_sargento
-            Personality.CHEERLEADER -> R.string.notif_tasks_title_cheerleader
-            Personality.NEUTRA -> R.string.notif_tasks_title_neutra
+            Personality.SARGENTO -> R.plurals.notif_tasks_title_sargento
+            Personality.CHEERLEADER -> R.plurals.notif_tasks_title_cheerleader
+            Personality.NEUTRA -> R.plurals.notif_tasks_title_neutra
+        }
+
+    /** [tasksTitleRes] sin nombre: `%2$d` sigue siendo el número de avisos (pásese un primer argumento vacío). */
+    @PluralsRes
+    fun tasksTitleSinNombreRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.plurals.notif_tasks_title_sargento_sin_nombre
+            Personality.CHEERLEADER -> R.plurals.notif_tasks_title_cheerleader_sin_nombre
+            Personality.NEUTRA -> R.plurals.notif_tasks_title_neutra_sin_nombre
         }
 
     /** M11: el titulo del recordatorio diario de respirar. */
@@ -139,6 +151,15 @@ object ReminderVoice {
             Personality.SARGENTO -> R.string.notif_breathing_title_sargento
             Personality.CHEERLEADER -> R.string.notif_breathing_title_cheerleader
             Personality.NEUTRA -> R.string.notif_breathing_title_neutra
+        }
+
+    /** [breathingTitleRes] para quien no ha dado su nombre. */
+    @StringRes
+    fun breathingTitleSinNombreRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.notif_breathing_title_sargento_sin_nombre
+            Personality.CHEERLEADER -> R.string.notif_breathing_title_cheerleader_sin_nombre
+            Personality.NEUTRA -> R.string.notif_breathing_title_neutra_sin_nombre
         }
 
     /** M11: el cuerpo del recordatorio diario de respirar. */

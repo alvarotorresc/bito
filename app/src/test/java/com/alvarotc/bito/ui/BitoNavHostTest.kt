@@ -239,13 +239,13 @@ class BitoNavHostTest {
     }
 
     /**
-     * Same limitation [com.alvarotc.bito.ui.review.ReviewScreenTest]'s own copy documents:
+     * Same limitation the old review screen test documented:
      * `createComposeRule()` has no exposed `.activity` to read a working
      * [OnBackPressedDispatcherOwner] back off of, so the only deterministic way to drive a system
      * back press under this harness is to provide the composition OUR OWN dispatcher instance and
      * invoke it ourselves from outside. Compose Navigation's own `NavHost` registers its back
      * handling against whatever [LocalOnBackPressedDispatcherOwner] it finds, so wrapping the
-     * whole [BitoNavHost] in this owner (rather than a single screen, as `ReviewScreenTest` does)
+     * whole [BitoNavHost] in this owner (rather than a single screen)
      * lets a test drive the NAV GRAPH's own back stack, not just one screen's `BackHandler`.
      */
     private class FakeBackDispatcherOwner : OnBackPressedDispatcherOwner {
@@ -344,16 +344,16 @@ class BitoNavHostTest {
         NavRequests.open("stats")
         compose.waitForIdle()
         assertNull(NavRequests.pending.value)
-        assertEquals("today", compose.runOnUiThread { nav.currentDestination?.route })
+        assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
     }
 
+    /** Antes iba también «review» → "review"; ahora abre el cierre dentro del Inicio (casos del cierre, más abajo). */
     @Test
-    fun `deep links to review, tasks, focus and breathing still work`() {
+    fun `deep links to tasks, focus and breathing still work`() {
         lateinit var nav: NavHostController
         setContentWithNav { nav = it }
         val esperadas =
             mapOf(
-                "review" to "review",
                 "tasks" to "tasks",
                 "focus" to "focus?taskId={taskId}",
                 "breathing" to "breathing",
@@ -363,7 +363,7 @@ class BitoNavHostTest {
             compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == ruta }
             assertNull(NavRequests.pending.value)
             compose.runOnUiThread { nav.popBackStack() }
-            compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == "today" }
+            compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == RUTA_HOY }
         }
     }
 
@@ -409,15 +409,47 @@ class BitoNavHostTest {
         val vistos = mutableListOf<String?>()
         val observador = androidx.lifecycle.Observer<String?> { vistos += it }
         compose.runOnUiThread {
-            nav.getBackStackEntry("today").savedStateHandle.getLiveData<String?>("creado").observeForever(observador)
+            nav.getBackStackEntry(RUTA_HOY).savedStateHandle.getLiveData<String?>("creado").observeForever(observador)
         }
         compose.onNodeWithTag("save").performScrollTo()
         tapTag("save")
-        esperarRuta(nav, "today")
+        esperarRuta(nav, RUTA_HOY)
 
         val id = runBlocking { container.database.habitDao().all().single { it.name == "Agua" }.id }
         compose.runOnUiThread {
-            nav.getBackStackEntry("today").savedStateHandle.getLiveData<String?>("creado").removeObserver(observador)
+            nav.getBackStackEntry(RUTA_HOY).savedStateHandle.getLiveData<String?>("creado").removeObserver(observador)
+        }
+        assertTrue("Hoy recibió el id recién creado: $vistos", id in vistos)
+    }
+
+    /** P19: tras una petición que sustituye la entrada de Hoy (con argumentos), lo recién creado sigue llegando a Hoy. */
+    @Test
+    fun `a habit created from Inicio is still highlighted`() {
+        lateinit var nav: NavHostController
+        NavRequests.open("review")
+        setContentWithNav { nav = it }
+        esperarEtiqueta("cierre")
+        val app = ApplicationProvider.getApplicationContext<Application>()
+
+        compose.runOnUiThread { nav.navigate("habit") }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.onAllNodes(hasTestTag("name-field"), useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+        }
+        compose.onNode(hasSetTextAction() and hasAnyAncestor(hasTestTag("name-field"))).performTextInput("Agua")
+        compose.onNodeWithText(app.getString(R.string.preset_quantity)).performScrollTo().performClick()
+        compose.waitForIdle()
+        val vistos = mutableListOf<String?>()
+        val observador = androidx.lifecycle.Observer<String?> { vistos += it }
+        compose.runOnUiThread {
+            nav.getBackStackEntry(RUTA_HOY).savedStateHandle.getLiveData<String?>("creado").observeForever(observador)
+        }
+        compose.onNodeWithTag("save").performScrollTo()
+        tapTag("save")
+        esperarRuta(nav, RUTA_HOY)
+
+        val id = runBlocking { container.database.habitDao().all().single { it.name == "Agua" }.id }
+        compose.runOnUiThread {
+            nav.getBackStackEntry(RUTA_HOY).savedStateHandle.getLiveData<String?>("creado").removeObserver(observador)
         }
         assertTrue("Hoy recibió el id recién creado: $vistos", id in vistos)
     }
@@ -447,7 +479,7 @@ class BitoNavHostTest {
             Thread.sleep(50)
         }
         val id = runBlocking { container.database.taskDao().all().single { it.title == "Llamar al banco" }.id }
-        assertEquals(id, compose.runOnUiThread { nav.getBackStackEntry("today").savedStateHandle.get<String>("creado") })
+        assertEquals(id, compose.runOnUiThread { nav.getBackStackEntry(RUTA_HOY).savedStateHandle.get<String>("creado") })
         assertNull(compose.runOnUiThread { nav.getBackStackEntry("tasks").savedStateHandle.get<String>("creado") })
     }
 
@@ -538,18 +570,128 @@ class BitoNavHostTest {
             .assert(SemanticsMatcher.keyIsDefined(SemanticsProperties.StateDescription))
     }
 
+    /** Antes: la ruta "review". Ahora la misma petición pendiente abre el cierre dentro del Inicio, sin píldora ni +. */
     @Test
-    fun `a pending review request opens the review flow and hides the bar`() {
+    fun `a pending review request opens the day close inside Inicio and hides the pill`() {
         // Set BEFORE setContent: BitoNavHost's LaunchedEffect must observe the already-pending
         // route on its very first composition, the same way a notification tap's Intent extra
         // would already be waiting when onCreate() first builds the NavHost.
         NavRequests.open("review")
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
 
-        setContent()
-
-        // `review-seal` cuelga de la carga del repaso (Room y DataStore en hilos reales): se espera a esa condición.
-        esperarEtiqueta("review-seal")
+        // El cierre cuelga del Inicio, que espera a su carga (Room y DataStore en hilos reales): se espera a su etiqueta.
+        esperarEtiqueta("cierre")
         assertNull(NavRequests.pending.value)
+        assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
+        compose.onNodeWithTag("pildora", useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the review request opens the day close inside Inicio`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        esperarEtiqueta("inicio-hoy")
+
+        compose.runOnIdle { NavRequests.open("review") }
+
+        esperarEtiqueta("cierre")
+        assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
+        assertNull(NavRequests.pending.value)
+        // Una sola entrada de Hoy: la petición la sustituye en vez de apilar otra.
+        assertEquals(1, compose.runOnUiThread { nav.currentBackStack.value.count { it.destination.route == RUTA_HOY } })
+    }
+
+    @Test
+    fun `a review request from all tasks leaves only Today with the close in the stack`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        esperarEtiqueta("inicio-hoy")
+        compose.runOnUiThread { nav.navigate("tasks") }
+        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == "tasks" }
+
+        compose.runOnIdle { NavRequests.open("review") }
+
+        esperarEtiqueta("cierre")
+        val pila = compose.runOnUiThread { nav.currentBackStack.value.mapNotNull { it.destination.route } }
+        assertEquals(listOf(RUTA_HOY), pila)
+        assertEquals(true, compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getBoolean("cierre") })
+    }
+
+    @Test
+    fun `there is no review route any more`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        assertNull(compose.runOnUiThread { nav.graph.findNode("review") })
+        assertThrows(IllegalArgumentException::class.java) { compose.runOnUiThread { nav.navigate("review") } }
+    }
+
+    @Test
+    fun `back from the day close returns to Today on the same route`() {
+        val backOwner = FakeBackDispatcherOwner()
+        NavRequests.open("review")
+        setContentWithBack(backOwner)
+        esperarEtiqueta("cierre")
+
+        compose.runOnIdle { backOwner.onBackPressedDispatcher.onBackPressed() }
+        compose.waitUntil(timeoutMillis = 5_000) { !hayTag("cierre") }
+        compose.onNodeWithTag("pildora-hoy", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("inicio", useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun `the gordo request opens Today with the big thing flag`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        esperarEtiqueta("inicio-hoy")
+        val vistos = mutableListOf<Boolean?>()
+        val observador = androidx.lifecycle.Observer<Boolean?> { vistos += it }
+        val vista = "gordo-visto"
+
+        compose.runOnIdle { NavRequests.open("gordo") }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getBoolean("gordo") } == true
+        }
+        compose.runOnUiThread { nav.getBackStackEntry(RUTA_HOY).savedStateHandle.getLiveData<Boolean?>(vista).observeForever(observador) }
+
+        // HoyLista recibe abrirGordo y avisa de que lo ha visto: la entrada lo apunta y no vuelve a pedirlo.
+        compose.waitUntil(timeoutMillis = 5_000) { vistos.lastOrNull() == true }
+        compose.runOnUiThread { nav.getBackStackEntry(RUTA_HOY).savedStateHandle.getLiveData<Boolean?>(vista).removeObserver(observador) }
+        assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
+        assertNull(NavRequests.pending.value)
+        assertEquals(1, compose.runOnUiThread { nav.currentBackStack.value.count { it.destination.route == RUTA_HOY } })
+    }
+
+    @Test
+    fun `the today request goes back to the Today already open`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        esperarEtiqueta("inicio-hoy")
+        compose.runOnUiThread { nav.navigate("tasks") }
+        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == "tasks" }
+
+        compose.runOnIdle { NavRequests.open("today") }
+
+        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == RUTA_HOY }
+        assertEquals(1, compose.runOnUiThread { nav.currentBackStack.value.count { it.destination.route == RUTA_HOY } })
+        assertFalse(compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getBoolean("cierre") } ?: true)
+    }
+
+    @Test
+    fun `the habit form route takes an optional suggested target`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        esperarEtiqueta("inicio-hoy")
+
+        compose.runOnUiThread { nav.navigate("habit") }
+        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == RUTA_FORM_HABITO }
+        assertEquals(-1, compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getInt("objetivo") })
+
+        compose.runOnUiThread { nav.navigate("habit?objetivo=12") }
+        compose.waitUntil(timeoutMillis = 5_000) {
+            compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getInt("objetivo") } == 12
+        }
+        assertEquals(RUTA_FORM_HABITO, compose.runOnUiThread { nav.currentDestination?.route })
     }
 
     @Test
@@ -685,7 +827,7 @@ class BitoNavHostTest {
 
         // Held, not navigated: onboarding is still the one showing and review never opened over it.
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertExists()
-        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithTag("cierre", useUnmergedTree = true).assertDoesNotExist()
         // Genuinely still pending (not consumed into any ephemeral state): this is what makes the
         // hold rotation-safe -- NavRequests.pending is the one and only source of truth throughout.
         assertEquals("review", NavRequests.pending.value)
@@ -705,10 +847,10 @@ class BitoNavHostTest {
         compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
 
         compose.waitUntil(timeoutMillis = 5_000) {
-            compose.onAllNodesWithTag("review-seal", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
+            compose.onAllNodesWithTag("cierre", useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty()
         }
         compose.onNodeWithTag("onboarding-screen", useUnmergedTree = true).assertDoesNotExist()
-        compose.onNodeWithTag("review-seal", useUnmergedTree = true).assertExists()
+        compose.onNodeWithTag("cierre", useUnmergedTree = true).assertExists()
         assertNull(NavRequests.pending.value) // fired through the normal branch and consumed there
     }
 
@@ -861,7 +1003,7 @@ class BitoNavHostTest {
         compose.waitForIdle()
         compose.onNodeWithTag("onb-create-start", useUnmergedTree = true).performClick()
 
-        compose.waitUntil(timeoutMillis = 5_000) { hayTag("review-seal") }
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("cierre") }
         dejarPasar()
         assertTrue("el repaso no pinta la veta del día", !hayTag("veta-DIA"))
         assertTrue("el repaso no pinta ningún logro", !hayTag("hoja-logro"))
@@ -870,7 +1012,7 @@ class BitoNavHostTest {
         // La veta ya no sale aquí: la Hoy que asoma un instante bajo el onboarding la celebra a ciegas antes de que el
         // repaso tome la pantalla (ver el informe). Lo que sí sale, y solo al volver, es el logro del primer hábito.
         esperarAvanzando { hayTag("hoja-logro") }
-        assertEquals("today", compose.runOnUiThread { nav.currentDestination?.route })
+        assertEquals(RUTA_HOY, compose.runOnUiThread { nav.currentDestination?.route })
     }
 
     /**

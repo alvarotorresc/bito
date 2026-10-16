@@ -52,7 +52,7 @@ data class OnboardingUiState(
  * Backs the first-run onboarding flow (T6-T8 build the screens against this state/callback
  * contract). [finish] is the one place that writes: it closes the two gaps nothing else in the
  * app closes today — [com.alvarotc.bito.data.settings.Settings.userName] (every voiced string
- * falls back to "campeón" until this runs) and
+ * speaks without a name until this runs) and
  * [com.alvarotc.bito.data.settings.Settings.onboardingDone] — and, if the user named a first
  * habit, creates it through the exact same write path
  * [com.alvarotc.bito.ui.habitform.HabitFormViewModel.save] uses: a [HabitFormState] built here,
@@ -208,7 +208,7 @@ class OnboardingViewModel(
      * pager's swipe on a blank field, but this is the last line of defense against anything that
      * still reaches `finish()` with [OnboardingUiState.name] blank): a blank trimmed name never
      * overwrites [com.alvarotc.bito.data.settings.Settings.userName] — whatever was already stored
-     * (default `""`, same "campeón"/"champ" fallback everywhere else) is left as-is. Onboarding
+     * (default `""`, voiced texts then use their nameless twins) is left as-is. Onboarding
      * still completes either way.
      *
      * Guards on `busy` OR `done`, and never clears `busy` on the happy path — same reasoning as

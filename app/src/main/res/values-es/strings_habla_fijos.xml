@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Etiquetas de los botones de Habi (EtiquetasAccion). -->
+    <string name="habla_vale">Vale</string>
+    <string name="habla_vale_a_las">Vale, a las %1$s</string>
+    <string name="habla_vale_habito">Vale, %1$s</string>
+    <string name="habla_ahora">Ahora</string>
+    <string name="habla_empezar">Empezar</string>
+    <string name="habla_empezar_25">Empezar, 25 min</string>
+    <string name="habla_sesion_25">Sesión de 25 min</string>
+    <string name="habla_hecho">Hecho</string>
+    <string name="habla_cerrar_dia">Cerrar el día</string>
+    <string name="habla_elegir">Elegir</string>
+    <string name="habla_otra_hora">Otra hora</string>
+    <string name="habla_luego">Luego</string>
+    <string name="habla_todavia_no">Todavía no</string>
+    <string name="habla_ahora_no">Ahora no</string>
+    <string name="habla_no_hace_falta">No hace falta</string>
+    <string name="habla_permitir">Permitir</string>
+    <!-- Hoja de lo gordo, subtítulos de fila y avisos de la tarjeta. -->
+    <string name="habla_gordo_titulo">¿Qué es lo gordo de hoy?</string>
+    <string name="habla_gordo_desc">Lo que más pesa en tu día. Habi empieza por ahí.</string>
+    <string name="habla_gordo_nota_0">Elige de una a tres cosas.</string>
+    <string name="habla_gordo_nota_n">%1$d de 3. Lo demás cuenta igual, solo que no es lo gordo.</string>
+    <string name="habla_gordo_nota_3">Ya tienes tres. Para cambiar una, quita otra.</string>
+    <string name="habla_gordo_cuarta">Tres como mucho: así lo gordo sigue siendo gordo.</string>
+    <string name="habla_gordo_guardar">Guardar</string>
+    <string name="habla_gordo_aviso">Lo gordo de hoy: %1$s.</string>
+    <string name="habla_etiqueta_gordo">lo gordo</string>
+    <string name="habla_sub_tarea_hoy">Tarea de hoy</string>
+    <plurals name="habla_sub_tarea_vencida">
+        <item quantity="one">Tarea, vencida hace %d día</item>
+        <item quantity="other">Tarea, vencida hace %d días</item>
+    </plurals>
+    <string name="habla_sub_tarea_semana">Tarea de esta semana</string>
+    <string name="habla_sub_tarea">Tarea</string>
+    <string name="habla_sub_habito">Hábito</string>
+    <string name="habla_esperan_sin_prisa">Esperan sin prisa</string>
+    <string name="habla_manana">mañana</string>
+    <string name="habla_dia_cerrado">El día está cerrado. Puedes cambiarlo desde su ficha.</string>
+    <string name="habla_habi_duerme">Habi duerme. Mañana más.</string>
+    <string name="habla_mas_tarde">Más tarde</string>
+    <string name="habla_hecho_habito">Hecho: %1$s</string>
+    <string name="habla_mas_uno">+%1$d %2$s · %3$d/%4$d</string>
+    <string name="habla_manana_quitar">Mañana</string>
+</resources>

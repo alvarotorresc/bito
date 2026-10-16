@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Los avisos de Habi: la mañana, la noche y los aceptados. Los textos salen de las bolsas av_*. -->
+    <string name="avisohabi_canal">Avisos de Habi</string>
+</resources>

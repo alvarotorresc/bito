@@ -35,6 +35,7 @@ import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -42,7 +43,9 @@ import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.propuestas.Accion
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -64,6 +67,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -100,6 +104,7 @@ class DetailScreenTest {
     private var storeIndex = 0
     private var habiOpened = false
     private var edited: String? = null
+    private var editadoConObjetivo: Pair<String, Int>? = null
     private var backed = false
 
     private fun settingsStore(): DataStore<Preferences> =
@@ -155,6 +160,7 @@ class DetailScreenTest {
                     onBack = { backed = true },
                     onEdit = { edited = it },
                     onOpenHabi = { habiOpened = true },
+                    alEditarConObjetivo = { id, objetivo -> editadoConObjetivo = id to objetivo },
                 )
             }
         }
@@ -486,14 +492,28 @@ class DetailScreenTest {
                 override fun propuesta(
                     ambito: Ambito,
                     habitId: String?,
-                ): Flow<Propuesta?> = flowOf(Propuesta("p1", TextoHabi(R.string.got_it), setOf(Respuesta.VALE, Respuesta.HOY_NO)))
+                ): Flow<Propuesta?> =
+                    flowOf(
+                        Propuesta(
+                            "p1",
+                            TextoHabi(R.string.got_it),
+                            listOf(
+                                Accion(Respuesta.VALE, TextoHabi(R.string.ficha_vale), principal = true),
+                                Accion(Respuesta.HOY_NO, TextoHabi(R.string.ficha_no_hace_falta)),
+                            ),
+                        ),
+                    )
 
                 override suspend fun responder(
                     id: String,
                     respuesta: Respuesta,
-                ) {
+                    hora: Int?,
+                ): Efecto {
                     respuestas += respuesta
+                    return Efecto.Ninguno
                 }
+
+                override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
             }
         setContent("h1", propuestas = fuente)
 
@@ -504,6 +524,105 @@ class DetailScreenTest {
         assertEquals(listOf(Respuesta.VALE), respuestas)
     }
 
+    private fun fuenteDe(
+        propuesta: Propuesta,
+        efecto: Efecto = Efecto.Ninguno,
+        respuestas: MutableList<Respuesta> = mutableListOf(),
+    ) = object : FuentePropuestas {
+        override fun propuesta(
+            ambito: Ambito,
+            habitId: String?,
+        ): Flow<Propuesta?> = flowOf(propuesta)
+
+        override suspend fun responder(
+            id: String,
+            respuesta: Respuesta,
+            hora: Int?,
+        ): Efecto {
+            respuestas += respuesta
+            return efecto
+        }
+
+        override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    }
+
+    private val notaConAcciones =
+        Propuesta(
+            "FI_OBJETIVO:h1:20315",
+            TextoHabi(R.string.got_it),
+            listOf(
+                Accion(Respuesta.VALE, TextoHabi(R.string.ficha_vale), principal = true),
+                Accion(Respuesta.HOY_NO, TextoHabi(R.string.ficha_no_hace_falta)),
+            ),
+        )
+
+    @Test
+    fun `the note shows Vale and No need`() {
+        create()
+        setContent("h1", propuestas = fuenteDe(notaConAcciones))
+
+        compose.onNodeWithTag("habi-vale").performScrollTo().assertExists()
+        compose.onNodeWithTag("habi-hoy_no").assertExists()
+        compose.onNodeWithTag("habi-vale").assertHeightIsAtLeast(44.dp).assertWidthIsAtLeast(44.dp)
+        compose.onNodeWithTag("habi-hoy_no").assertHeightIsAtLeast(44.dp).assertWidthIsAtLeast(44.dp)
+    }
+
+    @Test
+    fun `the buttons are tagged by their answer, not by which one is principal`() {
+        create()
+        val cambiadas =
+            Propuesta(
+                "FI_HOY_FALTA:h1:20315",
+                TextoHabi(R.string.got_it),
+                listOf(
+                    Accion(Respuesta.HOY_NO, TextoHabi(R.string.ficha_no_hace_falta), principal = true),
+                    Accion(Respuesta.VALE, TextoHabi(R.string.ficha_vale)),
+                ),
+            )
+        setContent("h1", propuestas = fuenteDe(cambiadas))
+
+        compose.onNodeWithTag("habi-hoy_no").performScrollTo().assertExists()
+        compose.onNodeWithTag("habi-vale").assertExists()
+    }
+
+    @Test
+    fun `the objective note opens Edit with the suggested target`() {
+        create()
+        val respuestas = mutableListOf<Respuesta>()
+        setContent(
+            "h1",
+            propuestas = fuenteDe(notaConAcciones, Efecto.EditarHabito("h1", 15), respuestas),
+        )
+
+        compose.onNodeWithTag("habi-vale").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        assertEquals(listOf(Respuesta.VALE), respuestas)
+        assertEquals("h1" to 15, editadoConObjetivo)
+        assertNull(edited)
+    }
+
+    @Test
+    fun `an answer without effect does not navigate`() {
+        create()
+        setContent("h1", propuestas = fuenteDe(notaConAcciones))
+
+        compose.onNodeWithTag("habi-vale").performScrollTo().performClick()
+        compose.waitForIdle()
+
+        assertNull(editadoConObjetivo)
+        assertNull(edited)
+    }
+
+    @Test
+    fun `there is no note in read mode`() {
+        create()
+        setContent("h1", lectura = true, propuestas = fuenteDe(notaConAcciones))
+
+        compose.onNodeWithTag("nota-habi").assertDoesNotExist()
+        compose.onNodeWithTag("habi-vale").assertDoesNotExist()
+    }
+
     @Test
     fun `a note without actions has no buttons`() {
         create()
@@ -512,12 +631,15 @@ class DetailScreenTest {
                 override fun propuesta(
                     ambito: Ambito,
                     habitId: String?,
-                ): Flow<Propuesta?> = flowOf(Propuesta("p1", TextoHabi(R.string.got_it), emptySet()))
+                ): Flow<Propuesta?> = flowOf(Propuesta("p1", TextoHabi(R.string.got_it), emptyList()))
 
                 override suspend fun responder(
                     id: String,
                     respuesta: Respuesta,
-                ) = Unit
+                    hora: Int?,
+                ): Efecto = Efecto.Ninguno
+
+                override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
             }
         setContent("h1", propuestas = fuente)
 

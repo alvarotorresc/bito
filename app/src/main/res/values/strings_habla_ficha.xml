@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
+<resources>
+    <string-array name="habla_fi_hoy_falta_sargento">
+        <item>Still pending today. At {hora}? Then it\'s off your plate.</item>
+        <item>Pending today: {habito}. I say {hora}. No dithering.</item>
+        <item>Not done yet today. Lock in {hora} and keep it.</item>
+        <item>Today\'s habit is still unmarked. {hora}, then on to the next thing.</item>
+        <item>[tarde] Not much day left. Book {hora} and do it, no negotiating.</item>
+        <item>“{habito}” is still open. Pencil in {hora} and count on it.</item>
+        <item>[manana] Good morning to settle it: {hora}. One commitment, done.</item>
+        <item>It\'s on for today and not done yet. {hora} is yours; use it.</item>
+        <item>Still pending today. Do it and get it off your plate.</item>
+        <item>Pending today: {habito}. No dithering.</item>
+        <item>Today\'s habit is still unmarked. Now is a good time.</item>
+    </string-array>
+    <string-array name="habla_fi_hoy_falta_cheerleader">
+        <item>It\'s still waiting today. Shall we pencil it in for {hora}? I\'m right there with you.</item>
+        <item>There\'s a gap at {hora} today! Want me to pencil it in?</item>
+        <item>[manana] Good morning. {hora} looks like a great slot for this, and it\'ll almost do itself.</item>
+        <item>Today\'s one is still ahead of you, and {hora} looks good. Shall we meet there?</item>
+        <item>[noche] We still have time tonight. {hora}? One small push and it\'s done.</item>
+        <item>We\'ll get this one done today, you and me. Does {hora} work?</item>
+        <item>{habito}, today at {hora}. I\'ll be cheering from right here!</item>
+        <item>[finde] Easy weekend, but this one still needs its moment. {hora}, no rush?</item>
+        <item>Still waiting today. Shall we make room for it now? I\'m with you.</item>
+        <item>{habito}, still open today. There\'s still day left for this!</item>
+        <item>Today\'s one is still waiting for you. Whenever it suits you, I\'m here.</item>
+    </string-array>
+    <string-array name="habla_fi_hoy_falta_neutra">
+        <item>Still open today. Shall I remind you at {hora}?</item>
+        <item>Not done yet today. I can remind you at {hora}.</item>
+        <item>Still pending today. I\'ll remind you at {hora} if you like.</item>
+        <item>Still open today: “{habito}”. Shall we set it for {hora}?</item>
+        <item>[noche] There\'s still room today. If it suits you, I\'ll remind you at {hora}.</item>
+        <item>[manana] You have the whole day for this one. Shall I remind you at {hora}?</item>
+        <item>“{habito}” is still open today. Shall I remind you at {hora}?</item>
+        <item>[tarde] The afternoon still has room for this. I\'ll remind you at {hora}.</item>
+        <item>[viernes] It\'s Friday and this one is still open. Remind you at {hora}?</item>
+        <item>Still open today. Now or later, as you prefer.</item>
+        <item>Not done yet today. There\'s still time for it.</item>
+        <item>Still open today: {habito}. Whenever it suits you.</item>
+    </string-array>
+    <string-array name="habla_fi_objetivo_sargento">
+        <item>{pct} % in 30 days. What if we make it {objetivo}? You can raise it later.</item>
+        <item>This target asks for more than your month has room for. What if we make it {objetivo}?</item>
+        <item>30-day completion: {pct} %. A target of {objetivo} fits better. Change it?</item>
+        <item>Better a target you hit than one you stare at. What if we make it {objetivo}?</item>
+        <item>Adjusting isn\'t quitting, it\'s aiming. What if we make it {objetivo}?</item>
+        <item>At {objetivo} the habit fits into your day without a fight. Shall we try?</item>
+        <item>[lunes] Monday: a good day to start with a new measure. What if we make it {objetivo}?</item>
+    </string-array>
+    <string-array name="habla_fi_objetivo_cheerleader">
+        <item>This month was a stretch ({pct} %). What if we set it to {objetivo}?</item>
+        <item>What if we set it to {objetivo}? With a lighter goal there\'ll be more days to celebrate!</item>
+        <item>Let\'s try {objetivo} for a while. We raise it again whenever you say.</item>
+        <item>Idea: {objetivo} as the goal. Easier to hit, and that\'s how consistency grows.</item>
+        <item>{pct} % in 30 days, and you\'re still here. Lower the goal to {objetivo}?</item>
+        <item>No pressure: {objetivo} as the goal, and we see how it feels. You call it.</item>
+        <item>{habito}: what if the goal were {objetivo}? I want to see you win more days.</item>
+    </string-array>
+    <string-array name="habla_fi_objetivo_neutra">
+        <item>This month: {pct} % done. What if we set it to {objetivo}?</item>
+        <item>Maybe a goal of {objetivo} fits your current pace better. Shall we try it?</item>
+        <item>A goal of {objetivo} would be easier to reach each day. What if we left it there?</item>
+        <item>A smaller goal counts too. What if we set it to {objetivo}?</item>
+        <item>These 30 days have taken some effort. What if we set it to {objetivo}?</item>
+        <item>A small adjustment: {objetivo}. If it doesn\'t fit, we leave it as it is.</item>
+        <item>[lunes] A new week: shall we try {objetivo} and see how it goes?</item>
+        <item>30 days: {pct} %. A smaller goal helps you get going: {objetivo}.</item>
+    </string-array>
+    <string-array name="habla_fi_racha_vs_mejor_sargento">
+        <item>Streak of {racha}. Your best, {mejor}. You know what you\'re capable of.</item>
+        <item>Streak of {racha}. The record sits at {mejor} and it won\'t move by itself.</item>
+        <item>A streak of {racha} without letting go. Your record: {mejor}. Hold it.</item>
+        <item>Streak: {racha}. Record: {mejor}. Numbers don\'t lie.</item>
+        <item>[lunes] Monday, a streak of {racha}. Record: {mejor}. Start the week unbroken.</item>
+        <item>Streak of {racha}, record of {mejor}. What comes next is your call.</item>
+        <item>[finde] The weekend counts the same: streak of {racha}, record of {mejor}.</item>
+    </string-array>
+    <string-array name="habla_fi_racha_vs_mejor_cheerleader">
+        <item>You\'re on a streak of {racha}! Your best streak: {mejor}.</item>
+        <item>Streak now: {racha}. Your record is {mejor}, and I\'m betting on you.</item>
+        <item>{racha|time|times} without a miss, and each counts! Your best was {mejor}.</item>
+        <item>You\'re really good at this: {racha} in a row. Your all-time mark: {mejor}.</item>
+        <item>Every step of this streak of {racha} is yours. Best streak: {mejor}.</item>
+        <item>[lunes] Monday, and on a streak of {racha}. What a way to start the week!</item>
+        <item>Best streak: {mejor}. Right now: {racha}. We keep going, you and me.</item>
+    </string-array>
+    <string-array name="habla_fi_racha_vs_mejor_neutra">
+        <item>You\'re on a streak of {racha}. Your best streak is {mejor}.</item>
+        <item>Current streak: {racha}. Best: {mejor}.</item>
+        <item>The streak stands at {racha}. Your best mark is {mejor}.</item>
+        <item>A streak of {racha}. Your personal record is {mejor}.</item>
+        <item>[lunes] New week, and the streak is still at {racha}. Your best: {mejor}.</item>
+        <item>One more and the streak changes number. Right now: {racha}.</item>
+        <item>That\'s {racha} in a row. Your best streak reached {mejor}.</item>
+        <item>[domingo] You close the week with a streak of {racha}. Your best stands at {mejor}.</item>
+    </string-array>
+    <string-array name="habla_fi_mejor_dia_sargento">
+        <item>{dia_semana} is your best day: {pct} %. That\'s what you can do.</item>
+        <item>Your best day is {dia_semana}, at {pct} %. Copy that rhythm elsewhere.</item>
+        <item>Every {dia_semana} you do better: {pct} %. You get something right that day.</item>
+        <item>{dia_semana} nearly runs itself: {pct} %. Find out why and repeat it.</item>
+        <item>{pct} % on {dia_semana}: you\'ve already set the bar yourself.</item>
+        <item>If {dia_semana} gives {pct} %, the rest of the week can catch up.</item>
+    </string-array>
+    <string-array name="habla_fi_mejor_dia_cheerleader">
+        <item>Your best day for this one is {dia_semana}. You absolutely shine!</item>
+        <item>Fun fact: {dia_semana} is when you do it most. I love seeing it.</item>
+        <item>You nail it on {dia_semana}. The other days can take notes.</item>
+        <item>Your power day is {dia_semana}. Lean on it when the week gets tough!</item>
+        <item>{habito}: {dia_semana} is your best day of the week, and it shows.</item>
+        <item>You do best on {dia_semana}. I\'ll bring extra cheering that day.</item>
+        <item>Some days drag and some flow, and {dia_semana} flows. Let\'s get more like it!</item>
+    </string-array>
+    <string-array name="habla_fi_mejor_dia_neutra">
+        <item>{dia_semana} is the day it goes best.</item>
+        <item>Several weeks of data say {dia_semana} is your strongest day.</item>
+        <item>If you had to pick a moment, {dia_semana}: that\'s where it goes best.</item>
+        <item>Your most consistent day with this habit is {dia_semana}.</item>
+        <item>[domingo] Sunday for looking back: {dia_semana} is the day you do this one most.</item>
+        <item>{dia_semana} beats the rest of the week by a fair margin.</item>
+        <item>A pattern that keeps showing up: {dia_semana} goes better than the rest.</item>
+    </string-array>
+    <string-array name="habla_fi_constancia_sargento">
+        <item>Last 30 days: {pct} %. You\'re the one who moves that number.</item>
+        <item>{pct} % over 30 days. That\'s your starting line; it climbs with action.</item>
+        <item>A month of data: {pct} %. Numbers don\'t lie, and tomorrow they update.</item>
+        <item>30-day completion, {pct} %. Keep adding.</item>
+        <item>[lunes] Monday and {pct} % over 30 days. The week starts writing itself now.</item>
+        <item>The month reads {pct} %. No frills. Carry on.</item>
+        <item>[noche] Close the day and look: {pct} % over 30 days. Tomorrow, one more.</item>
+        <item>No data yet. Numbers are earned by marking.</item>
+        <item>No figure yet. Make one.</item>
+        <item>Too early to measure. Keep adding and we\'ll talk.</item>
+    </string-array>
+    <string-array name="habla_fi_constancia_cheerleader">
+        <item>Last 30 days: {pct} %. Every day adds up, and I\'m counting them with you!</item>
+        <item>{pct} % over 30 days. What really counts is keeping going, and we are.</item>
+        <item>{habito}: {pct} % this past month. A number is just a starting point.</item>
+        <item>This past month: {pct} %. And the best part is still to be written!</item>
+        <item>{pct} % over 30 days. Big or small, I saw every mark and I celebrate it.</item>
+        <item>[lunes] Monday check-in: {pct} % over the last 30 days. Here comes another good stretch.</item>
+        <item>Looking at the last month, it comes to {pct} %. And today is another day to add.</item>
+        <item>It\'s still early for numbers. Every time you mark it counts!</item>
+        <item>{habito}: no monthly figure yet. We\'re writing it side by side.</item>
+        <item>Not enough data yet to measure consistency. I\'m here to watch it arrive.</item>
+    </string-array>
+    <string-array name="habla_fi_constancia_neutra">
+        <item>Last 30 days: {pct} % done.</item>
+        <item>Over 30 days you\'ve done {pct} % of what was planned.</item>
+        <item>Consistency over the last 30 days sits at {pct} %.</item>
+        <item>{pct} % over 30 days. A data point, not a verdict.</item>
+        <item>{pct} % over 30 days, and every new day moves the number.</item>
+        <item>[lunes] Monday check-in: {pct} % of the last 30 days.</item>
+        <item>Looking back 30 days, completion is {pct} %. Today adds one more.</item>
+        <item>[finde] A good weekend to look at it: {pct} % over 30 days.</item>
+        <item>Not enough data yet to measure consistency.</item>
+        <item>It\'s still too early to give a consistency figure.</item>
+        <item>No figure for now. Each time you mark it, one starts to take shape.</item>
+    </string-array>
+    <string-array name="habla_fi_nuevo_sargento">
+        <item>New habit. The hard part is repeating it, not starting it.</item>
+        <item>The first days are the ones that count. One after another.</item>
+        <item>Just created. One week straight and it stops being new.</item>
+        <item>This has just begun. No rush, no pause.</item>
+        <item>Small and steady beats big and occasional.</item>
+        <item>[lunes] New habit on a Monday: you start the week ahead.</item>
+        <item>“{habito}” is new. Treat it like training: same time, every day.</item>
+    </string-array>
+    <string-array name="habla_fi_nuevo_cheerleader">
+        <item>A brand-new habit! The first days are for building momentum, and I\'m cheering from right here.</item>
+        <item>{habito}: a blank page. I\'m with you from day one.</item>
+        <item>This has only just begun and I\'m already excited. Tomorrow, another step!</item>
+        <item>Starting is the hard part, and you\'ve already done it. The rest we figure out together.</item>
+        <item>[lunes] New habit and a Monday: a great time to start. Let\'s go all in!</item>
+        <item>First days, first marks. No rush here: we\'re a team.</item>
+        <item>A freshly started habit is my favourite thing. Each day you repeat it, it takes firmer root.</item>
+    </string-array>
+    <string-array name="habla_fi_nuevo_neutra">
+        <item>This habit has only just begun. The first days are for finding your feet.</item>
+        <item>Brand-new habit. One day done is already a start.</item>
+        <item>It\'s early to draw conclusions. For now, everything you do adds up.</item>
+        <item>There\'s not enough history yet to talk about pace. We\'ll build it as we go.</item>
+        <item>[manana] New habit and the morning ahead. One day at a time is enough.</item>
+        <item>“{habito}” is new around here. Give it a few days before measuring the pace.</item>
+        <item>Not much track record yet. What matters now is repeating it, not measuring it.</item>
+    </string-array>
+    <string-array name="habla_fi_limpio_sargento">
+        <item>{n|clean day|clean days}. You count them one by one, like everything.</item>
+        <item>{n|day|days} without it. Tomorrow, one more.</item>
+        <item>{n|day|days} clean and you\'re still here. That\'s discipline.</item>
+        <item>Clean count: {n}. Keep it moving.</item>
+        <item>That\'s {n|day|days}. Every one counts, none of them is small.</item>
+        <item>[noche] Clean night, {n|day|days} now. Rest up: tomorrow we run it again.</item>
+        <item>It\'s not luck: {n|day|days} of deciding the same thing every morning.</item>
+    </string-array>
+    <string-array name="habla_fi_limpio_cheerleader">
+        <item>{n|clean day|clean days}! Every one is a day you\'ve won.</item>
+        <item>You\'re at {n|clean day|clean days}. The strength behind that shows.</item>
+        <item>{n|clean day|clean days} already. You did that, nobody else.</item>
+        <item>The count keeps growing: {n|clean day|clean days}. What team pride!</item>
+        <item>Quitting something is hard, and you\'re at {n|day|days}. I\'m beside you.</item>
+        <item>[noche] Another night with the count intact: {n|clean day|clean days}. Sleep with your head held high.</item>
+        <item>[manana] Good morning. {n|clean day|clean days}, and today we add one more. Let\'s go!</item>
+    </string-array>
+    <string-array name="habla_fi_limpio_neutra">
+        <item>You\'re at {n|clean day|clean days}. They\'re counted one at a time.</item>
+        <item>{n|clean day|clean days} so far. Today adds one more.</item>
+        <item>The count stands at {n|clean day|clean days}. That\'s enough for today.</item>
+        <item>[noche] Another night with the count at {n|clean day|clean days}.</item>
+        <item>[manana] The day begins and the count is at {n|clean day|clean days}.</item>
+        <item>That makes {n|clean day|clean days}, one after another. One day at a time.</item>
+        <item>{n|clean day|clean days}. A fact, and I like seeing it.</item>
+    </string-array>
+    <string-array name="habla_fi_pausa_sargento">
+        <item>Paused since {fecha}. Rest well; when you\'re back, we work.</item>
+        <item>On pause since {fecha}. Stopping in time is discipline too.</item>
+        <item>This habit has rested since {fecha}. Whenever you say, we pick it back up.</item>
+        <item>Paused since {fecha}. No hurry: the return gets planned.</item>
+        <item>Since {fecha} these days count neither for nor against you. Come back when it\'s time.</item>
+        <item>Paused. Rest well; when you\'re back, we work.</item>
+        <item>On pause. Stopping in time is discipline too.</item>
+        <item>This habit is resting. Whenever you say, we pick it back up.</item>
+    </string-array>
+    <string-array name="habla_fi_pausa_cheerleader">
+        <item>Paused since {fecha}. I\'ll be here, with everything just as you left it.</item>
+        <item>On pause since {fecha}. Resting is part of the journey too, and I\'m keeping your spot.</item>
+        <item>Resting since {fecha}. Whenever you want to pick it up, we\'ll be here. Ready and eager!</item>
+        <item>Paused since {fecha}. No hurry: come back when it suits you and we carry on.</item>
+        <item>Paused since {fecha}. Your history is still here, untouched, waiting for you.</item>
+        <item>Paused. I\'ll be here, with everything just as you left it.</item>
+        <item>Resting for a while. Whenever you want to come back, we\'ll be here!</item>
+        <item>It\'s paused, and that\'s fine. Your history is still intact.</item>
+    </string-array>
+    <string-array name="habla_fi_pausa_neutra">
+        <item>Paused since {fecha}. It neither counts nor subtracts in the meantime.</item>
+        <item>Paused since {fecha}. Pick it up whenever you want; it\'s right here.</item>
+        <item>Paused since {fecha}. No hurry: pauses are part of the rhythm too.</item>
+        <item>Resting since {fecha}. Paused days don\'t weigh on your completion.</item>
+        <item>On hold since {fecha}. The habit waits; no clock is running.</item>
+        <item>Paused. It neither counts nor subtracts in the meantime.</item>
+        <item>Paused. Pick it up whenever you want; it\'s right here.</item>
+        <item>On hold. The habit waits; no clock is running.</item>
+    </string-array>
+    <string-array name="habla_ca_radiante_sargento">
+        <item>A flawless week. Not one slip. That\'s the standard.</item>
+        <item>{n|perfect day|perfect days} this month. Now that\'s an inspection I enjoy.</item>
+        <item>Change on last week: {pct} %. I can\'t find a single flaw.</item>
+        <item>This is what happens when you do what you say. Carry on.</item>
+        <item>{n|perfect day|perfect days} so far this month. Spotless.</item>
+        <item>[lunes] We start the week from the top. Now hold it.</item>
+        <item>[finde] Weekend, week in the bag. Don\'t drop your guard.</item>
+        <item>Week at the top. That\'s how you hold it: by doing.</item>
+    </string-array>
+    <string-array name="habla_ca_radiante_cheerleader">
+        <item>What a week! Honestly, frame this one.</item>
+        <item>This month is already at {n|perfect day|perfect days}. And this week is glowing!</item>
+        <item>A week that makes you want to applaud. I\'m applauding right now.</item>
+        <item>{n|perfect day|perfect days} this month and counting. You\'re really good at this.</item>
+        <item>Look at how the Path looks right now: the best I\'ve seen. And all of it is yours!</item>
+        <item>[lunes] A new week on top of a perfect one: you can feel the momentum from day one.</item>
+        <item>[finde] The week went brilliantly, so this weekend calls for a little bragging.</item>
+    </string-array>
+    <string-array name="habla_ca_radiante_neutra">
+        <item>A very solid week: over 80 percent done.</item>
+        <item>A really good week. This month adds up to {n|perfect day|perfect days}.</item>
+        <item>Change on last week: {pct} %. This week\'s pace is very good.</item>
+        <item>{n|perfect day|perfect days} this month, and the week is moving at a good pace.</item>
+        <item>[lunes] Monday with a good rhythm behind it: nearly everything from these days is done.</item>
+        <item>Almost everything planned this week is done. Good rhythm.</item>
+        <item>[domingo] Sunday, and a strong week. The month stands at {n|perfect day|perfect days}.</item>
+        <item>[invierno] Cold outside, steady in here: the week is going well.</item>
+        <item>A strong week. Nearly everything planned is getting done.</item>
+    </string-array>
+    <string-array name="habla_ca_normal_sargento">
+        <item>Acceptable. We both know you\'ve got more.</item>
+        <item>This month: {n|perfect day|perfect days}. There\'s room to grow.</item>
+        <item>Change on last week: {pct} %. A bit more and it climbs.</item>
+        <item>Neither here nor there. One more habit a day and this changes.</item>
+        <item>Doing just enough gets just enough. You\'ve got more.</item>
+        <item>[domingo] Close the week with more than the minimum. Today still counts.</item>
+        <item>[manana] Good time to raise the bar. Start with the first one.</item>
+    </string-array>
+    <string-array name="habla_ca_normal_cheerleader">
+        <item>Good week. And the next one? Even better!</item>
+        <item>A week that builds things: {n|perfect day|perfect days} this month. I\'m right beside you.</item>
+        <item>Steady rhythm, and that\'s worth more than one spectacular day.</item>
+        <item>Solid base: {n|perfect day|perfect days} this month, and each week builds on the last.</item>
+        <item>Just one of your weeks: solid. I like it!</item>
+        <item>Some weeks are for records, others for consistency. This is the second kind, and it earns a cheer.</item>
+        <item>Calm road, steady steps. One more perfect day and the month gets even better.</item>
+    </string-array>
+    <string-array name="habla_ca_normal_neutra">
+        <item>A steady week. Keep going.</item>
+        <item>A calm week: no big rises or dips. This month: {n|perfect day|perfect days}.</item>
+        <item>Change on last week: {pct} %. A pace you can sustain.</item>
+        <item>{n|perfect day|perfect days} this month so far. One more changes the number.</item>
+        <item>The week is moving at its own pace. One more habit today and the number improves.</item>
+        <item>[viernes] Friday. An ordinary week, and there\'s still time to shift the number.</item>
+        <item>[manana] A stable week. Today you can hold it as it is or lift it a little.</item>
+        <item>[finde] A weekend with a steady week behind it: {n|perfect day|perfect days} this month.</item>
+        <item>A stable week, no surprises.</item>
+    </string-array>
+    <string-array name="habla_ca_mustio_sargento">
+        <item>Rough week. Don\'t argue with it. Fix it.</item>
+        <item>Short week. The next one starts today, not Monday.</item>
+        <item>Change on last week: {pct} %. One habit today starts the recovery.</item>
+        <item>That week is already written. The next one is blank: get to it.</item>
+        <item>A bad stretch doesn\'t define you. What you do today does.</item>
+        <item>Weak weeks pass if you don\'t stretch them out. Start with one.</item>
+        <item>[lunes] Monday. Fresh page and work ahead. First, just one.</item>
+    </string-array>
+    <string-array name="habla_ca_mustio_cheerleader">
+        <item>A tough week, and I won\'t sugarcoat it. Tomorrow we start a new one, you and me.</item>
+        <item>It\'s been an uphill week. I\'m with you, and today we can move one piece.</item>
+        <item>A slow week, yes. But we\'re both still here, and that\'s a foundation.</item>
+        <item>It wasn\'t your week, and it\'s fine to say so. A single habit today already shifts the course.</item>
+        <item>Some weeks go sideways. This one did, but the Path is still ahead and I\'m right there with you.</item>
+        <item>A hard week. If we do one small thing today, that\'s already a turning point. Which one do you pick?</item>
+        <item>[domingo] Sunday to catch your breath: the week was hard, and tomorrow a fresh blank one opens.</item>
+    </string-array>
+    <string-array name="habla_ca_mustio_neutra">
+        <item>A slow week: under half done. One habit today is enough to restart.</item>
+        <item>The week has run at half speed. A single habit today already shifts the number.</item>
+        <item>Change on last week: {pct} %. One habit today and the number moves.</item>
+        <item>This week has been harder. Today\'s small things count too.</item>
+        <item>A slow week doesn\'t erase what\'s already done this month.</item>
+        <item>[lunes] It\'s Monday. A whole week to get the rhythm back, no rush.</item>
+        <item>[noche] It\'s night now. If a small habit fits, good; if not, tomorrow counts too.</item>
+        <item>[invierno] Everything is harder in the cold. One small habit today is a good place to start.</item>
+    </string-array>
+    <string-array name="habla_ca_ausencia_sargento">
+        <item>A few days without showing up? Don\'t you dare give up now.</item>
+        <item>Still at my post. One habit today and we pick up again.</item>
+        <item>It\'s been days. Doesn\'t matter. Today can be the first one back.</item>
+        <item>Nobody counts the time away. Count what you do today.</item>
+        <item>Come back with just one. That\'s enough to start.</item>
+        <item>[lunes] It\'s Monday: the best day to come back. Just one and we go on.</item>
+        <item>[invierno] Cold out there, work in here. Start with one.</item>
+    </string-array>
+    <string-array name="habla_ca_ausencia_cheerleader">
+        <item>Three days without you! I missed you. Come back, it\'s not the same around here.</item>
+        <item>I miss you around here. Whenever you want to return, the Path is waiting just as it was.</item>
+        <item>So good to see you here. Everything is as you left it, and I\'m eager to pick things up.</item>
+        <item>Some absences weigh, and sometimes life takes over. I\'m here when you\'re back, no scores to settle.</item>
+        <item>You\'re back! I really needed to see you around. We\'ll start with something tiny.</item>
+        <item>A long break mends with one small step. Today, if you feel like it.</item>
+        <item>Everything you did is still here and still counts. When you\'re back, we carry on together.</item>
+    </string-array>
+    <string-array name="habla_ca_ausencia_neutra">
+        <item>A few days with no entries. Whenever you\'re ready, I\'m here.</item>
+        <item>Nothing here for a few days. When it suits you, we pick it back up.</item>
+        <item>I\'m still here. A single habit today is enough to pick things up.</item>
+        <item>A few days have gone by. Nothing to catch up on: we start with today.</item>
+        <item>[manana] Good morning. Today is a good moment to come back, with something small.</item>
+        <item>[noche] It\'s night already. Tomorrow works for coming back too; I\'ll be here.</item>
+        <item>No rush. Everything is just as you left it.</item>
+        <item>[invierno] It\'s the season for staying in. Whenever you want, we start again with something small.</item>
+    </string-array>
+</resources>

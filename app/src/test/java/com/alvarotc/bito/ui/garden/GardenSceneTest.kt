@@ -1,29 +1,41 @@
 package com.alvarotc.bito.ui.garden
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.view.View
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSpecial
@@ -32,6 +44,7 @@ import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.GrowthStage
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.habi.HabiArt
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
@@ -49,6 +62,8 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import org.robolectric.annotation.GraphicsMode
+import kotlin.math.abs
 
 /** La escena en Compose: lo que se toca (que una planta se meza lo prueba onSceneTap). Lo que se ve se comprueba en el Pixel (§9.2). */
 @OptIn(ExperimentalTestApi::class)
@@ -148,6 +163,8 @@ class GardenSceneTest {
         llegando: GardenSpecial? = null,
         creciendo: Int? = null,
         destacar: GardenSpecial? = null,
+        dormido: Boolean = false,
+        onHabiTap: () -> Unit = {},
     ) {
         jardin = garden
         compose.setContent {
@@ -157,7 +174,7 @@ class GardenSceneTest {
                         garden = jardin,
                         spec = spec,
                         animated = false,
-                        onHabiTap = {},
+                        onHabiTap = onHabiTap,
                         modifier = Modifier.width(400.dp),
                         alTocarFondo = alTocarFondo,
                         globitoPlanta = globitoPlanta,
@@ -166,10 +183,19 @@ class GardenSceneTest {
                         destacar = destacar,
                         saltoHabi = salto,
                         fiesta = fiesta,
+                        dormido = dormido,
                     )
                 }
             }
         }
+    }
+
+    /** Un toque en el centro del cuerpo de Habi, por la capa de delante (como el dedo). */
+    private fun tocarHabi() {
+        val widthPx = with(compose.density) { 400.dp.toPx() }
+        val cuerpo = habiBodyRect(widthPx, widthPx / GardenArt.SCENE_ASPECT)
+        tapCenter(cuerpo)
+        compose.waitForIdle()
     }
 
     private fun rectOf(
@@ -327,6 +353,32 @@ class GardenSceneTest {
     }
 
     @Test
+    fun `tapping Habi by day makes Habi jump`() {
+        var toques = 0
+        montar(onHabiTap = { toques++ })
+        compose.waitForIdle()
+
+        tocarHabi()
+
+        assertEquals(1, toques)
+        assertEquals(1, sonda.saltosHabi())
+        assertEquals(0, sonda.aplastadosHabi())
+    }
+
+    @Test
+    fun `tapping Habi asleep only squashes Habi, without a jump`() {
+        var toques = 0
+        montar(dormido = true, onHabiTap = { toques++ })
+        compose.waitForIdle()
+
+        tocarHabi()
+
+        assertEquals(1, toques)
+        assertEquals(0, sonda.saltosHabi())
+        assertEquals(1, sonda.aplastadosHabi())
+    }
+
+    @Test
     fun `raising saltoHabi makes Habi jump`() {
         montar()
         compose.waitForIdle()
@@ -447,4 +499,145 @@ class GardenSceneTest {
 
         assertEquals(antes, registro.posiciones.getValue(ClavesAncla.HABI))
     }
+
+    // --- G40: la noche que pinta el cierre del día (pieza 4, §7.5) ---
+
+    private val conFarolillo = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN))
+
+    @Test
+    fun `night one lights the lantern`() {
+        val sondaNoche = SondaJardin()
+        var noche by mutableStateOf(0f)
+        compose.setContent {
+            BitoTheme {
+                CompositionLocalProvider(LocalSondaJardin provides sondaNoche) {
+                    GardenScene(conFarolillo, spec, Modifier.width(400.dp), animated = false, noche = { noche })
+                }
+            }
+        }
+        compose.waitForIdle()
+        assertEquals("de día y sin anochecer, el farolillo está apagado", 0f, sondaNoche.brilloFarolillo(), 0.001f)
+        noche = 0.45f
+        compose.waitForIdle()
+        assertEquals("se enciende tarde: hasta 0,45 no brilla", 0f, sondaNoche.brilloFarolillo(), 0.001f)
+        noche = 1f
+        compose.waitForIdle()
+        assertEquals(1f, sondaNoche.brilloFarolillo(), 0.001f)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `night zero draws as today`() {
+        val sondas = List(3) { SondaJardin() }
+        // El arte ya en la caché: así la prueba no espera a la precarga en otro hilo (como LaminaTest).
+        val arte = HabiArt.get(ApplicationProvider.getApplicationContext())
+        recursosDelJardin(conFarolillo).forEach { (res, muestra) -> arte.image(res, muestra) }
+        lateinit var vista: View
+        compose.setContent {
+            vista = LocalView.current
+            // En píxeles enteros: una escena que empieza a media fila se muestrea distinto aunque se pinte igual.
+            val ancho = with(LocalDensity.current) { 300.toDp() }
+            val alto = with(LocalDensity.current) { 720.toDp() }
+            BitoTheme {
+                Box(Modifier.size(ancho, alto)) {
+                    listOf<(() -> Float)?>(null, { 0f }, { 1f }).forEachIndexed { i, noche ->
+                        val m = Modifier.offset { IntOffset(0, i * 240) }.width(ancho)
+                        CompositionLocalProvider(LocalSondaJardin provides sondas[i]) {
+                            if (noche == null) {
+                                GardenScene(conFarolillo, spec, m, animated = false)
+                            } else {
+                                GardenScene(conFarolillo, spec, m, animated = false, noche = noche)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitUntil(10_000) { sondas.all { it.arteListo() } }
+        compose.waitForIdle()
+        val captura = Bitmap.createBitmap(vista.width, vista.height, Bitmap.Config.ARGB_8888)
+        vista.draw(Canvas(captura))
+        val cajas = compose.onAllNodesWithTag("garden-scene").fetchSemanticsNodes().map { it.boundsInRoot }
+        val ancho = cajas.minOf { it.width }.toInt()
+        val alto = cajas.minOf { it.height }.toInt()
+
+        fun distintos(
+            a: Int,
+            b: Int,
+        ): Int {
+            var n = 0
+            val ya = cajas[a].top.toInt()
+            val yb = cajas[b].top.toInt()
+            for (x in 0 until ancho) {
+                for (y in 1 until alto - 1) if (lejos(captura.getPixel(x, ya + y), captura.getPixel(x, yb + y))) n++
+            }
+            return n
+        }
+        assertEquals("con noche 0 se pinta igual que hoy (salvo el ruido de muestreo de una unidad)", 0, distintos(0, 1))
+        assertTrue("con noche 1 el jardín cambia", distintos(0, 2) > ancho * alto / 4)
+    }
+
+    @Test
+    fun `the water seeps down while dusk starts from day and then goes away`() {
+        val sondaAgua = SondaJardin()
+        var noche by mutableStateOf(0f)
+        compose.setContent {
+            ConSistema(sonido, tacto, reducido = false) {
+                CompositionLocalProvider(LocalSondaJardin provides sondaAgua) {
+                    GardenScene(conFarolillo, spec, Modifier.width(400.dp), animated = false, noche = { noche })
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+        noche = 0.3f
+        Snapshot.sendApplyNotifications() // con el reloj quieto, el cambio no llega solo al efecto
+        repeat(60) { compose.mainClock.advanceTimeByFrame() } // ~1 s de los 2800
+        val aMitad = sondaAgua.filtracion()
+        assertTrue("a mitad se está filtrando ($aMitad)", aMitad > 0f && aMitad < 1f)
+        repeat(150) { compose.mainClock.advanceTimeByFrame() }
+        assertEquals("al acabar no queda franja", 1f, sondaAgua.filtracion(), 0f)
+    }
+
+    @Test
+    fun `there is no seep with reduced motion`() {
+        val sondaAgua = SondaJardin()
+        var noche by mutableStateOf(0f)
+        compose.setContent {
+            ConSistema(sonido, tacto, reducido = true) {
+                CompositionLocalProvider(LocalSondaJardin provides sondaAgua) {
+                    GardenScene(conFarolillo, spec, Modifier.width(400.dp), animated = false, noche = { noche })
+                }
+            }
+        }
+        compose.waitForIdle()
+        noche = 0.3f
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(1_000)
+        assertEquals("reducido: sin filtración", 0f, sondaAgua.filtracion(), 0f)
+    }
+
+    @Test
+    fun `opening already at night does not seep`() {
+        val sondaAgua = SondaJardin()
+        var noche by mutableStateOf(1f)
+        compose.setContent {
+            ConSistema(sonido, tacto, reducido = false) {
+                CompositionLocalProvider(LocalSondaJardin provides sondaAgua) {
+                    GardenScene(conFarolillo, spec, Modifier.width(400.dp), animated = false, noche = { noche })
+                }
+            }
+        }
+        compose.waitForIdle()
+        noche = 0.99f
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(500)
+        assertEquals(0f, sondaAgua.filtracion(), 0f)
+    }
+
+    /** Dos píxeles distintos de verdad: el filtro de color deja ruido de una unidad por canal entre dos pintadas iguales. */
+    private fun lejos(
+        a: Int,
+        b: Int,
+    ): Boolean = (0..3).any { abs((a shr (it * 8) and 0xFF) - (b shr (it * 8) and 0xFF)) > 2 }
 }

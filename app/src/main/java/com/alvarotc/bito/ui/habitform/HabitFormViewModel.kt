@@ -40,6 +40,8 @@ class HabitFormViewModel(
     habitId: String?,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
+    // El objetivo que sugiere Habi desde la ficha: rellena el campo, pero no guarda nada hasta «Guardar».
+    private val objetivoSugerido: Int? = null,
 ) : ViewModel() {
     private val formState = MutableStateFlow(HabitFormState(editingId = habitId))
     val state: StateFlow<HabitFormState> = formState.asStateFlow()
@@ -63,7 +65,10 @@ class HabitFormViewModel(
     init {
         if (habitId != null) {
             viewModelScope.launch {
-                habits.habit(habitId)?.let { entity -> formState.value = entity.toFormState() }
+                habits.habit(habitId)?.let { entity ->
+                    val cargado = entity.toFormState()
+                    formState.value = objetivoSugerido?.let { cargado.copy(target = cargado.clampTarget(it)) } ?: cargado
+                }
             }
         }
     }
@@ -169,10 +174,19 @@ class HabitFormViewModel(
         fun factory(
             container: AppContainer,
             habitId: String?,
+            // El objetivo que sugiere Habi desde la ficha: rellena el campo sin guardar.
+            objetivoSugerido: Int? = null,
         ): ViewModelProvider.Factory =
             viewModelFactory {
                 initializer {
-                    HabitFormViewModel(container.habits, container.settings, container.rewards, container.reconciler, habitId)
+                    HabitFormViewModel(
+                        container.habits,
+                        container.settings,
+                        container.rewards,
+                        container.reconciler,
+                        habitId,
+                        objetivoSugerido = objetivoSugerido,
+                    )
                 }
             }
     }

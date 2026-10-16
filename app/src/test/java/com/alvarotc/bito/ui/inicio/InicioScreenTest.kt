@@ -58,6 +58,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -534,6 +535,47 @@ class InicioScreenTest {
     }
 
     @Test
+    fun `the streak vein of a habit makes its day N bold on Today`() {
+        banco.preparar(marcaCero = true)
+        runBlocking {
+            banco.habits.create(
+                com.alvarotc.bito.data.habitEntity(
+                    id = "make-bed",
+                    name = "Hacer la cama",
+                    metric = com.alvarotc.bito.domain.model.Metric.CHECK,
+                    target = 1,
+                    createdOnDay = banco.hoyLogico - 10,
+                ),
+            )
+            (1..3).forEach {
+                banco.db.entryDao().insert(
+                    com.alvarotc.bito.data.entryEntity(id = "e$it", habitId = "make-bed", logicalDay = banco.hoyLogico - it),
+                )
+            }
+        }
+        rule.setContent { ConSistema(banco.sonido, banco.tacto) { banco.Inicio(enPrimerPlano = true) } }
+        esperarTag("dia-n-make-bed")
+        if (hay("hoja-logro")) rule.onNodeWithText(contexto.getString(R.string.camino_seguir)).performClick()
+        avanzar(Duraciones.CERRAR_HOJA * 2L + 800L)
+        assertTrue(pesoDiaN("make-bed") != androidx.compose.ui.text.font.FontWeight.Bold)
+
+        libro(fila("r", 10, PointsReason.STREAK_MILESTONE, "make-bed:7", 5))
+        avanzarHasta("veta-RACHA")
+        rule.waitForIdle()
+        assertEquals(androidx.compose.ui.text.font.FontWeight.Bold, pesoDiaN("make-bed"))
+    }
+
+    private fun pesoDiaN(id: String): androidx.compose.ui.text.font.FontWeight? {
+        val resultados = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule
+            .onNodeWithTag("dia-n-$id")
+            .fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult]
+            .action!!(resultados)
+        return resultados.first().layoutInput.style.fontWeight
+    }
+
+    @Test
     fun `the week vein speaks with Habi's real personality and the user's name`() {
         banco.preparar(marcaCero = true)
         runBlocking { banco.ajustes.update { it.copy(personality = Personality.SARGENTO, userName = "Marta") } }
@@ -634,5 +676,90 @@ class InicioScreenTest {
     @Test
     fun `the garden of Today is cut with a straight bottom edge`() {
         assertEquals(RectangleShape, FormaJardinHoy)
+    }
+
+    @Test
+    fun `closing the day hides the pill and the plus and back returns to Today`() {
+        banco.preparar()
+        var vistos = 0
+        rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true, alCierreVisto = { vistos++ }) } }
+        rule.waitUntil(5_000) { hay("cierre") }
+
+        assertEquals(1, vistos)
+        rule.onNodeWithTag("pildora").assertDoesNotExist()
+        rule.onNodeWithTag("boton-crear").assertDoesNotExist()
+
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.waitUntil(5_000) { !hay("cierre") }
+        rule.onNodeWithTag("pildora").assertExists()
+        rule.onNodeWithTag("boton-crear").assertExists()
+        rule.onNodeWithTag("pildora-hoy").assertIsSelected()
+    }
+
+    @Test
+    fun `the close day button opens the close inside Inicio instead of leaving`() {
+        montar(habitos = 1)
+        rule.onNodeWithTag("cerrar-dia").performScrollTo().performClick()
+        rule.waitUntil(5_000) { hay("cierre") }
+
+        assertTrue("no sale a otra ruta: ${banco.llamadas}", "repaso" !in banco.llamadas)
+        rule.onNodeWithTag("pildora").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the close mounts its own content over Inicio`() {
+        banco.preparar(habitos = 1)
+        rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true) } }
+        rule.waitUntil(5_000) { hay("cierre-buenas-noches") }
+        rule.onNodeWithTag("inicio").assertExists()
+    }
+
+    @Test
+    fun `the big thing flag reaches the list and is marked seen`() {
+        banco.preparar()
+        var vistos = 0
+        rule.setContent { ConSistema { banco.Inicio(gordo = true, alGordoVisto = { vistos++ }) } }
+        rule.waitUntil(5_000) { vistos == 1 }
+        rule.onNodeWithTag("inicio-hoy").assertExists()
+    }
+
+    @Test
+    fun `without the flags nothing is marked seen`() {
+        banco.preparar()
+        var vistos = 0
+        rule.setContent { ConSistema { banco.Inicio(alCierreVisto = { vistos++ }, alGordoVisto = { vistos++ }) } }
+        rule.waitForIdle()
+        assertEquals(0, vistos)
+        rule.onNodeWithTag("cierre").assertDoesNotExist()
+        rule.onNodeWithTag("pildora").assertExists()
+    }
+
+    @Test
+    fun `with the close open the list of Today leaves the accessibility tree`() {
+        banco.preparar()
+        rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true) } }
+        rule.waitUntil(5_000) { hay("cierre") }
+        rule.onNodeWithTag("tu-camino").assertDoesNotExist()
+
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.waitUntil(5_000) { !hay("cierre") }
+        rule.onNodeWithTag("tu-camino").assertExists()
+    }
+
+    @Test
+    fun `reopening the close starts clean and the dismissed row comes back`() {
+        banco.preparar(habitos = 1)
+        rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true) } }
+        rule.waitUntil(5_000) { hay("cierre-no-h0") }
+        rule.onNodeWithTag("cierre-no-h0").performClick()
+        rule.waitUntil(5_000) { hay("cierre-atenuada-h0") }
+
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        rule.waitUntil(5_000) { !hay("cierre") }
+        rule.onNodeWithTag("cerrar-dia").performScrollTo().performClick()
+        rule.waitUntil(5_000) { hay("cierre") }
+
+        rule.waitUntil(5_000) { hay("cierre-no-h0") }
+        assertFalse("lo decidido no pasa de una apertura a otra", hay("cierre-atenuada-h0"))
     }
 }

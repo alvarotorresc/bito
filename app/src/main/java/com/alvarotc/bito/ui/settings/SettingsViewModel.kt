@@ -70,12 +70,10 @@ class SettingsViewModel(
 
     fun removeReminder(minutes: Int) = write { it.copy(globalReminderMinutes = it.globalReminderMinutes.filterNot { m -> m == minutes }) }
 
-    fun setReviewTime(minutes: Int) = write { it.copy(reviewTimeMinutes = minutes) }
-
     fun setHabiMorning(minutes: Int) = write { it.copy(habiMorningMinutes = minutes.coerceIn(SettingsRanges.HABI_MORNING)) }
 
-    /** La noche de los avisos de Habi es la hora del repaso (decisión 3): sigue lanzando el aviso de repaso actual. */
-    fun setHabiNight(minutes: Int) = write { it.copy(reviewTimeMinutes = minutes.coerceIn(SettingsRanges.HABI_NIGHT)) }
+    /** Hora del aviso de la noche de Habi (19:00 a 23:30). */
+    fun setHabiNight(minutes: Int) = write { it.copy(habiNightMinutes = minutes.coerceIn(SettingsRanges.HABI_NIGHT)) }
 
     fun setDndEnabled(enabled: Boolean) = write { it.copy(dndEnabled = enabled) }
 

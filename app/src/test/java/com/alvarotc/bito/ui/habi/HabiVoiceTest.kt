@@ -9,8 +9,7 @@ import kotlin.test.assertEquals
 /**
  * [HabiVoice] is a pure lookup table — every (personality, mood) pair its mood-bearing functions
  * cover, and every personality its personality-only functions ([HabiVoice.freezerInfoRes],
- * [HabiVoice.reviewRes], [HabiVoice.reviewClearRes], [HabiVoice.sealedRes], [HabiVoice.perfectDayRes],
- * [HabiVoice.perfectDayNotifRes], [HabiVoice.badgeUnlockedRes]) cover, must resolve to its OWN
+ * [HabiVoice.perfectDayRes], [HabiVoice.perfectDayNotifRes], [HabiVoice.badgeUnlockedRes]) cover, must resolve to its OWN
  * string resource. A collision here would mean two contexts silently share copy, which the T13
  * brief treats as a bug (a mapping "sin colisiones").
  */
@@ -26,11 +25,6 @@ class HabiVoiceTest {
     }
 
     @Test
-    fun `greetingRes resolves a distinct resource for every personality-mood pair`() {
-        assertAllDistinct(Personality.entries.size * Mood.entries.size, HabiVoice::greetingRes)
-    }
-
-    @Test
     fun `freezerInfoRes resolves a distinct resource per personality`() {
         val ids = Personality.entries.map { HabiVoice.freezerInfoRes(it) }
 
@@ -42,21 +36,6 @@ class HabiVoiceTest {
         val ids = Personality.entries.map { HabiVoice.onboardingPreviewRes(it) }
 
         assertEquals(Personality.entries.size, ids.toSet().size)
-    }
-
-    @Test
-    fun `reviewRes resolves a distinct resource per personality`() {
-        assertAllDistinctPersonalityOnly(HabiVoice::reviewRes)
-    }
-
-    @Test
-    fun `reviewClearRes resolves a distinct resource per personality`() {
-        assertAllDistinctPersonalityOnly(HabiVoice::reviewClearRes)
-    }
-
-    @Test
-    fun `sealedRes resolves a distinct resource per personality`() {
-        assertAllDistinctPersonalityOnly(HabiVoice::sealedRes)
     }
 
     @Test
@@ -106,14 +85,14 @@ class HabiVoiceTest {
     }
 
     /**
-     * Every one of the twelve voiced contexts — the three mood-bearing ones per mood, plus the
-     * nine personality-only ones — must give each of the three personalities its OWN resource.
+     * Every one of the eight voiced contexts — the two mood-bearing ones per mood, plus the
+     * six personality-only ones — must give each of the three personalities its OWN resource.
      * This is the copy-paste guard: a context that accidentally reused another personality's id
      * would pass unnoticed otherwise.
      */
     @Test
     fun `every voiced context resolves a distinct resource per personality`() {
-        val moodRes = listOf(HabiVoice::bubbleRes, HabiVoice::homeRes, HabiVoice::greetingRes)
+        val moodRes = listOf(HabiVoice::bubbleRes, HabiVoice::homeRes)
         for (resolve in moodRes) {
             for (mood in Mood.entries) {
                 val ids = Personality.entries.map { resolve(mood, it) }
@@ -124,9 +103,6 @@ class HabiVoiceTest {
         val personalityOnlyRes =
             listOf(
                 HabiVoice::freezerInfoRes,
-                HabiVoice::reviewRes,
-                HabiVoice::reviewClearRes,
-                HabiVoice::sealedRes,
                 HabiVoice::perfectDayRes,
                 HabiVoice::perfectDayNotifRes,
                 HabiVoice::badgeUnlockedRes,
@@ -139,23 +115,20 @@ class HabiVoiceTest {
     }
 
     /**
-     * The full 63-string mapping (12 + 12 + 12 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3) never
-     * collides with itself — bubbleRes, homeRes and greetingRes are three DIFFERENT mood-bearing
-     * contexts that intentionally give the same (personality, mood) pair three different
-     * resources (e.g. the Stats commentator's `habi_bubble_sargento_normal` is not the Habi
-     * screen's `habi_home_sargento_normal`), and freezerInfoRes plus the eight
-     * review/celebration/badge/task functions are nine more DIFFERENT personality-only contexts,
-     * so the whole 63-id set — not just each function on its own — must have zero duplicate ids.
+     * The full 42-string mapping (12 + 12 + 3 * 6) never collides with itself — bubbleRes and
+     * homeRes are two DIFFERENT mood-bearing contexts that intentionally give the same
+     * (personality, mood) pair two different resources (e.g. the Stats commentator's
+     * `habi_bubble_sargento_normal` is not the Habi screen's `habi_home_sargento_normal`), and
+     * freezerInfoRes plus the five celebration/badge/task functions are six DIFFERENT
+     * personality-only contexts, so the whole 42-id set — not just each function on its own —
+     * must have zero duplicate ids.
      */
     @Test
-    fun `the full 63-string mapping has no collisions across contexts`() {
-        val moodRes = listOf(HabiVoice::bubbleRes, HabiVoice::homeRes, HabiVoice::greetingRes)
+    fun `the full 42-string mapping has no collisions across contexts`() {
+        val moodRes = listOf(HabiVoice::bubbleRes, HabiVoice::homeRes)
         val personalityOnlyRes =
             listOf(
                 HabiVoice::freezerInfoRes,
-                HabiVoice::reviewRes,
-                HabiVoice::reviewClearRes,
-                HabiVoice::sealedRes,
                 HabiVoice::perfectDayRes,
                 HabiVoice::perfectDayNotifRes,
                 HabiVoice::badgeUnlockedRes,
@@ -166,7 +139,7 @@ class HabiVoiceTest {
             moodRes.flatMap { fn -> Personality.entries.flatMap { p -> Mood.entries.map { m -> fn(m, p) } } } +
                 personalityOnlyRes.flatMap { fn -> Personality.entries.map { p -> fn(p) } }
 
-        assertEquals(12 + 12 + 12 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3 + 3, ids.size)
+        assertEquals(12 + 12 + 3 * 6, ids.size)
         assertEquals(ids.size, ids.toSet().size)
     }
 
@@ -177,9 +150,16 @@ class HabiVoiceTest {
             for (mood in Mood.entries) {
                 assertEquals(HabiVoice.bubbleRes(mood, personality), HabiVoice.bubbleRes(mood, personality))
                 assertEquals(HabiVoice.homeRes(mood, personality), HabiVoice.homeRes(mood, personality))
-                assertEquals(HabiVoice.greetingRes(mood, personality), HabiVoice.greetingRes(mood, personality))
             }
         }
+    }
+
+    @Test
+    fun `sinNombre maps the neutral perfect day notice to its own twin`() {
+        assertEquals(
+            R.string.habi_perfect_notif_neutra_sin_nombre,
+            HabiVoice.sinNombre(HabiVoice.perfectDayNotifRes(Personality.NEUTRA)),
+        )
     }
 
     private fun assertAllDistinct(

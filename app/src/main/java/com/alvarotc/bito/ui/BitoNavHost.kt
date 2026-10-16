@@ -51,6 +51,7 @@ import com.alvarotc.bito.ui.breathing.AndroidBreathingMusic
 import com.alvarotc.bito.ui.breathing.BreathingScreen
 import com.alvarotc.bito.ui.breathing.BreathingViewModel
 import com.alvarotc.bito.ui.camino.CaminoViewModel
+import com.alvarotc.bito.ui.cierre.CierreViewModel
 import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habi.HabiScreen
@@ -66,8 +67,6 @@ import com.alvarotc.bito.ui.onboarding.OnboardingReconciler
 import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
-import com.alvarotc.bito.ui.review.ReviewScreen
-import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.settings.AjustesScreen
 import com.alvarotc.bito.ui.settings.ArchivedScreen
 import com.alvarotc.bito.ui.settings.BackupViewModel
@@ -141,7 +140,7 @@ fun BitoNavHost(
     // Decided once, from that first resolved value: NavHost keys its graph on startDestination,
     // so re-evaluating this on every recomposition would rebuild the whole nav graph out from
     // under an in-flight finish()-triggered navigate("today") the moment onboardingDone flips.
-    val startDestination = remember { if (loadedSettings.onboardingDone) "today" else "onboarding" }
+    val startDestination = remember { if (loadedSettings.onboardingDone) RUTA_HOY else "onboarding" }
 
     val nav = navController
     val reducido = LocalReducido.current
@@ -180,9 +179,9 @@ fun BitoNavHost(
     val tasksViewModel: TasksViewModel = viewModel(factory = TasksViewModel.factory(container))
     val currentRoute = nav.currentBackStackEntryAsState().value?.destination?.route
 
-    // Lo recién creado se deja en la entrada `today` (no en la anterior): Hoy lo recibe lo cree donde lo cree.
+    // Lo recién creado se deja en la entrada de Hoy (no en la anterior): Hoy lo recibe lo cree donde lo cree.
     fun dejarCreado(id: String) {
-        runCatching { nav.getBackStackEntry("today") }.getOrNull()?.savedStateHandle?.set("creado", id)
+        runCatching { nav.getBackStackEntry(RUTA_HOY) }.getOrNull()?.savedStateHandle?.set("creado", id)
     }
 
     val camara = Muelles.camara<IntOffset>(umbral = IntOffset.VisibilityThreshold)
@@ -241,9 +240,9 @@ fun BitoNavHost(
                         ) { globalExit() }
                     },
                 ) {
-                    // A fresh install's first-run flow, not a destination of Inicio — same
-                    // reasoning as "review" below, and not deep-link allowlisted either. T6 builds the
-                    // welcome + story screens (7a-7d) against OnboardingViewModel's state/callbacks; T7-T8
+                    // A fresh install's first-run flow, not a destination of Inicio — and not deep-link
+                    // allowlisted either. T6 builds the welcome + story screens (7a-7d) against
+                    // OnboardingViewModel's state/callbacks; T7-T8
                     // own the rest of the flow's content. This composable's own job stays just the spine:
                     // instantiate the VM and leave once it reports done.
                     composable("onboarding") {
@@ -258,8 +257,27 @@ fun BitoNavHost(
                             OnboardingScreen(onboardingVm)
                         }
                     }
-                    composable("today") { entry ->
+                    composable(
+                        RUTA_HOY,
+                        arguments =
+                            listOf(
+                                navArgument("cierre") {
+                                    type = NavType.BoolType
+                                    defaultValue = false
+                                },
+                                navArgument("gordo") {
+                                    type = NavType.BoolType
+                                    defaultValue = false
+                                },
+                            ),
+                    ) { entry ->
                         val creado by entry.savedStateHandle.getStateFlow<String?>("creado", null).collectAsStateWithLifecycle()
+                        // Cada bandera se atiende una vez: al verla se apunta en el estado guardado de la entrada, y
+                        // girar la pantalla no vuelve a abrir el cierre ni la hoja.
+                        val cierreVisto by entry.savedStateHandle.getStateFlow(CIERRE_VISTO, false).collectAsStateWithLifecycle()
+                        val gordoVisto by entry.savedStateHandle.getStateFlow(GORDO_VISTO, false).collectAsStateWithLifecycle()
+                        val cierre = entry.arguments?.getBoolean("cierre") == true && !cierreVisto
+                        val gordo = entry.arguments?.getBoolean("gordo") == true && !gordoVisto
                         val ciclo by entry.lifecycle.currentStateAsState()
                         CompositionLocalProvider(LocalAnimacionRuta provides this) {
                             InicioScreen(
@@ -271,7 +289,8 @@ fun BitoNavHost(
                                         abrirFicha = { nav.navigate("detail/$it") },
                                         abrirAjustes = { nav.navigate("settings") },
                                         abrirTienda = { nav.navigate("habi") { launchSingleTop = true } },
-                                        abrirRepaso = { nav.navigate("review") },
+                                        // El Inicio lo sustituye: el cierre del día se abre dentro de él, sin ruta.
+                                        abrirRepaso = {},
                                         abrirTareas = { nav.navigate("tasks") },
                                         crearHabito = { nav.navigate("habit") },
                                         crearTarea = { nav.navigate("task") },
@@ -280,21 +299,32 @@ fun BitoNavHost(
                                 creado = creado,
                                 alCreadoVisto = { entry.savedStateHandle["creado"] = null },
                                 enPrimerPlano = ciclo.isAtLeast(Lifecycle.State.RESUMED),
+                                cierre = cierre,
+                                alCierreVisto = { entry.savedStateHandle[CIERRE_VISTO] = true },
+                                cierreViewModel = viewModel(factory = CierreViewModel.factory(container)),
+                                gordo = gordo,
+                                alGordoVisto = { entry.savedStateHandle[GORDO_VISTO] = true },
                             )
                         }
                     }
                     composable(
-                        "habit?id={id}",
+                        RUTA_FORM_HABITO,
                         arguments =
                             listOf(
                                 navArgument("id") {
                                     nullable = true
                                     defaultValue = null
                                 },
+                                navArgument("objetivo") {
+                                    type = NavType.IntType
+                                    defaultValue = SIN_OBJETIVO
+                                },
                             ),
                     ) { entry ->
+                        val objetivo = entry.arguments?.getInt("objetivo")?.takeIf { it != SIN_OBJETIVO }
                         HabitFormScreen(
-                            viewModel = viewModel(factory = HabitFormViewModel.factory(container, entry.arguments?.getString("id"))),
+                            viewModel =
+                                viewModel(factory = HabitFormViewModel.factory(container, entry.arguments?.getString("id"), objetivo)),
                             onBack = { nav.popBackStack() },
                             alCrear = { id -> dejarCreado(id) },
                         )
@@ -317,6 +347,7 @@ fun BitoNavHost(
                                 onBack = { nav.popBackStack() },
                                 onEdit = { nav.navigate("habit?id=$it") },
                                 onOpenHabi = { nav.navigate("habi") { launchSingleTop = true } },
+                                alEditarConObjetivo = { id, objetivo -> nav.navigate("habit?id=$id&objetivo=$objetivo") },
                             )
                         }
                     }
@@ -350,13 +381,6 @@ fun BitoNavHost(
                     }
                     composable("habi") {
                         HabiScreen(viewModel = habiViewModel)
-                    }
-                    // The review is its own flow, a route that hangs from Inicio like the other secondary screens.
-                    composable("review") {
-                        ReviewScreen(
-                            viewModel = viewModel(factory = ReviewViewModel.factory(container)),
-                            onClose = { nav.popBackStack() },
-                        )
                     }
                     // D12 revocado: crear y editar una tarea son ahora una pantalla completa, calcada de
                     // la ruta "habit?id={id}" de arriba en el mismo sentido — un solo composable, id nulo
@@ -444,7 +468,7 @@ fun BitoNavHost(
                             }
                         }
                     }
-                    // La lista es un destino secundario colgado de Hoy, como review.
+                    // La lista es un destino secundario colgado de Hoy.
                     composable("tasks") {
                         TasksScreen(
                             viewModel = viewModel(factory = TasksViewModel.factory(container)),
@@ -456,7 +480,7 @@ fun BitoNavHost(
                     // El argumento es opcional a proposito: sin defaultValue = null, navegar a "focus" a
                     // secas (la notificacion permanente, y el sheet de conflicto de esta misma pantalla)
                     // no casaria con este patron y navigate() lanzaria IllegalArgumentException. Sin barra
-                    // inferior, como "review" y "tasks" arriba — una sesion en marcha no es una pestana.
+                    // inferior, como "tasks" arriba — una sesion en marcha no es una pestana.
                     // "focus" gana la allowlist de NavRequests (arriba en este fichero) precisamente para
                     // que esa notificacion pueda pedirla.
                     composable(
@@ -491,7 +515,7 @@ fun BitoNavHost(
                         )
                     }
                     // M11: sin argumentos — el modo inicial sale de breathingLastMode. Fuera de la barra
-                    // inferior como review, tasks y focus: respirar no es una pestana. En la lista blanca de
+                    // inferior como tasks y focus: respirar no es una pestana. En la lista blanca de
                     // NavRequests para que la notificacion del recordatorio la abra (en reposo: el sonido
                     // y la vibracion no arrancan sin que el usuario lo pida). ViewModel por entrada: su
                     // guardado no depende de este scope (va en NonCancellable) y onClose solo llega cuando
@@ -532,7 +556,20 @@ fun BitoNavHost(
         LaunchedEffect(pendingRoute, currentRoute) {
             val route = pendingRoute ?: return@LaunchedEffect
             if (currentRoute == null || currentRoute == "onboarding") return@LaunchedEffect
-            nav.navigate(route) { launchSingleTop = true }
+            when {
+                // El cierre y lo gordo sustituyen la entrada de Hoy por una nueva con su bandera: una sola Hoy en la
+                // pila. Sin `launchSingleTop`: con Hoy arriba reutilizaría la entrada vieja, cuyo estado guardado
+                // no trae la bandera.
+                route == "review" || route == "gordo" ->
+                    nav.navigate(NavRequests.destino(route)) { popUpTo(RUTA_HOY) { inclusive = true } }
+                // Hoy a secas vuelve al Hoy que ya hay, con lo que tenga abierto.
+                NavRequests.vaAHoy(route) ->
+                    nav.navigate(NavRequests.destino(route)) {
+                        popUpTo(RUTA_HOY)
+                        launchSingleTop = true
+                    }
+                else -> nav.navigate(NavRequests.destino(route)) { launchSingleTop = true }
+            }
             NavRequests.consume()
         }
 
@@ -543,6 +580,9 @@ fun BitoNavHost(
         NotificationPermissionPrompt(container.settings, currentRoute)
     }
 }
+
+private const val CIERRE_VISTO = "cierre-visto"
+private const val GORDO_VISTO = "gordo-visto"
 
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.entra(
     t: TipoTransicion,

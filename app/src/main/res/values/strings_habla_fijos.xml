@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Habi's button labels (EtiquetasAccion). -->
+    <string name="habla_vale">OK</string>
+    <string name="habla_vale_a_las">OK, at %1$s</string>
+    <string name="habla_vale_habito">OK, %1$s</string>
+    <string name="habla_ahora">Now</string>
+    <string name="habla_empezar">Start</string>
+    <string name="habla_empezar_25">Start, 25 min</string>
+    <string name="habla_sesion_25">25-minute session</string>
+    <string name="habla_hecho">Done</string>
+    <string name="habla_cerrar_dia">Close the day</string>
+    <string name="habla_elegir">Choose</string>
+    <string name="habla_otra_hora">Another time</string>
+    <string name="habla_luego">Later</string>
+    <string name="habla_todavia_no">Not yet</string>
+    <string name="habla_ahora_no">Not now</string>
+    <string name="habla_no_hace_falta">No need</string>
+    <string name="habla_permitir">Allow</string>
+    <!-- "Big thing" sheet, row subtitles and card notices. -->
+    <string name="habla_gordo_titulo">What\'s the big thing today?</string>
+    <string name="habla_gordo_desc">What weighs most on your day. Habi starts there.</string>
+    <string name="habla_gordo_nota_0">Pick one to three things.</string>
+    <string name="habla_gordo_nota_n">%1$d of 3. The rest counts just the same, it just isn\'t the big thing.</string>
+    <string name="habla_gordo_nota_3">That\'s three. To change one, remove another.</string>
+    <string name="habla_gordo_cuarta">Three at most: that way the big thing stays big.</string>
+    <string name="habla_gordo_guardar">Save</string>
+    <string name="habla_gordo_aviso">Today\'s big thing: %1$s.</string>
+    <string name="habla_etiqueta_gordo">big thing</string>
+    <string name="habla_sub_tarea_hoy">Task for today</string>
+    <plurals name="habla_sub_tarea_vencida">
+        <item quantity="one">Task, overdue by %d day</item>
+        <item quantity="other">Task, overdue by %d days</item>
+    </plurals>
+    <string name="habla_sub_tarea_semana">Task for this week</string>
+    <string name="habla_sub_tarea">Task</string>
+    <string name="habla_sub_habito">Habit</string>
+    <string name="habla_esperan_sin_prisa">These can wait</string>
+    <string name="habla_manana">tomorrow</string>
+    <string name="habla_dia_cerrado">The day is closed. You can change it from its page.</string>
+    <string name="habla_habi_duerme">Habi is asleep. More tomorrow.</string>
+    <string name="habla_mas_tarde">Later</string>
+    <string name="habla_hecho_habito">Done: %1$s</string>
+    <string name="habla_mas_uno">+%1$d %2$s · %3$d/%4$d</string>
+    <string name="habla_manana_quitar">Tomorrow</string>
+</resources>

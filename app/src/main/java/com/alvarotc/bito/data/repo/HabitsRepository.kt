@@ -83,6 +83,14 @@ class HabitsRepository(private val db: BitoDatabase) {
             orderedIds.forEachIndexed { index, id -> db.habitDao().updateSortOrder(id, index) }
         }
 
-    /** Rule E3: cascades wipe the history; earned points are never deducted. */
-    suspend fun delete(id: String) = db.habitDao().delete(id)
+    /**
+     * Rule E3: cascades wipe the history; earned points are never deducted. Tambien se lleva sus
+     * filas de lo gordo y sus avisos aceptados, en la misma transaccion.
+     */
+    suspend fun delete(id: String) =
+        db.withTransaction {
+            db.habitDao().delete(id)
+            db.hablaDao().borrarGordoDeRef(id)
+            db.hablaDao().borrarAvisosDeHabito(id)
+        }
 }

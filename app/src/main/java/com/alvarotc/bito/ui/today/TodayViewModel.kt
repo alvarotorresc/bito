@@ -6,9 +6,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.EntryEntity
 import com.alvarotc.bito.data.db.HabitEntity
+import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
+import com.alvarotc.bito.data.habla.LoGordoRepository
+import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -21,11 +25,17 @@ import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.StatsEngine
+import com.alvarotc.bito.domain.habla.AvisoAceptado
+import com.alvarotc.bito.domain.habla.Memoria
+import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.Situacion
+import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -34,21 +44,43 @@ import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.habi.minuteTicks
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
+
+/** Lo de [hoy] que dice si es día duro: respuestas, muestras y vigentes de `DIA_DURO` y si se llegó a mostrar uno. */
+private fun Memoria.soloDiaDuro(hoy: LogicalDay): Memoria =
+    Memoria(
+        eventos =
+            eventos.filter {
+                (it.tipo == TipoMemoria.RESPUESTA || it.tipo == TipoMemoria.MOSTRADA) &&
+                    it.dia == hoy &&
+                    it.ref?.startsWith("${Situacion.DIA_DURO.name}:") == true
+            },
+        vigentes = vigentes.filter { it.situacion == Situacion.DIA_DURO && it.dia == hoy },
+        mostradasHoy = mostradasHoy.filter { it.situacion == Situacion.DIA_DURO }.take(1),
+    )
 
 /** Backs the Today screen: derives its state and runs every registration action. */
 class TodayViewModel(
@@ -72,6 +104,12 @@ class TodayViewModel(
     // con advanceUntilIdle no conviven con un bucle infinito). La fábrica pasa minuteTicks().
     clockTicks: Flow<Unit> = flowOf(Unit),
     private val economia: EconomyConfig = EconomyConfig(),
+    // Lo gordo de cada día; null en los tests que no lo usan.
+    private val gordo: LoGordoRepository? = null,
+    // Los «Vale, a las…» aceptados; null en los tests que no los usan.
+    private val aceptados: AvisosAceptadosRepository? = null,
+    // Lo que Habi recuerda: de ahí sale que hoy es día duro aunque la propuesta cambie. null en los tests que no la usan.
+    private val memoria: MemoriaRepository? = null,
 ) : ViewModel() {
     private val jardinForzado = MutableStateFlow<GardenState?>(null)
 
@@ -83,6 +121,67 @@ class TodayViewModel(
         val saldo: Int,
     )
 
+    // Lo gordo de hoy y de ayer, siguiendo al día lógico (el corte y el reloj).
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val gordoDeDosDias: Flow<Pair<List<RefGordo>, List<RefGordo>>> =
+        if (gordo == null) {
+            flowOf(emptyList<RefGordo>() to emptyList())
+        } else {
+            combine(settings.settings, clockTicks) { prefs, _ -> LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone()) }
+                .distinctUntilChanged()
+                .flatMapLatest { hoy ->
+                    gordo.observe(listOf(hoy - 1, hoy)).map { porDia -> (porDia[hoy] ?: emptyList()) to (porDia[hoy - 1] ?: emptyList()) }
+                }
+        }
+
+    /** La propuesta de Habi para Hoy; sin fuente, nunca hay. */
+    val propuesta: StateFlow<Propuesta?> =
+        propuestas?.propuesta(Ambito.HOY)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+            ?: MutableStateFlow<Propuesta?>(null)
+
+    // Los avisos aceptados de hoy, siguiendo al día lógico.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val avisosDeHoy: Flow<List<AvisoAceptado>> =
+        if (aceptados == null) {
+            flowOf(emptyList())
+        } else {
+            combine(settings.settings, clockTicks) { prefs, _ -> LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone()) }
+                .distinctUntilChanged()
+                .flatMapLatest { hoy -> aceptados.observeDe(hoy) }
+        }
+
+    // De la memoria de hoy, solo lo que dice si es día duro: así una escritura cualquiera no rehace Hoy.
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val memoriaDiaDuro: Flow<Memoria> =
+        if (memoria == null) {
+            flowOf(Memoria())
+        } else {
+            combine(settings.settings, clockTicks) { prefs, _ -> LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone()) }
+                .distinctUntilChanged()
+                .flatMapLatest { hoy -> memoria.observe(flowOf(hoy)).map { it.soloDiaDuro(hoy) } }
+                .distinctUntilChanged()
+        }
+
+    // El último hábito de día duro que propuso la tarjeta hoy, por si la vigente se reemplaza sin respuesta.
+    @Volatile private var diaDuroVisto: Pair<LogicalDay, String>? = null
+
+    private fun resolverDiaDuro(
+        propuesta: Propuesta?,
+        memoriaHoy: Memoria,
+        hoy: LogicalDay,
+    ): String? {
+        diaDuroDe(propuesta)?.takeIf { propuesta?.id?.endsWith(":$hoy") == true }?.let { diaDuroVisto = hoy to it }
+        return diaDuroDeHoy(propuesta, memoriaHoy, hoy, diaDuroVisto?.takeIf { it.first == hoy }?.second)
+    }
+
+    private data class Extras(
+        val badges: List<BadgeEntity>,
+        val gordos: Pair<List<RefGordo>, List<RefGordo>>,
+        val avisos: List<AvisoAceptado>,
+        val propuesta: Propuesta?,
+        val memoria: Memoria,
+    )
+
     val uiState: StateFlow<TodayUiState> =
         combine(
             combine(
@@ -92,11 +191,14 @@ class TodayViewModel(
                 rewards.observeOwnedItems(),
                 rewards.observeBalance(),
             ) { state, entities, prefs, owned, saldo -> Entradas(state, entities, prefs, owned, saldo) },
-            rewards.observeBadges(),
+            combine(rewards.observeBadges(), gordoDeDosDias, avisosDeHoy, propuesta, memoriaDiaDuro) { badges, gordos, avisos, p, m ->
+                Extras(badges, gordos, avisos, p, m)
+            },
             rewards.observeRecentMovements(5),
             jardinForzado,
             clockTicks,
-        ) { entradas, badges, recientes, forzado, _ ->
+        ) { entradas, extras, recientes, forzado, _ ->
+            val (badges, gordos) = extras.badges to extras.gordos
             val nowMillis = now()
             val zoneId = zone()
             val prefs = entradas.prefs
@@ -123,18 +225,35 @@ class TodayViewModel(
                 garden = garden,
                 movimientos = Movimientos.de(recientes, entradas.state, hoy),
                 economia = economia,
+                gordoHoy = gordos.first,
+                gordoAyer = gordos.second,
+                avisosHoy = extras.avisos,
+                diaDuro = resolverDiaDuro(extras.propuesta, extras.memoria, hoy),
             )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
-    /** La propuesta de Habi para Hoy; sin fuente, nunca hay. */
-    val propuesta: StateFlow<Propuesta?> =
-        propuestas?.propuesta(Ambito.HOY)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-            ?: MutableStateFlow<Propuesta?>(null)
+    // Un canal y no un SharedFlow sin replay: un efecto que llega sin colector (giro de pantalla, Hoy fuera de
+    // composición) espera a la pantalla en vez de perderse.
+    private val efectosInternos = Channel<Efecto>(Channel.BUFFERED)
 
-    fun responder(r: Respuesta) {
+    /** Lo que la pantalla debe hacer tras una respuesta. Se consume una vez: sin repetición para quien llega tarde. Un solo colector. */
+    val efectos: Flow<Efecto> = efectosInternos.receiveAsFlow()
+
+    fun responder(
+        r: Respuesta,
+        hora: Int? = null,
+    ) {
         val id = propuesta.value?.id ?: return
-        viewModelScope.launch { propuestas?.responder(id, r) }
+        viewModelScope.launch {
+            val efecto = propuestas?.responder(id, r, hora) ?: return@launch
+            if (efecto != Efecto.Ninguno) efectosInternos.send(efecto)
+        }
+    }
+
+    /** Lo gordo que el usuario guarda en la hoja. */
+    fun guardarGordo(refs: List<RefGordo>) {
+        viewModelScope.launch { propuestas?.guardarGordo(refs) }
     }
 
     /** Solo para el panel de depuración: fuerza lo que pinta el jardín; null vuelve al motor. */
@@ -142,12 +261,25 @@ class TodayViewModel(
         jardinForzado.value = garden
     }
 
+    private val habiDuermeInterno = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /** Se emite al tocar a Habi con el día sellado: la lista avisa de que duerme. */
+    val habiDuerme: SharedFlow<Unit> = habiDuermeInterno.asSharedFlow()
+
     fun alTocarHabi() {
-        habiSounds?.play(HabiSound.GREETING)
+        if (uiState.value.todaySealed) {
+            habiDuermeInterno.tryEmit(Unit)
+        } else {
+            habiSounds?.play(HabiSound.GREETING)
+        }
     }
 
     fun alAcariciarHabi() {
-        habiSounds?.play(HabiSound.HAPPY)
+        if (uiState.value.todaySealed) {
+            habiDuermeInterno.tryEmit(Unit)
+        } else {
+            habiSounds?.play(HabiSound.HAPPY)
+        }
     }
 
     private val loggedEntry = MutableStateFlow<String?>(null)
@@ -273,6 +405,9 @@ class TodayViewModel(
                         tasks = container.tasks,
                         propuestas = container.propuestas,
                         clockTicks = minuteTicks(),
+                        gordo = container.loGordo,
+                        aceptados = container.avisosAceptados,
+                        memoria = container.memoria,
                     )
                 }
             }

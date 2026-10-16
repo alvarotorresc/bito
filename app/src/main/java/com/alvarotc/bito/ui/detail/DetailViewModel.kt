@@ -19,6 +19,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -27,13 +28,22 @@ import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.today.CardKind
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -75,14 +85,72 @@ class DetailViewModel(
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** La propuesta de Habi para esta ficha; sin fuente, nunca hay. */
+    /** LIBRE: se pinta lo que diga la fuente. OCULTA: se fue a Editar. ESPERA: de vuelta, hasta que conteste (o el tope). */
+    private enum class Fase { LIBRE, OCULTA, ESPERA }
+
+    // Tras mandar a Editar, la nota se calla hasta que la ficha vuelva y la fuente conteste con el estado nuevo.
+    private val fase = MutableStateFlow(Fase.LIBRE)
+
+    // Lo último que dijo la fuente; es lo que se enseña si tras el tope no ha contestado nada nuevo.
+    private var ultima: Propuesta? = null
+
+    /** La propuesta de Habi para esta ficha; sin fuente o en modo lectura, nunca hay. */
+    @OptIn(ExperimentalCoroutinesApi::class)
     val propuesta: StateFlow<Propuesta?> =
-        propuestas?.propuesta(Ambito.FICHA, habitId)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-            ?: MutableStateFlow<Propuesta?>(null)
+        if (propuestas == null || lectura) {
+            MutableStateFlow<Propuesta?>(null)
+        } else {
+            // Una sola colección de la fuente por fase: lo que se pinta y lo que se espera es lo mismo.
+            fase
+                .flatMapLatest { f ->
+                    when (f) {
+                        Fase.LIBRE -> propuestas.propuesta(Ambito.FICHA, habitId).onEach { ultima = it }
+                        Fase.OCULTA -> flowOf(null)
+                        Fase.ESPERA ->
+                            channelFlow {
+                                send(null)
+                                var llego = false
+                                val tope =
+                                    launch {
+                                        delay(TOPE_ESPERA_MS)
+                                        if (!llego) {
+                                            llego = true
+                                            send(ultima)
+                                        }
+                                    }
+                                propuestas.propuesta(Ambito.FICHA, habitId).collect {
+                                    llego = true
+                                    tope.cancel()
+                                    ultima = it
+                                    send(it)
+                                }
+                            }
+                    }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        }
+
+    // Un canal y no un SharedFlow sin replay: un efecto que llega sin colector (giro de pantalla) espera a la
+    // pantalla en vez de perderse con la nota ya oculta. Se consume una vez: sin repetición para quien llega tarde.
+    private val _efectos = Channel<Efecto>(Channel.BUFFERED)
+
+    /** Lo que la pantalla debe hacer tras una respuesta (solo `EditarHabito` sale de la ficha). Un solo colector. */
+    val efectos: Flow<Efecto> = _efectos.receiveAsFlow()
 
     fun responder(r: Respuesta) {
         val id = propuesta.value?.id ?: return
-        viewModelScope.launch { propuestas?.responder(id, r) }
+        viewModelScope.launch {
+            val efecto = propuestas?.responder(id, r) ?: return@launch
+            if (efecto is Efecto.EditarHabito) fase.value = Fase.OCULTA
+            if (efecto != Efecto.Ninguno) _efectos.send(efecto)
+        }
+    }
+
+    /**
+     * La ficha vuelve a primer plano. Si venía de Editar, la fuente se pide otra vez y la nota sigue oculta hasta
+     * su primera respuesta o hasta [TOPE_ESPERA_MS]; con `WhileSubscribed(5_000)` lo guardado puede ser de antes de editar.
+     */
+    fun alVolver() {
+        fase.compareAndSet(Fase.OCULTA, Fase.ESPERA)
     }
 
     init {
@@ -172,6 +240,8 @@ class DetailViewModel(
     fun unarchive() = write { _, _ -> habits.unarchive(habitId) }
 
     companion object {
+        const val TOPE_ESPERA_MS = 2_000L
+
         fun factory(
             container: AppContainer,
             habitId: String,

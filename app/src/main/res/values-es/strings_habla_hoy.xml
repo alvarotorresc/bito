@@ -1,0 +1,431 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
+<resources>
+    <string-array name="habla_nu_ayer_escapo_sargento">
+        <item>Ayer se escapó: {habito}. Hoy lo cazamos.</item>
+        <item>{habito}, hoy a las {hora}. Sin discusión.</item>
+        <item>Ayer no salió: {habito}. Hoy son {minutos} min. Los tienes.</item>
+        <item>Un día torcido no es una semana. «{habito}», hoy a las {hora}.</item>
+        <item>Ayer se quedó fuera: {habito}. Hoy entra, a las {hora}.</item>
+        <item>Hoy toca: {habito}. Son {minutos} min, no más.</item>
+        <item>Ayer se escapó, hoy se corrige: {habito}.</item>
+        <item>Venías bien con esto. Ayer se escapó: {habito}. Hoy, a las {hora}.</item>
+        <item>[lunes] Lunes. «{habito}» se escapó ayer; hoy se arregla a las {hora}.</item>
+        <item>[viernes] Viernes. Ayer se escapó: {habito}. Que no cruce al finde.</item>
+        <item>[manana] Buenos días. Ayer se escapó: {habito}. Quítatelo de encima pronto.</item>
+        <item>[noche] Queda noche. «{habito}», {minutos} min, y se corrige lo de ayer.</item>
+        <item>[finde] Es finde, pero «{habito}» sigue en pie. Ayer se escapó: {minutos} min.</item>
+        <item>Sin dramas: ayer se escapó «{habito}». Se arregla hoy, a las {hora}.</item>
+        <item>Ayer se escapó: {habito}. Hoy no se escapa.</item>
+    </string-array>
+    <string-array name="habla_nu_ayer_escapo_cheerleader">
+        <item>Ayer se escapó: {habito}. Hoy a las {hora} vamos a por ello, tú y yo.</item>
+        <item>Ayer no pudo ser. Hoy sí: {habito}, a las {hora}.</item>
+        <item>Ayer se quedó sin hacer: {habito}. Hoy son {minutos} min, y yo contigo.</item>
+        <item>Ayer quedó en el tintero: {habito}. Hoy, a las {hora}, y a otra cosa.</item>
+        <item>[manana] Mañana nueva, intento nuevo: {habito}, a las {hora}. Tú puedes.</item>
+        <item>[lunes] Semana nueva. Ayer se escapó: {habito}. Hoy, a las {hora}, empezamos.</item>
+        <item>[finde] Es finde, así que con calma. Ayer se escapó: {habito}. Hoy, a las {hora}.</item>
+        <item>Ayer se escapó: {habito}. ¡Hoy es un gran día para volver a ello!</item>
+        <item>Hay sitio hoy para esto: {habito}. Ayer no pudo ser; son {minutos} min.</item>
+        <item>Venías con buen ritmo y ayer se escapó: {habito}. Retomamos hoy, sin drama.</item>
+        <item>A las {hora} tengo un plan: {habito}. Ayer se escapó; hoy, tú y yo.</item>
+        <item>[tarde] Aún queda tarde: {habito}, a las {hora}. Ayer se escapó; hoy llegamos.</item>
+        <item>{habito}, {minutos} min a las {hora}. Se escapó ayer; hoy sí.</item>
+        <item>[invierno] Con frío todo cuesta más. Ayer se escapó: {habito}. Hoy, {hora}, juntos.</item>
+        <item>Ayer se escapó: {habito}. Hoy le hacemos sitio, tú y yo.</item>
+    </string-array>
+    <string-array name="habla_nu_ayer_escapo_neutra">
+        <item>Ayer se quedó sin hacer: {habito}. Hoy son {minutos} min.</item>
+        <item>[lunes] Lunes. «{habito}» se quedó ayer en el tintero; hoy hay sitio.</item>
+        <item>«{habito}» ayer no pudo ser. Hoy bastan {minutos} min.</item>
+        <item>Ayer se escapó «{habito}». Hoy, {hora}: {minutos} min.</item>
+        <item>Un día sin «{habito}» es solo un día. Hoy, {minutos} min y queda al día.</item>
+        <item>{habito}, a las {hora}: {minutos} min cierran el hueco de ayer.</item>
+        <item>Ayer faltó «{habito}». Hoy cabe en {minutos} min, cuando quieras.</item>
+        <item>[manana] Es temprano. «{habito}» se quedó ayer; hoy cabe en {minutos} min.</item>
+        <item>[tarde] Ayer se escapó «{habito}». Esta tarde cabe en {minutos} min.</item>
+        <item>[finde] Es fin de semana. «{habito}» cabe hoy en {minutos} min, sin horarios.</item>
+        <item>[viernes] Viernes. «{habito}» se escapó ayer; {minutos} min y la semana acaba al día.</item>
+        <item>Ayer no salió «{habito}». Hoy: {minutos} min a las {hora}.</item>
+        <item>[invierno] Hace frío fuera. «{habito}» se quedó ayer; hoy son {minutos} min.</item>
+        <item>Ayer se quedó sin hacer: {habito}. Hoy hay sitio para retomarlo.</item>
+        <item>«{habito}» ayer no pudo ser. Hoy es otro día.</item>
+        <item>Ayer se escapó «{habito}». Hoy, cuando te venga bien.</item>
+    </string-array>
+    <string-array name="habla_nu_elegir_gordo_sargento">
+        <item>¿Cuál es lo gordo de hoy? Elige una cosa y la defiendes.</item>
+        <item>Hoy necesita una cosa gorda. Elígela antes de que el día elija por ti.</item>
+        <item>Mi apuesta para lo gordo: «{tarea}». Discútela o apúntala.</item>
+        <item>Lo gordo, antes de nada. ¿«{tarea}»? Tú decides.</item>
+        <item>De 1 a 3. Con una ya vale. Elige lo gordo de hoy.</item>
+        <item>Sin una cosa gorda, el día va a la deriva. Elige una.</item>
+        <item>«{tarea}» lleva esperando. Candidata clara a lo gordo.</item>
+        <item>Lo gordo no se elige solo. ¿Cuál va a ser?</item>
+        <item>[manana] Mañana fresca, cabeza clara. Elige lo gordo antes de que el día se llene.</item>
+        <item>[lunes] Lunes. Una cosa gorda y la semana arranca en serio.</item>
+        <item>[viernes] Viernes. Elige lo gordo y cierra la semana con algo hecho.</item>
+        <item>[finde] Aunque sea finde, una cosa gorda. Una.</item>
+    </string-array>
+    <string-array name="habla_nu_elegir_gordo_cheerleader">
+        <item>¿Qué es lo gordo de hoy? Elige hasta tres cosas, y lo demás va detrás.</item>
+        <item>Antes de empezar, una pregunta: ¿qué va a ser lo gordo hoy?</item>
+        <item>Mi apuesta para lo gordo de hoy: «{tarea}». Pero la última palabra es tuya.</item>
+        <item>[manana] Buenos días. Si hoy solo salieran bien una o dos cosas, ¿cuáles serían?</item>
+        <item>Elige lo gordo y el día se ordena solo. Yo empezaría por: {tarea}.</item>
+        <item>[lunes] Lunes, y una sola cosa que marque el día. ¿Cuál?</item>
+        <item>Lo gordo de hoy es la cosa que, hecha, hace que el día cuente. ¿Cuál es?</item>
+        <item>Tengo un favorito para lo gordo de hoy: «{tarea}». ¿Lo elegimos?</item>
+        <item>[invierno] Fuera hace frío, así que mejor decidir pronto: ¿qué es lo gordo de hoy?</item>
+        <item>[viernes] Viernes. Si dejas hecha una cosa gorda hoy, el fin de semana empieza ligero. ¿Cuál?</item>
+        <item>¡Elige lo gordo y yo te sigo! Una sola cosa, la que más pese.</item>
+        <item>Hay varias cosas esperando. ¿Cuál quieres tener hecha hoy sí o sí?</item>
+        <item>[finde] Fin de semana con cosas por hacer. Elige una gorda y el resto, a tu ritmo.</item>
+        <item>Mi sugerencia para lo gordo es esta: {tarea}. Tú decides.</item>
+    </string-array>
+    <string-array name="habla_nu_elegir_gordo_neutra">
+        <item>¿Qué es lo gordo de hoy? Elige una cosa, o hasta tres.</item>
+        <item>Hay hueco para elegir lo gordo de hoy. Sugiero: «{tarea}».</item>
+        <item>Lo gordo de hoy sigue sin elegir. Elegirlo lleva diez segundos.</item>
+        <item>Si hoy solo pudiera salir una cosa, ¿cuál? Esa es lo gordo.</item>
+        <item>Una candidata a lo gordo: «{tarea}». Tú decides.</item>
+        <item>Elegir lo gordo da un norte al día. Se me ocurre: «{tarea}».</item>
+        <item>[manana] Buen momento para elegir lo gordo, antes de que el día se llene.</item>
+        <item>[lunes] Lunes. Una cosa gorda para empezar la semana; sugiero «{tarea}».</item>
+        <item>[viernes] Viernes. Lo gordo de hoy puede ser el último cabo suelto de la semana.</item>
+        <item>Pueden ser hasta tres, aunque con una basta. ¿Cuál es lo gordo de hoy?</item>
+        <item>[finde] Fin de semana: lo gordo puede ser algo pequeño. ¿Lo eliges?</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_sin_empezar_sargento">
+        <item>Lo gordo sigue intacto: {gordo}. Empieza por el primer paso.</item>
+        <item>Primer paso: {primer_paso}. Solo ese.</item>
+        <item>Lo gordo no se hace solo. Primer paso: {primer_paso}.</item>
+        <item>Veinticinco minutos y lo gordo deja de estar a cero. Empieza por: {primer_paso}.</item>
+        <item>No te pido terminar. Te pido empezar: {primer_paso}.</item>
+        <item>Lo gordo espera. El primer paso es corto: {primer_paso}.</item>
+        <item>Empezar es lo difícil, y lo sabes. «{primer_paso}», ahora.</item>
+        <item>{gordo}: sin empezar. Un primer paso cambia el día.</item>
+        <item>Pasan las horas y lo gordo sigue quieto. Muévelo: {primer_paso}.</item>
+        <item>[tarde] Ya es tarde y lo gordo no ha arrancado. Hay tiempo: {primer_paso}.</item>
+        <item>[manana] La mañana es tuya. Arranca lo gordo con esto: {primer_paso}.</item>
+        <item>[mediodia] Mediodía, y lo gordo sigue a cero. Primer paso: {primer_paso}.</item>
+        <item>Lo gordo sigue a cero: {gordo}. Empieza ya.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_sin_empezar_cheerleader">
+        <item>Lo gordo de hoy sigue en pie: {gordo}. El primer paso: {primer_paso}.</item>
+        <item>Empezar es lo difícil, y el primer paso es pequeño: {primer_paso}. Yo te acompaño.</item>
+        <item>Lo gordo sigue sin empezar: {gordo}. Un primer paso y ya estás dentro.</item>
+        <item>[mediodia] Mediodía. Lo gordo aún no ha arrancado: {gordo}. La tarde da de sobra.</item>
+        <item>Solo hay que empezar: {primer_paso}. Con eso, lo gordo ya está en marcha.</item>
+        <item>¿Probamos con un primer paso? Este: {primer_paso}. Lo demás viene solo.</item>
+        <item>[tarde] Queda tarde por delante para lo gordo: {gordo}. ¿Arrancamos?</item>
+        <item>Lo gordo te espera sin prisa, y yo contigo. Empezamos cuando digas.</item>
+        <item>¡Vamos con lo gordo! Primer paso: {primer_paso}.</item>
+        <item>Elegiste lo gordo hace un rato: {gordo}. Un paso pequeño y se mueve todo.</item>
+        <item>[manana] Buenos días, lo gordo espera: {gordo}. Primer paso, corto: {primer_paso}.</item>
+        <item>Lo gordo cuenta contigo hoy. Basta con un trozo pequeño para entrar.</item>
+        <item>[lunes] Lunes de lo gordo: {gordo}. Arrancas así: {primer_paso}.</item>
+        <item>Elegir lo gordo ya fue un paso. El siguiente: {primer_paso}.</item>
+    </string-array>
+    <string-array name="habla_nu_gordo_sin_empezar_neutra">
+        <item>Lo gordo sigue por empezar: {gordo}. Primer paso: {primer_paso}.</item>
+        <item>Lo gordo sigue intacto: {gordo}. 25 minutos bastan para arrancar.</item>
+        <item>Para arrancar con lo gordo ({gordo}) basta esto: {primer_paso}.</item>
+        <item>Primer paso de lo gordo: {primer_paso}. Es pequeño a propósito.</item>
+        <item>Una sesión corta con lo gordo y el resto del día pesa menos: {gordo}.</item>
+        <item>Sigue sin empezar: {gordo}. ¿Probamos 25 minutos?</item>
+        <item>[manana] Aún es temprano para lo gordo: {gordo}. Empezar ahora deja libre la tarde.</item>
+        <item>[mediodia] Mediodía y lo gordo sin tocar: {gordo}. Un primer paso: {primer_paso}.</item>
+        <item>[tarde] La tarde aún da para lo gordo: {gordo}. Empezar es solo: {primer_paso}.</item>
+        <item>Lo gordo espera: {gordo}. No hace falta terminarlo, solo empezarlo.</item>
+        <item>[viernes] Viernes: lo gordo de hoy sigue esperando. Un paso lo mueve: {primer_paso}.</item>
+    </string-array>
+    <string-array name="habla_nu_hora_habitual_sargento">
+        <item>Se acerca tu hora: {habito}, hacia las {hora}.</item>
+        <item>{habito} suele caer a las {hora}. Ya casi.</item>
+        <item>Tu hora de siempre: {habito}. Sin darle vueltas.</item>
+        <item>Sueles hacerlo hacia las {hora}: «{habito}». Es ahora.</item>
+        <item>Casi es la hora. «{habito}» te espera, como siempre.</item>
+        <item>Rutina: {habito}, hacia las {hora}. Lo que se repite, se afianza.</item>
+        <item>Llega la hora de siempre. Hoy toca: {habito}.</item>
+        <item>{habito}, hacia las {hora}, como sueles. Hazlo pronto y a otra cosa.</item>
+        <item>[manana] Buenos días. Casi es tu hora de siempre: {habito}.</item>
+        <item>[tarde] Tarde. Casi es tu hora de siempre: {habito}.</item>
+        <item>[noche] Noche. Tu hora de siempre llega ya: {habito}. Despáchalo.</item>
+        <item>[finde] Finde o no, llega tu hora de siempre: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_hora_habitual_cheerleader">
+        <item>Se acerca tu hora de siempre: {habito}, a las {hora}.</item>
+        <item>Hacia las {hora} es tu hueco de costumbre: {habito}.</item>
+        <item>{habito}, hacia las {hora}, como siempre. Si quieres, empezamos antes.</item>
+        <item>Tienes una cita de costumbre: {habito}, hacia las {hora}. ¿Vamos?</item>
+        <item>[manana] Tu mañana tiene su momento: {habito}, hacia las {hora}.</item>
+        <item>[tarde] La tarde avanza y se acerca lo tuyo: {habito}, hacia las {hora}.</item>
+        <item>¡Casi es tu hora de siempre! Hoy toca: {habito}.</item>
+        <item>Hacia las {hora} suele ser tu momento. Hoy: {habito}.</item>
+        <item>Un empujón suave antes de tu hora: {habito}. Si te viene bien, ya.</item>
+        <item>Lo tuyo de las {hora} está al caer: {habito}.</item>
+        <item>[finde] También en finde tienes tu sitio: {habito}, hacia las {hora}.</item>
+        <item>Te lo recuerdo bajito: {habito}, hacia las {hora}.</item>
+        <item>Se acerca tu momento de siempre: {habito}. ¿Vamos?</item>
+    </string-array>
+    <string-array name="habla_nu_hora_habitual_neutra">
+        <item>Sueles hacer «{habito}» sobre las {hora}. Ya queda poco.</item>
+        <item>Tu hora de siempre para «{habito}» es a las {hora}, y se acerca.</item>
+        <item>{habito} suele caer sobre las {hora}. Ya falta poco.</item>
+        <item>Aviso sin sonido: «{habito}», que sueles hacer a las {hora}.</item>
+        <item>Dentro de poco, «{habito}». Es lo que sueles hacer a esta hora.</item>
+        <item>Ahora o luego, como prefieras: «{habito}» toca sobre las {hora}.</item>
+        <item>[manana] Mañana tranquila. «{habito}» suele ser a las {hora}.</item>
+        <item>[mediodia] Mediodía. Tu «{habito}» de siempre cae cerca: a las {hora}.</item>
+        <item>[tarde] Tarde. «{habito}» suele llegar a las {hora}; falta poco.</item>
+        <item>[noche] Esta noche, «{habito}» a tu hora de siempre, las {hora}.</item>
+        <item>[finde] Es fin de semana, pero «{habito}» sigue teniendo su hora: las {hora}.</item>
+        <item>Se acerca tu hora de siempre para «{habito}».</item>
+        <item>Se acerca el rato de siempre para «{habito}». Cuando quieras.</item>
+    </string-array>
+    <string-array name="habla_nu_vuelta_sargento">
+        <item>Han pasado {dias_fuera|día|días}. Hoy, una sola cosa: {habito}.</item>
+        <item>Vuelves tras {dias_fuera|día|días}. Eso ya era lo difícil. Ahora: {habito}.</item>
+        <item>Has vuelto. Una cosa pequeña para arrancar: {habito}.</item>
+        <item>Se acabó la pausa. Una cosa: {habito}.</item>
+        <item>Fueron {dias_fuera|día|días} fuera y no se borra nada. Arranca con «{habito}».</item>
+        <item>Nada que recuperar: solo «{habito}».</item>
+        <item>Volver es la parte difícil, y ya la has hecho. Ahora: {habito}.</item>
+        <item>Una cosa y el día ya cuenta: {habito}.</item>
+        <item>[lunes] Lunes de regreso. Empieza con «{habito}»; el resto, luego.</item>
+        <item>[manana] Buenos días. Has vuelto; empezamos por «{habito}».</item>
+        <item>Tras {dias_fuera|día|días}, lo pequeño manda: «{habito}».</item>
+        <item>Un {dia_semana} cualquiera sirve para volver: «{habito}».</item>
+    </string-array>
+    <string-array name="habla_nu_vuelta_cheerleader">
+        <item>Qué bien tenerte de vuelta. Una sola cosa, pequeña: {habito}.</item>
+        <item>Han sido {dias_fuera|día|días} sin vernos, y aquí sigo. Empezamos por una: {habito}.</item>
+        <item>Hoy volvemos con algo pequeño: {habito}. Tú y yo, sin prisa.</item>
+        <item>Volver ya es la parte difícil, y la tienes hecha. Ahora, una cosa: {habito}.</item>
+        <item>[manana] Buenos días. Qué ganas de verte por aquí. Primera cosa: {habito}.</item>
+        <item>Una cosa pequeña para retomar el hilo: {habito}. Lo demás puede esperar.</item>
+        <item>¡Has vuelto! Una cosa para entrar en ritmo: {habito}.</item>
+        <item>[lunes] Lunes, y de vuelta. Una cosa pequeña basta para arrancar: {habito}.</item>
+        <item>Después de {dias_fuera} días fuera, tu sitio sigue aquí. Hoy: {habito}.</item>
+        <item>No hace falta recuperar nada. Solo esto, hoy: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_vuelta_neutra">
+        <item>Han pasado {dias_fuera|día|días}. Hoy, una sola cosa: «{habito}».</item>
+        <item>Vuelves tras {dias_fuera|día|días}. Para empezar, solo esto: {habito}.</item>
+        <item>Me alegra verte. Hoy basta con una cosa pequeña: «{habito}».</item>
+        <item>Después de {dias_fuera|día|días}, empezamos por lo que mejor se te da: «{habito}».</item>
+        <item>«{habito}» es lo que mejor se te da. Empezamos por ahí.</item>
+        <item>Sin prisa por ponerte al día. Hoy, solo: {habito}.</item>
+        <item>[lunes] Vuelves en lunes, tras {dias_fuera|día|días}. Una cosa, «{habito}», y el resto espera.</item>
+        <item>Basta una para retomar el hilo: «{habito}».</item>
+        <item>[noche] Queda un rato de hoy, y para volver basta «{habito}».</item>
+        <item>[finde] Es fin de semana y estás de vuelta. Solo «{habito}»; lo demás, a tu ritmo.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_duro_sargento">
+        <item>Ayer fue duro. Hoy, una sola cosa: {habito}.</item>
+        <item>Dijiste «Duro» ayer. Hoy pido menos: {habito}.</item>
+        <item>Bajo el listón: {habito}. Nada más.</item>
+        <item>Un día duro no se compensa. Se sigue. Hoy: {habito}.</item>
+        <item>Lo demás espera. «{habito}» y ya has cumplido.</item>
+        <item>Ayer pesó. Hoy va ligero: {habito}.</item>
+        <item>Solo una cosa: {habito}. El resto puede esperar.</item>
+        <item>Tras un día así, poco y bueno: «{habito}».</item>
+        <item>[manana] Mañana suave. Una cosa: {habito}.</item>
+        <item>[viernes] Viernes tras un día duro. Una cosa y se acabó: {habito}.</item>
+        <item>[noche] Aún queda noche. Una cosa corta: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_duro_cheerleader">
+        <item>Ayer fue un día duro, así que hoy vamos con menos. Una cosa: {habito}.</item>
+        <item>Hoy te pido poco: {habito}. Lo demás espera sin prisa.</item>
+        <item>Tras un día duro, lo justo. Solo esto: {habito}. Yo me quedo al lado.</item>
+        <item>Seguimos en esto, tú y yo. Hoy, una sola cosa: {habito}.</item>
+        <item>[manana] Buenos días. Ayer pesó, así que hoy ligero: {habito}.</item>
+        <item>Ayer costó. Hoy, algo pequeño que sí está a tu alcance: {habito}.</item>
+        <item>Hoy no toca más que esto: {habito}. Con una cosa, el día ya cuenta.</item>
+        <item>Hoy menos es más: {habito}. El resto de la lista no se va a ninguna parte.</item>
+        <item>[finde] Tras un día duro, el fin de semana se toma con calma. Una cosa: {habito}.</item>
+        <item>[invierno] Hace frío y ayer fue duro. Hoy, una sola cosa: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_duro_neutra">
+        <item>Hoy, menos. Una sola cosa: «{habito}». El resto espera sin prisa.</item>
+        <item>Ayer fue duro, así que hoy va ligero: «{habito}», y ya.</item>
+        <item>Lo que dijiste anoche cuenta: hoy, menos. Propongo «{habito}».</item>
+        <item>Tras un día duro, una cosa es suficiente: {habito}.</item>
+        <item>Los demás hábitos esperan. Hoy solo: {habito}.</item>
+        <item>Sin lista larga hoy. Una cosa, «{habito}», a la hora que sea.</item>
+        <item>[manana] Empieza el día con calma: solo «{habito}», nada más por ahora.</item>
+        <item>[lunes] Un lunes tras un día duro. «{habito}» y poco más.</item>
+        <item>[invierno] Hace frío fuera y ayer fue duro. Hoy, algo pequeño: «{habito}».</item>
+        <item>No hace falta más que esto hoy: «{habito}».</item>
+    </string-array>
+    <string-array name="habla_nu_racha_cerca_sargento">
+        <item>Racha de {racha}, a {faltan} del hito: {bitos} bitos.</item>
+        <item>En «{habito}» estás a {faltan} del hito. Asegura la racha hoy.</item>
+        <item>Hito a la vista: {bitos} bitos al llegar. Hoy, asegura «{habito}».</item>
+        <item>Racha de {racha}. No es momento de soltarla: «{habito}», hoy.</item>
+        <item>A {faltan} de tu hito. Hoy cuenta: «{habito}».</item>
+        <item>Casi. A {faltan} de {bitos} bitos. Asegura «{habito}».</item>
+        <item>{habito}: racha de {racha}, a {faltan} del hito. Suma otra hoy.</item>
+        <item>La racha vale {racha}. Hoy la mantienes con «{habito}».</item>
+        <item>[finde] Ni en finde se pierde una racha de {racha}. «{habito}», hoy.</item>
+        <item>[lunes] Lunes y racha de {racha}. «{habito}» la mantiene.</item>
+    </string-array>
+    <string-array name="habla_nu_racha_cerca_cheerleader">
+        <item>Racha de {racha}, a {faltan} del siguiente hito: {habito}.</item>
+        <item>¡Qué racha! {racha} y subiendo. Asegúrala hoy: {habito}.</item>
+        <item>Hito a la vista: el siguiente escalón da {bitos} bitos. Hoy: {habito}.</item>
+        <item>Esa racha de {racha} es cosa tuya. Hoy, que siga: {habito}.</item>
+        <item>A {faltan} del hito, {bitos} bitos esperando: {habito}.</item>
+        <item>[manana] Buenos días con racha: {racha}. Hoy toca asegurarla: {habito}.</item>
+        <item>Cada paso de esta racha de {racha} es tuyo. Hoy, uno más: {habito}.</item>
+        <item>Ya casi llegas al hito. Un paso más sin soltar: {habito}.</item>
+        <item>[finde] Fin de semana con racha de {racha}. Asegúrala hoy: {habito}.</item>
+        <item>¡{racha} y contando! A {faltan} del hito: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_racha_cerca_neutra">
+        <item>«{habito}»: racha de {racha}. El hito vale {bitos|bito|bitos}.</item>
+        <item>«{habito}» lleva una racha de {racha}. Hoy la aseguras.</item>
+        <item>Con {faltan|vez|veces} más, «{habito}» llega al hito: {bitos|bito|bitos}.</item>
+        <item>Hacer «{habito}» hoy mantiene una racha de {racha}.</item>
+        <item>Estás a {faltan} de un hito en «{habito}». Hoy cuenta.</item>
+        <item>{habito}, racha de {racha}. El hito está cerca y da {bitos|bito|bitos}.</item>
+        <item>[noche] Aún da tiempo hoy: «{habito}» sostiene una racha de {racha}.</item>
+        <item>[manana] Buen día para asegurar «{habito}»: el hito queda a {faltan}.</item>
+        <item>[viernes] Viernes. «{habito}» sigue en racha ({racha}) y el hito queda cerca.</item>
+        <item>El hito de «{habito}» vale {bitos|bito|bitos} y queda a {faltan}.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_flojo_sargento">
+        <item>Este {dia_semana} te suele costar: «{habito}». Hazlo pronto.</item>
+        <item>Un {dia_semana} cualquiera se atraganta con «{habito}». Hoy, pronto.</item>
+        <item>Dato: este {dia_semana} cuesta más. Adelanta «{habito}» y se acabó.</item>
+        <item>Dicen los números que un {dia_semana} cuesta. No mandan: «{habito}», pronto.</item>
+        <item>Hazlo antes de que el {dia_semana} se complique: «{habito}».</item>
+        <item>«{habito}» y {dia_semana}: pareja difícil. Rómpela hoy, a primera hora.</item>
+        <item>Es {dia_semana}: ahí suele quedarse «{habito}». Adelántalo.</item>
+        <item>[manana] Buena hora para adelantarse. «{habito}», y este {dia_semana} cambia.</item>
+        <item>Este {dia_semana} es tu día flojo con «{habito}». Cámbialo hoy.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_flojo_cheerleader">
+        <item>Cada {dia_semana} cuesta un poco más, y lo sabemos. Hoy, pronto: {habito}.</item>
+        <item>¿Un {dia_semana} cuesta arriba? Nos adelantamos: {habito}, mejor pronto.</item>
+        <item>Para ti, el {dia_semana} cuesta más. Hoy lo atacamos pronto: {habito}.</item>
+        <item>Es {dia_semana}, así que mejor empezar pronto. Hoy: {habito}.</item>
+        <item>Los datos dicen que este día cuesta más, pero los datos no mandan: {habito}.</item>
+        <item>[manana] Buenos días. Si hoy se hace pronto, el {dia_semana} deja de pesar: {habito}.</item>
+        <item>Un buen {dia_semana} empieza pronto. Mi propuesta: {habito}.</item>
+        <item>Cada {dia_semana} puede cambiar el patrón. Hoy: {habito}, cuanto antes.</item>
+        <item>¡Vamos a por este {dia_semana}! Cuanto antes, mejor: {habito}.</item>
+        <item>[invierno] Hace frío y es {dia_semana}: doble cuesta. Pronto y juntos: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_dia_flojo_neutra">
+        <item>El {dia_semana} es más cuesta arriba para «{habito}». Mejor pronto.</item>
+        <item>«{habito}» suele costar más cada {dia_semana}. Hoy, a una hora temprana.</item>
+        <item>Hay días con más cuesta, y el {dia_semana} es uno de ellos para «{habito}».</item>
+        <item>Con «{habito}», el {dia_semana} pide empezar antes.</item>
+        <item>Es {dia_semana}: con «{habito}», mejor pronto que tarde.</item>
+        <item>Hacer «{habito}» temprano lo deja resuelto antes de que el día se complique.</item>
+        <item>[manana] Aún es temprano: buen momento para «{habito}», que el {dia_semana} cuesta más.</item>
+        <item>[tarde] Queda tarde para «{habito}». Cada {dia_semana}, mejor no dejarlo para la noche.</item>
+        <item>Un día de los que cuestan para «{habito}». Con hora temprana, pesa menos.</item>
+    </string-array>
+    <string-array name="habla_nu_tarea_vence_sargento">
+        <item>«{tarea}» tiene la fecha encima. Empieza ya.</item>
+        <item>{tarea}: el plazo aprieta. Un primer paso y ya está en marcha.</item>
+        <item>Esto no se va solo: «{tarea}». Empieza, aunque sea poco.</item>
+        <item>Pendiente con fecha: «{tarea}». Cuanto antes, menos pesa.</item>
+        <item>Te toca «{tarea}». Diez minutos cambian el panorama.</item>
+        <item>La fecha de «{tarea}» no se mueve. Tú sí: empieza.</item>
+        <item>{tarea} pide atención hoy. Dásela un rato.</item>
+        <item>No hace falta terminar «{tarea}». Hace falta empezar.</item>
+        <item>[manana] Temprano, la fecha pesa menos: «{tarea}».</item>
+        <item>[tarde] La tarde da para «{tarea}». Empieza antes de que se acabe.</item>
+    </string-array>
+    <string-array name="habla_nu_tarea_vence_cheerleader">
+        <item>Esta tarea pide su turno: «{tarea}». ¿La empezamos?</item>
+        <item>Fecha límite en juego: «{tarea}». Un buen empujón y se acaba la preocupación.</item>
+        <item>Hay una tarea que no puede esperar más: «{tarea}». ¡Tú puedes con esto!</item>
+        <item>Hoy te toca esta: «{tarea}». Empezar cuesta, y yo empiezo contigo.</item>
+        <item>[manana] Buenos días. Antes de que el día se llene, esta: «{tarea}».</item>
+        <item>Una tarea con fecha y yo con ganas de verte tacharla: «{tarea}».</item>
+        <item>[tarde] Sigue en la lista y aún queda tarde: «{tarea}». ¿Le damos?</item>
+        <item>Esto pesa más cuanto más espera: «{tarea}». Hoy es buen día para quitarse el peso.</item>
+        <item>Un bloque corto de enfoque puede con esto: «{tarea}».</item>
+        <item>[lunes] Lunes y una fecha asomando: «{tarea}». Mejor empezar hoy que acumular.</item>
+        <item>[viernes] Viernes. Si esta sale hoy, el fin de semana es todo tuyo: «{tarea}».</item>
+    </string-array>
+    <string-array name="habla_nu_tarea_vence_neutra">
+        <item>«{tarea}» ya tiene fecha. Empezar hoy la deja atrás.</item>
+        <item>Una tarea con fecha: «{tarea}». Con empezarla hoy ya hay avance.</item>
+        <item>«{tarea}» lleva la fecha encima. Un primer paso hoy la afloja.</item>
+        <item>De las tareas, «{tarea}» es la que pide atención hoy.</item>
+        <item>Para hoy queda: {tarea}. Una sesión corta ya la mueve.</item>
+        <item>Si hoy sale una tarea, que sea «{tarea}»: su fecha ya está aquí.</item>
+        <item>[manana] Por la mañana cuesta menos empezar «{tarea}», que tiene fecha.</item>
+        <item>[tarde] La tarde da para empezar «{tarea}», que ya tiene fecha.</item>
+        <item>[viernes] Viernes: sacar «{tarea}» hoy deja libre el fin de semana.</item>
+    </string-array>
+    <string-array name="habla_nu_regular_sargento">
+        <item>Arranque corto: {habito}. Solo eso, para empezar.</item>
+        <item>Algo pequeño primero: {habito}.</item>
+        <item>Empieza por lo fácil: «{habito}».</item>
+        <item>Poco y pronto: «{habito}».</item>
+        <item>Despacio, pero se arranca: {habito}.</item>
+        <item>Un solo paso para entrar en calor: «{habito}».</item>
+        <item>{habito}, y el día ya está en marcha.</item>
+    </string-array>
+    <string-array name="habla_nu_regular_cheerleader">
+        <item>Ayer fue regular, y hoy arrancamos corto: {habito}.</item>
+        <item>Un arranque pequeño para hoy, como te dije: {habito}.</item>
+        <item>Empezar con poco también es empezar: {habito}. Lo demás viene detrás.</item>
+        <item>[manana] Buenos días. Hoy, algo cortito para entrar en calor: {habito}.</item>
+        <item>Sin grandes planes para arrancar. Solo esto: {habito}.</item>
+        <item>¡Poquito a poco! Primera parada: {habito}.</item>
+        <item>[lunes] Lunes tranquilo: una cosa corta para arrancar. Esta: {habito}.</item>
+    </string-array>
+    <string-array name="habla_nu_regular_neutra">
+        <item>Algo corto para arrancar: «{habito}».</item>
+        <item>Para entrar en materia, lo más pequeño: «{habito}».</item>
+        <item>Ayer fue regular, así que hoy empezamos por poco: {habito}.</item>
+        <item>«{habito}» pesa poco. Empezamos por ahí.</item>
+        <item>Un arranque suave: «{habito}», y luego lo que venga.</item>
+        <item>[manana] Por la mañana, calentamos con «{habito}».</item>
+        <item>Empezar poco también es empezar: «{habito}».</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_avisos_sargento">
+        <item>Sin permiso no hay avisos. Tú decides.</item>
+        <item>Puedo avisarte, pero el móvil me frena hasta que lo permitas.</item>
+        <item>Los avisos me ayudan a mantenerte en marcha. ¿Los permites?</item>
+        <item>Un aviso a tiempo vale más que mil buenas intenciones. Permítelos.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_avisos_cheerleader">
+        <item>¿Me dejas avisarte? Con los avisos activados puedo acompañarte justo cuando toca.</item>
+        <item>Sin permiso para los avisos no llego a tiempo. ¿Lo activamos?</item>
+        <item>Los avisos están apagados en tu móvil. Si los permites, te aviso a la hora que elijas.</item>
+        <item>Un permiso y puedo avisarte a tu hora: tú eliges cuándo, yo me encargo del resto.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_avisos_neutra">
+        <item>Para avisarte a tiempo necesito el permiso de notificaciones. ¿Lo activamos?</item>
+        <item>Sin permiso de notificaciones no puedo avisarte. Se activa en un toque.</item>
+        <item>Los avisos de Habi están activos, pero el móvil no los deja salir. Falta un permiso.</item>
+        <item>Un permiso y los avisos llegan. Cuando quieras.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_alarmas_sargento">
+        <item>Para avisarte a la hora exacta necesito el permiso de alarmas.</item>
+        <item>Sin el permiso de alarmas, mi aviso llega cuando al móvil le parece.</item>
+        <item>Hora acordada, aviso a esa hora. Para eso, permiso de alarmas.</item>
+        <item>Quedamos a una hora y no puedo cumplirla sin el permiso de alarmas.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_alarmas_cheerleader">
+        <item>Para avisarte justo a la hora acordada, el móvil necesita permitir las alarmas.</item>
+        <item>Sin el permiso de alarmas mi aviso puede llegar tarde. ¿Lo permitimos?</item>
+        <item>Acordamos una hora y quiero cumplirla contigo. Falta un permiso de alarmas.</item>
+        <item>Un último permiso, el de alarmas, y mis avisos llegan al minuto.</item>
+    </string-array>
+    <string-array name="habla_nu_permiso_alarmas_neutra">
+        <item>Para avisarte a la hora exacta hace falta el permiso de alarmas. ¿Lo concedemos?</item>
+        <item>Sin el permiso de alarmas, los avisos pueden llegar tarde. Es un permiso del sistema.</item>
+        <item>Tu móvil necesita un permiso para que los avisos suenen a su hora.</item>
+        <item>Falta el permiso de alarmas. Con ese permiso, cada aviso llega a su hora exacta.</item>
+    </string-array>
+</resources>

@@ -1,6 +1,18 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.alvarotc.bito.ui.today
 
+import android.Manifest
+import android.app.AlarmManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -19,15 +31,20 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -36,7 +53,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -47,12 +66,16 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.inicio.EntradaSesion
 import com.alvarotc.bito.ui.inicio.NavegacionInicio
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.sistema.BitoFormas
@@ -77,6 +100,10 @@ import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private const val FILAS_HUECO = 4
+private const val ALFA_ESPERAN = 0.6f
+private val HUNDIDA_CIERRE = 48.dp
+private const val ESCALON_HUNDIDA_MS = 25
+private const val ESCALONES_HUNDIDA = 7
 private const val ESCALON_ENTRADA_MS = 60
 private const val MAX_ESCALONADAS = 8
 private const val SALIDA_TAREA_MS = 340L
@@ -85,6 +112,37 @@ private const val BROTE_VIGENCIA_MS = 1500L
 /** Lo que se espera, al volver de crear, a que el id nuevo llegue al estado de Hoy (viejo o aún sin escribir). */
 internal const val ESPERA_CREADO_MS = 1_500L
 private const val PUNTOS_MAX = 12
+
+/**
+ * Cuánto se ha hundido la fila [indice] cuando la lista lleva [progreso] (0 nada, 1 del todo) de su hundimiento. Cada
+ * fila tarda [Duraciones.HUNDIR_FILA] y la siguiente sale [ESCALON_HUNDIDA_MS] después; el escalón se detiene en
+ * [ESCALONES_HUNDIDA] filas para que una lista larga no tarde de más. El progreso lo da un muelle, no un reloj: los
+ * milisegundos son la proporción del escalón, no una duración exacta.
+ */
+internal fun hundidaDeFila(
+    progreso: Float,
+    indice: Int,
+): Float {
+    val total = (Duraciones.HUNDIR_FILA + ESCALON_HUNDIDA_MS * ESCALONES_HUNDIDA).toFloat()
+    val retraso = (ESCALON_HUNDIDA_MS * indice.coerceIn(0, ESCALONES_HUNDIDA)).toFloat()
+    return ((progreso * total - retraso) / Duraciones.HUNDIR_FILA).coerceIn(0f, 1f)
+}
+
+/** Lo que hunde una fila: baja y se apaga (solo se apaga con movimiento reducido). */
+private fun Modifier.hundirFila(
+    indice: Int,
+    hundida: () -> Float,
+    reducido: Boolean,
+): Modifier =
+    graphicsLayer {
+        val k = hundidaDeFila(hundida().coerceIn(0f, 1f), indice)
+        if (!reducido) translationY = HUNDIDA_CIERRE.toPx() * k
+        alpha = 1f - k
+    }
+
+/** Ajustes donde se concede la alarma exacta de este paquete (API 31 o más). */
+internal fun intentAlarmasExactas(paquete: String): Intent =
+    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$paquete"))
 
 /** La lista de Hoy (spec §5.3): Habi, «Tu día», hábitos, tareas, «En pausa» y cerrar el día, en un solo `LazyColumn`. */
 @Composable
@@ -98,6 +156,17 @@ fun HoyLista(
     contentPadding: PaddingValues = PaddingValues(),
     creado: String? = null,
     alCreadoVisto: () -> Unit = {},
+    // El aviso de la mañana pide la hoja de lo gordo: la lista la abre y avisa de que lo vio.
+    abrirGordo: Boolean = false,
+    alGordoVisto: () -> Unit = {},
+    // Lo que se ha hundido la lista porque se abre el cierre (0 nada, 1 del todo); se lee al dibujar. Cada fila
+    // lo recoge con su escalón de 25 ms ([hundidaDeFila]).
+    hundida: () -> Float = { 0f },
+    // El hábito cuya veta de racha dura ahora: su «día N» sube y va en negrita.
+    vetaRachaDe: String? = null,
+    // Lo que pide al jardín del Inicio: el salto de Habi al resolver el permiso (sin voz) y, tras «Hecho» en la vuelta,
+    // la voz del salto que el jardín ya da al revivir (con voz).
+    alSaltoHabi: (conVoz: Boolean) -> Unit = {},
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -105,6 +174,7 @@ fun HoyLista(
     val propuesta by viewModel.propuesta.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val gesto = rememberGesto()
+    val contexto = LocalContext.current
     val registro = LocalAnclas.current
     val reducido = BitoTema.reducido
     var exactFor by remember { mutableStateOf<HabitCardUi?>(null) }
@@ -112,6 +182,29 @@ fun HoyLista(
     var sealDismissed by rememberSaveable { mutableStateOf(false) }
     var limitePendiente by remember { mutableStateOf(false) }
     var brotando by remember { mutableStateOf<String?>(null) }
+    // Un hábito recién creado que cae en «Esperan sin prisa»: la sección ya está a la vista, falta su fila.
+    var traerAVista by remember { mutableStateOf<String?>(null) }
+    var gordoAbierto by remember { mutableStateOf(false) }
+    // Quien pide la hoja (el aviso de la mañana, la tarjeta, la etiqueta): se abre cuando Hoy está cargado.
+    var gordoPedido by remember { mutableIntStateOf(0) }
+    var horaAbierta by remember { mutableStateOf(false) }
+    var horaPedida by remember { mutableStateOf(Efecto.ElegirHora(0, MINUTOS_DIA - 1, 0)) }
+    // Resuelto el permiso, la tarjeta pasa a agua clara y Habi salta (catálogo 3.10): todo en el mismo fotograma.
+    var aguaClara by remember { mutableIntStateOf(0) }
+    val saltar by rememberUpdatedState(alSaltoHabi)
+    val permisoResuelto = {
+        gesto(Snd.LLEGADA, Haptica.CONFIRM)
+        aguaClara++
+        saltar(false)
+    }
+    val pedirAvisos =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+            if (concedido) permisoResuelto()
+        }
+    val pedirAlarmas =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (alarmasExactasConcedidas(contexto)) permisoResuelto()
+        }
     // La entrada escalonada solo ocurre al cargar: se apaga pasada su ventana y las filas que vuelven por scroll no la repiten.
     var vistoCargando by remember { mutableStateOf(false) }
     if (estado.loading) vistoCargando = true
@@ -119,6 +212,43 @@ fun HoyLista(
         if (!estado.loading && vistoCargando) {
             delay((MAX_ESCALONADAS * ESCALON_ENTRADA_MS + Duraciones.BROTAR_FILA + 100).toLong())
             vistoCargando = false
+        }
+    }
+    LaunchedEffect(abrirGordo) {
+        if (abrirGordo) {
+            gordoPedido++
+            alGordoVisto()
+        }
+    }
+    // Nada se siembra con el estado de relleno: la hoja se abre con Hoy cargado. Un estado viejo de `WhileSubscribed`
+    // también está cargado; para ese, la hoja vuelve a sembrar con lo que llegue mientras no se toque.
+    LaunchedEffect(gordoPedido) {
+        if (gordoPedido == 0) return@LaunchedEffect
+        snapshotFlow { estado }.first { !it.loading }
+        gordoAbierto = true
+    }
+    LaunchedEffect(viewModel) {
+        viewModel.efectos.collect { efecto ->
+            when (efecto) {
+                Efecto.Ninguno -> Unit
+                is Efecto.Sesion -> navegar.abrirRuta(EntradaSesion.ruta(efecto.destino))
+                Efecto.AbrirCierre -> navegar.abrirRepaso()
+                Efecto.AbrirLoGordo -> gordoPedido++
+                is Efecto.ElegirHora -> {
+                    horaPedida = efecto
+                    horaAbierta = true
+                }
+                // Editar el objetivo de un hábito se pide desde su ficha, no desde Hoy.
+                is Efecto.EditarHabito -> Unit
+                is Efecto.PedirPermiso ->
+                    if (efecto.alarmas) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            runCatching { pedirAlarmas.launch(intentAlarmasExactas(contexto.packageName)) }
+                        }
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        pedirAvisos.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+            }
         }
     }
     LaunchedEffect(brotando) {
@@ -133,8 +263,18 @@ fun HoyLista(
     val textoRegistrado = stringResource(R.string.logged_snackbar)
     val textoLimite = stringResource(R.string.hoy_limite_pasado)
     val deshacer = stringResource(R.string.undo)
-    val respaldo = stringResource(R.string.habi_name_fallback)
-    val textoTarea = stringResource(HabiVoice.taskDoneRes(estado.spec.personality), estado.userName.ifBlank { respaldo })
+    val textoCerrado = stringResource(R.string.habla_dia_cerrado)
+    val textoDuerme = stringResource(R.string.habla_habi_duerme)
+    val sellado = estado.todaySealed
+    val textoTarea = textoHabi(HabiVoice.conNombre(HabiVoice.taskDoneRes(estado.spec.personality), estado.userName))
+
+    // Habi duerme con el día sellado: tocar a Habi solo da un tick y avisa.
+    LaunchedEffect(viewModel) {
+        viewModel.habiDuerme.collect {
+            gesto(h = Haptica.TICK)
+            scope.launch { avisos.mostrar(textoDuerme) }
+        }
+    }
 
     LaunchedEffect(logged) {
         if (logged != null) {
@@ -167,6 +307,8 @@ fun HoyLista(
             if (desde != -1 && hasta != -1) ordenadas.add(hasta, ordenadas.removeAt(desde))
         }
     val base = filasDe(estado.copy(cards = ordenadas.toList()))
+    val abrirLoGordo: () -> Unit = { gordoPedido++ }
+    val gordoDe = { tipo: TipoRefGordo, id: String -> RefGordo(tipo, id) in estado.gordo }
     // La fila saliente vuelve a su sitio dentro del bloque de tareas, no al final.
     val filas =
         base.toMutableList().also { lista ->
@@ -195,7 +337,8 @@ fun HoyLista(
 
         fun posicionEn(s: TodayUiState) =
             filasDe(s).indexOfFirst {
-                (it is FilaHoy.Habito && it.card.id == creado) || (it is FilaHoy.Tarea && it.row.id == creado)
+                (it is FilaHoy.Habito && it.card.id == creado) || (it is FilaHoy.Tarea && it.row.id == creado) ||
+                    (it is FilaHoy.Esperan && it.cards.any { c -> c.id == creado })
             }
         snapshotFlow { estado }.first { !it.loading }
         // Cargado no basta: puede ser un estado viejo (Hoy dejó de escuchar) o la tarea aún no estar escrita.
@@ -213,11 +356,19 @@ fun HoyLista(
                 )
             }
             listState.animateScrollToItem(indice)
+            if (filasDe(cargado).getOrNull(posicion) is FilaHoy.Esperan) traerAVista = creado
         }
         alCreadoVisto()
     }
 
+    // Con el día sellado las filas no se marcan: tocarlas solo dice que el día está cerrado.
+    fun avisarCerrado() {
+        gesto(h = Haptica.TICK)
+        scope.launch { avisos.mostrar(textoCerrado) }
+    }
+
     fun sumar(card: HabitCardUi) {
+        if (sellado) return avisarCerrado()
         val llega = card.direction == Direction.AT_LEAST && card.progress < card.target && card.progress + card.step >= card.target
         val pasa = card.direction == Direction.AT_MOST && !card.failed && card.progress + card.step > card.target
         viewModel.addAmount(card, card.step)
@@ -233,6 +384,7 @@ fun HoyLista(
     }
 
     fun alCirculo(card: HabitCardUi) {
+        if (sellado) return avisarCerrado()
         when (card.kind) {
             CardKind.CHECK -> {
                 if (card.doneToday) {
@@ -249,6 +401,34 @@ fun HoyLista(
         }
     }
 
+    @Composable
+    fun FilaDeHabito(
+        card: HabitCardUi,
+        modifier: Modifier,
+        nombreModifier: Modifier = Modifier,
+    ) {
+        FilaHabito(
+            card,
+            alCirculo = { alCirculo(card) },
+            alPaso = { sumar(card) },
+            alExacto = {
+                if (sellado) {
+                    avisarCerrado()
+                } else {
+                    gesto(Snd.BROTE, Haptica.CLICK)
+                    exactFor = card
+                }
+            },
+            alAbrir = { navegar.abrirFicha(card.id) },
+            alRecaer = { if (sellado) avisarCerrado() else recaerFor = card },
+            modifier = modifier,
+            nombreModifier = nombreModifier,
+            rachaViva = vetaRachaDe == card.id,
+            esGordo = gordoDe(TipoRefGordo.HABITO, card.id),
+            alGordo = abrirLoGordo,
+        )
+    }
+
     Box(modifier) {
         LazyColumn(
             Modifier.fillMaxWidth().testTag("hoy-lista"),
@@ -260,25 +440,31 @@ fun HoyLista(
             item(key = "habi") {
                 TarjetaHabi(
                     propuesta,
-                    { r ->
-                        if (r == Respuesta.AHORA) navegar.abrirRuta(EntradaSesion.ruta(propuesta?.destino))
-                        viewModel.responder(r)
-                    },
-                    Modifier.padding(horizontal = Medidas.margen),
+                    { r -> viewModel.responder(r) },
+                    Modifier.padding(horizontal = Medidas.margen).hundirFila(0, hundida, reducido),
+                    alSaltoHabi = { saltar(true) },
+                    aguaClara = aguaClara,
                 )
             }
             if (hayTuDia) {
                 item(key = "tu-dia") {
-                    TuDia(estado.cards, estado.ringDone, estado.ringTotal, Modifier.padding(horizontal = Medidas.margen))
+                    TuDia(
+                        estado.cards,
+                        estado.ringDone,
+                        estado.ringTotal,
+                        Modifier.padding(horizontal = Medidas.margen).hundirFila(1, hundida, reducido),
+                    )
                 }
             }
             if (estado.loading) {
                 items(FILAS_HUECO, key = { "hueco-$it" }) { i ->
-                    FilaHueco(i, Modifier.padding(horizontal = Medidas.margen))
+                    FilaHueco(i, Modifier.padding(horizontal = Medidas.margen).hundirFila(i + 2, hundida, reducido))
                 }
             }
             if (vacio) {
-                item(key = "vacio") { HoyVacio(navegar.crearHabito, Modifier.padding(horizontal = Medidas.margen)) }
+                item(
+                    key = "vacio",
+                ) { HoyVacio(navegar.crearHabito, Modifier.padding(horizontal = Medidas.margen).hundirFila(2, hundida, reducido)) }
             }
             items(filas, key = { it.clave() }) { fila ->
                 val indice = filas.indexOf(fila)
@@ -292,7 +478,7 @@ fun HoyLista(
                             (fila is FilaHoy.Habito && brotando == fila.card.id) ||
                                 (fila is FilaHoy.Tarea && brotando == fila.row.id),
                     )
-                val margen = Modifier.padding(horizontal = Medidas.margen)
+                val margen = Modifier.padding(horizontal = Medidas.margen).hundirFila((if (hayTuDia) 2 else 1) + indice, hundida, reducido)
                 val colocar =
                     Modifier.animateItem(
                         placementSpec = if (reducido) null else tween<IntOffset>(Duraciones.HUNDIR_FILA, easing = Curvas.out),
@@ -301,25 +487,47 @@ fun HoyLista(
                     is FilaHoy.Habito -> {
                         val card = fila.card
                         ReorderableItem(reorderState, key = card.id) {
-                            FilaHabito(
+                            FilaDeHabito(
                                 card,
-                                alCirculo = { alCirculo(card) },
-                                alPaso = { sumar(card) },
-                                alExacto = {
-                                    gesto(Snd.BROTE, Haptica.CLICK)
-                                    exactFor = card
-                                },
-                                alAbrir = { navegar.abrirFicha(card.id) },
-                                alRecaer = { recaerFor = card },
-                                modifier = margen.then(aparece),
-                                nombreModifier =
-                                    Modifier.longPressDraggableHandle(
-                                        onDragStarted = { gesto(h = Haptica.CLICK) },
-                                        onDragStopped = { viewModel.reorder(ordenadas.map { it.id }) },
-                                    ),
+                                margen.then(aparece),
+                                Modifier.longPressDraggableHandle(
+                                    onDragStarted = { gesto(h = Haptica.CLICK) },
+                                    onDragStopped = { viewModel.reorder(ordenadas.map { it.id }) },
+                                ),
                             )
                         }
                     }
+                    is FilaHoy.Esperan ->
+                        Column(
+                            margen.then(colocar).testTag("esperan-sin-prisa"),
+                            verticalArrangement = Arrangement.spacedBy(Medidas.entreFilas),
+                        ) {
+                            Text(
+                                stringResource(R.string.habla_esperan_sin_prisa),
+                                style = BitoTema.tipos.t14.fuerte(),
+                                color = BitoTema.colores.tintaSuave,
+                            )
+                            // Por id: al marcar una, la fila sale de la sección y las demás no heredan su estado.
+                            fila.cards.forEach { card ->
+                                key(card.id) {
+                                    val traer = remember { BringIntoViewRequester() }
+                                    LaunchedEffect(traerAVista) {
+                                        if (traerAVista == card.id) {
+                                            traer.bringIntoView()
+                                            traerAVista = null
+                                        }
+                                    }
+                                    val brota = brotando == card.id
+                                    FilaDeHabito(
+                                        card,
+                                        Modifier
+                                            .bringIntoViewRequester(traer)
+                                            .graphicsLayer { alpha = ALFA_ESPERAN }
+                                            .aparecer(activo = brota, retraso = 0, brotar = brota),
+                                    )
+                                }
+                            }
+                        }
                     is FilaHoy.Tarea ->
                         FilaTarea(
                             fila.row,
@@ -337,6 +545,9 @@ fun HoyLista(
                             alEmpezar = { navegar.abrirRuta("focus?taskId=${fila.row.id}") },
                             alHoyNo = { viewModel.postponeTask(fila.row.id) },
                             modifier = margen.then(aparece).then(colocar),
+                            manana = sellado,
+                            esGordo = gordoDe(TipoRefGordo.TAREA, fila.row.id),
+                            alGordo = abrirLoGordo,
                         )
                     FilaHoy.TareasHechas ->
                         Text(
@@ -373,6 +584,29 @@ fun HoyLista(
         }
     }
 
+    HojaLoGordo(
+        abierta = gordoAbierto,
+        candidatos = estado.candidatosGordo,
+        sugerencia = estado.sugerenciaGordo,
+        elegidos = estado.gordo,
+        alGuardar = { refs ->
+            gordoAbierto = false
+            viewModel.guardarGordo(refs)
+        },
+        alCerrar = { gordoAbierto = false },
+        alAvisar = { texto -> scope.launch { avisos.mostrar(texto) } },
+    )
+    HojaOtraHora(
+        abierta = horaAbierta,
+        desde = horaPedida.desde,
+        hasta = horaPedida.hasta,
+        actual = horaPedida.actual,
+        alGuardar = { minuto ->
+            horaAbierta = false
+            viewModel.responder(Respuesta.OTRA_HORA, minuto)
+        },
+        alCerrar = { horaAbierta = false },
+    )
     HojaTotalExacto(
         abierta = exactFor != null,
         card = exactFor,
@@ -407,6 +641,12 @@ fun HoyLista(
 }
 
 private const val ENTRADA_SCROLL_MS = 420
+private const val MINUTOS_DIA = 24 * 60
+
+/** Si el sistema ya deja a la app programar alarmas exactas (antes de la API 31 siempre). */
+private fun alarmasExactasConcedidas(contexto: Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+        contexto.getSystemService(AlarmManager::class.java)?.canScheduleExactAlarms() == true
 
 /** «Tu día»: «N de M» con la cifra en rodillo y un puntito de agua por hábito, lleno si está hecho. */
 @Composable

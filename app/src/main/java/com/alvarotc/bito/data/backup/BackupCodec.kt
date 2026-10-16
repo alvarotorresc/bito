@@ -9,12 +9,14 @@ class BackupFormatException(message: String, cause: Throwable? = null) : Excepti
 private data class SchemaProbe(val schemaVersion: Int = -1)
 
 object BackupCodec {
+    // v6 (pieza 4): la memoria de Habi y lo gordo, y settings.habiNightMinutes en lugar de la hora del
+    // repaso. Sin leer la v5.
     // v5 (pieza 2): las claves nuevas de Ajustes (sonido, volúmenes, No molestar, pomodoro, avisos de
     // Habi, sonido de fondo y reducir animaciones). Sin compatibilidad hacia atrás: un fichero de otra
     // versión se rechaza entero, como no válido, antes de tocar nada.
     // v4 (Bito 2, pieza 1): catálogo nuevo de Habi y settings.gardenWaterHighMark. Las versiones 1 a 3
     // y sus migraciones de marcadores ya no existen.
-    const val SCHEMA_VERSION = 5
+    const val SCHEMA_VERSION = 6
 
     private val json =
         Json {

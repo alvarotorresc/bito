@@ -41,7 +41,7 @@ data class Settings(
     val dayCutoffMinutes: Int = 0,
     val languageTag: String? = null,
     val globalReminderMinutes: List<Int> = emptyList(),
-    val reviewTimeMinutes: Int = 21 * 60 + 30,
+    val habiNightMinutes: Int = 21 * 60 + 30,
     val perfectDayCelebration: Boolean = true,
     val personality: Personality = Personality.NEUTRA,
     val backupFolderUri: String? = null,
@@ -64,7 +64,7 @@ data class Settings(
     val breathingLastMode: BreathingMode = BreathingMode.CALM,
     /** Pieza 1 (D11): el máximo de agua que ha tenido el jardín. Las etapas no bajan aunque se corrija el pasado. */
     val gardenWaterHighMark: Double = 0.0,
-    /** Pieza 2 (§5.1.3). Aviso de Habi de la mañana: solo se guarda hasta la pieza 4. La noche es [reviewTimeMinutes] (decisión 3). */
+    /** Pieza 4 (§10.2). Hora del aviso de Habi de la mañana (6:00 a 11:00); la de la noche es [habiNightMinutes]. */
     val habiMorningMinutes: Int = 8 * 60 + 30,
     /** No molestar propio (D10): solo se guarda hasta la pieza 5. */
     val dndEnabled: Boolean = false,
@@ -100,7 +100,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val dayCutoffMinutes = intPreferencesKey("day_cutoff_minutes")
         val languageTag = stringPreferencesKey("language_tag")
         val globalReminderMinutes = stringPreferencesKey("global_reminder_minutes")
-        val reviewTimeMinutes = intPreferencesKey("review_time_minutes")
+        val habiNightMinutes = intPreferencesKey("habi_night_minutes")
         val perfectDayCelebration = booleanPreferencesKey("perfect_day_celebration")
         val personality = stringPreferencesKey("personality")
         val backupFolderUri = stringPreferencesKey("backup_folder_uri")
@@ -229,7 +229,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
                     ?.filter { it.isNotEmpty() }
                     ?.map { it.toInt() }
                     ?: defaults.globalReminderMinutes,
-            reviewTimeMinutes = this[Keys.reviewTimeMinutes] ?: defaults.reviewTimeMinutes,
+            habiNightMinutes = (this[Keys.habiNightMinutes] ?: defaults.habiNightMinutes).coerceIn(SettingsRanges.HABI_NIGHT),
             perfectDayCelebration = this[Keys.perfectDayCelebration] ?: defaults.perfectDayCelebration,
             personality = this[Keys.personality]?.let(Personality::valueOf) ?: defaults.personality,
             backupFolderUri = this[Keys.backupFolderUri],
@@ -281,7 +281,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.dayCutoffMinutes] = dayCutoffMinutes
         languageTag?.let { prefs[Keys.languageTag] = it } ?: prefs.remove(Keys.languageTag)
         prefs[Keys.globalReminderMinutes] = globalReminderMinutes.joinToString(",")
-        prefs[Keys.reviewTimeMinutes] = reviewTimeMinutes
+        prefs[Keys.habiNightMinutes] = habiNightMinutes
         prefs[Keys.perfectDayCelebration] = perfectDayCelebration
         prefs[Keys.personality] = personality.name
         backupFolderUri?.let { prefs[Keys.backupFolderUri] = it } ?: prefs.remove(Keys.backupFolderUri)

@@ -1,0 +1,87 @@
+bolsa	indice	etiquetas	es	en
+cie_gordo_hecho	0		¡Lo gordo, hecho, {nombre}! Eso lo has sacado adelante tú.	The big thing, done, {nombre}! That one was all you.
+cie_gordo_hecho	1		Lo gordo de hoy ya está: {gordo}. Qué bien sienta tacharlo.	Today's big thing is done: {gordo}. Crossing it off feels good.
+cie_gordo_hecho	2	lunes	¡Lunes y lo gordo ya hecho, {nombre}! Así se arranca una semana.	Monday and the big thing is done, {nombre}! That's how you start a week.
+cie_gordo_hecho	3		Elegiste lo gordo y lo hiciste: {gordo}. Yo solo miraba con una sonrisa enorme.	You picked the big thing and did it: {gordo}. I just watched, grinning.
+cie_gordo_hecho	4		{nombre}, lo gordo ha caído: {gordo}. Ahora ya puedes respirar.	{nombre}, the big thing is down: {gordo}. Now you can breathe.
+cie_gordo_hecho	5		Lo difícil del día ya está hecho: {gordo}. Bien jugado.	The hard part of the day is done: {gordo}. Well played.
+cie_gordo_hecho	6	viernes	Lo gordo, hecho, y encima es viernes. Te has ganado la noche, {nombre}.	Big thing done, and it's Friday. You've earned your evening, {nombre}.
+cie_gordo_hecho	7		No era poca cosa: {gordo}. Lo has llevado de principio a fin.	That was no small thing: {gordo}. You saw it through from start to finish.
+cie_logro	0		Ayer se escapó y hoy lo has hecho: {habito}. Eso cuenta, {nombre}.	It got away yesterday, today you did it: {habito}. That counts, {nombre}.
+cie_logro	1		¡Ayer no, hoy sí! «{habito}»: hecho. Así se vuelve.	Not yesterday, but today! “{habito}” done. That's how you come back.
+cie_logro	2		«{habito}» se escapó ayer. Hoy lo has cogido al vuelo.	“{habito}” got away yesterday. Today you caught it on the fly.
+cie_logro	3		{habito}, hecho. Ayer se escapó, y hoy has ido a buscarlo.	{habito}, done. It slipped away yesterday, and today you went back for it.
+cie_logro	4		Un día se escapa; lo que importa es volver. Hoy has vuelto: «{habito}».	One day slips by; what matters is coming back. Today you did: “{habito}”.
+cie_logro	5		¡{nombre}, eso es volver a la carga! «{habito}»: hecho, tras lo de ayer.	{nombre}, that's getting back on the horse! “{habito}” done after yesterday.
+cie_logro	6		Ayer se quedó atrás; hoy lo has recogido: {habito}.	Yesterday it got left behind; today you picked it back up: {habito}.
+cie_racha_avanza	0		¡Racha de {racha} con «{habito}», {nombre}!	A streak of {racha} with “{habito}”, {nombre}!
+cie_racha_avanza	1		«{habito}» llega a {racha}. Eso ya es costumbre, no suerte.	“{habito}” hits {racha}. That's habit by now, not luck.
+cie_racha_avanza	2		Cifra redonda: racha de {racha} en «{habito}». ¡Se nota que vas en serio!	Round number: a streak of {racha} on “{habito}”. You mean it!
+cie_racha_avanza	3		{habito}: {racha|vez|veces} seguidas. Cada una la has puesto tú.	{habito}: {racha} in a row. You put in every single one.
+cie_racha_avanza	4		Mira, {nombre}: racha de {racha} en «{habito}». Obra tuya.	Look, {nombre}: {racha} in a row on “{habito}”. Your work.
+cie_racha_avanza	5	domingo	Domingo y racha de {racha} en «{habito}». Semana cerrada a lo grande.	Sunday, a streak of {racha} on “{habito}”. A strong end to the week.
+cie_racha_avanza	6		¡Otra cifra redonda! «{habito}» suma {racha}, {nombre}.	Another round number! “{habito}” is at {racha}, {nombre}.
+cie_sencillo	0		Día tranquilo, {nombre}. Seguir apareciendo ya es mucho.	Quiet day, {nombre}. Just showing up is a lot.
+cie_sencillo	1		Un día más en el bolsillo. Pequeño o grande, suma.	One more day in the pocket. Big or small, it adds up.
+cie_sencillo	2		Cerramos el día, {nombre}, tú y yo. Me ha gustado ir a tu lado.	We're closing the day together, {nombre}. I liked walking alongside you.
+cie_sencillo	3		Hoy no ha habido fuegos artificiales, y está bien. Los días normales son los que cuentan.	No fireworks today, and that's fine. Ordinary days are the ones that count.
+cie_sencillo	4		{nombre}, gracias por pasar el día conmigo. Ya casi toca descansar.	{nombre}, thanks for spending the day with me. Nearly time to rest.
+cie_sencillo	5		¡Buen trabajo hoy, {nombre}! Sin ruido, pero constante.	Good work today, {nombre}! Quiet, but steady.
+cie_sencillo	6	viernes	Se acaba el viernes, {nombre}. Lo que has hecho hoy ya nadie te lo quita.	Friday's winding down, {nombre}. What you did today is yours to keep.
+cie_sencillo	7		Día cerrado sin ruido. Mañana seguimos a la vez.	A quiet close to the day. Tomorrow we carry on side by side.
+cie_nada_pendiente	0		Nada pendiente, {nombre}. Puedes sellar el día.	Nothing pending, {nombre}. You can seal the day.
+cie_nada_pendiente	1		¡Todo en orden, {nombre}! Solo queda sellar el día.	All in order, {nombre}! Only sealing the day is left.
+cie_nada_pendiente	2		No queda nada por decidir. Cuando quieras, buenas noches.	Nothing left to decide. Whenever you like, goodnight.
+cie_nada_pendiente	3		Aquí ya está todo. Sella cuando te apetezca, {nombre}.	It's all here. Seal it whenever you feel like it, {nombre}.
+cie_nada_pendiente	4		Cierre limpio: ni una fila por mirar. Toca descansar.	A clean close: not a single row left to look at. Time to rest.
+cie_nada_pendiente	5		Hoy no se queda nada en el aire, {nombre}. Buenas noches cuando quieras.	Nothing's left hanging today, {nombre}. Goodnight whenever you're ready.
+cie_nada_pendiente	6		¡Cero pendientes, {nombre}! Sellar el día y a descansar.	Zero pending, {nombre}! Seal the day and off to rest.
+cie_nada_pendiente	7		¡Todo decidido! Solo queda sellar el día.	Everything's decided! All that's left is sealing the day.
+cie_animo_bien	0		Me alegro. Mañana seguimos al mismo ritmo.	I'm glad. Tomorrow we keep the same pace.
+cie_animo_bien	1		¡Qué bien oír eso! Mañana, a por otro igual.	Great to hear it! Tomorrow, another one just like it.
+cie_animo_bien	2		Me alegra mucho. Guardo este día como ejemplo para mañana.	That makes me really happy. I'll keep today as the example for tomorrow.
+cie_animo_bien	3		Eso quería oír. Mañana repetimos la receta.	Just what I wanted to hear. Tomorrow we repeat the recipe.
+cie_animo_bien	4		¡Un día bueno de verdad! Así da gusto cerrarlo.	A properly good day! What a nice way to close it.
+cie_animo_bien	5		Me alegro, y se nota. Mañana seguimos a este ritmo, tú y yo.	Glad to hear it, and it shows. Tomorrow we keep this pace, you and me.
+cie_animo_bien	6		Qué bueno saberlo. Buena parte de esa alegría la has puesto tú. Descansa.	Good to know. A fair share of that good day came from you. Rest well.
+cie_animo_regular	0		Vale. Mañana te propongo algo corto para arrancar.	Okay. Tomorrow I'll suggest something short to get going.
+cie_animo_regular	1		Regular también cuenta. Mañana empezamos con algo pequeño.	So-so counts too. Tomorrow we start with something small.
+cie_animo_regular	2		Un día así pasa. Mañana, algo corto para entrar en calor, tú y yo.	Days like that happen. Tomorrow, something short to warm up, you and me.
+cie_animo_regular	3		Entendido. Mañana arrancamos con algo ligero.	Understood. Tomorrow we start with something light.
+cie_animo_regular	4		Ni bien ni mal, vale. Mañana busco un arranque sencillo.	Neither good nor bad, fair enough. Tomorrow I'll find an easy start.
+cie_animo_regular	5		Gracias por decírmelo. Mañana empezamos suave y vemos cómo va.	Thanks for telling me. Tomorrow we start gently and see how it goes.
+cie_animo_regular	6		Lo regular se arregla poco a poco. Mañana, un primer paso corto.	So-so can be turned around bit by bit. Tomorrow, one short first step.
+cie_animo_duro	0		Gracias por contármelo. Mañana te propongo menos.	Thanks for telling me. Tomorrow I'll suggest less.
+cie_animo_duro	1		Fue un día duro, y no hace falta adornarlo. Mañana, menos cosas.	It was a hard day, and there's no need to dress it up. Tomorrow, fewer things.
+cie_animo_duro	2		Lo siento. Me quedo contigo un rato. Mañana, solo lo justo.	I'm sorry. I'll stay with you a while. Tomorrow, only what's needed.
+cie_animo_duro	3		Se nota que ha pesado. Mañana vamos con menos peso, tú y yo.	It clearly weighed on you. Tomorrow we travel lighter, you and me.
+cie_animo_duro	4		Gracias por decirlo tal cual. Mañana, una cosa cada vez.	Thanks for saying it straight. Tomorrow, one thing at a time.
+cie_animo_duro	5		Los días duros también se cierran, y este ya casi está. Mañana, menos.	Hard days get closed too, and this one nearly is. Tomorrow, less.
+cie_animo_duro	6		Aquí estoy. No hace falta decir más. Mañana te propongo poco.	I'm here. No need to say more. Tomorrow I'll suggest little.
+cie_sello	0		¡Otro día en el bolsillo, {nombre}! Mañana seguimos.	That's another day in the pocket, {nombre}! Tomorrow we go on.
+cie_sello	1		Día sellado. Gracias por hoy, {nombre}. Me duermo con calma.	Day sealed. Thanks for today, {nombre}. I'm drifting off peacefully.
+cie_sello	2		Hecho y sellado. Sea cual sea el día, ya está cerrado. Hasta mañana.	Done and sealed. Whatever kind of day it was, it's closed now. See you tomorrow.
+cie_sello	3		Buenas noches, {nombre}. Hoy lo has dejado cerrado, y se nota.	Goodnight, {nombre}. You left today properly closed, and it shows.
+cie_sello	4	lunes	Primer día de la semana, sellado. ¡Así se empieza, {nombre}!	Day one of the week, sealed. That's how you start, {nombre}!
+cie_sello	5	viernes	Viernes sellado. Fin de semana por delante, {nombre}, y bien ganado.	Friday sealed. Weekend ahead, {nombre}, and well earned.
+cie_sello	6	domingo	Domingo sellado: la semana se cierra aquí. Gracias por llevarme contigo.	Sunday sealed: the week closes right here. Thanks for taking me along.
+cie_sello	7	invierno	Fuera hace frío y aquí dentro el día queda sellado. A dormir, {nombre}.	It's cold outside, and in here the day is sealed. Off to sleep, {nombre}.
+cie_sello	8		Un día más para el jardín. Buenas noches, {nombre}.	One more day for the garden. Goodnight, {nombre}.
+cie_sello	9	finde	Fin de semana sellado, {nombre}. Descansa; yo ya me voy durmiendo.	Weekend sealed, {nombre}. Rest up; I'm already drifting off.
+cie_sello	10		¡Día sellado! Mañana seguimos.	Day sealed! Tomorrow we carry on.
+cie_sello	11		Día guardado. Me duermo con una sonrisa.	Day saved. I'm drifting off with a smile.
+cie_sello_perfecto	0		¡Día perfecto, {nombre}! Todo hecho, todo. Estoy que no quepo en mí.	A perfect day, {nombre}! Every single thing, done. I could burst.
+cie_sello_perfecto	1		Hoy no se ha escapado nada. Día perfecto, {nombre}. Buenas noches.	Nothing got away today. A perfect day, {nombre}. Goodnight.
+cie_sello_perfecto	2		¡Perfecto de principio a fin! Eso ha sido cosa tuya, {nombre}.	Perfect from start to finish! That was all you, {nombre}.
+cie_sello_perfecto	3		Todo hecho y todo sellado. Me duermo con una sonrisa enorme.	All done and all sealed. I'm falling asleep with a huge smile.
+cie_sello_perfecto	4		Día perfecto. Lo digo bajito para no despertar al jardín: ¡enhorabuena, {nombre}!	Perfect day. I'm whispering so I don't wake the garden: congratulations, {nombre}!
+cie_sello_perfecto	5	lunes	¡Lunes perfecto, {nombre}! La semana ya empieza con ventaja.	A perfect Monday, {nombre}! The week is off to a head start.
+cie_sello_perfecto	6	viernes	Viernes perfecto. Cierras la semana sin dejar nada atrás, {nombre}.	Perfect Friday. You close out the week leaving nothing behind, {nombre}.
+cie_sello_perfecto	7	domingo	Domingo perfecto, {nombre}: la semana termina sin ningún cabo suelto.	Perfect Sunday, {nombre}: the week ends with no loose ends.
+cie_sello_perfecto	8		Cada hábito de hoy, hecho. Un día así se guarda, {nombre}.	Every habit today, done. A day like this one is a keeper, {nombre}.
+cie_sello_perfecto	9	invierno	Fuera hace frío y aquí dentro, un día perfecto. Qué calorcito, {nombre}.	Cold outside, and in here, a perfect day. How warm that feels, {nombre}.
+cie_sello_perfecto	10		¡Día perfecto! Me voy a dormir dando saltitos.	A perfect day! I'm off to sleep with a little bounce.
+cie_sello_perfecto	11		Día perfecto, de principio a fin. Qué gusto da sellarlo.	A perfect day, start to finish. Such a joy to seal it.
+cie_tareas_manana	0		Para mañana, {n|tarea|tareas}: {lista}.	Moving to tomorrow, {n|task|tasks}: {lista}.
+cie_tareas_manana	1		Mañana seguimos desde aquí: {lista}.	Tomorrow we pick it up from here: {lista}.
+cie_tareas_manana	2		Lo que queda de hoy te espera mañana: {lista}.	What's left of today will be waiting tomorrow: {lista}.

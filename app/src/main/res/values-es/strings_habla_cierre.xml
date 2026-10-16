@@ -1,0 +1,337 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
+<resources>
+    <string-array name="habla_cie_gordo_hecho_sargento">
+        <item>Lo gordo, hecho. Eso era lo difícil, {nombre}.</item>
+        <item>Hecho: {gordo}. Con eso, el día ya se sostiene solo.</item>
+        <item>Lo gordo está fuera del camino. Lo demás pesa menos.</item>
+        <item>Dijiste que lo hacías y lo hiciste: {gordo}. Así se habla.</item>
+        <item>Era cuestión de tiempo, {nombre}. Lo gordo, cerrado.</item>
+        <item>Lo gordo, tachado. Mañana buscamos la siguiente.</item>
+        <item>[lunes] Lunes y lo gordo ya hecho. Así empieza una semana.</item>
+        <item>[viernes] Viernes, y lo gordo no se queda para el lunes. Bien jugado.</item>
+        <item>Lo gordo ya no pesa. Cierra el día con la cabeza libre.</item>
+        <item>[domingo] Domingo, y lo gordo hecho. La semana se cierra limpia.</item>
+    </string-array>
+    <string-array name="habla_cie_gordo_hecho_cheerleader">
+        <item>¡Lo gordo, hecho, {nombre}! Eso lo has sacado adelante tú.</item>
+        <item>Lo gordo de hoy ya está: {gordo}. Qué bien sienta tacharlo.</item>
+        <item>[lunes] ¡Lunes y lo gordo ya hecho, {nombre}! Así se arranca una semana.</item>
+        <item>Elegiste lo gordo y lo hiciste: {gordo}. Yo solo miraba con una sonrisa enorme.</item>
+        <item>{nombre}, lo gordo ha caído: {gordo}. Ahora ya puedes respirar.</item>
+        <item>Lo difícil del día ya está hecho: {gordo}. Bien jugado.</item>
+        <item>[viernes] Lo gordo, hecho, y encima es viernes. Te has ganado la noche, {nombre}.</item>
+        <item>No era poca cosa: {gordo}. Lo has llevado de principio a fin.</item>
+    </string-array>
+    <string-array name="habla_cie_gordo_hecho_neutra">
+        <item>Lo gordo de hoy está hecho: {gordo}. Lo demás es un extra.</item>
+        <item>Hecho lo gordo, {nombre}. El resto del día pesa menos.</item>
+        <item>Lo gordo ya está: {gordo}. Cierras el día con lo difícil resuelto.</item>
+        <item>Hoy sacaste adelante lo gordo: {gordo}. Se nota.</item>
+        <item>{gordo}: hecho. Lo que elegiste como lo gordo de hoy está cerrado.</item>
+        <item>[lunes] Lunes y lo gordo ya hecho: {gordo}. La semana empieza con ventaja.</item>
+        <item>[viernes] Viernes con lo gordo hecho: {gordo}. El fin de semana empieza ligero.</item>
+        <item>[domingo] Domingo y lo gordo hecho: {gordo}. La semana se cierra en orden.</item>
+        <item>[invierno] Fuera hace frío y lo gordo ya está hecho: {gordo}. Buen momento para cerrar.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_sargento">
+        <item>Ayer se escapó y hoy lo has hecho: {habito}. Eso cuenta.</item>
+        <item>Ayer no, hoy sí: «{habito}». Así se corrige el rumbo.</item>
+        <item>Hoy has hecho lo que ayer quedó fuera: {habito}. Sin más comentarios.</item>
+        <item>{habito}: ayer se escapó, hoy no. Anotado, {nombre}.</item>
+        <item>Retomaste «{habito}» al día siguiente. Pocos lo hacen.</item>
+        <item>Lo de ayer, compensado hoy: {habito}. Así se construye.</item>
+        <item>No dejaste que ayer decidiera por ti. Hoy está hecho: {habito}.</item>
+        <item>[lunes] Lunes de recuperar terreno. Hecho: {habito}. Buen comienzo.</item>
+        <item>Se escapó ayer, lo has cazado hoy. Esa es la diferencia.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_cheerleader">
+        <item>Ayer se escapó y hoy lo has hecho: {habito}. Eso cuenta, {nombre}.</item>
+        <item>¡Ayer no, hoy sí! «{habito}»: hecho. Así se vuelve.</item>
+        <item>«{habito}» se escapó ayer. Hoy lo has cogido al vuelo.</item>
+        <item>{habito}, hecho. Ayer se escapó, y hoy has ido a buscarlo.</item>
+        <item>Un día se escapa; lo que importa es volver. Hoy has vuelto: «{habito}».</item>
+        <item>¡{nombre}, eso es volver a la carga! «{habito}»: hecho, tras lo de ayer.</item>
+        <item>Ayer se quedó atrás; hoy lo has recogido: {habito}.</item>
+    </string-array>
+    <string-array name="habla_cie_logro_neutra">
+        <item>Hoy has hecho lo que ayer se escapó: {habito}. Eso cuenta.</item>
+        <item>Ayer se quedó sin hacer y hoy sí salió: {habito}. Sin cuentas pendientes.</item>
+        <item>{habito}, hecho hoy después de escaparse ayer. Queda anotado.</item>
+        <item>Un día se escapa y al siguiente se retoma: {habito}. Así funciona.</item>
+        <item>Ayer no salió y hoy sí: «{habito}». Con eso basta.</item>
+        <item>[lunes] Lunes, y hoy has retomado lo de ayer: {habito}. Buen arranque.</item>
+        <item>[noche] Antes de cerrar: «{habito}» salió hoy, aunque ayer no.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_sargento">
+        <item>{habito}: racha de {racha}. No la sueltes.</item>
+        <item>Racha de {racha} en «{habito}». Era cuestión de tiempo.</item>
+        <item>Racha de {racha}, {nombre}. Esto ya no es suerte.</item>
+        <item>Cuenta de «{habito}»: {racha}. Sigue sumando.</item>
+        <item>Racha de {racha} sin soltarla. Eso es constancia.</item>
+        <item>Hoy suma {racha} en «{habito}». A mantenerla viva.</item>
+        <item>[lunes] Lunes y racha de {racha} en «{habito}». Así se arranca la semana.</item>
+        <item>[finde] Fin de semana y la racha sigue: {habito}, {racha}.</item>
+        <item>Tu racha en «{habito}» llega a {racha}. Eso se construye, no se regala.</item>
+        <item>Racha de {racha} en «{habito}». A por la siguiente.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_cheerleader">
+        <item>¡Racha de {racha} con «{habito}», {nombre}!</item>
+        <item>«{habito}» llega a {racha}. Eso ya es costumbre, no suerte.</item>
+        <item>Cifra redonda: racha de {racha} en «{habito}». ¡Se nota que vas en serio!</item>
+        <item>{habito}: {racha|vez|veces} seguidas. Cada una la has puesto tú.</item>
+        <item>Mira, {nombre}: racha de {racha} en «{habito}». Obra tuya.</item>
+        <item>[domingo] Domingo y racha de {racha} en «{habito}». Semana cerrada a lo grande.</item>
+        <item>¡Otra cifra redonda! «{habito}» suma {racha}, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_cie_racha_avanza_neutra">
+        <item>{habito}: racha de {racha}. Número redondo.</item>
+        <item>Racha de {racha} con «{habito}». Constancia, {nombre}.</item>
+        <item>{habito} suma {racha|vez|veces} seguidas, y hoy cuenta.</item>
+        <item>Racha de {racha} en «{habito}». Y sigue.</item>
+        <item>{nombre}, racha de {racha} en «{habito}». Sigue contando.</item>
+        <item>[domingo] Cierras la semana con {racha|vez|veces} seguidas de «{habito}».</item>
+        <item>[lunes] Lunes y racha redonda: «{habito}», {racha|vez|veces} seguidas.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_sargento">
+        <item>Cerremos el día, {nombre}. Sin excusas.</item>
+        <item>Repasa lo que queda y decide. Un minuto.</item>
+        <item>Último tramo del día. Lo que quede, aquí se decide.</item>
+        <item>Mira las filas, contesta con sinceridad y cierra. Nada más.</item>
+        <item>Cada cosa en su sitio y a descansar.</item>
+        <item>Hoy ya está casi escrito. Falta decidir lo que queda.</item>
+        <item>[lunes] Primer cierre de la semana. Que quede bien hecho.</item>
+        <item>[viernes] Viernes. Cierra con orden y el finde empieza limpio.</item>
+        <item>[domingo] Domingo. Un buen cierre deja la semana en orden.</item>
+        <item>[invierno] Fuera ya es de noche. Dentro, cerramos lo de hoy.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_cheerleader">
+        <item>Día tranquilo, {nombre}. Seguir apareciendo ya es mucho.</item>
+        <item>Un día más en el bolsillo. Pequeño o grande, suma.</item>
+        <item>Cerramos el día, {nombre}, tú y yo. Me ha gustado ir a tu lado.</item>
+        <item>Hoy no ha habido fuegos artificiales, y está bien. Los días normales son los que cuentan.</item>
+        <item>{nombre}, gracias por pasar el día conmigo. Ya casi toca descansar.</item>
+        <item>¡Buen trabajo hoy, {nombre}! Sin ruido, pero constante.</item>
+        <item>[viernes] Se acaba el viernes, {nombre}. Lo que has hecho hoy ya nadie te lo quita.</item>
+        <item>Día cerrado sin ruido. Mañana seguimos a la vez.</item>
+    </string-array>
+    <string-array name="habla_cie_sencillo_neutra">
+        <item>Repaso del día, {nombre}. Solo lo que queda.</item>
+        <item>Esto es lo que falta por decidir. Lo demás ya está.</item>
+        <item>Un último vistazo al día, {nombre}. Sin prisa.</item>
+        <item>Estas filas son lo único abierto. Se resuelven rápido.</item>
+        <item>El día está casi cerrado. Faltan solo estas decisiones.</item>
+        <item>[noche] Ya es de noche. Un repaso corto y a descansar.</item>
+        <item>[viernes] Viernes: un repaso rápido y el fin de semana empieza limpio.</item>
+        <item>[invierno] Con este frío, repaso corto: solo lo que sigue abierto.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_sargento">
+        <item>Nada pendiente. Hoy no tengo quejas, {nombre}.</item>
+        <item>Nada que decidir. Puedes sellar el día.</item>
+        <item>Sin pendientes. Así da gusto, {nombre}.</item>
+        <item>Todo contestado. Solo falta dar las buenas noches.</item>
+        <item>Cero cabos sueltos. Sella y a dormir.</item>
+        <item>Nada que corregir hoy. Descansa en serio.</item>
+        <item>[lunes] Lunes sin pendientes. Buen punto de partida, {nombre}.</item>
+        <item>[viernes] Viernes y nada pendiente. El finde empieza con la cuenta en limpio.</item>
+        <item>[domingo] Domingo sin pendientes. La semana se queda en orden.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_cheerleader">
+        <item>Nada pendiente, {nombre}. Puedes sellar el día.</item>
+        <item>¡Todo en orden, {nombre}! Solo queda sellar el día.</item>
+        <item>No queda nada por decidir. Cuando quieras, buenas noches.</item>
+        <item>Aquí ya está todo. Sella cuando te apetezca, {nombre}.</item>
+        <item>Cierre limpio: ni una fila por mirar. Toca descansar.</item>
+        <item>Hoy no se queda nada en el aire, {nombre}. Buenas noches cuando quieras.</item>
+        <item>¡Cero pendientes, {nombre}! Sellar el día y a descansar.</item>
+        <item>¡Todo decidido! Solo queda sellar el día.</item>
+    </string-array>
+    <string-array name="habla_cie_nada_pendiente_neutra">
+        <item>Nada pendiente, {nombre}. Puedes sellar el día.</item>
+        <item>No queda nada por decidir. El día puede sellarse.</item>
+        <item>Todo está en su sitio, {nombre}. Cuando quieras, buenas noches.</item>
+        <item>Hoy no hay filas: ya está todo decidido. Solo falta sellar.</item>
+        <item>No hay nada que repasar. Puedes cerrar cuando quieras.</item>
+        <item>[viernes] Nada pendiente. Sellas el día y empieza el fin de semana.</item>
+        <item>[lunes] Primer día de la semana y nada pendiente. Sella sin prisa.</item>
+        <item>[invierno] Nada pendiente. Sella el día y a resguardarse del frío.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_sargento">
+        <item>Bien. Mañana, al mismo ritmo.</item>
+        <item>Me alegro. Que no decaiga.</item>
+        <item>Un buen día. Apúntatelo y repite mañana.</item>
+        <item>Eso es lo que quería oír. Mañana, igual.</item>
+        <item>Bien. Guarda esa sensación, sirve de combustible.</item>
+        <item>Me alegro. Los días buenos también se ganan.</item>
+        <item>Vale, día bueno. Sin bajar la guardia.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_cheerleader">
+        <item>Me alegro. Mañana seguimos al mismo ritmo.</item>
+        <item>¡Qué bien oír eso! Mañana, a por otro igual.</item>
+        <item>Me alegra mucho. Guardo este día como ejemplo para mañana.</item>
+        <item>Eso quería oír. Mañana repetimos la receta.</item>
+        <item>¡Un día bueno de verdad! Así da gusto cerrarlo.</item>
+        <item>Me alegro, y se nota. Mañana seguimos a este ritmo, tú y yo.</item>
+        <item>Qué bueno saberlo. Buena parte de esa alegría la has puesto tú. Descansa.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_bien_neutra">
+        <item>Me alegro. Mañana seguimos al mismo ritmo.</item>
+        <item>Lo apunto: hoy fue un buen día.</item>
+        <item>Buen día, entonces. Que descanses.</item>
+        <item>Me alegra saberlo. Hasta mañana.</item>
+        <item>Bien está. Eso se queda guardado.</item>
+        <item>[viernes] Buen día para terminar la semana. A descansar.</item>
+        <item>[domingo] Y la semana acaba bien. Me alegro.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_sargento">
+        <item>Regular, vale. Mañana, algo corto para arrancar.</item>
+        <item>Ni bueno ni malo. Mañana arrancamos con algo corto.</item>
+        <item>Entendido. Un día regular también se cierra. Mañana, arranque corto.</item>
+        <item>Anotado. Mañana empiezas por algo corto.</item>
+        <item>Los días así pasan. Mañana, un primer paso pequeño.</item>
+        <item>Vale. No hace falta más: cierra y mañana arrancamos suave.</item>
+        <item>Ni fu ni fa. Mañana empezamos con algo corto y vemos.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_cheerleader">
+        <item>Vale. Mañana te propongo algo corto para arrancar.</item>
+        <item>Regular también cuenta. Mañana empezamos con algo pequeño.</item>
+        <item>Un día así pasa. Mañana, algo corto para entrar en calor, tú y yo.</item>
+        <item>Entendido. Mañana arrancamos con algo ligero.</item>
+        <item>Ni bien ni mal, vale. Mañana busco un arranque sencillo.</item>
+        <item>Gracias por decírmelo. Mañana empezamos suave y vemos cómo va.</item>
+        <item>Lo regular se arregla poco a poco. Mañana, un primer paso corto.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_regular_neutra">
+        <item>Vale. Mañana te propongo algo corto para arrancar.</item>
+        <item>Entendido. Mañana, algo corto para empezar.</item>
+        <item>Un día regular también cuenta. Mañana arrancamos con algo pequeño.</item>
+        <item>Gracias por decirlo. Mañana empezamos suave.</item>
+        <item>Anotado. Mañana, una cosa corta para entrar en calor.</item>
+        <item>[domingo] Un domingo regular. Mañana la semana empieza con algo corto.</item>
+        <item>[invierno] Hay días así, y más con este frío. Mañana, algo corto para arrancar.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_sargento">
+        <item>Gracias por decirlo. Mañana, menos.</item>
+        <item>Día duro, entendido. Mañana te pido menos.</item>
+        <item>Esto también cuenta: has llegado hasta el final. Mañana, menos carga.</item>
+        <item>Tomo nota. Mañana el listón baja un poco.</item>
+        <item>Un día duro no borra los demás. Mañana, menos.</item>
+        <item>Gracias por la sinceridad. Descansa; mañana, algo más ligero.</item>
+        <item>Basta por hoy, sin más peso. Mañana, menos.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_cheerleader">
+        <item>Gracias por contármelo. Mañana te propongo menos.</item>
+        <item>Fue un día duro, y no hace falta adornarlo. Mañana, menos cosas.</item>
+        <item>Lo siento. Me quedo contigo un rato. Mañana, solo lo justo.</item>
+        <item>Se nota que ha pesado. Mañana vamos con menos peso, tú y yo.</item>
+        <item>Gracias por decirlo tal cual. Mañana, una cosa cada vez.</item>
+        <item>Los días duros también se cierran, y este ya casi está. Mañana, menos.</item>
+        <item>Aquí estoy. No hace falta decir más. Mañana te propongo poco.</item>
+    </string-array>
+    <string-array name="habla_cie_animo_duro_neutra">
+        <item>Gracias por contármelo. Mañana te propongo menos.</item>
+        <item>Lo siento. Mañana te propongo menos.</item>
+        <item>Un día duro no borra los demás. Mañana, menos cosas.</item>
+        <item>Anotado. Descansa, que mañana pesará menos.</item>
+        <item>Entiendo. Mañana vamos con calma y con menos propuestas.</item>
+        <item>[viernes] Una semana dura, entonces. Descansa; mañana, con calma.</item>
+        <item>[noche] Es tarde y fue un día duro. Descansa; mañana, menos.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_sargento">
+        <item>Día cerrado, {nombre}. Mañana, más.</item>
+        <item>Cerrado. Descansa, que mañana también cuenta.</item>
+        <item>Hasta mañana, {nombre}. Aquí estaré.</item>
+        <item>Sellado. Lo de hoy, hecho está.</item>
+        <item>Buenas noches. Lo de hoy se queda escrito.</item>
+        <item>Se acabó por hoy. Duerme bien.</item>
+        <item>Otro día al marcador, {nombre}.</item>
+        <item>[lunes] Lunes cerrado. La semana ya está en marcha.</item>
+        <item>[viernes] Viernes sellado. El finde es tuyo.</item>
+        <item>[domingo] Domingo cerrado. Mañana, semana nueva.</item>
+        <item>[invierno] Sellado. Fuera hace frío; el día queda a resguardo.</item>
+        <item>[finde] Día de fin de semana cerrado. Descansa de verdad.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_cheerleader">
+        <item>¡Otro día en el bolsillo, {nombre}! Mañana seguimos.</item>
+        <item>Día sellado. Gracias por hoy, {nombre}. Me duermo con calma.</item>
+        <item>Hecho y sellado. Sea cual sea el día, ya está cerrado. Hasta mañana.</item>
+        <item>Buenas noches, {nombre}. Hoy lo has dejado cerrado, y se nota.</item>
+        <item>[lunes] Primer día de la semana, sellado. ¡Así se empieza, {nombre}!</item>
+        <item>[viernes] Viernes sellado. Fin de semana por delante, {nombre}, y bien ganado.</item>
+        <item>[domingo] Domingo sellado: la semana se cierra aquí. Gracias por llevarme contigo.</item>
+        <item>[invierno] Fuera hace frío y aquí dentro el día queda sellado. A dormir, {nombre}.</item>
+        <item>Un día más para el jardín. Buenas noches, {nombre}.</item>
+        <item>[finde] Fin de semana sellado, {nombre}. Descansa; yo ya me voy durmiendo.</item>
+        <item>¡Día sellado! Mañana seguimos.</item>
+        <item>Día guardado. Me duermo con una sonrisa.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_neutra">
+        <item>Día sellado, {nombre}. Hasta mañana.</item>
+        <item>Hasta mañana, {nombre}. El día queda guardado.</item>
+        <item>Día guardado. Buenas noches.</item>
+        <item>Todo apuntado, {nombre}. A descansar.</item>
+        <item>Cerrado por hoy. Mañana, una página nueva.</item>
+        <item>Que descanses, {nombre}. Mañana seguimos.</item>
+        <item>[domingo] La semana queda cerrada. Buenas noches, {nombre}.</item>
+        <item>[viernes] Viernes cerrado. Buenas noches, y buen fin de semana.</item>
+        <item>[invierno] Buenas noches, {nombre}. Que el frío se quede fuera.</item>
+        <item>[lunes] Primer día de la semana, sellado. Buenas noches.</item>
+        <item>Día sellado. Hasta mañana.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_sargento">
+        <item>Día perfecto, {nombre}. Así se hace. No te relajes.</item>
+        <item>Ni un hábito atrás. Era cuestión de tiempo, {nombre}.</item>
+        <item>Todo hecho y sin excusas. Mañana, igual.</item>
+        <item>Impecable. Eso sale cuando no negocias contigo.</item>
+        <item>Hoy no ha quedado nada. Guárdalo y duerme.</item>
+        <item>Así se cierra un día, {nombre}.</item>
+        <item>Todo en su sitio. Descansa; mañana, repetir.</item>
+        <item>[lunes] Lunes perfecto. Has puesto el listón de la semana.</item>
+        <item>[viernes] Viernes redondo. Llévate el finde sin deudas.</item>
+        <item>[domingo] Domingo perfecto. La semana termina como debe.</item>
+        <item>[finde] Fin de semana y aun así, todo hecho. Eso es disciplina.</item>
+        <item>[invierno] Frío fuera, día completo dentro. Bien jugado, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_cheerleader">
+        <item>¡Día perfecto, {nombre}! Todo hecho, todo. Estoy que no quepo en mí.</item>
+        <item>Hoy no se ha escapado nada. Día perfecto, {nombre}. Buenas noches.</item>
+        <item>¡Perfecto de principio a fin! Eso ha sido cosa tuya, {nombre}.</item>
+        <item>Todo hecho y todo sellado. Me duermo con una sonrisa enorme.</item>
+        <item>Día perfecto. Lo digo bajito para no despertar al jardín: ¡enhorabuena, {nombre}!</item>
+        <item>[lunes] ¡Lunes perfecto, {nombre}! La semana ya empieza con ventaja.</item>
+        <item>[viernes] Viernes perfecto. Cierras la semana sin dejar nada atrás, {nombre}.</item>
+        <item>[domingo] Domingo perfecto, {nombre}: la semana termina sin ningún cabo suelto.</item>
+        <item>Cada hábito de hoy, hecho. Un día así se guarda, {nombre}.</item>
+        <item>[invierno] Fuera hace frío y aquí dentro, un día perfecto. Qué calorcito, {nombre}.</item>
+        <item>¡Día perfecto! Me voy a dormir dando saltitos.</item>
+        <item>Día perfecto, de principio a fin. Qué gusto da sellarlo.</item>
+    </string-array>
+    <string-array name="habla_cie_sello_perfecto_neutra">
+        <item>Día perfecto, {nombre}. Todo lo exigible, cumplido.</item>
+        <item>Todo lo del día, hecho. Buenas noches, {nombre}.</item>
+        <item>Ni un hábito pendiente hoy. Queda registrado.</item>
+        <item>Un día completo, {nombre}. Hasta mañana.</item>
+        <item>Hoy salió todo. Que conste, y que descanses.</item>
+        <item>Día redondo: nada exigible se quedó sin hacer.</item>
+        <item>[viernes] La semana termina con un día completo. Buenas noches.</item>
+        <item>[domingo] La semana acaba con un día perfecto, {nombre}.</item>
+        <item>[lunes] Lunes perfecto, {nombre}. La semana empieza bien.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_sargento">
+        <item>Mañana toca: {lista}.</item>
+        <item>{n|tarea|tareas} para mañana: {lista}. Ahí empezamos.</item>
+        <item>Mañana, a por esto: {lista}.</item>
+        <item>Sin hacer hoy, lo primero de mañana: {lista}.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_cheerleader">
+        <item>Para mañana, {n|tarea|tareas}: {lista}.</item>
+        <item>Mañana seguimos desde aquí: {lista}.</item>
+        <item>Lo que queda de hoy te espera mañana: {lista}.</item>
+    </string-array>
+    <string-array name="habla_cie_tareas_manana_neutra">
+        <item>Para mañana: {lista}.</item>
+        <item>Lo que pasa a mañana, {n|tarea|tareas}: {lista}.</item>
+        <item>Para mañana queda esto: {lista}. Sin prisa.</item>
+        <item>Lo pendiente se queda para mañana: {lista}.</item>
+    </string-array>
+</resources>

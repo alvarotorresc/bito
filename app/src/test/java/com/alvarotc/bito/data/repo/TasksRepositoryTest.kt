@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.DAY_ZERO
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.db.LoGordoEntity
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.TaskEventKind
@@ -172,5 +173,20 @@ class TasksRepositoryTest {
 
             assertNull(repo.task("t1"))
             assertTrue(db.taskEventDao().all().isEmpty())
+        }
+
+    @Test
+    fun `deleting a task removes its big-thing rows`() =
+        runTest {
+            repo.create(taskEntity(id = "t1"))
+            repo.create(taskEntity(id = "t2", title = "Otra"))
+            db.hablaDao().reemplazarGordo(
+                DAY_ZERO,
+                listOf(LoGordoEntity(DAY_ZERO, 0, "TAREA", "t1", 1L), LoGordoEntity(DAY_ZERO, 1, "TAREA", "t2", 1L)),
+            )
+
+            repo.delete("t1")
+
+            assertEquals(listOf("t2"), db.hablaDao().todoGordo().map { it.refId })
         }
 }

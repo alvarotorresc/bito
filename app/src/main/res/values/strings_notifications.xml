@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="channel_reminders">Reminders</string>
-    <string name="channel_review">Daily review</string>
     <string name="channel_celebrations">Celebrations</string>
 
     <!--
@@ -14,14 +13,23 @@
         placeholder; the render call always passes all four.
     -->
     <string name="notif_reminder_title_sargento_morning">Up and at it, %1$s. There\'s work today.</string>
+    <string name="notif_reminder_title_sargento_morning_sin_nombre">Up and at it. There\'s work today.</string>
     <string name="notif_reminder_title_sargento_afternoon">Halfway through, %1$s. Don\'t ease up.</string>
+    <string name="notif_reminder_title_sargento_afternoon_sin_nombre">Halfway through. Don\'t ease up.</string>
     <string name="notif_reminder_title_sargento_evening">Last call, %1$s.</string>
+    <string name="notif_reminder_title_sargento_evening_sin_nombre">Last call.</string>
     <string name="notif_reminder_title_cheerleader_morning">Morning, %1$s! Today looks good.</string>
+    <string name="notif_reminder_title_cheerleader_morning_sin_nombre">Morning! Today looks good.</string>
     <string name="notif_reminder_title_cheerleader_afternoon">Still going, %1$s! The afternoon is ours.</string>
+    <string name="notif_reminder_title_cheerleader_afternoon_sin_nombre">Still going! The afternoon is ours.</string>
     <string name="notif_reminder_title_cheerleader_evening">One last push, %1$s!</string>
+    <string name="notif_reminder_title_cheerleader_evening_sin_nombre">One last push!</string>
     <string name="notif_reminder_title_neutra_morning">Good morning, %1$s. Your day, at a glance.</string>
+    <string name="notif_reminder_title_neutra_morning_sin_nombre">Good morning. Your day, at a glance.</string>
     <string name="notif_reminder_title_neutra_afternoon">Mid-afternoon, %1$s. Here\'s where we are.</string>
+    <string name="notif_reminder_title_neutra_afternoon_sin_nombre">Mid-afternoon. Here\'s where we are.</string>
     <string name="notif_reminder_title_neutra_evening">The day\'s winding down, %1$s.</string>
+    <string name="notif_reminder_title_neutra_evening_sin_nombre">The day\'s winding down.</string>
 
     <plurals name="notif_reminder_body_sargento_morning">
         <item quantity="one">One target today: %2$s. Go get it.</item>
@@ -68,29 +76,6 @@
     <string name="notif_target_done">Done: %1$s</string>
     <string name="notif_target_add" translatable="false">+%1$d %2$s · %3$d/%4$d</string>
 
-    <!--
-        REVIEW nudge, in Habi's voice. Titles: %1$s = the user's name. Bodies: plurals keyed by
-        how many rows today's review still has to decide (%1$d). The seal-only variant covers a
-        review owed with nothing to decide today — only past days left unsealed.
-    -->
-    <string name="notif_review_title_sargento">Day\'s close, %1$s.</string>
-    <string name="notif_review_title_cheerleader">Let\'s close the day, %1$s!</string>
-    <string name="notif_review_title_neutra">Day review, %1$s.</string>
-    <plurals name="notif_review_body_sargento">
-        <item quantity="one">%1$d left to settle. Close it out.</item>
-        <item quantity="other">%1$d left to settle. One minute and the day is closed. No excuses.</item>
-    </plurals>
-    <plurals name="notif_review_body_cheerleader">
-        <item quantity="one">Just %1$d left to settle. Seal it and rest up!</item>
-        <item quantity="other">%1$d left to settle. A quick review and off to rest!</item>
-    </plurals>
-    <plurals name="notif_review_body_neutra">
-        <item quantity="one">%1$d left to settle. One minute and the day is sealed.</item>
-        <item quantity="other">%1$d left to settle. One minute and the day is sealed.</item>
-    </plurals>
-    <string name="notif_review_seal_sargento">There are unsealed days on the books. Put them in order.</string>
-    <string name="notif_review_seal_cheerleader">A few days are waiting for their seal. One tap and done!</string>
-    <string name="notif_review_seal_neutra">Some earlier days are still unsealed. One tap closes them.</string>
 
     <string name="notif_perfect_day_title">Perfect day</string>
 
@@ -99,17 +84,41 @@
     <string name="notif_focus_over">Time\'s up</string>
 
     <!--
-        Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name. The body itself is
+        Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name, %2$d = how many tasks. The body itself is
         the named titles joined by the caller, not a resource — this plural is only the "and N
         more" tail, appended when some notices are left unnamed. No personality variation.
     -->
-    <string name="notif_tasks_title_sargento">%1$s, something\'s waiting.</string>
-    <string name="notif_tasks_title_cheerleader">Shall we, %1$s?</string>
-    <string name="notif_tasks_title_neutra">You have a task, %1$s.</string>
+    <plurals name="notif_tasks_title_sargento">
+        <item quantity="one">%1$s, something\'s waiting.</item>
+        <item quantity="other">%1$s, %2$d things are waiting.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_sargento_sin_nombre">
+        <item quantity="one">Something\'s waiting.</item>
+        <item quantity="other">%2$d things are waiting.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_cheerleader">
+        <item quantity="one">Shall we, %1$s?</item>
+        <item quantity="other">Shall we, %1$s? There are %2$d.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_cheerleader_sin_nombre">
+        <item quantity="one">Shall we?</item>
+        <item quantity="other">Shall we? There are %2$d.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_neutra">
+        <item quantity="one">You have a task, %1$s.</item>
+        <item quantity="other">You have %2$d tasks, %1$s.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_neutra_sin_nombre">
+        <item quantity="one">You have a task.</item>
+        <item quantity="other">You have %2$d tasks.</item>
+    </plurals>
     <!-- notif_breathing_* — M11, the optional daily breathing reminder. %1$s = user name. -->
     <string name="notif_breathing_title_sargento">%1$s, two minutes.</string>
+    <string name="notif_breathing_title_sargento_sin_nombre">Two minutes.</string>
     <string name="notif_breathing_title_cheerleader">Shall we breathe for a bit, %1$s?</string>
+    <string name="notif_breathing_title_cheerleader_sin_nombre">Shall we breathe for a bit?</string>
     <string name="notif_breathing_title_neutra">Time to breathe, %1$s.</string>
+    <string name="notif_breathing_title_neutra_sin_nombre">Time to breathe.</string>
     <string name="notif_breathing_body_sargento">Breathe with me. Then carry on.</string>
     <string name="notif_breathing_body_cheerleader">I\'ll be waiting with my eyes closed.</string>
     <string name="notif_breathing_body_neutra">Whenever you can.</string>

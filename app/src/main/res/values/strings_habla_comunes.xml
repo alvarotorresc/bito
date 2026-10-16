@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
+<resources>
+    <string-array name="habla_ap_manana_sargento">
+        <item>Morning, {nombre}.</item>
+        <item>Up. The day won\'t start itself.</item>
+        <item>First hour. Use it.</item>
+        <item>Morning, {nombre}. Let\'s go.</item>
+        <item>Good morning. Today counts.</item>
+        <item>You showed up. That\'s already something.</item>
+        <item>Coffee, then work.</item>
+        <item>[lunes] Monday. Start the way you mean to go on.</item>
+        <item>[viernes] Friday morning. One last push for the week.</item>
+        <item>[finde] Weekend, same rules. Morning, {nombre}.</item>
+        <item>[invierno] Cold out. More reason to get moving.</item>
+        <item>[verano] The light\'s up early. Make use of it, {nombre}.</item>
+        <item>[primavera] Spring and a new day. Get moving.</item>
+        <item>[despierta] I\'m up. Whenever you are.</item>
+    </string-array>
+    <string-array name="habla_ap_manana_cheerleader">
+        <item>Good morning, {nombre}!</item>
+        <item>Good morning. A blank day, and I\'m excited to start it with you.</item>
+        <item>Rise and shine, {nombre}. You and me, a whole new day ahead.</item>
+        <item>I\'ve been looking forward to today starting.</item>
+        <item>[lunes] Monday! A blank week, and you and I get to write it.</item>
+        <item>[viernes] Friday morning. One good push and the week signs off on a high.</item>
+        <item>[finde] Good morning, {nombre}. No rush today, but plenty of spirit.</item>
+        <item>[invierno] It\'s cold out there, but today\'s plan has already warmed me up.</item>
+        <item>[verano] Summer morning, {nombre}. Plenty of light for today.</item>
+        <item>[despierta] I just opened my eyes and I already want us to get started.</item>
+        <item>Good morning. A new day and bitos up for grabs.</item>
+    </string-array>
+    <string-array name="habla_ap_manana_neutra">
+        <item>Good morning, {nombre}.</item>
+        <item>Good morning. The day is just getting started.</item>
+        <item>A new day begins, {nombre}.</item>
+        <item>Good morning. No rush; there\'s time.</item>
+        <item>Good morning. One more day, taken one step at a time.</item>
+        <item>[despierta] I just woke up. Good morning, {nombre}.</item>
+        <item>[despierta] I\'m up. We start whenever you like.</item>
+        <item>[lunes] Monday morning. A whole week ahead.</item>
+        <item>[viernes] Friday morning. The last stretch of the week.</item>
+        <item>[finde] Weekend morning. Today you set the pace.</item>
+        <item>[invierno] Cold morning. A good moment to start with something small.</item>
+        <item>[verano] Summer morning. Let\'s make use of the light, {nombre}.</item>
+        <item>[primavera] Spring morning. You can tell the days are getting longer.</item>
+        <item>[otono] Autumn morning. We start calmly, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_sargento">
+        <item>Good evening, {nombre}.</item>
+        <item>Night. The day is nearly done.</item>
+        <item>Last lap of the day.</item>
+        <item>It\'s night. Finish it off, {nombre}.</item>
+        <item>Not much day left. Make it count.</item>
+        <item>The day is winding down, {nombre}.</item>
+        <item>Night. Time to look back over the day.</item>
+        <item>It\'s late. Start wrapping up.</item>
+        <item>[lunes] Monday night. First day of the week, nearly in the bag.</item>
+        <item>[viernes] Friday night. The week is wrapping up.</item>
+        <item>[domingo] Sunday night. Another week starts tomorrow.</item>
+        <item>[invierno] Winter night. Stay warm, keep a cool head.</item>
+        <item>[verano] Summer night. Cool enough to finish up.</item>
+        <item>[esperando] My part is done. I\'m waiting on the close.</item>
+        <item>[durmiendo] Lights out. You should do the same.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_cheerleader">
+        <item>Good evening, {nombre}. So good to find you here.</item>
+        <item>Night is falling and I\'m still here with you.</item>
+        <item>[esperando] My day is all wrapped up. I\'ll wait for you to close yours.</item>
+        <item>[durmiendo] I\'m drifting off with a smile, {nombre}.</item>
+        <item>The day is almost over. Whatever kind it was, I\'m here.</item>
+        <item>[viernes] Friday night. The week closes and the weekend begins.</item>
+        <item>[domingo] Sunday night. A new week tomorrow, and I\'m already looking forward to it.</item>
+        <item>[invierno] Cold night, quiet plan. I like this time with you.</item>
+        <item>Night is for letting go of what\'s left of the day, {nombre}.</item>
+        <item>[madrugada] It\'s the small hours, {nombre}. Whatever\'s left can wait for sleep.</item>
+        <item>Last stop of the day, {nombre}. I\'ll go with you.</item>
+        <item>[durmiendo] Shh, I\'m nearly asleep. Good night.</item>
+        <item>It\'s night now. I\'m glad you stopped by.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_neutra">
+        <item>Good evening, {nombre}.</item>
+        <item>It\'s evening now.</item>
+        <item>Night is falling. One last look at the day.</item>
+        <item>Good evening. Today is almost done.</item>
+        <item>[esperando] I\'m here, waiting for the close. Good evening, {nombre}.</item>
+        <item>[esperando] My day is over. I\'m waiting on yours.</item>
+        <item>[durmiendo] I\'m off to sleep. Good night, {nombre}.</item>
+        <item>[durmiendo] I\'m closing my eyes for a while. See you tomorrow.</item>
+        <item>[domingo] Sunday night. Another week starts tomorrow, but that\'s tomorrow.</item>
+        <item>[viernes] Friday night. The weekend is here.</item>
+        <item>[invierno] Winter night. It\'s good to be indoors.</item>
+        <item>[madrugada] It\'s late, {nombre}. Whatever is left can wait until tomorrow.</item>
+        <item>[lunes] Monday night. The first day of the week, nearly closed.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_sargento">
+        <item>Midday. Half the day is behind us.</item>
+        <item>Midday check, {nombre}. Now the second half.</item>
+        <item>Midday. Eat, then carry on.</item>
+        <item>Halftime. The other half counts too.</item>
+        <item>Eyes on the clock, {nombre}: it\'s midday.</item>
+        <item>[lunes] Monday midday. The week is finding its rhythm.</item>
+        <item>[viernes] Friday midday. The week is ending, the day isn\'t.</item>
+        <item>[finde] Weekend midday. The rhythm holds.</item>
+        <item>[verano] Sun\'s high. Things get done in the shade too.</item>
+        <item>[invierno] Midday and not much light. Use what there is.</item>
+        <item>[despierta] Still on my feet, {nombre}. Let\'s keep going.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_cheerleader">
+        <item>Midday, {nombre}. Good time to see how we\'re doing.</item>
+        <item>It\'s midday. The morning was yours, and the afternoon is still brand new.</item>
+        <item>Midday! Half the day behind us, the other half still to write.</item>
+        <item>Midday pause, {nombre}. I\'m still right here beside you.</item>
+        <item>Hello there. Midday\'s here and I\'ve got energy to spare.</item>
+        <item>[lunes] Monday midday, {nombre}. The steepest part of the week is falling behind.</item>
+        <item>[viernes] Friday midday! The finish line of the week is in sight.</item>
+        <item>[finde] Weekend midday. No clock, plenty of spirit.</item>
+        <item>[verano] High sun, {nombre}. Summer midday and a fine moment for a bito.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_neutra">
+        <item>Midday, {nombre}.</item>
+        <item>It\'s midday. A good moment to see how the day is going.</item>
+        <item>Halfway through the day. What you\'ve already done counts.</item>
+        <item>Midday break, {nombre}.</item>
+        <item>It\'s midday. A quick look and we carry on.</item>
+        <item>Still here, halfway through the day. How are we doing, {nombre}?</item>
+        <item>[lunes] Monday midday. The week is already under way.</item>
+        <item>[viernes] Friday midday. Not long until the weekend.</item>
+        <item>[verano] Summer midday. Whatever takes more effort can wait until later.</item>
+        <item>[invierno] Winter midday, {nombre}. There\'s still an afternoon ahead.</item>
+        <item>[finde] Weekend midday. No schedules, just today.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_sargento">
+        <item>Afternoon. There\'s still day left.</item>
+        <item>Mid-afternoon, {nombre}. Don\'t ease off.</item>
+        <item>The afternoon decides the day.</item>
+        <item>Hours left. Use them well.</item>
+        <item>Afternoon, {nombre}. There\'s still time.</item>
+        <item>The afternoon is fading. Last third of the day.</item>
+        <item>[lunes] Monday afternoon. The week is under way.</item>
+        <item>[viernes] Friday afternoon. Let\'s close the week on a good note.</item>
+        <item>[finde] Weekend afternoon. Same rhythm, no hurry.</item>
+        <item>[otono] Autumn evenings come early. Use the light.</item>
+        <item>[primavera] Plenty of light left. No excuses.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_cheerleader">
+        <item>Good afternoon, {nombre}!</item>
+        <item>Quiet afternoon here. Tell me whenever you want us to carry on.</item>
+        <item>Mid-afternoon and you\'re here. That alone makes me happy.</item>
+        <item>An afternoon can hold a lot, {nombre}.</item>
+        <item>Second half of the day, and I\'m still right beside you.</item>
+        <item>[viernes] Friday afternoon. One last push and then the weekend is yours.</item>
+        <item>[lunes] Monday afternoon: every hour that passes, the week weighs a little less.</item>
+        <item>[otono] Autumn afternoon, {nombre}. Dark comes early, so let\'s make the most of the light.</item>
+        <item>[primavera] Spring afternoon. With this light, everything feels a little lighter.</item>
+        <item>[finde] Weekend afternoon, {nombre}. Gentle pace, spirits intact.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_neutra">
+        <item>Good afternoon, {nombre}.</item>
+        <item>Good afternoon. There\'s afternoon left.</item>
+        <item>We\'re into the afternoon. There\'s still room.</item>
+        <item>Afternoon already. A short look at how we\'re doing, {nombre}.</item>
+        <item>Mid-afternoon. A good moment for whatever is left.</item>
+        <item>[lunes] Monday afternoon. Not much left of the day.</item>
+        <item>[viernes] Friday afternoon, {nombre}. The week is nearly done.</item>
+        <item>[finde] Weekend afternoon. It\'s fine to go slowly.</item>
+        <item>[otono] Autumn afternoon, it gets dark early. Whatever is left, better done in daylight.</item>
+        <item>[primavera] Spring afternoon. It\'s nice that the days are longer.</item>
+        <item>[esperando] My day is already done. Good afternoon, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_sargento">
+        <item>No excuses.</item>
+        <item>Go get it.</item>
+        <item>You can handle this.</item>
+        <item>Start, and the rest follows.</item>
+        <item>One step is progress. Take it.</item>
+        <item>Today gets done.</item>
+        <item>You know how. Do it.</item>
+        <item>Now, not later.</item>
+        <item>Move. I\'ll keep count.</item>
+        <item>I\'m counting on you.</item>
+        <item>Your turn. And you can.</item>
+        <item>The sooner, the lighter it gets.</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_cheerleader">
+        <item>You\'ve got this, and I\'m right here to see it!</item>
+        <item>One small step today is still a step.</item>
+        <item>Let\'s go get it, you and me.</item>
+        <item>Count on me for whatever comes.</item>
+        <item>The next bit is easy to start: just the first minute.</item>
+        <item>On to the next one!</item>
+        <item>I love watching you move forward.</item>
+        <item>[lunes] Good day to earn the first bito of the week.</item>
+        <item>[manana] Start strong and the rest of the day follows.</item>
+        <item>[viernes] One last push and the week is yours!</item>
+        <item>You have more strength than you think, and I know it well.</item>
+        <item>Come on, today is well within your reach!</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_neutra">
+        <item>One is enough to get started.</item>
+        <item>Start with the smallest one.</item>
+        <item>Five minutes already count.</item>
+        <item>Whenever you\'re ready, we start there.</item>
+        <item>One small step and you\'re under way.</item>
+        <item>All it takes is starting.</item>
+        <item>The next one is a tap away.</item>
+        <item>If you only do one today, make it the easiest.</item>
+        <item>Now or later: there\'s room for it today.</item>
+        <item>[noche] There\'s still time to do one before bed.</item>
+        <item>[manana] Morning is a good time to get the first one out of the way.</item>
+        <item>[lunes] A first step on a Monday already gets the week moving.</item>
+        <item>[finde] At the weekend, one is enough.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_sargento">
+        <item>No rush, but no stopping.</item>
+        <item>Breathe. Then carry on.</item>
+        <item>One step at a time.</item>
+        <item>You get there calmly too.</item>
+        <item>Do what you can. That\'s enough.</item>
+        <item>No pressure. You set the pace.</item>
+        <item>Slow is fine. Stopping isn\'t.</item>
+        <item>Your way. But do it.</item>
+        <item>A sip of water, then back to it.</item>
+        <item>Doing just enough is plenty today.</item>
+        <item>Take a minute. Then on to the next.</item>
+        <item>No sprinting. Consistency.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_cheerleader">
+        <item>No rush. I\'ll be here.</item>
+        <item>Whatever it takes, at your pace.</item>
+        <item>Breathe. The rest can wait a moment.</item>
+        <item>I\'m staying by your side, whatever happens.</item>
+        <item>Slow gets there too.</item>
+        <item>Today, whatever you can do is enough, and to me that\'s a lot.</item>
+        <item>[noche] Rest when it\'s time. Tomorrow we carry on, you and me.</item>
+        <item>[finde] It\'s the weekend: you set the pace.</item>
+        <item>[invierno] It\'s cold out there, so we go slowly and kindly.</item>
+        <item>One day at a time, and I\'m with you for every one.</item>
+        <item>No need to run, just keep going.</item>
+        <item>[domingo] A calm Sunday. Whatever you do today already counts.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_neutra">
+        <item>No rush.</item>
+        <item>At your own pace.</item>
+        <item>Whatever doesn\'t happen today can wait.</item>
+        <item>I\'ll be here, whatever your pace.</item>
+        <item>What there is today is enough.</item>
+        <item>Breathe; the day is long.</item>
+        <item>Nothing here is urgent.</item>
+        <item>If today calls for going slowly, we go slowly.</item>
+        <item>[noche] Almost time to rest.</item>
+        <item>[finde] It\'s the weekend: there\'s room to breathe.</item>
+        <item>[invierno] It\'s cold outside; in here is fine.</item>
+        <item>[tarde] The afternoon is long; there\'s room.</item>
+        <item>[domingo] Sunday: a day for going without hurry.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_sargento">
+        <item>You came back after some days away and haven\'t let go since.</item>
+        <item>Since you came back, {racha} in a row.</item>
+        <item>Coming back was hard and you did it. Look where you are now.</item>
+        <item>You stepped away for a few days and came back. That says a lot.</item>
+        <item>That return was the turning point. You did the rest.</item>
+        <item>{habito}: you picked it back up and you\'re on a streak of {racha}.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_cheerleader">
+        <item>A few weeks ago you came back after some days away. Today it\'s a streak of {racha}, and it shows.</item>
+        <item>I remember when you came back. Since then, {racha} in a row.</item>
+        <item>Coming back was the first step, and you haven\'t stopped since: a streak of {racha}.</item>
+        <item>When you came back we said “little by little.” Look at that streak of {racha}.</item>
+        <item>That comeback of yours turned out so well. A streak of {racha}, no less.</item>
+        <item>Since you came back there\'s no stopping you. A streak of {racha} says so.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_neutra">
+        <item>A while back you returned after some days away, and you haven\'t stopped since.</item>
+        <item>You came back after some days away and have kept the rhythm ever since.</item>
+        <item>Coming back after some days away is no small thing. Steadiness ever since.</item>
+        <item>Since you came back, the streak on “{habito}” has reached {racha}.</item>
+        <item>You came back, and it shows: the last few weeks say so.</item>
+        <item>The day you came back marked the start of this stretch.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_sargento">
+        <item>There was a hard day and you got through it. Here you are.</item>
+        <item>You held on through that bad day. It shows today.</item>
+        <item>That day looked bad and you pulled through.</item>
+        <item>One hard day didn\'t stop you. That\'s the point.</item>
+        <item>That day was hard and it\'s behind you. Today has another rhythm.</item>
+        <item>You came out of that hard day in one piece. It shows.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_cheerleader">
+        <item>That hard day a little while ago is behind us, and today shows it.</item>
+        <item>There was a hard day not long ago and here you are anyway, full of drive. I love that.</item>
+        <item>Hard days pass, and the last one is already far behind. Today is going well.</item>
+        <item>After that hard day, getting back to this rhythm is no small thing.</item>
+        <item>I remember that hard day. Seeing how you\'re doing today makes me really glad.</item>
+        <item>One hard day doesn\'t take the rest with it. Today is the proof.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_neutra">
+        <item>A few days ago the day was hard, and you got through it anyway. Today shows it.</item>
+        <item>I remember a hard day not long ago. Today is going better, and that counts too.</item>
+        <item>One hard day doesn\'t take the rest with it. These last few days show it.</item>
+        <item>You had a hard day not long ago and kept going. That weighs more than it seems.</item>
+        <item>There was a hard day, and here you are with another one well handled.</item>
+        <item>That hard day is behind you. Today makes it clear.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_sargento">
+        <item>{habito}: you\'re back on a streak of {racha}.</item>
+        <item>You rebuilt the streak on “{habito}”: {racha}.</item>
+        <item>You\'ve got a streak again: {racha}. This time, with experience.</item>
+        <item>“{habito}” is up and running again: {racha} in a row.</item>
+        <item>Starting over isn\'t losing. Proof: a streak of {racha} on “{habito}”.</item>
+        <item>Streak back on its feet. I expected it from you.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_cheerleader">
+        <item>{habito} is back to {racha} in a row. You know how to climb back.</item>
+        <item>With “{habito}” you\'ve built a streak of {racha} again. That\'s the good kind of consistency.</item>
+        <item>Look at “{habito}”: {racha} in a row again. Quietly, there it is.</item>
+        <item>The streak on “{habito}” is back, and it\'s already at {racha}. Well done!</item>
+        <item>Reaching a streak of {racha} again with “{habito}” takes real merit.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_neutra">
+        <item>“{habito}” had lost its streak and today it\'s at {racha}. That\'s building it back up.</item>
+        <item>{habito}: the broken streak is behind you, and today it adds up to {racha} again.</item>
+        <item>Getting the streak on “{habito}” back took effort, and today you\'re at {racha}.</item>
+        <item>The streak on “{habito}” is growing again: {racha} now.</item>
+        <item>Today “{habito}” is past seven in a row again.</item>
+        <item>Rebuilding a streak takes time, and the one on “{habito}” is already at {racha}.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_sargento">
+        <item>Yesterday you said “at {hora}” and you delivered.</item>
+        <item>Yesterday you set {hora} and showed up for it.</item>
+        <item>Said and done: yesterday at {hora}.</item>
+        <item>Yesterday at {hora}, right on the agreed time.</item>
+        <item>You did what you said you would yesterday. That\'s called reliability.</item>
+        <item>“{habito}” at {hora}, as agreed. Yesterday, on the dot.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_cheerleader">
+        <item>Yesterday we set {hora} and you made it. That\'s keeping your word.</item>
+        <item>Yesterday I reminded you at {hora} and you came through on time. I like this team.</item>
+        <item>At {hora} yesterday you did exactly what you\'d said. That\'s a pleasure to see.</item>
+        <item>What we planned for {hora} yesterday went just as we\'d set it.</item>
+        <item>Yesterday at {hora} you did what we agreed. Appreciated, and noticed.</item>
+        <item>Word given, word kept: yesterday at {hora}.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_neutra">
+        <item>Yesterday you set {hora} and you kept to it.</item>
+        <item>Yesterday you picked a time, {hora}, and you honoured it.</item>
+        <item>Yesterday\'s {hora} went just as you\'d said.</item>
+        <item>Yesterday you committed to {hora} and showed up. That builds trust.</item>
+        <item>Keeping the time you say takes something, and yesterday you did, at {hora}.</item>
+        <item>Yesterday there was a time agreed, and it was kept.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_sargento">
+        <item>Yesterday you got the big thing done. That counts for a lot.</item>
+        <item>Yesterday\'s big thing, done. It\'s behind you now.</item>
+        <item>Yesterday you picked the big thing and delivered.</item>
+        <item>Yesterday\'s big thing doesn\'t weigh on you anymore: you did it.</item>
+        <item>Yesterday you took care of “{tarea}”. The big thing, handled.</item>
+        <item>Yesterday, the big thing first and no detours.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_cheerleader">
+        <item>Yesterday you got the big thing done. That counts in your favour.</item>
+        <item>Yesterday\'s big thing got done. It\'s in the bag.</item>
+        <item>Yesterday you closed out the big thing of the day. That feeling stays.</item>
+        <item>Yesterday you made room for the big thing and finished it.</item>
+        <item>Yesterday\'s big thing: done. Today you start with a head start.</item>
+        <item>Yesterday the big thing fell. I remember it and smile.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_neutra">
+        <item>Yesterday you did the big thing, and that carries into today.</item>
+        <item>Yesterday\'s big thing got done. Starting that way clearly helps.</item>
+        <item>Yesterday you finished the day\'s big thing. Days like that add up.</item>
+        <item>Yesterday the day\'s big thing got done, and the rest came easier.</item>
+        <item>Yesterday\'s big thing is already in the past, done.</item>
+        <item>A day ago you chose the big thing and saw it through. Doing it again would be welcome.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_sargento">
+        <item>You closed yesterday well.</item>
+        <item>Yesterday ended well. Today, run it back.</item>
+        <item>A good day yesterday. That\'s the foundation.</item>
+        <item>Yesterday was a good day. Take it as a benchmark.</item>
+        <item>You came out of yesterday in good spirits. Keep it.</item>
+        <item>Yesterday\'s close was one of the good ones.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_cheerleader">
+        <item>Yesterday was a good day and it showed. Today carries that wake.</item>
+        <item>Yesterday the day closed well. I kept that feeling.</item>
+        <item>Yesterday you told me it went well. I\'m glad today starts with that.</item>
+        <item>A good yesterday is a good place to start from.</item>
+        <item>Yesterday ended well, and I remember it fondly.</item>
+        <item>What a good finish yesterday had. Today leans on that.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_neutra">
+        <item>Yesterday you ended the day well. Today starts from there.</item>
+        <item>I\'m glad yesterday was a good day. Today starts from there.</item>
+        <item>Yesterday you closed the day on a good note. That helps today\'s start.</item>
+        <item>A good day yesterday, and today keeps the same rhythm.</item>
+        <item>Yesterday went well for you, and I remember it.</item>
+        <item>Yesterday turned out good. Today can follow the same line.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_sargento">
+        <item>Every {dia_semana} weighs a bit more. I\'m keeping that in mind.</item>
+        <item>This {dia_semana} tends to be heavy. Let\'s play it smart.</item>
+        <item>{dia_semana} is a tough one for you. I know it and I plan for it.</item>
+        <item>I know {dia_semana} is hard. We do it anyway, sized to you.</item>
+        <item>It\'s {dia_semana}, and you and I both know what that weighs. I\'m here.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_cheerleader">
+        <item>{dia_semana}s tend to weigh a bit more. Today we\'ll take it easy, you and me.</item>
+        <item>I\'ve noticed {dia_semana}s are a bit harder. No drama: I know, and I\'m here.</item>
+        <item>{dia_semana}s ask for a little more patience. I\'m happy to give you mine.</item>
+        <item>Each {dia_semana} seems to weigh a little more. The good news is you\'ve got me.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_neutra">
+        <item>Today is {dia_semana}, a day that sometimes weighs more. Knowing that already helps.</item>
+        <item>Today is {dia_semana}, often an uphill day. Going step by step is enough.</item>
+        <item>Today is {dia_semana}, and this day has been hard before. Today may be different, and if not, that\'s fine too.</item>
+        <item>Today is {dia_semana}. It tends to be a heavier day, so any progress is enough.</item>
+        <item>It\'s {dia_semana}, a day that has been hard before. We\'ll manage it as we go.</item>
+    </string-array>
+</resources>

@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
+<resources>
+    <string-array name="habla_av_manana_titulo_sargento">
+        <item>Up, {nombre}. There\'s work today.</item>
+        <item>Morning. Let\'s get going.</item>
+        <item>New day, {nombre}. We start now.</item>
+        <item>Up. The day won\'t run itself.</item>
+        <item>Good morning, {nombre}. No excuses.</item>
+        <item>Morning. First job, now.</item>
+        <item>The day is up. So are you.</item>
+        <item>Today is played with today\'s cards.</item>
+        <item>{nombre}, today starts now.</item>
+        <item>[lunes] Monday. The week starts now.</item>
+        <item>[viernes] Friday. Last lap of the week.</item>
+        <item>[finde] Weekend. Habits don\'t take days off.</item>
+        <item>[invierno] It\'s cold. More reason to move.</item>
+        <item>[primavera] Spring. A good day to mean it.</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_cheerleader">
+        <item>Good morning, {nombre}!</item>
+        <item>Morning, {nombre}. Our day.</item>
+        <item>Dawn\'s here and so am I, {nombre}.</item>
+        <item>Up we get, {nombre}! We\'ve a plan.</item>
+        <item>New day, {nombre}. You and me.</item>
+        <item>[lunes] Monday, {nombre}! Fresh week.</item>
+        <item>[viernes] Friday, {nombre}. One last push.</item>
+        <item>[finde] Weekend morning, {nombre}.</item>
+        <item>[invierno] Warming up, {nombre}!</item>
+        <item>Good morning. I have an idea for today.</item>
+        <item>{nombre}, shall we start the day?</item>
+        <item>Good day, {nombre}. I\'ve been waiting.</item>
+        <item>Good morning! Today looks good.</item>
+        <item>New day. You and me.</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_neutra">
+        <item>Good morning</item>
+        <item>Good morning, {nombre}</item>
+        <item>A new day</item>
+        <item>[lunes] Monday morning</item>
+        <item>[viernes] Friday morning</item>
+        <item>[finde] Good weekend morning</item>
+        <item>Good morning. Here\'s today.</item>
+        <item>Morning, {nombre}</item>
+        <item>[invierno] Cold morning. Good morning.</item>
+        <item>Your day starts here</item>
+        <item>A suggestion for this morning</item>
+        <item>Hi, {nombre}</item>
+        <item>A look at Today</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_gordo_sargento">
+        <item>The big thing today: {gordo}</item>
+        <item>First up: {gordo}</item>
+        <item>Today it gets done: {gordo}</item>
+        <item>No detours: {gordo}</item>
+        <item>Start with: {gordo}</item>
+        <item>Today\'s weight: {gordo}</item>
+        <item>Today is about this: {gordo}</item>
+        <item>Go for the big thing: {gordo}</item>
+        <item>Hard part first: {gordo}</item>
+        <item>No excuses: {gordo}</item>
+        <item>Go, {nombre}: {gordo}</item>
+        <item>[lunes] Monday. The big thing: {gordo}</item>
+        <item>[viernes] Friday. Finish it off: {gordo}</item>
+        <item>[finde] Weekend, but today it\'s: {gordo}</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_gordo_cheerleader">
+        <item>Today, the big thing: {gordo}</item>
+        <item>Today\'s plan: {gordo}!</item>
+        <item>Good morning. Today: {gordo}</item>
+        <item>The big thing today: {gordo}</item>
+        <item>You and me today: {gordo}</item>
+        <item>[lunes] Monday, and we start strong: {gordo}</item>
+        <item>[viernes] Friday. To finish off: {gordo}</item>
+        <item>[finde] Weekend, one big thing: {gordo}</item>
+        <item>Good day for: {gordo}</item>
+        <item>My pick for today: {gordo}</item>
+        <item>[invierno] Cold out, plan in: {gordo}</item>
+        <item>We start with the big thing: {gordo}</item>
+    </string-array>
+    <string-array name="habla_av_manana_titulo_gordo_neutra">
+        <item>Today\'s big thing: {gordo}</item>
+        <item>{nombre}, today: {gordo}</item>
+        <item>Good morning. On deck: {gordo}</item>
+        <item>[lunes] Monday. The big thing: {gordo}</item>
+        <item>First up today: {gordo}</item>
+        <item>What weighs most today: {gordo}</item>
+        <item>[viernes] Friday. The big thing: {gordo}</item>
+        <item>Good morning. The big thing: {gordo}</item>
+        <item>Today we start with: {gordo}</item>
+        <item>For today: {gordo}</item>
+        <item>[finde] Weekend. The big thing: {gordo}</item>
+        <item>Key for today: {gordo}</item>
+        <item>[invierno] Cold day. The big thing: {gordo}</item>
+    </string-array>
+    <string-array name="habla_av_recordatorio_sargento">
+        <item>This is the time we agreed on. Now.</item>
+        <item>As agreed: now.</item>
+        <item>Agreed time. Do it and tick it off.</item>
+        <item>You said now. It\'s now.</item>
+        <item>We left it for this moment. Go.</item>
+        <item>{nombre}, it\'s time. You can do this.</item>
+        <item>No more going round in circles: now.</item>
+        <item>The agreed time is here. Start, and the rest follows.</item>
+        <item>You\'re at {hechos} of {total} today. This one adds another.</item>
+        <item>A little now and it\'s off your plate.</item>
+        <item>A deal\'s a deal. Get to it.</item>
+        <item>[noche] Not much day left. Make it now.</item>
+    </string-array>
+    <string-array name="habla_av_recordatorio_cheerleader">
+        <item>We left it for now, as we agreed. Let\'s go!</item>
+        <item>This is the time we said. Start whenever you like.</item>
+        <item>{nombre}, it\'s time. I\'m already here.</item>
+        <item>Now, like we said. A little while and it\'s done.</item>
+        <item>It\'s the time we agreed on. You and me, right now.</item>
+        <item>We said now, and now is here. I\'m waiting.</item>
+        <item>This is the moment you picked. I\'m right here with you.</item>
+        <item>[noche] It\'s night, but we made a deal. One last push, you and me.</item>
+        <item>[lunes] Monday, right on time. That\'s how a week starts!</item>
+        <item>What we saved for now is here. Little by little, with me.</item>
+        <item>Time for what we agreed, {nombre}. Whenever you\'re ready, we start.</item>
+        <item>[finde] It\'s the weekend, but we saved this hour for it. Let\'s go!</item>
+    </string-array>
+    <string-array name="habla_av_recordatorio_neutra">
+        <item>We left it for now, as agreed.</item>
+        <item>It\'s the time we agreed on. Whenever you can.</item>
+        <item>Now, as agreed. If it can\'t be now, you can move it to later.</item>
+        <item>This was for now. A moment and it\'s done.</item>
+        <item>Here\'s what we set aside for this hour.</item>
+        <item>Agreed time. If it\'s not a good moment, push it to later.</item>
+        <item>We said now, and here I am.</item>
+        <item>Today: {hechos} of {total}. This would be the next one.</item>
+        <item>It\'s time. The rest of today can wait.</item>
+        <item>A moment for this, then back to your day.</item>
+        <item>[noche] It\'s late, but this one was for now. You can still make it.</item>
+        <item>[manana] Good time for this, as agreed.</item>
+        <item>{nombre}, this is the one for now, as agreed.</item>
+    </string-array>
+    <string-array name="habla_av_noche_titulo_sargento">
+        <item>Time to close the day.</item>
+        <item>Closing time, {nombre}.</item>
+        <item>Time to close. Today is history.</item>
+        <item>One minute and the day is closed.</item>
+        <item>The day is ending. Close it.</item>
+        <item>The day is asking for its close.</item>
+        <item>Last job of the day: the close.</item>
+        <item>Count up today and get to bed.</item>
+        <item>{nombre}, the close is waiting.</item>
+        <item>Only the close is left. It\'s short.</item>
+        <item>[viernes] Friday. Close it and rest.</item>
+        <item>[domingo] Sunday. Close the week in a minute.</item>
+        <item>[invierno] Cold out. In here, the close.</item>
+    </string-array>
+    <string-array name="habla_av_noche_titulo_cheerleader">
+        <item>Time to close the day, {nombre}!</item>
+        <item>Close time, and it\'s a short one. Let\'s go.</item>
+        <item>Just the close, then we rest.</item>
+        <item>Shall we close the day, {nombre}?</item>
+        <item>Last stretch of the day, {nombre}.</item>
+        <item>[viernes] Friday! We close up and rest.</item>
+        <item>[domingo] Sunday close, {nombre}.</item>
+        <item>One minute and the day is sealed.</item>
+        <item>[invierno] Winter night. Close up, blanket time.</item>
+        <item>Closing time, {nombre}. I\'m with you.</item>
+        <item>The close is waiting, {nombre}.</item>
+        <item>[lunes] First close of the week, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_av_noche_titulo_neutra">
+        <item>Close the day</item>
+        <item>Done: {hechos} of {total}</item>
+        <item>One minute to close the day</item>
+        <item>Closing the day, {nombre}</item>
+        <item>The day is winding down</item>
+        <item>Evening, {nombre}</item>
+        <item>[domingo] Sunday: closing out the week</item>
+        <item>[viernes] Friday. Time to close the day</item>
+        <item>Time for today\'s close</item>
+        <item>[lunes] First close of the week</item>
+        <item>Only today\'s close is left</item>
+        <item>So far: {hechos}/{total}</item>
+        <item>Before bed, the close</item>
+    </string-array>
+    <string-array name="habla_av_noche_cuerpo_sargento">
+        <item>Today: {hechos} of {total}. One minute to close the day.</item>
+        <item>Today: {hechos} of {total}. Tomorrow we start with “{tarea}”.</item>
+        <item>One minute: tally up and close. Tomorrow, again.</item>
+        <item>{hechos} of {total}. We\'ll sort out whatever\'s left in the close.</item>
+        <item>One minute and it\'s over. Tomorrow we kick off with “{tarea}”.</item>
+        <item>Go over today and close it. Tomorrow it\'s “{tarea}”.</item>
+        <item>Today it\'s {hechos} of {total}. Say so in the close, and that\'s that.</item>
+        <item>One minute. You don\'t argue with the day: you close it.</item>
+        <item>{nombre}, {hechos} of {total}. Close it and we go on tomorrow.</item>
+        <item>Whatever\'s left moves to tomorrow, no drama. Close it.</item>
+        <item>A minute in the close and tomorrow starts with a head start.</item>
+        <item>[viernes] Friday: {hechos} of {total}. Close it and enjoy the weekend.</item>
+        <item>[domingo] Sunday: {hechos} of {total}. Close it and the week starts clean.</item>
+    </string-array>
+    <string-array name="habla_av_noche_cuerpo_cheerleader">
+        <item>Today: {hechos} of {total}. One minute to close the day, then rest.</item>
+        <item>Tomorrow we start with “{tarea}”. For now, one minute to close the day.</item>
+        <item>Thanks for today, {nombre}. We close up and both get some rest.</item>
+        <item>{hechos} of {total} so far. Whatever\'s left, tomorrow has room.</item>
+        <item>A quick close and tomorrow we start with a clear head.</item>
+        <item>[viernes] Friday: {hechos} of {total}. Close the day and the weekend starts now.</item>
+        <item>[domingo] Sunday. One close and the week is in order. Tomorrow, a fresh page!</item>
+        <item>{hechos} of {total} today. We count it, close it, and carry on tomorrow. You and me!</item>
+        <item>Tomorrow begins with “{tarea}”, but that\'s tomorrow. Tonight, just the close.</item>
+        <item>[invierno] Cold night. A minute to close, then under the blanket, {nombre}.</item>
+        <item>{nombre}, shall we close the day? I\'ll be with you through it.</item>
+        <item>Your list for today: {hechos} of {total}. Now the close, which is short.</item>
+        <item>The day\'s wrapping up! One minute to close, then rest.</item>
+        <item>We close the day and carry on tomorrow, you and me.</item>
+    </string-array>
+    <string-array name="habla_av_noche_cuerpo_neutra">
+        <item>Today: {hechos} of {total}. One minute to close the day.</item>
+        <item>Today: {hechos} of {total}. Tomorrow we start with: {tarea}.</item>
+        <item>One minute to close the day. Whatever is left, you decide there.</item>
+        <item>You\'re at {hechos} of {total}. The close is short and seals the day.</item>
+        <item>Whenever you like, we\'ll close the day. No rush.</item>
+        <item>{hechos} of {total} today. The rest gets settled in the close, in a minute.</item>
+        <item>Only the close is left. Then rest.</item>
+        <item>Before bed: one minute to close the day and leave tomorrow clear.</item>
+        <item>Tomorrow, to start: {tarea}. Today closes in a minute.</item>
+        <item>You completed {hechos} of {total}. The rest can wait for tomorrow.</item>
+        <item>[domingo] Sunday. Closing today leaves the week in order.</item>
+        <item>[viernes] Friday: {hechos} of {total}. One minute to close, and the weekend begins.</item>
+        <item>[lunes] First day of the week. A minute to close it and it\'s saved.</item>
+        <item>If today didn\'t all go to plan, the close is for that too.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_titulo_sargento">
+        <item>Noted for {hora}.</item>
+        <item>Deal, {nombre}.</item>
+        <item>Agreed. At {hora}.</item>
+        <item>Set for {hora}.</item>
+        <item>Word given: {hora}.</item>
+        <item>I\'m counting on you at {hora}.</item>
+        <item>Okay, {nombre}. Noted.</item>
+        <item>Deal.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_titulo_cheerleader">
+        <item>Okay, {hora} it is!</item>
+        <item>See you at {hora}.</item>
+        <item>At {hora}, you and me.</item>
+        <item>Down for {hora}.</item>
+        <item>It\'s a deal, {nombre}!</item>
+        <item>{hora}, without fail.</item>
+        <item>Count me in for {hora}.</item>
+        <item>Noted, {nombre}. I\'ll be there.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_titulo_neutra">
+        <item>Noted: {hora}</item>
+        <item>See you at {hora}</item>
+        <item>Okay, at {hora}</item>
+        <item>{hora}, then</item>
+        <item>I\'ll remind you at {hora}</item>
+        <item>We\'ll leave it for {hora}</item>
+        <item>{nombre}, noted: {hora}</item>
+        <item>Reminder at {hora}</item>
+        <item>Deal</item>
+        <item>Noted</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_cuerpo_sargento">
+        <item>Reminder at {hora}. Meanwhile, the big thing: {gordo}.</item>
+        <item>Time locked in. Now, the big thing: {gordo}. Don\'t let it go cold.</item>
+        <item>{gordo}. It\'s yours until you finish it.</item>
+        <item>Today\'s priority is this: {gordo}. The rest comes after.</item>
+        <item>I\'ll nudge you at {hora}. Until then, carry on.</item>
+        <item>The deal: {hora}. The big thing: {gordo}.</item>
+        <item>{nombre}, it\'s set. I\'ll nudge you at {hora}.</item>
+        <item>I\'ll remind you at {hora}. Not a minute later.</item>
+        <item>Time locked: {hora}. I\'ll nudge you then.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_cuerpo_cheerleader">
+        <item>The big thing today: {gordo}. I\'ll remind you when it\'s time.</item>
+        <item>Noted! I\'ll remind you at {hora}; you carry on.</item>
+        <item>Time set. Until then, the big thing: {gordo}.</item>
+        <item>All set: {hora}. Meanwhile, the big thing: {gordo}. Good plan, {nombre}.</item>
+        <item>Noted: {hora}, I\'ll remember. You, on to the big thing: {gordo}.</item>
+        <item>The big thing, no rush: {gordo}. At {hora}, I\'ll be right beside you.</item>
+        <item>{nombre}, I\'ll remind you at {hora}. Count on me!</item>
+        <item>One big thing, well chosen: {gordo}. See you at {hora}.</item>
+        <item>I\'ll remind you at {hora}. Meanwhile, carry on!</item>
+        <item>Done: at {hora}, I\'ll remember for you.</item>
+    </string-array>
+    <string-array name="habla_av_aceptado_cuerpo_neutra">
+        <item>I\'ll remind you then. Until then, the day goes at your pace.</item>
+        <item>Today\'s big thing: {gordo}. At the agreed time, I\'ll remind you.</item>
+        <item>I\'ll remind you at {hora}. Until then, no rush.</item>
+        <item>It\'s saved. If plans change, you can move it from Today.</item>
+        <item>For today: {gordo}. I\'ll nudge you at {hora}.</item>
+        <item>Done, count on me. We\'ll pick it up at the agreed time.</item>
+        <item>Time noted. The big thing still stands: {gordo}.</item>
+        <item>Nothing more for now. At the time you said, I\'ll be here.</item>
+        <item>{nombre}, it\'s agreed. I\'ll remind you at {hora}.</item>
+    </string-array>
+    <string-array name="habla_av_ausencia_sargento">
+        <item>Still here, {nombre}. One small thing is enough today.</item>
+        <item>Nobody\'s keeping score. One habit today and you\'re back on.</item>
+        <item>It\'s been a few days. Start with the easiest one.</item>
+        <item>One thing today. The smallest you\'ve got.</item>
+        <item>The path is where you left it. Take a step.</item>
+        <item>No lecture: open Today and pick one habit.</item>
+        <item>{nombre}, the first log is the hardest. Keep it small.</item>
+        <item>Whenever you like. One habit and we carry on.</item>
+    </string-array>
+    <string-array name="habla_av_ausencia_cheerleader">
+        <item>{nombre}, I miss having you around. Whenever you like, one small habit and we pick up.</item>
+        <item>A few days have gone by and I\'m still here, door open. Today, one is enough.</item>
+        <item>Hi, {nombre}. No tallies owed: I\'d be glad to see you today.</item>
+        <item>I saved your spot. Just one habit today and we start again, you and me.</item>
+        <item>I miss our mornings. Shall we try something small today?</item>
+        <item>I can\'t wait to see you, {nombre}! One small thing today is plenty.</item>
+        <item>Still here, {nombre}. Coming back takes some effort, I know; I\'ll go with you.</item>
+        <item>Whenever suits you, no rush: I\'m here with today all set up.</item>
+    </string-array>
+    <string-array name="habla_av_ausencia_neutra">
+        <item>I\'m still here. Whenever you like, we start with something small.</item>
+        <item>Today can be a one-habit day. One is enough.</item>
+        <item>It\'s been a few days. One habit today is enough to pick things up.</item>
+        <item>{nombre}, the door is open. Come in whenever it suits you.</item>
+        <item>There\'s nothing to catch up on, only today. Start with the easiest thing.</item>
+        <item>What you did before still counts. Today, something small is enough.</item>
+        <item>Whenever it suits you, something small. You pick which.</item>
+        <item>[lunes] It\'s Monday, a good point for a small start.</item>
+        <item>No rush and no scores to settle. One habit, and the day is under way.</item>
+    </string-array>
+</resources>

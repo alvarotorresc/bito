@@ -179,8 +179,11 @@
     <string name="onb_personality_title">Choose Habi\'s personality</string>
     <string name="onb_personality_hint">you can change it anytime</string>
     <string name="onb_personality_preview_sargento">I\'ll demand a lot from you, %1$s — because you\'ve got it in you.</string>
+    <string name="onb_personality_preview_sargento_sin_nombre">I\'ll demand a lot from you, because you\'ve got it in you.</string>
     <string name="onb_personality_preview_cheerleader">Together we can take on anything, %1$s!</string>
+    <string name="onb_personality_preview_cheerleader_sin_nombre">Together we can take on anything!</string>
     <string name="onb_personality_preview_neutra">Just what\'s needed, %1$s: your habits, clear, every day.</string>
+    <string name="onb_personality_preview_neutra_sin_nombre">Just what\'s needed: your habits, clear, every day.</string>
     <string name="onb_habit_title">Create your first habit</string>
     <string name="onb_habit_name_hint">e.g. Drink water</string>
     <string name="onb_habit_goal_label">goal</string>

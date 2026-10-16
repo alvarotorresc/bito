@@ -22,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /** Lo que espera un logro nuevo a que llegue su entrada del libro (se escriben por separado), para sonar tras las monedas (G14). */
@@ -142,8 +143,8 @@ internal object DerivarMomentos {
  * Se usa siempre desde el hilo principal.
  */
 class CelebracionesViewModel(
-    domainState: DomainStateRepository,
-    rewards: RewardsRepository,
+    private val domainState: DomainStateRepository,
+    private val rewards: RewardsRepository,
     private val settings: SettingsRepository,
     colaScope: CoroutineScope? = null,
 ) : ViewModel() {
@@ -152,6 +153,9 @@ class CelebracionesViewModel(
 
     private val cola = ColaCelebraciones(colaScope ?: viewModelScope, alAbsorber = { it.forEach(::cerrarEnLote) }) // regla 3
     val actual: StateFlow<Momento?> = cola.actual
+
+    /** Lo que suena y lo que espera su turno (también los logros que esperan a su entrada del libro). */
+    val enCola: List<Momento> get() = listOfNotNull(cola.actual.value) + cola.pendientes + retenidos
 
     // Estado de sesión (reglas 4, 7, 8 y 9).
     private var vistas: Set<String>? = null
@@ -165,6 +169,12 @@ class CelebracionesViewModel(
     /** Tras restaurar con los ajustes por delante del libro: lo próximo que cambie en el libro es lo restaurado. */
     private var esperandoLibro = false
     private var enHoy = false
+
+    /** Si el cierre del día está abierto encima de Hoy (el cierre es parte de Hoy: sus monedas se ven). */
+    private var cierreAbierto = false
+
+    /** Tras «Hasta mañana», mientras se lee el libro para apuntarlo: lo que llega se da por visto sin celebrarse. */
+    private var apuntando = false
 
     /** Logros nuevos que esperan a su entrada del libro (o a que pase [VENTANA_LOGRO_MS]) para ordenarse por G14. */
     private val retenidos = mutableListOf<Momento.Logro>()
@@ -228,6 +238,12 @@ class CelebracionesViewModel(
                 val (logros, logrosIds) = DerivarMomentos.logros(badges, logrosVistos, prefs, lote)
                 vistas = libro.vistas
                 logrosVistos = logrosIds
+                if (apuntando) {
+                    // «Hasta mañana» lo apunta todo: nada de esta emisión se celebra y su marca se escribe ya.
+                    retenidos.clear()
+                    libro.marcaLote?.let(::escribirMarca)
+                    return@collect
+                }
 
                 // Un logro y su entrada del libro se escriben por separado y pueden llegar en emisiones distintas: el logro
                 // espera a la siguiente emisión del libro o a la ventana, y entonces se ordena con el resto (G14).
@@ -310,6 +326,72 @@ class CelebracionesViewModel(
 
     /** Regla 11: salir de Hoy da por terminado lo que suena (cuenta para su lote); el resto espera. */
     fun enHoy(visible: Boolean) {
+        aplicarEnHoy(visible)
+    }
+
+    /**
+     * El cierre del día se abre y se cierra encima de Hoy sin salir de su ruta (pieza 4, §7.5). Abierto, la cola
+     * queda retenida: lo que llega se guarda y solo salen las monedas de cada marca. Lo que sonaba al abrirlo se da
+     * por terminado (ya se vio). Al cerrarlo sin sellar, lo guardado sale en Hoy.
+     */
+    fun retenerCierre(retener: Boolean) {
+        // Solo cuenta el cambio: decir «cerrado» al montar Hoy no puede pausar lo que ya suena.
+        if (retener == cierreAbierto) return
+        cierreAbierto = retener
+        if (retener) cola.actual.value?.takeIf { it !is Momento.Monedas }?.let(::terminado)
+        cola.retener = retener
+    }
+
+    /** Tras sellar con «Buenas noches»: lo guardado sale en cadena, en el orden de G14, con el cierre aún abierto. */
+    fun soltarCadena() {
+        cola.retener = false
+    }
+
+    /**
+     * «Hasta mañana» (§7.5, riesgo 2 de §14): lo que suena termina y el resto se apunta sin celebrarse. La marca del
+     * libro avanza a su última entrada, los logros quedan vistos y el día perfecto celebrado; el especial y la etapa
+     * se dan por llegados (el jardín ya los tiene). Así Hoy no vuelve a celebrar nada de esto por la mañana. Se lee el
+     * libro de la base, no la última emisión: lo que aún no había llegado aquí también se apunta.
+     */
+    fun apuntarSinCelebrar() {
+        apuntando = true
+        ventana?.cancel()
+        ventana = null
+        retenidos.clear()
+        cola.descartar { true }
+        cola.actual.value?.let {
+            marcarVisto(it)
+            cola.terminado()
+        }
+        lotes.clear()
+        cola.retener = false
+        viewModelScope.launch {
+            try {
+                val libro = domainState.observe().first().pointsLedger
+                val badges = rewards.observeBadges().first()
+                vistas = vistas.orEmpty() + libro.map { it.id }
+                logrosVistos = logrosVistos.orEmpty() + badges.map { it.badgeId }
+                val ultima = libro.maxOfOrNull { it.marca() }
+                val logro = badges.maxOfOrNull { it.unlockedAtMillis } ?: 0L
+                val dia =
+                    libro
+                        .filter { it.reason == PointsReason.PERFECT_DAY && it.refId?.startsWith("day:") == true }
+                        .maxOfOrNull { it.refId!!.removePrefix("day:").toIntOrNull() ?: it.logicalDay } ?: 0
+                settings.update {
+                    it.copy(
+                        celebratedLedgerMark = listOfNotNull(it.celebratedLedgerMark, ultima).maxOrNull(),
+                        badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, logro),
+                        perfectDayCelebratedDay = maxOf(it.perfectDayCelebratedDay, dia),
+                    )
+                }
+                cola.descartar { true } // lo que entrase mientras se leía
+            } finally {
+                apuntando = false
+            }
+        }
+    }
+
+    private fun aplicarEnHoy(visible: Boolean) {
         enHoy = visible
         if (visible) {
             esperandoLibro = false // una restauración se hace fuera de Hoy: al volver, el libro ya llegó
@@ -327,7 +409,7 @@ class CelebracionesViewModel(
     fun jardin(garden: GardenState) {
         val momentos = DerivarMomentos.delJardin(jardinAnterior, garden, ++siguienteLote)
         jardinAnterior = garden
-        cola.encolar(momentos)
+        if (!apuntando) cola.encolar(momentos)
     }
 
     /** Reglas 9 y 10. */

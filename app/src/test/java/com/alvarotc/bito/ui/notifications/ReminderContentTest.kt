@@ -82,24 +82,9 @@ class ReminderContentTest {
     }
 
     @Test
-    fun `a relapsed abstinence today makes no reminder noise and no review either`() {
+    fun `a relapsed abstinence today makes no reminder noise`() {
         val relapsed = card("nofap", kind = CardKind.ABSTINENCE).copy(direction = Direction.ZERO, failed = true)
         assertNull(buildReminderPayload(state(relapsed)))
-        // A relapsed ZERO card has nothing left to review: the review no longer nags about it.
-        assertFalse(reviewIsPending(state(relapsed)))
-    }
-
-    @Test
-    fun `sealing today closes the review even with positives left undone`() {
-        assertTrue(reviewIsPending(state(card("x"))))
-        assertFalse(reviewIsPending(state(card("x")).copy(todaySealed = true)))
-    }
-
-    @Test
-    fun `a clean unsealed abstinence keeps the review pending`() {
-        val clean = card("nofap", kind = CardKind.ABSTINENCE, done = true).copy(direction = Direction.ZERO)
-        assertTrue(reviewIsPending(state(clean)))
-        assertFalse(reviewIsPending(state(clean).copy(todaySealed = true)))
     }
 
     @Test
@@ -108,11 +93,6 @@ class ReminderContentTest {
         assertEquals(1, p.targets.size)
         assertEquals(1, p.targets.single().amount)
         assertTrue(p.targets.single().isCheck)
-    }
-
-    @Test
-    fun `the review fires while something is unsealed even if nothing is pending today`() {
-        assertTrue(reviewIsPending(state(card("x", done = true)).copy(pendingSealDays = listOf(20678))))
     }
 
     @Test
@@ -128,22 +108,5 @@ class ReminderContentTest {
         val p = buildReminderPayload(state(card("a"), card("b"), card("c")))!!
         assertEquals(0, p.doneCount)
         assertEquals(3, p.totalCount)
-    }
-
-    @Test
-    fun `review pending count follows the review rows and drops to zero once sealed`() {
-        // An undone AT_LEAST card and a clean ZERO card are both rows to decide; a done
-        // AT_LEAST card is not.
-        val zero = card("nofap", kind = CardKind.ABSTINENCE, done = true).copy(direction = Direction.ZERO)
-        val s = state(card("x"), card("y", done = true), zero)
-        assertEquals(2, reviewPendingCount(s))
-        assertEquals(0, reviewPendingCount(s.copy(todaySealed = true)))
-    }
-
-    @Test
-    fun `a past-days-only review debt reports zero to decide today`() {
-        val s = state(card("x", done = true)).copy(todaySealed = true, pendingSealDays = listOf(20678))
-        assertTrue(reviewIsPending(s))
-        assertEquals(0, reviewPendingCount(s))
     }
 }

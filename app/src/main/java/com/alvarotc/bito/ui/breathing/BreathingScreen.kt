@@ -59,6 +59,7 @@ import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiStage
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.theme.Hoja
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tinta
@@ -218,10 +219,9 @@ fun BreathingScreen(
                     )
                 }
                 BreathingStage.FINISHED -> {
-                    val fallbackName = stringResource(R.string.habi_name_fallback)
                     SpeechBubble(
                         speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
-                        text = stringResource(HabiVoice.breathingDoneRes(state.spec.personality), state.userName.ifBlank { fallbackName }),
+                        text = textoHabi(HabiVoice.conNombre(HabiVoice.breathingDoneRes(state.spec.personality), state.userName)),
                         modifier = Modifier.fillMaxWidth().testTag("breathing-done-bubble"),
                     )
                     Text(

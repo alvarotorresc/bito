@@ -116,7 +116,7 @@ private fun isOpenThisWeek(
 /**
  * Mirrors [Tasks.looseOfTheDay]'s private sink key through the public [Tasks.lastPostponedDay]:
  * a task postponed before today sinks to that day; postponed today (or never) stays at the
- * front. Today's champion is already excluded (it lives in [TasksUiState.todayTasks]), so this
+ * front. The task chosen for today is already excluded (it lives in [TasksUiState.todayTasks]), so this
  * is the same priority order Habi uses — the head of [TasksUiState.looseTasks] previews who
  * Habi brings next.
  */

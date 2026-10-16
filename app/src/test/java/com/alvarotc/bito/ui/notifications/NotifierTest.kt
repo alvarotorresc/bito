@@ -42,11 +42,44 @@ class NotifierTest {
             ?.getCharSequence(Notification.EXTRA_TEXT)
             ?.toString()
 
+    private fun postedTitle(): String? =
+        shadowOf(notificationManager)
+            .getNotification(Notifier.TASKS_ID)
+            ?.extras
+            ?.getCharSequence(Notification.EXTRA_TITLE)
+            ?.toString()
+
+    @Test
+    fun `tasks title is plural with four tasks`() {
+        Notifier.showTasks(context, listOf("A", "B", "C"), 4, Personality.NEUTRA, "Álvaro")
+        assertEquals("You have 4 tasks, Álvaro.", postedTitle())
+
+        Notifier.showTasks(context, listOf("A"), 1, Personality.NEUTRA, "Álvaro")
+        assertEquals("You have a task, Álvaro.", postedTitle())
+    }
+
+    @Test
+    @Config(qualifiers = "es")
+    fun `tasks title is plural with four tasks in Spanish`() {
+        Notifier.showTasks(context, listOf("A", "B", "C"), 4, Personality.NEUTRA, "Álvaro")
+        assertEquals("Tienes 4 tareas, Álvaro.", postedTitle())
+
+        Notifier.showTasks(context, listOf("A"), 1, Personality.NEUTRA, "Álvaro")
+        assertEquals("Tienes una tarea, Álvaro.", postedTitle())
+    }
+
     @Test
     fun `every notice named leaves no more-tail`() {
         Notifier.showTasks(context, listOf("Renovar el DNI", "Pagar el alquiler"), 2, Personality.NEUTRA, "Álvaro")
 
         assertEquals("Renovar el DNI · Pagar el alquiler", postedText())
+    }
+
+    @Test
+    fun `a blank name gets the nameless tasks title`() {
+        Notifier.showTasks(context, listOf("A", "B"), 2, Personality.NEUTRA, "")
+
+        assertEquals("You have 2 tasks.", postedTitle())
     }
 
     @Test
@@ -78,11 +111,11 @@ class NotifierTest {
     }
 
     @Test
-    fun `a blank name falls back to Habi's word for the user`() {
+    fun `a blank name gets the nameless title`() {
         Notifier.showBreathing(context, Personality.SARGENTO, "")
 
         val notification = shadowOf(notificationManager).getNotification(Notifier.BREATHING_ID)!!
         val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString()
-        assertEquals("champ, two minutes.", title)
+        assertEquals("Two minutes.", title)
     }
 }

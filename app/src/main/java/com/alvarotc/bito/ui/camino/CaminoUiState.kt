@@ -12,6 +12,7 @@ import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.Progreso
+import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.ui.stats.NumbersUiState
 import com.alvarotc.bito.ui.stats.RecordsUiState
 import com.alvarotc.bito.ui.stats.StatsUiState
@@ -40,6 +41,8 @@ data class CaminoUiState(
     // El día lógico de hoy como fecha: «lo que falta» y «El 1 de noviembre empieza otro mes entero.»
     // lo necesitan y CaminoContenido no tiene otra forma de saberlo. (No LocalDate.EPOCH: pide API 33.)
     val hoy: LocalDate = LocalDate.ofEpochDay(0),
+    // El comentario de Habi sobre el camino, de la fuente de propuestas; null = no hay tarjeta.
+    val comentario: Propuesta? = null,
 ) {
     val conseguidos: Int get() = logros.count { it.conseguido != null }
 }

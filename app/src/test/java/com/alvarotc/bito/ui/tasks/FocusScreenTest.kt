@@ -202,8 +202,8 @@ class FocusScreenTest {
         compose.onNodeWithText("+30", useUnmergedTree = true).assertExists()
         compose.onNodeWithText("Something came up, I'll stop", useUnmergedTree = true).assertExists()
         // The entrance line, spoken once for a session actually started FROM this tap — default
-        // spec is NEUTRA with a blank userName (habi_name_fallback = "champ").
-        compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertExists()
+        // spec is NEUTRA with a blank userName (its nameless twin).
+        compose.onNodeWithText("I'm here. Go ahead.", useUnmergedTree = true).assertExists()
         compose.onNodeWithTag("focus-start", useUnmergedTree = true).assertDoesNotExist()
     }
 
@@ -237,7 +237,7 @@ class FocusScreenTest {
         compose.onNodeWithText("Something came up, I'll stop", useUnmergedTree = true).assertExists()
         // This screen did not start the session (it was seeded directly, as a re-entry onto an
         // already-live one would look) — Habi never said anything, so no entrance line here.
-        compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertDoesNotExist()
+        compose.onNodeWithText("I'm here. Go ahead.", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -279,7 +279,7 @@ class FocusScreenTest {
         compose.onNodeWithTag("focus-clock", useUnmergedTree = true).assertExists()
         // "Dejarla y empezar esta" DOES start a session from this screen, same as "Empezar" —
         // the entrance line belongs here too, for t2 (not t1's, which never got one).
-        compose.onNodeWithText("I'm here, champ. Go ahead.", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("I'm here. Go ahead.", useUnmergedTree = true).assertExists()
     }
 
     /** [SemanticsActions.OnClick] directly — a button inside this sheet's own [tapText] caveat. */
@@ -404,7 +404,7 @@ class FocusScreenTest {
 
         // Up but not gone yet: the phrase is showing and onClose has not fired.
         compose.onNodeWithTag("focus-done-bubble", useUnmergedTree = true).assertExists()
-        compose.onNodeWithText("Done, champ.", useUnmergedTree = true).assertExists()
+        compose.onNodeWithText("Done.", useUnmergedTree = true).assertExists()
         assertFalse(closed)
 
         dispatcher.scheduler.advanceTimeBy(1_500)

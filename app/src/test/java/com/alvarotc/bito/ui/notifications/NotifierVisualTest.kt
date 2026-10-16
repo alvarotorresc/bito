@@ -5,7 +5,11 @@ import android.app.NotificationManager
 import android.content.Context
 import androidx.compose.ui.graphics.toArgb
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.sistema.BitoClaro
 import org.junit.Before
 import org.junit.runner.RunWith
@@ -57,12 +61,22 @@ class NotifierVisualTest {
     }
 
     @Test
-    fun `the review and the perfect day also carry a large Habi icon`() {
-        Notifier.showReview(context, Personality.CHEERLEADER, "Álvaro", 2)
+    fun `the night and the perfect day also carry a large Habi icon`() {
+        Notifier.showNoche(context, TextoHabi(R.string.habla_cerrar_dia), TextoHabi(R.string.habla_habi_duerme), Personality.CHEERLEADER)
         Notifier.showPerfectDay(context, "Día perfecto", Personality.SARGENTO)
 
-        assertNotNull(shadowOf(manager).getNotification(Notifier.REVIEW_ID)!!.getLargeIcon())
+        assertNotNull(shadowOf(manager).getNotification(Notifier.NOCHE_ID)!!.getLargeIcon())
         assertNotNull(shadowOf(manager).getNotification(Notifier.CELEBRATION_ID)!!.getLargeIcon())
+    }
+
+    @Test
+    fun `the morning notice and the accepted reminder carry a large Habi icon`() {
+        val vigente = Propuesta(id = "SALUDO::1", texto = TextoHabi(R.string.habla_ahora), acciones = emptyList())
+        Notifier.showManana(context, vigente, TextoHabi(R.string.habla_ahora), Personality.NEUTRA, Mood.NORMAL)
+        Notifier.showRecordatorioAceptado(context, "a1", 0, "Leer", TextoHabi(R.string.habla_hecho), null, false, Personality.NEUTRA)
+
+        assertNotNull(shadowOf(manager).getNotification(Notifier.MANANA_ID)!!.getLargeIcon())
+        assertNotNull(shadowOf(manager).getNotification(Notifier.aceptadoId(0))!!.getLargeIcon())
     }
 
     @Test

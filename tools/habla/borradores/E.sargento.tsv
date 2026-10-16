@@ -1,0 +1,98 @@
+bolsa	indice	etiquetas	es	en
+cie_gordo_hecho	0		Lo gordo, hecho. Eso era lo difícil, {nombre}.	The big thing, done. That was the hard part, {nombre}.
+cie_gordo_hecho	1		Hecho: {gordo}. Con eso, el día ya se sostiene solo.	Done: {gordo}. That's the day holding up on its own.
+cie_gordo_hecho	2		Lo gordo está fuera del camino. Lo demás pesa menos.	The big thing is out of the way. Everything else weighs less.
+cie_gordo_hecho	3		Dijiste que lo hacías y lo hiciste: {gordo}. Así se habla.	You said you'd do it and you did: {gordo}. That's how it's done.
+cie_gordo_hecho	4		Era cuestión de tiempo, {nombre}. Lo gordo, cerrado.	Only a matter of time, {nombre}. The big thing, closed.
+cie_gordo_hecho	5		Lo gordo, tachado. Mañana buscamos la siguiente.	The big thing, crossed off. Tomorrow we find the next one.
+cie_gordo_hecho	6	[lunes]	Lunes y lo gordo ya hecho. Así empieza una semana.	Monday and the big thing is done. That's how a week starts.
+cie_gordo_hecho	7	[viernes]	Viernes, y lo gordo no se queda para el lunes. Bien jugado.	Friday, and the big thing isn't waiting for Monday. Well played.
+cie_gordo_hecho	8		Lo gordo ya no pesa. Cierra el día con la cabeza libre.	The big thing no longer weighs on you. Close the day with a clear head.
+cie_gordo_hecho	9	[domingo]	Domingo, y lo gordo hecho. La semana se cierra limpia.	Sunday, and the big thing done. The week closes clean.
+cie_logro	0		Ayer se escapó y hoy lo has hecho: {habito}. Eso cuenta.	It slipped yesterday and you did it today: {habito}. That counts.
+cie_logro	1		Ayer no, hoy sí: «{habito}». Así se corrige el rumbo.	Not yesterday, but today: “{habito}”. That's how you correct course.
+cie_logro	2		Hoy has hecho lo que ayer quedó fuera: {habito}. Sin más comentarios.	Today you did what got left out yesterday: {habito}. No comment needed.
+cie_logro	3		{habito}: ayer se escapó, hoy no. Anotado, {nombre}.	{habito}: it got away yesterday, not today. Noted, {nombre}.
+cie_logro	4		Retomaste «{habito}» al día siguiente. Pocos lo hacen.	You picked “{habito}” back up the very next day. Few do.
+cie_logro	5		Lo de ayer, compensado hoy: {habito}. Así se construye.	Yesterday's miss, made up today: {habito}. That's how it's built.
+cie_logro	6		No dejaste que ayer decidiera por ti. Hoy está hecho: {habito}.	You didn't let yesterday decide for you. Today it's done: {habito}.
+cie_logro	7	[lunes]	Lunes de recuperar terreno. Hecho: {habito}. Buen comienzo.	Monday, winning ground back: “{habito}” done. Good start.
+cie_logro	8		Se escapó ayer, lo has cazado hoy. Esa es la diferencia.	It got away yesterday, you caught it today. That's the difference.
+cie_racha_avanza	0		{habito}: racha de {racha}. No la sueltes.	{habito}: a streak of {racha}. Don't let go.
+cie_racha_avanza	1		Racha de {racha} en «{habito}». Era cuestión de tiempo.	A streak of {racha} on “{habito}”. Only a matter of time.
+cie_racha_avanza	2		Racha de {racha}, {nombre}. Esto ya no es suerte.	A streak of {racha}, {nombre}. This isn't luck anymore.
+cie_racha_avanza	3		Cuenta de «{habito}»: {racha}. Sigue sumando.	“{habito}” count: {racha}. Keep adding.
+cie_racha_avanza	4		Racha de {racha} sin soltarla. Eso es constancia.	{racha} in a row without dropping it. That's consistency.
+cie_racha_avanza	5		Hoy suma {racha} en «{habito}». A mantenerla viva.	Today makes {racha} on “{habito}”. Keep it alive.
+cie_racha_avanza	6	[lunes]	Lunes y racha de {racha} en «{habito}». Así se arranca la semana.	Monday and a streak of {racha} on “{habito}”. That's how you start a week.
+cie_racha_avanza	7	[finde]	Fin de semana y la racha sigue: {habito}, {racha}.	Weekend and the streak holds: {habito}, {racha}.
+cie_racha_avanza	8		Tu racha en «{habito}» llega a {racha}. Eso se construye, no se regala.	Your streak on “{habito}” reaches {racha}. That's built, not handed out.
+cie_racha_avanza	9		Racha de {racha} en «{habito}». A por la siguiente.	A streak of {racha} on “{habito}”. On to the next one.
+cie_sencillo	0		Cerremos el día, {nombre}. Sin excusas.	Let's close the day, {nombre}. No excuses.
+cie_sencillo	1		Repasa lo que queda y decide. Un minuto.	Go over what's left and decide. One minute.
+cie_sencillo	2		Último tramo del día. Lo que quede, aquí se decide.	Last stretch of the day. Whatever's left gets decided here.
+cie_sencillo	3		Mira las filas, contesta con sinceridad y cierra. Nada más.	Look at the rows, answer straight and close. That's all.
+cie_sencillo	4		Cada cosa en su sitio y a descansar.	Everything in its place, then rest.
+cie_sencillo	5		Hoy ya está casi escrito. Falta decidir lo que queda.	Today is nearly written. What's left is yours to decide.
+cie_sencillo	6	[lunes]	Primer cierre de la semana. Que quede bien hecho.	First close of the week. Do it properly.
+cie_sencillo	7	[viernes]	Viernes. Cierra con orden y el finde empieza limpio.	Friday. Close it tidy and the weekend starts clean.
+cie_sencillo	8	[domingo]	Domingo. Un buen cierre deja la semana en orden.	Sunday. A good close leaves the week in order.
+cie_sencillo	9	[invierno]	Fuera ya es de noche. Dentro, cerramos lo de hoy.	It's dark out already. In here, we close today.
+cie_nada_pendiente	0		Nada pendiente. Hoy no tengo quejas, {nombre}.	All clear. No complaints from me today, {nombre}.
+cie_nada_pendiente	1		Nada que decidir. Puedes sellar el día.	Nothing to decide. You can seal the day.
+cie_nada_pendiente	2		Sin pendientes. Así da gusto, {nombre}.	No loose ends. Nice and clean, {nombre}.
+cie_nada_pendiente	3		Todo contestado. Solo falta dar las buenas noches.	Everything's answered. All that's left is goodnight.
+cie_nada_pendiente	4		Cero cabos sueltos. Sella y a dormir.	Zero loose ends. Seal it and sleep.
+cie_nada_pendiente	5		Nada que corregir hoy. Descansa en serio.	Nothing to fix today. Rest properly.
+cie_nada_pendiente	6	[lunes]	Lunes sin pendientes. Buen punto de partida, {nombre}.	Monday with nothing pending. Good starting point, {nombre}.
+cie_nada_pendiente	7	[viernes]	Viernes y nada pendiente. El finde empieza con la cuenta en limpio.	Friday with nothing pending. The weekend starts with a clean slate.
+cie_nada_pendiente	8	[domingo]	Domingo sin pendientes. La semana se queda en orden.	Sunday with nothing pending. The week stays in order.
+cie_animo_bien	0		Bien. Mañana, al mismo ritmo.	Good. Same pace tomorrow.
+cie_animo_bien	1		Me alegro. Que no decaiga.	Glad to hear it. Don't let it drop.
+cie_animo_bien	2		Un buen día. Apúntatelo y repite mañana.	A good day. Take note and repeat tomorrow.
+cie_animo_bien	3		Eso es lo que quería oír. Mañana, igual.	That's what I wanted to hear. Same again tomorrow.
+cie_animo_bien	4		Bien. Guarda esa sensación, sirve de combustible.	Good. Keep that feeling, it's fuel.
+cie_animo_bien	5		Me alegro. Los días buenos también se ganan.	Glad to hear it. Good days get earned too.
+cie_animo_bien	6		Vale, día bueno. Sin bajar la guardia.	Right, a good day. No lowering your guard.
+cie_animo_regular	0		Regular, vale. Mañana, algo corto para arrancar.	So-so, fine. Tomorrow, something short to get going.
+cie_animo_regular	1		Ni bueno ni malo. Mañana arrancamos con algo corto.	Neither good nor bad. Tomorrow we start with something short.
+cie_animo_regular	2		Entendido. Un día regular también se cierra. Mañana, arranque corto.	Understood. An average day still gets closed. Tomorrow, a short start.
+cie_animo_regular	3		Anotado. Mañana empiezas por algo corto.	Noted. Tomorrow you start with something short.
+cie_animo_regular	4		Los días así pasan. Mañana, un primer paso pequeño.	Days like this pass. Tomorrow, a small first step.
+cie_animo_regular	5		Vale. No hace falta más: cierra y mañana arrancamos suave.	Fine. Nothing more needed: close it and tomorrow we start gently.
+cie_animo_regular	6		Ni fu ni fa. Mañana empezamos con algo corto y vemos.	Meh. Tomorrow we start with something short and see.
+cie_animo_duro	0		Gracias por decirlo. Mañana, menos.	Thanks for saying it. Tomorrow, less.
+cie_animo_duro	1		Día duro, entendido. Mañana te pido menos.	Hard day, understood. Tomorrow I'll ask for less.
+cie_animo_duro	2		Esto también cuenta: has llegado hasta el final. Mañana, menos carga.	That counts too: you made it to the end. Tomorrow, a lighter load.
+cie_animo_duro	3		Tomo nota. Mañana el listón baja un poco.	Noted. Tomorrow the bar comes down a notch.
+cie_animo_duro	4		Un día duro no borra los demás. Mañana, menos.	One hard day doesn't erase the rest. Tomorrow, less.
+cie_animo_duro	5		Gracias por la sinceridad. Descansa; mañana, algo más ligero.	Thanks for being straight with me. Rest; tomorrow, something lighter.
+cie_animo_duro	6		Basta por hoy, sin más peso. Mañana, menos.	That's enough for today, no more weight. Tomorrow, less.
+cie_sello	0		Día cerrado, {nombre}. Mañana, más.	Day closed, {nombre}. Tomorrow, more.
+cie_sello	1		Cerrado. Descansa, que mañana también cuenta.	Closed. Rest up, tomorrow counts too.
+cie_sello	2		Hasta mañana, {nombre}. Aquí estaré.	See you tomorrow, {nombre}. I'll be here.
+cie_sello	3		Sellado. Lo de hoy, hecho está.	Sealed. What's done today stays done.
+cie_sello	4		Buenas noches. Lo de hoy se queda escrito.	Goodnight. Today stays on the record.
+cie_sello	5		Se acabó por hoy. Duerme bien.	That's it for today. Sleep well.
+cie_sello	6		Otro día al marcador, {nombre}.	Another day on the board, {nombre}.
+cie_sello	7	[lunes]	Lunes cerrado. La semana ya está en marcha.	Monday closed. The week is under way.
+cie_sello	8	[viernes]	Viernes sellado. El finde es tuyo.	Friday sealed. The weekend is yours.
+cie_sello	9	[domingo]	Domingo cerrado. Mañana, semana nueva.	Sunday closed. New week tomorrow.
+cie_sello	10	[invierno]	Sellado. Fuera hace frío; el día queda a resguardo.	Sealed. It's cold outside; the day is kept safe.
+cie_sello	11	[finde]	Día de fin de semana cerrado. Descansa de verdad.	Weekend day closed. Rest properly.
+cie_sello_perfecto	0		Día perfecto, {nombre}. Así se hace. No te relajes.	Perfect day, {nombre}. That's how it's done. Don't get comfortable.
+cie_sello_perfecto	1		Ni un hábito atrás. Era cuestión de tiempo, {nombre}.	Not one habit left behind. Only a matter of time, {nombre}.
+cie_sello_perfecto	2		Todo hecho y sin excusas. Mañana, igual.	All done, no excuses. Same again tomorrow.
+cie_sello_perfecto	3		Impecable. Eso sale cuando no negocias contigo.	Flawless. That's what comes out when you don't haggle with yourself.
+cie_sello_perfecto	4		Hoy no ha quedado nada. Guárdalo y duerme.	Nothing left over today. Bank it and sleep.
+cie_sello_perfecto	5		Así se cierra un día, {nombre}.	That's how you close a day, {nombre}.
+cie_sello_perfecto	6		Todo en su sitio. Descansa; mañana, repetir.	Everything in its place. Rest; tomorrow, repeat.
+cie_sello_perfecto	7	[lunes]	Lunes perfecto. Has puesto el listón de la semana.	Perfect Monday. You've set the bar for the week.
+cie_sello_perfecto	8	[viernes]	Viernes redondo. Llévate el finde sin deudas.	A clean sweep on Friday. Take the weekend debt-free.
+cie_sello_perfecto	9	[domingo]	Domingo perfecto. La semana termina como debe.	Perfect Sunday. The week ends as it should.
+cie_sello_perfecto	10	[finde]	Fin de semana y aun así, todo hecho. Eso es disciplina.	Weekend, and still everything done. That's discipline.
+cie_sello_perfecto	11	[invierno]	Frío fuera, día completo dentro. Bien jugado, {nombre}.	Cold out, full day in. Well played, {nombre}.
+cie_tareas_manana	0		Mañana toca: {lista}.	Moving to tomorrow: {lista}.
+cie_tareas_manana	1		{n|tarea|tareas} para mañana: {lista}. Ahí empezamos.	{n|task|tasks} for tomorrow: {lista}. That's where we start.
+cie_tareas_manana	2		Mañana, a por esto: {lista}.	Waiting for you tomorrow: {lista}.
+cie_tareas_manana	3		Sin hacer hoy, lo primero de mañana: {lista}.	Not done today, first thing tomorrow: {lista}.

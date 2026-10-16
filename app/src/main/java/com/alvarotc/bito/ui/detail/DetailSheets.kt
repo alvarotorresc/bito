@@ -30,6 +30,7 @@ import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.IconosSistema
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
@@ -252,11 +253,7 @@ fun FreezerInfoSheet(
         Column(verticalArrangement = Arrangement.spacedBy(Medidas.e12)) {
             SpeechBubble(
                 speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
-                text =
-                    stringResource(
-                        HabiVoice.freezerInfoRes(personality),
-                        userName.ifBlank { stringResource(R.string.habi_name_fallback) },
-                    ),
+                text = textoHabi(HabiVoice.conNombre(HabiVoice.freezerInfoRes(personality), userName)),
                 modifier = Modifier.fillMaxWidth(),
                 avatar = {
                     HabiAvatar(

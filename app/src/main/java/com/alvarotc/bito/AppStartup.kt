@@ -1,16 +1,22 @@
 package com.alvarotc.bito
 
 import android.app.Application
+import android.view.Choreographer
 import com.alvarotc.bito.data.backup.BackupSync
+import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.ui.notifications.FocusSync
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.ReminderSync
 import com.alvarotc.bito.ui.widget.WidgetRefresher
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import java.time.ZoneId
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -60,6 +66,7 @@ object AppStartup {
         app: Application,
         container: AppContainer,
         scope: CoroutineScope = defaultScope,
+        now: () -> Long = System::currentTimeMillis,
     ) {
         if (!started.compareAndSet(false, true)) return
         startInvocations.incrementAndGet()
@@ -68,6 +75,43 @@ object AppStartup {
         ReminderSync.start(app, container, scope)
         BackupSync.start(app, container, scope)
         FocusSync.start(app, container, scope)
+        // Las bolsas de Habi se analizan una vez por idioma fuera del hilo principal y tras el primer fotograma
+        // (spec §11): el arranque no las espera.
+        Choreographer.getInstance().postFrameCallback {
+            scope.launch {
+                try {
+                    container.catalogoHabla.precargar()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (
+                    @Suppress("TooGenericExceptionCaught") e: Exception,
+                ) {
+                    // Sin precarga, cada bolsa se lee la primera vez que se pide.
+                }
+            }
+        }
+        scope.launch {
+            try {
+                purgarMemoria(container, now)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (
+                @Suppress("TooGenericExceptionCaught") e: Exception,
+            ) {
+                // La purga es de mantenimiento: si falla, se reintenta en el proximo arranque.
+            }
+        }
+    }
+
+    /** Memoria de Habi: 400 dias de eventos y 60 de usos. El dia logico sale de los ajustes. */
+    private suspend fun purgarMemoria(
+        container: AppContainer,
+        now: () -> Long,
+    ) {
+        val ahora = now()
+        val corte = container.settings.settings.first().dayCutoffMinutes
+        val hoy = LogicalDays.logicalDayOf(ahora, corte, ZoneId.systemDefault())
+        container.memoria.purgar(hoy, ahora)
     }
 
     /**

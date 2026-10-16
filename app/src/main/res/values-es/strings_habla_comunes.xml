@@ -1,0 +1,420 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
+<resources>
+    <string-array name="habla_ap_manana_sargento">
+        <item>Buenos días, {nombre}.</item>
+        <item>Arriba. El día no se empieza solo.</item>
+        <item>Primera hora. Aprovéchala.</item>
+        <item>Mañana, {nombre}. Vamos.</item>
+        <item>Buenos días. Hoy cuenta.</item>
+        <item>Ya estás aquí. Eso ya es algo.</item>
+        <item>Café y a trabajar.</item>
+        <item>[lunes] Lunes. Se empieza como se quiere seguir.</item>
+        <item>[viernes] Viernes por la mañana. Último empujón de la semana.</item>
+        <item>[finde] Fin de semana, mismas reglas. Buenos días, {nombre}.</item>
+        <item>[invierno] Hace frío. Razón de más para moverse.</item>
+        <item>[verano] Hay luz desde temprano. Aprovecha, {nombre}.</item>
+        <item>[primavera] Primavera y día nuevo. A moverse.</item>
+        <item>[despierta] Ya estoy en pie. Cuando quieras.</item>
+    </string-array>
+    <string-array name="habla_ap_manana_cheerleader">
+        <item>¡Buenos días, {nombre}!</item>
+        <item>Buenos días. Un día en blanco y me hace ilusión estrenarlo contigo.</item>
+        <item>Arriba, {nombre}. Tú y yo, otro día por delante.</item>
+        <item>Qué ganas tenía de que empezara el día.</item>
+        <item>[lunes] ¡Lunes! Semana en blanco, y la escribimos tú y yo.</item>
+        <item>[viernes] Viernes por la mañana. Un buen empujón y la semana se despide por todo lo alto.</item>
+        <item>[finde] Buenos días, {nombre}. Hoy no hay prisa, pero sí ganas.</item>
+        <item>[invierno] Hace frío fuera, pero el plan de hoy ya me ha calentado el ánimo.</item>
+        <item>[verano] Mañana de verano, {nombre}. Luz de sobra para lo de hoy.</item>
+        <item>[despierta] Acabo de abrir los ojos y ya me apetece que empecemos.</item>
+        <item>Buenos días. Un día nuevo y bitos por ganar.</item>
+    </string-array>
+    <string-array name="habla_ap_manana_neutra">
+        <item>Buenos días, {nombre}.</item>
+        <item>Buenos días. El día está por empezar.</item>
+        <item>Empieza un día nuevo, {nombre}.</item>
+        <item>Buenos días. Sin prisa, que hay tiempo.</item>
+        <item>Buenos días. Un día más, y se hace de uno en uno.</item>
+        <item>[despierta] Acabo de despertarme. Buenos días, {nombre}.</item>
+        <item>[despierta] Ya estoy en pie. Empezamos cuando quieras.</item>
+        <item>[lunes] Lunes por la mañana. Una semana entera por delante.</item>
+        <item>[viernes] Viernes por la mañana. Último tramo de la semana.</item>
+        <item>[finde] Mañana de fin de semana. Hoy el ritmo lo marcas tú.</item>
+        <item>[invierno] Mañana fría. Buen momento para empezar con algo pequeño.</item>
+        <item>[verano] Mañana de verano. Aprovechamos la luz, {nombre}.</item>
+        <item>[primavera] Mañana de primavera. Se nota que el día alarga.</item>
+        <item>[otono] Mañana de otoño. Empezamos con calma, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_sargento">
+        <item>Buenas noches, {nombre}.</item>
+        <item>Noche. Se acaba el día.</item>
+        <item>Última vuelta del día.</item>
+        <item>Ya es de noche. Remata, {nombre}.</item>
+        <item>Queda poco día. Que cuente.</item>
+        <item>Se acaba la jornada, {nombre}.</item>
+        <item>Noche. Toca repasar el día.</item>
+        <item>Es tarde. Ve acabando.</item>
+        <item>[lunes] Lunes por la noche. Primer día de la semana, casi en el bolsillo.</item>
+        <item>[viernes] Viernes noche. La semana se cierra.</item>
+        <item>[domingo] Domingo por la noche. Mañana empieza otra semana.</item>
+        <item>[invierno] Noche de invierno. Al calor, pero con la cabeza fría.</item>
+        <item>[verano] Noche de verano. Con el fresco, a terminar.</item>
+        <item>[esperando] Lo mío está hecho. Espero el cierre.</item>
+        <item>[durmiendo] Me duermo. Tú también deberías.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_cheerleader">
+        <item>Buenas noches, {nombre}. Qué gusto encontrarte por aquí.</item>
+        <item>Cae la noche y yo sigo aquí contigo.</item>
+        <item>[esperando] Mi día ya está redondo. Te espero para cerrar el tuyo.</item>
+        <item>[durmiendo] Me voy a dormir con una sonrisa, {nombre}.</item>
+        <item>Se acaba el día. Sea como sea, aquí estoy.</item>
+        <item>[viernes] Viernes por la noche. La semana se cierra y el fin de semana empieza.</item>
+        <item>[domingo] Domingo de noche. Mañana, semana nueva, y yo ya tengo ganas.</item>
+        <item>[invierno] Noche fría, plan tranquilo. Me gusta este rato contigo.</item>
+        <item>La noche sirve para soltar lo que queda del día, {nombre}.</item>
+        <item>[madrugada] Ya es de madrugada, {nombre}. Lo que falte puede esperar al sueño.</item>
+        <item>Última parada del día, {nombre}. Te acompaño.</item>
+        <item>[durmiendo] Shh, que ya casi me duermo. Buenas noches.</item>
+        <item>Ya es de noche. Me alegra que pases por aquí.</item>
+    </string-array>
+    <string-array name="habla_ap_noche_neutra">
+        <item>Buenas noches, {nombre}.</item>
+        <item>Ya es de noche.</item>
+        <item>Cae la noche. Un último vistazo al día.</item>
+        <item>Buenas noches. Lo de hoy ya casi está.</item>
+        <item>[esperando] Estoy aquí esperando el cierre. Buenas noches, {nombre}.</item>
+        <item>[esperando] Mi día ya terminó. Espero al tuyo.</item>
+        <item>[durmiendo] Me voy a dormir. Buenas noches, {nombre}.</item>
+        <item>[durmiendo] Cierro los ojos un rato. Hasta mañana.</item>
+        <item>[domingo] Domingo por la noche. Mañana empieza otra semana, pero eso es mañana.</item>
+        <item>[viernes] Viernes por la noche. El fin de semana ya está aquí.</item>
+        <item>[invierno] Noche de invierno. Se agradece estar dentro.</item>
+        <item>[madrugada] Es tarde, {nombre}. Lo que quede puede esperar a mañana.</item>
+        <item>[lunes] Lunes por la noche. El primer día de la semana, casi cerrado.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_sargento">
+        <item>Mediodía. Media jornada a la espalda.</item>
+        <item>Alto en el camino, {nombre}. Ahora, la segunda mitad.</item>
+        <item>Mediodía. Se come y se sigue.</item>
+        <item>Mitad del día. La otra mitad también cuenta.</item>
+        <item>Ojo al reloj, {nombre}: mediodía.</item>
+        <item>[lunes] Lunes a mediodía. La semana va cogiendo ritmo.</item>
+        <item>[viernes] Viernes a mediodía. Se acaba la semana, no el día.</item>
+        <item>[finde] Mediodía de fin de semana. El ritmo se mantiene.</item>
+        <item>[verano] Sol alto. A la sombra también se cumple.</item>
+        <item>[invierno] Mediodía y poca luz. Aprovecha la que hay.</item>
+        <item>[despierta] Sigo en pie, {nombre}. Seguimos.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_cheerleader">
+        <item>Mediodía, {nombre}. Buen momento para mirar cómo vamos.</item>
+        <item>Ya es mediodía. La mañana fue tuya y la tarde está por estrenar.</item>
+        <item>¡Mediodía! Media jornada hecha y la otra mitad por escribir.</item>
+        <item>Pausa de mediodía, {nombre}. Yo sigo aquí, a tu lado.</item>
+        <item>Buenas. Llega el mediodía y a mí me sobra energía.</item>
+        <item>[lunes] Mediodía de lunes, {nombre}. Lo más cuesta arriba de la semana va quedando atrás.</item>
+        <item>[viernes] ¡Viernes a mediodía! La meta de la semana ya se ve desde aquí.</item>
+        <item>[finde] Mediodía de fin de semana. Sin reloj y con ganas.</item>
+        <item>[verano] Sol alto, {nombre}. Mediodía de verano y buen momento para un bito.</item>
+    </string-array>
+    <string-array name="habla_ap_mediodia_neutra">
+        <item>Mediodía, {nombre}.</item>
+        <item>Ya es mediodía. Buen momento para ver cómo va el día.</item>
+        <item>Mitad del día. Lo que ya has hecho cuenta.</item>
+        <item>Pausa de mediodía, {nombre}.</item>
+        <item>Es mediodía. Un vistazo rápido y seguimos.</item>
+        <item>Aquí sigo, a mitad del día. ¿Cómo vamos, {nombre}?</item>
+        <item>[lunes] Lunes a mediodía. La semana ya está en marcha.</item>
+        <item>[viernes] Viernes a mediodía. Queda poco para el fin de semana.</item>
+        <item>[verano] Mediodía de verano. Lo que cueste más, mejor para después.</item>
+        <item>[invierno] Mediodía de invierno, {nombre}. Aún queda tarde por delante.</item>
+        <item>[finde] Mediodía de fin de semana. Sin horarios, solo lo de hoy.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_sargento">
+        <item>Tarde. Todavía queda día.</item>
+        <item>Media tarde, {nombre}. No aflojes.</item>
+        <item>La tarde decide el día.</item>
+        <item>Quedan horas. Úsalas bien.</item>
+        <item>Tarde, {nombre}. Aún se llega.</item>
+        <item>Cae la tarde. Último tercio del día.</item>
+        <item>[lunes] Lunes por la tarde. La semana ya está en marcha.</item>
+        <item>[viernes] Viernes por la tarde. Cerramos la semana con buena nota.</item>
+        <item>[finde] Tarde de fin de semana. Mismo ritmo, sin prisa.</item>
+        <item>[otono] En otoño anochece pronto. Aprovecha la luz.</item>
+        <item>[primavera] Hay luz de sobra. Excusas, ninguna.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_cheerleader">
+        <item>¡Buenas tardes, {nombre}!</item>
+        <item>Tarde tranquila por aquí. Dime cuando quieras que sigamos.</item>
+        <item>Media tarde y tú por aquí. Eso ya me alegra.</item>
+        <item>La tarde da para mucho, {nombre}.</item>
+        <item>Segunda mitad del día, y aquí sigo a tu lado.</item>
+        <item>[viernes] Viernes por la tarde. Un último empujón y a disfrutar del fin de semana.</item>
+        <item>[lunes] Tarde de lunes: cada hora que pasa, la semana pesa un poco menos.</item>
+        <item>[otono] Tarde de otoño, {nombre}. Anochece pronto, así que aprovechemos la luz.</item>
+        <item>[primavera] Tarde de primavera. Con esta luz, todo cuesta un poco menos.</item>
+        <item>[finde] Tarde de fin de semana, {nombre}. Ritmo suave, ganas intactas.</item>
+    </string-array>
+    <string-array name="habla_ap_tarde_neutra">
+        <item>Buenas tardes, {nombre}.</item>
+        <item>Buenas tardes. Queda tarde por delante.</item>
+        <item>Entramos en la tarde. Todavía hay margen.</item>
+        <item>Tarde ya. Un repaso breve de cómo vamos, {nombre}.</item>
+        <item>Media tarde. Buen momento para lo que falte.</item>
+        <item>[lunes] Lunes por la tarde. Ya queda menos para acabar el día.</item>
+        <item>[viernes] Viernes por la tarde, {nombre}. La semana casi está.</item>
+        <item>[finde] Tarde de fin de semana. Se puede ir despacio.</item>
+        <item>[otono] Tarde de otoño, anochece pronto. Lo que falte, mejor con luz.</item>
+        <item>[primavera] Tarde de primavera. Da gusto que el día alargue.</item>
+        <item>[esperando] Mi día ya está hecho. Buenas tardes, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_sargento">
+        <item>Sin excusas.</item>
+        <item>A por ello.</item>
+        <item>Tú puedes con esto.</item>
+        <item>Empieza, que lo demás viene solo.</item>
+        <item>Un paso ya es avanzar. Dalo.</item>
+        <item>Hoy se cumple.</item>
+        <item>Lo sabes hacer. Hazlo.</item>
+        <item>Ahora, no luego.</item>
+        <item>Muévete. Yo llevo la cuenta.</item>
+        <item>Cuento contigo.</item>
+        <item>Te toca. Y puedes.</item>
+        <item>Cuanto antes, menos pesa.</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_cheerleader">
+        <item>¡Tú puedes, y yo estoy aquí para verlo!</item>
+        <item>Un paso pequeño hoy ya es un paso.</item>
+        <item>Vamos a por ello, tú y yo.</item>
+        <item>Cuenta conmigo para lo que venga.</item>
+        <item>Lo siguiente es fácil de empezar: basta con el primer minuto.</item>
+        <item>¡A por el siguiente!</item>
+        <item>Me encanta verte avanzar.</item>
+        <item>[lunes] Buen día para sumar el primer bito de la semana.</item>
+        <item>[manana] Empieza fuerte y el resto del día te sigue.</item>
+        <item>[viernes] ¡Un último empujón y la semana es tuya!</item>
+        <item>Tienes más fuerza de la que crees, y yo lo sé de sobra.</item>
+        <item>¡Vamos, que lo de hoy está a tu alcance!</item>
+    </string-array>
+    <string-array name="habla_ci_empuje_neutra">
+        <item>Con uno basta para arrancar.</item>
+        <item>Empieza por lo más pequeño.</item>
+        <item>Cinco minutos ya cuentan.</item>
+        <item>Cuando quieras, empezamos por ahí.</item>
+        <item>Un paso pequeño y ya has arrancado.</item>
+        <item>No hace falta más que empezar.</item>
+        <item>Lo siguiente está a un toque.</item>
+        <item>Si hoy haces solo uno, que sea el más sencillo.</item>
+        <item>Ahora o más tarde: hoy hay hueco para ello.</item>
+        <item>[noche] Aún hay tiempo de hacer uno antes de dormir.</item>
+        <item>[manana] La mañana es buen momento para quitarse el primero.</item>
+        <item>[lunes] Un primer paso en lunes ya pone la semana en marcha.</item>
+        <item>[finde] En fin de semana, con uno basta.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_sargento">
+        <item>Sin prisa, pero sin parar.</item>
+        <item>Respira. Luego seguimos.</item>
+        <item>Un paso cada vez.</item>
+        <item>Con calma también se llega.</item>
+        <item>Haz lo que puedas. Eso basta.</item>
+        <item>Sin agobios. Tú marcas el paso.</item>
+        <item>Despacio vale. Parar, no.</item>
+        <item>A tu manera. Pero hazlo.</item>
+        <item>Un trago de agua y a lo tuyo.</item>
+        <item>Hoy basta con lo justo.</item>
+        <item>Tómate un minuto. Luego, a lo siguiente.</item>
+        <item>Nada de correr. Constancia.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_cheerleader">
+        <item>Sin prisa. Aquí estaré.</item>
+        <item>Lo que haga falta, a tu ritmo.</item>
+        <item>Respira. Lo demás puede esperar un momento.</item>
+        <item>Me quedo a tu lado, pase lo que pase.</item>
+        <item>Con calma también se llega.</item>
+        <item>Hoy basta con lo que puedas, y a mí me parece mucho.</item>
+        <item>[noche] Descansa cuando toque. Mañana seguimos, tú y yo.</item>
+        <item>[finde] Es fin de semana: el ritmo lo pones tú.</item>
+        <item>[invierno] Hace frío fuera, así que vamos despacio y con cariño.</item>
+        <item>Un día cada vez, y yo te acompaño en todos.</item>
+        <item>No hace falta correr, solo seguir.</item>
+        <item>[domingo] Domingo de calma. Lo que hagas hoy ya suma.</item>
+    </string-array>
+    <string-array name="habla_ci_calma_neutra">
+        <item>Sin prisa.</item>
+        <item>A tu ritmo.</item>
+        <item>Lo que no salga hoy puede esperar.</item>
+        <item>Aquí estaré, vayas al ritmo que vayas.</item>
+        <item>Con lo que hay hoy, ya es bastante.</item>
+        <item>Respira, que el día es largo.</item>
+        <item>No hay nada urgente.</item>
+        <item>Si hoy toca ir despacio, se va despacio.</item>
+        <item>[noche] Ya casi es hora de descansar.</item>
+        <item>[finde] Es fin de semana: hay sitio para respirar.</item>
+        <item>[invierno] Hace frío fuera; dentro se está bien.</item>
+        <item>[tarde] La tarde es larga, hay margen.</item>
+        <item>[domingo] Domingo: un día para ir sin prisa.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_sargento">
+        <item>Volviste tras unos días fuera y no has soltado el hilo.</item>
+        <item>Desde que volviste, {racha|vez|veces} seguidas.</item>
+        <item>Volver costó y lo hiciste. Mira dónde estás.</item>
+        <item>Te fuiste unos días y regresaste. Eso dice mucho de ti.</item>
+        <item>Aquella vuelta fue el punto de inflexión. Lo demás lo has hecho tú.</item>
+        <item>{habito}: lo retomaste y ya llevas una racha de {racha}.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_cheerleader">
+        <item>Hace unas semanas volviste tras unos días fuera. Hoy llevas una racha de {racha}, y se nota.</item>
+        <item>Me acuerdo de cuando volviste. Desde entonces, {racha|vez|veces} seguidas.</item>
+        <item>Volver fue el primer paso, y desde entonces no has parado: racha de {racha}.</item>
+        <item>Cuando volviste dijimos «poco a poco». Mira esa racha de {racha}.</item>
+        <item>Qué bien ha salido aquella vuelta tuya. Racha de {racha}, nada menos.</item>
+        <item>Desde que volviste no hay quien te pare. Una racha de {racha} lo dice.</item>
+    </string-array>
+    <string-array name="habla_re_vuelta_neutra">
+        <item>Hace un tiempo volviste tras unos días fuera, y desde entonces no has parado.</item>
+        <item>Volviste después de unos días fuera y has sostenido el ritmo desde entonces.</item>
+        <item>Volver tras unos días fuera no es poca cosa. Desde entonces, constancia.</item>
+        <item>Desde que volviste, la racha de «{habito}» ya suma {racha}.</item>
+        <item>Volviste, y se nota: el ritmo de estas semanas lo dice.</item>
+        <item>Aquel día en que volviste marcó el principio de esta etapa.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_sargento">
+        <item>Hubo un día duro y lo atravesaste. Aquí estás.</item>
+        <item>Aguantaste aquel día malo. Hoy se nota.</item>
+        <item>Aquel día pintaba mal y lo sacaste adelante.</item>
+        <item>Un día duro no te paró. Esa es la clave.</item>
+        <item>Aquel día fue duro y quedó atrás. Hoy, otro ritmo.</item>
+        <item>De aquel día duro saliste entero. Se ve.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_cheerleader">
+        <item>Aquel día duro de hace poco quedó atrás, y hoy se nota.</item>
+        <item>Hubo un día duro hace poco y aun así aquí estás, con ganas. Eso me encanta.</item>
+        <item>Los días duros pasan, y el último ya queda lejos. Hoy va bien.</item>
+        <item>Después de aquel día duro, volver a este ritmo no es poca cosa.</item>
+        <item>Me acuerdo de aquel día duro. Ver cómo vas hoy me da mucha alegría.</item>
+        <item>Un día duro no se lleva el resto. Lo de hoy es la prueba.</item>
+    </string-array>
+    <string-array name="habla_re_duro_pasado_neutra">
+        <item>Hace unos días el día fue duro, y lo atravesaste igual. Hoy se nota.</item>
+        <item>Recuerdo que hubo un día difícil hace poco. Hoy va mejor, y eso también cuenta.</item>
+        <item>Un día duro no se lleva el resto. Lo de estos días lo demuestra.</item>
+        <item>Pasaste un día duro hace poco y has seguido. Eso pesa más de lo que parece.</item>
+        <item>Hubo un día duro, y aquí estás con otro bien llevado.</item>
+        <item>Aquel día duro quedó atrás. Lo de hoy lo deja claro.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_sargento">
+        <item>{habito}: vuelves a llevar una racha de {racha}.</item>
+        <item>Reconstruiste la racha de «{habito}»: {racha}.</item>
+        <item>Vuelves a tener racha: {racha}. Esta vez, con experiencia.</item>
+        <item>«{habito}» otra vez en marcha: {racha|vez|veces} seguidas.</item>
+        <item>Empezar de nuevo no es perder. Prueba: racha de {racha} en «{habito}».</item>
+        <item>Racha otra vez en pie. Lo esperaba de ti.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_cheerleader">
+        <item>{habito} vuelve a estar en racha: {racha|vez|veces} seguidas. Tú sabes remontar.</item>
+        <item>Con «{habito}» has vuelto a levantar una racha de {racha}. Eso es constancia de la buena.</item>
+        <item>Mira «{habito}»: {racha|vez|veces} seguidas otra vez. Sin hacer ruido, ahí está.</item>
+        <item>La racha de «{habito}» ha vuelto, y ya va por {racha}. ¡Bien hecho!</item>
+        <item>Llegar otra vez a una racha de {racha} con «{habito}» tiene mucho mérito.</item>
+    </string-array>
+    <string-array name="habla_re_racha_recuperada_neutra">
+        <item>«{habito}» había perdido su racha y hoy ya va por {racha}. Eso es volver a levantarla.</item>
+        <item>{habito}: la racha rota ya quedó atrás, y hoy suma {racha} otra vez.</item>
+        <item>Recuperar la racha de «{habito}» costó, y hoy vas por {racha}.</item>
+        <item>La racha de «{habito}» volvió a crecer: {racha} ya.</item>
+        <item>Hoy «{habito}» vuelve a pasar de siete veces seguidas.</item>
+        <item>Reconstruir una racha lleva tiempo, y la de «{habito}» ya va por {racha}.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_sargento">
+        <item>Ayer dijiste «a las {hora}» y cumpliste.</item>
+        <item>Ayer fijaste las {hora} y llegaste a la cita.</item>
+        <item>Palabra dada, palabra cumplida: ayer a las {hora}.</item>
+        <item>Ayer, a las {hora}, justo como pactamos.</item>
+        <item>Cumpliste lo que dijiste ayer. Eso se llama fiabilidad.</item>
+        <item>«{habito}» a las {hora}, como quedamos. Ayer, puntual.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_cheerleader">
+        <item>Ayer quedamos a las {hora} y cumpliste. Eso es palabra.</item>
+        <item>Ayer te avisé a las {hora} y respondiste a tiempo. Me gusta este equipo.</item>
+        <item>A las {hora} de ayer hiciste justo lo que habías dicho. Así da gusto.</item>
+        <item>Lo de ayer a las {hora} salió tal como lo planeamos.</item>
+        <item>Ayer, a las {hora}, cumpliste lo acordado. Se agradece, y se nota.</item>
+        <item>Palabra dada, palabra cumplida: ayer a las {hora}.</item>
+    </string-array>
+    <string-array name="habla_re_cumpliste_hora_neutra">
+        <item>Ayer quedaste a las {hora} y cumpliste a esa hora.</item>
+        <item>Ayer pusiste hora, las {hora}, y la respetaste.</item>
+        <item>Lo de ayer a las {hora} salió como lo habías dicho.</item>
+        <item>Ayer te comprometiste a las {hora} y llegaste. Eso da confianza.</item>
+        <item>Cumplir la hora que dices tiene mérito, y ayer lo hiciste a las {hora}.</item>
+        <item>Ayer hubo hora acordada y se cumplió.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_sargento">
+        <item>Ayer sacaste lo gordo. Eso pesa.</item>
+        <item>Lo gordo de ayer, hecho. Ya lo tienes a la espalda.</item>
+        <item>Ayer elegiste lo gordo y lo cumpliste.</item>
+        <item>Lo gordo de ayer ya no pesa: lo hiciste.</item>
+        <item>Ayer te encargaste de «{tarea}». Lo gordo, resuelto.</item>
+        <item>Ayer, lo gordo primero y sin rodeos.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_cheerleader">
+        <item>Ayer sacaste adelante lo gordo. Eso pesa a tu favor.</item>
+        <item>Lo gordo de ayer quedó hecho. Ya está en el bolsillo.</item>
+        <item>Ayer cerraste lo gordo del día. Esa sensación se queda.</item>
+        <item>Ayer le hiciste hueco a lo gordo y lo terminaste.</item>
+        <item>Lo gordo de ayer: hecho. Hoy empiezas con ventaja.</item>
+        <item>Ayer lo gordo cayó. Me acuerdo y sonrío.</item>
+    </string-array>
+    <string-array name="habla_re_gordo_hecho_neutra">
+        <item>Ayer hiciste lo gordo, y eso se sostiene hoy.</item>
+        <item>Lo gordo de ayer quedó hecho. Se nota que empezar así ayuda.</item>
+        <item>Ayer cerraste lo gordo del día. Ese tipo de días suma.</item>
+        <item>Ayer lo gordo del día se hizo, y el resto fue más fácil.</item>
+        <item>Lo gordo de ayer ya está en el pasado, hecho.</item>
+        <item>Hace un día elegiste lo gordo y lo sacaste adelante. Se agradece repetir.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_sargento">
+        <item>Ayer cerraste el día bien.</item>
+        <item>Ayer terminó bien. Hoy, a repetir.</item>
+        <item>Un buen día ayer. Esa es la base.</item>
+        <item>Ayer fue un día bueno. Tómalo como referencia.</item>
+        <item>Ayer saliste del día con buen ánimo. Mantenlo.</item>
+        <item>Ayer el cierre fue de los buenos.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_cheerleader">
+        <item>Ayer fue un buen día y se notó. Hoy tiene esa estela.</item>
+        <item>Ayer el día cerró bien. Me quedé con esa sensación.</item>
+        <item>Ayer me dijiste que fue bien. Me alegra que hoy empiece con eso.</item>
+        <item>Un buen ayer es un buen punto de partida.</item>
+        <item>Ayer terminó bien, y yo me acuerdo con cariño.</item>
+        <item>Qué bien acabó ayer. Hoy se apoya en eso.</item>
+    </string-array>
+    <string-array name="habla_re_bien_ayer_neutra">
+        <item>Ayer terminaste el día bien. Hoy parte de ahí.</item>
+        <item>Me alegro de que ayer fuera un buen día. Hoy parte de ahí.</item>
+        <item>Ayer cerraste el día con buen pie. Eso ayuda a empezar hoy.</item>
+        <item>Un buen día ayer, y hoy sigue el mismo ritmo.</item>
+        <item>Ayer te fue bien, y lo recuerdo.</item>
+        <item>El día de ayer salió bueno. Hoy se puede seguir en esa línea.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_sargento">
+        <item>Cada {dia_semana} pesa un poco más. Hoy lo tengo en cuenta.</item>
+        <item>Este {dia_semana} suele pesar. Vamos con cabeza.</item>
+        <item>El {dia_semana} es de los duros para ti. Lo sé y cuento con ello.</item>
+        <item>Sé que el {dia_semana} cuesta. Se hace igual, a tu medida.</item>
+        <item>Es {dia_semana}, y tú y yo sabemos lo que eso pesa. Aquí estoy.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_cheerleader">
+        <item>Cada {dia_semana} suele costar un poco más. Hoy iremos con calma, tú y yo.</item>
+        <item>He notado que el {dia_semana} cuesta algo más. Sin drama: lo sé, y aquí estoy.</item>
+        <item>El {dia_semana} pide un poco más de paciencia. Te la regalo con gusto.</item>
+        <item>Cada {dia_semana} parece pesar un poco más. Lo bueno es que me tienes a mí.</item>
+    </string-array>
+    <string-array name="habla_re_patron_animo_neutra">
+        <item>Hoy es {dia_semana}, un día que a veces pesa más. Saberlo ya ayuda.</item>
+        <item>Hoy es {dia_semana}: suele ser un día cuesta arriba. Ir paso a paso basta.</item>
+        <item>Hoy es {dia_semana}, y este día ha costado otras veces. Hoy puede ser distinto, y si no, también está bien.</item>
+        <item>Hoy es {dia_semana}. Suele ser un día algo pesado, así que cualquier avance es suficiente.</item>
+        <item>Es {dia_semana}, un día que ha sido difícil otras veces. Lo vamos llevando.</item>
+    </string-array>
+</resources>

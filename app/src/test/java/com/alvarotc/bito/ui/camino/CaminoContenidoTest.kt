@@ -34,6 +34,8 @@ import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.Progreso
+import com.alvarotc.bito.domain.propuestas.Propuesta
+import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.stats.NumbersUiState
@@ -67,6 +69,7 @@ class CaminoContenidoTest {
     private fun estado(
         delta: Int? = 12,
         sinHabitos: Boolean = false,
+        comentario: Propuesta? = null,
     ): CaminoUiState {
         val semana =
             WeekSummary(
@@ -97,6 +100,7 @@ class CaminoContenidoTest {
             numbers = NumbersUiState(Totals(1234, 20, 300, 80, 2, 1, 4, 1, 2, 90), loading = false),
             sinHabitos = sinHabitos,
             loading = false,
+            comentario = comentario,
         )
     }
 
@@ -116,7 +120,7 @@ class CaminoContenidoTest {
 
     @Test
     fun `the six stat pieces show with test data`() {
-        montar(estado())
+        montar(estado(comentario = Propuesta("CA_NORMAL::1", TextoHabi(HabiVoice.bubbleRes(Mood.NORMAL, Personality.NEUTRA)), emptyList())))
         rule.onNodeWithText(cadena(HabiVoice.bubbleRes(Mood.NORMAL, Personality.NEUTRA))).assertExists()
         rule.onNodeWithText(cadena(R.string.stats_perfect_days_label)).assertExists()
         rule.onNodeWithText(cadena(R.string.camino_este_mes)).assertExists()
@@ -125,6 +129,22 @@ class CaminoContenidoTest {
         rule.onNodeWithTag("streak-agua").assertExists()
         rule.onNodeWithText(cadena(R.string.camino_mejor_racha, 31)).assertExists()
         rule.onNodeWithText(cadena(R.string.camino_registros_totales)).assertExists()
+    }
+
+    @Test
+    fun `Camino's comment comes from the source`() {
+        montar(estado(comentario = Propuesta("CA_MUSTIO::1", TextoHabi(R.string.got_it), emptyList())))
+        rule.onNodeWithTag("tarjeta-habi").assertExists()
+        rule.onNodeWithText(cadena(R.string.got_it)).assertExists()
+        // Ya no se inventa el comentario con el ánimo: el de siempre no aparece.
+        rule.onNodeWithText(cadena(HabiVoice.bubbleRes(Mood.NORMAL, Personality.NEUTRA))).assertDoesNotExist()
+    }
+
+    @Test
+    fun `without a comment from the source there is no card`() {
+        montar(estado(comentario = null))
+        rule.onNodeWithTag("tarjeta-habi").assertDoesNotExist()
+        rule.onNodeWithText(cadena(HabiVoice.bubbleRes(Mood.NORMAL, Personality.NEUTRA))).assertDoesNotExist()
     }
 
     @Test

@@ -17,12 +17,14 @@ import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -35,14 +37,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -317,15 +326,19 @@ class DetailViewModelTest {
                         habitId: String?,
                     ): Flow<Propuesta?> {
                         pedidas += ambito to habitId
-                        return flowOf(Propuesta("p", TextoHabi(1), emptySet()))
+                        return flowOf(Propuesta("p", TextoHabi(1), emptyList()))
                     }
 
                     override suspend fun responder(
                         id: String,
                         respuesta: Respuesta,
-                    ) {
+                        hora: Int?,
+                    ): Efecto {
                         respondidas += id to respuesta
+                        return Efecto.Ninguno
                     }
+
+                    override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
                 }
             habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
             val vm = newViewModel("h1", propuestas = fuente)
@@ -338,6 +351,197 @@ class DetailViewModelTest {
             vm.responder(Respuesta.VALE)
             advanceUntilIdle()
             assertEquals(listOf("p" to Respuesta.VALE), respondidas)
+        }
+
+    private class FuenteControlable(
+        inicial: Propuesta?,
+        var efecto: Efecto = Efecto.Ninguno,
+    ) : FuentePropuestas {
+        val actual = MutableStateFlow(inicial)
+        var suscripciones = 0
+
+        override fun propuesta(
+            ambito: Ambito,
+            habitId: String?,
+        ): Flow<Propuesta?> = actual.onStart { suscripciones++ }
+
+        override suspend fun responder(
+            id: String,
+            respuesta: Respuesta,
+            hora: Int?,
+        ): Efecto = efecto
+
+        override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    }
+
+    @Test
+    fun `an answer with effect reaches the screen through the effects flow`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()), Efecto.EditarHabito("h1", 15))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            val recibidos = mutableListOf<Efecto>()
+            backgroundScope.launch { vm.efectos.collect { recibidos += it } }
+            advanceUntilIdle()
+
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+
+            assertEquals(listOf<Efecto>(Efecto.EditarHabito("h1", 15)), recibidos)
+        }
+
+    @Test
+    fun `an effect without anyone listening waits for the screen and is not repeated`() =
+        runTest {
+            // Giro de pantalla mientras la fuente responde: la edición no se pierde (ni la nota se queda oculta sin ella).
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()), Efecto.EditarHabito("h1", 15))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+
+            val primero = mutableListOf<Efecto>()
+            val colector1 = launch { vm.efectos.collect { primero += it } }
+            advanceUntilIdle()
+            assertEquals(listOf<Efecto>(Efecto.EditarHabito("h1", 15)), primero)
+            colector1.cancel()
+
+            val segundo = mutableListOf<Efecto>()
+            val colector2 = launch { vm.efectos.collect { segundo += it } }
+            advanceUntilIdle()
+            assertTrue(segundo.isEmpty())
+            colector2.cancel()
+        }
+
+    @Test
+    fun `an answer without effect emits nothing`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            val recibidos = mutableListOf<Efecto>()
+            backgroundScope.launch { vm.efectos.collect { recibidos += it } }
+            advanceUntilIdle()
+
+            vm.responder(Respuesta.HOY_NO)
+            advanceUntilIdle()
+
+            assertTrue(recibidos.isEmpty())
+        }
+
+    /** Primera suscripción: la nota vieja al momento. Las siguientes: [siguientes] tras [retraso] ms (o nunca). */
+    private class FuenteTardia(
+        private val vieja: Propuesta,
+        private val siguientes: Propuesta?,
+        private val retraso: Long,
+    ) : FuentePropuestas {
+        var suscripciones = 0
+
+        override fun propuesta(
+            ambito: Ambito,
+            habitId: String?,
+        ): Flow<Propuesta?> =
+            flow {
+                suscripciones++
+                if (suscripciones == 1) {
+                    emit(vieja)
+                    awaitCancellation()
+                }
+                if (siguientes == null) awaitCancellation()
+                delay(retraso)
+                emit(siguientes)
+                awaitCancellation()
+            }
+
+        override suspend fun responder(
+            id: String,
+            respuesta: Respuesta,
+            hora: Int?,
+        ): Efecto = Efecto.EditarHabito("h1", 15)
+
+        override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    }
+
+    @Test
+    fun `the note after editing stays hidden until the source answers with the new state`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val vieja = Propuesta("FI_OBJETIVO:h1:1", TextoHabi(1), emptyList())
+            val nueva = Propuesta("FI_CONSTANCIA:h1:1", TextoHabi(2), emptyList())
+            val vm = newViewModel("h1", propuestas = FuenteTardia(vieja, nueva, retraso = 500))
+            val vistas = mutableListOf<String?>()
+            backgroundScope.launch { vm.propuesta.collect { vistas += it?.id } }
+            advanceUntilIdle()
+            assertEquals(vieja.id, vm.propuesta.value?.id)
+
+            val antesDeEditar = vistas.size
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+            assertNull(vm.propuesta.value)
+
+            vm.alVolver()
+            advanceTimeBy(100)
+            runCurrent()
+            // La fuente aún no contesta: ni la vieja ni nada.
+            assertNull(vm.propuesta.value)
+
+            advanceTimeBy(500)
+            runCurrent()
+            assertEquals(nueva.id, vm.propuesta.value?.id)
+            assertTrue("la vieja no se pinta ni un instante", vieja.id !in vistas.drop(antesDeEditar))
+        }
+
+    @Test
+    fun `the wait for the new state has a ceiling and then shows what there is`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val vieja = Propuesta("FI_OBJETIVO:h1:1", TextoHabi(1), emptyList())
+            val vm = newViewModel("h1", propuestas = FuenteTardia(vieja, siguientes = null, retraso = 0))
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+            vm.alVolver()
+            advanceTimeBy(DetailViewModel.TOPE_ESPERA_MS - 100)
+            runCurrent()
+            assertNull(vm.propuesta.value)
+
+            advanceTimeBy(200)
+            runCurrent()
+            assertEquals(vieja.id, vm.propuesta.value?.id)
+        }
+
+    @Test
+    fun `returning without having edited keeps the note`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+
+            vm.alVolver()
+            advanceUntilIdle()
+
+            assertEquals("p", vm.propuesta.value?.id)
+        }
+
+    @Test
+    fun `read mode never has a proposal nor asks the source`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()))
+            val vm = newViewModel("h1", lectura = true, propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+
+            assertNull(vm.propuesta.value)
+            assertEquals(0, fuente.suscripciones)
         }
 
     @Test

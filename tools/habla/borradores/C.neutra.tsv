@@ -1,0 +1,100 @@
+bolsa	indice	etiquetas	es	en
+nu_saludo	0		Hola, {nombre}.	Hi, {nombre}.
+nu_saludo	1		Hola, {nombre}. Ahora mismo no tengo nada que proponerte.	Hi, {nombre}. Nothing to suggest right now.
+nu_saludo	2		Hoy: {hechos} de {total}. El resto, a tu ritmo.	Today: {hechos} of {total}. The rest, at your own pace.
+nu_saludo	3		{hechos} de {total} por ahora. Lo siguiente, cuando te venga bien.	{hechos} of {total} so far. The next one, whenever it suits you.
+nu_saludo	4		Aquí sigo, {nombre}. Hoy vas por {hechos} de {total}.	Still here, {nombre}. You're at {hechos} of {total} today.
+nu_saludo	5		Te dejo hacer, {nombre}. Si veo algo, te lo digo.	I'll let you get on with it, {nombre}. If I spot something, I'll say.
+nu_saludo	6		Nada que proponer por ahora. La lista de Hoy va a tu ritmo.	Nothing to suggest for now. Today's list moves at your pace.
+nu_saludo	7	[manana]	Empieza el día: {hechos} de {total} hasta ahora.	The day is under way: {hechos} of {total} so far.
+nu_saludo	8	[mediodia]	Mediodía. Llevas {hechos} de {total}, y la tarde tiene sitio para el resto.	Midday. {hechos} of {total} done; the afternoon has room for the rest.
+nu_saludo	9	[tarde]	Media tarde, {nombre}. Así vamos: {hechos} de {total}.	Mid-afternoon, {nombre}. So far: {hechos} of {total}.
+nu_saludo	10	[noche]	Ya es de noche. Hoy: {hechos} de {total}. Lo que falte, sin prisa.	It's evening now. Today: {hechos} of {total}. Whatever's left, no rush.
+nu_saludo	11	[lunes]	Lunes. Primera vuelta de la semana: {hechos} de {total}.	Monday. First lap of the week: {hechos} of {total}.
+nu_saludo	12	[viernes]	Viernes. Hoy cuenta igual que el lunes: {hechos} de {total} por ahora.	Friday. Today counts the same as Monday: {hechos} of {total} so far.
+nu_saludo	13	[finde]	Fin de semana. Lo de hoy, a su ritmo: {hechos} de {total}.	Weekend. Today goes at its own pace: {hechos} of {total}.
+nu_saludo	14	[invierno]	Fuera hace frío. Aquí dentro vamos por {hechos} de {total}.	Cold out there. In here, we're at {hechos} of {total}.
+nu_saludo	15		Hola. Aquí sigo.	Hi. Still here.
+nu_saludo	16		Hola. Ahora mismo no tengo nada que proponerte.	Hi. Nothing to suggest right now.
+nu_todo_hecho	0	[esperando]	He terminado mi día. Aquí me quedo, esperando el tuyo.	I've finished my day. I'll stay here, waiting on yours.
+nu_todo_hecho	1		Todo hecho por hoy. Cuando quieras, cierras el día.	Everything's done for today. Close the day whenever you like.
+nu_todo_hecho	2		Los hábitos de hoy, hechos. Solo queda el cierre, y es corto.	Today's habits are done. Only the close is left, and it's short.
+nu_todo_hecho	3		Ningún hábito pendiente. El cierre puede esperar a que te venga bien.	No habits left for today. The close can wait until it suits you.
+nu_todo_hecho	4		Lo de hoy está hecho. Cerrar el día es lo único que falta.	Today's done. Closing the day is all that's left.
+nu_todo_hecho	5	[esperando]	Yo ya he acabado lo mío. Espero aquí hasta que cierres el día.	I'm done with mine. I'll wait here until you close the day.
+nu_todo_hecho	6	[esperando]	Mi día también ha terminado. Cuando cierres el tuyo, descansamos los dos.	My day's over too. When you close yours, we both get to rest.
+nu_todo_hecho	7	[manana]	Todo hecho antes de comer. El cierre puede esperar a la noche.	All done before lunch. The close can wait until tonight.
+nu_todo_hecho	8	[tarde]	Todo hecho, y aún es de tarde. El resto del día es tuyo.	All done, and it's still afternoon. The rest of the day is yours.
+nu_todo_hecho	9	[noche]	Todo hecho. Un minuto para cerrar el día y a descansar.	All done. One minute to close the day, then rest.
+nu_todo_hecho	10	[viernes]	Viernes, todo hecho. Queda cerrar el día.	Friday, all done. Just the close left.
+nu_todo_hecho	11	[domingo]	Domingo, todo hecho. La semana termina con el cierre de hoy.	Sunday, all done. The week ends with today's close.
+nu_todo_hecho	12	[invierno]	Todo hecho, y fuera ya oscurece. El cierre, cuando quieras.	All done, and it's getting dark out. The close, whenever you like.
+nu_cerrar_dia	0		¿Cerramos el día? Por decidir: {n|cosa|cosas}.	Shall we close the day? To decide: {n|thing|things}.
+nu_cerrar_dia	1		Por decidir: {n|cosa|cosas}. Un minuto y el día queda sellado.	Left to decide: {n|thing|things}. One minute and the day is sealed.
+nu_cerrar_dia	2		Es hora de cerrar el día: {n|cosa|cosas} y a dormir.	Time to close the day: {n|thing|things}, then bed.
+nu_cerrar_dia	3		En el cierre de hoy hay {n|cosa|cosas}. Lo hacemos cuando digas.	Today's close has {n|thing|things} in it. We'll do it when you say.
+nu_cerrar_dia	4		Antes de dormir, el cierre: {n|cosa|cosas} por decidir.	Before bed, the close: {n|thing|things} to decide.
+nu_cerrar_dia	5		Lo que queda de hoy cabe en el cierre: {n|cosa|cosas}.	What's left of today fits in the close: {n|thing|things}.
+nu_cerrar_dia	6	[noche]	Ya es de noche. Cerrar el día lleva un minuto: {n|cosa|cosas}.	It's night now. Closing the day takes a minute: {n|thing|things}.
+nu_cerrar_dia	7	[madrugada]	Se ha hecho tarde. Para cerrar el día: {n|cosa|cosas}, y a dormir.	It got late. To close the day: {n|thing|things}, then bed.
+nu_cerrar_dia	8	[lunes]	Primer cierre de la semana: {n|cosa|cosas} por decidir.	First close of the week: {n|thing|things} to decide.
+nu_cerrar_dia	9	[viernes]	Viernes por la noche. Cerramos el día con {n|cosa|cosas} y empieza el fin de semana.	Friday night. We close the day with {n|thing|things}, and the weekend begins.
+nu_cerrar_dia	10	[domingo]	Domingo. Cerrar hoy deja la semana en orden: {n|cosa|cosas} por decidir.	Sunday. Closing today leaves the week in order: {n|thing|things} to decide.
+nu_cerrar_dia	11	[invierno]	Noche larga de invierno. El cierre, en un minuto: {n|cosa|cosas}.	Long winter night. The close takes a minute: {n|thing|things}.
+nu_noche	0	[durmiendo]	Día cerrado. Buenas noches.	Day closed. Good night.
+nu_noche	1		Día cerrado. Mañana empezamos por «{tarea}».	Day closed. Tomorrow we start with “{tarea}”.
+nu_noche	2	[durmiendo]	Me duermo. Mañana seguimos.	I'm off to sleep. More tomorrow.
+nu_noche	3		El día está sellado. Hasta mañana.	The day is sealed. See you tomorrow.
+nu_noche	4		Hoy ya está contado. Descansa.	Today's on the books. Get some rest.
+nu_noche	5	[durmiendo]	Cierro los ojos. Mañana, aquí mismo.	Closing my eyes. Same place tomorrow.
+nu_noche	6	[noche]	Día cerrado. Lo que queda de noche es para descansar.	Day closed. The rest of the night is for resting.
+nu_noche	7	[madrugada]	Es tarde y el día está cerrado. A dormir.	It's late and the day is closed. Time for bed.
+nu_noche	8	[viernes]	Viernes cerrado. Buenas noches.	Friday's closed. Good night.
+nu_noche	9	[domingo]	Domingo cerrado. Mañana empieza otra semana.	Sunday's closed. A new week starts tomorrow.
+nu_noche	10	[invierno]	Noche de invierno, día cerrado. Buenas noches.	Winter night, day closed. Good night.
+nu_noche	11	[verano]	Aún queda algo de luz, pero el día está cerrado. Buenas noches.	There's still a bit of light, but the day is closed. Good night.
+nu_noche	12		«{tarea}», mañana a primera hora. Ahora, a descansar.	“{tarea}”, first thing tomorrow. For now, rest.
+nu_noche	13		Día cerrado. Hasta mañana.	Day closed. See you tomorrow.
+nu_tras_hoy_no	0		Vale. Si cambias de idea, aquí sigo.	Okay. If you change your mind, I'm here.
+nu_tras_hoy_no	1		Entendido. Cuando quieras, aquí sigo.	Understood. I'm here whenever you want.
+nu_tras_hoy_no	2		De acuerdo. Lo dejamos aquí.	All right. We'll leave it there.
+nu_tras_hoy_no	3		Anotado. Lo demás sigue igual.	Noted. Everything else stays as it is.
+nu_tras_hoy_no	4		Sin problema. Tú marcas el ritmo.	No problem. You set the pace.
+nu_tras_hoy_no	5		Vale, lo aparco. Sigo por aquí.	Okay, parking it. I'll be around.
+nu_tras_hoy_no	6		Entendido. No hace falta decidirlo todo ahora.	Got it. Not everything needs deciding now.
+nu_tras_hoy_no	7	[manana]	De acuerdo. Queda mucho día por delante.	All right. There's plenty of day left.
+nu_tras_hoy_no	8	[tarde]	Vale. La tarde sigue siendo tuya.	Okay. The afternoon's still yours.
+nu_tras_hoy_no	9	[noche]	Entendido. A estas horas, mejor sin prisas.	Understood. At this hour, better not to rush.
+nu_tras_hoy_no	10	[finde]	Anotado. El fin de semana tiene su propio ritmo.	Noted. Weekends have their own pace.
+nu_tras_hoy_no	11	[lunes]	Vale. Los lunes cuesta arrancar.	Okay. Mondays take a while to get going.
+nu_confirma_vale	0		Hecho: te aviso a las {hora}.	Done. I'll remind you at {hora}.
+nu_confirma_vale	1		Anotado. A las {hora} te lo recuerdo.	Noted. I'll remind you at {hora}.
+nu_confirma_vale	2		A las {hora}, entonces. Yo te aviso.	{hora}, then. I'll let you know.
+nu_confirma_vale	3		Queda para las {hora}. Hasta entonces, no hace falta acordarse.	Set for {hora}. Until then, no need to keep it in mind.
+nu_confirma_vale	4		Vale, anotado.	Okay, noted.
+nu_confirma_vale	5		De acuerdo. Queda apuntado.	All right. It's written down.
+nu_confirma_vale	6	[manana]	Hecho: a las {hora} te aviso. La mañana, a tu aire.	Done: I'll remind you at {hora}. The morning is yours.
+nu_confirma_vale	7	[tarde]	A las {hora}. Te aviso, y hasta entonces, sin prisa.	{hora} it is. I'll let you know; no hurry till then.
+nu_confirma_vale	8	[noche]	A las {hora}, antes de cerrar el día. Te aviso.	At {hora}, before we close the day. I'll let you know.
+nu_confirma_vale	9	[finde]	Hecho: te aviso a las {hora}. Sin prisa, que es fin de semana.	Done: reminder at {hora}. No rush, it's the weekend.
+nu_confirma_vale	10		Entendido. Queda así.	Understood. That's settled.
+nu_confirma_vale	11		De acuerdo. Lo dejo apuntado.	All right. I've made a note of it.
+nu_confirma_vale	12		Hecho. Por mi parte, todo en orden.	Done. All in order on my side.
+nu_confirma_vale_gordo	0		Hecho: te aviso a las {hora}. Mientras tanto, lo gordo: {gordo}.	Done. I'll remind you at {hora}. Meanwhile, the big thing: {gordo}.
+nu_confirma_vale_gordo	1		Anotado para las {hora}. Hasta entonces, lo gordo sigue ahí: {gordo}.	Noted for {hora}. Until then, the big thing is still there: {gordo}.
+nu_confirma_vale_gordo	2		A las {hora}, entonces. Ahora hay hueco para lo gordo: {gordo}.	{hora}, then. That leaves room now for the big thing: {gordo}.
+nu_confirma_vale_gordo	3		Queda para las {hora}. Si te apetece una sesión, lo gordo: {gordo}.	Set for {hora}. If you fancy a session, the big thing: {gordo}.
+nu_confirma_vale_gordo	4		Hecho: {hora}. Y entre tanto, 25 minutos con lo gordo: {gordo}.	Done: {hora}. In the meantime, 25 minutes on the big thing: {gordo}.
+nu_confirma_vale_gordo	5		Vale, anotado. Lo gordo de hoy sigue siendo esto: {gordo}.	Okay, noted. Today's big thing is still this: {gordo}.
+nu_confirma_vale_gordo	6	[manana]	Te aviso a las {hora}. La mañana es buen momento para lo gordo: {gordo}.	I'll remind you at {hora}. Mornings suit the big thing: {gordo}.
+nu_confirma_vale_gordo	7	[tarde]	A las {hora}, hecho. Aún queda tarde para lo gordo: {gordo}.	{hora}, done. There's still afternoon left for the big thing: {gordo}.
+nu_confirma_vale_gordo	8	[lunes]	Anotado: {hora}. Para empezar la semana, lo gordo: {gordo}.	Noted: {hora}. To start the week, the big thing: {gordo}.
+nu_confirma_vale_gordo	9	[viernes]	Hecho: {hora}. Lo gordo del viernes: {gordo}.	Done: {hora}. Friday's big thing: {gordo}.
+nu_gordo_elegido	0		Lo gordo de hoy: {gordo}. Primer paso: {primer_paso}. Con eso basta.	Today's big thing: {gordo}. First step: {primer_paso}. That's enough to start.
+nu_gordo_elegido	1		Lo gordo de hoy: {gordo}. Una sesión de 25 minutos es buen comienzo.	Today's big thing: {gordo}. A 25-minute session is a good start.
+nu_gordo_elegido	2		Elegido. Lo gordo: {gordo}. Lo demás cuenta igual.	Chosen. The big thing: {gordo}. Everything else counts just the same.
+nu_gordo_elegido	3		Lo gordo, decidido: {gordo}. Con empezar, basta.	The big thing is settled: {gordo}. Starting is enough.
+nu_gordo_elegido	4		Lo gordo: {gordo}. Para arrancar: {primer_paso}.	The big thing: {gordo}. To get going: {primer_paso}.
+nu_gordo_elegido	5	[manana]	Lo gordo de hoy: {gordo}. Toda la mañana por delante.	Today's big thing: {gordo}. The whole morning ahead.
+nu_gordo_elegido	6	[lunes]	Lo gordo del lunes: {gordo}. Primer paso: {primer_paso}.	Monday's big thing: {gordo}. First step: {primer_paso}.
+nu_gordo_elegido	7	[viernes]	Lo gordo del viernes: {gordo}. Una sesión y la semana termina más ligera.	Friday's big thing: {gordo}. One session and the week ends lighter.

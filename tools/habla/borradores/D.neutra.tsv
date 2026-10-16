@@ -1,0 +1,103 @@
+bolsa	indice	etiquetas	es	en
+fi_hoy_falta	0		Hoy está pendiente. ¿Te aviso a las {hora}?	Still open today. Shall I remind you at {hora}?
+fi_hoy_falta	1		Hoy aún no está hecho. Puedo avisarte a las {hora}.	Not done yet today. I can remind you at {hora}.
+fi_hoy_falta	2		Pendiente de hoy. A las {hora} te lo recuerdo, si quieres.	Still pending today. I'll remind you at {hora} if you like.
+fi_hoy_falta	3		Hoy falta: {habito}. ¿Lo dejamos para las {hora}?	Still open today: “{habito}”. Shall we set it for {hora}?
+fi_hoy_falta	4	[noche]	Todavía cabe hoy. Si te va bien, te aviso a las {hora}.	There's still room today. If it suits you, I'll remind you at {hora}.
+fi_hoy_falta	5	[manana]	Tienes el día entero para esto. ¿Te aviso a las {hora}?	You have the whole day for this one. Shall I remind you at {hora}?
+fi_hoy_falta	6		{habito}, pendiente hoy. ¿Te aviso a las {hora}?	“{habito}” is still open today. Shall I remind you at {hora}?
+fi_hoy_falta	7	[tarde]	La tarde aún da para esto. A las {hora} te lo recuerdo.	The afternoon still has room for this. I'll remind you at {hora}.
+fi_hoy_falta	8	[viernes]	Es viernes y esto sigue abierto. ¿Te aviso a las {hora}?	It's Friday and this one is still open. Remind you at {hora}?
+fi_hoy_falta	9		Hoy está pendiente. Ahora o más tarde, como prefieras.	Still open today. Now or later, as you prefer.
+fi_hoy_falta	10		Hoy aún no está hecho. Queda día para esto.	Not done yet today. There's still time for it.
+fi_hoy_falta	11		Hoy falta: {habito}. Cuando te venga bien.	Still open today: {habito}. Whenever it suits you.
+fi_objetivo	0		Este mes, un {pct} % de cumplimiento. ¿Y si lo dejamos en {objetivo}?	This month: {pct} % done. What if we set it to {objetivo}?
+fi_objetivo	1		Quizá una meta de {objetivo} encaje mejor con tu ritmo de ahora. ¿Lo probamos?	Maybe a goal of {objetivo} fits your current pace better. Shall we try it?
+fi_objetivo	2		Con una meta de {objetivo} sería más fácil llegar cada día. ¿Y si lo dejamos ahí?	A goal of {objetivo} would be easier to reach each day. What if we left it there?
+fi_objetivo	3		Un objetivo más pequeño también cuenta. ¿Y si lo dejamos en {objetivo}?	A smaller goal counts too. What if we set it to {objetivo}?
+fi_objetivo	4		Estos 30 días han costado un poco. ¿Y si lo dejamos en {objetivo}?	These 30 days have taken some effort. What if we set it to {objetivo}?
+fi_objetivo	5		Un ajuste pequeño: {objetivo}. Si no te encaja, lo dejamos como está.	A small adjustment: {objetivo}. If it doesn't fit, we leave it as it is.
+fi_objetivo	6	[lunes]	Empieza la semana: ¿probamos con {objetivo} y vemos cómo va?	A new week: shall we try {objetivo} and see how it goes?
+fi_objetivo	7		En 30 días, {pct} %. Un objetivo menor ayuda a arrancar: {objetivo}.	30 days: {pct} %. A smaller goal helps you get going: {objetivo}.
+fi_racha_vs_mejor	0		Llevas una racha de {racha}. Tu mejor racha es de {mejor}.	You're on a streak of {racha}. Your best streak is {mejor}.
+fi_racha_vs_mejor	1		Racha actual: {racha}. La mejor, {mejor}.	Current streak: {racha}. Best: {mejor}.
+fi_racha_vs_mejor	2		La racha va por {racha}. Tu mejor marca está en {mejor}.	The streak stands at {racha}. Your best mark is {mejor}.
+fi_racha_vs_mejor	3		Racha de {racha}. Tu récord personal es de {mejor}.	A streak of {racha}. Your personal record is {mejor}.
+fi_racha_vs_mejor	4	[lunes]	Semana nueva y la racha sigue en {racha}. Tu mejor: {mejor}.	New week, and the streak is still at {racha}. Your best: {mejor}.
+fi_racha_vs_mejor	5		Una más y la racha cambia de cifra. Ahora mismo: {racha}.	One more and the streak changes number. Right now: {racha}.
+fi_racha_vs_mejor	6		Van {racha|vez|veces} seguidas. Tu mejor racha llegó a {mejor}.	That's {racha} in a row. Your best streak reached {mejor}.
+fi_racha_vs_mejor	7	[domingo]	Cierras la semana con una racha de {racha}. Tu mejor sigue en {mejor}.	You close the week with a streak of {racha}. Your best stands at {mejor}.
+fi_mejor_dia	0		El {dia_semana} es el día en que mejor te sale.	{dia_semana} is the day it goes best.
+fi_mejor_dia	1		Varias semanas de datos lo dicen: el {dia_semana} es tu día más fuerte.	Several weeks of data say {dia_semana} is your strongest day.
+fi_mejor_dia	2		Si hay que elegir un momento, el {dia_semana}: ahí se te da mejor.	If you had to pick a moment, {dia_semana}: that's where it goes best.
+fi_mejor_dia	3		Tu día más constante con este hábito es el {dia_semana}.	Your most consistent day with this habit is {dia_semana}.
+fi_mejor_dia	4	[domingo]	Domingo de repasar: el {dia_semana} es el día en que más cumples con esto.	Sunday for looking back: {dia_semana} is the day you do this one most.
+fi_mejor_dia	5		El {dia_semana} gana al resto de días de la semana, y por bastante.	{dia_semana} beats the rest of the week by a fair margin.
+fi_mejor_dia	6		Un patrón que se repite: el {dia_semana} te sale mejor que el resto.	A pattern that keeps showing up: {dia_semana} goes better than the rest.
+fi_constancia	0		Últimos 30 días: {pct} % de cumplimiento.	Last 30 days: {pct} % done.
+fi_constancia	1		En 30 días has cumplido un {pct} % de lo previsto.	Over 30 days you've done {pct} % of what was planned.
+fi_constancia	2		La constancia de los últimos 30 días está en {pct} %.	Consistency over the last 30 days sits at {pct} %.
+fi_constancia	3		Un {pct} % en 30 días. Es un dato, no un veredicto.	{pct} % over 30 days. A data point, not a verdict.
+fi_constancia	4		{pct} % en 30 días, y cada día nuevo mueve la cifra.	{pct} % over 30 days, and every new day moves the number.
+fi_constancia	5	[lunes]	Lunes de balance: {pct} % de los últimos 30 días.	Monday check-in: {pct} % of the last 30 days.
+fi_constancia	6		Si miras 30 días atrás, el cumplimiento es del {pct} %. Hoy suma uno más.	Looking back 30 days, completion is {pct} %. Today adds one more.
+fi_constancia	7	[finde]	Buen fin de semana para mirarlo: {pct} % en 30 días.	A good weekend to look at it: {pct} % over 30 days.
+fi_constancia	8		Aún no hay datos suficientes para medir la constancia.	Not enough data yet to measure consistency.
+fi_constancia	9		Todavía es pronto para dar una cifra de constancia.	It's still too early to give a consistency figure.
+fi_constancia	10		Sin cifra por ahora. Cada vez que lo marques, se irá formando.	No figure for now. Each time you mark it, one starts to take shape.
+fi_nuevo	0		Este hábito acaba de empezar. Los primeros días sirven para tantear.	This habit has only just begun. The first days are for finding your feet.
+fi_nuevo	1		Hábito recién estrenado. Un día hecho ya es un comienzo.	Brand-new habit. One day done is already a start.
+fi_nuevo	2		Es pronto para sacar conclusiones. Por ahora, todo lo que se haga suma.	It's early to draw conclusions. For now, everything you do adds up.
+fi_nuevo	3		Aún no hay historia suficiente para hablar de ritmo. La iremos escribiendo.	There's not enough history yet to talk about pace. We'll build it as we go.
+fi_nuevo	4	[manana]	Hábito nuevo y la mañana por delante. Con un día a la vez basta.	New habit and the morning ahead. One day at a time is enough.
+fi_nuevo	5		{habito} es nuevo por aquí. Dale unos días antes de medir el ritmo.	“{habito}” is new around here. Give it a few days before measuring the pace.
+fi_nuevo	6		Poco recorrido todavía. Lo que importa ahora es repetirlo, no medirlo.	Not much track record yet. What matters now is repeating it, not measuring it.
+fi_limpio	0		Llevas {n|día limpio|días limpios}. Se cuentan uno a uno.	You're at {n|clean day|clean days}. They're counted one at a time.
+fi_limpio	1		{n|día limpio|días limpios} hasta ahora. Hoy suma uno más.	{n|clean day|clean days} so far. Today adds one more.
+fi_limpio	2		La cuenta está en {n|día limpio|días limpios}. Con eso basta por hoy.	The count stands at {n|clean day|clean days}. That's enough for today.
+fi_limpio	3	[noche]	Otra noche con la cuenta en {n|día limpio|días limpios}.	Another night with the count at {n|clean day|clean days}.
+fi_limpio	4	[manana]	Empieza el día y la cuenta sigue en {n|día limpio|días limpios}.	The day begins and the count is at {n|clean day|clean days}.
+fi_limpio	5		La suma es de {n|día limpio|días limpios}, uno detrás de otro. Un día cada vez.	That makes {n|clean day|clean days}, one after another. One day at a time.
+fi_limpio	6		{n|día limpio|días limpios}. Es un dato y me gusta verlo.	{n|clean day|clean days}. A fact, and I like seeing it.
+fi_pausa	0		En pausa desde el {fecha}. No cuenta ni resta mientras tanto.	Paused since {fecha}. It neither counts nor subtracts in the meantime.
+fi_pausa	1		En pausa desde el {fecha}. Cuando quieras retomarlo, aquí está.	Paused since {fecha}. Pick it up whenever you want; it's right here.
+fi_pausa	2		Pausado desde el {fecha}. Sin prisa: las pausas también forman parte del ritmo.	Paused since {fecha}. No hurry: pauses are part of the rhythm too.
+fi_pausa	3		De descanso desde el {fecha}. Los días de pausa no pesan en el cumplimiento.	Resting since {fecha}. Paused days don't weigh on your completion.
+fi_pausa	4		Pausa desde el {fecha}. El hábito espera; no corre ningún reloj.	On hold since {fecha}. The habit waits; no clock is running.
+fi_pausa	5		En pausa. No cuenta ni resta mientras tanto.	Paused. It neither counts nor subtracts in the meantime.
+fi_pausa	6		En pausa. Cuando quieras retomarlo, aquí está.	Paused. Pick it up whenever you want; it's right here.
+fi_pausa	7		Pausado. El hábito espera; no corre ningún reloj.	On hold. The habit waits; no clock is running.
+ca_radiante	0		Semana muy sólida: más del 80 por ciento cumplido.	A very solid week: over 80 percent done.
+ca_radiante	1		Muy buena semana. Este mes suma {n|día perfecto|días perfectos}.	A really good week. This month adds up to {n|perfect day|perfect days}.
+ca_radiante	2		Cambio sobre la semana pasada: {pct} %. El ritmo de esta semana es muy bueno.	Change on last week: {pct} %. This week's pace is very good.
+ca_radiante	3		{n|día perfecto|días perfectos} este mes, y la semana va con buen paso.	{n|perfect day|perfect days} this month, and the week is moving at a good pace.
+ca_radiante	4	[lunes]	Lunes con buen ritmo de fondo: casi todo lo de estos días está hecho.	Monday with a good rhythm behind it: nearly everything from these days is done.
+ca_radiante	5		Casi todo lo previsto esta semana está hecho. Buen ritmo.	Almost everything planned this week is done. Good rhythm.
+ca_radiante	6	[domingo]	Domingo y semana en alto. El mes suma {n|día perfecto|días perfectos}.	Sunday, and a strong week. The month stands at {n|perfect day|perfect days}.
+ca_radiante	7	[invierno]	Con el frío de fuera, la semana va firme por aquí.	Cold outside, steady in here: the week is going well.
+ca_radiante	8		Semana alta. Lo previsto se está cumpliendo casi entero.	A strong week. Nearly everything planned is getting done.
+ca_normal	0		Semana dentro de lo normal. Sigue así.	A steady week. Keep going.
+ca_normal	1		Una semana tranquila: ni subidas ni bajadas grandes. Este mes: {n|día perfecto|días perfectos}.	A calm week: no big rises or dips. This month: {n|perfect day|perfect days}.
+ca_normal	2		Cambio sobre la semana pasada: {pct} %. Un ritmo que se puede sostener.	Change on last week: {pct} %. A pace you can sustain.
+ca_normal	3		Este mes van {n|día perfecto|días perfectos}. Un día perfecto más cambia la cifra.	{n|perfect day|perfect days} this month so far. One more changes the number.
+ca_normal	4		La semana va a su paso. Un hábito más hoy y mejora la cifra.	The week is moving at its own pace. One more habit today and the number improves.
+ca_normal	5	[viernes]	Viernes. Semana normal, y todavía queda día para mover la cifra.	Friday. An ordinary week, and there's still time to shift the number.
+ca_normal	6	[manana]	Semana estable. Hoy puedes mantenerla tal cual o subirla un poco.	A stable week. Today you can hold it as it is or lift it a little.
+ca_normal	7	[finde]	Fin de semana con la semana estable: {n|día perfecto|días perfectos} este mes.	A weekend with a steady week behind it: {n|perfect day|perfect days} this month.
+ca_normal	8		Semana estable, sin sobresaltos.	A stable week, no surprises.
+ca_mustio	0		Semana floja: menos de la mitad cumplido. Un hábito hoy basta para arrancar.	A slow week: under half done. One habit today is enough to restart.
+ca_mustio	1		La semana ha ido a medio gas. Hoy un solo hábito ya cambia la cifra.	The week has run at half speed. A single habit today already shifts the number.
+ca_mustio	2		Cambio sobre la semana pasada: {pct} %. Un hábito hoy y la cifra se mueve.	Change on last week: {pct} %. One habit today and the number moves.
+ca_mustio	3		Esta semana ha costado más. Lo pequeño de hoy también cuenta.	This week has been harder. Today's small things count too.
+ca_mustio	4		Una semana floja no borra lo que ya está hecho este mes.	A slow week doesn't erase what's already done this month.
+ca_mustio	5	[lunes]	Es lunes. Hay una semana entera para ir recuperando el ritmo, sin prisa.	It's Monday. A whole week to get the rhythm back, no rush.
+ca_mustio	6	[noche]	Ya es de noche. Si cabe un hábito pequeño, bien; si no, mañana también cuenta.	It's night now. If a small habit fits, good; if not, tomorrow counts too.
+ca_mustio	7	[invierno]	Con el frío todo cuesta más. Un hábito pequeño hoy es un buen punto de partida.	Everything is harder in the cold. One small habit today is a good place to start.
+ca_ausencia	0		Unos días sin registros. Cuando quieras, aquí sigo.	A few days with no entries. Whenever you're ready, I'm here.
+ca_ausencia	1		Hace unos días que no hay nada por aquí. Cuando te venga bien, retomamos.	Nothing here for a few days. When it suits you, we pick it back up.
+ca_ausencia	2		Aquí sigo. Un solo hábito hoy basta para retomar.	I'm still here. A single habit today is enough to pick things up.
+ca_ausencia	3		Han pasado unos días. Nada que recuperar: se empieza por lo de hoy.	A few days have gone by. Nothing to catch up on: we start with today.
+ca_ausencia	4	[manana]	Buenos días. Hoy es un buen momento para volver, con algo pequeño.	Good morning. Today is a good moment to come back, with something small.
+ca_ausencia	5	[noche]	Ya es de noche. Mañana también sirve para volver; aquí estaré.	It's night already. Tomorrow works for coming back too; I'll be here.
+ca_ausencia	6		Sin prisa. Todo está como lo dejaste.	No rush. Everything is just as you left it.
+ca_ausencia	7	[invierno]	Es época de quedarse en casa. Cuando quieras, volvemos con algo pequeño.	It's the season for staying in. Whenever you want, we start again with something small.

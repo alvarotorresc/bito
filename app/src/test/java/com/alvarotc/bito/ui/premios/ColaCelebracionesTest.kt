@@ -93,4 +93,22 @@ class ColaCelebracionesTest {
             assertEquals("fila:h1", juntas.single().origen)
             assertEquals(7, absorbidas.size) // el ViewModel las da por terminadas para su lote
         }
+
+    @Test
+    fun `held, it keeps what arrives but lets the coins through`() =
+        runTest {
+            val cola = ColaCelebraciones(backgroundScope)
+            cola.retener = true
+            cola.encolar(listOf(Momento.Veta(TipoVeta.DIA, 3, dia = 1, lote = 1), Momento.Logro("first-habit", 1L, 1)))
+            assertNull("retenida, la veta no sale", cola.actual.value)
+            assertEquals(2, cola.pendientes.size)
+            cola.encolar(listOf(monedas()))
+            assertEquals(1, cola.actual.value!!.orden) // las monedas de cada marca sí
+            cola.terminado()
+            advanceTimeBy(400)
+            runCurrent()
+            assertNull("tras las monedas sigue retenida", cola.actual.value)
+            cola.retener = false
+            assertEquals(2, cola.actual.value!!.orden)
+        }
 }

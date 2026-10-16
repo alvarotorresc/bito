@@ -12,6 +12,8 @@ import com.alvarotc.bito.data.backup.BackupWorker
 import com.alvarotc.bito.data.settings.BackupFrequency
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.domain.habla.EventoMemoria
+import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.ui.notifications.FocusReceiver
 import com.alvarotc.bito.ui.notifications.NotificationChannels
 import com.alvarotc.bito.ui.notifications.Notifier
@@ -96,7 +98,8 @@ class AppStartupTest {
                 .notificationChannelsCompat
                 .map { it.id }
         assertTrue(channelIds.contains(NotificationChannels.REMINDERS))
-        assertTrue(channelIds.contains(NotificationChannels.REVIEW))
+        assertTrue(channelIds.contains(NotificationChannels.HABI))
+        assertTrue("review" !in channelIds)
         // Proves the celebrations channel exists synchronously before any component (the
         // widget's LogHabitAction included) can run — start() is called from BitoApp.onCreate()
         // directly, not from a launched coroutine, so PerfectDayNotifier.maybeNotify (T13) never
@@ -158,7 +161,7 @@ class AppStartupTest {
         // A folder reaches BackupSync's collector and, through it, WorkManager — proves the
         // injected scope is really the one driving the collector, not a leftover default one.
         runBlocking { container.settings.update { it.copy(backupFolderUri = FOLDER) } }
-        eventually { workInfos().size == 1 }
+        eventually(timeoutMs = 5_000) { workInfos().size == 1 }
         assertEquals(TimeUnit.DAYS.toMillis(1), workInfos().single().periodicityInfo?.repeatIntervalMillis)
 
         // cancelAndJoin suspends until the collector coroutine (a child of this job) has actually
@@ -171,6 +174,35 @@ class AppStartupTest {
         // Still DAILY: the cancelled collector never saw the WEEKLY write, so it never reached
         // WorkManager with it.
         assertEquals(TimeUnit.DAYS.toMillis(1), workInfos().single().periodicityInfo?.repeatIntervalMillis)
+    }
+
+    @Test
+    fun `start purges the memory of Habi older than 400 days with the injected clock`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+        val ahora = 20_500L * 86_400_000L + 12 * 3_600_000L
+        val hoy = 20_500
+        runBlocking {
+            container.memoria.anotar(EventoMemoria("viejo", TipoMemoria.ANIMO, hoy - 401, null, 1, ahora))
+            container.memoria.anotar(EventoMemoria("reciente", TipoMemoria.ANIMO, hoy - 10, null, 1, ahora))
+        }
+
+        AppStartup.start(app, container, testScope()) { ahora }
+
+        eventually(5_000) { runBlocking { container.database.hablaDao().todosEventos() }.map { it.id } == listOf("reciente") }
+    }
+
+    @Test
+    fun `start loads the catalog of Habi after the first frame and the source uses it`() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val container = AppContainer(app)
+
+        AppStartup.start(app, container, testScope())
+        assertTrue(container.catalogoHabla.idiomasCargados().isEmpty())
+
+        // El primer fotograma: corre la llamada de Choreographer y la carga sigue en otro hilo.
+        shadowOf(android.os.Looper.getMainLooper()).idleFor(java.time.Duration.ofMillis(100))
+        eventually(5_000) { container.catalogoHabla.idiomasCargados().isNotEmpty() }
     }
 
     // ReminderSync/BackupSync/WidgetRefresher, los otros tres colectores que AppStartup.start

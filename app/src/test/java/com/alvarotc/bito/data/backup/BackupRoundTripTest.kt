@@ -8,8 +8,13 @@ import com.alvarotc.bito.data.DAY_ZERO
 import com.alvarotc.bito.data.breathingSessionEntity
 import com.alvarotc.bito.data.customizationItemEntity
 import com.alvarotc.bito.data.daySealEntity
+import com.alvarotc.bito.data.db.AvisoAceptadoEntity
 import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
+import com.alvarotc.bito.data.db.HabiMemoriaEntity
+import com.alvarotc.bito.data.db.HablaUsadaEntity
+import com.alvarotc.bito.data.db.LoGordoEntity
+import com.alvarotc.bito.data.db.PropuestaVigenteEntity
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.freezerUseEntity
@@ -72,7 +77,7 @@ class BackupRoundTripTest {
             dayCutoffMinutes = 180,
             languageTag = "es",
             globalReminderMinutes = listOf(8 * 60, 22 * 60),
-            reviewTimeMinutes = 22 * 60,
+            habiNightMinutes = 22 * 60,
             perfectDayCelebration = false,
             personality = Personality.SARGENTO,
             backupFolderUri = "content://tree/backups",
@@ -248,7 +253,7 @@ class BackupRoundTripTest {
         runTest {
             seedEverything()
             val before = snapshotAllTables()
-            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 5", "\"schemaVersion\": 3")
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 6", "\"schemaVersion\": 3")
 
             assertFailsWith<BackupFormatException> { backup.import(older) }
 
@@ -261,7 +266,7 @@ class BackupRoundTripTest {
         runTest {
             seedEverything()
             val before = snapshotAllTables()
-            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 5", "\"schemaVersion\": 4")
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 6", "\"schemaVersion\": 4")
 
             assertFailsWith<BackupFormatException> { backup.import(older) }
 
@@ -422,6 +427,90 @@ class BackupRoundTripTest {
             backup.import(json)
 
             assertEquals(sessions, db.breathingSessionDao().all())
+        }
+
+    @Test
+    fun `memory and big thing survive a round trip`() =
+        runTest {
+            val memoria =
+                listOf(
+                    HabiMemoriaEntity("m1", "ANIMO", 100, null, 2, 11L),
+                    HabiMemoriaEntity("m2", "HECHO", 101, "h1", null, 12L),
+                )
+            val gordo =
+                listOf(
+                    LoGordoEntity(101, 0, "HABITO", "h1", 13L),
+                    LoGordoEntity(101, 1, "TAREA", "t1", 14L),
+                )
+            memoria.forEach { db.hablaDao().insertarEvento(it) }
+            db.hablaDao().insertarGordo(gordo)
+
+            val json = backup.exportJson(nowMillis = 9_000L)
+            db.hablaDao().vaciarMemoria()
+            db.hablaDao().vaciarGordo()
+            backup.import(json)
+
+            assertEquals(memoria, db.hablaDao().todosEventos())
+            assertEquals(gordo, db.hablaDao().todoGordo())
+            assertEquals(2, backup.preview(json).recuerdos)
+        }
+
+    @Test
+    fun `restoring empties accepted notices, the current proposal and the used pieces and cancels their alarms`() =
+        runTest {
+            val canceladas = mutableListOf<String>()
+            val conAvisos =
+                BackupRepository(db, settingsRepo, keyStore, "0.3.0-test", cancelarAvisos = { canceladas += it })
+            val json = conAvisos.exportJson(nowMillis = 9_000L)
+            val dao = db.hablaDao()
+            dao.insertarAviso(AvisoAceptadoEntity("a1", 100, "h1", 600, 0, "PENDIENTE", "p1", 1L))
+            dao.insertarAviso(AvisoAceptadoEntity("a2", 100, "h1", 700, 0, "PENDIENTE", "p2", 2L))
+            dao.insertarAviso(AvisoAceptadoEntity("a3", 100, "h1", 800, 0, "HECHO", "p3", 3L))
+            dao.guardarVigente(PropuestaVigenteEntity("HOY", "", 100, "VUELTA", null, "", "{}", "", null, 4L))
+            dao.insertarUsos(
+                listOf(
+                    HablaUsadaEntity(
+                        voz = "NEUTRA",
+                        bolsa = "B",
+                        indice = 1,
+                        combinacion = "c",
+                        dia = 100,
+                        usadoMillis = 5L,
+                        situacion = null,
+                    ),
+                ),
+            )
+
+            conAvisos.import(json)
+
+            assertEquals(listOf("a1", "a2"), canceladas.sorted())
+            assertEquals(emptyList(), dao.avisosPendientes())
+            assertNull(dao.aviso("a3"))
+            assertNull(dao.vigente("HOY", ""))
+            assertEquals(emptyList(), dao.usosDesde(0L).first())
+        }
+
+    @Test
+    fun `if the restore fails no notice is cancelled`() =
+        runTest {
+            val canceladas = mutableListOf<String>()
+            val conAvisos =
+                BackupRepository(db, settingsRepo, keyStore, "0.3.0-test", cancelarAvisos = { canceladas += it })
+            db.habitDao().upsert(habitEntity(id = "h1"))
+            db.hablaDao().insertarAviso(AvisoAceptadoEntity("a1", 100, "h1", 600, 0, "PENDIENTE", "p1", 1L))
+            // Dos registros con el mismo id: el segundo insert aborta la transaccion a mitad.
+            val roto =
+                BackupCodec.encode(
+                    BackupCodec.decode(conAvisos.exportJson(nowMillis = 9_000L)).let {
+                        val e = BackupEntry("dup", "h1", 0, 1, 1L)
+                        it.copy(entries = listOf(e, e))
+                    },
+                )
+
+            assertFailsWith<Exception> { conAvisos.import(roto) }
+
+            assertEquals(emptyList(), canceladas)
+            assertEquals(listOf("a1"), db.hablaDao().avisosPendientes().map { it.id })
         }
 
     // Un test que solo compara exportJson() contra si mismo no puede fallar por un mapeador o un

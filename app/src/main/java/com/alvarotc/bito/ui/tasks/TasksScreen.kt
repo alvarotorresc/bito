@@ -55,6 +55,7 @@ import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.IconosSistema
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
@@ -112,8 +113,7 @@ fun TasksScreen(
     val saliendo = remember { mutableStateMapOf<String, SaliendoDeSeccion>() }
     var borrando by remember { mutableStateOf<TaskListRowUi?>(null) }
     val avisos = rememberAvisoEstado()
-    val fallbackName = stringResource(R.string.habi_name_fallback)
-    val taskDoneLabel = stringResource(HabiVoice.taskDoneRes(state.personality), state.userName.ifBlank { fallbackName })
+    val taskDoneLabel = textoHabi(HabiVoice.conNombre(HabiVoice.taskDoneRes(state.personality), state.userName))
     val deshacer = stringResource(R.string.sistema_deshacer)
     val traida = stringResource(R.string.tasks2_traida)
 
