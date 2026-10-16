@@ -31,10 +31,9 @@ class ReglaRachaCercaTest {
     }
 
     @Test
-    fun `zero and three periods away do not`() {
-        // 0: el hito ya se alcanzó; 3: aún lejos. Hechos.hitoCerca vale null en ambos casos.
+    fun `without a milestone near it does not come out`() {
+        // Los bordes de 0 y 3 periodos los decide Hechos.hitoCerca (HechosTest, `milestone near`).
         assertTrue(sale(aFaltan(null)).isEmpty())
-        assertTrue(sale(habito(racha = 4, hitoCerca = null, faltanHito = 3)).isEmpty())
     }
 
     @Test

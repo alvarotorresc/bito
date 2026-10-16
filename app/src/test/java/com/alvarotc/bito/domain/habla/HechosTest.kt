@@ -335,6 +335,8 @@ class HechosTest {
         assertEquals(7, primero(rachaDe(5)).hitoCerca)
         assertEquals(7, primero(rachaDe(6)).hitoCerca)
         assertNull(primero(rachaDe(4)).hitoCerca)
+        // A 0 periodos el hito ya se alcanzó: no está cerca.
+        assertNull(primero(rachaDe(7)).hitoCerca)
         assertEquals(30, primero(rachaDe(28)).hitoCerca)
     }
 
