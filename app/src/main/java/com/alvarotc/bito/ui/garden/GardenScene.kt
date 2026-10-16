@@ -157,7 +157,6 @@ private const val FAROL_ENCIMA = 0.5f
 
 // G40: mientras anochece, una franja de agua de 160 dp se filtra hacia abajo por el jardín en 2800 ms `io`: un
 // degradado fijo que se traslada, sin desenfoque (los valores del prototipo `cierre.html`; el agua no tiene token).
-private const val FILTRACION_MS = 2800
 private val FRANJA_FILTRA = 160.dp
 private val AGUA_FILTRA = Color(0xFF7DB6C9)
 private const val AGUA_FILTRA_ALFA = 0.42f
@@ -470,7 +469,7 @@ fun GardenScene(
             if (!reducido && antes <= 0f && n > 0f && n < 1f && !filtracion.isRunning) {
                 launch {
                     filtracion.snapTo(0f)
-                    filtracion.animateTo(1f, tween(FILTRACION_MS, easing = Curvas.io))
+                    filtracion.animateTo(1f, tween(Duraciones.FILTRACION, easing = Curvas.io))
                 }
             }
             antes = n

@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -85,7 +85,6 @@ private val TINTE_TARDE = Color(0x33E39B4A)
 // G40 (catálogo 3.8): el anochecer dura 2400 ms `io` (la filtración de agua la pinta el jardín); a los 1,3 s se sella,
 // la lista se hunde (200 ms) y brota el sello. La tierra se enfría con un tinte de noche multiplicado (32 %), como en el
 // prototipo `cierre.html`; la tierra de noche no tiene token.
-private const val ANOCHECER_MS = 2400
 private const val SELLA_A_MS = 1300L
 private const val HUNDIR_MS = 200
 private const val ESPERA_SELLADO_MS = 2_000L
@@ -188,7 +187,7 @@ fun CierreContenido(
             Fase.CADENA -> hastaManana()
         }
     }
-    BackHandler { cerrar() }
+    BackHandler(enabled = fase != Fase.FIN) { cerrar() }
 
     /**
      * Las capas que brotan cuando termine su celebración: las de lo que está en la cola y, con algún logro nuevo, la de
@@ -211,7 +210,7 @@ fun CierreContenido(
         fase = Fase.ANOCHECE
         gesto(Snd.ANOCHECER, Haptica.RISE)
         scope.launch {
-            val noche = launch { estado.noche.animateTo(1f, tween(ANOCHECER_MS, easing = Curvas.io)) }
+            val noche = launch { estado.noche.animateTo(1f, tween(Duraciones.ANOCHECER, easing = Curvas.io)) }
             delay(SELLA_A_MS)
             viewModel.buenasNoches()?.join()
             // El sello se fija en cuanto la pantalla ve el día sellado. Lo que concede el propio sellado (los bitos del
@@ -281,7 +280,9 @@ fun CierreContenido(
             }.testTag("cierre"),
     ) {
         Box(
-            Modifier.fillMaxSize().drawBehind { drawRect(TINTE_TARDE.copy(alpha = TINTE_TARDE.alpha * tarde.value)) },
+            Modifier.fillMaxSize().drawBehind {
+                drawRect(TINTE_TARDE.copy(alpha = TINTE_TARDE.alpha * tarde.value * (1f - estado.noche.value.coerceIn(0f, 1f))))
+            },
         )
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val arriba = (maxHeight * MedidasInicio.ALTO_HOY - SUBIDA_JARDIN).coerceAtLeast(0.dp)
@@ -422,8 +423,8 @@ private fun CuerpoCierre(
                 modifier = Modifier.brota(1).then(if (vacio) Modifier.testTag("cierre-vacio") else Modifier),
             )
         }
-        items(ui.filas, key = { it.id }) { card ->
-            val indice = 2 + ui.filas.indexOf(card)
+        itemsIndexed(ui.filas, key = { _, card -> card.id }) { i, card ->
+            val indice = 2 + i
             FilaCierre(
                 card = card,
                 decidida = card.id in ui.decididas,
