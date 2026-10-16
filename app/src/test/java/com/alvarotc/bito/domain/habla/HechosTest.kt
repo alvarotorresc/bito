@@ -11,6 +11,7 @@ import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
 import com.alvarotc.bito.domain.entryOn
 import com.alvarotc.bito.domain.millisOn
+import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Entry
 import com.alvarotc.bito.domain.model.Habit
@@ -109,6 +110,18 @@ class HechosTest {
         val tras = domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 3)))
         assertTrue(de(tras).primerDiaTrasAusencia)
         assertFalse(de(domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 2)))).primerDiaTrasAusencia)
+    }
+
+    @Test
+    fun `sealing the days away today does not end the absence`() {
+        val fuera = ((TODAY - 3)..(TODAY - 1)).map { DaySeal(it, millisOn(TODAY, 9)) }
+        val tras = domainState(habits = listOf(leer), entries = listOf(entryOn(leer, TODAY - 4))).copy(daySeals = fuera)
+        assertTrue(de(tras).primerDiaTrasAusencia)
+        assertEquals(3, de(tras).diasSinActividad)
+        // Sellados cada uno en su día, sí son actividad: no hubo ausencia.
+        val enSuDia = tras.copy(daySeals = ((TODAY - 3)..(TODAY - 1)).map { DaySeal(it, millisOn(it, 22)) })
+        assertFalse(de(enSuDia).primerDiaTrasAusencia)
+        assertEquals(0, de(enSuDia).diasSinActividad)
     }
 
     @Test
