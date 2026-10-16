@@ -147,12 +147,28 @@ class FueraGrabada : FueraDeLaApp {
     /** El `sonando` de cada cambio, en el mismo orden que [cambios]. */
     val sonandos: MutableList<Boolean> = Collections.synchronizedList(mutableListOf())
 
+    /**
+     * Con una puerta puesta, cerrar (`alCambiar(null)`) espera a que se abra, como el de verdad al soltar los avisos
+     * retenidos, que suspende. [esperandoLaPuerta] dice que ya está parado ahí.
+     */
+    @Volatile
+    var puerta: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
+    @Volatile
+    var esperandoLaPuerta = false
+
     override suspend fun alCambiar(
         r: RegistroSesion?,
         sonando: Boolean,
     ) {
         cambios += r
         sonandos += sonando
+        val cerrar = puerta
+        if (r == null && cerrar != null) {
+            esperandoLaPuerta = true
+            cerrar.await()
+            esperandoLaPuerta = false
+        }
     }
 
     override fun respirando(
