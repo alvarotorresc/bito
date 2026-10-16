@@ -643,6 +643,31 @@ class HoyListaTest {
     }
 
     @Test
+    fun `a hard day shown and replaced without an answer keeps its habit out of the wait after a restart`() {
+        // Lo que deja la fuente al mostrar el día duro: el uso del núcleo y el evento con su id. Después la tarjeta cambió.
+        banco.preparar(FuenteFalsa(propuestaDe("PERMISO_AVISOS::${banco.hoy}")))
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        val id = "DIA_DURO:make-bed:${banco.hoy}"
+        runBlocking {
+            val memoria = com.alvarotc.bito.data.habla.MemoriaRepository(banco.db)
+            memoria.anotar(
+                com.alvarotc.bito.domain.habla.EventoMemoria(
+                    "MOSTRADA:$id",
+                    com.alvarotc.bito.domain.habla.TipoMemoria.MOSTRADA,
+                    banco.hoy,
+                    id,
+                    null,
+                    banco.fixedNow,
+                ),
+            )
+        }
+        banco.montar()
+        esperarNodo("esperan-sin-prisa")
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccionEsperan()).assertExists()
+        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("fila-make-bed") and seccionEsperan()).assertCountEquals(0)
+    }
+
+    @Test
     fun `guard - yesterday's hard day does not make anything wait today`() {
         banco.preparar(FuenteFalsa())
         banco.sembrar(RealHabits.makeBed, RealHabits.water)

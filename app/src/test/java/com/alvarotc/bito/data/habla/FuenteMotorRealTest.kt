@@ -13,9 +13,11 @@ import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.Contexto
 import com.alvarotc.bito.domain.habla.ElegirCandidata
 import com.alvarotc.bito.domain.habla.EstadoAviso
+import com.alvarotc.bito.domain.habla.EventoMemoria
 import com.alvarotc.bito.domain.habla.FaseHabi
 import com.alvarotc.bito.domain.habla.Motor
 import com.alvarotc.bito.domain.habla.Situacion
+import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.millisOn
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
@@ -227,5 +229,27 @@ class FuenteMotorRealTest {
             aceptados.crear(AvisoAceptado("y:1", TODAY, "otro2", 17 * 60, 0, EstadoAviso.PENDIENTE, "y", ahora))
             f.responder(confirma.id, Respuesta.OTRA_HORA, p.hora!! + 30)
             assertEquals(2, avisosDeHoy().count { it.estado != EstadoAviso.CANCELADO })
+        }
+
+    // A9: la fuente apunta qué día duro mostró, para que Hoy lo sepa tras reiniciar aunque la tarjeta cambie.
+
+    @Test
+    fun `showing a hard day leaves its id in the memory`() =
+        prueba {
+            MemoriaRepository(db) { ahora }.anotar(
+                EventoMemoria(
+                    "animo",
+                    TipoMemoria.ANIMO,
+                    TODAY - 1,
+                    null,
+                    2,
+                    ahora,
+                ),
+            )
+            val p = fuente().hoy()!!
+            assertEquals(Situacion.DIA_DURO.name, situacion(p))
+            val mostradas =
+                db.hablaDao().todosEventos().mapNotNull { it.aDominio() }.filter { it.tipo == TipoMemoria.MOSTRADA }
+            assertEquals(listOf(p.id), mostradas.map { it.ref })
         }
 }

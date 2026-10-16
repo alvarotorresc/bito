@@ -58,6 +58,17 @@ class DiaDuroTest {
     }
 
     @Test
+    fun `a hard day shown, replaced and not answered still names its habit after a restart`() {
+        // La fuente apunta en la memoria qué día duro mostró: sin sesión, sin vigente y sin respuesta, se sabe cuál era.
+        val memoria =
+            Memoria(
+                eventos = listOf(EventoMemoria("MOSTRADA:DIA_DURO:agua:$hoy", TipoMemoria.MOSTRADA, hoy, "DIA_DURO:agua:$hoy", null, 1L)),
+                mostradasHoy = listOf(Mostrada(Situacion.DIA_DURO, null, 1L)),
+            )
+        assertEquals("agua", diaDuroDeHoy(propuesta("CERRAR_DIA::$hoy"), memoria, hoy))
+    }
+
+    @Test
     fun `the habit last seen this session wins over a shown hard day without ref`() {
         val memoria = Memoria(mostradasHoy = listOf(Mostrada(Situacion.DIA_DURO, null, 1L)))
         assertEquals("agua", diaDuroDeHoy(propuesta("PERMISO_AVISOS::$hoy"), memoria, hoy, vista = "agua"))

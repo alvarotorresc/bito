@@ -69,12 +69,14 @@ import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
 
-/** Lo de [hoy] que dice si es día duro: respuestas y vigentes de `DIA_DURO` y si se llegó a mostrar uno. */
+/** Lo de [hoy] que dice si es día duro: respuestas, muestras y vigentes de `DIA_DURO` y si se llegó a mostrar uno. */
 private fun Memoria.soloDiaDuro(hoy: LogicalDay): Memoria =
     Memoria(
         eventos =
             eventos.filter {
-                it.tipo == TipoMemoria.RESPUESTA && it.dia == hoy && it.ref?.startsWith("${Situacion.DIA_DURO.name}:") == true
+                (it.tipo == TipoMemoria.RESPUESTA || it.tipo == TipoMemoria.MOSTRADA) &&
+                    it.dia == hoy &&
+                    it.ref?.startsWith("${Situacion.DIA_DURO.name}:") == true
             },
         vigentes = vigentes.filter { it.situacion == Situacion.DIA_DURO && it.dia == hoy },
         mostradasHoy = mostradasHoy.filter { it.situacion == Situacion.DIA_DURO }.take(1),

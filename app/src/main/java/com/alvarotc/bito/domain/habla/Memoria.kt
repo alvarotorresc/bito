@@ -6,8 +6,12 @@ import com.alvarotc.bito.domain.propuestas.Ambito
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
 
-/** Qué recuerda Habi (spec §4.6, §5.11). `RESPUESTA`: `ref` = [idPropuesta], `valor` = ordinal de la [Respuesta]. */
-enum class TipoMemoria { ANIMO, RESPUESTA, VUELTA, GORDO_HECHO, ACEPTADO_CUMPLIDO, MENCION, COMO_ESTAS }
+/**
+ * Qué recuerda Habi (spec §4.6, §5.11). `RESPUESTA`: `ref` = [idPropuesta], `valor` = ordinal de la [Respuesta].
+ * `MOSTRADA`: un día duro que la tarjeta llegó a enseñar, `ref` = [idPropuesta] y sin `valor`. Hoy lo lee para saber
+ * qué hábito no espera aunque la tarjeta cambie sin respuesta y la app se reinicie. Ningún recuerdo sale de ahí.
+ */
+enum class TipoMemoria { ANIMO, RESPUESTA, VUELTA, GORDO_HECHO, ACEPTADO_CUMPLIDO, MENCION, COMO_ESTAS, MOSTRADA }
 
 /** Un recuerdo de un día (spec §4.6). */
 data class EventoMemoria(

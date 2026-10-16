@@ -304,9 +304,9 @@ fun diaDuroDe(propuesta: Propuesta?): String? {
 /**
  * El día duro de [hoy] (spec §5.5, §7.3): dura todo el día lógico, aunque la tarjeta pase a la confirmación, a lo
  * propuesto ya hecho o a otra situación. Se sabe por la propuesta de ahora y por lo que Habi recuerda de hoy: la vigente
- * de `DIA_DURO`, la respuesta a una de ellas (su id es `DIA_DURO:<hábito>:<día>`) o, en [vista], el último hábito de
- * día duro que la tarjeta propuso en esta sesión. Si hoy se mostró uno pero ya no se sabe cuál, "": todo pendiente
- * espera. null en un día normal.
+ * de `DIA_DURO`, en [vista] el último hábito de día duro que la tarjeta propuso en esta sesión, la respuesta a una de
+ * ellas (su id es `DIA_DURO:<hábito>:<día>`) o el día duro que la fuente apuntó al mostrarlo (`MOSTRADA`). Si hoy se
+ * mostró uno pero ya no se sabe cuál, "": todo pendiente espera. null en un día normal.
  */
 fun diaDuroDeHoy(
     propuesta: Propuesta?,
@@ -315,14 +315,24 @@ fun diaDuroDeHoy(
     vista: String? = null,
 ): String? {
     val sufijo = ":$hoy"
-    val prefijo = "${Situacion.DIA_DURO.name}:"
     return propuesta?.takeIf { it.id.endsWith(sufijo) }?.let(::diaDuroDe)
         ?: memoria.vigentes.firstOrNull { it.situacion == Situacion.DIA_DURO && it.dia == hoy && !it.ref.isNullOrBlank() }?.ref
         ?: vista
-        ?: memoria.eventos
-            .filter { it.tipo == TipoMemoria.RESPUESTA && it.dia == hoy && it.ref?.startsWith(prefijo) == true }
-            .maxByOrNull { it.creadoMillis }
-            ?.ref
-            ?.let { id -> id.removePrefix(prefijo).substringBeforeLast(':', "").ifBlank { null } }
+        ?: deLaMemoria(memoria, hoy, TipoMemoria.RESPUESTA)
+        ?: deLaMemoria(memoria, hoy, TipoMemoria.MOSTRADA)
         ?: "".takeIf { memoria.mostradasHoy.any { it.situacion == Situacion.DIA_DURO } }
+}
+
+/** El hábito del último evento de [tipo] de hoy con id `DIA_DURO:<hábito>:<día>`. */
+private fun deLaMemoria(
+    memoria: Memoria,
+    hoy: LogicalDay,
+    tipo: TipoMemoria,
+): String? {
+    val prefijo = "${Situacion.DIA_DURO.name}:"
+    return memoria.eventos
+        .filter { it.tipo == tipo && it.dia == hoy && it.ref?.startsWith(prefijo) == true }
+        .maxByOrNull { it.creadoMillis }
+        ?.ref
+        ?.let { id -> id.removePrefix(prefijo).substringBeforeLast(':', "").ifBlank { null } }
 }

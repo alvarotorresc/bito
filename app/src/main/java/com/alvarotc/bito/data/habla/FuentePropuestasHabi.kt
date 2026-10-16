@@ -329,6 +329,12 @@ class FuentePropuestasHabi(
             )
         vigentes.guardar(v)
         if (r.usos.isNotEmpty()) memoria.anotarUsos(r.usos)
+        // El día duro mostrado queda en la memoria con su hábito: Hoy deja ese fuera de «Esperan sin prisa» aunque
+        // la tarjeta cambie sin respuesta y la app se reinicie (los usos guardan la situación, no la ref).
+        if (c.situacion == Situacion.DIA_DURO) {
+            val id = idDe(v)
+            memoria.anotar(EventoMemoria("MOSTRADA:$id", TipoMemoria.MOSTRADA, ctx.hoy, id, null, ctx.ahoraMillis))
+        }
         r.mencion?.let { evento ->
             memoria.anotar(EventoMemoria("MENCION:$evento", TipoMemoria.MENCION, ctx.hoy, evento, null, ctx.ahoraMillis))
         }
