@@ -34,7 +34,8 @@ object ReglaVuelta : Regla {
                 huecos =
                     mapOf(
                         Hueco.HABITO to ValorHueco.Texto(habito.nombre),
-                        Hueco.DIAS_FUERA to ValorHueco.Numero(h.diasSinActividad),
+                        // Días fuera = hoy - última actividad; `diasSinActividad` solo cuenta los vacíos de en medio.
+                        Hueco.DIAS_FUERA to ValorHueco.Numero(h.diasSinActividad + 1),
                     ),
                 acciones = listOf(Respuesta.HECHO, Respuesta.HOY_NO),
                 destino = Destino.Habito(habito.id),

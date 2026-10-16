@@ -10,15 +10,19 @@ import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
+import java.time.Instant
 
-/** §5.1 n.º 4: desde la hora de la noche, con el día sin sellar y algo que decidir en el cierre. */
+/**
+ * §5.1 n.º 4: desde la hora de la noche, con el día sin sellar y algo que decidir en el cierre.
+ * Pasada la medianoche y antes del corte sigue siendo la noche del mismo día lógico (como en `Contextos`).
+ */
 object ReglaCerrarDia : Regla {
     override fun candidatas(
         h: Hechos,
         m: Memoria,
         ctx: Contexto,
     ): List<Candidata> {
-        if (ctx.ahoraMin < ctx.horaNoche || h.diaSellado || h.pendientesCierre <= 0) return emptyList()
+        if (!deNoche(ctx) || h.diaSellado || h.pendientesCierre <= 0) return emptyList()
         return listOf(
             Candidata(
                 situacion = Situacion.CERRAR_DIA,
@@ -29,4 +33,8 @@ object ReglaCerrarDia : Regla {
             ),
         )
     }
+
+    private fun deNoche(ctx: Contexto): Boolean =
+        ctx.ahoraMin >= ctx.horaNoche ||
+            Instant.ofEpochMilli(ctx.ahoraMillis).atZone(ctx.zona).toLocalDate() != ctx.fecha
 }

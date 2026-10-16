@@ -30,7 +30,8 @@ class ReglaVueltaTest {
             ReglaVuelta
                 .candidatas(
                     hechos(
-                        diasSinActividad = 3,
+                        // El borde: última actividad hace 3 días lógicos.
+                        diasSinActividad = 2,
                         primerDiaTrasAusencia = true,
                         habitos =
                             listOf(
@@ -45,7 +46,7 @@ class ReglaVueltaTest {
         assertEquals(Situacion.VUELTA, c.situacion)
         assertEquals("c", c.ref) // empate a 90: gana el de objetivo menor
         assertEquals(listOf(Respuesta.HECHO, Respuesta.HOY_NO), c.acciones)
-        assertEquals(ValorHueco.Numero(3), c.huecos[Hueco.DIAS_FUERA])
+        assertEquals(ValorHueco.Numero(3), c.huecos[Hueco.DIAS_FUERA]) // hoy menos la última actividad, no los días vacíos de en medio
         assertEquals(ValorHueco.Texto("Leer"), c.huecos[Hueco.HABITO])
         assertEquals(Destino.Habito("c"), c.destino)
         assertNull(c.hora)
