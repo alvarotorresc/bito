@@ -182,8 +182,8 @@ private fun ColumnaBrota(
 internal fun BloqueDeSesion(bloque: BloqueSesion) {
     when (bloque) {
         BloqueSesion.PREPARAR -> Unit
-        BloqueSesion.RESPIRAR -> Unit
-        BloqueSesion.FOCO -> Unit
+        BloqueSesion.RESPIRAR -> RespirarEntrarBloque()
+        BloqueSesion.FOCO -> FocoBloque()
         BloqueSesion.DESCANSO -> Unit
         BloqueSesion.TERMINADA -> Unit
     }

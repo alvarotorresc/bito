@@ -87,7 +87,7 @@ fun FaseRespiracion(
         PalabraFase(fase, modifier.testTag("e-fase"))
         if (mostrarPuntitos) {
             Spacer(Modifier.height(ARRIBA_PUNTITOS))
-            Puntitos(puntitosEncendidos(punto, ciclo, ciclos), ciclos)
+            Puntitos(puntitosEncendidos(punto, ciclo, ciclos), ciclos, Modifier.testTag("e-dots"))
         }
     }
 }
@@ -141,16 +141,16 @@ private fun PalabraFase(
     }
 }
 
+/** Los puntitos (`.dots`): 9 dp con 5 dp de hueco; la respiración y los bloques de Foco los comparten. */
 @Composable
-private fun Puntitos(
+internal fun Puntitos(
     encendidos: Int,
     total: Int,
+    modifier: Modifier = Modifier,
 ) {
     val colores = BitoTema.colores
     Row(
-        Modifier
-            .testTag("e-dots")
-            .semantics { this[PuntitosEncendidos] = encendidos },
+        modifier.semantics { this[PuntitosEncendidos] = encendidos },
         horizontalArrangement = Arrangement.spacedBy(HUECO_PUNTITOS),
     ) {
         repeat(total) { i ->

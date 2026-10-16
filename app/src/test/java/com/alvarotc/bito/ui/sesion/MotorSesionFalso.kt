@@ -25,6 +25,9 @@ class MotorSesionFalso : MotorSesion {
 
     /** Lo que `preparar` deja en el borrador. */
     var planAlPreparar: PlanSesion? = planSesion()
+
+    /** Lo que devuelven «He terminado», «lo dejo» y compañía. */
+    var respuesta: ResultadoAccion = SIN_EFECTO
     val llamadas = mutableListOf<String>()
 
     override suspend fun preparar(desde: Destino?) {
@@ -65,25 +68,25 @@ class MotorSesionFalso : MotorSesion {
     }
 
     override suspend fun heTerminado(): ResultadoAccion =
-        SIN_EFECTO.also {
+        respuesta.also {
             llamadas += "heTerminado"
             cerrar()
         }
 
     override suspend fun loDejo(): ResultadoAccion =
-        SIN_EFECTO.also {
+        respuesta.also {
             llamadas += "loDejo"
             cerrar()
         }
 
     override suspend fun siTerminado(): ResultadoAccion =
-        SIN_EFECTO.also {
+        respuesta.also {
             llamadas += "siTerminado"
             cerrar()
         }
 
     override suspend fun sigoLuego(): ResultadoAccion =
-        SIN_EFECTO.also {
+        respuesta.also {
             llamadas += "sigoLuego"
             cerrar()
         }

@@ -18,7 +18,6 @@ import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.sesion.Entrada
 import com.alvarotc.bito.domain.sesion.planSesion
 import com.alvarotc.bito.sesion.AireMudo
-import com.alvarotc.bito.ui.sesion.BloqueDeSesion
 import com.alvarotc.bito.ui.sesion.BloqueSesion
 import com.alvarotc.bito.ui.sesion.LocalBloqueRetenido
 import com.alvarotc.bito.ui.sesion.LocalSalidaSesion
@@ -70,7 +69,8 @@ class InicioSesionTest {
 
     private fun montar(
         reducido: Boolean = false,
-        contenido: @Composable (BloqueSesion) -> Unit = { BloqueDeSesion(it) },
+        // Estas pruebas son del modo sesión del Inicio: los bloques de verdad tienen las suyas (`InicioRespirarFocoTest`).
+        contenido: @Composable (BloqueSesion) -> Unit = {},
     ) {
         banco.preparar()
         rule.setContent {

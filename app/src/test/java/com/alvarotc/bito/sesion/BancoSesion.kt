@@ -106,7 +106,9 @@ class AireGrabado : Aire {
         _sonando.value = true
     }
 
-    override fun musica(encendida: Boolean) = Unit
+    override fun musica(encendida: Boolean) {
+        llamadas += "musica:$encendida"
+    }
 
     override fun parar() {
         llamadas += "parar"
