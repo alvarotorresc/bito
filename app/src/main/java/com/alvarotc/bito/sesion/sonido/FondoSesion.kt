@@ -69,6 +69,8 @@ class FondoSesion(
     FocoAudio.Usuario {
     private val _sonando = MutableStateFlow<SessionBackground?>(null)
     override val sonando: StateFlow<SessionBackground?> = _sonando.asStateFlow()
+    private val _pendiente = MutableStateFlow(false)
+    override val pendiente: StateFlow<Boolean> = _pendiente.asStateFlow()
 
     private val cerrojo = Any()
     private var querido: SessionBackground? = null
@@ -99,6 +101,8 @@ class FondoSesion(
             muestra?.cancel()
             muestra = null
             empezar(tipo)
+            // Con Bito callado no pedirá el foco ni sonará: el pedido se resuelve ya como «no suena».
+            _pendiente.value = _sonando.value == null && ganancia() > 0f
         }
     }
 
@@ -136,6 +140,7 @@ class FondoSesion(
             muestra?.cancel()
             muestra = null
             _sonando.value = null
+            _pendiente.value = false
             tau = TAU_FOCO
             arrancarBucle()
         }
@@ -179,6 +184,7 @@ class FondoSesion(
         querido = null
         tau = if (seco) TAU_SECO else TAU_SALE
         _sonando.value = null
+        _pendiente.value = false
         arrancarBucle()
     }
 
@@ -227,6 +233,8 @@ class FondoSesion(
                 if (conFoco && fuente == null) abrir(tipo)
                 _sonando.value = if (conFoco && fuente != null) tipo else null
             }
+            // Ya suena, o no sonará (sin foco, o Bito callado): el pedido deja de estar pendiente.
+            if (_pendiente.value && (_sonando.value != null || perdido || ganancia() <= 0f)) _pendiente.value = false
             if (foco.factor != ultimoFactor) {
                 ultimoFactor = foco.factor
                 tau = TAU_FOCO

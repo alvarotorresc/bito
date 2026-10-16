@@ -30,17 +30,20 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.io.File
 
-/** Un [Fondo] que apunta lo que le piden, en orden. */
+/** Un [Fondo] que apunta lo que le piden, en orden. Lo pedido se queda pendiente: nunca llega a sonar. */
 class FondoGrabado : Fondo {
     val llamadas = mutableListOf<String>()
     override val sonando: StateFlow<SessionBackground?> = MutableStateFlow(null)
+    override val pendiente = MutableStateFlow(false)
 
     override fun sonar(tipo: SessionBackground) {
         llamadas += "sonar:${tipo.name}"
+        pendiente.value = tipo != SessionBackground.NONE
     }
 
     override fun callar(seco: Boolean) {
         llamadas += "callar"
+        pendiente.value = false
     }
 
     override fun muestra(tipo: SessionBackground) {

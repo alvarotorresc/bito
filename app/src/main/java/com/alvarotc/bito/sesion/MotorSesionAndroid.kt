@@ -100,38 +100,52 @@ class MotorSesionAndroid(
     /** El último guardado en Ajustes de lo que se cambió en Preparar. */
     private var guardadoBorrador: Job? = null
 
-    /** Lo que se dijo a lo de fuera la última vez sobre si suena algo; null = nada dicho de esta sesión. */
-    private var ultimoSonando: Boolean? = null
+    /** Lo que se dijo a lo de fuera la última vez sobre el audio; null = nada dicho de esta sesión. */
+    private var ultimoAudio: Audio? = null
+
+    /** Si suena algo de la sesión y si el fondo está pedido y aún sin confirmar. */
+    private data class Audio(
+        val suena: Boolean,
+        val fondoPendiente: Boolean,
+    )
 
     init {
         // El fondo tarda en sonar (toma el foco de audio y abre la pista en su hilo) y el aire tarda en callarse: lo de
         // fuera se entera cuando el sonido cambia de verdad, no cuando el motor lo pide. Empieza sin despachar para no
         // perder el primer cambio.
         alcance.launch(start = CoroutineStart.UNDISPATCHED) {
-            combine(fondo.sonando, aire.sonando) { f, a -> f != null || a }
+            combine(fondo.sonando, fondo.pendiente, aire.sonando) { f, p, a -> Audio(f != null || a, p) }
                 .distinctUntilChanged()
                 .collect { alCambiarElAudio() }
         }
     }
 
     /**
-     * Con la sesión en un tramo con tiempo, si lo que suena ya no es lo que se dijo a lo de fuera (el fondo empezó a
-     * sonar, se perdió el foco para siempre o el aire acabó de callarse), se le avisa. Se mira al entrar en el cerrojo,
-     * no al emitirse: el motor puede haber cambiado de tramo (calla y suena de nuevo) antes de que esto corra.
+     * Con la sesión en un tramo con tiempo, si el audio ya no es lo que se dijo a lo de fuera (el fondo empezó a sonar
+     * o se resolvió que no sonará, se perdió el foco para siempre o el aire acabó de callarse), se le avisa. Se mira al
+     * entrar en el cerrojo, no al emitirse: el motor puede haber cambiado de tramo (calla y suena de nuevo) antes.
      */
     internal suspend fun alCambiarElAudio() =
         enCerrojo {
-            // Con la app fuera, lo de fuera lo lleva el receptor y el instante de aquí sería viejo (el tic no lo actualiza).
-            if (!delante()) return@enCerrojo
+            if (!delante()) {
+                // Con la app fuera el tic está parado y el instante de aquí sería viejo: decide lo de fuera, con lo guardado.
+                // El audio se lee tras leer el store y sin suspender hasta que lo de fuera mira el reloj: el receptor pudo
+                // mover el audio mientras tanto (callar en el descanso, sonar en el foco).
+                if (_registro.value == null) return@enCerrojo
+                val guardado = store.leer() ?: return@enCerrojo
+                val ahora = audio()
+                fuera.alCambiarElAudioFuera(guardado, ahora.suena, ahora.fondoPendiente)
+                return@enCerrojo
+            }
             val r = _registro.value ?: return@enCerrojo
             if (_instante.value?.actual == null) return@enCerrojo
-            if (sonando() != ultimoSonando) avisarFuera(r)
+            if (audio() != ultimoAudio) avisarFuera(r)
         }
 
     private suspend fun avisarFuera(r: RegistroSesion?) {
-        val suena = r != null && sonando()
-        ultimoSonando = if (r == null) null else suena
-        fuera.alCambiar(r, suena)
+        val ahora = audio().takeIf { r != null }
+        ultimoAudio = ahora
+        fuera.alCambiar(r, ahora?.suena == true, ahora?.fondoPendiente == true)
     }
 
     override suspend fun preparar(desde: Destino?) {
@@ -591,7 +605,7 @@ class MotorSesionAndroid(
         tacto.haptica(haptica)
     }
 
-    private fun sonando(): Boolean = aire.sonando.value || fondo.sonando.value != null
+    private fun audio() = Audio(aire.sonando.value || fondo.sonando.value != null, fondo.pendiente.value)
 
     private fun hoyDe(
         ahora: Ahora,

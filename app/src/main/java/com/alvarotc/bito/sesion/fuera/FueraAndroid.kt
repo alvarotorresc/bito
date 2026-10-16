@@ -5,11 +5,10 @@ import android.os.SystemClock
 import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.sesion.SesionStore
-import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.data.settings.SettingsRepository
-import com.alvarotc.bito.domain.sesion.Ahora
 import com.alvarotc.bito.domain.sesion.Instante
 import com.alvarotc.bito.domain.sesion.RegistroSesion
+import com.alvarotc.bito.domain.sesion.RelojSesion
 import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.sesion.FueraDeLaApp
 import com.alvarotc.bito.sesion.NoMolestar
@@ -50,6 +49,7 @@ class FueraAndroid internal constructor(
     override suspend fun alCambiar(
         r: RegistroSesion?,
         sonando: Boolean,
+        fondoPendiente: Boolean,
     ) {
         val context = entorno.context
         if (r == null) {
@@ -62,11 +62,29 @@ class FueraAndroid internal constructor(
         }
         NotificationChannels.ensure(context)
         val ahora = entorno.ahora()
-        val instante =
-            com.alvarotc.bito.domain.sesion.RelojSesion.en(r, ahora)
+        val instante = RelojSesion.en(r, ahora)
         gestionarCerrojo(instante)
-        gestionarServicio(r, instante, ahora, sonando)
+        ReglaServicio.aplicar(entorno, r, instante, ahora, sonando, fondoPendiente)
         SesionSync.aplicar(entorno, r, ahora, restaurarDnd = false)
+    }
+
+    /**
+     * Con la app fuera cambió lo que suena: la regla del servicio, con el registro guardado y el tramo de [RelojSesion]
+     * en este momento. Solo puede soltarlo (la app no está delante). El servicio se lleva su aviso al soltarse: con la
+     * sesión viva vuelve el de siempre; al acabar no, porque «Se acabó el tiempo» lo pone el receptor.
+     */
+    override suspend fun alCambiarElAudioFuera(
+        guardado: RegistroSesion,
+        suena: Boolean,
+        fondoPendiente: Boolean,
+    ) {
+        val r = guardado
+        val ahora = entorno.ahora()
+        val instante = RelojSesion.en(r, ahora)
+        val soltado = ReglaServicio.aplicar(entorno, r, instante, ahora, suena, fondoPendiente)
+        if (soltado && instante.actual != null) {
+            PresenciaSesion.mostrar(entorno.context, r, ahora, entorno.titulo(r.plan.objetivo), entorno.voz())
+        }
     }
 
     /**
@@ -113,30 +131,5 @@ class FueraAndroid internal constructor(
     /** Respirar para entrar: cerrojo solo lo que dura el tramo; en cualquier otro tramo, suelto. */
     private fun gestionarCerrojo(instante: Instante) {
         if (instante.actual is Tramo.Respirar) entorno.despierto.retener(instante.restaMillis) else entorno.despierto.liberar()
-    }
-
-    /**
-     * Hay servicio mientras suena algo continuo. Arranca solo con la app delante y se mantiene durante los descansos
-     * si la sesión tiene fondo; fuera de ellos, sin sonido, sale. Ningún receptor llega aquí.
-     */
-    private suspend fun gestionarServicio(
-        r: RegistroSesion,
-        instante: Instante,
-        ahora: Ahora,
-        sonando: Boolean,
-    ) {
-        val servicio = entorno.servicio
-        val estabaVivo = servicio.pedido()
-        val hayFondo = r.plan.fondo != SessionBackground.NONE
-        // Fuera de los descansos manda lo que suena: un foco sin sonido (pérdida del foco de audio, Bito callado) no sostiene el servicio.
-        val enDescanso = instante.actual is Tramo.Descanso
-        val quiero = instante.actual != null && (sonando || (enDescanso && estabaVivo && hayFondo))
-        when {
-            !quiero -> if (servicio.pedido()) servicio.parar()
-            !estabaVivo && entorno.visible() -> {
-                val aviso = PresenciaSesion.construir(entorno.context, r, ahora, entorno.titulo(r.plan.objetivo), entorno.voz())
-                if (aviso != null) servicio.arrancar(aviso, null)
-            }
-        }
     }
 }

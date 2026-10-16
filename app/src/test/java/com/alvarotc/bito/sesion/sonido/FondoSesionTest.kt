@@ -391,6 +391,51 @@ class FondoSesionTest {
             assertNotNull(shadowOf(audio).lastAudioFocusRequest)
             assertEquals(SessionBackground.RAIN, m.fondo.sonando.value)
         }
+
+    @Test
+    fun `a requested background is pending until it really sounds`() =
+        runTest {
+            val m = montar()
+            assertFalse(m.fondo.pendiente.value)
+            m.fondo.sonar(SessionBackground.BROWN)
+            assertTrue("pedido y aún sin sonar", m.fondo.pendiente.value)
+            assertNull(m.fondo.sonando.value)
+
+            advanceTimeBy(50)
+            assertEquals(SessionBackground.BROWN, m.fondo.sonando.value)
+            assertFalse(m.fondo.pendiente.value)
+        }
+
+    @Test
+    fun `a silent Bito resolves the request as not sounding at once`() =
+        runTest {
+            ganancia = 0f
+            val m = montar()
+            m.fondo.sonar(SessionBackground.RAIN)
+            assertFalse(m.fondo.pendiente.value)
+            advanceTimeBy(500)
+            assertFalse(m.fondo.pendiente.value)
+            assertNull(m.fondo.sonando.value)
+        }
+
+    @Test
+    fun `callar, a permanent loss and a denied focus clear the request`() =
+        runTest {
+            val m = montar()
+            m.fondo.sonar(SessionBackground.BROWN)
+            m.fondo.callar()
+            assertFalse("callar", m.fondo.pendiente.value)
+
+            m.fondo.sonar(SessionBackground.BROWN)
+            m.fondo.alPerder()
+            assertFalse("pérdida para siempre", m.fondo.pendiente.value)
+
+            shadowOf(audio).setNextFocusRequestResponse(AudioManager.AUDIOFOCUS_REQUEST_FAILED)
+            m.fondo.sonar(SessionBackground.RAIN)
+            advanceTimeBy(50)
+            assertNull(m.fondo.sonando.value)
+            assertFalse("sin foco no sonará", m.fondo.pendiente.value)
+        }
 }
 
 internal class MotorSonidoQueGraba : MotorSonido {

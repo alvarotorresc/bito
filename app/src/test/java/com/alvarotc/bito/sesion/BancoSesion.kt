@@ -38,11 +38,13 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 import org.robolectric.Shadows.shadowOf
 import java.io.File
 import java.time.ZoneOffset
 import java.util.Collections
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 
 const val MINUTO = 60_000L
 
@@ -116,18 +118,40 @@ class AireGrabado : Aire {
     }
 }
 
-class FondoGrabado : Fondo {
+/**
+ * Un [Fondo] que apunta lo que le piden. Sin [asincrono], `sonando` cambia en el mismo hilo; con él, [sonar] solo
+ * pide (queda [pendiente]) y `sonando` cambia en un `launch` aparte sobre ese alcance, como el de verdad, que suena en
+ * su hilo tras tomar el foco de audio. [callar] es inmediato y anula lo que estuviera por sonar.
+ */
+class FondoGrabado(private val asincrono: CoroutineScope? = null) : Fondo {
     val llamadas: MutableList<String> = Collections.synchronizedList(mutableListOf())
     private val _sonando = MutableStateFlow<SessionBackground?>(null)
     override val sonando: StateFlow<SessionBackground?> = _sonando
+    private val _pendiente = MutableStateFlow(false)
+    override val pendiente: StateFlow<Boolean> = _pendiente
+    private val vez = AtomicInteger()
 
     override fun sonar(tipo: SessionBackground) {
         llamadas += "sonar:$tipo"
-        _sonando.value = tipo.takeIf { it != SessionBackground.NONE }
+        val mia = vez.incrementAndGet()
+        val suena = tipo.takeIf { it != SessionBackground.NONE }
+        if (asincrono == null || suena == null) {
+            _sonando.value = suena
+            _pendiente.value = false
+            return
+        }
+        _pendiente.value = true
+        asincrono.launch {
+            if (vez.get() != mia) return@launch
+            _sonando.value = suena
+            _pendiente.value = false
+        }
     }
 
     override fun callar(seco: Boolean) {
         llamadas += if (seco) "callar:seco" else "callar"
+        vez.incrementAndGet()
+        _pendiente.value = false
         _sonando.value = null
     }
 
@@ -137,6 +161,8 @@ class FondoGrabado : Fondo {
 
     /** El foco de audio se perdió para siempre: el fondo deja de sonar sin que nadie lo haya callado. */
     fun perder() {
+        vez.incrementAndGet()
+        _pendiente.value = false
         _sonando.value = null
     }
 }
@@ -150,6 +176,8 @@ class FondoAsincrono(private val silencioso: Boolean = false) : Fondo {
     val llamadas: MutableList<String> = Collections.synchronizedList(mutableListOf())
     private val _sonando = MutableStateFlow<SessionBackground?>(null)
     override val sonando: StateFlow<SessionBackground?> = _sonando
+    private val _pendiente = MutableStateFlow(false)
+    override val pendiente: StateFlow<Boolean> = _pendiente
 
     @Volatile
     private var pedido: SessionBackground? = null
@@ -158,11 +186,14 @@ class FondoAsincrono(private val silencioso: Boolean = false) : Fondo {
         llamadas += "sonar:$tipo"
         pedido = tipo.takeIf { it != SessionBackground.NONE }
         if (pedido == null) _sonando.value = null
+        // Bito callado lo resuelve al instante como «no suena», igual que el de verdad.
+        _pendiente.value = pedido != null && !silencioso
     }
 
     override fun callar(seco: Boolean) {
         llamadas += if (seco) "callar:seco" else "callar"
         pedido = null
+        _pendiente.value = false
         _sonando.value = null
     }
 
@@ -173,11 +204,13 @@ class FondoAsincrono(private val silencioso: Boolean = false) : Fondo {
     /** Lo pedido por fin suena. */
     fun completar() {
         if (!silencioso) _sonando.value = pedido
+        _pendiente.value = false
     }
 
     /** El foco de audio se perdió para siempre. */
     fun perder() {
         pedido = null
+        _pendiente.value = false
         _sonando.value = null
     }
 }
@@ -236,6 +269,7 @@ class FueraGrabada : FueraDeLaApp {
     override suspend fun alCambiar(
         r: RegistroSesion?,
         sonando: Boolean,
+        fondoPendiente: Boolean,
     ) {
         cambios += r
         sonandos += sonando

@@ -1,6 +1,5 @@
 package com.alvarotc.bito.sesion
 
-import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -48,13 +47,5 @@ class SonidoFronteraTest {
         assertEquals(Haptica.CONFIRM, s.haptica)
         assertEquals(AccionFondo.CALLAR, s.fondo)
         assertTrue(SonidoFrontera.de(respirar, null).pararAire)
-    }
-
-    @Test
-    fun `the service goes on after a boundary only with a background and time left`() {
-        assertTrue(SonidoFrontera.servicioSigue(foco, SessionBackground.RAIN))
-        assertTrue(SonidoFrontera.servicioSigue(descanso, SessionBackground.RAIN))
-        assertFalse(SonidoFrontera.servicioSigue(foco, SessionBackground.NONE))
-        assertFalse(SonidoFrontera.servicioSigue(null, SessionBackground.RAIN))
     }
 }

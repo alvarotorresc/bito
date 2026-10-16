@@ -66,6 +66,7 @@ internal class FueraGrabada : FueraDeLaApp {
     override suspend fun alCambiar(
         r: RegistroSesion?,
         sonando: Boolean,
+        fondoPendiente: Boolean,
     ) = Unit
 
     override fun respirando(

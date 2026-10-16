@@ -1,6 +1,5 @@
 package com.alvarotc.bito.sesion
 
-import com.alvarotc.bito.data.settings.SessionBackground
 import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -39,13 +38,4 @@ object SonidoFrontera {
             is Tramo.Respirar -> Salida(Snd.BROTE, Haptica.RISE, AccionFondo.CALLAR, pararAire)
         }
     }
-
-    /**
-     * Si tras la frontera hay sonido continuo que sostenga el servicio: un foco con fondo o, en un descanso, la espera
-     * de volver a él. Sin fondo, o al acabar, el servicio se va.
-     */
-    fun servicioSigue(
-        nuevo: Tramo?,
-        fondo: SessionBackground,
-    ): Boolean = nuevo != null && fondo != SessionBackground.NONE
 }

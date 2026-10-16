@@ -110,6 +110,12 @@ interface Fondo {
     /** null = callado o foco perdido para siempre. */
     val sonando: StateFlow<SessionBackground?>
 
+    /**
+     * Se pidió sonar y aún no se sabe si sonará (toma el foco de audio y abre la pista en su hilo). Con Bito callado,
+     * o si no consigue el foco, pasa a false sin que [sonando] llegue a cambiar.
+     */
+    val pendiente: StateFlow<Boolean> get() = NADA_PENDIENTE
+
     /** Entra con tau 400 ms; NONE = callar. */
     fun sonar(tipo: SessionBackground)
 
@@ -122,11 +128,26 @@ interface Fondo {
 
 /** Lo que pasa fuera de la pantalla: aviso fijo, alarma de la siguiente frontera y servicio. */
 interface FueraDeLaApp {
-    /** null = sesión cerrada: cancela todo y suelta los avisos retenidos. */
+    /**
+     * null = sesión cerrada: cancela todo y suelta los avisos retenidos. [fondoPendiente]: el fondo está pedido y aún
+     * sin confirmar (ver [Fondo.pendiente]); no arranca el servicio, pero no lo suelta.
+     */
     suspend fun alCambiar(
         r: RegistroSesion?,
         sonando: Boolean,
+        fondoPendiente: Boolean = false,
     )
+
+    /**
+     * Con la app fuera, lo que suena cambió (el fondo se perdió, el aire acabó de callarse, Bito se calló). [guardado]
+     * es el registro del store leído en ese momento, no el del motor, que con la app fuera es viejo; lo de fuera saca el
+     * tramo de él con el reloj de ahora y decide sobre el servicio.
+     */
+    suspend fun alCambiarElAudioFuera(
+        guardado: RegistroSesion,
+        suena: Boolean,
+        fondoPendiente: Boolean,
+    ) = Unit
 
     /** Respirar suelta con la pantalla apagada. */
     fun respirando(
@@ -134,6 +155,8 @@ interface FueraDeLaApp {
         finElapsed: Long?,
     )
 }
+
+private val NADA_PENDIENTE: StateFlow<Boolean> = MutableStateFlow(false)
 
 object AireMudo : Aire {
     override val sonando: StateFlow<Boolean> = MutableStateFlow(false)
@@ -164,6 +187,7 @@ object FueraMuda : FueraDeLaApp {
     override suspend fun alCambiar(
         r: RegistroSesion?,
         sonando: Boolean,
+        fondoPendiente: Boolean,
     ) = Unit
 
     override fun respirando(

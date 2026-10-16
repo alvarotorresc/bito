@@ -55,6 +55,9 @@ class SesionReceiver : BroadcastReceiver() {
             val tramos = Tramos.de(r.plan)
             if (tramoEsperado in tramos.indices && instante.tramo > tramoEsperado) {
                 sonarFrontera(e, audio, r.plan.fondo, previo = tramos[instante.tramo - 1], nuevo = instante.actual)
+                // Con el audio ya movido, la misma regla que con la app delante. Desde aquí solo puede soltar el servicio.
+                val suena = audio.aire.sonando.value || audio.fondo.sonando.value != null
+                ReglaServicio.aplicar(e, r, instante, ahora, suena, audio.fondo.pendiente.value)
             }
             SesionSync.aplicar(e, r, ahora, restaurarDnd = true)
         }
@@ -78,8 +81,6 @@ class SesionReceiver : BroadcastReceiver() {
                 audio.sonido.play(salida.snd)
                 e.tacto().haptica(salida.haptica)
             }
-            // Parar el servicio sí se puede desde segundo plano; arrancarlo no.
-            if (!SonidoFrontera.servicioSigue(nuevo, fondo)) soltarServicio(e)
         }
     }
 }
