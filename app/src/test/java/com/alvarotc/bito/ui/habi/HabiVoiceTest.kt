@@ -182,6 +182,14 @@ class HabiVoiceTest {
         }
     }
 
+    @Test
+    fun `sinNombre maps the neutral perfect day notice to its own twin`() {
+        assertEquals(
+            R.string.habi_perfect_notif_neutra_sin_nombre,
+            HabiVoice.sinNombre(HabiVoice.perfectDayNotifRes(Personality.NEUTRA)),
+        )
+    }
+
     private fun assertAllDistinct(
         expectedCount: Int,
         resolve: (Mood, Personality) -> Int,
