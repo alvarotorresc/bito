@@ -42,17 +42,29 @@
     <string name="habi_bubble_neutra_dramatic">Tres días sin registros. Cuando quieras, aquí sigo.</string>
 
     <string name="habi_home_sargento_radiant">En plena forma, %1$s. Así da gusto pasar revista.</string>
+    <string name="habi_home_sargento_radiant_sin_nombre">En plena forma. Así da gusto pasar revista.</string>
     <string name="habi_home_sargento_normal">¿Me has traído algo, %1$s?</string>
+    <string name="habi_home_sargento_normal_sin_nombre">¿Me has traído algo?</string>
     <string name="habi_home_sargento_wilted">¿Ves esta cara, %1$s? Se arregla con hábitos, no con mimos.</string>
+    <string name="habi_home_sargento_wilted_sin_nombre">¿Ves esta cara? Se arregla con hábitos, no con mimos.</string>
     <string name="habi_home_sargento_dramatic">¿Dónde estabas, %1$s? Da igual. Ya estás aquí: a trabajar.</string>
+    <string name="habi_home_sargento_dramatic_sin_nombre">¿Dónde estabas? Da igual. Ya estás aquí: a trabajar.</string>
     <string name="habi_home_cheerleader_radiant">¡Mírate, %1$s! Estamos radiantes. Y eso es cosa tuya.</string>
+    <string name="habi_home_cheerleader_radiant_sin_nombre">¡Mírate! Estamos radiantes. Y eso es cosa tuya.</string>
     <string name="habi_home_cheerleader_normal">¡Hola, %1$s! Qué ganas tenía de verte.</string>
+    <string name="habi_home_cheerleader_normal_sin_nombre">¡Hola! Qué ganas tenía de verte.</string>
     <string name="habi_home_cheerleader_wilted">%1$s… ha sido duro, pero seguimos en esto, ¿vale?</string>
+    <string name="habi_home_cheerleader_wilted_sin_nombre">Ha sido duro, pero seguimos en esto, ¿vale?</string>
     <string name="habi_home_cheerleader_dramatic">¡%1$s, cuánto tiempo! Te he guardado el sitio. Ven aquí.</string>
+    <string name="habi_home_cheerleader_dramatic_sin_nombre">¡Cuánto tiempo! Te he guardado el sitio. Ven aquí.</string>
     <string name="habi_home_neutra_radiant">Buen ritmo esta semana, %1$s.</string>
+    <string name="habi_home_neutra_radiant_sin_nombre">Buen ritmo esta semana.</string>
     <string name="habi_home_neutra_normal">Hola, %1$s. Todo en orden.</string>
+    <string name="habi_home_neutra_normal_sin_nombre">Hola. Todo en orden.</string>
     <string name="habi_home_neutra_wilted">%1$s, va siendo hora de retomar. Con un hábito basta.</string>
+    <string name="habi_home_neutra_wilted_sin_nombre">Va siendo hora de retomar. Con un hábito basta.</string>
     <string name="habi_home_neutra_dramatic">Hace días que no te veía, %1$s. Me alegra que estés aquí.</string>
+    <string name="habi_home_neutra_dramatic_sin_nombre">Hace días que no te veía. Me alegra que estés aquí.</string>
 
     <string name="habi_greeting_sargento_radiant">Buen nivel, %1$s. Mantenlo.</string>
     <string name="habi_greeting_sargento_normal">En marcha, %1$s.</string>
@@ -68,8 +80,11 @@
     <string name="habi_greeting_neutra_dramatic">%1$s, qué bien verte de vuelta.</string>
 
     <string name="freezer_info_sargento">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes, %1$s.</string>
+    <string name="freezer_info_sargento_sin_nombre">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes.</string>
     <string name="freezer_info_cheerleader">¡Un congelador te salva la racha si fallas UN día en UN hábito! Toca el día en rojo del calendario, dale a «Usar congelador» y listo. Los tienes en la tienda. Yo que tú tendría siempre uno a mano, %1$s.</string>
+    <string name="freezer_info_cheerleader_sin_nombre">¡Un congelador te salva la racha si fallas UN día en UN hábito! Toca el día en rojo del calendario, dale a «Usar congelador» y listo. Los tienes en la tienda. Yo que tú tendría siempre uno a mano.</string>
     <string name="freezer_info_neutra">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día en rojo en el calendario y elige «Usar congelador». Se compran en la tienda de Habi, %1$s.</string>
+    <string name="freezer_info_neutra_sin_nombre">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día en rojo en el calendario y elige «Usar congelador». Se compran en la tienda de Habi.</string>
 
     <string name="habi_review_sargento">Cerremos el día, %1$s. Sin excusas.</string>
     <string name="habi_review_cheerleader">¡Hora de cerrar el día, %1$s! Lo que falte, lo hacemos ya.</string>
@@ -88,29 +103,44 @@
     <string name="habi_perfect_neutra">Día perfecto, %1$s. Todo lo exigible, cumplido.</string>
 
     <string name="habi_perfect_notif_sargento">Día perfecto, %1$s. Impecable. Mañana igual.</string>
+    <string name="habi_perfect_notif_sargento_sin_nombre">Día perfecto. Impecable. Mañana igual.</string>
     <string name="habi_perfect_notif_cheerleader">¡Día perfecto, %1$s! Hoy no se te escapó nada.</string>
-    <string name="habi_perfect_notif_neutra">Día perfecto, %1$s. Que conste.</string>
+    <string name="habi_perfect_notif_cheerleader_sin_nombre">¡Día perfecto! Hoy no se te escapó nada.</string>
+    <string name="habi_perfect_notif_neutra">Día perfecto, %1$s. Hoy no ha quedado nada.</string>
+    <string name="habi_perfect_notif_neutra_sin_nombre">Día perfecto. Hoy no ha quedado nada.</string>
 
     <string name="habi_badge_sargento">%2$s. Te lo has ganado, %1$s. Era cuestión de tiempo.</string>
+    <string name="habi_badge_sargento_sin_nombre">%2$s. Te lo has ganado. Era cuestión de tiempo.</string>
     <string name="habi_badge_cheerleader">¡%2$s! Sabía que lo conseguirías, %1$s.</string>
+    <string name="habi_badge_cheerleader_sin_nombre">¡%2$s! Sabía que lo conseguirías.</string>
     <string name="habi_badge_neutra">Logro desbloqueado: %2$s. Bien hecho.</string>
+    <string name="habi_badge_neutra_sin_nombre">Logro desbloqueado: %2$s. Bien hecho.</string>
 
     <!-- habi_task_done_* — T13, texto del snackbar de deshacer de la fila de tarea en Hoy. El
          sargento no lleva %1$s a propósito (ver kdoc de HabiVoice.taskDoneRes); las otras dos sí. -->
     <string name="habi_task_done_sargento">Hecha. La siguiente.</string>
+    <string name="habi_task_done_sargento_sin_nombre">Hecha. La siguiente.</string>
     <string name="habi_task_done_cheerleader">¡Fuera! Qué gusto, %1$s.</string>
+    <string name="habi_task_done_cheerleader_sin_nombre">¡Fuera! Qué gusto.</string>
     <string name="habi_task_done_neutra">Hecha, %1$s.</string>
+    <string name="habi_task_done_neutra_sin_nombre">Hecha.</string>
     <!-- habi_breathing_done_* — M11, la frase de cierre tras respirar, completa o parada. Ninguna
          felicita por «haberlo conseguido», ninguna reprocha haber parado, ninguna promete calma. -->
     <string name="habi_breathing_done_sargento">Bien respirado, %1$s. A lo tuyo.</string>
+    <string name="habi_breathing_done_sargento_sin_nombre">Bien respirado. A lo tuyo.</string>
     <string name="habi_breathing_done_cheerleader">¡Qué bien sienta esto, %1$s!</string>
+    <string name="habi_breathing_done_cheerleader_sin_nombre">¡Qué bien sienta esto!</string>
     <string name="habi_breathing_done_neutra">Ya está, %1$s.</string>
+    <string name="habi_breathing_done_neutra_sin_nombre">Ya está.</string>
 
     <!-- habi_task_focus_* — T19, la frase de entrada de FocusScreen, dicha una vez al empezar la
          sesion. %1$s = el nombre del usuario, %2$d = los minutos elegidos; solo el sargento usa %2$d. -->
     <string name="habi_task_focus_sargento">%1$s, %2$d minutos. Empieza.</string>
+    <string name="habi_task_focus_sargento_sin_nombre">%2$d minutos. Empieza.</string>
     <string name="habi_task_focus_cheerleader">¡Vamos allá, %1$s! Yo me quedo aquí contigo.</string>
+    <string name="habi_task_focus_cheerleader_sin_nombre">¡Vamos allá! Yo me quedo aquí contigo.</string>
     <string name="habi_task_focus_neutra">Aquí estoy, %1$s. Tú a lo tuyo.</string>
+    <string name="habi_task_focus_neutra_sin_nombre">Aquí estoy. Tú a lo tuyo.</string>
 
     <string name="store_title">Tienda</string>
     <string name="store_axis_colors">Colores</string>

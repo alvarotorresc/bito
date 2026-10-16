@@ -4,6 +4,7 @@ import androidx.annotation.StringRes
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.propuestas.TextoHabi
 
 /**
  * Resolves which string resource Habi speaks in each of its thirteen voiced contexts, by
@@ -208,6 +209,68 @@ object HabiVoice {
             Personality.CHEERLEADER -> R.string.habi_task_focus_cheerleader
             Personality.NEUTRA -> R.string.habi_task_focus_neutra
         }
+
+    /**
+     * Decision 9: la variante de un texto con `%1$s` para quien no ha dado su nombre. Tabla
+     * explicita; `null` si el texto no tiene gemelo (los contextos que no llevan nombre, o los
+     * que aun no lo necesitan). La variante dice lo mismo sin llamar a nadie por nada y conserva
+     * la numeracion de los demas huecos (`%2$s`, `%2$d`).
+     */
+    @StringRes
+    fun sinNombre(
+        @StringRes res: Int,
+    ): Int? = SIN_NOMBRE[res]
+
+    /**
+     * El texto de Habi en [res] con [nombre], o su gemelo [sinNombre] si no hay nombre (vacio o en
+     * blanco). [extra] son los huecos que siguen al nombre (`%2$s`...); sin nombre se conserva su
+     * posicion con un primer argumento vacio que el gemelo no usa.
+     */
+    fun conNombre(
+        @StringRes res: Int,
+        nombre: String,
+        vararg extra: Any,
+    ): TextoHabi =
+        if (nombre.isBlank()) {
+            val gemelo = requireNotNull(sinNombre(res)) { "El texto $res no tiene variante sin nombre" }
+            TextoHabi.Recurso(gemelo, if (extra.isEmpty()) emptyList() else listOf<Any>("") + extra)
+        } else {
+            TextoHabi.Recurso(res, listOf<Any>(nombre) + extra)
+        }
+
+    private val SIN_NOMBRE: Map<Int, Int> =
+        mapOf(
+            R.string.habi_home_sargento_radiant to R.string.habi_home_sargento_radiant_sin_nombre,
+            R.string.habi_home_sargento_normal to R.string.habi_home_sargento_normal_sin_nombre,
+            R.string.habi_home_sargento_wilted to R.string.habi_home_sargento_wilted_sin_nombre,
+            R.string.habi_home_sargento_dramatic to R.string.habi_home_sargento_dramatic_sin_nombre,
+            R.string.habi_home_cheerleader_radiant to R.string.habi_home_cheerleader_radiant_sin_nombre,
+            R.string.habi_home_cheerleader_normal to R.string.habi_home_cheerleader_normal_sin_nombre,
+            R.string.habi_home_cheerleader_wilted to R.string.habi_home_cheerleader_wilted_sin_nombre,
+            R.string.habi_home_cheerleader_dramatic to R.string.habi_home_cheerleader_dramatic_sin_nombre,
+            R.string.habi_home_neutra_radiant to R.string.habi_home_neutra_radiant_sin_nombre,
+            R.string.habi_home_neutra_normal to R.string.habi_home_neutra_normal_sin_nombre,
+            R.string.habi_home_neutra_wilted to R.string.habi_home_neutra_wilted_sin_nombre,
+            R.string.habi_home_neutra_dramatic to R.string.habi_home_neutra_dramatic_sin_nombre,
+            R.string.habi_badge_sargento to R.string.habi_badge_sargento_sin_nombre,
+            R.string.habi_task_focus_sargento to R.string.habi_task_focus_sargento_sin_nombre,
+            R.string.habi_breathing_done_sargento to R.string.habi_breathing_done_sargento_sin_nombre,
+            R.string.freezer_info_sargento to R.string.freezer_info_sargento_sin_nombre,
+            R.string.habi_task_done_sargento to R.string.habi_task_done_sargento_sin_nombre,
+            R.string.habi_perfect_notif_sargento to R.string.habi_perfect_notif_sargento_sin_nombre,
+            R.string.habi_badge_cheerleader to R.string.habi_badge_cheerleader_sin_nombre,
+            R.string.habi_task_focus_cheerleader to R.string.habi_task_focus_cheerleader_sin_nombre,
+            R.string.habi_breathing_done_cheerleader to R.string.habi_breathing_done_cheerleader_sin_nombre,
+            R.string.freezer_info_cheerleader to R.string.freezer_info_cheerleader_sin_nombre,
+            R.string.habi_task_done_cheerleader to R.string.habi_task_done_cheerleader_sin_nombre,
+            R.string.habi_perfect_notif_cheerleader to R.string.habi_perfect_notif_cheerleader_sin_nombre,
+            R.string.habi_badge_neutra to R.string.habi_badge_neutra_sin_nombre,
+            R.string.habi_task_focus_neutra to R.string.habi_task_focus_neutra_sin_nombre,
+            R.string.habi_breathing_done_neutra to R.string.habi_breathing_done_neutra_sin_nombre,
+            R.string.freezer_info_neutra to R.string.freezer_info_neutra_sin_nombre,
+            R.string.habi_task_done_neutra to R.string.habi_task_done_neutra_sin_nombre,
+            R.string.habi_perfect_notif_neutra to R.string.habi_perfect_notif_neutra_sin_nombre,
+        )
 
     @StringRes
     fun labelRes(personality: Personality): Int =
