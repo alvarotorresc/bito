@@ -20,6 +20,10 @@ PERCENT_SUELTO = re.compile(r"(?<!\} )%")
 TITULOS = {"av_manana_titulo", "av_manana_titulo_gordo", "av_noche_titulo", "av_aceptado_titulo"}
 CUERPOS = {"av_recordatorio", "av_noche_cuerpo", "av_aceptado_cuerpo", "av_ausencia"}
 LIBRES = {"habito", "tarea"}
+# HUECOS.md: un hueco opcional puede no llegar y entonces solo valen los trozos que no lo usan.
+# Cada bolsa y voz necesita este número de trozos sin etiqueta que usen solo sus huecos
+# obligatorios (`obligatorios` en bolsas.json), o el de su mínimo si es menor.
+MINIMO_SIN_OPCIONALES = 3
 
 
 def limite(bolsa):
@@ -145,6 +149,14 @@ def comprobar(rutas, minimos=True):
                 fallos.append(f"{ruta}:{fs[0]['linea']}: índices: {nombre} debe usar 0..{len(fs) - 1} sin huecos ni repetidos")
             if minimos and len(fs) < bolsas[nombre]["minimo"]:
                 fallos.append(f"{ruta}:{fs[0]['linea']}: mínimo: {nombre} tiene {len(fs)} y necesita {bolsas[nombre]['minimo']}")
+            if minimos:
+                obligatorios = set(bolsas[nombre].get("obligatorios", []))
+                pide = min(MINIMO_SIN_OPCIONALES, bolsas[nombre]["minimo"])
+                valen = [f for f in fs if not comun.etiquetas_de(f["etiquetas"])
+                         and set(comun.huecos_de(f["es"])) <= obligatorios]
+                if len(valen) < pide:
+                    fallos.append(f"{ruta}:{fs[0]['linea']}: sin opcionales: {nombre} tiene {len(valen)} trozos sin etiqueta "
+                                  f"y solo con {sorted(obligatorios)}; pide {pide}")
         grupo = comun.grupo_de(ruta)
         if minimos and grupo:
             for nombre, b in bolsas.items():
