@@ -183,11 +183,8 @@ class TextosHablaTest {
                 val nombre = "habla_${b.clave}_$v"
                 val ie = es[nombre]?.size ?: 0
                 val ing = en[nombre]?.size ?: 0
-                // Las bolsas de la sesión llevan una semilla por voz hasta el volcado de los textos aprobados.
-                val semilla = b.archivo == "sesion"
-                if (!semilla && ie < b.minimo) fallos.add("$nombre ES tiene $ie y necesita ${b.minimo}")
-                if (!semilla && ing < b.minimo) fallos.add("$nombre EN tiene $ing y necesita ${b.minimo}")
-                if (semilla && (ie < 1 || ing < 1)) fallos.add("$nombre no tiene ni la semilla")
+                if (ie < b.minimo) fallos.add("$nombre ES tiene $ie y necesita ${b.minimo}")
+                if (ing < b.minimo) fallos.add("$nombre EN tiene $ing y necesita ${b.minimo}")
                 if (ie != ing) fallos.add("$nombre tiene $ie en ES y $ing en EN")
             }
         }

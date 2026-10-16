@@ -1,104 +1,359 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Semillas provisionales (un item por bolsa y voz); el volcado final las sustituye -->
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
 <resources>
     <string-array name="habla_se_entrar_sargento">
         <item>{nombre}, {minutos} minutos. Empieza.</item>
+        <item>Aquí estoy. A lo tuyo.</item>
+        <item>{minutos} minutos por delante. Yo vigilo, tú trabajas.</item>
+        <item>Ahora toca esto: {tarea}. A ello.</item>
+        <item>Ahora toca esto: {habito}. Sin dar vueltas.</item>
+        <item>Empezamos, {nombre}. Cabeza en lo que toca.</item>
+        <item>Un bloque cada vez. Este, entero.</item>
+        <item>Ahora, nada más. Se trabaja.</item>
+        <item>[manana] La mañana rinde. Aprovéchala.</item>
+        <item>[noche] De noche también se trabaja. Despacio, pero firme.</item>
+        <item>[lunes] Lunes, {nombre}. Se arranca con esto: {tarea}.</item>
+        <item>[finde] Fin de semana y aquí estás. Pues a lo que toca.</item>
+        <item>[invierno] Fuera hace frío. Aquí dentro, {minutos} minutos de trabajo.</item>
+        <item>[tarde] Media tarde, {nombre}. {minutos} minutos y luego descanso.</item>
     </string-array>
     <string-array name="habla_se_entrar_cheerleader">
         <item>¡Vamos allá, {nombre}! Yo me quedo aquí contigo.</item>
+        <item>Vamos allá. Yo me quedo aquí contigo.</item>
+        <item>¡{minutos} min por delante! Tú a lo tuyo, que yo te cubro.</item>
+        <item>Ahora toca esto: {tarea}. ¡Tú puedes y yo te acompaño!</item>
+        <item>Ahora toca esto: {habito}. Aquí estoy, animando en silencio.</item>
+        <item>Empezamos, {nombre}. Si necesitas algo, grita y me tienes al lado.</item>
+        <item>Un bloque cada vez, tú y yo. ¡Lo demás puede esperar!</item>
+        <item>Aquí estoy contigo. Tú a lo tuyo, que yo animo desde aquí.</item>
+        <item>[manana] Buenos días. ¡Qué buena hora para concentrarse! Aquí estoy.</item>
+        <item>[noche] Ya es de noche, pero aquí seguimos, tú y yo. Sin prisa.</item>
+        <item>[lunes] Lunes, {nombre}. ¡Empezamos la semana con esto: {tarea}!</item>
+        <item>[finde] Fin de semana y aquí estás. Eso tiene mérito, y yo contigo.</item>
+        <item>[invierno] Fuera hace frío. Aquí dentro, {minutos} min calentitos para ti.</item>
+        <item>[tarde] Media tarde, {nombre}. {minutos} min y descanso, ¡te lo has ganado!</item>
     </string-array>
     <string-array name="habla_se_entrar_neutra">
         <item>Aquí estoy, {nombre}. Tú a lo tuyo.</item>
+        <item>Aquí estoy. Tú a lo tuyo.</item>
+        <item>{minutos} min por delante. Yo me quedo aquí, sin hacer ruido.</item>
+        <item>Ahora toca esto: {tarea}. Te dejo con ello.</item>
+        <item>Ahora toca esto: {habito}. Aquí sigo, en silencio.</item>
+        <item>Empezamos, {nombre}. Si necesitas algo, estoy al lado.</item>
+        <item>Un bloque cada vez. El resto puede esperar.</item>
+        <item>[manana] La mañana es buena para concentrarse. Aquí estoy.</item>
+        <item>[noche] Ya es de noche. Sin prisa: yo me quedo aquí.</item>
+        <item>[lunes] Lunes, {nombre}. Ahora, solo esto: {tarea}.</item>
+        <item>[finde] Fin de semana, y aun así aquí estás. Yo también.</item>
+        <item>[invierno] Fuera hace frío. Aquí dentro, {minutos} min que son tuyos.</item>
+        <item>[tarde] Media tarde, {nombre}. {minutos} min y luego, descanso.</item>
+        <item>Empezamos cuando quieras. Yo estoy aquí.</item>
     </string-array>
     <string-array name="habla_de_habito_sargento">
         <item>Te queda esto: {habito}. Aprovecha el descanso.</item>
+        <item>Pendiente de hoy: {habito}. Cabe en este descanso.</item>
+        <item>«{habito}» sigue sin marcar. Ahora es buen momento.</item>
+        <item>Para este descanso: {habito}. Sin darle vueltas.</item>
+        <item>Hay {minutos} minutos de descanso. Da tiempo a esto: {habito}.</item>
+        <item>Cambiar de tarea también descansa: {habito}. Adelante.</item>
+        <item>[manana] Sigue siendo mañana y queda esto: {habito}. Ciérralo pronto.</item>
+        <item>[tarde] La tarde avanza y queda esto: {habito}. Este descanso sirve.</item>
+        <item>[noche] Antes de que acabe el día: {habito}. Mejor ahora.</item>
+        <item>[finde] Fin de semana, y queda esto: {habito}. El descanso es para esto.</item>
+        <item>[lunes] Lunes. Queda esto de hoy: {habito}. Que no se acumule.</item>
     </string-array>
     <string-array name="habla_de_habito_cheerleader">
         <item>Te queda esto: {habito}. ¿Lo hacemos ahora, que es el descanso?</item>
+        <item>Pendiente de hoy: {habito}. ¡Cabe justo en este descanso!</item>
+        <item>«{habito}» sigue sin marcar. Ahora es buen momento, ¿lo hacemos juntos?</item>
+        <item>Para este descanso te propongo esto: {habito}. Yo te acompaño.</item>
+        <item>Hay {minutos} min de descanso. ¡Da tiempo a esto: {habito}!</item>
+        <item>Cambiar de tarea también descansa: {habito}. ¿Te animas?</item>
+        <item>[manana] Aún es por la mañana y queda esto: {habito}. Ahora o luego, como veas.</item>
+        <item>[tarde] La tarde avanza y queda esto: {habito}. ¿Aprovechamos este descanso?</item>
+        <item>[noche] Antes de que acabe el día: {habito}. Si te cuadra, ahora, y yo contigo.</item>
+        <item>[finde] Fin de semana, y queda esto: {habito}. ¿Aprovechamos el descanso?</item>
+        <item>[lunes] Lunes. Queda esto de hoy: {habito}. ¡Lo hacemos en el descanso y a otra cosa!</item>
     </string-array>
     <string-array name="habla_de_habito_neutra">
         <item>Te queda esto: {habito}. ¿Lo hacemos ahora, que es el descanso?</item>
+        <item>Pendiente de hoy: {habito}. Si te apetece, cabe en este descanso.</item>
+        <item>«{habito}» sigue sin marcar. Ahora es buen momento, si quieres.</item>
+        <item>Para este descanso te propongo esto: {habito}.</item>
+        <item>Hay {minutos} min de descanso. Da tiempo a esto: {habito}.</item>
+        <item>Cambiar de tarea también descansa: {habito}. ¿Lo hacemos?</item>
+        <item>[manana] Aún es por la mañana y queda esto: {habito}. Ahora o luego, como veas.</item>
+        <item>[tarde] La tarde avanza y queda esto: {habito}. Este descanso puede servir.</item>
+        <item>[noche] Antes de que acabe el día: {habito}. Si te cuadra, ahora.</item>
+        <item>[finde] Fin de semana, y queda esto: {habito}. ¿Aprovechamos el descanso?</item>
+        <item>[lunes] Lunes. Queda esto de hoy: {habito}. ¿Lo hacemos en el descanso?</item>
     </string-array>
     <string-array name="habla_de_habito_largo_sargento">
         <item>Te queda esto: {habito}. Hay {minutos} minutos por delante.</item>
+        <item>Descanso largo. Hueco de sobra para esto: {habito}.</item>
+        <item>Este descanso es largo y queda esto: {habito}. Hazlo ahora.</item>
+        <item>Con {minutos} minutos de descanso, esto cabe: {habito}.</item>
+        <item>[tarde] Media tarde y descanso largo. Aprovéchalo con esto: {habito}.</item>
+        <item>[manana] Descanso largo a media mañana. Pendiente: {habito}. Ahora mismo.</item>
+        <item>[noche] Descanso largo y ya es de noche. Queda esto: {habito}.</item>
+        <item>Descanso largo. Esto sigue pendiente: {habito}. Ciérralo.</item>
     </string-array>
     <string-array name="habla_de_habito_largo_cheerleader">
         <item>Te queda esto: {habito}. Hay {minutos} min por delante, ¡de sobra!</item>
+        <item>Descanso largo. ¡Buen hueco para esto: {habito}!</item>
+        <item>Este descanso es largo y queda esto: {habito}. ¿Lo hacemos juntos?</item>
+        <item>Con {minutos} min de descanso, da para esto: {habito}. Voy contigo.</item>
+        <item>Descanso largo. Te propongo esto: {habito}. Voy contigo.</item>
+        <item>[manana] Descanso largo a media mañana. Pendiente: {habito}. Ahora o luego.</item>
+        <item>[noche] Descanso largo y ya de noche. Queda esto: {habito}. ¿Lo cerramos?</item>
     </string-array>
     <string-array name="habla_de_habito_largo_neutra">
         <item>Te queda esto: {habito}. Hay {minutos} min por delante.</item>
+        <item>Descanso largo. Buen hueco para esto: {habito}.</item>
+        <item>Este descanso es largo y queda esto: {habito}. ¿Lo hacemos?</item>
+        <item>Con {minutos} min de descanso, da para esto: {habito}.</item>
+        <item>[tarde] Media tarde y descanso largo. Te propongo esto: {habito}.</item>
+        <item>[manana] Descanso largo a media mañana. Pendiente: {habito}. Ahora o luego.</item>
+        <item>[noche] Descanso largo, y ya es de noche. Queda esto: {habito}.</item>
+        <item>Descanso largo y queda esto: {habito}. Hay tiempo de sobra.</item>
     </string-array>
     <string-array name="habla_de_sin_pendientes_sargento">
         <item>Hoy todo regado. Levántate, estira las piernas y bebe agua.</item>
+        <item>Nada que proponer en este descanso. De pie y a estirar las piernas.</item>
+        <item>Este descanso es tuyo, {nombre}. Un vaso de agua, ya.</item>
+        <item>Nada de la lista para este descanso. Agua, y mira lejos un rato.</item>
+        <item>Descansa la vista: un minuto mirando algo lejano.</item>
+        <item>Sin nada que proponer, {nombre}. De pie y hombros hacia atrás.</item>
+        <item>[manana] Descanso de media mañana. Agua y estira la espalda.</item>
+        <item>[tarde] La tarde pesa en la espalda. De pie y a estirar.</item>
+        <item>[noche] Ya es de noche, {nombre}. Unos minutos lejos de la pantalla.</item>
+        <item>[verano] Verano. Agua fresca y estira las piernas.</item>
+        <item>[invierno] En invierno también se bebe agua. De pie y a por un vaso.</item>
     </string-array>
     <string-array name="habla_de_sin_pendientes_cheerleader">
         <item>Hoy ya está todo regado. ¡Levántate, estira las piernas y bebe un poco de agua!</item>
+        <item>Nada que proponerte para este descanso. ¿Te levantas y estiras las piernas?</item>
+        <item>Este descanso es solo tuyo, {nombre}. Un vaso de agua te vendría genial.</item>
+        <item>Para este descanso, nada de la lista. ¿Un poco de agua y mirar lejos un rato?</item>
+        <item>Descansa la vista: un minuto mirando algo lejano. ¡Se agradece!</item>
+        <item>Sin nada que proponerte, {nombre}. ¿Te pones de pie y mueves los hombros?</item>
+        <item>[manana] Descanso de media mañana. Un poco de agua y estirar la espalda.</item>
+        <item>[tarde] La tarde pesa en la espalda. ¿Te levantas y estiras un poco?</item>
+        <item>[noche] Ya es de noche, {nombre}. Unos minutos sin pantalla te sentarán genial.</item>
+        <item>[verano] Verano. ¡Un vaso de agua fresca y a estirar las piernas!</item>
+        <item>[invierno] En invierno también hace falta agua. ¿Te levantas y bebes un poco?</item>
     </string-array>
     <string-array name="habla_de_sin_pendientes_neutra">
         <item>Hoy ya está todo regado. Levántate, estira las piernas y bebe un poco de agua.</item>
+        <item>Nada que proponerte para este descanso. ¿Te levantas y estiras las piernas?</item>
+        <item>Este descanso es solo tuyo, {nombre}. Un vaso de agua no vendría mal.</item>
+        <item>Para este descanso, nada de la lista. ¿Un poco de agua y mirar lejos un rato?</item>
+        <item>Descansa la vista: un minuto mirando algo lejano.</item>
+        <item>Sin nada que proponerte, {nombre}. ¿Te pones de pie y mueves los hombros?</item>
+        <item>[manana] Descanso de media mañana. Un poco de agua y estirar la espalda.</item>
+        <item>[tarde] La tarde pesa en la espalda. ¿Te levantas y estiras un poco?</item>
+        <item>[noche] Ya es de noche, {nombre}. Unos minutos lejos de la pantalla sientan bien.</item>
+        <item>[verano] Verano. Un vaso de agua fresca y estirar las piernas.</item>
+        <item>[invierno] En invierno también hace falta agua. ¿Te levantas y bebes un poco?</item>
     </string-array>
     <string-array name="habla_se_hecha_tarea_sargento">
         <item>Hecha, {nombre}.</item>
+        <item>Hecha.</item>
+        <item>Una menos, {nombre}.</item>
+        <item>Una menos. Siguiente.</item>
+        <item>Terminada. Era cuestión de tiempo.</item>
+        <item>Hecha. Fuera de la cabeza.</item>
+        <item>[noche] Hecha, {nombre}. Esta noche se duerme mejor.</item>
+        <item>[lunes] Hecha. La semana arranca con una menos.</item>
+        <item>[viernes] Hecha. El fin de semana llega más ligero.</item>
     </string-array>
     <string-array name="habla_se_hecha_tarea_cheerleader">
         <item>¡Hecha, {nombre}!</item>
+        <item>¡Hecha!</item>
+        <item>¡Una menos, {nombre}! Eso lo has conseguido tú.</item>
+        <item>Una menos. Eso lo has conseguido tú.</item>
+        <item>Terminada. ¡Bien hecho!</item>
+        <item>Hecha. Ya puedes quitártela de la cabeza, ¡qué alivio!</item>
+        <item>[noche] Hecha, {nombre}. Esta noche se duerme mejor.</item>
+        <item>[lunes] Hecha. ¡La semana empieza con una menos!</item>
+        <item>[viernes] Hecha. El fin de semana llega más ligero, ¡y te lo has ganado!</item>
     </string-array>
     <string-array name="habla_se_hecha_tarea_neutra">
         <item>Hecha, {nombre}.</item>
+        <item>Hecha.</item>
+        <item>Una menos, {nombre}.</item>
+        <item>Una menos.</item>
+        <item>Terminada. Bien hecho.</item>
+        <item>Hecha. Ya puedes quitártela de la cabeza.</item>
+        <item>[noche] Hecha, {nombre}. Esta noche se duerme mejor.</item>
+        <item>[lunes] Hecha. La semana empieza con una menos.</item>
+        <item>[viernes] Hecha. El fin de semana llega más ligero.</item>
     </string-array>
     <string-array name="habla_se_hecha_habito_sargento">
         <item>Hecho, {nombre}.</item>
+        <item>Hecho.</item>
+        <item>Uno menos, {nombre}.</item>
+        <item>Uno menos para hoy.</item>
+        <item>Hecho. Hoy ya cuenta.</item>
+        <item>Hecho. Así se hace.</item>
+        <item>[manana] Hecho, {nombre}, y aún es temprano.</item>
+        <item>[noche] Hecho. El día queda cerrado.</item>
     </string-array>
     <string-array name="habla_se_hecha_habito_cheerleader">
         <item>¡Hecho, {nombre}!</item>
+        <item>¡Hecho!</item>
+        <item>Uno menos, {nombre}. ¡Así se hace!</item>
+        <item>Uno menos para hoy. Eso suma.</item>
+        <item>Hecho. Hoy ya cuenta, ¡y lo has hecho tú!</item>
+        <item>Hecho. Uno más de hoy, tú y yo.</item>
+        <item>[manana] Hecho, {nombre}, ¡y aún es temprano!</item>
+        <item>[noche] Hecho. Hoy queda un poco más completo.</item>
     </string-array>
     <string-array name="habla_se_hecha_habito_neutra">
         <item>Hecho, {nombre}.</item>
+        <item>Hecho.</item>
+        <item>Uno menos, {nombre}.</item>
+        <item>Uno menos para hoy.</item>
+        <item>Hecho. Hoy ya cuenta.</item>
+        <item>Hecho. Uno más de hoy.</item>
+        <item>[manana] Hecho, {nombre}, y aún es temprano.</item>
+        <item>[noche] Hecho. Hoy queda un poco más completo.</item>
     </string-array>
     <string-array name="habla_ce_mejor_sargento">
         <item>Bien. Eso era lo que tocaba.</item>
+        <item>Bien. Unos minutos han bastado.</item>
+        <item>Bien. Lo apunto, por si otro día hace falta.</item>
+        <item>Me alegro. A veces basta con parar un poco.</item>
+        <item>Así se hace. Aquí sigo cuando quieras.</item>
+        <item>[noche] Bien. Ahora, a descansar.</item>
+        <item>[manana] Bien. La mañana sigue, y mejor así.</item>
     </string-array>
     <string-array name="habla_ce_mejor_cheerleader">
         <item>¡Me alegro mucho! Aquí sigo cuando quieras.</item>
+        <item>Qué bien. Unos minutos han bastado, y eso lo has hecho tú.</item>
+        <item>Me alegro. Lo apunto, por si otro día hace falta. Tú y yo.</item>
+        <item>Qué bien. A veces basta con parar un poco.</item>
+        <item>[noche] Me alegro. Que descanses esta noche, te lo has ganado.</item>
+        <item>[manana] ¡Me alegro! La mañana sigue mejor así.</item>
+        <item>[tarde] Qué bien. La tarde se lleva mejor así.</item>
     </string-array>
     <string-array name="habla_ce_mejor_neutra">
         <item>Me alegro. Aquí sigo cuando quieras.</item>
+        <item>Bien. Unos minutos han bastado.</item>
+        <item>Me alegro. Lo apunto, por si otro día hace falta.</item>
+        <item>Bien. A veces basta con parar un poco.</item>
+        <item>[noche] Me alegro. Que descanses esta noche.</item>
+        <item>[manana] Me alegro. La mañana sigue mejor así.</item>
+        <item>[tarde] Bien. La tarde se lleva mejor así.</item>
     </string-array>
     <string-array name="habla_ce_igual_sargento">
         <item>Vale. A veces hace falta otra vuelta.</item>
+        <item>Vale. No siempre se nota a la primera.</item>
+        <item>Entendido. No siempre cambia algo, y no pasa nada.</item>
+        <item>Vale. Otro ritmo puede ir distinto. Pruébalo si quieres.</item>
+        <item>De acuerdo. Por lo menos has parado un rato.</item>
+        <item>[noche] Vale. De noche cuesta más soltar el día.</item>
     </string-array>
     <string-array name="habla_ce_igual_cheerleader">
         <item>Vale. A veces hace falta otra vuelta, y aquí estoy.</item>
+        <item>Vale. No siempre se nota a la primera.</item>
+        <item>Entendido. Respirar no siempre cambia algo, y está bien. Seguimos juntos.</item>
+        <item>Vale. Si quieres, probamos otro ritmo y vemos.</item>
+        <item>De acuerdo. Por lo menos has parado un rato, y eso cuenta.</item>
+        <item>[noche] Vale. De noche cuesta más soltar el día. Sin prisa.</item>
     </string-array>
     <string-array name="habla_ce_igual_neutra">
         <item>Vale. A veces hace falta otra vuelta.</item>
+        <item>Vale. No siempre se nota a la primera.</item>
+        <item>Entendido. Respirar no siempre cambia algo, y está bien así.</item>
+        <item>Vale. Si quieres, otro ritmo puede ir distinto.</item>
+        <item>De acuerdo. Por lo menos has parado un rato.</item>
+        <item>[noche] Vale. De noche cuesta más soltar el día.</item>
     </string-array>
     <string-array name="habla_ce_cuesta_sargento">
         <item>Entendido. Otra vez, más despacio. Dormir es el ritmo más largo.</item>
+        <item>Hay días en que cuesta más. Pasa.</item>
+        <item>Entendido. Repetimos o lo dejamos aquí. Las dos valen.</item>
+        <item>Vale. Aquí sigo, para otra vuelta.</item>
+        <item>Lo tengo en cuenta para lo próximo que te proponga hoy.</item>
+        <item>[noche] De noche todo pesa más. Otra vez, con calma.</item>
+        <item>[manana] Queda mucha mañana. Sin prisa.</item>
     </string-array>
     <string-array name="habla_ce_cuesta_cheerleader">
         <item>Sin prisa. ¿Otra vez, más despacio? Dormir es el ritmo más largo, y voy contigo.</item>
+        <item>Sin prisa. Hay días en que cuesta más, y aquí sigo a tu lado.</item>
+        <item>Entendido. Podemos repetir o dejarlo aquí. Las dos cosas valen.</item>
+        <item>Vale. Aquí sigo, por si quieres otra vuelta juntos.</item>
+        <item>Lo tengo en cuenta para lo próximo que te proponga hoy.</item>
+        <item>[noche] Sin prisa. De noche todo pesa un poco más, y seguimos en esto.</item>
+        <item>[manana] Sin prisa. Aún queda mucha mañana, tú y yo.</item>
     </string-array>
     <string-array name="habla_ce_cuesta_neutra">
         <item>Sin prisa. ¿Otra vez, más despacio? Dormir es el ritmo más largo.</item>
+        <item>Sin prisa. Hay días en que cuesta más, y no pasa nada.</item>
+        <item>Entendido. Podemos repetir o dejarlo aquí. Las dos cosas valen.</item>
+        <item>Vale. Aquí sigo, por si quieres otra vuelta.</item>
+        <item>Lo tengo en cuenta para lo próximo que te proponga hoy.</item>
+        <item>[noche] Sin prisa. De noche todo pesa un poco más.</item>
+        <item>[manana] Sin prisa. Aún queda mucha mañana.</item>
     </string-array>
     <string-array name="habla_re_fin_respirar_sargento">
         <item>Ya está, {nombre}.</item>
+        <item>Ya está.</item>
+        <item>Bien respirado, {nombre}. A lo tuyo.</item>
+        <item>Bien respirado. A lo tuyo.</item>
+        <item>Ya está. Unos minutos para ti.</item>
+        <item>Ya está. El cuerpo lo nota.</item>
+        <item>[noche] Ya está. Si es hora de dormir, a dormir.</item>
+        <item>[manana] Ya está, {nombre}. La mañana sigue, y con buen pie.</item>
+        <item>[tarde] Ya está. Una pausa en mitad de la tarde. Bien hecha.</item>
+        <item>[finde] Ya está. El fin de semana también es para esto.</item>
     </string-array>
     <string-array name="habla_re_fin_respirar_cheerleader">
         <item>¡Ya está, {nombre}! Qué bien sienta esto.</item>
+        <item>¡Ya está! Qué bien sienta esto.</item>
+        <item>Ya está, {nombre}. Unos minutos para ti.</item>
+        <item>Ya está. Unos minutos solo para ti.</item>
+        <item>Ya está. El cuerpo lo agradece, y a mí me encanta acompañarte.</item>
+        <item>[noche] Ya está. Si es hora de dormir, buenas noches.</item>
+        <item>[manana] Ya está, {nombre}. ¡La mañana sigue a tu ritmo!</item>
+        <item>[tarde] Ya está. Una pausa en mitad de la tarde, ¡bien ahí!</item>
+        <item>[finde] Ya está. El fin de semana también es para esto.</item>
     </string-array>
     <string-array name="habla_re_fin_respirar_neutra">
         <item>Ya está, {nombre}.</item>
+        <item>Ya está.</item>
+        <item>Ya está, {nombre}. Unos minutos para ti.</item>
+        <item>Ya está. Unos minutos solo para ti.</item>
+        <item>Ya está. El cuerpo lo agradece.</item>
+        <item>[noche] Ya está. Si es hora de dormir, buenas noches.</item>
+        <item>[manana] Ya está, {nombre}. La mañana sigue a tu ritmo.</item>
+        <item>[tarde] Ya está. Una pausa en mitad de la tarde.</item>
+        <item>[finde] Ya está. El fin de semana también es para esto.</item>
     </string-array>
     <string-array name="habla_re_respirar_mejor_sargento">
         <item>Ayer respirar te sentó bien. «{modo}» sigue aquí.</item>
+        <item>Hace poco «{modo}» te sentó bien. Está a un toque.</item>
+        <item>Una vez «{modo}» te dejó mejor. Úsalo cuando haga falta.</item>
+        <item>«{modo}» ya te ha funcionado. Ahí está.</item>
+        <item>Te recuerdo que «{modo}» te sentó bien. Por si hoy hace falta.</item>
+        <item>[noche] Por si esta noche cuesta: «{modo}» ya te sentó bien una vez.</item>
     </string-array>
     <string-array name="habla_re_respirar_mejor_cheerleader">
         <item>Ayer respirar te sentó bien. «{modo}» sigue aquí, ¡cuando quieras!</item>
+        <item>Hace poco, «{modo}» te sentó bien. Sigue a un toque.</item>
+        <item>Una vez, «{modo}» te dejó mejor. Lo tienes cuando quieras.</item>
+        <item>Recuerdo que «{modo}» te sentó bien. Por si hoy hace falta, tú y yo.</item>
+        <item>«{modo}» ya te ha funcionado alguna vez. Ahí sigue.</item>
+        <item>[noche] Por si esta noche cuesta: «{modo}» ya te sentó bien una vez.</item>
     </string-array>
     <string-array name="habla_re_respirar_mejor_neutra">
         <item>Ayer respirar te sentó bien. «{modo}» sigue aquí.</item>
+        <item>Hace poco, «{modo}» te sentó bien. Sigue a un toque.</item>
+        <item>Una vez, «{modo}» te dejó mejor. Lo tienes cuando quieras.</item>
+        <item>Recuerdo que «{modo}» te sentó bien. Por si hoy hace falta.</item>
+        <item>«{modo}» ya te ha funcionado alguna vez. Ahí sigue.</item>
+        <item>[noche] Por si esta noche cuesta: «{modo}» ya te sentó bien una vez.</item>
     </string-array>
     <string name="ses_modo_calm">Calmarme</string>
     <string name="ses_modo_sleep">Dormir</string>

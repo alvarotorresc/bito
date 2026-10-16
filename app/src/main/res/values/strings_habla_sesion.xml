@@ -1,104 +1,359 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Semillas provisionales (un item por bolsa y voz); el volcado final las sustituye -->
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
 <resources>
     <string-array name="habla_se_entrar_sargento">
         <item>{nombre}, {minutos} minutes. Begin.</item>
+        <item>I\'m here. Get to it.</item>
+        <item>{minutos} minutes ahead. I keep watch, you work.</item>
+        <item>This one now: {tarea}. Get on it.</item>
+        <item>This one now: {habito}. No dithering.</item>
+        <item>Here we go, {nombre}. Head in the game.</item>
+        <item>One block at a time. This one, all of it.</item>
+        <item>Nothing else right now. Work.</item>
+        <item>[manana] Mornings pay off. Make the most of it.</item>
+        <item>[noche] Night work counts too. Slow, but steady.</item>
+        <item>[lunes] Monday, {nombre}. We start with this: {tarea}.</item>
+        <item>[finde] Weekend and here you are. Then to it.</item>
+        <item>[invierno] Cold out there. In here, {minutos} minutes of work.</item>
+        <item>[tarde] Mid-afternoon, {nombre}. {minutos} minutes, then a break.</item>
     </string-array>
     <string-array name="habla_se_entrar_cheerleader">
         <item>Here we go, {nombre}! I\'m right here with you.</item>
+        <item>Here we go. I\'m right here with you.</item>
+        <item>{minutos} min ahead! You do your thing, I\'ve got your back.</item>
+        <item>This one now: {tarea}. You\'ve got this, and I\'m with you!</item>
+        <item>This one now: {habito}. I\'m here, cheering quietly.</item>
+        <item>Starting now, {nombre}. If you need anything, just shout and I\'m beside you.</item>
+        <item>One block at a time, you and me. The rest can wait!</item>
+        <item>I\'m right here with you. You do your thing, I\'ll cheer from here.</item>
+        <item>[manana] Good morning. What a great time to focus! I\'m here.</item>
+        <item>[noche] It\'s night already, but here we are, you and me. No rush.</item>
+        <item>[lunes] Monday, {nombre}. Let\'s start the week with this: {tarea}!</item>
+        <item>[finde] Weekend, and here you are. That takes something, and I\'m with you.</item>
+        <item>[invierno] Cold out there. In here, {minutos} min of cosy time for you.</item>
+        <item>[tarde] Mid-afternoon, {nombre}. {minutos} min, then a break. Earned it!</item>
     </string-array>
     <string-array name="habla_se_entrar_neutra">
         <item>I\'m here, {nombre}. Go ahead.</item>
+        <item>I\'m here. Go ahead.</item>
+        <item>{minutos} min ahead. I\'ll stay here, quietly.</item>
+        <item>This one now: {tarea}. I\'ll leave you to it.</item>
+        <item>This one now: {habito}. I\'m here, quietly.</item>
+        <item>Here we go, {nombre}. If you need anything, I\'m right here.</item>
+        <item>One block at a time. The rest can wait.</item>
+        <item>[manana] Mornings are good for focusing. I\'m here.</item>
+        <item>[noche] It\'s evening now. No rush: I\'m staying right here.</item>
+        <item>[lunes] Monday, {nombre}. For now, just this: {tarea}.</item>
+        <item>[finde] It\'s the weekend, and here you are anyway. Me too.</item>
+        <item>[invierno] Cold out there. In here, {minutos} min that are yours.</item>
+        <item>[tarde] Mid-afternoon, {nombre}. {minutos} min, then a break.</item>
+        <item>We start whenever you\'re ready. I\'m here.</item>
     </string-array>
     <string-array name="habla_de_habito_sargento">
         <item>Still left today: {habito}. Use the break.</item>
+        <item>Pending today: {habito}. It fits in this break.</item>
+        <item>“{habito}” is still unmarked. Now is a good time.</item>
+        <item>For this break: {habito}. No overthinking.</item>
+        <item>You have a {minutos} minute break. Time enough for this: {habito}.</item>
+        <item>Switching tasks is rest too: {habito}. Go on.</item>
+        <item>[manana] It\'s still morning and this is left: {habito}. Close it early.</item>
+        <item>[tarde] The afternoon is moving and this is left: {habito}. This break will do.</item>
+        <item>[noche] Before the day ends: {habito}. Better now.</item>
+        <item>[finde] Weekend, and this is left: {habito}. The break is for this.</item>
+        <item>[lunes] Monday. Left for today: {habito}. Don\'t let it pile up.</item>
     </string-array>
     <string-array name="habla_de_habito_cheerleader">
         <item>Still left today: {habito}. Shall we do it now, during the break?</item>
+        <item>Still open today: {habito}. It fits right into this break!</item>
+        <item>“{habito}” is still unticked. Now\'s a good moment, shall we do it together?</item>
+        <item>For this break I\'d suggest this: {habito}. I\'ll keep you company.</item>
+        <item>A {minutos} min break. Plenty of time for this: {habito}!</item>
+        <item>Switching tasks is a kind of rest too: {habito}. Fancy it?</item>
+        <item>[manana] Still morning, and this is left: {habito}. Now or later, as you like.</item>
+        <item>[tarde] Afternoon\'s moving on and this is left: {habito}. Use this break?</item>
+        <item>[noche] Before the day ends: {habito}. Now, if it suits you, and I\'m with you.</item>
+        <item>[finde] It\'s the weekend, and this is still open: {habito}. Use the break for it?</item>
+        <item>[lunes] Monday. Still left today: {habito}. Let\'s do it in the break and move on!</item>
     </string-array>
     <string-array name="habla_de_habito_neutra">
         <item>Still left today: {habito}. Shall we do it now, during the break?</item>
+        <item>Still open today: {habito}. If you feel like it, it fits in this break.</item>
+        <item>“{habito}” is still unticked. Now is a good time, if you like.</item>
+        <item>For this break, I\'d suggest this: {habito}.</item>
+        <item>You\'ve got a {minutos} min break. Time enough for this: {habito}.</item>
+        <item>Switching tasks is a kind of rest too: {habito}. Shall we?</item>
+        <item>[manana] Still morning, and this is left: {habito}. Now or later, as you like.</item>
+        <item>[tarde] The afternoon is moving on and this is left: {habito}. This break could do.</item>
+        <item>[noche] Before the day ends: {habito}. Now, if it suits you.</item>
+        <item>[finde] It\'s the weekend, and this is still open: {habito}. Use the break for it?</item>
+        <item>[lunes] Monday. Still left today: {habito}. Do it during the break?</item>
     </string-array>
     <string-array name="habla_de_habito_largo_sargento">
         <item>Still left today: {habito}. There are {minutos} minutes ahead.</item>
+        <item>Long break. Plenty of room for this: {habito}.</item>
+        <item>This break is long and this is left: {habito}. Do it now.</item>
+        <item>With a {minutos} minute break, this fits: {habito}.</item>
+        <item>[tarde] Mid-afternoon and a long break. Use it for this: {habito}.</item>
+        <item>[manana] Long mid-morning break. Pending: {habito}. Right now.</item>
+        <item>[noche] Long break and it\'s evening already. This is left: {habito}.</item>
+        <item>Long break. This is still pending: {habito}. Close it.</item>
     </string-array>
     <string-array name="habla_de_habito_largo_cheerleader">
         <item>Still left today: {habito}. There are {minutos} min ahead, plenty!</item>
+        <item>A long break. A great slot for this: {habito}!</item>
+        <item>This break is a long one, and this is left: {habito}. Shall we do it together?</item>
+        <item>{minutos} min of break fits this: {habito}. I\'m with you.</item>
+        <item>A long break. I\'d suggest this: {habito}. I\'m with you.</item>
+        <item>[manana] A long mid-morning break. Still open: {habito}. Now or later.</item>
+        <item>[noche] Long break, and night already. This is left: {habito}. Close it out?</item>
     </string-array>
     <string-array name="habla_de_habito_largo_neutra">
         <item>Still left today: {habito}. There are {minutos} min ahead.</item>
+        <item>A long break. A good slot for this: {habito}.</item>
+        <item>This break is a long one, and this is left: {habito}. Shall we?</item>
+        <item>With a {minutos} min break, there\'s room for this: {habito}.</item>
+        <item>[tarde] Mid-afternoon and a long break. I\'d suggest this: {habito}.</item>
+        <item>[manana] A long mid-morning break. Still open: {habito}. Now or later.</item>
+        <item>[noche] A long break, and it\'s evening now. This is left: {habito}.</item>
+        <item>A long break, and this is left: {habito}. Plenty of time.</item>
     </string-array>
     <string-array name="habla_de_sin_pendientes_sargento">
         <item>Everything watered today. Stand up, stretch your legs and drink water.</item>
+        <item>Nothing to suggest this break. On your feet, stretch your legs.</item>
+        <item>This break is yours, {nombre}. A glass of water, now.</item>
+        <item>Nothing from the list this break. Water, and look far away for a while.</item>
+        <item>Rest your eyes: one minute looking at something far away.</item>
+        <item>Nothing to suggest, {nombre}. On your feet, shoulders back.</item>
+        <item>[manana] Mid-morning break. Water, and stretch your back.</item>
+        <item>[tarde] Afternoons weigh on the back. On your feet and stretch.</item>
+        <item>[noche] It\'s evening, {nombre}. A few minutes away from the screen.</item>
+        <item>[verano] Summer. Cool water and stretch your legs.</item>
+        <item>[invierno] You drink water in winter too. On your feet and get a glass.</item>
     </string-array>
     <string-array name="habla_de_sin_pendientes_cheerleader">
         <item>Everything\'s watered for today. Get up, stretch your legs and drink some water!</item>
+        <item>Nothing to suggest for this break. Get up and stretch your legs?</item>
+        <item>This break is all yours, {nombre}. A glass of water would be great.</item>
+        <item>Nothing from the list for this break. Some water, and a look at something far away?</item>
+        <item>Rest your eyes: a minute looking at something far away. They\'ll thank you!</item>
+        <item>Nothing to suggest, {nombre}. Stand up and roll your shoulders?</item>
+        <item>[manana] A mid-morning break. Some water and a back stretch.</item>
+        <item>[tarde] Afternoons weigh on the back. Get up and stretch a little?</item>
+        <item>[noche] It\'s night, {nombre}. A few minutes off-screen will feel wonderful.</item>
+        <item>[verano] Summer. A glass of cool water and a leg stretch!</item>
+        <item>[invierno] Winter needs water too. Get up and have a little?</item>
     </string-array>
     <string-array name="habla_de_sin_pendientes_neutra">
         <item>Everything\'s watered for today. Get up, stretch your legs and drink some water.</item>
+        <item>Nothing to suggest for this break. Get up and stretch your legs?</item>
+        <item>This break is all yours, {nombre}. A glass of water wouldn\'t hurt.</item>
+        <item>Nothing from the list for this break. Some water, and a look at something far away?</item>
+        <item>Rest your eyes: a minute looking at something far away.</item>
+        <item>Nothing to suggest, {nombre}. Stand up and roll your shoulders?</item>
+        <item>[manana] A mid-morning break. Some water and a back stretch.</item>
+        <item>[tarde] Afternoons weigh on the back. Get up and stretch a little?</item>
+        <item>[noche] It\'s evening, {nombre}. A few minutes away from the screen will do you good.</item>
+        <item>[verano] Summer. A glass of cool water and a leg stretch.</item>
+        <item>[invierno] Winter needs water too. Get up and have a little?</item>
     </string-array>
     <string-array name="habla_se_hecha_tarea_sargento">
         <item>Done, {nombre}.</item>
+        <item>Done.</item>
+        <item>One down, {nombre}.</item>
+        <item>One down. Next.</item>
+        <item>Finished. Only a matter of time.</item>
+        <item>Done. Out of your head.</item>
+        <item>[noche] Done, {nombre}. Tonight you sleep better.</item>
+        <item>[lunes] Done. The week starts one lighter.</item>
+        <item>[viernes] Done. The weekend arrives lighter.</item>
     </string-array>
     <string-array name="habla_se_hecha_tarea_cheerleader">
         <item>Done, {nombre}!</item>
+        <item>Done!</item>
+        <item>One down, {nombre}! You did that.</item>
+        <item>One down. You did that.</item>
+        <item>Finished. Well done!</item>
+        <item>Done. You can let it go now, what a relief!</item>
+        <item>[noche] Done, {nombre}. Tonight you\'ll sleep easier.</item>
+        <item>[lunes] Done. The week starts one lighter!</item>
+        <item>[viernes] Done. The weekend arrives lighter, and you earned it!</item>
     </string-array>
     <string-array name="habla_se_hecha_tarea_neutra">
         <item>Done, {nombre}.</item>
+        <item>Done.</item>
+        <item>One down, {nombre}.</item>
+        <item>One down.</item>
+        <item>Finished. Well done.</item>
+        <item>Done. You can let it go now.</item>
+        <item>[noche] Done, {nombre}. Tonight you\'ll sleep easier.</item>
+        <item>[lunes] Done. The week starts one lighter.</item>
+        <item>[viernes] Done. The weekend arrives lighter.</item>
     </string-array>
     <string-array name="habla_se_hecha_habito_sargento">
         <item>Done, {nombre}.</item>
+        <item>Done.</item>
+        <item>One down, {nombre}.</item>
+        <item>One down for today.</item>
+        <item>Done. It counts for today.</item>
+        <item>Done. That\'s how it\'s done.</item>
+        <item>[manana] Done, {nombre}, and it\'s still early.</item>
+        <item>[noche] Done. The day is closed.</item>
     </string-array>
     <string-array name="habla_se_hecha_habito_cheerleader">
         <item>Done, {nombre}!</item>
+        <item>Done!</item>
+        <item>One down, {nombre}. That\'s how it\'s done!</item>
+        <item>One down for today. That adds up.</item>
+        <item>Done. It counts for today, and you did it!</item>
+        <item>Done. One more for today, you and me.</item>
+        <item>[manana] Done, {nombre}, and it\'s still early!</item>
+        <item>[noche] Done. Today is a little fuller.</item>
     </string-array>
     <string-array name="habla_se_hecha_habito_neutra">
         <item>Done, {nombre}.</item>
+        <item>Done.</item>
+        <item>One down, {nombre}.</item>
+        <item>One down for today.</item>
+        <item>Done. It counts for today.</item>
+        <item>Done. One more for today.</item>
+        <item>[manana] Done, {nombre}, and it\'s still early.</item>
+        <item>[noche] Done. Today is a little fuller.</item>
     </string-array>
     <string-array name="habla_ce_mejor_sargento">
         <item>Good. That was the idea.</item>
+        <item>Good. A few minutes was enough.</item>
+        <item>Good. Noted, in case another day needs it.</item>
+        <item>Glad to hear it. Sometimes stopping a bit is enough.</item>
+        <item>That\'s how it\'s done. I\'m here whenever you want.</item>
+        <item>[noche] Good. Now, get some rest.</item>
+        <item>[manana] Good. The morning goes on, and better for it.</item>
     </string-array>
     <string-array name="habla_ce_mejor_cheerleader">
         <item>So glad to hear it! I\'m here whenever you want.</item>
+        <item>Great. A few minutes was enough, and you did that.</item>
+        <item>Glad to hear it. I\'ll remember that, in case another day needs it. You and me.</item>
+        <item>Great. Sometimes stopping for a bit is enough.</item>
+        <item>[noche] Glad to hear it. Sleep well tonight, you\'ve earned it.</item>
+        <item>[manana] So glad! The morning goes better like this.</item>
+        <item>[tarde] Great. The afternoon is easier like this.</item>
     </string-array>
     <string-array name="habla_ce_mejor_neutra">
         <item>Glad to hear it. I\'m here whenever you want.</item>
+        <item>Good. A few minutes was enough.</item>
+        <item>Glad to hear it. I\'ll remember that, in case another day needs it.</item>
+        <item>Good. Sometimes stopping for a bit is enough.</item>
+        <item>[noche] Glad to hear it. Sleep well tonight.</item>
+        <item>[manana] Glad to hear it. The morning goes better like this.</item>
+        <item>[tarde] Good. The afternoon is easier like this.</item>
     </string-array>
     <string-array name="habla_ce_igual_sargento">
         <item>Okay. Sometimes it takes another round.</item>
+        <item>Okay. It doesn\'t always show the first time.</item>
+        <item>Understood. It doesn\'t always change something, and that\'s fine.</item>
+        <item>Okay. Another rhythm might feel different. Try it if you like.</item>
+        <item>Fair enough. At least you stopped for a while.</item>
+        <item>[noche] Okay. At night the day is harder to let go of.</item>
     </string-array>
     <string-array name="habla_ce_igual_cheerleader">
         <item>Okay. Sometimes it takes another round, and I\'m here.</item>
+        <item>Okay. It doesn\'t always show the first time.</item>
+        <item>Understood. Breathing doesn\'t always shift things, and that\'s fine. We go on together.</item>
+        <item>Okay. If you like, we try another rhythm and see.</item>
+        <item>Fair enough. At least you stopped for a while, and that counts.</item>
+        <item>[noche] Okay. At night the day is harder to let go of. No rush.</item>
     </string-array>
     <string-array name="habla_ce_igual_neutra">
         <item>Okay. Sometimes it takes another round.</item>
+        <item>Okay. It doesn\'t always show the first time.</item>
+        <item>Understood. Breathing doesn\'t always shift things, and that\'s fine.</item>
+        <item>Okay. If you like, another rhythm might feel different.</item>
+        <item>Fair enough. At least you stopped for a while.</item>
+        <item>[noche] Okay. At night the day is harder to let go of.</item>
     </string-array>
     <string-array name="habla_ce_cuesta_sargento">
         <item>Understood. Again, slower. Sleep is the longest rhythm.</item>
+        <item>Some days it\'s harder. It passes.</item>
+        <item>Understood. We go again or leave it here. Both count.</item>
+        <item>Okay. I\'m still here for another round.</item>
+        <item>I\'ll keep that in mind for the next thing I suggest today.</item>
+        <item>[noche] At night everything weighs more. Again, calmly.</item>
+        <item>[manana] Plenty of morning left. No rush.</item>
     </string-array>
     <string-array name="habla_ce_cuesta_cheerleader">
         <item>No rush. Again, more slowly? Sleep is the longest rhythm, and I\'m with you.</item>
+        <item>No rush. Some days it\'s harder, and I\'m still right beside you.</item>
+        <item>Understood. We can go again or leave it here. Either is fine.</item>
+        <item>Okay. I\'m still here if you want another round together.</item>
+        <item>I\'ll keep that in mind for the next thing I suggest today.</item>
+        <item>[noche] No rush. At night everything weighs a little more, and we\'re in this together.</item>
+        <item>[manana] No rush. There\'s plenty of morning left, you and me.</item>
     </string-array>
     <string-array name="habla_ce_cuesta_neutra">
         <item>No rush. Again, more slowly? Sleep is the longest rhythm.</item>
+        <item>No rush. Some days it\'s harder, and that\'s okay.</item>
+        <item>Understood. We can go again or leave it here. Either is fine.</item>
+        <item>Okay. I\'m still here if you want another round.</item>
+        <item>I\'ll keep that in mind for the next thing I suggest today.</item>
+        <item>[noche] No rush. At night everything weighs a little more.</item>
+        <item>[manana] No rush. There\'s plenty of morning left.</item>
     </string-array>
     <string-array name="habla_re_fin_respirar_sargento">
         <item>Done, {nombre}.</item>
+        <item>Done.</item>
+        <item>Well breathed, {nombre}. Back to it.</item>
+        <item>Well breathed. Back to it.</item>
+        <item>Done. A few minutes for you.</item>
+        <item>Done. Your body notices.</item>
+        <item>[noche] Done. If it\'s bedtime, go to bed.</item>
+        <item>[manana] Done, {nombre}. The morning goes on, on the right foot.</item>
+        <item>[tarde] Done. A pause in the middle of the afternoon. Well taken.</item>
+        <item>[finde] Done. Weekends are for this too.</item>
     </string-array>
     <string-array name="habla_re_fin_respirar_cheerleader">
         <item>That\'s it, {nombre}! That felt good.</item>
+        <item>That\'s it! That felt good.</item>
+        <item>There, {nombre}. A few minutes just for you.</item>
+        <item>That\'s it. A few minutes just for you.</item>
+        <item>That\'s it. Your body will thank you, and I love keeping you company.</item>
+        <item>[noche] That\'s it. If it\'s bedtime, good night.</item>
+        <item>[manana] That\'s it, {nombre}. The morning carries on at your pace!</item>
+        <item>[tarde] That\'s it. A pause in the middle of the afternoon, nicely done!</item>
+        <item>[finde] That\'s it. Weekends are for this too.</item>
     </string-array>
     <string-array name="habla_re_fin_respirar_neutra">
         <item>There, {nombre}.</item>
+        <item>There we go.</item>
+        <item>There, {nombre}. A few minutes just for you.</item>
+        <item>That\'s it. A few minutes just for you.</item>
+        <item>That\'s it. Your body will thank you.</item>
+        <item>[noche] That\'s it. If it\'s bedtime, good night.</item>
+        <item>[manana] That\'s it, {nombre}. The morning carries on at your pace.</item>
+        <item>[tarde] That\'s it. A pause in the middle of the afternoon.</item>
+        <item>[finde] That\'s it. Weekends are for this too.</item>
     </string-array>
     <string-array name="habla_re_respirar_mejor_sargento">
         <item>Yesterday breathing did you good. “{modo}” is still here.</item>
+        <item>Not long ago “{modo}” did you good. It\'s one tap away.</item>
+        <item>Once “{modo}” left you better. Use it when needed.</item>
+        <item>“{modo}” has worked for you before. It\'s there.</item>
+        <item>A reminder: “{modo}” did you good. In case today needs it.</item>
+        <item>[noche] In case tonight is hard: “{modo}” helped you once before.</item>
     </string-array>
     <string-array name="habla_re_respirar_mejor_cheerleader">
         <item>Yesterday breathing did you good. “{modo}” is still here, whenever you want!</item>
+        <item>Not long ago, “{modo}” did you good. It\'s still one tap away.</item>
+        <item>Once, “{modo}” left you feeling better. It\'s there whenever you want.</item>
+        <item>I remember “{modo}” did you good. In case today needs it, you and me.</item>
+        <item>“{modo}” has worked for you before. It\'s still there.</item>
+        <item>[noche] In case tonight is hard: “{modo}” helped you once before.</item>
     </string-array>
     <string-array name="habla_re_respirar_mejor_neutra">
         <item>Yesterday breathing did you good. “{modo}” is still here.</item>
+        <item>Not long ago, “{modo}” did you good. It\'s still one tap away.</item>
+        <item>Once, “{modo}” left you feeling better. It\'s there whenever you want.</item>
+        <item>I remember “{modo}” did you good. In case today needs it.</item>
+        <item>“{modo}” has worked for you before. It\'s still there.</item>
+        <item>[noche] In case tonight is hard: “{modo}” helped you once before.</item>
     </string-array>
     <string name="ses_modo_calm">Calm down</string>
     <string name="ses_modo_sleep">Sleep</string>
