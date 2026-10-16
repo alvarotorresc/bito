@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- El cierre del día dentro del Inicio. Los botones del repaso (Hecho, No lo hice, Así se queda, Día limpio) están en strings_review.xml. -->
+    <string name="cierre_cerrar">Cerrar el cierre del día</string>
+    <string name="cierre_hoy_n_de_m">Hoy: %1$d de %2$d</string>
+    <string name="cierre_total_exacto">Total exacto</string>
+    <string name="cierre_buenas_noches">Buenas noches</string>
+    <string name="cierre_tareas_mas">%1$d más</string>
+    <string name="cierre_animo_titulo">¿Qué tal el día?</string>
+    <string name="cierre_animo_bien">Bien</string>
+    <string name="cierre_animo_regular">Regular</string>
+    <string name="cierre_animo_duro">Duro</string>
+    <!-- El sello del cierre: «Día sellado», «Hasta mañana», las rachas y los logros nuevos se reutilizan de strings_review.xml. -->
+    <string name="cierre_sello_perfecto">Día perfecto</string>
+    <string name="cierre_sello_bitos">Bitos de hoy</string>
+    <string name="cierre_sello_gordo">Mañana empezamos por %1$s</string>
+</resources>

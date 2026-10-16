@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
@@ -28,7 +27,6 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.height
-import androidx.lifecycle.viewModelScope
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.db.BadgeEntity
@@ -54,7 +52,6 @@ import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -669,11 +666,10 @@ class InicioScreenTest {
     }
 
     @Test
-    fun `the close mounts the current review over Inicio`() {
+    fun `the close mounts its own content over Inicio`() {
         banco.preparar(habitos = 1)
         rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true) } }
-        // T32: rehacer cuando u2 sustituya el repaso
-        rule.waitUntil(5_000) { hay("review-seal") }
+        rule.waitUntil(5_000) { hay("cierre-buenas-noches") }
         rule.onNodeWithTag("inicio").assertExists()
     }
 
@@ -710,22 +706,19 @@ class InicioScreenTest {
     }
 
     @Test
-    fun `reopening the close starts a fresh review and the dismissed row comes back`() {
+    fun `reopening the close starts clean and the dismissed row comes back`() {
         banco.preparar(habitos = 1)
         rule.setContent { ConSistema { banco.Inicio(cierreAlEntrar = true) } }
-        // T32: rehacer cuando u2 sustituya el repaso (las filas son del repaso de hoy).
-        rule.waitUntil(5_000) { hay("review-ack-h0") }
-        val primero = banco.cierre.repasoActual!!
-        rule.onNodeWithTag("review-ack-h0").fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
-        rule.waitUntil(5_000) { !hay("review-ack-h0") }
+        rule.waitUntil(5_000) { hay("cierre-no-h0") }
+        rule.onNodeWithTag("cierre-no-h0").performClick()
+        rule.waitUntil(5_000) { hay("cierre-atenuada-h0") }
 
         rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
         rule.waitUntil(5_000) { !hay("cierre") }
-        assertFalse("el repaso viejo deja de escuchar al cerrar", primero.viewModelScope.isActive)
         rule.onNodeWithTag("cerrar-dia").performScrollTo().performClick()
         rule.waitUntil(5_000) { hay("cierre") }
 
-        assertTrue("otro repaso, sin el estado viejo", banco.cierre.repasoActual !== primero)
-        rule.waitUntil(5_000) { hay("review-ack-h0") }
+        rule.waitUntil(5_000) { hay("cierre-no-h0") }
+        assertFalse("lo decidido no pasa de una apertura a otra", hay("cierre-atenuada-h0"))
     }
 }

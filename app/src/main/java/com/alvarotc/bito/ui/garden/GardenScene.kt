@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -144,12 +146,44 @@ private const val GLOW_SHIFT_X_PCT = 1.5f
 private const val GLOW_RISE_PCT = 15f
 private const val GLOW_MID_STOP = 0.45f
 private val GlowCore = Color(0xBFFFBE6E)
+
+// G40: el tinte de noche que el anochecer multiplica sobre el jardín (el de la fase NOCHE de la tabla de luz). El
+// farolillo «se enciende tarde»: su brillo empieza a subir con la noche a 0,45 y llega a 1 con la noche entera; de la
+// mitad de la noche en adelante se pinta encima de la luz.
+private val NOCHE_ARRIBA = Color(GardenLookTable.light.getValue("NOCHE").first)
+private val NOCHE_ABAJO = Color(GardenLookTable.light.getValue("NOCHE").second)
+private const val FAROL_DESDE = 0.45f
+private const val FAROL_ENCIMA = 0.5f
+
+// G40: mientras anochece, una franja de agua de 160 dp se filtra hacia abajo por el jardín en 2800 ms `io`: un
+// degradado fijo que se traslada, sin desenfoque (los valores del prototipo `cierre.html`; el agua no tiene token).
+private val FRANJA_FILTRA = 160.dp
+private val AGUA_FILTRA = Color(0xFF7DB6C9)
+private const val AGUA_FILTRA_ALFA = 0.42f
+private const val AGUA_FILTRA_PICO = 0.55f
+private const val AGUA_FILTRA_LLENA = 0.2f
+
+/** El brillo del farolillo: el de la noche del reloj ([night]) o el del anochecer del cierre ([noche]), el mayor. */
+internal fun brilloFarolillo(
+    night: Float,
+    noche: Float,
+): Float = maxOf(night.coerceIn(0f, 1f), ((noche - FAROL_DESDE) / (1f - FAROL_DESDE)).coerceIn(0f, 1f))
+
 private val GlowMid = Color(0x38FFA050)
 
 /** Lo que las pruebas miran del jardín sin cambiar su firma: el mustio que se dibuja y cuántos saltos ha dado Habi. */
 internal class SondaJardin {
     var wiltDibujado: () -> Float = { 0f }
     var saltosHabi: () -> Int = { 0 }
+
+    /** El brillo del farolillo que se pinta, de 0 a 1 (G40). */
+    var brilloFarolillo: () -> Float = { 0f }
+
+    /** Por dónde va la franja de agua que se filtra al anochecer (0 o 1 cuando no se pinta). */
+    var filtracion: () -> Float = { 0f }
+
+    /** Si el arte del jardín ya está cargado y se dibuja. */
+    var arteListo: () -> Boolean = { false }
 
     /** Las claves de los especiales que se han destacado, en orden. */
     val destacados = mutableListOf<String>()
@@ -250,7 +284,7 @@ fun GardenScene(
     forma: Shape = RoundedCornerShape(24.dp),
     // Cada incremento, la fiesta del día completo: las plantas en ola, Habi salta y la luz sube 1,4 s (spec §6.3).
     fiesta: Int = 0,
-    // 0 de día, 1 de noche (G40). Lambda para leerla al dibujar sin recomponer en cada fotograma; aún no se pinta.
+    // 0 de día, 1 de noche (G40). Lambda para leerla al dibujar sin recomponer en cada fotograma.
     noche: () -> Float = { 0f },
 ) {
     val context = LocalContext.current
@@ -424,9 +458,33 @@ fun GardenScene(
         }
     }
 
+    // G40: la noche se lee al dibujar; solo recompone cuando el farolillo pasa a pintarse encima de la luz.
+    val nocheAhora by rememberUpdatedState(noche)
+    val farolEncima by remember { derivedStateOf { nocheAhora() > FAROL_ENCIMA } }
+    // La filtración sale solo cuando el anochecer arranca desde el día; abrir de noche (Hoy de noche) no la pinta.
+    val filtracion = remember { Animatable(0f) }
+    LaunchedEffect(reducido) {
+        var antes = nocheAhora()
+        snapshotFlow { nocheAhora() }.collect { n ->
+            if (!reducido && antes <= 0f && n > 0f && n < 1f && !filtracion.isRunning) {
+                launch {
+                    filtracion.snapTo(0f)
+                    filtracion.animateTo(1f, tween(Duraciones.FILTRACION, easing = Curvas.io))
+                }
+            }
+            antes = n
+        }
+    }
+    val listoAhora by rememberUpdatedState(listo)
+
     SideEffect {
         sonda?.wiltDibujado = { wiltAnim.value }
         sonda?.saltosHabi = { habiNudge }
+        sonda?.arteListo = { listoAhora }
+        sonda?.filtracion = { filtracion.value }
+        sonda?.brilloFarolillo = {
+            if (GardenSpecial.LANTERN in pintado.specials) brilloFarolillo(GardenLook.nightness(garden.light), nocheAhora()) else 0f
+        }
     }
 
     val registro = LocalAnclas.current
@@ -450,7 +508,11 @@ fun GardenScene(
         val sceneH = constraints.maxHeight.toFloat()
         val items = remember(pintado, sceneW, sceneH) { sceneItems(pintado, sceneW, sceneH) }
         val habiDepth = GardenArt.habiSpot.yPct
-        val overLight = itemsOverLight(items, garden.light)
+        // De noche (la del reloj o la del cierre), el farolillo encendido se pinta encima de la luz y no se oscurece.
+        val overLight =
+            itemsOverLight(items, garden.light).ifEmpty {
+                if (farolEncima) items.filter { it is SceneItem.Special && it.special == GardenSpecial.LANTERN } else emptyList()
+            }
         val habi = habiRect(sceneW, sceneH)
         val habiBody = habiBodyRect(sceneW, sceneH)
         val currentOnHabiTap by rememberUpdatedState(onHabiTap)
@@ -581,10 +643,14 @@ fun GardenScene(
             val (top, bottom) = GardenLook.lightGradient(garden.light)
             drawRect(Brush.verticalGradient(listOf(Color(top), Color(bottom))), blendMode = BlendMode.Multiply)
             if (luzFiesta.value > 0f) drawRect(Color.White.copy(alpha = FIESTA_LUZ_MAX * luzFiesta.value), blendMode = BlendMode.Plus)
+            // G40: el tinte de la noche, multiplicado encima de la luz del reloj. Con 0 no se pinta nada.
+            val n = nocheAhora().coerceIn(0f, 1f)
+            if (n > 0f) drawRect(Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO)), alpha = n, blendMode = BlendMode.Multiply)
+            drawFiltracion(filtracion.value)
             overLight.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
-            val night = GardenLook.nightness(garden.light)
+            val brillo = brilloFarolillo(GardenLook.nightness(garden.light), n)
             val lantern = GardenArt.specialSpots[GardenSpecial.LANTERN.key]
-            if (GardenSpecial.LANTERN in garden.specials && lantern != null && night > 0f) drawLanternGlow(lantern, night)
+            if (GardenSpecial.LANTERN in garden.specials && lantern != null && brillo > 0f) drawLanternGlow(lantern, brillo)
         }
 
         bubble?.let { SpecialBubble(it, sceneW, conOrigen = globitoPlanta) }
@@ -707,6 +773,26 @@ private fun tintes(
             )
         }
     return listOfNotNull(mustio, GardenLookTable.seasons[season.name])
+}
+
+/** La franja de agua que baja mientras anochece (G40): aparece en el primer 20 % y se apaga al llegar abajo. */
+private fun DrawScope.drawFiltracion(p: Float) {
+    if (p <= 0f || p >= 1f) return
+    val franja = FRANJA_FILTRA.toPx()
+    val y = -franja + (size.height + franja) * p
+    val alfa = if (p < AGUA_FILTRA_LLENA) p / AGUA_FILTRA_LLENA else (1f - p) / (1f - AGUA_FILTRA_LLENA)
+    drawRect(
+        Brush.verticalGradient(
+            0f to Color.Transparent,
+            AGUA_FILTRA_PICO to AGUA_FILTRA.copy(alpha = AGUA_FILTRA_ALFA),
+            1f to Color.Transparent,
+            startY = y,
+            endY = y + franja,
+        ),
+        topLeft = Offset(0f, y),
+        size = Size(size.width, franja),
+        alpha = alfa.coerceIn(0f, 1f),
+    )
 }
 
 private fun DrawScope.drawLanternGlow(

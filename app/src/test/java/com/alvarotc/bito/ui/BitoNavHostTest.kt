@@ -239,13 +239,13 @@ class BitoNavHostTest {
     }
 
     /**
-     * Same limitation [com.alvarotc.bito.ui.review.ReviewScreenTest]'s own copy documents:
+     * Same limitation the old review screen test documented:
      * `createComposeRule()` has no exposed `.activity` to read a working
      * [OnBackPressedDispatcherOwner] back off of, so the only deterministic way to drive a system
      * back press under this harness is to provide the composition OUR OWN dispatcher instance and
      * invoke it ourselves from outside. Compose Navigation's own `NavHost` registers its back
      * handling against whatever [LocalOnBackPressedDispatcherOwner] it finds, so wrapping the
-     * whole [BitoNavHost] in this owner (rather than a single screen, as `ReviewScreenTest` does)
+     * whole [BitoNavHost] in this owner (rather than a single screen)
      * lets a test drive the NAV GRAPH's own back stack, not just one screen's `BackHandler`.
      */
     private class FakeBackDispatcherOwner : OnBackPressedDispatcherOwner {

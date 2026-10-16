@@ -55,7 +55,7 @@ private const val FOCUS_CUSTOM_MAX_MINUTES = 180
  * `review`: a live session isn't a place you tab away from, it's a place you finish or leave.
  *
  * At rest: [HabiStage] on the user's real [FocusUiState.spec] (no new pose, no new sound — the
- * stage is shared with [com.alvarotc.bito.ui.review.SealedDayContent]), the task's title and
+ * same stage as everywhere else), the task's title and
  * first step, the three lengths ([FocusViewModel.OPTIONS]) and "Empezar". Running: the same Habi
  * and task copy, the mm:ss countdown next to the five actions — "he terminado", the three "+" extensions
  * ([FocusViewModel.EXTENSIONS]) and "lo dejo". At `00:00` nothing changes: [FocusUiState] never
