@@ -29,13 +29,12 @@ import com.alvarotc.bito.ui.today.CardKind
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
@@ -44,6 +43,7 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -129,17 +129,19 @@ class DetailViewModel(
                 }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
         }
 
-    private val _efectos = MutableSharedFlow<Efecto>(extraBufferCapacity = 4)
+    // Un canal y no un SharedFlow sin replay: un efecto que llega sin colector (giro de pantalla) espera a la
+    // pantalla en vez de perderse con la nota ya oculta. Se consume una vez: sin repetición para quien llega tarde.
+    private val _efectos = Channel<Efecto>(Channel.BUFFERED)
 
-    /** Lo que la pantalla debe hacer tras una respuesta (solo `EditarHabito` sale de la ficha). */
-    val efectos: SharedFlow<Efecto> = _efectos.asSharedFlow()
+    /** Lo que la pantalla debe hacer tras una respuesta (solo `EditarHabito` sale de la ficha). Un solo colector. */
+    val efectos: Flow<Efecto> = _efectos.receiveAsFlow()
 
     fun responder(r: Respuesta) {
         val id = propuesta.value?.id ?: return
         viewModelScope.launch {
             val efecto = propuestas?.responder(id, r) ?: return@launch
             if (efecto is Efecto.EditarHabito) fase.value = Fase.OCULTA
-            if (efecto != Efecto.Ninguno) _efectos.emit(efecto)
+            if (efecto != Efecto.Ninguno) _efectos.send(efecto)
         }
     }
 

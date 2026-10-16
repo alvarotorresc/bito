@@ -392,6 +392,31 @@ class DetailViewModelTest {
         }
 
     @Test
+    fun `an effect without anyone listening waits for the screen and is not repeated`() =
+        runTest {
+            // Giro de pantalla mientras la fuente responde: la edición no se pierde (ni la nota se queda oculta sin ella).
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()), Efecto.EditarHabito("h1", 15))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+
+            val primero = mutableListOf<Efecto>()
+            val colector1 = launch { vm.efectos.collect { primero += it } }
+            advanceUntilIdle()
+            assertEquals(listOf<Efecto>(Efecto.EditarHabito("h1", 15)), primero)
+            colector1.cancel()
+
+            val segundo = mutableListOf<Efecto>()
+            val colector2 = launch { vm.efectos.collect { segundo += it } }
+            advanceUntilIdle()
+            assertTrue(segundo.isEmpty())
+            colector2.cancel()
+        }
+
+    @Test
     fun `an answer without effect emits nothing`() =
         runTest {
             habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))

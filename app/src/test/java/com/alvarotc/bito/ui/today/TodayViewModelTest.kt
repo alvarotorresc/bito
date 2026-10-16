@@ -535,6 +535,29 @@ class TodayViewModelTest {
         }
 
     @Test
+    fun `an effect without anyone listening waits for the screen and is not repeated`() =
+        runTest(dispatcher) {
+            // Un giro de pantalla: el efecto llega mientras no hay colector y no se pierde.
+            vm = newViewModel(FuenteConEfectos(Efecto.PedirPermiso(alarmas = false)))
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+
+            val primero = mutableListOf<Efecto>()
+            val colector1 = launch { vm.efectos.collect { primero += it } }
+            advanceUntilIdle()
+            assertEquals(listOf<Efecto>(Efecto.PedirPermiso(alarmas = false)), primero)
+            colector1.cancel()
+
+            val segundo = mutableListOf<Efecto>()
+            val colector2 = launch { vm.efectos.collect { segundo += it } }
+            advanceUntilIdle()
+            assertTrue(segundo.isEmpty())
+            colector2.cancel()
+        }
+
+    @Test
     fun `an answer with nothing to do emits no effect`() =
         runTest(dispatcher) {
             vm = newViewModel(FuenteConEfectos(Efecto.Ninguno))

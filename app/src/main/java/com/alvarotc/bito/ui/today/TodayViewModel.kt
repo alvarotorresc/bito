@@ -45,6 +45,7 @@ import com.alvarotc.bito.ui.habi.minuteTicks
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,14 +61,13 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
-
-private const val EFECTOS_EN_COLA = 8
 
 /** Lo de [hoy] que dice si es día duro: respuestas y vigentes de `DIA_DURO` y si se llegó a mostrar uno. */
 private fun Memoria.soloDiaDuro(hoy: LogicalDay): Memoria =
@@ -231,10 +231,12 @@ class TodayViewModel(
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
 
-    private val efectosInternos = MutableSharedFlow<Efecto>(extraBufferCapacity = EFECTOS_EN_COLA)
+    // Un canal y no un SharedFlow sin replay: un efecto que llega sin colector (giro de pantalla, Hoy fuera de
+    // composición) espera a la pantalla en vez de perderse.
+    private val efectosInternos = Channel<Efecto>(Channel.BUFFERED)
 
-    /** Lo que la pantalla debe hacer tras una respuesta. Se consume una vez: sin repetición para quien llega tarde. */
-    val efectos: SharedFlow<Efecto> = efectosInternos.asSharedFlow()
+    /** Lo que la pantalla debe hacer tras una respuesta. Se consume una vez: sin repetición para quien llega tarde. Un solo colector. */
+    val efectos: Flow<Efecto> = efectosInternos.receiveAsFlow()
 
     fun responder(
         r: Respuesta,
@@ -243,7 +245,7 @@ class TodayViewModel(
         val id = propuesta.value?.id ?: return
         viewModelScope.launch {
             val efecto = propuestas?.responder(id, r, hora) ?: return@launch
-            if (efecto != Efecto.Ninguno) efectosInternos.emit(efecto)
+            if (efecto != Efecto.Ninguno) efectosInternos.send(efecto)
         }
     }
 
