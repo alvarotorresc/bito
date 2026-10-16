@@ -1,5 +1,6 @@
 package com.alvarotc.bito.domain.habla
 
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import java.time.DayOfWeek
 
@@ -27,6 +28,7 @@ enum class Hueco(
     OBJETIVO("objetivo"),
     FECHA("fecha"),
     LISTA("lista"),
+    MODO("modo"),
 }
 
 /** Tipos de trozo con los que se compone una frase. */
@@ -183,6 +185,17 @@ enum class Bolsa(
     AV_ACEPTADO_TITULO("av_aceptado_titulo", TipoTrozo.SUELTA, setOf(Hueco.HORA, Hueco.GORDO, Hueco.NOMBRE), 6),
     AV_ACEPTADO_CUERPO("av_aceptado_cuerpo", TipoTrozo.SUELTA, setOf(Hueco.HORA, Hueco.GORDO, Hueco.NOMBRE), 6),
     AV_AUSENCIA("av_ausencia", TipoTrozo.SUELTA, setOf(Hueco.NOMBRE, Hueco.HORA, Hueco.GORDO), 6),
+    SE_ENTRAR("se_entrar", TipoTrozo.SUELTA, setOf(Hueco.NOMBRE, Hueco.TAREA, Hueco.HABITO, Hueco.MINUTOS), 10),
+    DE_HABITO("de_habito", TipoTrozo.SUELTA, setOf(Hueco.HABITO, Hueco.MINUTOS), 10),
+    DE_HABITO_LARGO("de_habito_largo", TipoTrozo.SUELTA, setOf(Hueco.HABITO, Hueco.MINUTOS), 6),
+    DE_SIN_PENDIENTES("de_sin_pendientes", TipoTrozo.SUELTA, setOf(Hueco.NOMBRE), 10),
+    SE_HECHA_TAREA("se_hecha_tarea", TipoTrozo.SUELTA, setOf(Hueco.NOMBRE), 8),
+    SE_HECHA_HABITO("se_hecha_habito", TipoTrozo.SUELTA, setOf(Hueco.NOMBRE), 8),
+    CE_MEJOR("ce_mejor", TipoTrozo.SUELTA, emptySet(), 6),
+    CE_IGUAL("ce_igual", TipoTrozo.SUELTA, emptySet(), 6),
+    CE_CUESTA("ce_cuesta", TipoTrozo.SUELTA, emptySet(), 6),
+    RE_FIN_RESPIRAR("re_fin_respirar", TipoTrozo.SUELTA, setOf(Hueco.NOMBRE), 8),
+    RE_RESPIRAR_MEJOR("re_respirar_mejor", TipoTrozo.RECUERDO, setOf(Hueco.MODO), 5),
 }
 
 /** Etiquetas de contexto de un item («[lunes,manana] Texto», spec §5.13). */
@@ -267,6 +280,11 @@ sealed interface ValorHueco {
 
     data class Fecha(
         val epochDay: Long,
+    ) : ValorHueco
+
+    /** El modo de respiración; la pantalla lo escribe con su nombre en el idioma activo. */
+    data class Modo(
+        val modo: BreathingMode,
     ) : ValorHueco
 }
 

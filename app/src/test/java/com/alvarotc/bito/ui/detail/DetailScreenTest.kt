@@ -45,6 +45,7 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.propuestas.Accion
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -492,6 +493,7 @@ class DetailScreenTest {
                 override fun propuesta(
                     ambito: Ambito,
                     habitId: String?,
+                    descanso: ContextoDescanso?,
                 ): Flow<Propuesta?> =
                     flowOf(
                         Propuesta(
@@ -532,6 +534,7 @@ class DetailScreenTest {
         override fun propuesta(
             ambito: Ambito,
             habitId: String?,
+            descanso: ContextoDescanso?,
         ): Flow<Propuesta?> = flowOf(propuesta)
 
         override suspend fun responder(
@@ -631,6 +634,7 @@ class DetailScreenTest {
                 override fun propuesta(
                     ambito: Ambito,
                     habitId: String?,
+                    descanso: ContextoDescanso?,
                 ): Flow<Propuesta?> = flowOf(Propuesta("p1", TextoHabi(R.string.got_it), emptyList()))
 
                 override suspend fun responder(

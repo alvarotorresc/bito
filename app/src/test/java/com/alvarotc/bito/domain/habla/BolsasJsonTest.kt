@@ -48,10 +48,13 @@ class BolsasJsonTest {
         }
 
     @Test
-    fun `there are sixty four bags`() = assertEquals(64, Bolsa.entries.size)
+    fun `there are seventy five bags`() = assertEquals(75, Bolsa.entries.size)
 
     @Test
     fun `the four notice bags that can greet by name admit it`() =
         listOf(Bolsa.AV_RECORDATORIO, Bolsa.AV_NOCHE_CUERPO, Bolsa.AV_ACEPTADO_TITULO, Bolsa.AV_ACEPTADO_CUERPO)
             .forEach { assertEquals(it.clave, true, Hueco.NOMBRE in it.huecos) }
+
+    @Test
+    fun `the json has as many rows as the enum`() = assertEquals(json.size, Bolsa.entries.size)
 }

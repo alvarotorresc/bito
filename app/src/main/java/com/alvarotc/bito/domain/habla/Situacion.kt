@@ -60,6 +60,11 @@ enum class Situacion(
     CIE_RACHA_AVANZA(Ambito.CIERRE, Bolsa.CIE_RACHA_AVANZA, conBotones = false, cuentaTope = false),
     CIE_NADA_PENDIENTE(Ambito.CIERRE, Bolsa.CIE_NADA_PENDIENTE, conBotones = false, cuentaTope = false),
     CIE_SENCILLO(Ambito.CIERRE, Bolsa.CIE_SENCILLO, conBotones = false, cuentaTope = false),
+
+    // DESCANSO (sesión): un hábito para el descanso
+    DESCANSO_HABITO(Ambito.DESCANSO, Bolsa.DE_HABITO, conBotones = false, cuentaTope = false),
+    DESCANSO_HABITO_LARGO(Ambito.DESCANSO, Bolsa.DE_HABITO_LARGO, conBotones = false, cuentaTope = false),
+    DESCANSO_SIN_PENDIENTES(Ambito.DESCANSO, Bolsa.DE_SIN_PENDIENTES, conBotones = false, cuentaTope = false),
 }
 
 /** Lo que una regla propone antes de redactarlo (spec §4.3). [acciones]: la primera, principal. */

@@ -32,6 +32,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -73,6 +74,7 @@ class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
     override fun propuesta(
         ambito: Ambito,
         habitId: String?,
+        descanso: ContextoDescanso?,
     ): Flow<Propuesta?> = flujo
 
     override suspend fun responder(

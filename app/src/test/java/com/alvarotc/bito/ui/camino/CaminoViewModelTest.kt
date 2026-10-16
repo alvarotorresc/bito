@@ -18,6 +18,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -127,6 +128,7 @@ class CaminoViewModelTest {
         override fun propuesta(
             ambito: Ambito,
             habitId: String?,
+            descanso: ContextoDescanso?,
         ): Flow<Propuesta?> {
             pedidas += ambito
             return actual
@@ -192,6 +194,7 @@ class CaminoViewModelTest {
                     override fun propuesta(
                         ambito: Ambito,
                         habitId: String?,
+                        descanso: ContextoDescanso?,
                     ): Flow<Propuesta?> = flow { awaitCancellation() }
 
                     override suspend fun responder(

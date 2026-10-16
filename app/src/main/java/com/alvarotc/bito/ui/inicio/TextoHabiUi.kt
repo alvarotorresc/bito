@@ -1,15 +1,18 @@
 package com.alvarotc.bito.ui.inicio
 
 import android.content.res.Resources
+import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.habla.ClaveTrozo
 import com.alvarotc.bito.domain.habla.Idioma
 import com.alvarotc.bito.domain.habla.Plantilla
 import com.alvarotc.bito.domain.habla.TipoTrozo
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.habla.BolsasRecursos
 import java.util.Locale
@@ -43,6 +46,7 @@ fun resolverTextoHabi(
                 t.args.map {
                     when (it) {
                         is TextoHabi -> resolverTextoHabi(it, resources)
+                        is ValorHueco.Modo -> resources.getString(nombreModo(it))
                         is ValorHueco -> Plantilla.valor(it, idioma, locale)
                         else -> it
                     }
@@ -50,6 +54,15 @@ fun resolverTextoHabi(
             resources.getString(t.res, *args.toTypedArray())
         }
         is TextoHabi.Frase -> frase(t, resources)
+    }
+
+/** El nombre del modo de respiración en la voz de la pantalla («Calmarme», «Dormir», «Centrarme»). */
+@StringRes
+private fun nombreModo(v: ValorHueco.Modo): Int =
+    when (v.modo) {
+        BreathingMode.CALM -> R.string.ses_modo_calm
+        BreathingMode.SLEEP -> R.string.ses_modo_sleep
+        BreathingMode.FOCUS -> R.string.ses_modo_focus
     }
 
 private fun locale(resources: Resources): Locale = resources.configuration.locales.get(0) ?: Locale.getDefault()
@@ -62,7 +75,9 @@ private fun frase(
 ): String {
     val locale = locale(resources)
     val idioma = idioma(locale)
-    return Plantilla.unir(f.trozos.map { trozo(it, f, resources, idioma, locale) })
+    val huecos = f.huecos.mapValues { (_, v) -> if (v is ValorHueco.Modo) ValorHueco.Texto(resources.getString(nombreModo(v))) else v }
+    val resuelta = f.copy(huecos = huecos)
+    return Plantilla.unir(f.trozos.map { trozo(it, resuelta, resources, idioma, locale) })
 }
 
 /**

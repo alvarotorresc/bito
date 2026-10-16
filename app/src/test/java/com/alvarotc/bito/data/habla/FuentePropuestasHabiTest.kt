@@ -40,6 +40,7 @@ import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -568,9 +569,14 @@ class FuentePropuestasHabiTest {
         }
 
     @Test
-    fun `the rest says nothing`() =
+    fun `the source still says nothing in a break`() =
         prueba {
             assertNull(fuente(estadoCon(agua)).propuesta(Ambito.DESCANSO).first())
+            assertNull(
+                fuente(estadoCon(agua))
+                    .propuesta(Ambito.DESCANSO, descanso = ContextoDescanso("s1", 1, false, 5, null))
+                    .first(),
+            )
         }
 
     // «Ayer se escapó» de un hábito de marcar: la Neutra aún no tiene frases sin {minutos} que valgan cualquier día.

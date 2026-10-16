@@ -21,6 +21,7 @@ import com.alvarotc.bito.domain.habla.reglas.ReglasFicha
 import com.alvarotc.bito.domain.habla.reglas.Respuestas
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.TaskStatus
+import com.alvarotc.bito.domain.propuestas.Ambito
 import com.alvarotc.bito.domain.task
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -310,9 +311,10 @@ class ContratoHuecosTest {
     @Test
     fun `the scenarios cover every bag the domain can produce`() {
         val esperadas =
-            Situacion.entries.mapNotNull { it.nucleo }.toSet() +
+            // El descanso y el recuerdo de respirar los arma la sesión, fuera de estas reglas.
+            Situacion.entries.filter { it.ambito != Ambito.DESCANSO }.mapNotNull { it.nucleo }.toSet() +
                 setOf(Bolsa.NU_REGULAR, Bolsa.NU_PERMISO_ALARMAS, Bolsa.NU_CONFIRMA_VALE_GORDO) +
-                Bolsa.entries.filter { it.tipo == TipoTrozo.RECUERDO }
+                Bolsa.entries.filter { it.tipo == TipoTrozo.RECUERDO && it != Bolsa.RE_RESPIRAR_MEJOR }
         assertEquals(esperadas, todo().map { it.bolsa }.toSet())
     }
 
