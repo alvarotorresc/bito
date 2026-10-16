@@ -39,6 +39,14 @@ class ReglaTodoHechoTest {
         )
 
     @Test
+    fun `a relapse or a passed limit do not keep it away`() {
+        val recaida = habito("d", tipo = TipoHabito.DEJAR).copy(falladoHoy = true)
+        val pasado = habito("l", tipo = TipoHabito.LIMITE).copy(falladoHoy = true)
+        val h = hechos(habitos = listOf(habito("a", hechoHoy = true), recaida, pasado))
+        assertEquals(Situacion.TODO_HECHO, ReglaTodoHecho.candidatas(h, Memoria(), ctx()).single().situacion)
+    }
+
+    @Test
     fun `a sealed day does not come out`() =
         assertTrue(
             ReglaTodoHecho.candidatas(hechos(habitos = listOf(habito(hechoHoy = true)), diaSellado = true), Memoria(), ctx()).isEmpty(),
