@@ -563,8 +563,8 @@ class DetailScreenTest {
 
         compose.onNodeWithTag("habi-vale").performScrollTo().assertExists()
         compose.onNodeWithTag("habi-hoy_no").assertExists()
-        compose.onNodeWithTag("habi-vale").assertHeightIsAtLeast(44.dp)
-        compose.onNodeWithTag("habi-hoy_no").assertHeightIsAtLeast(44.dp)
+        compose.onNodeWithTag("habi-vale").assertHeightIsAtLeast(44.dp).assertWidthIsAtLeast(44.dp)
+        compose.onNodeWithTag("habi-hoy_no").assertHeightIsAtLeast(44.dp).assertWidthIsAtLeast(44.dp)
     }
 
     @Test

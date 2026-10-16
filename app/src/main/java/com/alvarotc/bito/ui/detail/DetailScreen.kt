@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -454,7 +455,8 @@ private fun NotaDeHabi(
                             Boton(
                                 textoHabi(accion.etiqueta),
                                 { alResponder(accion.respuesta) },
-                                Modifier.testTag("habi-${accion.respuesta.name.lowercase()}"),
+                                // 44 dp también de ancho: «Vale» es corto (review final de la pieza 3, M2).
+                                Modifier.widthIn(min = Medidas.toqueMinimo).testTag("habi-${accion.respuesta.name.lowercase()}"),
                                 estilo = if (accion.principal) EstiloBoton.PRINCIPAL else EstiloBoton.FANTASMA,
                             )
                         }
