@@ -184,6 +184,9 @@ internal class SondaJardin {
     /** Cuántas veces se ha aplastado Habi para dormirse («Hasta mañana»). */
     var aplastadosHabi: () -> Int = { 0 }
 
+    /** La noche que se pinta (G40): 0 de día, 1 en Hoy de noche. */
+    var noche: () -> Float = { 0f }
+
     /** El brillo del farolillo que se pinta, de 0 a 1 (G40). */
     var brilloFarolillo: () -> Float = { 0f }
 
@@ -505,6 +508,7 @@ fun GardenScene(
         sonda?.wiltDibujado = { wiltAnim.value }
         sonda?.saltosHabi = { habiNudge }
         sonda?.aplastadosHabi = { aplastados }
+        sonda?.noche = { nocheAhora() }
         sonda?.arteListo = { listoAhora }
         sonda?.filtracion = { filtracion.value }
         sonda?.brilloFarolillo = {
