@@ -48,6 +48,7 @@ import androidx.navigation.navArgument
 import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.propuestas.Destino
+import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.ui.breathing.AndroidBreathingMusic
 import com.alvarotc.bito.ui.breathing.BreathingScreen
 import com.alvarotc.bito.ui.breathing.BreathingViewModel
@@ -69,6 +70,7 @@ import com.alvarotc.bito.ui.onboarding.OnboardingReconciler
 import com.alvarotc.bito.ui.onboarding.OnboardingScreen
 import com.alvarotc.bito.ui.onboarding.OnboardingViewModel
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
+import com.alvarotc.bito.ui.sesion.DatosObjetivo
 import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.settings.AjustesScreen
 import com.alvarotc.bito.ui.settings.ArchivedScreen
@@ -305,7 +307,7 @@ fun BitoNavHost(
                                 cierreViewModel = viewModel(factory = CierreViewModel.factory(container)),
                                 gordo = gordo,
                                 alGordoVisto = { entry.savedStateHandle[GORDO_VISTO] = true },
-                                sesion = remember(container) { SesionInicio(container.motorSesion, container.aire, container.settings) },
+                                sesion = remember(container) { sesionInicioDe(container) },
                             )
                         }
                     }
@@ -587,3 +589,22 @@ private fun AnimatedContentTransitionScope<NavBackStackEntry>.sale(
         TipoTransicion.CAMARA_VUELVE_SALE -> slideOutVertically(camara) { it * 24 / 100 } + fadeOut(tween(Duraciones.SALIR))
         else -> global()
     }
+
+/** Lo que el Inicio y los bloques de la sesión leen de la app: motor, aire, fondo, No molestar, objetivo y frases. */
+private fun sesionInicioDe(container: AppContainer): SesionInicio =
+    SesionInicio(
+        motor = container.motorSesion,
+        aire = container.aire,
+        ajustes = container.settings,
+        fondo = container.fondo,
+        noMolestar = container.noMolestar,
+        objetivos = { objetivo ->
+            when (objetivo) {
+                is Objetivo.Tarea -> container.tasks.task(objetivo.id)?.let { DatosObjetivo(it.title, it.firstStep) }
+                is Objetivo.Habito -> container.habits.habit(objetivo.id)?.let { DatosObjetivo(it.name, null) }
+                Objetivo.Libre -> null
+            }
+        },
+        catalogo = container.catalogoHabla,
+        contextoDelDia = container::contextoDelDia,
+    )

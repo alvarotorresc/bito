@@ -64,13 +64,35 @@ class MotorSesionFalso : MotorSesion {
         llamadas += "empezarDescanso"
     }
 
-    override suspend fun heTerminado(): ResultadoAccion = SIN_EFECTO.also { llamadas += "heTerminado" }
+    override suspend fun heTerminado(): ResultadoAccion =
+        SIN_EFECTO.also {
+            llamadas += "heTerminado"
+            cerrar()
+        }
 
-    override suspend fun loDejo(): ResultadoAccion = SIN_EFECTO.also { llamadas += "loDejo" }
+    override suspend fun loDejo(): ResultadoAccion =
+        SIN_EFECTO.also {
+            llamadas += "loDejo"
+            cerrar()
+        }
 
-    override suspend fun siTerminado(): ResultadoAccion = SIN_EFECTO.also { llamadas += "siTerminado" }
+    override suspend fun siTerminado(): ResultadoAccion =
+        SIN_EFECTO.also {
+            llamadas += "siTerminado"
+            cerrar()
+        }
 
-    override suspend fun sigoLuego(): ResultadoAccion = SIN_EFECTO.also { llamadas += "sigoLuego" }
+    override suspend fun sigoLuego(): ResultadoAccion =
+        SIN_EFECTO.also {
+            llamadas += "sigoLuego"
+            cerrar()
+        }
+
+    /** Como el motor real al cerrar: ya no hay registro ni instante, aunque la pantalla siga un rato. */
+    private fun cerrar() {
+        registro.value = null
+        instante.value = null
+    }
 
     override suspend fun otraDeCinco() {
         llamadas += "otraDeCinco"

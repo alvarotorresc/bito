@@ -30,6 +30,10 @@ import com.alvarotc.bito.data.sesion.ahoraDelSistema
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.Sealing
+import com.alvarotc.bito.domain.habla.Contexto
+import com.alvarotc.bito.domain.habla.Contextos
+import com.alvarotc.bito.domain.habla.Hechos
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.sesion.TareasEmpezadas
 import com.alvarotc.bito.sesion.Aire
@@ -188,6 +192,35 @@ class AppContainer(context: Context) {
             }
 
     private val registrarVuelta by lazy { QuickActionUseCase(journal, reconciler, domainState, habits, settings) }
+
+    /**
+     * El contexto de ahora para las frases que se redactan en la pantalla (la sesión): el mismo que construye la fuente de
+     * Habi con los mismos ajustes y permisos, para que las frases con etiquetas (franja, estación, voz) filtren igual.
+     */
+    suspend fun contextoDelDia(): Contexto {
+        val prefs = settings.settings.first()
+        val state = domainState.snapshot()
+        val ahora = System.currentTimeMillis()
+        val zona = ZoneId.systemDefault()
+        val hoy = LogicalDays.logicalDayOf(ahora, prefs.dayCutoffMinutes, zona)
+        val permisos = permisosAvisos()
+        return Contextos.de(
+            ahoraMillis = ahora,
+            zona = zona,
+            corteDia = prefs.dayCutoffMinutes,
+            horaManana = prefs.habiMorningMinutes,
+            horaNoche = prefs.habiNightMinutes,
+            dndActivo = prefs.dndEnabled,
+            dndDesde = prefs.dndFromMinutes,
+            dndHasta = prefs.dndToMinutes,
+            voz = prefs.personality,
+            nombre = prefs.userName,
+            permisoAvisos = permisos.notificaciones,
+            alarmasExactas = permisos.alarmasExactas,
+            diaSellado = Sealing.isSealed(state, hoy),
+            quedanExigibles = Hechos.quedanPendientes(state, hoy),
+        )
+    }
 
     internal fun permisosAvisos(): PermisosAvisos {
         val notificaciones = NotificationManagerCompat.from(appContext).areNotificationsEnabled()

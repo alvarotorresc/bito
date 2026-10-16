@@ -107,15 +107,20 @@ import com.alvarotc.bito.ui.premios.Momento
 import com.alvarotc.bito.ui.premios.PremiosEnInicio
 import com.alvarotc.bito.ui.premios.RegistroAnclas
 import com.alvarotc.bito.ui.premios.TipoVeta
+import com.alvarotc.bito.ui.sesion.BloqueDeSesion
+import com.alvarotc.bito.ui.sesion.BloqueRetenido
 import com.alvarotc.bito.ui.sesion.BloqueSesion
 import com.alvarotc.bito.ui.sesion.CabeceraSesion
 import com.alvarotc.bito.ui.sesion.Encuadre
 import com.alvarotc.bito.ui.sesion.ApoyoDescanso
 import com.alvarotc.bito.ui.sesion.LocalApoyoDescanso
+import com.alvarotc.bito.ui.sesion.LocalBloqueRetenido
 import com.alvarotc.bito.ui.sesion.LocalMotorSesion
 import com.alvarotc.bito.ui.sesion.LocalRegistroHoja
 import com.alvarotc.bito.ui.sesion.LocalRespiracionJardin
 import com.alvarotc.bito.ui.sesion.LocalSalidaSesion
+import com.alvarotc.bito.ui.sesion.LocalSaltoHabi
+import com.alvarotc.bito.ui.sesion.LocalSesionInicio
 import com.alvarotc.bito.ui.sesion.RegistroHoja
 import com.alvarotc.bito.ui.sesion.SalidaSesion
 import com.alvarotc.bito.ui.sesion.SesionContenido
@@ -318,6 +323,8 @@ fun InicioScreen(
     alGordoVisto: () -> Unit = {},
     // La sesión (pieza 5) vive dentro del Inicio. Sin ella (las pruebas de Hoy) no hay modo sesión.
     sesion: SesionInicio? = null,
+    // El contenido de cada bloque de la tierra; las pruebas ponen uno suyo.
+    contenidoSesion: @Composable (BloqueSesion) -> Unit = { BloqueDeSesion(it) },
 ) {
     val estado by hoy.uiState.collectAsStateWithLifecycle()
     val estadoCamino by camino.uiState.collectAsStateWithLifecycle()
@@ -416,7 +423,8 @@ fun InicioScreen(
         if (reducido) tween(Duraciones.REDUCIDO) else tween(160, easing = Curvas.out),
         label = "hoy-sesion",
     )
-    val estadoSesion = estadoSesionUi(instante, borrador, preparando, hojasSesion.abierta)
+    val retenido = remember { BloqueRetenido() }
+    val estadoSesion = estadoSesionUi(instante, borrador, preparando, hojasSesion.abierta).conRetenido(retenido.bloque)
     val estadoVista = if (saliendo) estadoSesion.copy(bloque = null) else estadoSesion
 
     fun entrarEnSesion(vistaPreparar: Boolean) {
@@ -439,6 +447,7 @@ fun InicioScreen(
         scope.launch { EntradaSesion.abrir(destinoSesion, AbrirSesion(sesion.motor, ::entrarEnSesion, navegar.abrirRuta)) }
     }
     val abrirSesionActual = rememberUpdatedState(::abrirSesion)
+    val salidaSesion = remember { SalidaSesion(::volverAHoy) { texto -> scope.launch { avisos.mostrar(texto) } } }
 
     // La cámara sigue al bloque; al volver a Hoy llega a su encuadre y solo entonces se sale del modo sesión.
     LaunchedEffect(sesionActiva, saliendo, estadoSesion.encuadre) {
@@ -462,6 +471,7 @@ fun InicioScreen(
     }
     LaunchedEffect(sesionActiva) {
         if (!sesionActiva) {
+            retenido.soltar()
             altoContenido.intValue = 0
             respiracion.value = null
         }
@@ -537,6 +547,8 @@ fun InicioScreen(
     // Volver de crear: el Inicio guarda su copia, porque la lista borra la señal al desplazarse.
     var creadoVisto by remember { mutableStateOf<String?>(null) }
     var salto by remember { mutableIntStateOf(0) }
+    // El saltito de Habi que piden los bloques; la amplitud la pone la reacción de Habi (hoy, la de un toque).
+    val saltarHabi: (Float) -> Unit = remember(reducido) { { _ -> if (!reducido) salto++ } }
     var aplastar by remember { mutableIntStateOf(0) }
     var fiesta by remember { mutableIntStateOf(0) }
     var frase by remember { mutableStateOf<Int?>(null) }
@@ -668,11 +680,14 @@ fun InicioScreen(
                         CompositionLocalProvider(
                             LocalMotorSesion provides sesion.motor,
                             LocalRegistroHoja provides hojasSesion,
-                            LocalSalidaSesion provides SalidaSesion(::volverAHoy),
+                            LocalSalidaSesion provides salidaSesion,
                             LocalRespiracionJardin provides respiracion,
                             LocalApoyoDescanso provides apoyoDescanso,
+                            LocalBloqueRetenido provides retenido,
+                            LocalSaltoHabi provides saltarHabi,
+                            LocalSesionInicio provides sesion,
                         ) {
-                            SesionContenido(estadoVista, alAlto = { altoContenido.intValue = it })
+                            SesionContenido(estadoVista, alAlto = { altoContenido.intValue = it }, contenido = contenidoSesion)
                         }
                     }
                 }

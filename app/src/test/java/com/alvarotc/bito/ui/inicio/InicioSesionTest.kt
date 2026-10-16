@@ -2,20 +2,34 @@ package com.alvarotc.bito.ui.inicio
 
 import android.content.pm.ActivityInfo
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.clickable
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.sesion.Entrada
 import com.alvarotc.bito.domain.sesion.planSesion
 import com.alvarotc.bito.sesion.AireMudo
+import com.alvarotc.bito.ui.sesion.BloqueDeSesion
+import com.alvarotc.bito.ui.sesion.BloqueSesion
+import com.alvarotc.bito.ui.sesion.LocalBloqueRetenido
+import com.alvarotc.bito.ui.sesion.LocalSalidaSesion
+import com.alvarotc.bito.ui.sesion.LocalSaltoHabi
+import com.alvarotc.bito.ui.sesion.LocalSesionInicio
 import com.alvarotc.bito.ui.sesion.MotorSesionFalso
 import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
+import kotlinx.coroutines.launch
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -54,11 +68,18 @@ class InicioSesionTest {
         banco.cerrar()
     }
 
-    private fun montar(reducido: Boolean = false) {
+    private fun montar(
+        reducido: Boolean = false,
+        contenido: @Composable (BloqueSesion) -> Unit = { BloqueDeSesion(it) },
+    ) {
         banco.preparar()
         rule.setContent {
             ConSistema(banco.sonido, banco.tacto, reducido) {
-                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+                banco.Inicio(
+                    sesion = SesionInicio(motor, AireMudo, banco.ajustes),
+                    enPrimerPlano = true,
+                    contenidoSesion = contenido,
+                )
             }
         }
         rule.waitForIdle()
@@ -242,5 +263,76 @@ class InicioSesionTest {
         rule.waitUntil(5_000) { existe("ses-b-prep") }
 
         assertTrue("preparar:null" in motor.llamadas)
+    }
+
+    /** Un bloque de Foco que, como «He terminado», cierra la sesión y se queda 2200 ms con su aviso. */
+    private val bloqueQueTermina: @Composable (BloqueSesion) -> Unit = { b ->
+        if (b == BloqueSesion.FOCO) {
+            val retenido = LocalBloqueRetenido.current
+            val salida = LocalSalidaSesion.current
+            val scope = rememberCoroutineScope()
+            Text(
+                "terminar",
+                Modifier.testTag("t-terminar").clickable {
+                    scope.launch {
+                        launch {
+                            retenido.conservar(BloqueSesion.FOCO, 2_200)
+                            salida.avisar("Informe, hecho.")
+                            salida.volverAHoy()
+                        }
+                        motor.heTerminado()
+                    }
+                },
+            )
+        }
+    }
+
+    @Test
+    fun `a block stays mounted after the session closes and then goes back to today with its notice`() {
+        motor.viva(directo)
+        montar(contenido = bloqueQueTermina)
+        pedir(null)
+        assertTrue(existe("t-terminar"))
+        rule.mainClock.autoAdvance = false
+
+        rule.onNodeWithTag("t-terminar").performSemanticsAction(androidx.compose.ui.semantics.SemanticsActions.OnClick)
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeBy(1_000)
+        assertEquals("el motor ya cerró como el real: ${motor.llamadas}", null, motor.instante.value)
+        assertTrue("sigue montado a 1000 ms", existe("t-terminar"))
+        assertTrue(existe("ses-tierra"))
+
+        rule.mainClock.advanceTimeBy(1_100)
+        assertTrue("sigue montado a 2100 ms", existe("t-terminar"))
+
+        rule.mainClock.advanceTimeBy(1_500)
+        rule.mainClock.autoAdvance = true
+        rule.waitForIdle()
+        assertFalse(existe("ses-tierra"))
+        assertTrue(existe("pildora-hoy"))
+        rule.onNodeWithText("Informe, hecho.").assertExists()
+    }
+
+    @Test
+    fun `the blocks can make Habi hop and read the session data`() {
+        var datos: com.alvarotc.bito.ui.sesion.SesionInicio? = null
+        var saltar: ((Float) -> Unit)? = null
+        motor.viva(directo)
+        montar(contenido = { b ->
+            if (b == BloqueSesion.FOCO) {
+                datos = LocalSesionInicio.current
+                saltar = LocalSaltoHabi.current
+            }
+        })
+        pedir(null)
+        rule.waitForIdle()
+        val antes = banco.sonda.saltosHabi()
+
+        rule.runOnUiThread { saltar!!(0.11f) }
+        rule.waitUntil(5_000) { banco.sonda.saltosHabi() > antes }
+
+        assertEquals(antes + 1, banco.sonda.saltosHabi())
+        assertTrue(datos != null)
+        assertFalse(datos!!.noMolestarActivo(motor.registro.value))
     }
 }
