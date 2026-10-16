@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.cierre
 
 import com.alvarotc.bito.domain.model.BadgeDef
 import com.alvarotc.bito.domain.model.LogicalDay
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.ui.today.HabitCardUi
 
@@ -29,4 +30,6 @@ data class CierreUiState(
     val loading: Boolean = true,
     /** Días anteriores sin sellar, para [CierreViewModel.sealPendingDays]. */
     val diasPendientes: List<LogicalDay> = emptyList(),
+    /** La voz de Habi con la que se redactan las frases sueltas del cierre (la línea de tareas, la respuesta al ánimo). */
+    val voz: Personality = Personality.NEUTRA,
 )

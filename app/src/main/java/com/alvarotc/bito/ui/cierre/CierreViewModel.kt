@@ -38,7 +38,6 @@ import com.alvarotc.bito.ui.habi.HabiSound
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.habla.reviewRowsOf
 import com.alvarotc.bito.ui.notifications.AvisosHabi
-import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.buildTodayUiState
 import kotlinx.coroutines.CoroutineDispatcher
@@ -46,7 +45,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -69,9 +67,6 @@ private const val TAREAS_NOMBRADAS = 2
  * El modelo del cierre del día, dentro del Inicio. Vive en la entrada de Hoy: lo decidido y el ánimo son de la
  * apertura en curso y se olvidan con [reiniciar]. Todas las escrituras corren en su propio ámbito, que no se
  * cancela al bajar la cámara: sellar con «Buenas noches» y cerrar a toda prisa no corta la memoria ni el aviso.
- *
- * [crearRepaso], [abrirRepaso] y [soltarRepaso] son transitorios: los usa el contenido provisional del cierre
- * hasta que la Tarea 27 lo sustituya.
  */
 class CierreViewModel internal constructor(
     private val domainState: DomainStateRepository,
@@ -86,7 +81,6 @@ class CierreViewModel internal constructor(
     private val aceptados: AvisosAceptadosRepository,
     private val avisos: AvisosHabi,
     private val propuestas: FuentePropuestas,
-    private val crearRepaso: () -> ReviewViewModel,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
     private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default,
@@ -157,6 +151,7 @@ class CierreViewModel internal constructor(
             gordoSinHacer = gordo.filterNot { LoGordo.hecho(it, estado, hoy) }.map { nombreDe(it, estado) },
             loading = false,
             diasPendientes = delDia.pendingSealDays,
+            voz = ajustes.personality,
         )
     }
 
@@ -282,29 +277,6 @@ class CierreViewModel internal constructor(
             settings.update { it.copy(badgesSeenUntilMillis = maxOf(it.badgesSeenUntilMillis, ultimo ?: ahora)) }
         }
 
-    // Transitorio (Tarea 27): el repaso provisional que monta el contenido del cierre.
-
-    /** El repaso de la apertura en curso, o null con el cierre cerrado. */
-    internal var repasoActual: ReviewViewModel? = null
-        private set
-
-    init {
-        addCloseable { repasoActual?.viewModelScope?.cancel() }
-    }
-
-    /** Un repaso nuevo para esta apertura; el anterior, si lo hubiera, deja de escuchar. Reinicia también lo decidido. */
-    internal fun abrirRepaso(): ReviewViewModel {
-        reiniciar()
-        repasoActual?.viewModelScope?.cancel()
-        return crearRepaso().also { repasoActual = it }
-    }
-
-    /** Al cerrar: el repaso de esa apertura deja de escuchar. */
-    internal fun soltarRepaso(repaso: ReviewViewModel) {
-        repaso.viewModelScope.cancel()
-        if (repasoActual === repaso) repasoActual = null
-    }
-
     companion object {
         fun factory(container: AppContainer): ViewModelProvider.Factory =
             viewModelFactory {
@@ -322,17 +294,6 @@ class CierreViewModel internal constructor(
                         container.avisosAceptados,
                         container.avisosHabi,
                         container.propuestas,
-                        crearRepaso = {
-                            ReviewViewModel(
-                                container.domainState,
-                                container.habits,
-                                container.journal,
-                                container.settings,
-                                container.reconciler,
-                                container.rewards,
-                                container.habiSounds,
-                            )
-                        },
                     )
                 }
             }

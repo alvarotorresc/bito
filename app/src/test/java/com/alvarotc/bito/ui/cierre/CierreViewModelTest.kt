@@ -34,7 +34,6 @@ import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabi
-import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -140,9 +139,6 @@ class CierreViewModelTest {
                 aceptados,
                 avisos,
                 FuentePropuestasNula,
-                crearRepaso = {
-                    ReviewViewModel(domainStateRepo, habitsRepo, journal, settingsRepo, reconciler, rewardsRepo, sonidos)
-                },
                 now = { fixedNow },
                 zone = { utc },
                 defaultDispatcher = dispatcher,

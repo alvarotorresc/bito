@@ -32,7 +32,6 @@ import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabiNulo
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.premios.RegistroAnclas
-import com.alvarotc.bito.ui.review.ReviewViewModel
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
@@ -138,8 +137,7 @@ internal class BancoInicio(
     }
 
     /**
-     * El único sitio donde el banco construye el cierre. Este banco es del carril del cierre (u2) desde la Ola 1: cuando
-     * el cierre deje de montar el repaso, se cambia aquí y en ningún otro sitio.
+     * El único sitio donde el banco construye el cierre. Este banco es del carril del cierre (u2) desde la Ola 1.
      */
     private fun construirCierre(
         domainState: DomainStateRepository,
@@ -161,20 +159,6 @@ internal class BancoInicio(
             AvisosAceptadosRepository(db),
             AvisosHabiNulo,
             FuentePropuestasNula,
-            crearRepaso = {
-                ReviewViewModel(
-                    domainState,
-                    habits,
-                    journal,
-                    settings,
-                    reconciler,
-                    rewards,
-                    HabiSounds(MotorSonidoMudo),
-                    now = { fixedNow },
-                    zone = { utc },
-                    defaultDispatcher = dispatcherVM,
-                )
-            },
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcherVM,
