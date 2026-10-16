@@ -13,7 +13,6 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
-import com.alvarotc.bito.data.settings.FocusClock
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.Settings
@@ -27,6 +26,7 @@ import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.equippedSetOf
+import com.alvarotc.bito.domain.sesion.FocusClock
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.notifications.AndroidFocusPresence
 import com.alvarotc.bito.ui.notifications.FocusPresence

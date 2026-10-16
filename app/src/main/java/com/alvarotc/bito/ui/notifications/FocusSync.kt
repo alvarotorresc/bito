@@ -3,7 +3,7 @@ package com.alvarotc.bito.ui.notifications
 import android.content.Context
 import android.os.SystemClock
 import com.alvarotc.bito.AppContainer
-import com.alvarotc.bito.data.settings.FocusClock
+import com.alvarotc.bito.domain.sesion.FocusClock
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.combine

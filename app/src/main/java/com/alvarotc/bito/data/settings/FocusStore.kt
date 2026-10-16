@@ -7,7 +7,6 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import kotlin.math.abs
 
 /**
  * Focus session state: when the session ends (on two clocks) and when the device booted, to
@@ -21,31 +20,6 @@ data class FocusSession(
     val endsAtElapsed: Long,
     val bootMillis: Long,
 )
-
-/**
- * La cuenta atras es aritmetica sobre un fin guardado, no un contador que alguien baje: cualquiera
- * que sepa la hora puede decir cuanto queda. Dos relojes porque ninguno solo vale —
- * elapsedRealtime se va a cero al reiniciar y currentTimeMillis salta si se cambia la hora.
- */
-object FocusClock {
-    /** Margen de la firma de arranque: el par de relojes no se lee en el mismo instante. */
-    const val BOOT_TOLERANCE_MILLIS = 5_000L
-
-    fun bootSignatureOf(
-        nowMillis: Long,
-        elapsedMillis: Long,
-    ): Long = nowMillis - elapsedMillis
-
-    fun remainingMillis(
-        session: FocusSession,
-        nowMillis: Long,
-        elapsedMillis: Long,
-    ): Long {
-        val sameBoot = abs(bootSignatureOf(nowMillis, elapsedMillis) - session.bootMillis) <= BOOT_TOLERANCE_MILLIS
-        val remaining = if (sameBoot) session.endsAtElapsed - elapsedMillis else session.endsAtMillis - nowMillis
-        return remaining.coerceAtLeast(0L)
-    }
-}
 
 class FocusStore(private val dataStore: DataStore<Preferences>) {
     private object Keys {

@@ -158,4 +158,30 @@ class BreathingRhythmTest {
         assertEquals(1, BreathingRhythm.at(BreathingMode.CALM, 119_001).remainingSeconds)
         assertEquals(0, BreathingRhythm.at(BreathingMode.CALM, 120_000).remainingSeconds)
     }
+
+    @Test
+    fun `six cycles of calm to enter a session last sixty seconds and then finish`() {
+        assertEquals(60_000L, BreathingRhythm.totalMillis(BreathingMode.CALM, 6))
+        assertEquals(38_000L, BreathingRhythm.totalMillis(BreathingMode.SLEEP, 2))
+        val medio = BreathingRhythm.at(BreathingMode.CALM, 55_000L, 6)
+        assertEquals(6, medio.cycle)
+        assertEquals(6, medio.totalCycles)
+        assertEquals(5_000L, medio.remainingMillis)
+        assertFalse(medio.finished)
+        val fin = BreathingRhythm.at(BreathingMode.CALM, 60_000L, 6)
+        assertTrue(fin.finished)
+        assertEquals(6, fin.cycle)
+        assertEquals(11, fin.stepIndex)
+    }
+
+    @Test
+    fun `the cycle overload agrees with the mode default`() {
+        for (mode in BreathingMode.entries) {
+            val n = BreathingRhythm.cycles(mode)
+            assertEquals(BreathingRhythm.totalMillis(mode), BreathingRhythm.totalMillis(mode, n))
+            for (t in listOf(0L, 7_500L, 33_333L, BreathingRhythm.totalMillis(mode))) {
+                assertEquals(BreathingRhythm.at(mode, t), BreathingRhythm.at(mode, t, n))
+            }
+        }
+    }
 }

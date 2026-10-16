@@ -22,12 +22,12 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
-import com.alvarotc.bito.data.settings.FocusClock
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.sesion.FocusClock
 import com.alvarotc.bito.ui.notifications.FocusPresence
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.CoroutineScope

@@ -39,7 +39,6 @@ import com.alvarotc.bito.R
 import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
-import com.alvarotc.bito.data.settings.FocusClock
 import com.alvarotc.bito.data.settings.FocusSession
 import com.alvarotc.bito.data.settings.MarcaLibro
 import com.alvarotc.bito.data.taskEntity
@@ -47,6 +46,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.sesion.FocusClock
 import com.alvarotc.bito.ui.theme.BitoTheme
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
