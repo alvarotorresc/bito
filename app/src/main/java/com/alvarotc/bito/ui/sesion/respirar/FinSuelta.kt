@@ -49,6 +49,7 @@ fun FinSuelta(
     Column(modifier.fillMaxWidth()) {
         Column(
             Modifier
+                .escalon(0)
                 .fillMaxWidth()
                 .testTag("tarjeta-habi")
                 .background(colores.canto, BitoFormas.tarjeta)
@@ -69,7 +70,7 @@ fun FinSuelta(
                 style = BitoTema.tipos.t16,
                 color = colores.tintaSuave,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = ARRIBA_SEMANA).fillMaxWidth().testTag("sf-semana"),
+                modifier = Modifier.escalon(1).padding(top = ARRIBA_SEMANA).fillMaxWidth().testTag("sf-semana"),
             )
         }
         if (total != null) {
@@ -82,11 +83,11 @@ fun FinSuelta(
                 style = BitoTema.tipos.t16,
                 color = colores.tintaSuave,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth().testTag("sf-total"),
+                modifier = Modifier.escalon(2).fillMaxWidth().testTag("sf-total"),
             )
         }
         Row(
-            Modifier.fillMaxWidth().padding(top = ARRIBA_BOTONES),
+            Modifier.escalon(3).fillMaxWidth().padding(top = ARRIBA_BOTONES),
             horizontalArrangement = Arrangement.spacedBy(Medidas.e8),
         ) {
             Boton(

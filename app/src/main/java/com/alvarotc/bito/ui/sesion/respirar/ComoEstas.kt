@@ -86,9 +86,14 @@ fun ComoEstas(
         alSeguir(e)
     }
     Column(modifier.fillMaxWidth()) {
-        Text(stringResource(R.string.ses_como_estas), style = BitoTema.tipos.t19.fuerte(), color = BitoTema.colores.tinta)
+        Text(
+            stringResource(R.string.ses_como_estas),
+            style = BitoTema.tipos.t19.fuerte(),
+            color = BitoTema.colores.tinta,
+            modifier = Modifier.escalon(0),
+        )
         Column(
-            Modifier.padding(top = ARRIBA_OPCIONES).fillMaxWidth().selectableGroup(),
+            Modifier.escalon(1).padding(top = ARRIBA_OPCIONES).fillMaxWidth().selectableGroup(),
             verticalArrangement = Arrangement.spacedBy(ENTRE_OPCIONES),
         ) {
             AnimoSuelta.entries.forEach { animo ->
@@ -113,7 +118,7 @@ fun ComoEstas(
                 )
             }
         }
-        Row(Modifier.fillMaxWidth().padding(top = ARRIBA_SALTAR), horizontalArrangement = Arrangement.Center) {
+        Row(Modifier.escalon(2).fillMaxWidth().padding(top = ARRIBA_SALTAR), horizontalArrangement = Arrangement.Center) {
             Boton(
                 stringResource(R.string.ses_saltar),
                 alPulsar = { if (elegida == null) alSaltar() },

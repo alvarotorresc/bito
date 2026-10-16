@@ -8,12 +8,11 @@ import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -24,6 +23,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -82,7 +82,6 @@ import com.alvarotc.bito.ui.sesion.CabeceraSesion
 import com.alvarotc.bito.ui.sesion.Encuadre
 import com.alvarotc.bito.ui.sesion.EstadoCamaraSesion
 import com.alvarotc.bito.ui.sistema.BitoTema
-import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
@@ -101,13 +100,6 @@ import kotlin.math.roundToInt
 // `.ses-b`: 18 dp arriba. `.costura`: 6 dp de borde de arriba. Sin token: el recorte de la tierra.
 private val ARRIBA_TIERRA = 18.dp
 private val COSTURA = 6.dp
-
-// Cambio de bloque (`mostrar()`): lo viejo 160 ms y +8 dp; lo nuevo entra 140 ms después, 260 ms y +12 dp.
-private const val SALE_MS = 160
-private const val ENTRA_MS = 260
-private const val ENTRA_RETRASO_MS = 140
-private val SALE_DESPLAZA = 8.dp
-private val ENTRA_DESPLAZA = 12.dp
 
 // Llegada a «¿Cómo estás?»: Habi se alegra 1,2 s a los 560 ms (100 reducido) y el globito dura 2,2 s.
 private const val LLEGADA_MS = 560L
@@ -164,7 +156,6 @@ fun RespirarSuelta(
 
     val gesto = rememberGesto()
     val reducido = BitoTema.reducido
-    val densidad = androidx.compose.ui.platform.LocalDensity.current
     val alcance = rememberCoroutineScope()
     val activity = remember(contexto) { contexto.buscarActivity() }
     val energia = remember(contexto) { contexto.getSystemService(PowerManager::class.java) }
@@ -363,91 +354,84 @@ fun RespirarSuelta(
             AnimatedContent(
                 targetState = reglas.etapa,
                 transitionSpec = {
-                    val dx = SALE_DESPLAZA
                     if (reducido) {
                         ContentTransform(fadeIn(tween(Duraciones.REDUCIDO)), fadeOut(tween(Duraciones.REDUCIDO)))
                     } else {
-                        (
-                            fadeIn(tween(ENTRA_MS, ENTRA_RETRASO_MS, Curvas.out)) +
-                                slideInVertically(tween(ENTRA_MS, ENTRA_RETRASO_MS, Curvas.out)) {
-                                    with(densidad) { ENTRA_DESPLAZA.roundToPx() }
-                                }
-                        ) togetherWith
-                            (
-                                fadeOut(tween(SALE_MS, easing = Curvas.out)) +
-                                    slideOutVertically(tween(SALE_MS, easing = Curvas.out)) { with(densidad) { dx.roundToPx() } }
-                            )
+                        // Cada hijo se anima por su cuenta (`escalon`); el bloque solo tiene que seguir en pantalla.
+                        ContentTransform(EnterTransition.None, ExitTransition.None)
                     }
                 },
                 label = "bloqueSuelta",
                 modifier = Modifier.fillMaxWidth(),
             ) { etapa ->
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .verticalScroll(rememberScrollState())
-                        .onSizeChanged { altoContenido = it.height }
-                        .padding(top = COSTURA + ARRIBA_TIERRA, start = Medidas.margen, end = Medidas.margen),
-                ) {
-                    when (etapa) {
-                        EtapaSuelta.ELEGIR ->
-                            ElegirSuelta(
-                                modo = reglas.modo,
-                                alModo = { reglas.modo = it },
-                                musica = reglas.musica,
-                                alMusica = { on ->
-                                    reglas.musica = on
-                                    alcance.launch { settings.update { it.copy(breathingMusicEnabled = on) } }
-                                },
-                                semana = semana,
-                                alEmpezar = ::comenzar,
-                            )
-                        EtapaSuelta.EN_MARCHA ->
-                            EnMarchaSuelta(punto = punto, restaSegundos = restaSegundos, alParar = ::cerrarEjercicio)
-                        EtapaSuelta.COMO_ESTAS ->
-                            ComoEstas(
-                                alElegir = { animo ->
-                                    val c = contextoDia
-                                    fraseRespuesta =
-                                        frase(
-                                            when (animo) {
-                                                AnimoSuelta.MEJOR -> Bolsa.CE_MEJOR
-                                                AnimoSuelta.IGUAL -> Bolsa.CE_IGUAL
-                                                AnimoSuelta.CUESTA -> Bolsa.CE_CUESTA
-                                            },
-                                            c,
-                                        )
-                                    when (animo) {
-                                        AnimoSuelta.MEJOR -> gestos.saltos++
-                                        AnimoSuelta.CUESTA -> {
-                                            gestos.alegre = false
-                                            gestos.caras++
+                CompositionLocalProvider(LocalEscalonado provides if (reducido) null else transition) {
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .verticalScroll(rememberScrollState())
+                            .onSizeChanged { altoContenido = it.height }
+                            .padding(top = COSTURA + ARRIBA_TIERRA, start = Medidas.margen, end = Medidas.margen),
+                    ) {
+                        when (etapa) {
+                            EtapaSuelta.ELEGIR ->
+                                ElegirSuelta(
+                                    modo = reglas.modo,
+                                    alModo = { reglas.modo = it },
+                                    musica = reglas.musica,
+                                    alMusica = { on ->
+                                        reglas.musica = on
+                                        alcance.launch { settings.update { it.copy(breathingMusicEnabled = on) } }
+                                    },
+                                    semana = semana,
+                                    alEmpezar = ::comenzar,
+                                )
+                            EtapaSuelta.EN_MARCHA ->
+                                EnMarchaSuelta(punto = punto, restaSegundos = restaSegundos, alParar = ::cerrarEjercicio)
+                            EtapaSuelta.COMO_ESTAS ->
+                                ComoEstas(
+                                    alElegir = { animo ->
+                                        val c = contextoDia
+                                        fraseRespuesta =
+                                            frase(
+                                                when (animo) {
+                                                    AnimoSuelta.MEJOR -> Bolsa.CE_MEJOR
+                                                    AnimoSuelta.IGUAL -> Bolsa.CE_IGUAL
+                                                    AnimoSuelta.CUESTA -> Bolsa.CE_CUESTA
+                                                },
+                                                c,
+                                            )
+                                        when (animo) {
+                                            AnimoSuelta.MEJOR -> gestos.saltos++
+                                            AnimoSuelta.CUESTA -> {
+                                                gestos.alegre = false
+                                                gestos.caras++
+                                            }
+                                            AnimoSuelta.IGUAL -> Unit
                                         }
-                                        AnimoSuelta.IGUAL -> Unit
-                                    }
-                                    val recuerdo =
-                                        EventoMemoria(
-                                            id = UUID.randomUUID().toString(),
-                                            tipo = TipoMemoria.COMO_ESTAS,
-                                            dia = hoy(),
-                                            ref = modoCerrado.name,
-                                            valor = animo.valor,
-                                            creadoMillis = entorno.pared(),
-                                        )
-                                    alcance.launch(NonCancellable) { memoria.anotar(recuerdo) }
-                                },
-                                alSeguir = { reglas.etapa = EtapaSuelta.FIN },
-                                alSaltar = ::saltarAnimo,
-                            )
-                        EtapaSuelta.FIN -> {
-                            val f = fraseRespuesta ?: fraseYaEsta
-                            FinSuelta(
-                                frase = f?.let { textoHabi(it) }.orEmpty(),
-                                semana = semana,
-                                total = total,
-                                alOtraVez = ::comenzar,
-                                alListo = ::volverAHoy,
-                            )
+                                        val recuerdo =
+                                            EventoMemoria(
+                                                id = UUID.randomUUID().toString(),
+                                                tipo = TipoMemoria.COMO_ESTAS,
+                                                dia = hoy(),
+                                                ref = modoCerrado.name,
+                                                valor = animo.valor,
+                                                creadoMillis = entorno.pared(),
+                                            )
+                                        alcance.launch(NonCancellable) { memoria.anotar(recuerdo) }
+                                    },
+                                    alSeguir = { reglas.etapa = EtapaSuelta.FIN },
+                                    alSaltar = ::saltarAnimo,
+                                )
+                            EtapaSuelta.FIN -> {
+                                val f = fraseRespuesta ?: fraseYaEsta
+                                FinSuelta(
+                                    frase = f?.let { textoHabi(it) }.orEmpty(),
+                                    semana = semana,
+                                    total = total,
+                                    alOtraVez = ::comenzar,
+                                    alListo = ::volverAHoy,
+                                )
+                            }
                         }
                     }
                 }

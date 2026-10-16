@@ -90,24 +90,25 @@ fun ElegirSuelta(
             stringResource(R.string.breathing_title),
             style = BitoTema.tipos.t19.fuerte(),
             color = BitoTema.colores.tinta,
+            modifier = Modifier.escalon(0),
         )
         Segmentado(
             opciones = MODOS.map { stringResource(nombreDeModo(it)) },
             elegida = MODOS.indexOf(modo),
             alElegir = { alModo(MODOS[it]) },
-            modifier = Modifier.padding(top = ARRIBA_SEGMENTADO).fillMaxWidth().testTag("r-modo"),
+            modifier = Modifier.escalon(1).padding(top = ARRIBA_SEGMENTADO).fillMaxWidth().testTag("r-modo"),
             repartir = true,
         )
         TextoRodillo(
             stringResource(ritmoDeModo(modo)),
-            Modifier.padding(top = ARRIBA_RITMO).fillMaxWidth().testTag("r-ritmo"),
+            Modifier.escalon(2).padding(top = ARRIBA_RITMO).fillMaxWidth().testTag("r-ritmo"),
         )
         FilaInterruptor(
             etiqueta = stringResource(R.string.ses_musica_fondo),
             subtitulo = stringResource(R.string.ses_musica_fondo_desc),
             activo = musica,
             alCambiar = alMusica,
-            modifier = Modifier.padding(top = ARRIBA_FILAS).testTag("r-mus"),
+            modifier = Modifier.escalon(3).padding(top = ARRIBA_FILAS).testTag("r-mus"),
         )
         Boton(
             stringResource(R.string.breathing_start),
@@ -115,7 +116,7 @@ fun ElegirSuelta(
                 gesto(h = Haptica.CONFIRM)
                 alEmpezar()
             },
-            modifier = Modifier.padding(top = ARRIBA_BOTONES).fillMaxWidth().testTag("r-empezar"),
+            modifier = Modifier.escalon(4).padding(top = ARRIBA_BOTONES).fillMaxWidth().testTag("r-empezar"),
             estilo = EstiloBoton.PRINCIPAL,
             alto = Medidas.botonHoja,
         )
@@ -125,7 +126,7 @@ fun ElegirSuelta(
                 style = BitoTema.tipos.t16,
                 color = BitoTema.colores.tintaSuave,
                 textAlign = TextAlign.Center,
-                modifier = Modifier.padding(top = ARRIBA_CUENTA).fillMaxWidth().testTag("r-semana"),
+                modifier = Modifier.escalon(5).padding(top = ARRIBA_CUENTA).fillMaxWidth().testTag("r-semana"),
             )
         }
     }

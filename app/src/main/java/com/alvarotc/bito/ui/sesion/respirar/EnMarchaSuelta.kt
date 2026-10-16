@@ -51,9 +51,9 @@ fun EnMarchaSuelta(
     val despues = frase.substringAfter(MARCA_RESTA, "")
     val resta = mmss(restaSegundos)
     Column(modifier.fillMaxWidth()) {
-        FaseRespiracion(punto, punto.cycle, punto.totalCycles, mostrarPuntitos = false, modifier = Modifier.testTag("s-fase"))
+        FaseRespiracion(punto, punto.cycle, punto.totalCycles, mostrarPuntitos = false, modifier = Modifier.escalon(0).testTag("s-fase"))
         Row(
-            Modifier.fillMaxWidth().padding(top = ARRIBA_CICLO).semantics(mergeDescendants = true) {},
+            Modifier.escalon(1).fillMaxWidth().padding(top = ARRIBA_CICLO).semantics(mergeDescendants = true) {},
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -61,7 +61,7 @@ fun EnMarchaSuelta(
             Text(resta, style = BitoTema.tipos.t16, color = colores.tintaSuave, modifier = Modifier.testTag("s-resta"))
             if (despues.isNotEmpty()) Text(despues, style = BitoTema.tipos.t16, color = colores.tintaSuave)
         }
-        Row(Modifier.fillMaxWidth().padding(top = ARRIBA_PARAR), horizontalArrangement = Arrangement.Center) {
+        Row(Modifier.escalon(2).fillMaxWidth().padding(top = ARRIBA_PARAR), horizontalArrangement = Arrangement.Center) {
             Boton(
                 stringResource(R.string.breathing_stop),
                 alPulsar = {
