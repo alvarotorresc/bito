@@ -39,7 +39,7 @@ class ExactAlarmReceiver : BroadcastReceiver() {
                 // not crash the process — finish() below still has to run so the system doesn't ANR us.
                 runCatching {
                     val container = (context.applicationContext as BitoApp).container
-                    reschedule(context, container.settings, container.habits)
+                    reschedule(context, container.settings, container.habits, container.avisosHabi)
                 }
             } finally {
                 pendingResult.finish()
@@ -48,11 +48,12 @@ class ExactAlarmReceiver : BroadcastReceiver() {
     }
 
     companion object {
-        /** Recomputes every slot from live state and reschedules — the testable seam behind [onReceive]. */
+        /** Recomputes every slot from live state and reschedules, Habi's notices included — the testable seam behind [onReceive]. */
         internal suspend fun reschedule(
             context: Context,
             settings: SettingsRepository,
             habits: HabitsRepository,
+            avisos: AvisosHabi = AvisosHabiNulo,
         ) {
             val prefs = settings.settings.first()
             val entities = habits.observeHabits().first()
@@ -62,6 +63,8 @@ class ExactAlarmReceiver : BroadcastReceiver() {
                 System.currentTimeMillis(),
                 ZoneId.systemDefault(),
             )
+            // Los aceptados pendientes pasan a exactos (o al respaldo) con el permiso nuevo.
+            avisos.replanificar()
         }
     }
 }

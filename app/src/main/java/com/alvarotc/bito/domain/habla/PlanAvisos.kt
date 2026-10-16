@@ -27,7 +27,7 @@ object PlanAvisos {
     const val CLAVE_MANANA = "manana"
     const val CLAVE_NOCHE = "noche"
 
-    /** Los avisos de Habi de hoy que aún no han pasado: mañana, noche y aceptados. */
+    /** Los avisos de Habi de hoy que aún no han pasado: mañana, noche y aceptados (los [Ritmo.TOPE_ACEPTADOS_DIA] primeros del día). */
     fun de(
         h: Hechos,
         m: Memoria,
@@ -38,8 +38,12 @@ object PlanAvisos {
         minutoNoche(h, ctx)?.let { plan += AvisoPlan(TipoAviso.NOCHE, CLAVE_NOCHE, it, ctx.hoy) }
         if (!h.diaSellado) {
             val pendientes = h.habitos.filterNot { it.hechoHoy }.map { it.id }.toSet()
+            // Tope de §5.2: cuentan los de hoy en cualquier estado, en el orden en que se aceptaron.
             m.avisos
-                .filter { it.dia == ctx.hoy && it.estado == EstadoAviso.PENDIENTE && it.habitId in pendientes }
+                .filter { it.dia == ctx.hoy }
+                .sortedBy { it.creadoMillis }
+                .take(Ritmo.TOPE_ACEPTADOS_DIA)
+                .filter { it.estado == EstadoAviso.PENDIENTE && it.habitId in pendientes }
                 .forEach { plan += AvisoPlan(TipoAviso.ACEPTADO, it.id, it.minuto, ctx.hoy) }
         }
         return plan.filterNot { yaPasado(it.minuto, ctx) }

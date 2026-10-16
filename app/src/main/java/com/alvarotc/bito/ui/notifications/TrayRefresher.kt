@@ -52,7 +52,7 @@ object TrayRefresher {
         val entities = habits.observeHabits().first()
         val today = LogicalDays.logicalDayOf(System.currentTimeMillis(), prefs.dayCutoffMinutes, ZoneId.systemDefault())
         val state = buildTodayUiState(domainState.snapshot(), entities.associate { it.id to it.sortOrder }, today)
-        if (!reviewIsPending(state)) Notifier.cancelReview(context)
+        if (!reviewIsPending(state)) Notifier.cancelNoche(context)
         val payload = buildReminderPayload(state)
         if (payload == null) {
             Notifier.cancelReminder(context)

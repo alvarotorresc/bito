@@ -98,7 +98,8 @@ class AppStartupTest {
                 .notificationChannelsCompat
                 .map { it.id }
         assertTrue(channelIds.contains(NotificationChannels.REMINDERS))
-        assertTrue(channelIds.contains(NotificationChannels.REVIEW))
+        assertTrue(channelIds.contains(NotificationChannels.HABI))
+        assertTrue("review" !in channelIds)
         // Proves the celebrations channel exists synchronously before any component (the
         // widget's LogHabitAction included) can run — start() is called from BitoApp.onCreate()
         // directly, not from a launched coroutine, so PerfectDayNotifier.maybeNotify (T13) never

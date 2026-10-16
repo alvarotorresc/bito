@@ -131,19 +131,8 @@ class ReminderContentTest {
     }
 
     @Test
-    fun `review pending count follows the review rows and drops to zero once sealed`() {
-        // An undone AT_LEAST card and a clean ZERO card are both rows to decide; a done
-        // AT_LEAST card is not.
-        val zero = card("nofap", kind = CardKind.ABSTINENCE, done = true).copy(direction = Direction.ZERO)
-        val s = state(card("x"), card("y", done = true), zero)
-        assertEquals(2, reviewPendingCount(s))
-        assertEquals(0, reviewPendingCount(s.copy(todaySealed = true)))
-    }
-
-    @Test
     fun `a past-days-only review debt reports zero to decide today`() {
         val s = state(card("x", done = true)).copy(todaySealed = true, pendingSealDays = listOf(20678))
         assertTrue(reviewIsPending(s))
-        assertEquals(0, reviewPendingCount(s))
     }
 }

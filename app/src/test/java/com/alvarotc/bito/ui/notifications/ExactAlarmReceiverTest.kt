@@ -23,6 +23,7 @@ import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -110,5 +111,23 @@ class ExactAlarmReceiverTest {
             val breathingCode = ReminderScheduler.requestCodeOf(Slot(SlotKind.BREATHING, "", 22 * 60))
             val scheduledCodes = shadowOf(alarmManager).scheduledAlarms.map { shadowOf(it.operation).requestCode }
             assertTrue(scheduledCodes.contains(breathingCode))
+        }
+
+    @Test
+    fun `the permission change also reschedules the habi notices`() =
+        runTest(dispatcher) {
+            var replanes = 0
+            val avisos =
+                object : AvisosHabi {
+                    override suspend fun replanificar() {
+                        replanes++
+                    }
+
+                    override suspend fun cancelarAceptados(ids: List<String>) = Unit
+                }
+
+            ExactAlarmReceiver.reschedule(context, settingsRepo, habitsRepo, avisos)
+
+            assertEquals(1, replanes)
         }
 }

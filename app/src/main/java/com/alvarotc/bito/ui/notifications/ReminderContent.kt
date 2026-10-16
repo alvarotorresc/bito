@@ -70,10 +70,3 @@ fun buildReminderPayload(state: TodayUiState): ReminderPayload? {
 /** Review owed: a past day unsealed, or today unsealed with something to act on. Sealing today closes the review for the day. */
 fun reviewIsPending(state: TodayUiState): Boolean =
     state.pendingSealDays.isNotEmpty() || (!state.todaySealed && reviewRowsOf(state.cards, state.todaySealed).isNotEmpty())
-
-/**
- * How many rows today's review still has to decide — the count the review nudge can honestly
- * cite. Zero with [reviewIsPending] still true means the debt is past days left unsealed, and
- * the nudge says so instead of inventing a number.
- */
-fun reviewPendingCount(state: TodayUiState): Int = if (state.todaySealed) 0 else reviewRowsOf(state.cards, state.todaySealed).size

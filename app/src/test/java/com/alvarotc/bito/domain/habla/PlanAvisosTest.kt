@@ -107,6 +107,23 @@ class PlanAvisosTest {
     }
 
     @Test
+    fun `no more than two accepted notices a day, counting every state`() {
+        val m =
+            Memoria(
+                avisos =
+                    listOf(
+                        aceptado(id = "tercero", minuto = 13 * 60).copy(creadoMillis = 3L),
+                        aceptado(id = "cancelado", estado = EstadoAviso.CANCELADO).copy(creadoMillis = 1L),
+                        aceptado(id = "segundo", minuto = 16 * 60).copy(creadoMillis = 2L),
+                    ),
+            )
+
+        val claves = PlanAvisos.de(conAlgo, m, ctx()).filter { it.tipo == TipoAviso.ACEPTADO }.map { it.clave }
+
+        assertEquals(listOf("segundo"), claves)
+    }
+
+    @Test
     fun `only pending accepted notices of today are planned`() {
         val m =
             Memoria(

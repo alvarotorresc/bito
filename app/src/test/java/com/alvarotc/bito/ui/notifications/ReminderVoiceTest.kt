@@ -55,16 +55,6 @@ class ReminderVoiceTest {
     }
 
     @Test
-    fun `review title, body, and seal-only each resolve a distinct resource per personality`() {
-        val ids =
-            Personality.entries.flatMap {
-                listOf(ReminderVoice.reviewTitleRes(it), ReminderVoice.reviewBodyRes(it), ReminderVoice.reviewSealOnlyRes(it))
-            }
-
-        assertEquals(Personality.entries.size * 3, ids.toSet().size)
-    }
-
-    @Test
     fun `tasksTitleRes resolves a distinct resource per personality`() {
         val ids = Personality.entries.map { ReminderVoice.tasksTitleRes(it) }
 

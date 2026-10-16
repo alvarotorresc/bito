@@ -175,35 +175,35 @@ class TrayRefresherTest {
         }
 
     @Test
-    fun `a refresh with no review pending cancels the review notification`() =
+    fun `a refresh with nothing left to close cancels the night notice`() =
         runTest(dispatcher) {
             // Post a stale review notification first
             val reviewNotification =
-                NotificationCompat.Builder(context, NotificationChannels.REVIEW)
+                NotificationCompat.Builder(context, NotificationChannels.HABI)
                     .setSmallIcon(R.drawable.ic_stat_habi)
                     .setContentTitle("stale review")
                     .build()
-            NotificationManagerCompat.from(context).notify(Notifier.REVIEW_ID, reviewNotification)
-            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+            NotificationManagerCompat.from(context).notify(Notifier.NOCHE_ID, reviewNotification)
+            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.NOCHE_ID))
 
             // Refresh with no pending review (empty state)
             TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
 
             // Review notification should be cancelled
-            assertNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+            assertNull(shadowOf(notificationManager).getNotification(Notifier.NOCHE_ID))
         }
 
     @Test
-    fun `a refresh with review pending leaves the review notification alone`() =
+    fun `a refresh with something left to close leaves the night notice alone`() =
         runTest(dispatcher) {
             // Post a review notification
             val reviewNotification =
-                NotificationCompat.Builder(context, NotificationChannels.REVIEW)
+                NotificationCompat.Builder(context, NotificationChannels.HABI)
                     .setSmallIcon(R.drawable.ic_stat_habi)
                     .setContentTitle("review")
                     .build()
-            NotificationManagerCompat.from(context).notify(Notifier.REVIEW_ID, reviewNotification)
-            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+            NotificationManagerCompat.from(context).notify(Notifier.NOCHE_ID, reviewNotification)
+            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.NOCHE_ID))
 
             // Create a habit that hasn't been done yet to make today unsealed with content
             habitsRepo.create(
@@ -214,7 +214,7 @@ class TrayRefresherTest {
             TrayRefresher.refresh(context, settingsRepo, habitsRepo, domainStateRepo)
 
             // Review notification should still be there
-            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.REVIEW_ID))
+            assertNotNull(shadowOf(notificationManager).getNotification(Notifier.NOCHE_ID))
         }
 
     @Test

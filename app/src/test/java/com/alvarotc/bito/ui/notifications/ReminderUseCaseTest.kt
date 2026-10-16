@@ -167,38 +167,6 @@ class ReminderUseCaseTest {
         }
 
     @Test
-    fun `the review slot fires only while something is unsealed`() =
-        runTest(dispatcher) {
-            habitsRepo.create(
-                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
-            )
-
-            val pending = useCase.evaluate("HABI_NOCHE", "")
-            assertTrue(pending is ReminderUseCase.Outcome.Review)
-            assertEquals(SlotKind.HABI_NOCHE, (pending as ReminderUseCase.Outcome.Review).slot.kind)
-
-            db.entryDao().insert(entryEntity(id = "e1", habitId = "h1", logicalDay = today, value = 1))
-
-            val settled = useCase.evaluate("HABI_NOCHE", "")
-            assertTrue(settled is ReminderUseCase.Outcome.Silent)
-            assertEquals(SlotKind.HABI_NOCHE, (settled as ReminderUseCase.Outcome.Silent).slot.kind)
-        }
-
-    @Test
-    fun `the review slot goes silent once today is sealed, even with an unlogged habit`() =
-        runTest(dispatcher) {
-            habitsRepo.create(
-                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
-            )
-            journal.sealDay(today, fixedNow)
-
-            val outcome = useCase.evaluate("HABI_NOCHE", "")
-
-            assertTrue(outcome is ReminderUseCase.Outcome.Silent)
-            assertEquals(SlotKind.HABI_NOCHE, (outcome as ReminderUseCase.Outcome.Silent).slot.kind)
-        }
-
-    @Test
     fun `a habit slot goes silent once that habit is done today`() =
         runTest(dispatcher) {
             habitsRepo.create(
@@ -337,23 +305,6 @@ class ReminderUseCaseTest {
             assertEquals(1, remind.payload.doneCount)
             assertEquals(2, remind.payload.totalCount)
             assertEquals(listOf("Agua"), remind.payload.pendingNames)
-        }
-
-    @Test
-    fun `a review outcome carries the voice and how many rows are left to decide`() =
-        runTest(dispatcher) {
-            settingsRepo.update { it.copy(personality = Personality.CHEERLEADER, userName = "Álvaro") }
-            habitsRepo.create(
-                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
-            )
-
-            val outcome = useCase.evaluate("HABI_NOCHE", "")
-
-            assertTrue(outcome is ReminderUseCase.Outcome.Review)
-            val review = outcome as ReminderUseCase.Outcome.Review
-            assertEquals(1, review.pendingCount)
-            assertEquals(Personality.CHEERLEADER, review.personality)
-            assertEquals("Álvaro", review.userName)
         }
 
     @Test
@@ -496,5 +447,24 @@ class ReminderUseCaseTest {
         runTest(dispatcher) {
             assertEquals(ReminderUseCase.Outcome.Stale, useCase.evaluate("HABI_MANANA", ""))
             assertEquals(ReminderUseCase.Outcome.Stale, useCase.evaluate("ACEPTADO", "p1"))
+        }
+
+    @Test
+    fun `habi slots are resolved by the habi notices`() =
+        runTest(dispatcher) {
+            val noche = Slot(SlotKind.HABI_NOCHE, "noche", 21 * 60 + 30)
+            val preguntas = mutableListOf<Pair<SlotKind, String>>()
+            val conHabi =
+                ReminderUseCase(domainStateRepo, habitsRepo, settingsRepo, now = { fixedNow }, zone = { utc }) { kind, key ->
+                    preguntas += kind to key
+                    if (kind == SlotKind.HABI_NOCHE) ReminderUseCase.Outcome.Silent(noche) else ReminderUseCase.Outcome.Stale
+                }
+            settingsRepo.update { it.copy(globalReminderMinutes = listOf(480)) }
+
+            assertEquals(ReminderUseCase.Outcome.Silent(noche), conHabi.evaluate("HABI_NOCHE", "noche"))
+            assertEquals(ReminderUseCase.Outcome.Stale, conHabi.evaluate("ACEPTADO", "a1"))
+            conHabi.evaluate("GLOBAL", "480")
+
+            assertEquals(listOf(SlotKind.HABI_NOCHE to "noche", SlotKind.ACEPTADO to "a1"), preguntas)
         }
 }
