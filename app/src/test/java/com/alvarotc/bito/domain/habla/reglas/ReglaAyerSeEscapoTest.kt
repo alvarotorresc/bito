@@ -30,6 +30,13 @@ class ReglaAyerSeEscapoTest {
     ) = habito(id, tipo = tipo, objetivo = objetivo, racha = racha, falladoAyer = true, cumplidosTresAnteriores = 1)
 
     @Test
+    fun `from thirty minutes before the night it no longer comes out`() {
+        // La noche del fixture es a las 21:30: la fuente la da por caducada desde las 21:00.
+        assertEquals(1, sale(escapado(), ahoraMin = 20 * 60 + 59).size)
+        assertTrue(sale(escapado(), ahoraMin = 21 * 60).isEmpty())
+    }
+
+    @Test
     fun `a daily habit that failed yesterday comes out with the hour and three actions`() {
         val c = sale(escapado()).single()
         assertEquals(Situacion.AYER_SE_ESCAPO, c.situacion)
@@ -44,7 +51,7 @@ class ReglaAyerSeEscapoTest {
 
     @Test
     fun `without a possible hour there is no hour and no Vale`() {
-        val c = sale(escapado(), ahoraMin = 21 * 60).single()
+        val c = sale(escapado(), ahoraMin = 20 * 60 + 50).single()
         assertNull(c.hora)
         assertNull(c.huecos[Hueco.HORA])
         assertEquals(listOf(Respuesta.AHORA, Respuesta.HOY_NO), c.acciones)

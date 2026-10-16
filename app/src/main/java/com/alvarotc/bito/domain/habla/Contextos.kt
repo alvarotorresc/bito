@@ -61,3 +61,12 @@ object Contextos {
         )
     }
 }
+
+/**
+ * §5.1: desde [Ritmo.CADUCA_ANTES_NOCHE_MIN] antes de la hora de la noche, y pasada la medianoche antes del corte
+ * (sigue siendo la noche del mismo día lógico). Las reglas que caducan ahí («ayer se escapó», «racha cerca», «día
+ * flojo») ya no proponen desde ese momento, y la fuente las da por caducadas con esta misma cuenta.
+ */
+fun Contexto.cercaDeLaNoche(): Boolean =
+    ahoraMin >= horaNoche - Ritmo.CADUCA_ANTES_NOCHE_MIN ||
+        Instant.ofEpochMilli(ahoraMillis).atZone(zona).toLocalDate() != fecha

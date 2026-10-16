@@ -9,6 +9,7 @@ import com.alvarotc.bito.domain.habla.Memoria
 import com.alvarotc.bito.domain.habla.Regla
 import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.habla.cercaDeLaNoche
 import com.alvarotc.bito.domain.propuestas.Destino
 
 /** §5.1 n.º 9: la racha está a 1 o 2 periodos de un hito y el hábito sigue pendiente hoy. Gana la racha mayor. */
@@ -19,7 +20,7 @@ object ReglaRachaCerca : Regla {
         ctx: Contexto,
     ): List<Candidata> =
         h.habitos
-            .filter { it.hitoCerca != null && it.pendienteHoy() }
+            .filter { !ctx.cercaDeLaNoche() && it.hitoCerca != null && it.pendienteHoy() }
             .map { habito ->
                 val hora = HoraPropuesta.de(habito, ctx)
                 Candidata(

@@ -37,6 +37,15 @@ class ContextosTest {
     )
 
     @Test
+    fun `near the night starts thirty minutes before it and lasts past midnight until the cutoff`() {
+        assertEquals(false, de(ahoraMillis = millisOn(TODAY, 20, 59)).cercaDeLaNoche())
+        assertEquals(true, de(ahoraMillis = millisOn(TODAY, 21, 0)).cercaDeLaNoche())
+        val madrugada = de(ahoraMillis = millisOn(TODAY + 1, 0, 30), corteDia = 3 * 60)
+        assertEquals(TODAY, madrugada.hoy)
+        assertEquals(true, madrugada.cercaDeLaNoche())
+    }
+
+    @Test
     fun `a morning instant gives today, its date, its weekday, its season and its slot`() {
         val c = de()
         assertEquals(TODAY, c.hoy)

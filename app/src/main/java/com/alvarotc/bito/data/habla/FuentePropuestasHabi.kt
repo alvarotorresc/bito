@@ -33,6 +33,7 @@ import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.habla.cercaDeLaNoche
 import com.alvarotc.bito.domain.habla.idPropuesta
 import com.alvarotc.bito.domain.habla.reglas.Respuestas
 import com.alvarotc.bito.domain.model.DomainState
@@ -191,8 +192,8 @@ class FuentePropuestasHabi(
     ): Boolean =
         when (v.situacion) {
             Situacion.ELEGIR_GORDO -> ctx.ahoraMin >= Ritmo.GORDO_HASTA_MIN
-            Situacion.AYER_SE_ESCAPO, Situacion.RACHA_CERCA, Situacion.DIA_FLOJO ->
-                ctx.ahoraMin >= ctx.horaNoche - Ritmo.CADUCA_ANTES_NOCHE_MIN
+            // La misma cuenta con que las reglas dejan de proponerlas: una sola constante, ninguna nace caducada.
+            Situacion.AYER_SE_ESCAPO, Situacion.RACHA_CERCA, Situacion.DIA_FLOJO -> ctx.cercaDeLaNoche()
             Situacion.HORA_HABITUAL -> {
                 val hora = v.hora ?: (v.huecos[Hueco.HORA] as? ValorHueco.Hora)?.minuto
                 hora != null && ctx.ahoraMin >= hora + Ritmo.HORA_HABITUAL_CADUCA_MIN

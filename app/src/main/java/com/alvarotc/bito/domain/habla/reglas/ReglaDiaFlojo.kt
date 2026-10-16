@@ -12,6 +12,7 @@ import com.alvarotc.bito.domain.habla.Ritmo
 import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.habla.cercaDeLaNoche
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
 
@@ -27,7 +28,7 @@ object ReglaDiaFlojo : Regla {
         ctx: Contexto,
     ): List<Candidata> =
         h.habitos
-            .filter { it.flojoHoy() && it.pendienteHoy() && !respondidaDeSobra(m, ctx, it) }
+            .filter { !ctx.cercaDeLaNoche() && it.flojoHoy() && it.pendienteHoy() && !respondidaDeSobra(m, ctx, it) }
             .map { habito ->
                 val hora = HoraPropuesta.de(habito, ctx)
                 Candidata(

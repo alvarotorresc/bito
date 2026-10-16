@@ -11,6 +11,7 @@ import com.alvarotc.bito.domain.habla.Regla
 import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.TipoHabito
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.habla.cercaDeLaNoche
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
 
@@ -26,7 +27,9 @@ object ReglaAyerSeEscapo : Regla {
     ): List<Candidata> =
         h.habitos
             .filter {
-                it.diario &&
+                // Caduca 30 min antes de la noche (§5.1): desde ahí no se propone, con la cuenta de la fuente.
+                !ctx.cercaDeLaNoche() &&
+                    it.diario &&
                     it.tipo != TipoHabito.LIMITE &&
                     it.tipo != TipoHabito.DEJAR &&
                     it.falladoAyer &&

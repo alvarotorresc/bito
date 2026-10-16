@@ -52,7 +52,7 @@ class ReglaRachaCercaTest {
 
     @Test
     fun `without an hour the first action is Now`() {
-        val c = ReglaRachaCerca.candidatas(hechos(habitos = listOf(aFaltan(1))), Memoria(), ctx(ahoraMin = 21 * 60)).single()
+        val c = ReglaRachaCerca.candidatas(hechos(habitos = listOf(aFaltan(1))), Memoria(), ctx(ahoraMin = 20 * 60 + 50)).single()
         assertNull(c.hora)
         assertEquals(listOf(Respuesta.AHORA, Respuesta.HOY_NO), c.acciones)
     }
