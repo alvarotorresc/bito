@@ -95,10 +95,19 @@ data class RegistroSesion(
     /** getCurrentInterruptionFilter() antes de poner PRIORITY; null = Bito no lo tocó. */
     val filtroPrevio: Int?,
     val inicioDia: LogicalDay,
+    /** `Settings.Global.BOOT_COUNT` al Empezar; null si el sistema no lo dio. */
+    val arranques: Int? = null,
 )
 
-/** Los dos relojes leídos a la vez. */
-data class Ahora(val paredMillis: Long, val elapsedMillis: Long)
+/**
+ * Los dos relojes leídos a la vez, con el contador de arranques del sistema ([arranques], null si
+ * no se pudo leer). En Android se construye con `ahoraDelSistema(context)`.
+ */
+data class Ahora(
+    val paredMillis: Long,
+    val elapsedMillis: Long,
+    val arranques: Int? = null,
+)
 
 /** Dónde está la sesión en un momento dado. Lo calcula [RelojSesion], nadie lo guarda. */
 data class Instante(

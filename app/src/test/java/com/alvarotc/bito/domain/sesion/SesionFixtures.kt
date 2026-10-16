@@ -36,6 +36,7 @@ fun registroSesion(
     eventos: List<Evento> = emptyList(),
     inicioPared: Long = INICIO_PARED,
     anclaElapsed: Long = ANCLA_ELAPSED,
+    arranques: Int? = null,
 ): RegistroSesion =
     RegistroSesion(
         id = "s1",
@@ -46,4 +47,5 @@ fun registroSesion(
         arranque = FocusClock.bootSignatureOf(inicioPared, anclaElapsed),
         filtroPrevio = null,
         inicioDia = 20_000,
+        arranques = arranques,
     )

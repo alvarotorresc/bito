@@ -19,6 +19,10 @@ object FocusClock {
         elapsedMillis: Long,
     ): Long = nowMillis - elapsedMillis
 
+    /**
+     * La cuenta de la sesion vieja. Es la unica razon de que el dominio importe [FocusSession]: se
+     * va con `FocusSession` y `FocusStore` cuando la sesion nueva los sustituya del todo.
+     */
     fun remainingMillis(
         session: FocusSession,
         nowMillis: Long,
@@ -44,7 +48,10 @@ object RelojSesion {
      * Ms de sesion desde Empezar. Dentro del mismo arranque manda elapsedRealtime; tras reiniciar,
      * el reloj de pared.
      *
-     * Mismo arranque es la firma de [FocusClock] dentro de su tolerancia, o bien que el elapsed no
+     * Si el registro y [ahora] traen el contador de arranques del sistema, mismo arranque es que
+     * coincida: ni un cambio de hora grande ni un reinicio con la pared atrasada lo confunden.
+     *
+     * Si falta en alguno, mismo arranque es la firma de [FocusClock] dentro de su tolerancia, o bien que el elapsed no
      * haya bajado del ancla y la firma no diga que el movil arranco despues de Empezar. Lo segundo
      * cubre un cambio de hora dentro del arranque, que mueve la firma tanto como el salto: con solo
      * la tolerancia, adelantar la hora movería el reloj. Un salto hacia delante mayor que el tiempo
@@ -54,9 +61,16 @@ object RelojSesion {
         r: RegistroSesion,
         ahora: Ahora,
     ): Long {
-        val firma = FocusClock.bootSignatureOf(ahora.paredMillis, ahora.elapsedMillis)
-        val mismaFirma = abs(firma - r.arranque) <= TOLERANCIA_ARRANQUE_MILLIS
-        val mismoArranque = mismaFirma || (ahora.elapsedMillis >= r.anclaElapsed && firma < r.inicioPared)
+        val contadorGuardado = r.arranques
+        val contadorAhora = ahora.arranques
+        val mismoArranque =
+            if (contadorGuardado != null && contadorAhora != null) {
+                contadorGuardado == contadorAhora
+            } else {
+                val firma = FocusClock.bootSignatureOf(ahora.paredMillis, ahora.elapsedMillis)
+                val mismaFirma = abs(firma - r.arranque) <= TOLERANCIA_ARRANQUE_MILLIS
+                mismaFirma || (ahora.elapsedMillis >= r.anclaElapsed && firma < r.inicioPared)
+            }
         val ms = if (mismoArranque) ahora.elapsedMillis - r.anclaElapsed else ahora.paredMillis - r.inicioPared
         return ms.coerceAtLeast(0L)
     }
@@ -70,7 +84,9 @@ object RelojSesion {
      * Recorre los tramos aplicando los eventos en orden de [Evento.enMillis]. Un evento que ya no
      * encaja con el tramo de su instante no hace nada: un [Evento.Saltar] que llega cuando el
      * descanso ya acabo solo no se come el foco siguiente, un [Evento.Sumar] fuera de un foco no
-     * suma y un [Evento.EmpezarDescanso] sin descanso esperando se ignora.
+     * suma y un [Evento.EmpezarDescanso] sin descanso esperando se ignora. [Evento.Pausa] y
+     * [Evento.Seguir] solo actuan en un foco: una pausa que cae ya en el descanso o en Respirar
+     * no congela nada, y al cambiar de tramo la pausa se suelta.
      */
     fun enSesion(
         r: RegistroSesion,
@@ -89,7 +105,12 @@ object RelojSesion {
         return recorrido.instante(t)
     }
 
-    /** Hora de pared en la que la sesion llega a [msSesion], segun el reloj de pared de [ahora]. */
+    /**
+     * Hora de pared en la que la sesion llega a [msSesion], segun el reloj de pared de [ahora]. Vale
+     * para el cronometro. Para una alarma conviene `ELAPSED_REALTIME_WAKEUP` en
+     * `ahora.elapsedMillis + (msSesion - transcurrido(r, ahora))`: un cambio de hora despues de
+     * programarla no la mueve, y esta hora de pared si se moveria.
+     */
     fun paredDe(
         r: RegistroSesion,
         msSesion: Long,
@@ -137,8 +158,8 @@ object RelojSesion {
         fun aplicar(evento: Evento) {
             val tramo = actual ?: return
             when (evento) {
-                is Evento.Pausa -> pausado = true
-                is Evento.Seguir -> pausado = false
+                is Evento.Pausa -> if (tramo is Tramo.Foco) pausado = true
+                is Evento.Seguir -> if (tramo is Tramo.Foco) pausado = false
                 is Evento.Sumar -> if (tramo is Tramo.Foco) extra += evento.minutos * MILLIS_POR_MINUTO
                 is Evento.Saltar -> if (tramo is Tramo.Respirar || tramo is Tramo.Descanso) siguiente()
                 is Evento.EmpezarDescanso -> esperando = false
@@ -171,6 +192,7 @@ object RelojSesion {
             indice++
             extra = 0L
             llevado = 0L
+            pausado = false
             esperando = actual is Tramo.Descanso && !plan.descansoSolo
         }
     }

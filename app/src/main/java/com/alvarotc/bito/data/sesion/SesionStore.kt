@@ -91,6 +91,8 @@ private data class RegistroDto(
     val arranque: Long,
     val filtroPrevio: Int?,
     val inicioDia: Int,
+    /** Falta en los registros guardados antes de existir: se lee como null. */
+    val arranques: Int? = null,
 ) {
     fun aDominio() =
         RegistroSesion(
@@ -102,6 +104,7 @@ private data class RegistroDto(
             arranque = arranque,
             filtroPrevio = filtroPrevio,
             inicioDia = inicioDia,
+            arranques = arranques,
         )
 
     companion object {
@@ -116,6 +119,7 @@ private data class RegistroDto(
                 arranque = r.arranque,
                 filtroPrevio = r.filtroPrevio,
                 inicioDia = r.inicioDia,
+                arranques = r.arranques,
             )
     }
 }
