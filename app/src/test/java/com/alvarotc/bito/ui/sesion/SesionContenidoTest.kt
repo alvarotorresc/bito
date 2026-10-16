@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.Density
@@ -117,6 +118,34 @@ class SesionContenidoTest {
             assertEquals(1f, it.first, 0.001f)
             assertEquals(0f, it.second, 0.001f)
         }
+    }
+
+    @Test
+    fun `the block that leaves is the same composition that was shown, with its state and effects`() {
+        val creadas = mutableMapOf<BloqueSesion, Int>()
+        val efectos = mutableMapOf<BloqueSesion, Int>()
+        val vistos = mutableMapOf<BloqueSesion, Int>()
+        montar(contenido = { b ->
+            val numero = androidx.compose.runtime.remember { (creadas[b] ?: 0) + 1 }
+            creadas[b] = numero
+            androidx.compose.runtime.DisposableEffect(Unit) {
+                efectos[b] = (efectos[b] ?: 0) + 1
+                onDispose {}
+            }
+            // Lo que el bloque pinta guardado en su `remember`: si se recompone de cero, vuelve a empezar.
+            val recuerdo = androidx.compose.runtime.remember { vistos.getOrDefault(b, 0) + 1 }
+            vistos[b] = recuerdo
+            Text("pieza-$recuerdo", Modifier.testTag("texto-${b.id}"))
+        })
+        assertEquals(1, creadas[BloqueSesion.PREPARAR])
+
+        cambiar(BloqueSesion.FOCO)
+        compose.mainClock.advanceTimeBy(80)
+
+        assertTrue("el que sale sigue ahí", existe("ses-b-prep"))
+        assertEquals("el que sale no se compone otra vez de cero", 1, creadas[BloqueSesion.PREPARAR])
+        assertEquals("ni repite sus efectos", 1, efectos[BloqueSesion.PREPARAR])
+        compose.onNodeWithTag("texto-prep").assertTextEquals("pieza-1")
     }
 
     @Test

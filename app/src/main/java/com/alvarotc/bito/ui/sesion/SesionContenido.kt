@@ -12,6 +12,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
@@ -106,35 +107,38 @@ fun SesionContenido(
     }
 
     val scroll = rememberScrollState()
+    val dyHundir = with(LocalDensity.current) { SALE_DY.toPx() }
     Box(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().testTag("ses-tierra").verticalScroll(scroll)) {
             Box {
-                saliente?.let { viejo ->
-                    val dy = with(LocalDensity.current) { SALE_DY.toPx() }
-                    Box(
-                        Modifier
-                            .testTag("ses-b-${viejo.id}")
-                            .graphicsLayer {
-                                alpha = 1f - salida.value
-                                translationY = dy * salida.value
-                                sonda?.salidaAlfa = alpha
-                                sonda?.salidaDy = translationY
-                            }.padding(top = ARRIBA_TIERRA)
-                            .padding(horizontal = Medidas.margen),
-                    ) { contenido(viejo) }
-                }
-                entrante?.let { nuevo ->
-                    ColumnaBrota(
-                        ms = { llegada.value },
-                        reducido = reducido,
-                        sonda = sonda,
-                        modifier =
-                            Modifier
-                                .testTag("ses-b-${nuevo.id}")
-                                .onSizeChanged { alAlto(it.height) }
-                                .padding(top = ARRIBA_TIERRA)
-                                .padding(horizontal = Medidas.margen),
-                    ) { contenido(nuevo) }
+                // Una sola lista de ranuras con la clave del bloque: el que sale es la misma composición que se veía (con su
+                // estado y sus efectos), y no una nueva que se pinta vacía; solo cambia quién anima su capa.
+                listOfNotNull(saliente, entrante).distinct().forEach { bloque ->
+                    key(bloque) {
+                        val sale = bloque == saliente && bloque != entrante
+                        ColumnaBrota(
+                            // El que sale ya llegó entero: sus piezas no vuelven a empezar con la llegada del siguiente.
+                            ms = { if (sale) RELOJ_LLEGADA_MS.toFloat() else llegada.value },
+                            reducido = reducido,
+                            sonda = if (sale) null else sonda,
+                            modifier =
+                                Modifier
+                                    .testTag("ses-b-${bloque.id}")
+                                    .then(
+                                        if (sale) {
+                                            Modifier.graphicsLayer {
+                                                alpha = 1f - salida.value
+                                                translationY = dyHundir * salida.value
+                                                sonda?.salidaAlfa = alpha
+                                                sonda?.salidaDy = translationY
+                                            }
+                                        } else {
+                                            Modifier.onSizeChanged { alAlto(it.height) }
+                                        },
+                                    ).padding(top = ARRIBA_TIERRA)
+                                    .padding(horizontal = Medidas.margen),
+                        ) { contenido(bloque) }
+                    }
                 }
             }
         }
