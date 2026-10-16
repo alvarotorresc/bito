@@ -26,7 +26,7 @@ class ReminderUseCase(
     private val settings: SettingsRepository,
     private val now: () -> Long = System::currentTimeMillis,
     private val zone: () -> ZoneId = ZoneId::systemDefault,
-    // Los avisos de Habi (AvisosHabiAndroid.evaluar); sin él, no hay plan y sus alarmas no dicen nada.
+    // Los avisos de Habi (AvisosHabiAndroid.evaluar); sin ese parámetro no hay plan y sus alarmas no dicen nada.
     private val habi: suspend (SlotKind, String) -> Outcome = { _, _ -> Outcome.Stale },
 ) {
     private companion object {
