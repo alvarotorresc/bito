@@ -5,12 +5,16 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.HabitEntity
 import com.alvarotc.bito.data.db.PauseIntervalEntity
 import com.alvarotc.bito.data.db.TargetChangeEntity
+import com.alvarotc.bito.data.sesion.SesionesRepository
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogicalDay
 import kotlinx.coroutines.flow.Flow
 
 /** Habit definitions: the habit row plus its target history and pauses. */
-class HabitsRepository(private val db: BitoDatabase) {
+class HabitsRepository(
+    private val db: BitoDatabase,
+    private val sesiones: SesionesRepository = SesionesRepository(db),
+) {
     fun observeHabits(): Flow<List<HabitEntity>> = db.habitDao().observeAll()
 
     suspend fun habit(id: String): HabitEntity? = db.habitDao().byId(id)
@@ -85,12 +89,13 @@ class HabitsRepository(private val db: BitoDatabase) {
 
     /**
      * Rule E3: cascades wipe the history; earned points are never deducted. Tambien se lleva sus
-     * filas de lo gordo y sus avisos aceptados, en la misma transaccion.
+     * filas de lo gordo, sus avisos aceptados y sus sesiones de foco, en la misma transaccion.
      */
     suspend fun delete(id: String) =
         db.withTransaction {
             db.habitDao().delete(id)
             db.hablaDao().borrarGordoDeRef(id)
             db.hablaDao().borrarAvisosDeHabito(id)
+            sesiones.borrarDe(id)
         }
 }

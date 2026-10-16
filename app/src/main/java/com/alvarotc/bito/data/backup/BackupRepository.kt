@@ -21,6 +21,8 @@ class BackupRepository(
     private val appVersion: String,
     /** Cancela las alarmas de los avisos aceptados que la restauracion borra. La cablea el contenedor. */
     private val cancelarAvisos: suspend (List<String>) -> Unit = {},
+    /** Cierra la sesion de foco en marcha (alarmas, sonido, No molestar) antes de restaurar. La cablea el contenedor. */
+    private val cerrarSesionViva: suspend () -> Unit = {},
 ) {
     suspend fun exportJson(nowMillis: Long): String = exportJson(nowMillis, settings.settings.first())
 
@@ -68,6 +70,7 @@ class BackupRepository(
                     breathingSessions = db.breathingSessionDao().all().sortedBy { it.id }.map { it.toBackup() },
                     habiMemoria = db.hablaDao().todosEventos().sortedBy { it.id }.map { it.toBackup() },
                     loGordo = db.hablaDao().todoGordo().sortedWith(compareBy({ it.dia }, { it.posicion })).map { it.toBackup() },
+                    sesiones = db.sesionDao().all().sortedBy { it.id }.map { it.toBackup() },
                 )
             }
         return BackupCodec.encode(file)
@@ -84,6 +87,8 @@ class BackupRepository(
 
     suspend fun import(text: String) {
         val file = BackupCodec.decode(text) // validate before touching anything
+        // Una sesion viva no puede sobrevivir a una restauracion: se cierra antes de vaciar nada.
+        cerrarSesionViva()
         val pendientes =
             db.withTransaction {
                 // Los ids se leen antes de borrar las filas; las alarmas se cancelan solo si la restauracion acaba bien.
@@ -101,6 +106,7 @@ class BackupRepository(
                 db.habitDao().deleteAll()
                 db.taskDao().deleteAll()
                 db.breathingSessionDao().deleteAll()
+                db.sesionDao().deleteAll()
                 // La memoria y lo gordo se reemplazan; lo demas de Habi solo vale para hoy y se vacia.
                 db.hablaDao().reemplazarMemoriaYGordo(file.habiMemoria.map { it.toEntity() }, file.loGordo.map { it.toEntity() })
                 db.hablaDao().vaciarAvisos()
@@ -118,6 +124,7 @@ class BackupRepository(
                 file.tasks.forEach { db.taskDao().upsert(it.toEntity()) }
                 file.taskEvents.forEach { db.taskEventDao().insert(it.toEntity()) }
                 file.breathingSessions.forEach { db.breathingSessionDao().insert(it.toEntity()) }
+                file.sesiones.forEach { db.sesionDao().insert(it.toEntity()) }
                 ids
             }
         if (pendientes.isNotEmpty()) cancelarAvisos(pendientes)

@@ -261,6 +261,11 @@ private fun VistaPrevia(
             ahora?.recuerdos?.toString() ?: "-",
             preview.recuerdos.toString(),
         )
+        FilaCuadro(
+            stringResource(R.string.copias_sesiones),
+            ahora?.sesiones?.toString() ?: "-",
+            preview.sesiones.toString(),
+        )
     }
     AvisoPeligro(stringResource(R.string.import_preview_warning))
     BotonesHoja(

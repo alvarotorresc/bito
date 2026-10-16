@@ -11,6 +11,7 @@ import com.alvarotc.bito.data.db.HabitEntity
 import com.alvarotc.bito.data.db.LoGordoEntity
 import com.alvarotc.bito.data.db.PauseIntervalEntity
 import com.alvarotc.bito.data.db.PointsLedgerEntity
+import com.alvarotc.bito.data.db.SesionEntity
 import com.alvarotc.bito.data.db.TargetChangeEntity
 import com.alvarotc.bito.data.db.TaskEntity
 import com.alvarotc.bito.data.db.TaskEventEntity
@@ -206,6 +207,8 @@ fun Settings.toBackup() =
         vibStrength = vibStrength,
         sessionBackground = sessionBackground,
         reduceMotion = reduceMotion,
+        sessionEntry = sessionEntry,
+        sessionDnd = sessionDnd,
     )
 
 fun BackupSettings.toSettings() =
@@ -249,6 +252,8 @@ fun BackupSettings.toSettings() =
         vibStrength = vibStrength,
         sessionBackground = sessionBackground,
         reduceMotion = reduceMotion,
+        sessionEntry = sessionEntry,
+        sessionDnd = sessionDnd,
     )
 
 fun HabiMemoriaEntity.toBackup() = BackupHabiMemoria(id = id, tipo = tipo, dia = dia, ref = ref, valor = valor, creadoMillis = creadoMillis)
@@ -258,3 +263,31 @@ fun BackupHabiMemoria.toEntity() = HabiMemoriaEntity(id = id, tipo = tipo, dia =
 fun LoGordoEntity.toBackup() = BackupLoGordo(dia = dia, posicion = posicion, tipo = tipo, refId = refId, creadoMillis = creadoMillis)
 
 fun BackupLoGordo.toEntity() = LoGordoEntity(dia = dia, posicion = posicion, tipo = tipo, refId = refId, creadoMillis = creadoMillis)
+
+fun SesionEntity.toBackup() =
+    BackupSesion(
+        id = id,
+        objetivoTipo = objetivoTipo,
+        objetivoId = objetivoId,
+        dia = dia,
+        inicioMillis = inicioMillis,
+        finMillis = finMillis,
+        minutosFoco = minutosFoco,
+        bloquesHechos = bloquesHechos,
+        bloquesPlan = bloquesPlan,
+        resultado = resultado,
+    )
+
+fun BackupSesion.toEntity() =
+    SesionEntity(
+        id = id,
+        objetivoTipo = objetivoTipo,
+        objetivoId = objetivoId,
+        dia = dia,
+        inicioMillis = inicioMillis,
+        finMillis = finMillis,
+        minutosFoco = minutosFoco,
+        bloquesHechos = bloquesHechos,
+        bloquesPlan = bloquesPlan,
+        resultado = resultado,
+    )

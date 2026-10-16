@@ -15,6 +15,7 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
+import com.alvarotc.bito.domain.sesion.Entrada
 import kotlinx.serialization.Serializable
 
 /**
@@ -52,6 +53,10 @@ data class BackupFile(
      */
     val habiMemoria: List<BackupHabiMemoria> = emptyList(),
     val loGordo: List<BackupLoGordo> = emptyList(),
+    /**
+     * Pieza 5 (v7). Las sesiones de foco. Con default por la misma razon que las anteriores.
+     */
+    val sesiones: List<BackupSesion> = emptyList(),
 )
 
 @Serializable
@@ -71,6 +76,20 @@ data class BackupLoGordo(
     val tipo: String,
     val refId: String,
     val creadoMillis: Long,
+)
+
+@Serializable
+data class BackupSesion(
+    val id: String,
+    val objetivoTipo: String,
+    val objetivoId: String?,
+    val dia: Int,
+    val inicioMillis: Long,
+    val finMillis: Long,
+    val minutosFoco: Int,
+    val bloquesHechos: Int,
+    val bloquesPlan: Int,
+    val resultado: String,
 )
 
 @Serializable
@@ -197,7 +216,7 @@ data class BackupBreathingSession(
  * auto-backup, meaningless on the phone the file is restored to (pinned by BackupRoundTripTest's
  * "local auto backup state does not travel in exports"). gardenWaterHighMark (pieza 1) viaja
  * siempre: sin ella, restaurar haría bajar etapas del jardín ya vistas.
- * Las claves de la pieza 2 viajan todas (spec §6), sin valores por defecto: una copia sin ellas no es v5.
+ * Las claves de la pieza 2 viajan todas (spec §6), sin valores por defecto: una copia sin ellas no es v5. Las dos de la pieza 5 (sessionEntry, sessionDnd) también: una copia sin ellas no es v7.
  */
 @Serializable
 data class BackupSettings(
@@ -240,6 +259,8 @@ data class BackupSettings(
     val vibStrength: Int,
     val sessionBackground: SessionBackground,
     val reduceMotion: Boolean,
+    val sessionEntry: Entrada,
+    val sessionDnd: Boolean,
 )
 
 /** What the restore confirmation shows before anything is overwritten (§5.4). */
@@ -250,6 +271,8 @@ data class BackupPreview(
     val entries: Int,
     /** Los «Recuerdos de Habi» de la copia. */
     val recuerdos: Int,
+    /** Las «Sesiones de foco» de la copia. */
+    val sesiones: Int,
 )
 
-fun BackupFile.toPreview() = BackupPreview(exportedAt, appVersion, habits.size, entries.size, habiMemoria.size)
+fun BackupFile.toPreview() = BackupPreview(exportedAt, appVersion, habits.size, entries.size, habiMemoria.size, sesiones.size)

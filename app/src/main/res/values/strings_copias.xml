@@ -45,6 +45,7 @@
     <string name="copias_habitos">Habits</string>
     <string name="copias_registros">Log entries</string>
     <string name="copias_recuerdos">Habi memories</string>
+    <string name="copias_sesiones">Focus sessions</string>
     <string name="copias_exp_titulo">Export a backup</string>
     <string name="copias_exp_desc">Save a file with everything, for example to move to another phone.</string>
     <string name="copias_exp_cifrada">It will be saved encrypted with your passphrase.</string>

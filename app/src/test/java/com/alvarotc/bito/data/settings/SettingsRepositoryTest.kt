@@ -9,6 +9,7 @@ import com.alvarotc.bito.data.backup.toBackup
 import com.alvarotc.bito.data.backup.toSettings
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.sesion.Entrada
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -280,6 +281,27 @@ class SettingsRepositoryTest {
             assertEquals(listOf(8, 7, 6, 7), listOf(s.volHabi, s.volEffects, s.volAmbient, s.vibStrength))
             assertEquals(SessionBackground.RAIN, s.sessionBackground)
             assertEquals(false, s.reduceMotion)
+        }
+
+    @Test
+    fun `settings default to breathing entry and no dnd`() =
+        runTest {
+            val repo = SettingsRepository(store("sesion-defaults"))
+            val s = repo.settings.first()
+            assertEquals(Entrada.RESPIRAR, s.sessionEntry)
+            assertEquals(false, s.sessionDnd)
+            repo.update { it.copy(sessionEntry = Entrada.DIRECTO, sessionDnd = true) }
+            val back = repo.settings.first()
+            assertEquals(Entrada.DIRECTO, back.sessionEntry)
+            assertEquals(true, back.sessionDnd)
+        }
+
+    @Test
+    fun `an unknown stored entry falls back to breathing`() =
+        runTest {
+            val st = store("sesion-entrada-rara")
+            st.edit { it[stringPreferencesKey("session_entry")] = "OTRA" }
+            assertEquals(Entrada.RESPIRAR, SettingsRepository(st).settings.first().sessionEntry)
         }
 
     @Test

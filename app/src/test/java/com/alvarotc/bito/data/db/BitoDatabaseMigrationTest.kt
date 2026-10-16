@@ -165,9 +165,28 @@ class BitoDatabaseMigrationTest {
         db.close()
     }
 
+    /** Una base v5 de verdad (5.json entero) con un habito y una tarea, y `PRAGMA user_version = 5`. */
+    private fun seedVersionFive(context: Context) {
+        val file = context.getDatabasePath(name)
+        file.parentFile?.mkdirs()
+        if (file.exists()) file.delete()
+        val db = SQLiteDatabase.openOrCreateDatabase(file, null)
+        runSchemaSetup(db, schemaVersion = 5)
+        db.execSQL(
+            "INSERT INTO habits VALUES ('h1', 'Agua', 'COUNT', 'DAY', 'AT_LEAST', 8, 'vasos', " +
+                "'COUNTER', 1, NULL, NULL, NULL, 'ACTIVE', 1000, 20000, NULL, NULL, 0)",
+        )
+        db.execSQL("INSERT INTO entries VALUES ('e1', 'h1', 20000, 3, 1000)")
+        db.execSQL("INSERT INTO tasks VALUES ('t1', 'Llamar al banco', NULL, 'NONE', NULL, 'OPEN', 1000, 20000, NULL, NULL)")
+        db.execSQL("INSERT INTO lo_gordo VALUES (20000, 0, 'TAREA', 't1', 1000)")
+        db.execSQL("PRAGMA user_version = 5")
+        assertEquals(5, db.version)
+        db.close()
+    }
+
     private fun openMigrated(context: Context): BitoDatabase =
         Room.databaseBuilder(context, BitoDatabase::class.java, name)
-            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+            .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
             .build()
 
     @Test
@@ -177,7 +196,7 @@ class BitoDatabaseMigrationTest {
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
         try {
             runBlocking {
@@ -186,7 +205,7 @@ class BitoDatabaseMigrationTest {
                 assertEquals(1, db.pointsLedgerDao().all().size)
                 assertEquals(8, db.habitDao().byId("h1")!!.target)
             }
-            assertEquals(5, db.openHelper.readableDatabase.version)
+            assertEquals(6, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
@@ -199,7 +218,7 @@ class BitoDatabaseMigrationTest {
 
         val db =
             Room.databaseBuilder(context, BitoDatabase::class.java, name)
-                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                 .build()
         try {
             runBlocking {
@@ -241,7 +260,7 @@ class BitoDatabaseMigrationTest {
                 assertEquals("Llamar al banco", db.taskDao().byId("t1")!!.title)
                 assertEquals(listOf("ev1"), db.taskEventDao().all().map { it.id })
             }
-            assertEquals(5, db.openHelper.readableDatabase.version)
+            assertEquals(6, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
@@ -266,7 +285,7 @@ class BitoDatabaseMigrationTest {
     }
 
     @Test
-    fun `a v1 database reaches five in one go`() {
+    fun `a v1 database reaches six in one go`() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         seedVersionOne(context)
 
@@ -277,7 +296,7 @@ class BitoDatabaseMigrationTest {
                 assertTrue(db.taskDao().all().isEmpty())
                 assertTrue(db.breathingSessionDao().all().isEmpty())
             }
-            assertEquals(5, db.openHelper.readableDatabase.version)
+            assertEquals(6, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
@@ -298,7 +317,7 @@ class BitoDatabaseMigrationTest {
                 assertEquals(listOf("streak-7"), db.badgeDao().all().map { it.badgeId })
                 assertEquals("Llamar al banco", db.taskDao().byId("t1")!!.title)
             }
-            assertEquals(5, db.openHelper.readableDatabase.version)
+            assertEquals(6, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }
@@ -327,7 +346,35 @@ class BitoDatabaseMigrationTest {
                     listOf("habi_memoria", "lo_gordo", "aviso_aceptado", "propuesta_vigente", "habla_usada"),
                 ),
             )
-            assertEquals(5, db.openHelper.readableDatabase.version)
+            assertEquals(6, db.openHelper.readableDatabase.version)
+        } finally {
+            db.close()
+        }
+    }
+
+    @Test
+    fun `migration 5 to 6 creates sesiones and keeps everything`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        seedVersionFive(context)
+
+        val db = openMigrated(context)
+        try {
+            runBlocking {
+                assertEquals(1, db.habitDao().all().size)
+                assertEquals(1, db.entryDao().all().size)
+                assertEquals("Llamar al banco", db.taskDao().byId("t1")!!.title)
+                assertEquals(1, db.hablaDao().todoGordo().size)
+                assertTrue(db.sesionDao().all().isEmpty())
+                val sesion = SesionEntity("s1", "TAREA", "t1", 20_000, 1_000L, 2_500_000L, 25, 1, 4, "HECHA")
+                db.sesionDao().insert(sesion)
+                assertEquals(listOf(sesion), db.sesionDao().all())
+            }
+            val indices =
+                db.openHelper.readableDatabase.query("SELECT name FROM sqlite_master WHERE type='index'").use { c ->
+                    buildList { while (c.moveToNext()) add(c.getString(0)) }
+                }
+            assertTrue(indices.contains("index_sesiones_objetivo_id_dia"))
+            assertEquals(6, db.openHelper.readableDatabase.version)
         } finally {
             db.close()
         }

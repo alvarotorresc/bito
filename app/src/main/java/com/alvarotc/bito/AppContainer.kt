@@ -24,6 +24,7 @@ import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
+import com.alvarotc.bito.data.sesion.SesionesRepository
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
@@ -42,10 +43,11 @@ import kotlinx.coroutines.flow.map
 /** Hand-built DI (tech doc §1.4: no framework — constructors). */
 class AppContainer(context: Context) {
     val database: BitoDatabase = BitoDatabase.build(context)
-    val habits = HabitsRepository(database)
+    val sesiones = SesionesRepository(database)
+    val habits = HabitsRepository(database, sesiones)
     val rewards = RewardsRepository(database)
     val domainState = DomainStateRepository(database)
-    val tasks = TasksRepository(database)
+    val tasks = TasksRepository(database, sesiones)
     val breathing = BreathingRepository(database)
     val memoria = MemoriaRepository(database)
     val propuestaVigente = PropuestaVigenteStore(database)
