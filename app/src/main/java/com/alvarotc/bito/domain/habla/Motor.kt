@@ -69,7 +69,8 @@ object Motor {
     /**
      * Hoy (spec §5.1, §5.2, §5.5): con el día sellado, la noche. Si no, la primera situación de
      * [Prioridades.HOY] con candidatas que pasen los filtros, y dentro de ella la de más peso
-     * (empate: `ref`). Los filtros solo tocan a las situaciones que cuentan para el tope.
+     * (empate: `ref`). Los filtros solo tocan a las situaciones que cuentan para el tope; las que
+     * no cuentan («Cerrar el día», «Todo hecho») solo esperan tras su propio «Todavía no».
      */
     internal fun elegirHoy(
         h: Hechos,
@@ -88,7 +89,7 @@ object Motor {
                 regla
                     .candidatas(h, m, ctx)
                     .filterNot { proponeLimiteODejar(it, h) }
-                    .filter { !situacion.cuentaTope || (!bloqueadas && !descartadaHoy(it, m, ctx)) }
+                    .filter { if (situacion.cuentaTope) !bloqueadas && !descartadaHoy(it, m, ctx) else !luegoReciente(it, m, ctx) }
             if (validas.isEmpty()) continue
             val regular = h.animoAyer == ANIMO_REGULAR && situacion.cuentaTope && primeraDelDia
             val elegida = if (regular) masCorta(validas, h) else validas.sortedWith(POR_PESO).first()
@@ -159,6 +160,24 @@ object Motor {
     ): Boolean {
         val id = idPropuesta(c.situacion, c.ref, ctx.hoy)
         return m.eventos.any { it.tipo == TipoMemoria.RESPUESTA && it.ref == id && respuestaDe(it) == Respuesta.HOY_NO }
+    }
+
+    /**
+     * §5.2: «Todavía no» (`LUEGO`) en una propuesta que no cuenta para el tope la deja volver pasada la
+     * misma espera que el resto de respuestas: esa situación con esa ref, hoy.
+     */
+    private fun luegoReciente(
+        c: Candidata,
+        m: Memoria,
+        ctx: Contexto,
+    ): Boolean {
+        val id = idPropuesta(c.situacion, c.ref, ctx.hoy)
+        return m.eventos.any {
+            it.tipo == TipoMemoria.RESPUESTA &&
+                it.ref == id &&
+                respuestaDe(it) == Respuesta.LUEGO &&
+                ctx.ahoraMillis - it.creadoMillis < Ritmo.ESPERA_TRAS_RESPONDER_MIN * MILLIS_MIN
+        }
     }
 
     private fun respuestaDe(e: EventoMemoria): Respuesta? = e.valor?.let { Respuesta.entries.getOrNull(it) }

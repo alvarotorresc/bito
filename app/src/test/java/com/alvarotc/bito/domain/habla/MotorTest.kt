@@ -163,6 +163,32 @@ class MotorTest {
     }
 
     @Test
+    fun `not yet holds back everything done for the wait`() {
+        val h = hechos(habitos = listOf(habito(hechoHoy = true)))
+        val hace89 = Memoria(eventos = listOf(respuesta(Situacion.TODO_HECHO, null, Respuesta.LUEGO, minAntes(89))))
+        val hace90 = Memoria(eventos = listOf(respuesta(Situacion.TODO_HECHO, null, Respuesta.LUEGO, minAntes(90))))
+        assertEquals(Situacion.TODO_HECHO, elegir(h).situacion)
+        assertEquals(Situacion.SALUDO, elegir(h, hace89).situacion)
+        assertEquals(Situacion.TODO_HECHO, elegir(h, hace90).situacion)
+    }
+
+    @Test
+    fun `not yet holds back closing the day for the wait`() {
+        val h = hechos(habitos = listOf(habito()), pendientesCierre = 1)
+        val hace89 = Memoria(eventos = listOf(respuesta(Situacion.CERRAR_DIA, null, Respuesta.LUEGO, minAntes(89, noche))))
+        val hace90 = Memoria(eventos = listOf(respuesta(Situacion.CERRAR_DIA, null, Respuesta.LUEGO, minAntes(90, noche))))
+        assertEquals(Situacion.SALUDO, elegir(h, hace89, ahoraMin = noche).situacion)
+        assertEquals(Situacion.CERRAR_DIA, elegir(h, hace90, ahoraMin = noche).situacion)
+    }
+
+    @Test
+    fun `not yet on everything done does not hold back closing the day`() {
+        val h = hechos(habitos = listOf(habito()), pendientesCierre = 1)
+        val luego = Memoria(eventos = listOf(respuesta(Situacion.TODO_HECHO, null, Respuesta.LUEGO, minAntes(10, noche))))
+        assertEquals(Situacion.CERRAR_DIA, elegir(h, luego, ahoraMin = noche).situacion)
+    }
+
+    @Test
     fun `two accepted notices remove the hour`() {
         val h = hechos(habitos = listOf(escapado()))
         val uno = elegir(h, Memoria(avisos = listOf(aviso("a"))))
