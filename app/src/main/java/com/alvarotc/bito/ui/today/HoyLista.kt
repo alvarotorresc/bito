@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -493,22 +494,25 @@ fun HoyLista(
                                 style = BitoTema.tipos.t14.fuerte(),
                                 color = BitoTema.colores.tintaSuave,
                             )
+                            // Por id: al marcar una, la fila sale de la sección y las demás no heredan su estado.
                             fila.cards.forEach { card ->
-                                val traer = remember { BringIntoViewRequester() }
-                                LaunchedEffect(traerAVista) {
-                                    if (traerAVista == card.id) {
-                                        traer.bringIntoView()
-                                        traerAVista = null
+                                key(card.id) {
+                                    val traer = remember { BringIntoViewRequester() }
+                                    LaunchedEffect(traerAVista) {
+                                        if (traerAVista == card.id) {
+                                            traer.bringIntoView()
+                                            traerAVista = null
+                                        }
                                     }
+                                    val brota = brotando == card.id
+                                    FilaDeHabito(
+                                        card,
+                                        Modifier
+                                            .bringIntoViewRequester(traer)
+                                            .graphicsLayer { alpha = ALFA_ESPERAN }
+                                            .aparecer(activo = brota, retraso = 0, brotar = brota),
+                                    )
                                 }
-                                val brota = brotando == card.id
-                                FilaDeHabito(
-                                    card,
-                                    Modifier
-                                        .bringIntoViewRequester(traer)
-                                        .graphicsLayer { alpha = ALFA_ESPERAN }
-                                        .aparecer(activo = brota, retraso = 0, brotar = brota),
-                                )
                             }
                         }
                     is FilaHoy.Tarea ->

@@ -209,12 +209,16 @@ fun TarjetaHabi(
                                                         gesto(Snd.TIC, Haptica.CONFIRM)
                                                     }
                                                     accion.respuesta == Respuesta.HECHO -> {
-                                                        // Marca (gorgoteo, ticks); Habi suena al saltar con el jardín.
                                                         sinTexto = true
-                                                        gesto(Snd.GORGOTEO, Haptica.TICKS)
-                                                        alcance.launch {
-                                                            delay(SALTO_HABI_MS)
-                                                            gesto(Snd.HABI)
+                                                        if (esVuelta(p)) {
+                                                            // Marca (gorgoteo, ticks); Habi suena al saltar con el jardín.
+                                                            gesto(Snd.GORGOTEO, Haptica.TICKS)
+                                                            alcance.launch {
+                                                                delay(SALTO_HABI_MS)
+                                                                gesto(Snd.HABI)
+                                                            }
+                                                        } else {
+                                                            gesto(Snd.BROTE, Haptica.TICK)
                                                         }
                                                     }
                                                     accion.principal -> gesto(Snd.BROTE, Haptica.TICK)
@@ -236,6 +240,9 @@ fun TarjetaHabi(
 
 /** Si la propuesta es la de un día duro: su id estable empieza por la situación (`SITUACION:ref:día`). */
 internal fun esDiaDuro(propuesta: Propuesta): Boolean = propuesta.id.startsWith("${Situacion.DIA_DURO.name}:")
+
+/** Si la propuesta es la de la vuelta tras días fuera, la que «Hecho» celebra con el jardín (spec §5.6, §9). */
+private fun esVuelta(propuesta: Propuesta): Boolean = propuesta.id.startsWith("${Situacion.VUELTA.name}:")
 
 /** Los botones de la propuesta, en fila y en su orden: el principal relleno, los demás como texto. */
 @Composable
