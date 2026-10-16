@@ -19,6 +19,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
@@ -104,6 +105,26 @@ class CierreContenidoTest {
         rule.onNodeWithTag("cerrar-dia").performClick()
         esperar("cierre-buenas-noches")
         esperar("cierre-fila-h0")
+    }
+
+    @Test
+    fun `the coins and veins of the rewards are drawn over the close`() {
+        // Lo que se compone después en el Inicio se pinta encima: los premios van tras el cierre.
+        banco.preparar(habitos = 1)
+        rule.setContent { ConSistema(banco.sonido, banco.tacto) { banco.Inicio() } }
+        rule.onNodeWithTag("cerrar-dia").performClick()
+        esperar("cierre")
+        val orden = mutableListOf<String>()
+
+        fun recorrer(n: androidx.compose.ui.semantics.SemanticsNode) {
+            n.config.getOrElseNullable(SemanticsProperties.TestTag) { null }?.let { orden += it }
+            n.children.forEach(::recorrer)
+        }
+        recorrer(rule.onRoot(useUnmergedTree = true).fetchSemanticsNode())
+        assertTrue(orden.toString(), orden.indexOf("premios") > orden.indexOf("cierre"))
+        // Y los premios no se quedan los toques del cierre.
+        rule.onNodeWithTag("cierre-cerrar").performClick()
+        rule.waitUntil(5_000) { !hay("cierre") }
     }
 
     @Test

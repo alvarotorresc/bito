@@ -584,6 +584,18 @@ fun InicioScreen(
                         BotonMas(activo = masActivo, alPulsar = { crear = true })
                     }
                 }
+                // Sobre Hoy y fuera de las listas (el cierre trae su propio scroll), pero bajo los premios: las monedas
+                // de las filas y las vetas de la cadena se ven encima de la tierra del cierre; avisos y globitos, también.
+                if (cierreEnPantalla && cierreViewModel != null) {
+                    CierreContenido(
+                        cierreEstado,
+                        cierreViewModel,
+                        alCerrar = { moverCierre(0f) },
+                        alBuenasNoches = { moverCierre(0f) },
+                        modifier = Modifier.fillMaxSize(),
+                        celebraciones = celebraciones,
+                    )
+                }
                 PremiosEnInicio(
                     celebraciones,
                     registro,
@@ -597,7 +609,7 @@ fun InicioScreen(
                     alFiesta = { fiesta++ },
                     personalidad = estado.spec.personality,
                     nombre = estado.userName,
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier.fillMaxSize().testTag("premios"),
                 )
                 AvisoHost(avisos, Modifier.align(Alignment.BottomCenter).padding(bottom = AVISO_SOBRE_PILDORA - Medidas.margen))
                 val texto = frase?.let { stringResource(it) }
@@ -633,17 +645,6 @@ fun InicioScreen(
                                     .testTag("habi-asoma"),
                         )
                     }
-                }
-                // Encima de todo y fuera de las listas: el cierre trae su propio scroll.
-                if (cierreEnPantalla && cierreViewModel != null) {
-                    CierreContenido(
-                        cierreEstado,
-                        cierreViewModel,
-                        alCerrar = { moverCierre(0f) },
-                        alBuenasNoches = { moverCierre(0f) },
-                        modifier = Modifier.fillMaxSize(),
-                        celebraciones = celebraciones,
-                    )
                 }
             }
         }
