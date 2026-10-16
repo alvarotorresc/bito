@@ -59,6 +59,10 @@ import java.time.ZoneId
 class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
     val flujo = MutableStateFlow(inicial)
     val respuestas = mutableListOf<Respuesta>()
+    val horas = mutableListOf<Int?>()
+
+    /** Lo que devuelve la siguiente respuesta; por defecto, nada que hacer. */
+    var efecto: Efecto = Efecto.Ninguno
 
     override fun propuesta(
         ambito: Ambito,
@@ -71,7 +75,8 @@ class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
         hora: Int?,
     ): Efecto {
         respuestas += respuesta
-        return Efecto.Ninguno
+        horas += hora
+        return efecto
     }
 
     override suspend fun guardarGordo(refs: List<RefGordo>) = Unit

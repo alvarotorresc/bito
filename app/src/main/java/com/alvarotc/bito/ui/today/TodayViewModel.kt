@@ -21,11 +21,13 @@ import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.StatsEngine
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -35,9 +37,12 @@ import com.alvarotc.bito.ui.habi.minuteTicks
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
@@ -49,6 +54,8 @@ import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.UUID
+
+private const val EFECTOS_EN_COLA = 8
 
 /** Backs the Today screen: derives its state and runs every registration action. */
 class TodayViewModel(
@@ -132,10 +139,25 @@ class TodayViewModel(
         propuestas?.propuesta(Ambito.HOY)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
             ?: MutableStateFlow<Propuesta?>(null)
 
-    fun responder(r: Respuesta) {
+    private val efectosInternos = MutableSharedFlow<Efecto>(extraBufferCapacity = EFECTOS_EN_COLA)
+
+    /** Lo que la pantalla debe hacer tras una respuesta. Se consume una vez: sin repetición para quien llega tarde. */
+    val efectos: SharedFlow<Efecto> = efectosInternos.asSharedFlow()
+
+    fun responder(
+        r: Respuesta,
+        hora: Int? = null,
+    ) {
         val id = propuesta.value?.id ?: return
-        // El efecto de la respuesta se atiende más adelante; por ahora se ignora.
-        viewModelScope.launch { propuestas?.responder(id, r) }
+        viewModelScope.launch {
+            val efecto = propuestas?.responder(id, r, hora) ?: return@launch
+            if (efecto != Efecto.Ninguno) efectosInternos.emit(efecto)
+        }
+    }
+
+    /** Lo gordo que el usuario guarda en la hoja. */
+    fun guardarGordo(refs: List<RefGordo>) {
+        viewModelScope.launch { propuestas?.guardarGordo(refs) }
     }
 
     /** Solo para el panel de depuración: fuerza lo que pinta el jardín; null vuelve al motor. */

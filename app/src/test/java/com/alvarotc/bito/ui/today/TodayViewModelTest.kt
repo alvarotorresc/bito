@@ -480,6 +480,81 @@ class TodayViewModelTest {
             assertEquals(listOf("p" to Respuesta.HOY_NO), respondidas)
         }
 
+    private class FuenteConEfectos(var efecto: Efecto) : FuentePropuestas {
+        val llamadas = mutableListOf<Triple<String, Respuesta, Int?>>()
+
+        override fun propuesta(
+            ambito: Ambito,
+            habitId: String?,
+        ): Flow<Propuesta?> = flowOf(Propuesta("p", TextoHabi(1), emptyList()))
+
+        override suspend fun responder(
+            id: String,
+            respuesta: Respuesta,
+            hora: Int?,
+        ): Efecto {
+            llamadas += Triple(id, respuesta, hora)
+            return efecto
+        }
+
+        override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    }
+
+    @Test
+    fun `each effect reaches the screen once`() =
+        runTest(dispatcher) {
+            val fuente = FuenteConEfectos(Efecto.AbrirCierre)
+            vm = newViewModel(fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+            val primero = mutableListOf<Efecto>()
+            val colector1 = launch { vm.efectos.collect { primero += it } }
+            advanceUntilIdle()
+
+            vm.responder(Respuesta.CERRAR_DIA)
+            advanceUntilIdle()
+            assertEquals(listOf<Efecto>(Efecto.AbrirCierre), primero)
+            colector1.cancel()
+
+            // Un segundo colector, ya pasado el efecto, no recibe el viejo.
+            val segundo = mutableListOf<Efecto>()
+            val colector2 = launch { vm.efectos.collect { segundo += it } }
+            advanceUntilIdle()
+            assertTrue(segundo.isEmpty())
+
+            fuente.efecto = Efecto.AbrirLoGordo
+            vm.responder(Respuesta.ELEGIR_GORDO)
+            advanceUntilIdle()
+            assertEquals(listOf<Efecto>(Efecto.AbrirLoGordo), segundo)
+            colector2.cancel()
+        }
+
+    @Test
+    fun `an answer with nothing to do emits no effect`() =
+        runTest(dispatcher) {
+            vm = newViewModel(FuenteConEfectos(Efecto.Ninguno))
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+            val recibidos = mutableListOf<Efecto>()
+            backgroundScope.launch { vm.efectos.collect { recibidos += it } }
+            advanceUntilIdle()
+            vm.responder(Respuesta.HOY_NO)
+            advanceUntilIdle()
+            assertTrue(recibidos.isEmpty())
+        }
+
+    @Test
+    fun `another hour reaches the source with its minute`() =
+        runTest(dispatcher) {
+            val fuente = FuenteConEfectos(Efecto.Ninguno)
+            vm = newViewModel(fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+            vm.responder(Respuesta.OTRA_HORA, 600)
+            advanceUntilIdle()
+            assertEquals(listOf(Triple("p", Respuesta.OTRA_HORA, 600 as Int?)), fuente.llamadas)
+        }
+
     @Test
     fun `without a source there is no proposal and answering does nothing`() =
         runTest(dispatcher) {

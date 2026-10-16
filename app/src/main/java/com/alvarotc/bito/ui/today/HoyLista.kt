@@ -1,5 +1,14 @@
 package com.alvarotc.bito.ui.today
 
+import android.Manifest
+import android.app.AlarmManager
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.os.Build
+import android.provider.Settings
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
@@ -49,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.habi.HabiVoice
@@ -79,6 +90,8 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 
 private const val FILAS_HUECO = 4
 private val HUNDIDA_CIERRE = 48.dp
+private const val ESCALON_HUNDIDA_MS = 25
+private const val ESCALONES_HUNDIDA = 7
 private const val ESCALON_ENTRADA_MS = 60
 private const val MAX_ESCALONADAS = 8
 private const val SALIDA_TAREA_MS = 340L
@@ -87,6 +100,37 @@ private const val BROTE_VIGENCIA_MS = 1500L
 /** Lo que se espera, al volver de crear, a que el id nuevo llegue al estado de Hoy (viejo o aún sin escribir). */
 internal const val ESPERA_CREADO_MS = 1_500L
 private const val PUNTOS_MAX = 12
+
+/**
+ * Cuánto se ha hundido la fila [indice] cuando la lista lleva [progreso] (0 nada, 1 del todo) de su hundimiento. Cada
+ * fila tarda [Duraciones.HUNDIR_FILA] y la siguiente sale [ESCALON_HUNDIDA_MS] después; el escalón se detiene en
+ * [ESCALONES_HUNDIDA] filas para que una lista larga no tarde de más. El progreso lo da un muelle, no un reloj: los
+ * milisegundos son la proporción del escalón, no una duración exacta.
+ */
+internal fun hundidaDeFila(
+    progreso: Float,
+    indice: Int,
+): Float {
+    val total = (Duraciones.HUNDIR_FILA + ESCALON_HUNDIDA_MS * ESCALONES_HUNDIDA).toFloat()
+    val retraso = (ESCALON_HUNDIDA_MS * indice.coerceIn(0, ESCALONES_HUNDIDA)).toFloat()
+    return ((progreso * total - retraso) / Duraciones.HUNDIR_FILA).coerceIn(0f, 1f)
+}
+
+/** Lo que hunde una fila: baja y se apaga (solo se apaga con movimiento reducido). */
+private fun Modifier.hundirFila(
+    indice: Int,
+    hundida: () -> Float,
+    reducido: Boolean,
+): Modifier =
+    graphicsLayer {
+        val k = hundidaDeFila(hundida().coerceIn(0f, 1f), indice)
+        if (!reducido) translationY = HUNDIDA_CIERRE.toPx() * k
+        alpha = 1f - k
+    }
+
+/** Ajustes donde se concede la alarma exacta de este paquete (API 31 o más). */
+internal fun intentAlarmasExactas(paquete: String): Intent =
+    Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM, Uri.parse("package:$paquete"))
 
 /** La lista de Hoy (spec §5.3): Habi, «Tu día», hábitos, tareas, «En pausa» y cerrar el día, en un solo `LazyColumn`. */
 @Composable
@@ -103,8 +147,8 @@ fun HoyLista(
     // El aviso de la mañana pide la hoja de lo gordo; la lista avisa de que lo vio (la hoja la abre la Tarea 24).
     abrirGordo: Boolean = false,
     alGordoVisto: () -> Unit = {},
-    // Lo que se ha hundido la lista porque se abre el cierre (0 nada, 1 del todo); se lee al dibujar. Provisional: la
-    // lista entera baja y se apaga a la vez; el carril de Hoy (u1) lo cambia por un escalón de 25 ms por fila.
+    // Lo que se ha hundido la lista porque se abre el cierre (0 nada, 1 del todo); se lee al dibujar. Cada fila
+    // lo recoge con su escalón de 25 ms ([hundidaDeFila]).
     hundida: () -> Float = { 0f },
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
@@ -113,6 +157,7 @@ fun HoyLista(
     val propuesta by viewModel.propuesta.collectAsStateWithLifecycle()
     val scope = rememberCoroutineScope()
     val gesto = rememberGesto()
+    val contexto = LocalContext.current
     val registro = LocalAnclas.current
     val reducido = BitoTema.reducido
     var exactFor by remember { mutableStateOf<HabitCardUi?>(null) }
@@ -120,6 +165,18 @@ fun HoyLista(
     var sealDismissed by rememberSaveable { mutableStateOf(false) }
     var limitePendiente by remember { mutableStateOf(false) }
     var brotando by remember { mutableStateOf<String?>(null) }
+    var gordoAbierto by remember { mutableStateOf(false) }
+    var horaAbierta by remember { mutableStateOf(false) }
+    var horaPedida by remember { mutableStateOf(Efecto.ElegirHora(0, MINUTOS_DIA - 1, 0)) }
+    // Resuelto el permiso, el agua se aclara y Habi llega: aquí suena y vibra en ese fotograma.
+    val pedirAvisos =
+        rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
+            if (concedido) gesto(Snd.LLEGADA, Haptica.CONFIRM)
+        }
+    val pedirAlarmas =
+        rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
+            if (alarmasExactasConcedidas(contexto)) gesto(Snd.LLEGADA, Haptica.CONFIRM)
+        }
     // La entrada escalonada solo ocurre al cargar: se apaga pasada su ventana y las filas que vuelven por scroll no la repiten.
     var vistoCargando by remember { mutableStateOf(false) }
     if (estado.loading) vistoCargando = true
@@ -130,6 +187,30 @@ fun HoyLista(
         }
     }
     LaunchedEffect(abrirGordo) { if (abrirGordo) alGordoVisto() }
+    LaunchedEffect(viewModel) {
+        viewModel.efectos.collect { efecto ->
+            when (efecto) {
+                Efecto.Ninguno -> Unit
+                is Efecto.Sesion -> navegar.abrirRuta(EntradaSesion.ruta(efecto.destino))
+                Efecto.AbrirCierre -> navegar.abrirRepaso()
+                Efecto.AbrirLoGordo -> gordoAbierto = true
+                is Efecto.ElegirHora -> {
+                    horaPedida = efecto
+                    horaAbierta = true
+                }
+                // Editar el objetivo de un hábito se pide desde su ficha, no desde Hoy.
+                is Efecto.EditarHabito -> Unit
+                is Efecto.PedirPermiso ->
+                    if (efecto.alarmas) {
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            runCatching { pedirAlarmas.launch(intentAlarmasExactas(contexto.packageName)) }
+                        }
+                    } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                        pedirAvisos.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+            }
+        }
+    }
     LaunchedEffect(brotando) {
         if (brotando != null) {
             delay(BROTE_VIGENCIA_MS)
@@ -258,13 +339,7 @@ fun HoyLista(
         }
     }
 
-    Box(
-        modifier.graphicsLayer {
-            val k = hundida()
-            if (!reducido) translationY = HUNDIDA_CIERRE.toPx() * k
-            alpha = 1f - k
-        },
-    ) {
+    Box(modifier) {
         LazyColumn(
             Modifier.fillMaxWidth().testTag("hoy-lista"),
             state = listState,
@@ -275,25 +350,29 @@ fun HoyLista(
             item(key = "habi") {
                 TarjetaHabi(
                     propuesta,
-                    { r ->
-                        if (r == Respuesta.AHORA) navegar.abrirRuta(EntradaSesion.ruta(propuesta?.destino))
-                        viewModel.responder(r)
-                    },
-                    Modifier.padding(horizontal = Medidas.margen),
+                    { r -> viewModel.responder(r) },
+                    Modifier.padding(horizontal = Medidas.margen).hundirFila(0, hundida, reducido),
                 )
             }
             if (hayTuDia) {
                 item(key = "tu-dia") {
-                    TuDia(estado.cards, estado.ringDone, estado.ringTotal, Modifier.padding(horizontal = Medidas.margen))
+                    TuDia(
+                        estado.cards,
+                        estado.ringDone,
+                        estado.ringTotal,
+                        Modifier.padding(horizontal = Medidas.margen).hundirFila(1, hundida, reducido),
+                    )
                 }
             }
             if (estado.loading) {
                 items(FILAS_HUECO, key = { "hueco-$it" }) { i ->
-                    FilaHueco(i, Modifier.padding(horizontal = Medidas.margen))
+                    FilaHueco(i, Modifier.padding(horizontal = Medidas.margen).hundirFila(i + 2, hundida, reducido))
                 }
             }
             if (vacio) {
-                item(key = "vacio") { HoyVacio(navegar.crearHabito, Modifier.padding(horizontal = Medidas.margen)) }
+                item(
+                    key = "vacio",
+                ) { HoyVacio(navegar.crearHabito, Modifier.padding(horizontal = Medidas.margen).hundirFila(2, hundida, reducido)) }
             }
             items(filas, key = { it.clave() }) { fila ->
                 val indice = filas.indexOf(fila)
@@ -307,7 +386,7 @@ fun HoyLista(
                             (fila is FilaHoy.Habito && brotando == fila.card.id) ||
                                 (fila is FilaHoy.Tarea && brotando == fila.row.id),
                     )
-                val margen = Modifier.padding(horizontal = Medidas.margen)
+                val margen = Modifier.padding(horizontal = Medidas.margen).hundirFila((if (hayTuDia) 2 else 1) + indice, hundida, reducido)
                 val colocar =
                     Modifier.animateItem(
                         placementSpec = if (reducido) null else tween<IntOffset>(Duraciones.HUNDIR_FILA, easing = Curvas.out),
@@ -388,6 +467,28 @@ fun HoyLista(
         }
     }
 
+    HojaLoGordo(
+        abierta = gordoAbierto,
+        candidatos = emptyList(),
+        sugerencia = null,
+        elegidos = emptyList(),
+        alGuardar = { refs ->
+            gordoAbierto = false
+            viewModel.guardarGordo(refs)
+        },
+        alCerrar = { gordoAbierto = false },
+    )
+    HojaOtraHora(
+        abierta = horaAbierta,
+        desde = horaPedida.desde,
+        hasta = horaPedida.hasta,
+        actual = horaPedida.actual,
+        alGuardar = { minuto ->
+            horaAbierta = false
+            viewModel.responder(Respuesta.OTRA_HORA, minuto)
+        },
+        alCerrar = { horaAbierta = false },
+    )
     HojaTotalExacto(
         abierta = exactFor != null,
         card = exactFor,
@@ -422,6 +523,12 @@ fun HoyLista(
 }
 
 private const val ENTRADA_SCROLL_MS = 420
+private const val MINUTOS_DIA = 24 * 60
+
+/** Si el sistema ya deja a la app programar alarmas exactas (antes de la API 31 siempre). */
+private fun alarmasExactasConcedidas(contexto: Context): Boolean =
+    Build.VERSION.SDK_INT < Build.VERSION_CODES.S ||
+        contexto.getSystemService(AlarmManager::class.java)?.canScheduleExactAlarms() == true
 
 /** «Tu día»: «N de M» con la cifra en rodillo y un puntito de agua por hábito, lleno si está hecho. */
 @Composable
