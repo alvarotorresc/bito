@@ -499,6 +499,11 @@ fun InicioScreen(
                             alGordoVisto = alGordoVisto,
                             hundida = { cierreEstado.c.value.coerceIn(0f, 1f) },
                             vetaRachaDe = vetaRachaDe,
+                            // El salto de Habi en el jardín; la voz, en el mismo fotograma, solo tras «Hecho» en la vuelta.
+                            alSaltoHabi = { conVoz ->
+                                if (!reducido) salto++
+                                if (conVoz) gesto(Snd.HABI)
+                            },
                         )
                     }
                 }

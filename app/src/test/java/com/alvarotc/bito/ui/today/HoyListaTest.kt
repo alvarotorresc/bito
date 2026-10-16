@@ -590,6 +590,42 @@ class HoyListaTest {
             acciones = emptyList(),
         )
 
+    @Test
+    fun `granting the notifications from the card clears the water and makes Habi jump`() {
+        val permiso =
+            propuestaDe("PERMISO_AVISOS::${banco.hoy}").copy(
+                acciones =
+                    listOf(
+                        com.alvarotc.bito.domain.propuestas.Accion(
+                            com.alvarotc.bito.domain.propuestas.Respuesta.VALE,
+                            com.alvarotc.bito.domain.propuestas.TextoHabi(com.alvarotc.bito.R.string.habla_vale),
+                            principal = true,
+                        ),
+                    ),
+            )
+        val fuente = FuenteFalsa(permiso)
+        fuente.efecto = com.alvarotc.bito.domain.propuestas.Efecto.PedirPermiso(alarmas = false)
+        banco.preparar(fuente)
+        // El diálogo del sistema dice que sí.
+        banco.registroResultados =
+            object : androidx.activity.result.ActivityResultRegistry() {
+                override fun <I, O> onLaunch(
+                    requestCode: Int,
+                    contract: androidx.activity.result.contract.ActivityResultContract<I, O>,
+                    input: I,
+                    options: androidx.core.app.ActivityOptionsCompat?,
+                ) {
+                    dispatchResult(requestCode, true)
+                }
+            }
+        banco.montar()
+        esperarNodo("habi-vale")
+        rule.onNodeWithTag("habi-vale").performClick()
+        banco.esperar()
+        assertEquals(listOf(false), banco.saltos)
+        assertTrue(com.alvarotc.bito.ui.sistema.sonido.Snd.LLEGADA in banco.sonido.snds())
+    }
+
     // Lo que el cuerpo real de la fuente escribe al responder (spec §5.11): `RESPUESTA` con el id de la propuesta.
     private fun recordarRespuesta(
         id: String,

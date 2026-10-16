@@ -71,6 +71,10 @@ fun TarjetaHabi(
     propuesta: Propuesta?,
     alResponder: (Respuesta) -> Unit,
     modifier: Modifier = Modifier,
+    // «Hecho» en la vuelta: Habi salta con el jardín 1,1 s después (el salto y su voz los pone el Inicio).
+    alSaltoHabi: () -> Unit = {},
+    // Cada vez que sube, el permiso se acaba de resolver: la tarjeta se llena de agua clara y vuelve (240 ms, §9).
+    aguaClara: Int = 0,
 ) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
@@ -84,14 +88,26 @@ fun TarjetaHabi(
     // «Vale» sin hora (día duro): los botones se pliegan y la confirmación se funde. «Hecho»: la tarjeta encoge sin texto.
     var valeDuro by remember { mutableStateOf(false) }
     var sinTexto by remember { mutableStateOf(false) }
+    // «Hecho» en la vuelta: solo entonces la tarjeta se hunde al irse (spec §9).
+    var hechoEnVuelta by remember { mutableStateOf(false) }
     var altoContenido by remember { mutableIntStateOf(0) }
     val brote = remember { Animatable(1f) }
     val anterior = remember { arrayOf(propuesta?.id) }
+    val clara = remember { Animatable(0f) }
+    var ultimaClara by remember { mutableIntStateOf(aguaClara) }
+    LaunchedEffect(aguaClara) {
+        val sube = aguaClara > ultimaClara
+        ultimaClara = aguaClara
+        if (!sube) return@LaunchedEffect
+        clara.animateTo(1f, tween(PERMISO_RESUELTO_MS, easing = Curvas.out))
+        clara.animateTo(0f, tween(Duraciones.COLOR, easing = Curvas.out))
+    }
 
     LaunchedEffect(propuesta?.id) {
         val id = propuesta?.id
-        // «Hecho»: la tarjeta se va y se hunde (spec §9, «Vuelta, Hecho»).
-        if (id != anterior[0] && respondida == Respuesta.HECHO) gesto(Snd.HUNDIR, Haptica.FALL)
+        // «Hecho» en la vuelta: la tarjeta se va y se hunde (spec §9, «Vuelta, Hecho»). En otra situación se va sin más.
+        if (id != anterior[0] && respondida == Respuesta.HECHO && hechoEnVuelta) gesto(Snd.HUNDIR, Haptica.FALL)
+        if (id != anterior[0]) hechoEnVuelta = false
         if (id == null) respondida = null
         if (id != null && id != anterior[0]) {
             valeDuro = false
@@ -131,6 +147,7 @@ fun TarjetaHabi(
                         alpha = 0.4f + 0.6f * v
                         if (!reducido) translationY = (1f - v) * DESPLAZA_LLEGADA_DP.dp.toPx()
                     }.background(colores.canto, BitoFormas.tarjeta)
+                    .background(colores.agua.copy(alpha = AGUA_CLARA_ALFA * clara.value), BitoFormas.tarjeta)
                     .border(Medidas.linea, colores.contorno, BitoFormas.tarjeta)
                     .padding(Medidas.e16),
             ) {
@@ -211,11 +228,12 @@ fun TarjetaHabi(
                                                     accion.respuesta == Respuesta.HECHO -> {
                                                         sinTexto = true
                                                         if (esVuelta(p)) {
-                                                            // Marca (gorgoteo, ticks); Habi suena al saltar con el jardín.
+                                                            // Marca (gorgoteo, ticks); Habi salta y suena con el jardín, en el Inicio.
                                                             gesto(Snd.GORGOTEO, Haptica.TICKS)
+                                                            hechoEnVuelta = true
                                                             alcance.launch {
                                                                 delay(SALTO_HABI_MS)
-                                                                gesto(Snd.HABI)
+                                                                alSaltoHabi()
                                                             }
                                                         } else {
                                                             gesto(Snd.BROTE, Haptica.TICK)
@@ -277,3 +295,7 @@ private const val CONFIRMACION_DURA_MS = 200
 
 // Sin token: el jardín crece y Habi salta 1,1 s después de marcar la vuelta (spec §5.6).
 private const val SALTO_HABI_MS = 1_100L
+
+// Permiso resuelto (spec §9, catálogo 3.10): 240 ms hacia el agua clara; sin token de alfa, con nombre aquí.
+private const val PERMISO_RESUELTO_MS = 240
+private const val AGUA_CLARA_ALFA = 0.35f

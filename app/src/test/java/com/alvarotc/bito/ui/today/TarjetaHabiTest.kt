@@ -210,6 +210,9 @@ class TarjetaHabiTest {
         assertEquals(tras + 1, sonido.snds().count { it == Snd.BROTE })
     }
 
+    /** Cuántas veces la tarjeta pidió al Inicio que Habi salte. */
+    private var saltos = 0
+
     private fun montarConTacto(
         fuente: FuenteFalsa,
         sonido: SonidoGrabado,
@@ -218,7 +221,7 @@ class TarjetaHabiTest {
         rule.setContent {
             ConSistema(sonido, tacto) {
                 val p by fuente.flujo.collectAsState()
-                TarjetaHabi(p, { r -> fuente.respuestas += r })
+                TarjetaHabi(p, { r -> fuente.respuestas += r }, alSaltoHabi = { saltos++ })
             }
         }
         rule.waitForIdle()
@@ -343,8 +346,34 @@ class TarjetaHabiTest {
         assertTrue(Snd.HUNDIR in sonido.snds())
         assertTrue(Haptica.FALL in tacto.hapticas)
         assertTrue(Snd.BROTE !in sonido.snds())
-        // Habi salta con el jardín, 1,1 s después de marcar.
+        // Habi salta con el jardín, 1,1 s después de marcar: lo pide al Inicio, que pone el salto y su voz (una sola).
+        assertEquals(0, saltos)
         rule.mainClock.advanceTimeBy(1_100)
-        assertTrue(Snd.HABI in sonido.snds())
+        assertEquals(1, saltos)
+        assertTrue("la voz de Habi va con el salto del Inicio, no aquí", Snd.HABI !in sonido.snds())
+    }
+
+    @Test
+    fun `Hecho outside the return leaves without sinking`() {
+        // Spec §9: «hundir» y «fall» al irse la tarjeta solo en la vuelta.
+        val sonido = SonidoGrabado()
+        val tacto = TactoGrabado()
+        val fuente =
+            FuenteFalsa(
+                Propuesta(
+                    "DIA_DURO:h1:20251015",
+                    texto(R.string.habi_name_fallback),
+                    listOf(Accion(Respuesta.HECHO, TextoHabi(R.string.habla_hecho), principal = true)),
+                ),
+            )
+        montarConTacto(fuente, sonido, tacto)
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("habi-hecho").performClick()
+        fuente.flujo.value = null
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeBy(1_300)
+        assertTrue(Snd.HUNDIR !in sonido.snds())
+        assertTrue(Haptica.FALL !in tacto.hapticas)
+        assertEquals(0, saltos)
     }
 }

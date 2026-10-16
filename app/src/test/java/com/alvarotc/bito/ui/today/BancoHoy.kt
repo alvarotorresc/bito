@@ -110,6 +110,12 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
 
     /** El hábito cuya veta de racha dura ahora (el que Inicio pasa a la lista), si hay. */
     var vetaRachaDe by mutableStateOf<String?>(null)
+
+    /** Los saltos de Habi que la lista pide al Inicio (true: con su voz, el de la vuelta). */
+    val saltos = mutableListOf<Boolean>()
+
+    /** Si no es null, los permisos que pide Hoy se resuelven con este registro (el diálogo del sistema). */
+    var registroResultados: androidx.activity.result.ActivityResultRegistry? = null
     var fichaAbierta: String? = null
     val navegar =
         NavegacionInicio(
@@ -213,18 +219,27 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         ConSistema(sonido, tacto, reducido) {
             CompositionLocalProvider(LocalAnclas provides registro) {
                 Box(Modifier.fillMaxSize()) {
-                    HoyLista(
-                        vm,
-                        navegar,
-                        rememberLazyListState(),
-                        avisos,
-                        encabezado = {},
-                        creado = creado,
-                        alCreadoVisto = alCreadoVisto,
-                        abrirGordo = abrirGordo,
-                        alGordoVisto = alGordoVisto,
-                        vetaRachaDe = vetaRachaDe,
-                    )
+                    val registroOwner =
+                        registroResultados?.let { r ->
+                            object : androidx.activity.result.ActivityResultRegistryOwner {
+                                override val activityResultRegistry = r
+                            }
+                        } ?: androidx.activity.compose.LocalActivityResultRegistryOwner.current
+                    CompositionLocalProvider(androidx.activity.compose.LocalActivityResultRegistryOwner provides registroOwner!!) {
+                        HoyLista(
+                            vm,
+                            navegar,
+                            rememberLazyListState(),
+                            avisos,
+                            encabezado = {},
+                            creado = creado,
+                            alCreadoVisto = alCreadoVisto,
+                            abrirGordo = abrirGordo,
+                            alGordoVisto = alGordoVisto,
+                            vetaRachaDe = vetaRachaDe,
+                            alSaltoHabi = { saltos += it },
+                        )
+                    }
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
                 }
             }

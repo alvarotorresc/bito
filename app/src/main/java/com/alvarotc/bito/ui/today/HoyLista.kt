@@ -44,6 +44,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
@@ -162,6 +163,8 @@ fun HoyLista(
     hundida: () -> Float = { 0f },
     // El hábito cuya veta de racha dura ahora: su «día N» sube y va en negrita.
     vetaRachaDe: String? = null,
+    // Habi salta en el jardín del Inicio: al resolver el permiso (sin voz) y tras «Hecho» en la vuelta (con su voz).
+    alSaltoHabi: (conVoz: Boolean) -> Unit = {},
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
     val logged by viewModel.lastLogged.collectAsStateWithLifecycle()
@@ -184,14 +187,21 @@ fun HoyLista(
     var gordoPedido by remember { mutableIntStateOf(0) }
     var horaAbierta by remember { mutableStateOf(false) }
     var horaPedida by remember { mutableStateOf(Efecto.ElegirHora(0, MINUTOS_DIA - 1, 0)) }
-    // Resuelto el permiso, el agua se aclara y Habi llega: aquí suena y vibra en ese fotograma.
+    // Resuelto el permiso, la tarjeta pasa a agua clara y Habi salta (catálogo 3.10): todo en el mismo fotograma.
+    var aguaClara by remember { mutableIntStateOf(0) }
+    val saltar by rememberUpdatedState(alSaltoHabi)
+    val permisoResuelto = {
+        gesto(Snd.LLEGADA, Haptica.CONFIRM)
+        aguaClara++
+        saltar(false)
+    }
     val pedirAvisos =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { concedido ->
-            if (concedido) gesto(Snd.LLEGADA, Haptica.CONFIRM)
+            if (concedido) permisoResuelto()
         }
     val pedirAlarmas =
         rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) {
-            if (alarmasExactasConcedidas(contexto)) gesto(Snd.LLEGADA, Haptica.CONFIRM)
+            if (alarmasExactasConcedidas(contexto)) permisoResuelto()
         }
     // La entrada escalonada solo ocurre al cargar: se apaga pasada su ventana y las filas que vuelven por scroll no la repiten.
     var vistoCargando by remember { mutableStateOf(false) }
@@ -431,6 +441,8 @@ fun HoyLista(
                     propuesta,
                     { r -> viewModel.responder(r) },
                     Modifier.padding(horizontal = Medidas.margen).hundirFila(0, hundida, reducido),
+                    alSaltoHabi = { saltar(true) },
+                    aguaClara = aguaClara,
                 )
             }
             if (hayTuDia) {
