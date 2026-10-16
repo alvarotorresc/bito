@@ -48,12 +48,15 @@ import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.notifications.AvisosHabi
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -96,6 +99,8 @@ class FuentePropuestasHabi(
     private val hechos: (DomainState, Memoria, Contexto, Map<String, Int>) -> Hechos = HechosCache()::hechos,
     // El reloj de la tarjeta: con la app abierta, la vigente se vuelve a mirar en cada minuto. AppContainer pasa ticksDeMinuto().
     private val ticks: Flow<Unit> = flowOf(Unit),
+    // Donde corre todo (hechos, motor, redactor, replanificar): nunca en el hilo de quien escucha. Los tests pasan el suyo.
+    private val despachador: CoroutineDispatcher = Dispatchers.Default,
 ) : FuentePropuestas {
     private val cerrojo = Mutex()
 
@@ -116,6 +121,7 @@ class FuentePropuestasHabi(
             val h = hechos(state, m, ctx, recs)
             enCerrojo { vigenteODeNuevo(ambito, clave, habitId, state, ctx, h, recs) }
         }.distinctUntilChanged()
+            .flowOn(despachador)
     }
 
     /**
@@ -512,8 +518,12 @@ class FuentePropuestasHabi(
         }
     }
 
-    /** Leer y escribir la vigente, de una vez y sin cortarse a medias si quien escucha se va. */
-    private suspend fun <T> enCerrojo(bloque: suspend () -> T): T = withContext(NonCancellable) { cerrojo.withLock { bloque() } }
+    /**
+     * Leer y escribir la vigente, de una vez y sin cortarse a medias si quien escucha se va. En [despachador]: responder
+     * desde una pantalla no redacta ni replanifica en el hilo principal.
+     */
+    private suspend fun <T> enCerrojo(bloque: suspend () -> T): T =
+        withContext(NonCancellable + despachador) { cerrojo.withLock { bloque() } }
 
     // Contexto.
 

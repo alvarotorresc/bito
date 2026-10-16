@@ -32,10 +32,13 @@ import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import java.time.LocalDate
 import java.time.ZoneId
@@ -57,13 +60,17 @@ class AvisosHabiAndroid(
     private val fuente: () -> FuentePropuestas = { contenedor().propuestas },
     private val aceptados: () -> AvisosAceptadosRepository = { contenedor().avisosAceptados },
     private val catalogo: () -> CatalogoHabla,
+    // Replanificar lee todo el estado y llama a AlarmManager: nunca en el hilo principal. Los tests pasan el suyo.
+    private val despachador: CoroutineDispatcher = Dispatchers.Default,
 ) : AvisosHabi {
     /**
      * Programa lo que queda de hoy y quita lo que ya no toca: la mañana y la noche que hoy no salen pasan a mañana a su
      * hora de siempre (así la cadena sigue); los aceptados que salen del plan pierden su alarma, y su recordatorio si el
      * hábito ya está hecho o el día sellado; los pendientes de otros días, también.
      */
-    override suspend fun replanificar() {
+    override suspend fun replanificar() = withContext(despachador) { replanificarAqui() }
+
+    private suspend fun replanificarAqui() {
         val p = plan()
         val ctx = p.ctx
         val avisos = PlanAvisos.de(p.hechos, p.memoria, ctx)

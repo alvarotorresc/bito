@@ -47,16 +47,19 @@ import com.alvarotc.bito.ui.inicio.resolverTextoHabi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -66,6 +69,7 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlarmManager
 import java.io.File
+import java.util.concurrent.Executors
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -152,8 +156,37 @@ class AvisosHabiAndroidTest {
             fuente = { fuente },
             aceptados = { repo },
             catalogo = { CatalogoHablaVacio },
+            despachador = dispatcher,
         )
     }
+
+    @Test
+    fun `replanning works on its own dispatcher, not on the caller's thread`() {
+        val hilo = Executors.newSingleThreadExecutor { Thread(it, "avisos-habi") }.asCoroutineDispatcher()
+        var hiloDelPlan: String? = null
+        val enSuHilo =
+            AvisosHabiAndroid(
+                context,
+                contenedor = { error("sin contenedor en los tests") },
+                plan = {
+                    hiloDelPlan = Thread.currentThread().name
+                    throw PlanLeido()
+                },
+                fuente = { fuente },
+                aceptados = { repo },
+                catalogo = { CatalogoHablaVacio },
+                despachador = hilo,
+            )
+        try {
+            runBlocking { runCatching { enSuHilo.replanificar() } }
+
+            assertTrue("hilo del plan: $hiloDelPlan", hiloDelPlan?.startsWith("avisos-habi") == true)
+        } finally {
+            hilo.close()
+        }
+    }
+
+    private class PlanLeido : RuntimeException()
 
     @Before
     fun setUp() {

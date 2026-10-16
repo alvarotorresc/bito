@@ -47,7 +47,9 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.domain.testZone
 import com.alvarotc.bito.ui.notifications.AvisosHabi
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,9 +57,11 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -69,7 +73,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
+import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration.Companion.seconds
@@ -127,8 +133,12 @@ class FuentePropuestasHabiTest {
             }
         }
 
+    /** El hilo de cada elección del motor. */
+    private val hilosMotor = CopyOnWriteArrayList<String>()
+
     private val motorFalso =
         ElegirCandidata { ambito, h, m, _, habitId ->
+            hilosMotor += Thread.currentThread().name
             when (ambito) {
                 Ambito.HOY ->
                     if (alarmas) {
@@ -225,6 +235,7 @@ class FuentePropuestasHabiTest {
         estado: Flow<DomainState>,
         nombre: String = "Álvaro",
         permisos: PermisosAvisos = PermisosAvisos(notificaciones = true, alarmasExactas = true),
+        despachador: CoroutineDispatcher = Dispatchers.Default,
     ) = FuentePropuestasHabi(
         estado = estado,
         ajustes = flowOf(Settings(userName = nombre, personality = Personality.NEUTRA)),
@@ -241,6 +252,7 @@ class FuentePropuestasHabiTest {
         registrar = { id, cantidad -> registros += id to cantidad },
         motor = motorFalso,
         hechos = hechosFalsos,
+        despachador = despachador,
     )
 
     private fun marcar(h: Habit) {
@@ -254,6 +266,20 @@ class FuentePropuestasHabiTest {
     private fun prueba(cuerpo: suspend TestScope.() -> Unit) = runTest(timeout = 10.seconds, testBody = cuerpo)
 
     private suspend fun FuentePropuestasHabi.hoy(): Propuesta = propuesta(Ambito.HOY).first { it != null }!!
+
+    @Test
+    fun `the source works on its own dispatcher, not on the thread that listens`() {
+        val hilo = Executors.newSingleThreadExecutor { Thread(it, "fuente-habi") }.asCoroutineDispatcher()
+        try {
+            val f = fuente(estadoCon(leerFalladoAyer), despachador = hilo)
+
+            runBlocking { withTimeout(5_000) { f.hoy() } }
+
+            assertTrue("hilos del motor: $hilosMotor", hilosMotor.isNotEmpty() && hilosMotor.all { it.startsWith("fuente-habi") })
+        } finally {
+            hilo.close()
+        }
+    }
 
     @Test
     fun `the current proposal does not change when something else is marked`() =
