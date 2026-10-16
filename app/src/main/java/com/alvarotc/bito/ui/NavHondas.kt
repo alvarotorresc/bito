@@ -20,6 +20,9 @@ internal const val RUTA_FICHA = "detail/{habitId}?lectura={lectura}"
 
 internal const val RUTA_AJUSTES = "settings"
 
+/** La tienda: brota sobre Hoy con su propio movimiento (no es una ruta honda ni lleva el sonido de descenso). */
+internal const val RUTA_TIENDA = "habi"
+
 /** Las rutas cuyo cambio suena como un descenso o un ascenso. */
 internal val RUTAS_CON_SONIDO = RUTAS_HONDAS + RUTA_FICHA
 

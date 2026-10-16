@@ -194,7 +194,10 @@ class BarraPruebaTest {
             BarraPrueba.NoSeCompra(
                 f("Reno", "Reindeer"),
                 MotivoNoSeCompra.TEMPORADA,
-                TextoBarra.Plano(R.string.store_bar_out_of_season, listOf(f("1 de diciembre", "December 1"), f("6 de enero", "January 6"))),
+                TextoBarra.Plano(
+                    R.string.store_bar_out_of_season,
+                    listOf(f("del 1 de diciembre al 6 de enero", "from December 1 to January 6")),
+                ),
                 false,
             ),
             BarraPrueba.NoSeCompra(
@@ -202,7 +205,7 @@ class BarraPruebaTest {
                 MotivoNoSeCompra.TEMPORADA,
                 TextoBarra.Plano(
                     R.string.store_bar_out_of_season,
-                    listOf(f("el 9 de febrero", "February 9"), f("el 22 de febrero", "February 22")),
+                    listOf(f("del 9 de febrero al 22 de febrero", "from February 9 to February 22")),
                 ),
                 false,
             ),

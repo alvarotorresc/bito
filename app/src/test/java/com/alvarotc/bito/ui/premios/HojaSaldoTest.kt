@@ -96,4 +96,15 @@ class HojaSaldoTest {
         assertEquals(1, cerrada)
         assertEquals(0, tienda)
     }
+
+    @Test
+    fun `without alIrTienda there is no store button`() {
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            ConSistema { HojaSaldo(true, 140, emptyList(), EconomyConfig(), alCerrar = { cerrada++ }) }
+        }
+        rule.mainClock.advanceTimeBy(600)
+        rule.onNodeWithTag("saldo-tienda").assertDoesNotExist()
+        rule.onNodeWithTag("saldo-cerrar").assertExists()
+    }
 }

@@ -30,8 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.compose.currentStateAsState
@@ -54,7 +56,6 @@ import com.alvarotc.bito.ui.camino.CaminoViewModel
 import com.alvarotc.bito.ui.cierre.CierreViewModel
 import com.alvarotc.bito.ui.detail.DetailScreen
 import com.alvarotc.bito.ui.detail.DetailViewModel
-import com.alvarotc.bito.ui.habi.HabiScreen
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
@@ -89,6 +90,8 @@ import com.alvarotc.bito.ui.tasks.TasksViewModel
 import com.alvarotc.bito.ui.tasks.resolvedDueDay
 import com.alvarotc.bito.ui.tasks.toFormState
 import com.alvarotc.bito.ui.theme.Papel
+import com.alvarotc.bito.ui.tienda.TiendaScreen
+import com.alvarotc.bito.ui.tienda.TiendaViewModel
 import com.alvarotc.bito.ui.today.TodayViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
@@ -188,6 +191,8 @@ fun BitoNavHost(
     }
 
     val camara = Muelles.camara<IntOffset>(umbral = IntOffset.VisibilityThreshold)
+    // La tienda brota desde abajo y Hoy sube 40 dp por detrás (tienda-habi.js, `entraSp`).
+    val subeHoy = with(LocalDensity.current) { SUBE_HOY.roundToPx() }
     val globalEnter: AnimatedContentTransitionScope<NavBackStackEntry>.(Int) -> EnterTransition = { signo ->
         fadeIn(tween(150, easing = LinearOutSlowInEasing)) +
             slideInHorizontally(tween(150, easing = LinearOutSlowInEasing)) { signo * it / 12 }
@@ -217,30 +222,46 @@ fun BitoNavHost(
                     // only entering/leaving its route uses this. The juicy celebration sheets are
                     // overlays, not routes, so they never see this.
                     enterTransition = {
-                        entra(
-                            transicionDe(Momento.ENTRA, initialState.destination.route, targetState.destination.route, reducido),
-                            camara,
-                        ) { globalEnter(1) }
+                        if (targetState.destination.route == RUTA_TIENDA) {
+                            tiendaBrota(reducido)
+                        } else {
+                            entra(
+                                transicionDe(Momento.ENTRA, initialState.destination.route, targetState.destination.route, reducido),
+                                camara,
+                            ) { globalEnter(1) }
+                        }
                     },
                     exitTransition = {
-                        sale(
-                            transicionDe(Momento.SALE, initialState.destination.route, targetState.destination.route, reducido),
-                            camara,
-                        ) { globalExit() }
+                        if (targetState.destination.route == RUTA_TIENDA) {
+                            hoyBajoLaTienda(reducido, subeHoy)
+                        } else {
+                            sale(
+                                transicionDe(Momento.SALE, initialState.destination.route, targetState.destination.route, reducido),
+                                camara,
+                            ) { globalExit() }
+                        }
                     },
                     popEnterTransition = {
-                        entra(
-                            transicionDe(Momento.VUELVE_ENTRA, initialState.destination.route, targetState.destination.route, reducido),
-                            camara,
-                        ) {
-                            globalEnter(-1)
+                        if (initialState.destination.route == RUTA_TIENDA) {
+                            hoyVuelve(reducido, subeHoy)
+                        } else {
+                            entra(
+                                transicionDe(Momento.VUELVE_ENTRA, initialState.destination.route, targetState.destination.route, reducido),
+                                camara,
+                            ) {
+                                globalEnter(-1)
+                            }
                         }
                     },
                     popExitTransition = {
-                        sale(
-                            transicionDe(Momento.VUELVE_SALE, initialState.destination.route, targetState.destination.route, reducido),
-                            camara,
-                        ) { globalExit() }
+                        if (initialState.destination.route == RUTA_TIENDA) {
+                            tiendaSeHunde(reducido)
+                        } else {
+                            sale(
+                                transicionDe(Momento.VUELVE_SALE, initialState.destination.route, targetState.destination.route, reducido),
+                                camara,
+                            ) { globalExit() }
+                        }
                     },
                 ) {
                     // A fresh install's first-run flow, not a destination of Inicio — and not deep-link
@@ -291,7 +312,7 @@ fun BitoNavHost(
                                     NavegacionInicio(
                                         abrirFicha = { nav.navigate("detail/$it") },
                                         abrirAjustes = { nav.navigate("settings") },
-                                        abrirTienda = { nav.navigate("habi") { launchSingleTop = true } },
+                                        abrirTienda = { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } },
                                         // El Inicio lo sustituye: el cierre del día se abre dentro de él, sin ruta.
                                         abrirRepaso = {},
                                         abrirTareas = { nav.navigate("tasks") },
@@ -349,7 +370,7 @@ fun BitoNavHost(
                                 viewModel = viewModel(factory = DetailViewModel.factory(container, habitId, lectura)),
                                 onBack = { nav.popBackStack() },
                                 onEdit = { nav.navigate("habit?id=$it") },
-                                onOpenHabi = { nav.navigate("habi") { launchSingleTop = true } },
+                                onOpenHabi = { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } },
                                 alEditarConObjetivo = { id, objetivo -> nav.navigate("habit?id=$id&objetivo=$objetivo") },
                             )
                         }
@@ -382,8 +403,11 @@ fun BitoNavHost(
                             onOpenHabit = { nav.navigate("detail/$it?lectura=true") },
                         )
                     }
-                    composable("habi") {
-                        HabiScreen(viewModel = habiViewModel)
+                    composable(RUTA_TIENDA) { entry ->
+                        TiendaScreen(
+                            viewModel = viewModel(factory = TiendaViewModel.factory(container)),
+                            alSalir = { if (entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) nav.popBackStack() },
+                        )
                     }
                     // D12 revocado: crear y editar una tarea son ahora una pantalla completa, calcada de
                     // la ruta "habit?id={id}" de arriba en el mismo sentido — un solo composable, id nulo
@@ -548,6 +572,46 @@ fun BitoNavHost(
 
 private const val CIERRE_VISTO = "cierre-visto"
 private const val GORDO_VISTO = "gordo-visto"
+
+private val SUBE_HOY = 40.dp
+
+/** La tienda sube desde abajo con el muelle de las hojas; en modo reducido, un fundido. */
+private fun tiendaBrota(reducido: Boolean): EnterTransition =
+    if (reducido) {
+        fadeIn(tween(Duraciones.REDUCIDO))
+    } else {
+        slideInVertically(Muelles.hoja<IntOffset>(umbral = IntOffset.VisibilityThreshold)) { it }
+    }
+
+/** La tienda baja sin rebote (el muelle `hundir` es crítico). */
+private fun tiendaSeHunde(reducido: Boolean): ExitTransition =
+    if (reducido) {
+        fadeOut(tween(Duraciones.REDUCIDO))
+    } else {
+        slideOutVertically(Muelles.hundir<IntOffset>(umbral = IntOffset.VisibilityThreshold)) { it }
+    }
+
+/** Hoy se queda debajo mientras la tienda brota, subiendo 40 dp. */
+private fun hoyBajoLaTienda(
+    reducido: Boolean,
+    sube: Int,
+): ExitTransition =
+    if (reducido) {
+        fadeOut(targetAlpha = 1f, animationSpec = tween(Duraciones.REDUCIDO))
+    } else {
+        slideOutVertically(Muelles.hoja<IntOffset>(umbral = IntOffset.VisibilityThreshold)) { -sube }
+    }
+
+/** Hoy vuelve a su sitio cuando la tienda se hunde. */
+private fun hoyVuelve(
+    reducido: Boolean,
+    sube: Int,
+): EnterTransition =
+    if (reducido) {
+        fadeIn(tween(Duraciones.REDUCIDO))
+    } else {
+        slideInVertically(Muelles.hundir<IntOffset>(umbral = IntOffset.VisibilityThreshold)) { -sube }
+    }
 
 private fun AnimatedContentTransitionScope<NavBackStackEntry>.entra(
     t: TipoTransicion,

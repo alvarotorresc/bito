@@ -16,6 +16,7 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.Streaks
@@ -26,6 +27,7 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LightPhase
+import com.alvarotc.bito.domain.model.PointsLedgerEntry
 import com.alvarotc.bito.domain.model.equippedSetOf
 import com.alvarotc.bito.ui.habi.minuteTicks
 import kotlinx.coroutines.CoroutineDispatcher
@@ -86,11 +88,19 @@ class TiendaViewModel(
         val filas: List<CustomizationItemEntity>,
         val saldo: Int,
         val ajustes: Settings,
+        val recientes: List<PointsLedgerEntry>,
     )
 
     val uiState: StateFlow<TiendaUiState> =
         combine(
-            combine(domainState.observe(), rewards.observeOwnedItems(), rewards.observeBalance(), settings.settings, ::Datos),
+            combine(
+                domainState.observe(),
+                rewards.observeOwnedItems(),
+                rewards.observeBalance(),
+                settings.settings,
+                rewards.observeRecentMovements(MOVIMIENTOS),
+                ::Datos,
+            ),
             pestana,
             luz.filterNotNull(),
             pruebaElegida,
@@ -130,6 +140,8 @@ class TiendaViewModel(
             congeladores = PointsEngine.freezersOwned(datos.estado),
             mejorRacha = mejorRacha,
             hoy = hoy,
+            movimientos = Movimientos.de(datos.recientes, datos.estado, dia),
+            economia = economy,
         )
     }
 
@@ -322,6 +334,9 @@ class TiendaViewModel(
     companion object {
         const val CLAVE_PESTANA = "tienda_pestana"
         const val CLAVE_PRUEBA = "tienda_prueba"
+
+        /** Los últimos movimientos que enseña «Tus bitos». */
+        private const val MOVIMIENTOS = 5
 
         /** Los ejes que un disfraz tapa al pintar (los ojos no). */
         private val TAPADAS_POR_DISFRAZ =

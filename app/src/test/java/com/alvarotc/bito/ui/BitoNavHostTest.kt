@@ -316,11 +316,10 @@ class BitoNavHostTest {
 
     /** Antes: la pestaña Habi de la barra; ahora, el botón de la tienda de la hoja del saldo. */
     @Test
-    fun `the store button of the balance sheet navigates to the habi screen`() {
+    fun `the habi route shows the store`() {
         setContent()
-        // HabiAvatar's infinite bob/blink transitions never settle on their own — freeze the
-        // clock BEFORE navigating there, so the framework's post-click idle-sync doesn't spin
-        // forever trying to reach a steady state that never comes (T9 note).
+        // El armario de la tienda lleva el HabiAvatar, cuyas transiciones infinitas nunca se asientan: se
+        // congela el reloj ANTES de navegar, para que la espera de reposo del clic no gire sin fin (nota de T9).
         compose.mainClock.autoAdvance = false
 
         compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
@@ -333,10 +332,9 @@ class BitoNavHostTest {
         compose.mainClock.advanceTimeByFrame()
         compose.mainClock.advanceTimeByFrame()
 
-        // QA 2026-08-23: HabiScreen gates its first frame on `loading` (calm paper, tag
-        // "habi-loading") until the VM's combine emits, so arrival at the route is either tag.
+        // La tienda espera a su primer estado real (papel, tag «tienda-cargando») antes de pintar el contenido.
         compose
-            .onNode(hasTestTag("habi-loading") or hasTestTag("habi-screen"), useUnmergedTree = true)
+            .onNode(hasTestTag("tienda-cargando") or hasTestTag("ttab-habi"), useUnmergedTree = true)
             .assertExists()
     }
 

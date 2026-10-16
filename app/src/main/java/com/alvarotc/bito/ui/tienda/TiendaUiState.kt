@@ -1,6 +1,8 @@
 package com.alvarotc.bito.ui.tienda
 
 import androidx.annotation.StringRes
+import com.alvarotc.bito.domain.Movimiento
+import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.EquippedSet
 import java.time.LocalDate
 
@@ -79,6 +81,9 @@ data class TiendaUiState(
     val mejorRacha: Int,
     val hoy: LocalDate,
     val cargado: Boolean = true,
+    /** Los últimos movimientos y la economía, para «Tus bitos» dentro de la tienda. */
+    val movimientos: List<Movimiento> = emptyList(),
+    val economia: EconomyConfig = EconomyConfig(),
 )
 
 sealed interface EventoTienda {
