@@ -211,7 +211,6 @@ private fun Piezas(d: DatosDescanso) {
 
     // Los mandos: con el descanso esperando, «Saltar» encima como texto y «Empezar el descanso» principal debajo.
     val saltar = {
-        gesto(h = Haptica.TICK)
         alcance.launch { motor.saltar() }
         Unit
     }

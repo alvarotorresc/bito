@@ -272,11 +272,11 @@ class DescansoContenidoTest {
         montar()
         compose.onNodeWithTag("d-saltar").performClick()
         compose.waitUntil(10_000) { motor.instante.value?.actual == Tramo.Foco(2, 25) }
-        assertTrue(Haptica.TICK in tacto.hapticas)
+        assertTrue(Haptica.TICK in grabadores.tacto.hapticas)
     }
 
     @Test
-    fun `skipping ticks once on the screen and the motor adds brote and rise, not a second tick`() {
+    fun `skipping ticks once, from the motor, with the brote`() {
         enElDescanso()
         montar()
         grabadores.tacto.hapticas.clear()
@@ -285,8 +285,8 @@ class DescansoContenidoTest {
         compose.onNodeWithTag("d-saltar").performClick()
         compose.waitUntil(10_000) { motor.instante.value?.actual == Tramo.Foco(2, 25) }
 
-        assertEquals("el tick es de la pantalla", listOf(Haptica.TICK), tacto.hapticas)
-        assertEquals("el motor suena la frontera de siempre", listOf(Haptica.RISE), grabadores.tacto.hapticas.toList())
+        assertEquals("la pantalla no vibra", emptyList<Haptica>(), tacto.hapticas.toList())
+        assertEquals("el motor hace el tick una sola vez", listOf(Haptica.TICK), grabadores.tacto.hapticas.toList())
         assertEquals(listOf(com.alvarotc.bito.ui.sistema.sonido.Snd.BROTE), grabadores.sonido.sonidos.toList())
     }
 

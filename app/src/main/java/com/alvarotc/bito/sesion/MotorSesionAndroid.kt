@@ -235,8 +235,8 @@ class MotorSesionAndroid(
             _registro.value = r2
             val nuevo = RelojSesion.en(r2, ahora)
             _instante.value = nuevo
-            // Saltar el descanso ya hace su tick en la pantalla: el motor suena la frontera de siempre (brote y rise).
-            anunciar(r2, inst.tramo, nuevo, gesto = if (inst.actual is Tramo.Respirar) Haptica.TICK else null)
+            // Saltar es un toque: la frontera suena de siempre y la háptica es el tick (spec §7), una sola vez y desde el motor.
+            anunciar(r2, inst.tramo, nuevo, gesto = Haptica.TICK)
         }
 
     override suspend fun empezarDescanso() =
