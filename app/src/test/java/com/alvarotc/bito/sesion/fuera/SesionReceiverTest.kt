@@ -105,8 +105,8 @@ class SesionReceiverTest {
         dispara(60_000 + 500, 0)
         assertEquals(listOf("parar"), b.aire.llamadas)
         assertEquals(listOf("sonar:${SessionBackground.RAIN.name}"), b.fondo.llamadas)
-        assertEquals(listOf(Snd.BROTE), b.sonido.snds())
-        assertEquals(listOf(Haptica.RISE), b.tacto.hapticas)
+        assertEquals(listOf(Snd.ALEJAR), b.sonido.snds())
+        assertEquals(listOf(Haptica.TICK), b.tacto.hapticas)
     }
 
     @Test
@@ -124,6 +124,17 @@ class SesionReceiverTest {
         assertEquals(listOf("callar"), b.fondo.llamadas)
         assertEquals(listOf(Haptica.RISE), b.tacto.hapticas)
         assertTrue(alarmas.isEmpty())
+    }
+
+    @Test
+    fun `after giving dnd back the saved session no longer carries the previous filter`() {
+        shadowOf(b.manager).setNotificationPolicyAccessGranted(true)
+        b.manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        guardar(registroDeDosBloques(filtroPrevio = NotificationManager.INTERRUPTION_FILTER_ALL))
+
+        dispara(55 * MIN + 1_000, 2)
+
+        assertNull(runBlocking { b.store.leer() }?.filtroPrevio)
     }
 
     @Test

@@ -74,12 +74,19 @@ class SesionReceiver : BroadcastReceiver() {
                         e.tacto().haptica(Haptica.CLICK)
                     }
                 }
-                is Tramo.Descanso, is Tramo.Respirar -> {
-                    if (previo is Tramo.Respirar) audio.aire.parar()
+                is Tramo.Descanso -> {
                     if (nuevo != null) {
                         audio.fondo.sonar(fondo)
                         audio.sonido.play(Snd.BROTE)
                         e.tacto().haptica(Haptica.RISE)
+                    }
+                }
+                is Tramo.Respirar -> {
+                    audio.aire.parar()
+                    if (nuevo != null) {
+                        audio.fondo.sonar(fondo)
+                        audio.sonido.play(Snd.ALEJAR)
+                        e.tacto().haptica(Haptica.TICK)
                     }
                 }
             }

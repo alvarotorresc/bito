@@ -138,7 +138,11 @@ object SesionSync {
             PresenciaSesion.mostrarFin(e.context, e.titulo(r.plan.objetivo), e.voz())
             e.tacto().haptica(Haptica.RISE)
         }
-        if (restaurarDnd && e.marcas.marcarDndSiNuevo(r.id)) e.noMolestar.restaurar(r.filtroPrevio)
+        if (restaurarDnd && e.marcas.marcarDndSiNuevo(r.id)) {
+            e.noMolestar.restaurar(r.filtroPrevio)
+            // Devuelto una vez: el registro ya no lo lleva, o el motor lo devolvería otra vez al volver (pisando lo que se pusiera a mano).
+            if (r.filtroPrevio != null) e.store.guardar(r.copy(filtroPrevio = null))
+        }
         // Acabó la parte con tiempo: los avisos de Bito que esperaban salen ahora, no tras la respuesta.
         e.retenidos.soltar()
     }
