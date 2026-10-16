@@ -62,9 +62,13 @@ class FuenteMotorRealTest {
     private val estado = MutableStateFlow(escapados(leer, meditar))
     private val contextos = mutableListOf<Contexto>()
 
+    private var replanes = 0
+
     private val avisos =
         object : AvisosHabi {
-            override suspend fun replanificar() = Unit
+            override suspend fun replanificar() {
+                replanes++
+            }
 
             override suspend fun cancelarAceptados(ids: List<String>) = Unit
         }
@@ -251,5 +255,22 @@ class FuenteMotorRealTest {
             val mostradas =
                 db.hablaDao().todosEventos().mapNotNull { it.aDominio() }.filter { it.tipo == TipoMemoria.MOSTRADA }
             assertEquals(listOf(p.id), mostradas.map { it.ref })
+        }
+
+    // Marcar desde la lista lo que la tarjeta proponía: la tarjeta se cierra y los avisos se replanifican (el aceptado
+    // de ese hábito ya no suena).
+
+    @Test
+    fun `marking from the list what the confirmation proposed replans the notices`() =
+        prueba {
+            estado.value = escapados(leer)
+            val f = fuente()
+            val p = f.hoy()!!
+            f.responder(p.id, Respuesta.VALE)
+            assertEquals(Situacion.CONFIRMA_VALE.name, situacion(f.hoy()))
+            val antes = replanes
+            estado.value = estado.value.copy(entries = estado.value.entries + entryOn(leer, TODAY))
+            assertEquals(null, f.hoy())
+            assertEquals(antes + 1, replanes)
         }
 }

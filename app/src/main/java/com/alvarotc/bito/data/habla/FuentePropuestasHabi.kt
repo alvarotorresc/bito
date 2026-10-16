@@ -136,6 +136,9 @@ class FuentePropuestasHabi(
                 Validez.VALE -> return pintar(v, h, ctx)
                 Validez.HECHA -> {
                     vigentes.borrar(ambito, clave)
+                    // Lo propuesto se hizo fuera de la tarjeta: el aviso aceptado de ese hábito ya no tiene que sonar.
+                    // `replanificar` no lee la fuente, así que se puede llamar con el cerrojo cogido.
+                    avisos.replanificar()
                     return null
                 }
                 Validez.NO_VALE -> vigentes.borrar(ambito, clave)
