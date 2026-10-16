@@ -1,5 +1,6 @@
 package com.alvarotc.bito.ui.sesion
 
+import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.compositionLocalOf
@@ -105,6 +106,27 @@ val LocalSaltoHabi = compositionLocalOf<(Float) -> Unit> { {} }
 val LocalSesionInicio = compositionLocalOf<SesionInicio?> { null }
 
 /**
+ * Del instante, solo el tramo en que va ([actual], null = Terminada): lo que decide qué bloque se pinta. Cada tic del
+ * motor emite un instante nuevo; con esto el Inicio solo se entera cuando cambia de tramo y no con cada tic. El resto del
+ * instante (la cuenta, la pausa) lo lee quien lo pinta.
+ */
+@Immutable
+data class TramoVisto(val actual: Tramo?) {
+    val bloque: BloqueSesion
+        get() =
+            when (actual) {
+                is Tramo.Respirar -> BloqueSesion.RESPIRAR
+                is Tramo.Foco -> BloqueSesion.FOCO
+                is Tramo.Descanso -> BloqueSesion.DESCANSO
+                null -> BloqueSesion.TERMINADA
+            }
+
+    companion object {
+        fun de(instante: Instante?): TramoVisto? = instante?.let { TramoVisto(it.actual) }
+    }
+}
+
+/**
  * De lo que dice el motor a lo que se ve. [preparando] es la vista: Preparar manda sobre una sesión viva mientras el
  * borrador siga ahí (se abre otra tarea con una en marcha, spec §4.1). Sin ella, manda el tramo de la sesión; y
  * sin sesión, el borrador.
@@ -114,17 +136,19 @@ fun estadoSesionUi(
     borrador: PlanSesion?,
     preparando: Boolean,
     hojaAbierta: Boolean = false,
+): EstadoSesionUi = estadoSesionDeTramo(TramoVisto.de(instante), borrador, preparando, hojaAbierta)
+
+/** Lo mismo, desde el tramo visto: no depende de cada tic del motor. */
+fun estadoSesionDeTramo(
+    tramo: TramoVisto?,
+    borrador: PlanSesion?,
+    preparando: Boolean,
+    hojaAbierta: Boolean = false,
 ): EstadoSesionUi {
     val bloque =
         when {
             preparando && borrador != null -> BloqueSesion.PREPARAR
-            instante != null ->
-                when (instante.actual) {
-                    is Tramo.Respirar -> BloqueSesion.RESPIRAR
-                    is Tramo.Foco -> BloqueSesion.FOCO
-                    is Tramo.Descanso -> BloqueSesion.DESCANSO
-                    null -> BloqueSesion.TERMINADA
-                }
+            tramo != null -> tramo.bloque
             borrador != null -> BloqueSesion.PREPARAR
             else -> null
         }

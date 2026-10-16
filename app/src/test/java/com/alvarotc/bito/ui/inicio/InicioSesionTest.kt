@@ -18,7 +18,11 @@ import androidx.compose.ui.test.performSemanticsAction
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.propuestas.Destino
+import com.alvarotc.bito.domain.sesion.ANCLA_ELAPSED
+import com.alvarotc.bito.domain.sesion.Ahora
 import com.alvarotc.bito.domain.sesion.Entrada
+import com.alvarotc.bito.domain.sesion.INICIO_PARED
+import com.alvarotc.bito.domain.sesion.RelojSesion
 import com.alvarotc.bito.domain.sesion.planSesion
 import com.alvarotc.bito.sesion.AireMudo
 import com.alvarotc.bito.ui.sesion.BloqueSesion
@@ -286,6 +290,43 @@ class InicioSesionTest {
         assertFalse("no se queda una tierra vacía", existe("ses-tierra"))
         assertTrue("Hoy, con su píldora", existe("pildora-hoy"))
         assertTrue("y con su +", existe("boton-crear"))
+    }
+
+    private fun tictacSinRecomponer(): Pair<Int, Int> {
+        val registro = motor.registro.value!!
+        rule.waitForIdle()
+        val antes = banco.sonda.recomposiciones
+
+        // El tic del motor real: un instante nuevo cada 250 ms del mismo tramo y con la sesión (el registro) sin cambiar.
+        repeat(20) { i ->
+            val ms = 1_000L + 250L * i
+            rule.runOnUiThread {
+                motor.instante.value = RelojSesion.en(registro, Ahora(INICIO_PARED + ms, ANCLA_ELAPSED + ms))
+            }
+            rule.waitForIdle()
+        }
+        return antes to banco.sonda.recomposiciones
+    }
+
+    @Test
+    fun `the ticks of a live session do not recompose Today`() {
+        motor.viva(directo)
+        montar()
+
+        val (antes, despues) = tictacSinRecomponer()
+
+        assertEquals("Hoy no se recompone con los tics", antes, despues)
+    }
+
+    @Test
+    fun `the ticks of a live session do not recompose the Inicio inside the session either`() {
+        motor.viva(directo)
+        montar()
+        pedir(null)
+
+        val (antes, despues) = tictacSinRecomponer()
+
+        assertEquals("el Inicio no se recompone con los tics", antes, despues)
     }
 
     @Test

@@ -41,6 +41,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -98,6 +99,7 @@ import com.alvarotc.bito.ui.cierre.CierreViewModel
 import com.alvarotc.bito.ui.cierre.rememberEstadoCierre
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.garden.GardenDebugPanel
+import com.alvarotc.bito.ui.garden.LocalSondaJardin
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
@@ -130,7 +132,8 @@ import com.alvarotc.bito.ui.sesion.RegistroHoja
 import com.alvarotc.bito.ui.sesion.SalidaSesion
 import com.alvarotc.bito.ui.sesion.SesionContenido
 import com.alvarotc.bito.ui.sesion.SesionInicio
-import com.alvarotc.bito.ui.sesion.estadoSesionUi
+import com.alvarotc.bito.ui.sesion.TramoVisto
+import com.alvarotc.bito.ui.sesion.estadoSesionDeTramo
 import com.alvarotc.bito.ui.sesion.rememberAtrasSesion
 import com.alvarotc.bito.ui.sesion.rememberEstadoCamaraSesion
 import com.alvarotc.bito.ui.sesion.respirar.GestosHabi
@@ -405,7 +408,9 @@ fun InicioScreen(
 
     // ── La sesión vive aquí dentro (spec §4.2): el mismo jardín y la misma Habi, con la cámara. ──
     val motor = sesion?.motor
-    val instante by remember(motor) { motor?.instante ?: MutableStateFlow<Instante?>(null) }.collectAsStateWithLifecycle()
+    val instanteSesion = remember(motor) { motor?.instante ?: MutableStateFlow<Instante?>(null) }.collectAsStateWithLifecycle()
+    // Solo el tramo: cada tic emite un instante nuevo y el Inicio no se recompone con él; la cuenta la lee quien la pinta.
+    val tramoVisto by remember(instanteSesion) { derivedStateOf { TramoVisto.de(instanteSesion.value) } }
     val borrador by remember(motor) { motor?.borrador ?: MutableStateFlow<PlanSesion?>(null) }.collectAsStateWithLifecycle()
     val registroSesion by remember(motor) { motor?.registro ?: MutableStateFlow<RegistroSesion?>(null) }.collectAsStateWithLifecycle()
     var sesionActiva by rememberSaveable { mutableStateOf(false) }
@@ -437,7 +442,10 @@ fun InicioScreen(
         label = "hoy-sesion",
     )
     val retenido = remember { BloqueRetenido() }
-    val estadoSesion = estadoSesionUi(instante, borrador, preparando, hojasSesion.abierta).conRetenido(retenido.bloque, retenido.encuadre)
+    val sondaRecomposiciones = LocalSondaJardin.current
+    SideEffect { sondaRecomposiciones?.let { it.recomposiciones++ } }
+    val estadoSesion =
+        estadoSesionDeTramo(tramoVisto, borrador, preparando, hojasSesion.abierta).conRetenido(retenido.bloque, retenido.encuadre)
     val estadoVista = if (saliendo) estadoSesion.copy(bloque = null) else estadoSesion
 
     fun entrarEnSesion(vistaPreparar: Boolean) {
@@ -622,6 +630,7 @@ fun InicioScreen(
             .onGloballyPositioned { origen = it.positionInRoot() }
             .testTag("inicio"),
     ) {
+        SideEffect { sondaRecomposiciones?.let { it.recomposiciones++ } }
         val alto = constraints.maxHeight.toFloat()
         val ancho = constraints.maxWidth.toFloat()
         val escenaAlto = ancho / GardenArt.SCENE_ASPECT
@@ -822,7 +831,7 @@ fun InicioScreen(
                         saldo = if (respira) null else estado.saldo,
                         modifier = Modifier.align(Alignment.TopStart),
                     )
-                    AnuncioTramo(instante, registroSesion)
+                    AnuncioTramo(tramoVisto, registroSesion)
                 }
                 if (sueltaActiva && sesion != null) {
                     SueltaEnInicio(sesion, camara, respiracion, gestosHabi) { sueltaSaliendo = true }
@@ -1050,18 +1059,18 @@ private fun Context.actividad(): Activity? {
  */
 @Composable
 private fun AnuncioTramo(
-    instante: Instante?,
+    tramo: TramoVisto?,
     registro: RegistroSesion?,
 ) {
     val recursos = LocalContext.current.resources
     val texto =
-        remember(registro?.id, instante?.actual) {
+        remember(registro?.id, tramo) {
             val plan = registro?.plan
-            when (val actual = instante?.actual) {
+            when (val actual = tramo?.actual) {
                 is Tramo.Foco -> plan?.let { recursos.getString(R.string.ses_bloque_n_de_m, actual.bloque, it.bloques) }
                 is Tramo.Descanso -> recursos.getQuantityString(R.plurals.sesr_anuncio_descanso, actual.minutos, actual.minutos)
                 is Tramo.Respirar -> null
-                null -> if (instante != null) recursos.getString(R.string.sesr_anuncio_terminada) else null
+                null -> if (tramo != null) recursos.getString(R.string.sesr_anuncio_terminada) else null
             }
         }
     if (texto != null) {
