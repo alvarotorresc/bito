@@ -159,7 +159,7 @@ class HojasNoMolestarTest {
     }
 
     @Test
-    fun `Listo makes Habi jump a quarter of her height`() {
+    fun `Listo makes Habi jump 0,24`() {
         montar()
         compose.onNodeWithText("Dar permiso").performClick()
         compose.waitForIdle()

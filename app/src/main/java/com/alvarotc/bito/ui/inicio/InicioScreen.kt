@@ -947,7 +947,8 @@ fun InicioScreen(
             alDejar = {
                 scope.launch {
                     val resultado = sesion.motor.dejarlaYEmpezar()
-                    resultado.aviso?.let { avisos.mostrar(it.texto(recursos)) }
+                    // El aviso espera a que se vaya (4 s): la respiración se abre ya y el aviso sale aparte.
+                    resultado.aviso?.let { launch { avisos.mostrar(it.texto(recursos)) } }
                     entrarSuelta()
                 }
             },

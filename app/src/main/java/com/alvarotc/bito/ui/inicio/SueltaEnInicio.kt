@@ -8,7 +8,7 @@ import com.alvarotc.bito.ui.sesion.respirar.GestosHabi
 import com.alvarotc.bito.ui.sesion.respirar.RespirarSuelta
 
 /**
- * La respiración suelta dentro del Inicio (spec §4.2): ella pinta su tierra y su cabecera, mueve la [camara] y
+ * La respiración suelta dentro del Inicio (spec §4.2): pinta su propia tierra y su cabecera, mueve la [camara] y
  * entrega a [respiracion] el llenado de Habi y a [gestos] sus saltos y su alegría. [alVolverAHoy] se llama al lanzar la
  * vuelta de la cámara: el Inicio deja la pantalla montada hasta que la cámara llega a Hoy. Sin sesiones de respirar ni
  * memoria en [sesion] (las pruebas de Hoy) no se pinta nada.

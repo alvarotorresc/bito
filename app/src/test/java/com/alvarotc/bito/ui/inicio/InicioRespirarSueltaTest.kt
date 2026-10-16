@@ -97,7 +97,7 @@ class InicioRespirarSueltaTest {
     }
 
     @Test
-    fun `the plus Respirar opens the loose breathing in Today with the last mode`() {
+    fun `the plus and the card Respirar open the loose breathing in Today with the last mode`() {
         montar(BreathingMode.SLEEP)
         assertTrue(existe("boton-crear"))
 
@@ -122,9 +122,12 @@ class InicioRespirarSueltaTest {
         assertFalse(existe("r-empezar"))
 
         rule.onNodeWithText("Dejarla y empezar esta").performClick()
-        esperar { existe("r-empezar") }
+        // La respiración se abre en cuanto se deja la sesión, sin esperar a que el aviso (4 s) se vaya.
+        esperar { "dejarlaYEmpezar" in motor.llamadas }
+        rule.mainClock.advanceTimeBy(600)
 
-        assertTrue("dejarlaYEmpezar" in motor.llamadas)
+        assertTrue("la suelta ya está abierta", existe("r-empezar"))
+        assertTrue("y el aviso sigue a la vista", hayTexto("Llamar al banco: queda como intento."))
     }
 
     @Test
