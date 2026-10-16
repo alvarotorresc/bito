@@ -267,7 +267,7 @@ class TarjetaHabiTest {
     fun `a Vale without an hour is the hard day one with tic and confirm`() {
         val sonido = SonidoGrabado()
         val tacto = TactoGrabado()
-        val fuente = FuenteFalsa(Propuesta("DIA_DURO:h1:20251 ", texto(R.string.habi_name_fallback), todas, hora = null))
+        val fuente = FuenteFalsa(Propuesta("DIA_DURO:h1:20251015", texto(R.string.habi_name_fallback), todas, hora = null))
         montarConTacto(fuente, sonido, tacto)
         rule.onNodeWithTag("habi-vale").performClick()
         assertTrue(Snd.TIC in sonido.snds())
@@ -316,5 +316,35 @@ class TarjetaHabiTest {
         rule.onNodeWithTag("habi-vale").performClick()
         assertTrue(Snd.TIC !in sonido.snds())
         assertTrue(Haptica.CONFIRM !in tacto.hapticas)
+    }
+
+    @Test
+    fun `Hecho gurgles and ticks, Habi sounds after the jump and the card sinks with a fall`() {
+        val sonido = SonidoGrabado()
+        val tacto = TactoGrabado()
+        val fuente =
+            FuenteFalsa(
+                Propuesta(
+                    "VUELTA:h1:20251015",
+                    texto(R.string.habi_name_fallback),
+                    listOf(Accion(Respuesta.HECHO, TextoHabi(R.string.habla_hecho), principal = true)),
+                ),
+            )
+        montarConTacto(fuente, sonido, tacto)
+        rule.mainClock.autoAdvance = false
+        rule.onNodeWithTag("habi-hecho").performClick()
+        // En el fotograma del toque: la marca.
+        assertEquals(listOf(Snd.GORGOTEO), sonido.snds())
+        assertEquals(listOf(Haptica.TICKS), tacto.hapticas)
+        // La tarjeta se va: se hunde.
+        fuente.flujo.value = null
+        rule.mainClock.advanceTimeByFrame()
+        rule.mainClock.advanceTimeBy(100)
+        assertTrue(Snd.HUNDIR in sonido.snds())
+        assertTrue(Haptica.FALL in tacto.hapticas)
+        assertTrue(Snd.BROTE !in sonido.snds())
+        // Habi salta con el jardín, 1,1 s después de marcar.
+        rule.mainClock.advanceTimeBy(1_100)
+        assertTrue(Snd.HABI in sonido.snds())
     }
 }

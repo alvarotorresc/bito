@@ -31,6 +31,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,6 +60,8 @@ import com.alvarotc.bito.ui.sistema.componentes.EstiloBoton
 import com.alvarotc.bito.ui.sistema.fuerte
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 private const val DESPLAZA_LLEGADA_DP = 14
 
@@ -72,6 +75,7 @@ fun TarjetaHabi(
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
     val gesto = rememberGesto()
+    val alcance = rememberCoroutineScope()
     // La última propuesta se retiene para que la tarjeta pueda encoger con su contenido a la vista.
     val retenida = remember { arrayOfNulls<Propuesta>(1) }
     if (propuesta != null) retenida[0] = propuesta
@@ -86,6 +90,8 @@ fun TarjetaHabi(
 
     LaunchedEffect(propuesta?.id) {
         val id = propuesta?.id
+        // «Hecho»: la tarjeta se va y se hunde (spec §9, «Vuelta, Hecho»).
+        if (id != anterior[0] && respondida == Respuesta.HECHO) gesto(Snd.HUNDIR, Haptica.FALL)
         if (id == null) respondida = null
         if (id != null && id != anterior[0]) {
             valeDuro = false
@@ -203,8 +209,13 @@ fun TarjetaHabi(
                                                         gesto(Snd.TIC, Haptica.CONFIRM)
                                                     }
                                                     accion.respuesta == Respuesta.HECHO -> {
+                                                        // Marca (gorgoteo, ticks); Habi suena al saltar con el jardín.
                                                         sinTexto = true
-                                                        gesto(Snd.BROTE, Haptica.TICK)
+                                                        gesto(Snd.GORGOTEO, Haptica.TICKS)
+                                                        alcance.launch {
+                                                            delay(SALTO_HABI_MS)
+                                                            gesto(Snd.HABI)
+                                                        }
                                                     }
                                                     accion.principal -> gesto(Snd.BROTE, Haptica.TICK)
                                                     else -> gesto(h = Haptica.TICK)
@@ -256,3 +267,6 @@ private const val HOY_NO_ENTRA_MS = 260
 private const val HUNDIR_TARJETA_MS = 240
 private const val PLEGAR_BOTONES_MS = 220
 private const val CONFIRMACION_DURA_MS = 200
+
+// Sin token: el jardín crece y Habi salta 1,1 s después de marcar la vuelta (spec §5.6).
+private const val SALTO_HABI_MS = 1_100L

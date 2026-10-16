@@ -232,7 +232,8 @@ private fun EtiquetaGordo(
     Text(
         stringResource(R.string.habla_etiqueta_gordo),
         style = BitoTema.tipos.t14.fuerte(),
-        color = BitoTema.colores.tinta,
+        // Agua (spec §7.3): la honda, que se lee sobre el canto de la fila.
+        color = BitoTema.colores.aguaHonda,
         modifier =
             Modifier
                 .heightIn(min = Medidas.toqueMinimo)
