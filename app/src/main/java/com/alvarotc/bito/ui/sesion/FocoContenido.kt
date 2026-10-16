@@ -85,6 +85,7 @@ import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
+import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.cifra
 import com.alvarotc.bito.ui.sistema.componentes.Boton
@@ -93,6 +94,8 @@ import com.alvarotc.bito.ui.sistema.componentes.EstiloBoton
 import com.alvarotc.bito.ui.sistema.componentes.Globito
 import com.alvarotc.bito.ui.sistema.componentes.pulsar
 import com.alvarotc.bito.ui.sistema.fuerte
+import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.emptyFlow
@@ -153,6 +156,10 @@ private const val GLOBITO_VISIBLE_MS = 2_600L
 
 // Tras «He terminado»: «Hecha, {nombre}.» y, a los 2200 ms, vuelta a Hoy.
 private const val HECHA_MS = 2_200L
+
+// El salto de Habi al llegar el «Hecha» y cuándo (el mock: 0,38 a los 420 ms).
+private const val SALTO_HECHA = 0.38f
+private const val SALTO_HECHA_TRAS_MS = 420L
 
 // Un bloque recién empezado: pasados unos segundos (al volver a abrir la app a mitad) no se saluda otra vez.
 private const val SALUDO_HASTA_MS = 3_000L
@@ -220,6 +227,7 @@ fun FocoContenido(
 ) {
     val reducido = BitoTema.reducido
     val scope = rememberCoroutineScope()
+    val gesto = rememberGesto()
     val foco = instante.actual as? Tramo.Foco
     val bloque = foco?.bloque ?: 1
     var hecha by remember { mutableStateOf<HechaFoco?>(null) }
@@ -325,6 +333,12 @@ fun FocoContenido(
                     // Como `terminada(true)` del mock: la cámara pasa ya a Terminada y Habi se pone radiante.
                     entorno.retenido.retener(BloqueSesion.FOCO, Encuadre.TERMINADA)
                     entorno.cara.radiante = true
+                    // Y el resto de `terminada(true)`: la campanilla con el confirm y el salto de Habi a los 420 ms (ya en reducido).
+                    gesto(Snd.CAMPANILLA, Haptica.CONFIRM)
+                    launch {
+                        if (!reducido) delay(SALTO_HECHA_TRAS_MS)
+                        entorno.saltarHabi(SALTO_HECHA)
+                    }
                     try {
                         val minutos = FormatoSesion.minutosDeFoco(instante.focoMillis)
                         val resultado = entorno.motor.heTerminado()

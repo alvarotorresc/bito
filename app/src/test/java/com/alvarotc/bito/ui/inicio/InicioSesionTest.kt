@@ -330,6 +330,69 @@ class InicioSesionTest {
     }
 
     @Test
+    fun `from breathing to focus the camera stays silent because the motor already sounds the boundary`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 1_000L)
+        montar()
+        pedir(null)
+        asentar()
+        banco.sonido.sonados.clear()
+        banco.tacto.hapticas.clear()
+
+        rule.runOnUiThread { motor.viva(planSesion(entrada = Entrada.RESPIRAR), 61_000L) }
+        rule.waitUntil(5_000) { existe("ses-b-foco") }
+        asentar()
+
+        assertEquals(emptyList<Snd>(), banco.sonido.snds())
+        assertEquals(emptyList<Haptica>(), banco.tacto.hapticas)
+    }
+
+    @Test
+    fun `coming back to the app with the stretch already changed adopts the camera without sound`() {
+        motor.viva(directo)
+        montar()
+        pedir(null)
+        asentar()
+        banco.sonido.sonados.clear()
+        banco.tacto.hapticas.clear()
+
+        // La app se va, la frontera pasa sin ella (la hace el receptor) y al volver el motor adopta el descanso.
+        rule.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+        rule.runOnUiThread { motor.viva(directo, 25 * MINUTO + 1_000) }
+        rule.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+        rule.waitUntil(5_000) { existe("ses-b-descanso") }
+        asentar()
+        rule.waitForIdle()
+
+        assertEquals(emptyList<Snd>(), banco.sonido.snds())
+        assertEquals(emptyList<Haptica>(), banco.tacto.hapticas)
+    }
+
+    @Test
+    fun `a session mode restored after the process died zooms in without the entering sound`() {
+        motor.viva(directo)
+        banco.preparar()
+        val tester = androidx.compose.ui.test.junit4.StateRestorationTester(rule)
+        tester.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+            }
+        }
+        rule.waitForIdle()
+        pedir(null)
+        asentar()
+        banco.sonido.sonados.clear()
+        banco.tacto.hapticas.clear()
+
+        tester.emulateSavedInstanceStateRestore()
+        rule.waitForIdle()
+        asentar()
+        rule.waitForIdle()
+
+        assertTrue("sigue en la sesión", existe("ses-b-foco"))
+        assertEquals("la cámara no suena el zoom de entrar", emptyList<Snd>(), banco.sonido.snds())
+    }
+
+    @Test
     fun `the session locks portrait and releases it`() {
         montar()
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, rule.activity.requestedOrientation)

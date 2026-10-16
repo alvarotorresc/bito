@@ -54,6 +54,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -487,10 +488,16 @@ fun InicioScreen(
     val abrirSesionActual = rememberUpdatedState(::abrirSesion)
     val salidaSesion = remember { SalidaSesion(::volverAHoy) { texto -> scope.launch { avisos.mostrar(texto) } } }
 
+    // Mientras se vuelve a la sesión (la app estuvo fuera o el proceso murió) el motor adopta el tramo sin sonar la frontera.
+    val modoRestaurado = remember { sesionActiva }
+    val volviendoALaSesion = remember { intArrayOf(if (modoRestaurado) 1 else 0) }
     // La cámara sigue al bloque; al volver a Hoy llega a su encuadre y solo entonces se sale del modo sesión.
     LaunchedEffect(sesionActiva, saliendo, estadoSesion.encuadre) {
         if (!sesionActiva) return@LaunchedEffect
-        camara.ir(if (saliendo) Encuadre.HOY else estadoSesion.encuadre, gesto)
+        val destinoCamara = if (saliendo) Encuadre.HOY else estadoSesion.encuadre
+        // Sin sonido de cámara cuando no hay frontera viva (se vuelve a la sesión) ni en Respirar → Foco, que ya suena el motor.
+        val muda = volviendoALaSesion[0] > 0 || (camara.destino == Encuadre.RESPIRAR && destinoCamara == Encuadre.FOCO)
+        camara.ir(destinoCamara, if (muda) null else gesto)
         if (saliendo) {
             sesionActiva = false
             saliendo = false
@@ -526,12 +533,20 @@ fun InicioScreen(
     // Al abrir y en cada vuelta a primer plano la sesión se recupera del disco (cambio de día, app matada).
     // El modo sesión se guarda con la instancia y la sesión no: si venía restaurado (el proceso murió) y tras recuperar no
     // hay nada que enseñar (ni sesión ni borrador, o se cerró por el cambio de día), se sale a Hoy en vez de quedarse vacío.
-    val modoRestaurado = remember { sesionActiva }
     LaunchedEffect(motor) {
         motor?.recuperar()
         if (motor != null && modoRestaurado && sesionActiva && motor.instante.value == null && motor.borrador.value == null) saliendo = true
+        if (modoRestaurado) quitarAdopcion(volviendoALaSesion)
     }
-    LifecycleEventEffect(Lifecycle.Event.ON_START) { if (motor != null) scope.launch { motor.recuperar() } }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        if (motor != null) {
+            volviendoALaSesion[0]++
+            scope.launch {
+                motor.recuperar()
+                quitarAdopcion(volviendoALaSesion)
+            }
+        }
+    }
     // Las peticiones de otras pantallas (Tareas, la notificación): se recupera primero para ver la sesión viva.
     val peticion by EntradaSesion.pendiente.collectAsStateWithLifecycle()
     LaunchedEffect(peticion, sesion) {
@@ -1084,4 +1099,11 @@ private fun AnuncioTramo(
                 },
         )
     }
+}
+
+/** Cuando ya se pintó el cambio de tramo de la vuelta (dos fotogramas tras recuperar), el cambio siguiente es una frontera viva. */
+private suspend fun quitarAdopcion(contador: IntArray) {
+    withFrameNanos { }
+    withFrameNanos { }
+    contador[0] = (contador[0] - 1).coerceAtLeast(0)
 }
