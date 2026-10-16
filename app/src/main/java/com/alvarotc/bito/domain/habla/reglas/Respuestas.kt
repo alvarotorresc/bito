@@ -16,16 +16,25 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
  */
 object Respuestas {
     /**
-     * Tras «Vale, a las…», con la hora recién aceptada para el hábito: `{hora}` va siempre (HUECOS.md), así que
-     * un «Vale» sin hora no tiene confirmación. Con lo gordo sin hacer y algo que nombrar, ofrece la sesión de lo
-     * gordo o luego (`{gordo}` es lo que queda; la hora es la del hábito, nunca la de lo gordo); si no, solo
-     * «Otra hora».
+     * Tras «Vale». Con la hora recién aceptada para el hábito y lo gordo sin hacer con algo que nombrar, ofrece la
+     * sesión de lo gordo o luego (`{gordo}` es lo que queda; la hora es la del hábito, nunca la de lo gordo); si no,
+     * solo «Otra hora». Un «Vale» sin hora (el día duro, o con dos avisos ya aceptados) también confirma (§5.2), con
+     * la bolsa sencilla (`nu_confirma_vale_gordo` pide `{hora}`), sin hora y sin botones: no hay aviso que mover.
      */
     fun confirmaVale(
         c: Candidata,
-        hora: Int,
+        hora: Int?,
         h: Hechos,
     ): Candidata {
+        if (hora == null) {
+            return Candidata(
+                situacion = Situacion.CONFIRMA_VALE,
+                ref = c.ref,
+                huecos = emptyMap(),
+                acciones = emptyList(),
+                nucleo = Bolsa.NU_CONFIRMA_VALE,
+            )
+        }
         val huecos = mapOf(Hueco.HORA to ValorHueco.Hora(hora))
         val nombres = h.gordo.filter { it !in h.gordoHecho }.mapNotNull { nombreDeGordo(it, h) }
         if (nombres.isEmpty()) {

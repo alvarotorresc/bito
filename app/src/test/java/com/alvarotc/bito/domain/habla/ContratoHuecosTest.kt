@@ -186,6 +186,8 @@ class ContratoHuecosTest {
             addAll(candidatas("confirmación sin lo gordo", listOf(Respuestas.confirmaVale(vale, 900, hechos()))))
             addAll(candidatas("confirmación con lo gordo", listOf(Respuestas.confirmaVale(vale, 900, conGordo))))
             addAll(candidatas("confirmación con lo gordo sin nombre", listOf(Respuestas.confirmaVale(vale, 900, gordoSinNombre))))
+            addAll(candidatas("confirmación sin hora", listOf(Respuestas.confirmaVale(vale, null, hechos()))))
+            addAll(candidatas("confirmación sin hora con lo gordo", listOf(Respuestas.confirmaVale(vale, null, conGordo))))
             addAll(candidatas("lo gordo elegido, tareas", listOf(Respuestas.gordoElegido(conGordo))))
             addAll(
                 candidatas(

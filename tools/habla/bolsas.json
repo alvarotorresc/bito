@@ -29,7 +29,7 @@
   {"bolsa": "nu_cerrar_dia", "grupo": "C", "archivo": "hoy2", "tipo": "NUCLEO", "huecos": ["n", "tarea"], "obligatorios": ["n"], "minimo": 10, "nombre": false},
   {"bolsa": "nu_noche", "grupo": "C", "archivo": "hoy2", "tipo": "NUCLEO", "huecos": ["n", "tarea"], "obligatorios": [], "minimo": 10, "nombre": false},
   {"bolsa": "nu_tras_hoy_no", "grupo": "C", "archivo": "hoy2", "tipo": "NUCLEO", "huecos": ["n", "tarea"], "obligatorios": [], "minimo": 10, "nombre": false},
-  {"bolsa": "nu_confirma_vale", "grupo": "C", "archivo": "hoy2", "tipo": "NUCLEO", "huecos": ["hora", "gordo"], "obligatorios": ["hora"], "minimo": 8, "nombre": false},
+  {"bolsa": "nu_confirma_vale", "grupo": "C", "archivo": "hoy2", "tipo": "NUCLEO", "huecos": ["hora", "gordo"], "obligatorios": [], "minimo": 8, "nombre": false},
   {"bolsa": "nu_confirma_vale_gordo", "grupo": "C", "archivo": "hoy2", "tipo": "NUCLEO", "huecos": ["hora", "gordo"], "obligatorios": ["hora", "gordo"], "minimo": 8, "nombre": false},
   {"bolsa": "nu_gordo_elegido", "grupo": "C", "archivo": "hoy2", "tipo": "NUCLEO", "huecos": ["gordo", "primer_paso"], "obligatorios": ["gordo"], "minimo": 6, "nombre": false},
   {"bolsa": "fi_hoy_falta", "grupo": "D", "archivo": "ficha", "tipo": "NUCLEO", "huecos": ["habito", "racha", "mejor", "pct", "dia_semana", "n", "hora", "objetivo"], "obligatorios": ["habito"], "minimo": 6, "nombre": false},

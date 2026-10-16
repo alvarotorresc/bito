@@ -286,11 +286,11 @@ class FuentePropuestasHabiTest {
         }
 
     @Test
-    fun `vale without an hour leaves no confirmation`() =
+    fun `vale without an hour still leaves the confirmation, with no hour`() =
         prueba {
             val f = fuente(estadoCon(leerFalladoAyer, agua))
             val p = f.hoy()
-            // Dos avisos aceptados hoy: «Vale» ya no programa otro y se queda sin hora (§5.2).
+            // Dos avisos aceptados hoy: «Vale» ya no programa otro y se queda sin hora (§5.2), pero confirma igual.
             listOf("a1", "a2").forEach {
                 aceptados.crear(AvisoAceptado(it, TODAY, agua.id, 18 * 60, 0, EstadoAviso.PENDIENTE, "otra:$it", ahora))
             }
@@ -298,8 +298,11 @@ class FuentePropuestasHabiTest {
             f.responder(p.id, Respuesta.VALE, p.hora)
 
             assertEquals(2, aceptados.pendientes().size)
-            val vigente = vigentes.leer(Ambito.HOY)
-            assertTrue(vigente?.situacion != Situacion.CONFIRMA_VALE)
+            val vigente = vigentes.leer(Ambito.HOY)!!
+            assertEquals(Situacion.CONFIRMA_VALE, vigente.situacion)
+            assertNull(vigente.hora)
+            assertNull(vigente.huecos[Hueco.HORA])
+            assertTrue(vigente.acciones.isEmpty())
             assertEquals(1, eventos(TipoMemoria.RESPUESTA).size)
         }
 

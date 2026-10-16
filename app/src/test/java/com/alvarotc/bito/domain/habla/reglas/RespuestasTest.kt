@@ -77,6 +77,25 @@ class RespuestasTest {
     }
 
     @Test
+    fun `without hour it is the plain confirmation with no hour and no buttons`() {
+        val c = Respuestas.confirmaVale(candidata, null, conGordo(emptyList()))
+        assertEquals(Situacion.CONFIRMA_VALE, c.situacion)
+        assertEquals(Bolsa.NU_CONFIRMA_VALE, c.nucleo)
+        assertNull(c.hora)
+        assertNull(c.huecos[Hueco.HORA])
+        assertTrue(c.acciones.isEmpty())
+    }
+
+    @Test
+    fun `without hour the big thing undone does not take its bag, which needs the hour`() {
+        val c = Respuestas.confirmaVale(candidata, null, conGordo(listOf(informe, banco)))
+        assertEquals(Bolsa.NU_CONFIRMA_VALE, c.nucleo)
+        assertTrue(c.huecos.isEmpty())
+        assertTrue(c.acciones.isEmpty())
+        assertNull(c.destino)
+    }
+
+    @Test
     fun `the line after Not today has no actions and no holes`() {
         val c = Respuestas.trasHoyNo(conGordo(listOf(informe)))
         assertEquals(Situacion.TRAS_HOY_NO, c.situacion)

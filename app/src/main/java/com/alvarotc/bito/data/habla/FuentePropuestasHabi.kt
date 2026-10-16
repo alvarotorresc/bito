@@ -434,9 +434,9 @@ class FuentePropuestasHabi(
             if (minuto != null && v.ref != null) {
                 aceptados.crear(aceptado(v.ref, minuto, id))
             }
-            // La confirmación nombra la hora aceptada (`{hora}` va siempre en su bolsa): sin hora (el día duro, o con
-            // dos avisos ya aceptados) no hay confirmación; la tarjeta se va y el motor decide, como en la ficha.
-            if (v.ambito == Ambito.HOY && minuto != null) {
+            // §5.2: en Hoy, «Vale» deja la confirmación también sin hora (el día duro, o con dos avisos ya aceptados);
+            // va `minuto` y no la hora de la propuesta, porque sin aviso programado no hay hora que nombrar.
+            if (v.ambito == Ambito.HOY) {
                 redactarYGuardar(Respuestas.confirmaVale(candidata(v), minuto, h), Ambito.HOY, "", ctx, h, m)
             } else {
                 vigentes.borrar(v.ambito, clave)
