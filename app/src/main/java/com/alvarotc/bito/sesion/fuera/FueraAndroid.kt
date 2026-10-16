@@ -81,7 +81,7 @@ class FueraAndroid internal constructor(
         val r = guardado
         val ahora = entorno.ahora()
         val instante = RelojSesion.en(r, ahora)
-        val soltado = ReglaServicio.aplicar(entorno, r, instante, ahora, suena, fondoPendiente)
+        val soltado = ReglaServicio.aplicar(entorno, r, instante, ahora, suena, fondoPendiente, puedeArrancar = false)
         if (soltado && instante.actual != null) {
             PresenciaSesion.mostrar(entorno.context, r, ahora, entorno.titulo(r.plan.objetivo), entorno.voz())
         }

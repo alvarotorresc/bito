@@ -30,7 +30,8 @@ internal object ReglaServicio {
 
     /**
      * Pone el servicio como pide la regla: lo suelta si no debe seguir (eso se puede desde segundo plano) y lo arranca
-     * solo si algo suena y la app está delante. Devuelve si lo ha soltado: su aviso se va con él.
+     * solo si algo suena, la app está delante y quien llama puede arrancarlo ([puedeArrancar]: el receptor y el camino de
+     * la app fuera nunca, aunque la app vuelva justo mientras deciden). Devuelve si lo ha soltado: su aviso se va con él.
      */
     suspend fun aplicar(
         e: EntornoFuera,
@@ -39,6 +40,7 @@ internal object ReglaServicio {
         ahora: Ahora,
         suena: Boolean,
         fondoPendiente: Boolean,
+        puedeArrancar: Boolean = true,
     ): Boolean {
         val servicio = e.servicio
         if (servicio.pedido()) {
@@ -46,7 +48,7 @@ internal object ReglaServicio {
             servicio.parar()
             return true
         }
-        if (arranca(instante.actual, suena) && e.visible()) {
+        if (puedeArrancar && arranca(instante.actual, suena) && e.visible()) {
             val aviso = PresenciaSesion.construir(e.context, r, ahora, e.titulo(r.plan.objetivo), e.voz())
             if (aviso != null) servicio.arrancar(aviso, null)
         }
