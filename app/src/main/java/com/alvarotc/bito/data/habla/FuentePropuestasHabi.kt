@@ -94,6 +94,8 @@ class FuentePropuestasHabi(
     private val motor: ElegirCandidata = ElegirCandidata(Motor::elegir),
     // Ruling P24: los tests de m2 inyectan unos hechos falsos.
     private val hechos: (DomainState, Memoria, Contexto, Map<String, Int>) -> Hechos = HechosCache()::hechos,
+    // El reloj de la tarjeta: con la app abierta, la vigente se vuelve a mirar en cada minuto. AppContainer pasa ticksDeMinuto().
+    private val ticks: Flow<Unit> = flowOf(Unit),
 ) : FuentePropuestas {
     private val cerrojo = Mutex()
 
@@ -105,8 +107,11 @@ class FuentePropuestasHabi(
     ): Flow<Propuesta?> {
         if (ambito == Ambito.FICHA && habitId == null) return flowOf(null)
         val clave = if (ambito == Ambito.FICHA) habitId.orEmpty() else ""
-        val dia = ajustes.map { diaDe(it) }.distinctUntilChanged()
-        return combine(estado, ajustes, recordatorios, memoria.observe(dia)) { state, prefs, recs, m ->
+        // El día lógico también sigue al reloj: a medianoche (o al corte) la memoria pasa al día nuevo.
+        val dia = combine(ajustes, ticks) { prefs, _ -> diaDe(prefs) }.distinctUntilChanged()
+        // Cada tick vuelve a mirar la vigente: si sigue valiendo sale igual (y `distinctUntilChanged` la calla);
+        // si ha caducado o ha llegado la noche, el motor elige otra en ese minuto.
+        return combine(estado, ajustes, recordatorios, memoria.observe(dia), ticks) { state, prefs, recs, m, _ ->
             val ctx = contexto(state, prefs)
             val h = hechos(state, m, ctx, recs)
             enCerrojo { vigenteODeNuevo(ambito, clave, habitId, state, ctx, h, recs) }

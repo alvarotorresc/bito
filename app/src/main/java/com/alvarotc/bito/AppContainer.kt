@@ -15,6 +15,7 @@ import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.habla.PermisosAvisos
 import com.alvarotc.bito.data.habla.PropuestaVigenteStore
+import com.alvarotc.bito.data.habla.ticksDeMinuto
 import com.alvarotc.bito.data.repo.BreathingRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
@@ -96,6 +97,8 @@ class AppContainer(context: Context) {
             permisos = { permisosAvisos() },
             // «Hecho» de la vuelta: la misma escritura que las acciones rápidas de los recordatorios.
             registrar = { habitId, cantidad -> registrarVuelta.log(habitId, cantidad) },
+            // Con la app abierta, la tarjeta cambia sola con la hora (la noche, las caducidades).
+            ticks = ticksDeMinuto(System::currentTimeMillis),
         )
     }
 

@@ -15,6 +15,7 @@ import com.alvarotc.bito.domain.habla.ElegirCandidata
 import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.EventoMemoria
 import com.alvarotc.bito.domain.habla.FaseHabi
+import com.alvarotc.bito.domain.habla.HechosCache
 import com.alvarotc.bito.domain.habla.Motor
 import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.TipoMemoria
@@ -28,11 +29,18 @@ import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.testZone
 import com.alvarotc.bito.ui.notifications.AvisosHabi
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -42,6 +50,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -101,22 +110,60 @@ class FuenteMotorRealTest {
             sealedDays = sellados,
         )
 
-    private fun fuente(corteDia: Int = 0) =
-        FuentePropuestasHabi(
-            estado = estado,
-            ajustes = flowOf(Settings(userName = "Álvaro", personality = Personality.NEUTRA, dayCutoffMinutes = corteDia)),
-            recordatorios = flowOf(emptyMap()),
-            memoria = MemoriaRepository(db) { ahora },
-            vigentes = PropuestaVigenteStore(db),
-            gordo = LoGordoRepository(db) { ahora },
-            aceptados = aceptados,
-            catalogo = { catalogo },
-            avisos = avisos,
-            permisos = { PermisosAvisos(notificaciones = true, alarmasExactas = true) },
-            now = { ahora },
-            zone = { testZone },
-            motor = motor,
-        )
+    /** El reloj de la tarjeta, con [conReloj]: cada tick lo da la prueba. */
+    private val ticks = MutableSharedFlow<Unit>(replay = 1)
+
+    /** El minuto de cada emisión que la fuente ha mirado (los hechos se calculan una vez por emisión). */
+    private val minutosMirados = CopyOnWriteArrayList<Int>()
+    private val hechosReales = HechosCache()
+
+    private fun fuente(
+        corteDia: Int = 0,
+        conReloj: Boolean = false,
+    ) = FuentePropuestasHabi(
+        estado = estado,
+        ajustes = flowOf(Settings(userName = "Álvaro", personality = Personality.NEUTRA, dayCutoffMinutes = corteDia)),
+        recordatorios = flowOf(emptyMap()),
+        memoria = MemoriaRepository(db) { ahora },
+        vigentes = PropuestaVigenteStore(db),
+        gordo = LoGordoRepository(db) { ahora },
+        aceptados = aceptados,
+        catalogo = { catalogo },
+        avisos = avisos,
+        permisos = { PermisosAvisos(notificaciones = true, alarmasExactas = true) },
+        now = { ahora },
+        zone = { testZone },
+        motor = motor,
+        hechos = { s, m, c, r ->
+            minutosMirados += c.ahoraMin
+            hechosReales.hechos(s, m, c, r)
+        },
+        ticks = if (conReloj) ticks else flowOf(Unit),
+    )
+
+    /** Lo que ve la tarjeta, emisión a emisión, escuchando fuera del reloj virtual (Room va en sus hilos). */
+    private fun TestScope.escuchar(f: FuentePropuestasHabi): MutableStateFlow<List<Propuesta?>> {
+        val vistas = MutableStateFlow<List<Propuesta?>>(emptyList())
+        backgroundScope.launch(Dispatchers.Default) { f.propuesta(Ambito.HOY).collect { p -> vistas.update { it + p } } }
+        return vistas
+    }
+
+    private suspend fun esperar(
+        vistas: MutableStateFlow<List<Propuesta?>>,
+        hasta: (List<Propuesta?>) -> Boolean,
+    ): List<Propuesta?> = withContext(Dispatchers.Default) { withTimeout(5_000) { vistas.first(hasta) } }
+
+    /** Pone el reloj en [hora]:[minuto], da un tick (sin tocar nada más) y espera a que la fuente lo mire. */
+    private suspend fun tic(
+        hora: Int,
+        minuto: Int,
+    ) {
+        ahora = millisOn(TODAY, hora, minuto)
+        ticks.emit(Unit)
+        withContext(Dispatchers.Default) {
+            withTimeout(5_000) { while (hora * 60 + minuto !in minutosMirados) delay(10) }
+        }
+    }
 
     private fun prueba(cuerpo: suspend TestScope.() -> Unit) = runTest(timeout = 20.seconds, testBody = cuerpo)
 
@@ -272,5 +319,42 @@ class FuenteMotorRealTest {
             estado.value = estado.value.copy(entries = estado.value.entries + entryOn(leer, TODAY))
             assertEquals(null, f.hoy())
             assertEquals(antes + 1, replanes)
+        }
+
+    // Con la app abierta, la tarjeta sigue al reloj: un tick por minuto, sin otra interacción.
+
+    @Test
+    fun `with the app open a proposal that expires leaves the card at its minute and a valid one is not redone`() =
+        prueba {
+            val f = fuente(conReloj = true)
+            ticks.emit(Unit)
+            val vistas = escuchar(f)
+            val primera = esperar(vistas) { situacion(it.lastOrNull()) == Situacion.AYER_SE_ESCAPO.name }.last()!!
+            val creada = PropuestaVigenteStore(db).leer(Ambito.HOY)!!.creadoMillis
+
+            // A las 20:59 sigue valiendo: ni se elige otra ni se reescribe.
+            tic(20, 59)
+            assertEquals(creada, PropuestaVigenteStore(db).leer(Ambito.HOY)!!.creadoMillis)
+
+            // A las 21:00 (media hora antes de la noche) caduca y la tarjeta la deja en ese minuto.
+            tic(21, 0)
+            val despues = esperar(vistas) { situacion(it.last()) != Situacion.AYER_SE_ESCAPO.name }
+            // Una sola «ayer se escapó» en toda la escucha: los ticks en que valía no la redactaron otra vez.
+            assertEquals(listOf(primera), despues.filter { situacion(it) == Situacion.AYER_SE_ESCAPO.name })
+        }
+
+    @Test
+    fun `with the app open the card turns to close the day at the night hour`() =
+        prueba {
+            ahora = millisOn(TODAY, 21, 10)
+            val f = fuente(conReloj = true)
+            ticks.emit(Unit)
+            val vistas = escuchar(f)
+            esperar(vistas) { it.isNotEmpty() }
+            tic(21, 29)
+            assertTrue(vistas.value.none { situacion(it) == Situacion.CERRAR_DIA.name })
+
+            tic(21, 30)
+            esperar(vistas) { situacion(it.last()) == Situacion.CERRAR_DIA.name }
         }
 }
