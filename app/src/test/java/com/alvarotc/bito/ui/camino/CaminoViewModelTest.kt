@@ -28,8 +28,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -179,5 +181,33 @@ class CaminoViewModelTest {
 
             assertNull(vm.uiState.value.comentario)
             assertFalse(vm.uiState.value.loading)
+        }
+
+    @Test
+    fun `Camino paints without waiting for a comment that never arrives`() =
+        runTest {
+            HabitsRepository(db).create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today - 5))
+            val silenciosa =
+                object : FuentePropuestas {
+                    override fun propuesta(
+                        ambito: Ambito,
+                        habitId: String?,
+                    ): Flow<Propuesta?> = flow { awaitCancellation() }
+
+                    override suspend fun responder(
+                        id: String,
+                        respuesta: Respuesta,
+                        hora: Int?,
+                    ): Efecto = Efecto.Ninguno
+
+                    override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+                }
+            val vm = vmCon(silenciosa)
+            backgroundScope.launch { vm.uiState.collect {} }
+            advanceUntilIdle()
+
+            assertFalse(vm.uiState.value.loading)
+            assertFalse(vm.uiState.value.sinHabitos)
+            assertNull(vm.uiState.value.comentario)
         }
 }

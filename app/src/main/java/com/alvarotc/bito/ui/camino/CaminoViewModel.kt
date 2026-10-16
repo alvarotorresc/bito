@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.stateIn
 import java.time.ZoneId
 
@@ -40,7 +41,8 @@ class CaminoViewModel(
             settings.settings,
             rewards.observeOwnedItems(),
             rewards.observeBadges(),
-            propuestas?.propuesta(Ambito.CAMINO) ?: flowOf(null),
+            // Camino no espera al comentario: arranca sin él y lo añade cuando llega.
+            (propuestas?.propuesta(Ambito.CAMINO) ?: flowOf(null)).onStart { emit(null) },
         ) { state, prefs, owned, badges, comentario ->
             val zoneId = zone()
             val today = LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zoneId)
