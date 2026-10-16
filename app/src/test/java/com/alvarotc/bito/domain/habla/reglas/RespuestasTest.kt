@@ -96,4 +96,36 @@ class RespuestasTest {
         assertTrue(Respuestas.noche(conGordo(emptyList())).huecos.isEmpty())
         assertTrue(Respuestas.noche(conGordo(listOf(RefGordo(TipoRefGordo.HABITO, "h1")))).huecos.isEmpty())
     }
+
+    @Test
+    fun `the chosen big thing names all of it and the first step it has`() {
+        val h =
+            hechos(
+                habitos = listOf(habito(id = "h1", nombre = "Correr")),
+                tareas =
+                    listOf(
+                        tarea("t1", titulo = "El informe"),
+                        tarea("t2", titulo = "Llamar al banco", primerPaso = "Buscar el número"),
+                    ),
+                gordo = listOf(informe, RefGordo(TipoRefGordo.HABITO, "h1"), banco),
+            )
+        val c = Respuestas.gordoElegido(h)!!
+        assertEquals(Situacion.GORDO_ELEGIDO, c.situacion)
+        assertEquals(ValorHueco.Lista(listOf("El informe", "Correr", "Llamar al banco")), c.huecos[Hueco.GORDO])
+        assertEquals(ValorHueco.Texto("Buscar el número"), c.huecos[Hueco.PRIMER_PASO])
+        assertEquals(listOf(Respuesta.AHORA, Respuesta.LUEGO), c.acciones)
+    }
+
+    @Test
+    fun `the chosen big thing without a first step has no first step hole`() {
+        val c = Respuestas.gordoElegido(conGordo(listOf(informe)))!!
+        assertEquals(ValorHueco.Lista(listOf("El informe")), c.huecos[Hueco.GORDO])
+        assertNull(c.huecos[Hueco.PRIMER_PASO])
+    }
+
+    @Test
+    fun `with nothing to name there is no chosen big thing line`() {
+        assertNull(Respuestas.gordoElegido(conGordo(emptyList())))
+        assertNull(Respuestas.gordoElegido(conGordo(listOf(RefGordo(TipoRefGordo.TAREA, "borrada")))))
+    }
 }

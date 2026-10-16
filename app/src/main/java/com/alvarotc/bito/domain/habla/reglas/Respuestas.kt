@@ -57,8 +57,26 @@ object Respuestas {
             TipoRefGordo.HABITO -> h.habitos.firstOrNull { it.id == ref.id }?.nombre
         }
 
-    /** Tras guardar la hoja de lo gordo. */
-    fun gordoElegido(h: Hechos): Candidata = Candidata(Situacion.GORDO_ELEGIDO, null, emptyMap(), listOf(Respuesta.AHORA, Respuesta.LUEGO))
+    /**
+     * Tras guardar la hoja de lo gordo. `{gordo}` es lo elegido, de 1 a 3 nombres; `{primer_paso}`, el de la
+     * primera tarea de lo gordo que lo tenga (HUECOS.md). Sin nada que nombrar, null: la frase pide `{gordo}`.
+     */
+    fun gordoElegido(h: Hechos): Candidata? {
+        val nombres = h.gordo.mapNotNull { nombreDeGordo(it, h) }
+        if (nombres.isEmpty()) return null
+        val huecos =
+            buildMap {
+                put(Hueco.GORDO, ValorHueco.Lista(nombres))
+                primerPasoDeGordo(h)?.let { put(Hueco.PRIMER_PASO, ValorHueco.Texto(it)) }
+            }
+        return Candidata(Situacion.GORDO_ELEGIDO, null, huecos, listOf(Respuesta.AHORA, Respuesta.LUEGO))
+    }
+
+    /** El primer paso de la primera tarea de lo gordo que lo tenga, o null. */
+    internal fun primerPasoDeGordo(h: Hechos): String? =
+        h.gordo
+            .filter { it.tipo == TipoRefGordo.TAREA }
+            .firstNotNullOfOrNull { ref -> h.tareas.firstOrNull { it.id == ref.id }?.primerPaso }
 
     /** Tras «Hoy no» o «Ahora no»: la frase corta, sin acciones ni huecos (HUECOS.md: ni `{n}` ni `{tarea}`). */
     fun trasHoyNo(h: Hechos): Candidata = Candidata(Situacion.TRAS_HOY_NO, null, emptyMap(), emptyList())

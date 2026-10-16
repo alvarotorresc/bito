@@ -439,6 +439,18 @@ class FuentePropuestasHabiTest {
         }
 
     @Test
+    fun `saving a big thing with nothing to name keeps the current proposal`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer))
+            val antes = f.hoy()
+
+            f.guardarGordo(listOf(RefGordo(TipoRefGordo.TAREA, "borrada")))
+
+            assertEquals(antes.id, f.hoy().id)
+            assertEquals(Situacion.AYER_SE_ESCAPO, vigentes.leer(Ambito.HOY)!!.situacion)
+        }
+
+    @Test
     fun `a memory mentioned is written once`() =
         prueba {
             memoria.anotar(EventoMemoria("animo-ayer", TipoMemoria.ANIMO, TODAY - 1, null, 0, ahora))

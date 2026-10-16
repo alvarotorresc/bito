@@ -34,10 +34,7 @@ object ReglaGordoSinEmpezar : Regla {
         val esperado = m.gordoElegidoMillis?.let { ctx.ahoraMillis - it >= Ritmo.GORDO_ESPERA_MIN * MILLIS_MIN } ?: false
         if (!esperado && ctx.ahoraMin <= Ritmo.GORDO_TARDE_MIN) return emptyList()
         val nombres = h.gordo.mapNotNull { nombreDe(it, h) }
-        val primerPaso =
-            h.gordo
-                .filter { it.tipo == TipoRefGordo.TAREA }
-                .firstNotNullOfOrNull { ref -> h.tareas.firstOrNull { it.id == ref.id }?.primerPaso }
+        val primerPaso = Respuestas.primerPasoDeGordo(h)
         val huecos =
             buildMap {
                 if (nombres.isNotEmpty()) put(Hueco.GORDO, ValorHueco.Lista(nombres))

@@ -504,7 +504,8 @@ class FuentePropuestasHabi(
             gordo.guardar(ctx.hoy, refs)
             val m = memoria.observe(flowOf(ctx.hoy)).first()
             val h = hechos(state, m, ctx, recordatorios.first())
-            redactarYGuardar(Respuestas.gordoElegido(h), Ambito.HOY, "", ctx, h, m)
+            // Sin nada que nombrar (una tarea borrada), la tarjeta sigue como estaba.
+            Respuestas.gordoElegido(h)?.let { redactarYGuardar(it, Ambito.HOY, "", ctx, h, m) }
             avisos.replanificar()
         }
     }
