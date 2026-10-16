@@ -1,5 +1,8 @@
 package com.alvarotc.bito.ui.today
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
@@ -13,6 +16,8 @@ import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.DueKind
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestScope
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -111,5 +116,37 @@ class HoyGordoTest {
         rule.onNodeWithTag("hoja-gordo-guardar").performClick()
         rule.waitUntil(5_000) { fuente.gordoGuardado.isNotEmpty() }
         assertEquals(listOf(listOf(RefGordo(TipoRefGordo.TAREA, "informe"))), fuente.gordoGuardado)
+    }
+
+    @Test
+    fun `on a cold start the sheet waits for Today to load before marking the suggestion`() {
+        // Como al abrir el aviso de la mañana con la app cerrada: la lista se compone antes de que Hoy cargue.
+        val pausado = StandardTestDispatcher(TestScope().testScheduler)
+        val b = BancoHoy(rule, tmp).also { banco = it }
+        b.preparar(FuenteFalsa(), dispatcherVM = pausado)
+        runBlocking {
+            val tareas = TasksRepository(b.db)
+            tareas.create(
+                taskEntity(id = "informe", title = "Informe trimestral", dueKind = DueKind.DATE, dueDay = b.hoy, createdOnDay = b.hoy - 3),
+            )
+            tareas.create(
+                taskEntity(
+                    id = "dentista",
+                    title = "Llamar al dentista",
+                    dueKind = DueKind.DATE,
+                    dueDay = b.hoy - 2,
+                    createdOnDay = b.hoy - 6,
+                ),
+            )
+        }
+        // Inicio apaga la petición en cuanto la lista dice que la vio.
+        var pedir by mutableStateOf(true)
+        rule.setContent { b.Contenido(abrirGordo = pedir, alGordoVisto = { pedir = false }) }
+        b.esperar(300)
+        pausado.scheduler.advanceUntilIdle()
+        esperarHoja()
+        b.esperar()
+        rule.onNodeWithTag("gordo-dentista").assertIsOn()
+        rule.onNodeWithTag("gordo-informe").assertIsOff()
     }
 }

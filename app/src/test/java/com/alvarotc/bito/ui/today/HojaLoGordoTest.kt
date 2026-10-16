@@ -235,4 +235,28 @@ class HojaLoGordoTest {
         montar(abierta = false)
         rule.onAllNodesWithTag("hoja-gordo").assertCountEquals(0)
     }
+
+    @Test
+    fun `an open sheet seeds again when fresher data arrives until it is touched`() {
+        // Hoy viejo o aún cargando: la hoja se abre con lo que hay y llega lo de verdad después.
+        var lista by mutableStateOf(emptyList<CandidatoGordo>())
+        var sugerida by mutableStateOf<RefGordo?>(null)
+        rule.setContent {
+            ConSistema(sonido, tacto) {
+                HojaLoGordo(true, lista, sugerida, emptyList(), alGuardar = { guardados += it }, alCerrar = {})
+            }
+        }
+        rule.waitForIdle()
+        lista = candidatos
+        sugerida = dentista
+        rule.waitForIdle()
+        rule.onNodeWithTag("gordo-dentista").assertIsOn()
+        // Una vez tocada, lo que llega ya no pisa la elección.
+        rule.onNodeWithTag("gordo-leer").performClick()
+        sugerida = informe
+        rule.waitForIdle()
+        rule.onNodeWithTag("gordo-informe").assertIsOff()
+        rule.onNodeWithTag("gordo-dentista").assertIsOn()
+        rule.onNodeWithTag("gordo-leer").assertIsOn()
+    }
 }

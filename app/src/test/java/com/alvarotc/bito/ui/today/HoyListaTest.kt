@@ -583,6 +583,86 @@ class HoyListaTest {
         assertTrue(banco.entradasDeHoy("water") >= 1)
     }
 
+    private fun propuestaDe(id: String) =
+        com.alvarotc.bito.domain.propuestas.Propuesta(
+            id = id,
+            texto = com.alvarotc.bito.domain.propuestas.TextoHabi(com.alvarotc.bito.R.string.habla_vale),
+            acciones = emptyList(),
+        )
+
+    // Lo que el cuerpo real de la fuente escribe al responder (spec §5.11): `RESPUESTA` con el id de la propuesta.
+    private fun recordarRespuesta(
+        id: String,
+        dia: Int = banco.hoy,
+    ) = runBlocking {
+        com.alvarotc.bito.data.habla.MemoriaRepository(banco.db).anotar(
+            com.alvarotc.bito.domain.habla.EventoMemoria(
+                "r-$id",
+                com.alvarotc.bito.domain.habla.TipoMemoria.RESPUESTA,
+                dia,
+                id,
+                com.alvarotc.bito.domain.propuestas.Respuesta.VALE.ordinal,
+                banco.fixedNow,
+            ),
+        )
+    }
+
+    private fun seccionEsperan() = androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("esperan-sin-prisa"))
+
+    @Test
+    fun `after Vale and another situation the rest still waits all day`() {
+        val fuente = FuenteFalsa(propuestaDe("DIA_DURO:make-bed:${banco.hoy}"))
+        banco.preparar(fuente)
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        banco.montar()
+        esperarNodo("esperan-sin-prisa")
+        // «Vale»: la fuente recuerda la respuesta y la vigente pasa a la confirmación; luego llega otra situación.
+        recordarRespuesta("DIA_DURO:make-bed:${banco.hoy}")
+        fuente.flujo.value = propuestaDe("CONFIRMA_VALE:make-bed:${banco.hoy}")
+        banco.esperar()
+        fuente.flujo.value = propuestaDe("PERMISO_AVISOS::${banco.hoy}")
+        banco.esperar()
+        rule.onNodeWithTag("esperan-sin-prisa").assertExists()
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccionEsperan()).assertExists()
+        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("fila-make-bed") and seccionEsperan()).assertCountEquals(0)
+        // Hecho lo propuesto, el resto sigue esperando.
+        rule.onNodeWithTag("circulo-make-bed").performClick()
+        banco.esperar()
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccionEsperan()).assertExists()
+    }
+
+    @Test
+    fun `a hard day answered earlier today waits without a live proposal`() {
+        banco.preparar(FuenteFalsa())
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        recordarRespuesta("DIA_DURO:make-bed:${banco.hoy}")
+        banco.montar()
+        esperarNodo("esperan-sin-prisa")
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccionEsperan()).assertExists()
+        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("fila-make-bed") and seccionEsperan()).assertCountEquals(0)
+    }
+
+    @Test
+    fun `guard - yesterday's hard day does not make anything wait today`() {
+        banco.preparar(FuenteFalsa())
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        recordarRespuesta("DIA_DURO:make-bed:${banco.hoy - 1}", dia = banco.hoy - 1)
+        banco.montar()
+        esperarNodo("fila-water")
+        rule.onAllNodesWithTag("esperan-sin-prisa").assertCountEquals(0)
+    }
+
+    @Test
+    fun `a habit created on a hard day that waits without hurry is still found and shown`() {
+        banco.preparar(FuenteFalsa(propuestaDe("DIA_DURO:h1:${banco.hoy}")))
+        banco.sembrar(*(1..15).map { RealHabits.makeBed.copy(id = "h$it", name = "Hábito $it") }.toTypedArray())
+        var vistos = 0
+        banco.montar(creado = "h15", alCreadoVisto = { vistos++ })
+        banco.esperar(1500)
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-h15") and seccionEsperan()).assertIsDisplayed()
+        assertEquals(1, vistos)
+    }
+
     private fun sellarHoy() = runBlocking { com.alvarotc.bito.data.repo.JournalRepository(banco.db).sealDay(banco.hoy, banco.fixedNow) }
 
     @Test

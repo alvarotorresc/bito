@@ -75,6 +75,19 @@ class HoyDeNocheTest {
     }
 
     @Test
+    fun `touching Habi at night ticks without sound`() {
+        sellarHoy()
+        banco.montar()
+        esperarEstado { !it.loading && it.todaySealed }
+        banco.tacto.hapticas.clear()
+        banco.sonido.sonados.clear()
+        banco.vm.alTocarHabi()
+        banco.esperar()
+        assertTrue(com.alvarotc.bito.ui.sistema.Haptica.TICK in banco.tacto.hapticas)
+        assertTrue(banco.sonido.sonados.isEmpty())
+    }
+
+    @Test
     fun `touching Habi by day shows no sleeping notice`() {
         banco.montar()
         esperarEstado { !it.loading }

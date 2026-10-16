@@ -68,20 +68,19 @@ fun HojaLoGordo(
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
 
-    fun inicial(): List<RefGordo> {
-        val posibles = candidatos.map { it.ref }.toSet()
-        val previas = elegidos.filter { it in posibles }
-        return (previas.ifEmpty { listOfNotNull(sugerencia).filter { it in posibles } }).take(LoGordo.MAXIMO)
-    }
+    val posibles = candidatos.map { it.ref }.toSet()
+    val semilla = (elegidos.filter { it in posibles }.ifEmpty { listOfNotNull(sugerencia).filter { it in posibles } }).take(LoGordo.MAXIMO)
 
-    // La selección se rehace cada vez que la hoja se abre; mientras se cierra conserva lo que había.
-    var seleccion by remember { mutableStateOf(inicial()) }
-    var vista by remember { mutableStateOf(abierta) }
-    if (abierta && !vista) {
-        seleccion = inicial()
-        vista = true
-    } else if (!abierta && vista) {
-        vista = false
+    // Al abrir se siembra lo elegido o la sugerencia, y se vuelve a sembrar si llegan datos más frescos mientras el
+    // usuario no haya tocado nada (Hoy aún cargando o viejo al volver). Mientras se cierra conserva lo que había.
+    var seleccion by remember { mutableStateOf(semilla) }
+    var tocada by remember { mutableStateOf(false) }
+    LaunchedEffect(abierta, semilla) {
+        if (!abierta) {
+            tocada = false
+        } else if (!tocada) {
+            seleccion = semilla
+        }
     }
     var rechazos by remember { mutableIntStateOf(0) }
     var rechazada by remember { mutableStateOf(false) }
@@ -122,6 +121,7 @@ fun HojaLoGordo(
                         .heightIn(min = Medidas.toqueMinimo)
                         .alpha(if (!marcada && seleccion.size >= LoGordo.MAXIMO) FILA_APAGADA else 1f)
                         .toggleable(value = marcada, role = Role.Checkbox) {
+                            tocada = true
                             rechazada = false
                             when {
                                 marcada -> {

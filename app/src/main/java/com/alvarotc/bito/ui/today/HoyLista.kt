@@ -1,3 +1,5 @@
+@file:OptIn(ExperimentalFoundationApi::class)
+
 package com.alvarotc.bito.ui.today
 
 import android.Manifest
@@ -10,6 +12,7 @@ import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,12 +31,15 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -170,7 +176,11 @@ fun HoyLista(
     var sealDismissed by rememberSaveable { mutableStateOf(false) }
     var limitePendiente by remember { mutableStateOf(false) }
     var brotando by remember { mutableStateOf<String?>(null) }
+    // Un hábito recién creado que cae en «Esperan sin prisa»: la sección ya está a la vista, falta su fila.
+    var traerAVista by remember { mutableStateOf<String?>(null) }
     var gordoAbierto by remember { mutableStateOf(false) }
+    // Quien pide la hoja (el aviso de la mañana, la tarjeta, la etiqueta): se abre cuando Hoy está cargado.
+    var gordoPedido by remember { mutableIntStateOf(0) }
     var horaAbierta by remember { mutableStateOf(false) }
     var horaPedida by remember { mutableStateOf(Efecto.ElegirHora(0, MINUTOS_DIA - 1, 0)) }
     // Resuelto el permiso, el agua se aclara y Habi llega: aquí suena y vibra en ese fotograma.
@@ -193,9 +203,16 @@ fun HoyLista(
     }
     LaunchedEffect(abrirGordo) {
         if (abrirGordo) {
-            gordoAbierto = true
+            gordoPedido++
             alGordoVisto()
         }
+    }
+    // Nada se siembra con el estado de relleno: la hoja se abre con Hoy cargado. Un estado viejo de `WhileSubscribed`
+    // también está cargado; para ese, la hoja vuelve a sembrar con lo que llegue mientras no se toque.
+    LaunchedEffect(gordoPedido) {
+        if (gordoPedido == 0) return@LaunchedEffect
+        snapshotFlow { estado }.first { !it.loading }
+        gordoAbierto = true
     }
     LaunchedEffect(viewModel) {
         viewModel.efectos.collect { efecto ->
@@ -203,7 +220,7 @@ fun HoyLista(
                 Efecto.Ninguno -> Unit
                 is Efecto.Sesion -> navegar.abrirRuta(EntradaSesion.ruta(efecto.destino))
                 Efecto.AbrirCierre -> navegar.abrirRepaso()
-                Efecto.AbrirLoGordo -> gordoAbierto = true
+                Efecto.AbrirLoGordo -> gordoPedido++
                 is Efecto.ElegirHora -> {
                     horaPedida = efecto
                     horaAbierta = true
@@ -239,9 +256,12 @@ fun HoyLista(
     val sellado = estado.todaySealed
     val textoTarea = stringResource(HabiVoice.taskDoneRes(estado.spec.personality), estado.userName.ifBlank { respaldo })
 
-    // Habi duerme con el día sellado: tocarla solo avisa.
+    // Habi duerme con el día sellado: tocar a Habi solo da un tick y avisa.
     LaunchedEffect(viewModel) {
-        viewModel.habiDuerme.collect { scope.launch { avisos.mostrar(textoDuerme) } }
+        viewModel.habiDuerme.collect {
+            gesto(h = Haptica.TICK)
+            scope.launch { avisos.mostrar(textoDuerme) }
+        }
     }
 
     LaunchedEffect(logged) {
@@ -275,7 +295,7 @@ fun HoyLista(
             if (desde != -1 && hasta != -1) ordenadas.add(hasta, ordenadas.removeAt(desde))
         }
     val base = filasDe(estado.copy(cards = ordenadas.toList()))
-    val abrirLoGordo = { gordoAbierto = true }
+    val abrirLoGordo: () -> Unit = { gordoPedido++ }
     val gordoDe = { tipo: TipoRefGordo, id: String -> RefGordo(tipo, id) in estado.gordo }
     // La fila saliente vuelve a su sitio dentro del bloque de tareas, no al final.
     val filas =
@@ -305,7 +325,8 @@ fun HoyLista(
 
         fun posicionEn(s: TodayUiState) =
             filasDe(s).indexOfFirst {
-                (it is FilaHoy.Habito && it.card.id == creado) || (it is FilaHoy.Tarea && it.row.id == creado)
+                (it is FilaHoy.Habito && it.card.id == creado) || (it is FilaHoy.Tarea && it.row.id == creado) ||
+                    (it is FilaHoy.Esperan && it.cards.any { c -> c.id == creado })
             }
         snapshotFlow { estado }.first { !it.loading }
         // Cargado no basta: puede ser un estado viejo (Hoy dejó de escuchar) o la tarea aún no estar escrita.
@@ -323,6 +344,7 @@ fun HoyLista(
                 )
             }
             listState.animateScrollToItem(indice)
+            if (filasDe(cargado).getOrNull(posicion) is FilaHoy.Esperan) traerAVista = creado
         }
         alCreadoVisto()
     }
@@ -471,7 +493,23 @@ fun HoyLista(
                                 style = BitoTema.tipos.t14.fuerte(),
                                 color = BitoTema.colores.tintaSuave,
                             )
-                            fila.cards.forEach { card -> FilaDeHabito(card, Modifier.graphicsLayer { alpha = ALFA_ESPERAN }) }
+                            fila.cards.forEach { card ->
+                                val traer = remember { BringIntoViewRequester() }
+                                LaunchedEffect(traerAVista) {
+                                    if (traerAVista == card.id) {
+                                        traer.bringIntoView()
+                                        traerAVista = null
+                                    }
+                                }
+                                val brota = brotando == card.id
+                                FilaDeHabito(
+                                    card,
+                                    Modifier
+                                        .bringIntoViewRequester(traer)
+                                        .graphicsLayer { alpha = ALFA_ESPERAN }
+                                        .aparecer(activo = brota, retraso = 0, brotar = brota),
+                                )
+                            }
                         }
                     is FilaHoy.Tarea ->
                         FilaTarea(
