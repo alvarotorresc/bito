@@ -36,6 +36,7 @@ import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -273,7 +274,7 @@ class InicioSesionTest {
         var montajes = 0
         tester.setContent {
             // El segundo montaje es el de después de morir el proceso: el borrador (en memoria) ya no está.
-            if (remember { ++montajes } == 2) motor.borrador.value = null
+            if (remember { ++montajes } == 2) motor.borrador.update { null }
             ConSistema(banco.sonido, banco.tacto) {
                 banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
             }
