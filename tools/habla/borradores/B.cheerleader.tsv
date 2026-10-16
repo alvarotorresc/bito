@@ -13,6 +13,7 @@ nu_ayer_escapo	10		A las {hora} tengo un plan: {habito}. Ayer se escapó; hoy, t
 nu_ayer_escapo	11	[tarde]	Aún queda tarde: {habito}, a las {hora}. Ayer se escapó; hoy llegamos.	Afternoon left: {habito}, at {hora}. Slipped yesterday; we'll make it.
 nu_ayer_escapo	12		{habito}, {minutos} min a las {hora}. Se escapó ayer; hoy sí.	{habito}, {minutos} min at {hora}. It slipped; today, yes.
 nu_ayer_escapo	13	[invierno]	Con frío todo cuesta más. Ayer se escapó: {habito}. Hoy, {hora}, juntos.	Cold makes it harder. It slipped: {habito}. Today at {hora}, together.
+nu_ayer_escapo	14		Ayer se escapó: {habito}. Hoy le hacemos sitio, tú y yo.	It slipped yesterday: {habito}. Today we make room for it, you and me.
 nu_elegir_gordo	0		¿Qué es lo gordo de hoy? Elige hasta tres cosas, y lo demás va detrás.	What's the big thing today? Pick up to three, and the rest can follow.
 nu_elegir_gordo	1		Antes de empezar, una pregunta: ¿qué va a ser lo gordo hoy?	One question before we start: what's going to be the big thing today?
 nu_elegir_gordo	2		Mi apuesta para lo gordo de hoy: «{tarea}». Pero la última palabra es tuya.	My pick for the big thing today: “{tarea}”. But you have the last word.
@@ -53,6 +54,7 @@ nu_hora_habitual	8		Un empujón suave antes de tu hora: {habito}. Si te viene bi
 nu_hora_habitual	9		Lo tuyo de las {hora} está al caer: {habito}.	Your {hora} thing is about to land: {habito}.
 nu_hora_habitual	10	[finde]	También en finde tienes tu sitio: {habito}, hacia las {hora}.	Weekends have their slot too: {habito}, around {hora}.
 nu_hora_habitual	11		Te lo recuerdo bajito: {habito}, hacia las {hora}.	A quiet reminder: {habito}, around {hora}.
+nu_hora_habitual	12		Se acerca tu momento de siempre: {habito}. ¿Vamos?	Your usual moment is coming up: {habito}. Shall we?
 nu_vuelta	0		Qué bien tenerte de vuelta. Una sola cosa, pequeña: {habito}.	So good to have you back. Just one small thing: {habito}.
 nu_vuelta	1		Han sido {dias_fuera|día|días} sin vernos, y aquí sigo. Empezamos por una: {habito}.	It's been {dias_fuera|day|days}, and I'm still here. We start with one: {habito}.
 nu_vuelta	2		Hoy volvemos con algo pequeño: {habito}. Tú y yo, sin prisa.	Today we ease back in with something small: {habito}. You and me, no rush.

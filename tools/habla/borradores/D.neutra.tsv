@@ -8,6 +8,9 @@ fi_hoy_falta	5	[manana]	Tienes el día entero para esto. ¿Te aviso a las {hora}
 fi_hoy_falta	6		{habito}, pendiente hoy. ¿Te aviso a las {hora}?	“{habito}” is still open today. Shall I remind you at {hora}?
 fi_hoy_falta	7	[tarde]	La tarde aún da para esto. A las {hora} te lo recuerdo.	The afternoon still has room for this. I'll remind you at {hora}.
 fi_hoy_falta	8	[viernes]	Es viernes y esto sigue abierto. ¿Te aviso a las {hora}?	It's Friday and this one is still open. Remind you at {hora}?
+fi_hoy_falta	9		Hoy está pendiente. Ahora o más tarde, como prefieras.	Still open today. Now or later, as you prefer.
+fi_hoy_falta	10		Hoy aún no está hecho. Queda día para esto.	Not done yet today. There's still time for it.
+fi_hoy_falta	11		Hoy falta: {habito}. Cuando te venga bien.	Still open today: {habito}. Whenever it suits you.
 fi_objetivo	0		Este mes, un {pct} % de cumplimiento. ¿Y si lo dejamos en {objetivo}?	This month: {pct} % done. What if we set it to {objetivo}?
 fi_objetivo	1		Quizá una meta de {objetivo} encaje mejor con tu ritmo de ahora. ¿Lo probamos?	Maybe a goal of {objetivo} fits your current pace better. Shall we try it?
 fi_objetivo	2		Con una meta de {objetivo} sería más fácil llegar cada día. ¿Y si lo dejamos ahí?	A goal of {objetivo} would be easier to reach each day. What if we left it there?
@@ -39,6 +42,9 @@ fi_constancia	4		{pct} % en 30 días, y cada día nuevo mueve la cifra.	{pct} % 
 fi_constancia	5	[lunes]	Lunes de balance: {pct} % de los últimos 30 días.	Monday check-in: {pct} % of the last 30 days.
 fi_constancia	6		Si miras 30 días atrás, el cumplimiento es del {pct} %. Hoy suma uno más.	Looking back 30 days, completion is {pct} %. Today adds one more.
 fi_constancia	7	[finde]	Buen fin de semana para mirarlo: {pct} % en 30 días.	A good weekend to look at it: {pct} % over 30 days.
+fi_constancia	8		Aún no hay datos suficientes para medir la constancia.	Not enough data yet to measure consistency.
+fi_constancia	9		Todavía es pronto para dar una cifra de constancia.	It's still too early to give a consistency figure.
+fi_constancia	10		Sin cifra por ahora. Cada vez que lo marques, se irá formando.	No figure for now. Each time you mark it, one starts to take shape.
 fi_nuevo	0		Este hábito acaba de empezar. Los primeros días sirven para tantear.	This habit has only just begun. The first days are for finding your feet.
 fi_nuevo	1		Hábito recién estrenado. Un día hecho ya es un comienzo.	Brand-new habit. One day done is already a start.
 fi_nuevo	2		Es pronto para sacar conclusiones. Por ahora, todo lo que se haga suma.	It's early to draw conclusions. For now, everything you do adds up.
@@ -58,6 +64,9 @@ fi_pausa	1		En pausa desde el {fecha}. Cuando quieras retomarlo, aquí está.	Pa
 fi_pausa	2		Pausado desde el {fecha}. Sin prisa: las pausas también forman parte del ritmo.	Paused since {fecha}. No hurry: pauses are part of the rhythm too.
 fi_pausa	3		De descanso desde el {fecha}. Los días de pausa no pesan en el cumplimiento.	Resting since {fecha}. Paused days don't weigh on your completion.
 fi_pausa	4		Pausa desde el {fecha}. El hábito espera; no corre ningún reloj.	On hold since {fecha}. The habit waits; no clock is running.
+fi_pausa	5		En pausa. No cuenta ni resta mientras tanto.	Paused. It neither counts nor subtracts in the meantime.
+fi_pausa	6		En pausa. Cuando quieras retomarlo, aquí está.	Paused. Pick it up whenever you want; it's right here.
+fi_pausa	7		Pausado. El hábito espera; no corre ningún reloj.	On hold. The habit waits; no clock is running.
 ca_radiante	0		Semana muy sólida: más del 80 por ciento cumplido.	A very solid week: over 80 percent done.
 ca_radiante	1		Muy buena semana. Este mes suma {n|día perfecto|días perfectos}.	A really good week. This month adds up to {n|perfect day|perfect days}.
 ca_radiante	2		Cambio sobre la semana pasada: {pct} %. El ritmo de esta semana es muy bueno.	Change on last week: {pct} %. This week's pace is very good.
@@ -66,6 +75,7 @@ ca_radiante	4	[lunes]	Lunes con buen ritmo de fondo: casi todo lo de estos días
 ca_radiante	5		Casi todo lo previsto esta semana está hecho. Buen ritmo.	Almost everything planned this week is done. Good rhythm.
 ca_radiante	6	[domingo]	Domingo y semana en alto. El mes suma {n|día perfecto|días perfectos}.	Sunday, and a strong week. The month stands at {n|perfect day|perfect days}.
 ca_radiante	7	[invierno]	Con el frío de fuera, la semana va firme por aquí.	Cold outside, steady in here: the week is going well.
+ca_radiante	8		Semana alta. Lo previsto se está cumpliendo casi entero.	A strong week. Nearly everything planned is getting done.
 ca_normal	0		Semana dentro de lo normal. Sigue así.	A steady week. Keep going.
 ca_normal	1		Una semana tranquila: ni subidas ni bajadas grandes. Este mes: {n|día perfecto|días perfectos}.	A calm week: no big rises or dips. This month: {n|perfect day|perfect days}.
 ca_normal	2		Cambio sobre la semana pasada: {pct} %. Un ritmo que se puede sostener.	Change on last week: {pct} %. A pace you can sustain.
@@ -74,6 +84,7 @@ ca_normal	4		La semana va a su paso. Un hábito más hoy y mejora la cifra.	The 
 ca_normal	5	[viernes]	Viernes. Semana normal, y todavía queda día para mover la cifra.	Friday. An ordinary week, and there's still time to shift the number.
 ca_normal	6	[manana]	Semana estable. Hoy puedes mantenerla tal cual o subirla un poco.	A stable week. Today you can hold it as it is or lift it a little.
 ca_normal	7	[finde]	Fin de semana con la semana estable: {n|día perfecto|días perfectos} este mes.	A weekend with a steady week behind it: {n|perfect day|perfect days} this month.
+ca_normal	8		Semana estable, sin sobresaltos.	A stable week, no surprises.
 ca_mustio	0		Semana floja: menos de la mitad cumplido. Un hábito hoy basta para arrancar.	A slow week: under half done. One habit today is enough to restart.
 ca_mustio	1		La semana ha ido a medio gas. Hoy un solo hábito ya cambia la cifra.	The week has run at half speed. A single habit today already shifts the number.
 ca_mustio	2		Cambio sobre la semana pasada: {pct} %. Un hábito hoy y la cifra se mueve.	Change on last week: {pct} %. One habit today and the number moves.

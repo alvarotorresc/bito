@@ -12,6 +12,9 @@ nu_ayer_escapo	9	[finde]	Es fin de semana. «{habito}» cabe hoy en {minutos} mi
 nu_ayer_escapo	10	[viernes]	Viernes. «{habito}» se escapó ayer; {minutos} min y la semana acaba al día.	Friday. “{habito}” got away yesterday; {minutos} min and the week ends level.
 nu_ayer_escapo	11		Ayer no salió «{habito}». Hoy: {minutos} min a las {hora}.	“{habito}” slipped yesterday. Today: {minutos} min at {hora}.
 nu_ayer_escapo	12	[invierno]	Hace frío fuera. «{habito}» se quedó ayer; hoy son {minutos} min.	Cold out. “{habito}” was left yesterday; today it's {minutos} min.
+nu_ayer_escapo	13		Ayer se quedó sin hacer: {habito}. Hoy hay sitio para retomarlo.	Left undone yesterday: {habito}. There's room to pick it up today.
+nu_ayer_escapo	14		«{habito}» ayer no pudo ser. Hoy es otro día.	“{habito}” didn't happen yesterday. Today is another day.
+nu_ayer_escapo	15		Ayer se escapó «{habito}». Hoy, cuando te venga bien.	“{habito}” got away yesterday. Today, whenever it suits you.
 nu_elegir_gordo	0		¿Qué es lo gordo de hoy? Elige una cosa, o hasta tres.	What's the big thing today? Pick one, or up to three.
 nu_elegir_gordo	1		Hay hueco para elegir lo gordo de hoy. Sugiero: «{tarea}».	There's room to pick today's big thing. My suggestion: “{tarea}”.
 nu_elegir_gordo	2		Lo gordo de hoy sigue sin elegir. Elegirlo lleva diez segundos.	Today's big thing is still open. Picking it takes ten seconds.
@@ -45,6 +48,8 @@ nu_hora_habitual	7	[mediodia]	Mediodía. Tu «{habito}» de siempre cae cerca: a
 nu_hora_habitual	8	[tarde]	Tarde. «{habito}» suele llegar a las {hora}; falta poco.	Afternoon. “{habito}” usually arrives at {hora}; not long now.
 nu_hora_habitual	9	[noche]	Esta noche, «{habito}» a tu hora de siempre, las {hora}.	Tonight, “{habito}” at your usual time, {hora}.
 nu_hora_habitual	10	[finde]	Es fin de semana, pero «{habito}» sigue teniendo su hora: las {hora}.	It's the weekend, but “{habito}” still has its time: {hora}.
+nu_hora_habitual	11		Se acerca tu hora de siempre para «{habito}».	Your usual time for “{habito}” is coming up.
+nu_hora_habitual	12		Se acerca el rato de siempre para «{habito}». Cuando quieras.	Your usual slot for “{habito}” is near. Whenever you like.
 nu_vuelta	0		Han pasado {dias_fuera|día|días}. Hoy, una sola cosa: «{habito}».	It's been {dias_fuera|day|days}. Today, just one thing: “{habito}”.
 nu_vuelta	1		Vuelves tras {dias_fuera|día|días}. Para empezar, solo esto: {habito}.	You're back after {dias_fuera|day|days}. To begin, only this: {habito}.
 nu_vuelta	2		Me alegra verte. Hoy basta con una cosa pequeña: «{habito}».	Good to see you. One small thing is enough today: “{habito}”.

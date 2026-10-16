@@ -11,6 +11,8 @@ av_manana_titulo	8	[invierno]	¡Calentamos motores, {nombre}!	Warming up, {nombr
 av_manana_titulo	9		Buenos días. Tengo una idea para hoy.	Good morning. I have an idea for today.
 av_manana_titulo	10		{nombre}, ¿empezamos el día?	{nombre}, shall we start the day?
 av_manana_titulo	11		Buen día, {nombre}. Te esperaba.	Good day, {nombre}. I've been waiting.
+av_manana_titulo	12		¡Buenos días! Hoy pinta bien.	Good morning! Today looks good.
+av_manana_titulo	13		Un día nuevo. Tú y yo.	New day. You and me.
 av_manana_titulo_gordo	0		Hoy, a por lo gordo: {gordo}	Today, the big thing: {gordo}
 av_manana_titulo_gordo	1		¡Hoy nos toca: {gordo}!	Today's plan: {gordo}!
 av_manana_titulo_gordo	2		Buenos días. Hoy: {gordo}	Good morning. Today: {gordo}
@@ -59,6 +61,8 @@ av_noche_cuerpo	8		Mañana empieza con «{tarea}», pero eso es mañana. Esta no
 av_noche_cuerpo	9	[invierno]	Noche de frío. Un minuto de cierre y a la manta, {nombre}.	Cold night. A minute to close, then under the blanket, {nombre}.
 av_noche_cuerpo	10		{nombre}, ¿cerramos el día? Yo te acompaño en el cierre.	{nombre}, shall we close the day? I'll be with you through it.
 av_noche_cuerpo	11		Tu lista de hoy: {hechos} de {total}. Ahora el cierre, que es corto.	Your list for today: {hechos} of {total}. Now the close, which is short.
+av_noche_cuerpo	12		¡Se acaba el día! Un minuto de cierre y a descansar.	The day's wrapping up! One minute to close, then rest.
+av_noche_cuerpo	13		Cerramos el día y mañana seguimos, tú y yo.	We close the day and carry on tomorrow, you and me.
 av_aceptado_titulo	0		¡Vale, a las {hora}!	Okay, {hora} it is!
 av_aceptado_titulo	1		Quedamos a las {hora}.	See you at {hora}.
 av_aceptado_titulo	2		A las {hora}, tú y yo.	At {hora}, you and me.
@@ -75,6 +79,8 @@ av_aceptado_cuerpo	4		Apuntado: a las {hora}, yo me acuerdo. Tú, a lo gordo: {g
 av_aceptado_cuerpo	5		Lo gordo, sin prisa: {gordo}. A las {hora}, estaré a tu lado.	The big thing, no rush: {gordo}. At {hora}, I'll be right beside you.
 av_aceptado_cuerpo	6		{nombre}, a las {hora} te aviso. ¡Cuenta conmigo!	{nombre}, I'll remind you at {hora}. Count on me!
 av_aceptado_cuerpo	7		Una cosa gorda, bien elegida: {gordo}. Nos vemos a las {hora}.	One big thing, well chosen: {gordo}. See you at {hora}.
+av_aceptado_cuerpo	8		A las {hora} te aviso yo. ¡Mientras, a lo tuyo!	I'll remind you at {hora}. Meanwhile, carry on!
+av_aceptado_cuerpo	9		Hecho: a las {hora} me acuerdo por ti.	Done: at {hora}, I'll remember for you.
 av_ausencia	0		{nombre}, te echo de menos por aquí. Cuando quieras, un hábito pequeño y seguimos.	{nombre}, I miss having you around. Whenever you like, one small habit and we pick up.
 av_ausencia	1		Han pasado unos días y aquí sigo, con la puerta abierta. Hoy basta con uno.	A few days have gone by and I'm still here, door open. Today, one is enough.
 av_ausencia	2		Hola, {nombre}. Sin cuentas pendientes: me alegraría verte hoy.	Hi, {nombre}. No tallies owed: I'd be glad to see you today.

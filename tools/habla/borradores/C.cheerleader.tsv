@@ -14,6 +14,8 @@ nu_saludo	11	[lunes]	¡Lunes! Primera vuelta de la semana: {hechos} de {total}.	
 nu_saludo	12	[viernes]	Viernes, {nombre}. ¡{hechos} de {total}, a rematar la semana!	Friday, {nombre}. {hechos} of {total}. Finish the week strong!
 nu_saludo	13	[finde]	Fin de semana. Lo de hoy, a su ritmo: {hechos} de {total}, ¡y a disfrutar!	Weekend. Today goes at its own pace: {hechos} of {total}. Enjoy it!
 nu_saludo	14	[invierno]	Fuera hace frío, aquí vamos por {hechos} de {total}. ¡Qué bien se está!	Cold out there, but in here we're at {hechos} of {total}. Cosy, isn't it!
+nu_saludo	15		¡Hola! Aquí estoy, contigo.	Hi! I'm right here with you.
+nu_saludo	16		Qué bien verte por aquí. Lo tuyo, a tu ritmo.	So good to see you here. Your things, at your pace.
 nu_todo_hecho	0	[esperando]	Lo mío ya está hecho. ¡Me quedo contigo hasta cerrar!	I'm all done for today. Staying right here till we close!
 nu_todo_hecho	1		¡Todo hecho por hoy! Cuando quieras, cierras el día.	Everything's done for today! Close the day whenever you like.
 nu_todo_hecho	2		Los hábitos de hoy, hechos. Solo queda el cierre, y es cortísimo.	Today's habits are done. Only the close is left, and it's super short.
@@ -52,6 +54,7 @@ nu_noche	9	[domingo]	Domingo cerrado. Mañana empieza otra semana, y la empezamo
 nu_noche	10	[invierno]	Noche de invierno, día cerrado. Buenas noches, ¡a abrigarse!	Winter night, day closed. Good night, wrap up warm!
 nu_noche	11	[verano]	Aún queda algo de luz, pero el día está cerrado. ¡Buenas noches!	There's still a bit of light, but the day is closed. Good night!
 nu_noche	12		«{tarea}», mañana a primera hora. Ahora, a descansar.	“{tarea}”, first thing tomorrow. For now, rest.
+nu_noche	13		¡Día cerrado y bien cerrado! Hasta mañana.	Day closed, and closed well! See you tomorrow.
 nu_tras_hoy_no	0		Vale, sin problema. ¡Aquí sigo para cuando quieras!	Okay, no problem. I'm here whenever you want!
 nu_tras_hoy_no	1		Entendido. Cuando quieras, aquí estoy.	Understood. I'm here whenever you want.
 nu_tras_hoy_no	2		De acuerdo. Lo dejamos aquí, sin dramas.	All right. We'll leave it there, no drama.
@@ -74,6 +77,9 @@ nu_confirma_vale	6	[manana]	Hecho: a las {hora} te aviso. La mañana, a tu aire.
 nu_confirma_vale	7	[tarde]	A las {hora}. Te aviso, y hasta entonces, sin prisa.	{hora} it is. I'll let you know; no hurry till then.
 nu_confirma_vale	8	[noche]	A las {hora}, antes de cerrar el día. ¡Te aviso!	At {hora}, before we close the day. I'll let you know!
 nu_confirma_vale	9	[finde]	Hecho: te aviso a las {hora}. Sin prisa, que es fin de semana.	Done: reminder at {hora}. No rush, it's the weekend.
+nu_confirma_vale	10		¡Genial! Queda apuntado.	Great! It's noted.
+nu_confirma_vale	11		Me encanta ese «vale». Aquí estoy contigo.	Love that “okay”. I'm right here with you.
+nu_confirma_vale	12		Trato hecho. Esto va a salir bien.	Deal. This is going to go well.
 nu_confirma_vale_gordo	0		¡Hecho! Te aviso a las {hora}. Mientras tanto, lo gordo: {gordo}.	Done! I'll remind you at {hora}. Meanwhile, the big thing: {gordo}.
 nu_confirma_vale_gordo	1		Anotado para las {hora}. Hasta entonces, lo gordo sigue ahí: {gordo}.	Noted for {hora}. Until then, the big thing is still there: {gordo}.
 nu_confirma_vale_gordo	2		A las {hora}, entonces. Ahora hay hueco para lo gordo: {gordo}.	{hora}, then. That leaves room now for the big thing: {gordo}.

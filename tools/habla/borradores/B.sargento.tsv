@@ -13,6 +13,7 @@ nu_ayer_escapo	10	[manana]	Buenos días. Ayer se escapó: {habito}. Quítatelo d
 nu_ayer_escapo	11	[noche]	Queda noche. «{habito}», {minutos} min, y se corrige lo de ayer.	There's still tonight. “{habito}”, {minutos} min, and yesterday is fixed.
 nu_ayer_escapo	12	[finde]	Es finde, pero «{habito}» sigue en pie. Ayer se escapó: {minutos} min.	Weekend, but “{habito}” still stands. It slipped yesterday: {minutos} min.
 nu_ayer_escapo	13		Sin dramas: ayer se escapó «{habito}». Se arregla hoy, a las {hora}.	No drama: “{habito}” slipped yesterday. It gets fixed today, at {hora}.
+nu_ayer_escapo	14		Ayer se escapó: {habito}. Hoy no se escapa.	It slipped yesterday: {habito}. Today it doesn't.
 nu_elegir_gordo	0		¿Cuál es lo gordo de hoy? Elige una cosa y la defiendes.	What's the big thing today? Pick one and defend it.
 nu_elegir_gordo	1		Hoy necesita una cosa gorda. Elígela antes de que el día elija por ti.	Today needs one big thing. Pick it before the day picks for you.
 nu_elegir_gordo	2		Mi apuesta para lo gordo: «{tarea}». Discútela o apúntala.	My pick for the big thing: “{tarea}”. Argue with it or lock it in.
@@ -37,6 +38,7 @@ nu_gordo_sin_empezar	8		Pasan las horas y lo gordo sigue quieto. Muévelo: {prim
 nu_gordo_sin_empezar	9	[tarde]	Ya es tarde y lo gordo no ha arrancado. Hay tiempo: {primer_paso}.	It's afternoon and the big thing hasn't started. There's time: {primer_paso}.
 nu_gordo_sin_empezar	10	[manana]	La mañana es tuya. Arranca lo gordo con esto: {primer_paso}.	The morning is yours. Get the big thing moving with this: {primer_paso}.
 nu_gordo_sin_empezar	11	[mediodia]	Mediodía, y lo gordo sigue a cero. Primer paso: {primer_paso}.	Midday, and the big thing is still at zero. First step: {primer_paso}.
+nu_gordo_sin_empezar	12		Lo gordo sigue a cero: {gordo}. Empieza ya.	The big thing is still at zero: {gordo}. Start now.
 nu_hora_habitual	0		Se acerca tu hora: {habito}, hacia las {hora}.	Your usual time is coming up: {habito}, around {hora}.
 nu_hora_habitual	1		{habito} suele caer a las {hora}. Ya casi.	{habito} usually lands at {hora}. Almost time.
 nu_hora_habitual	2		Tu hora de siempre: {habito}. Sin darle vueltas.	Your usual time: {habito}. No second-guessing.

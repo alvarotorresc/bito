@@ -28,6 +28,7 @@ cie_sencillo	3		Hoy no ha habido fuegos artificiales, y está bien. Los días no
 cie_sencillo	4		{nombre}, gracias por pasar el día conmigo. Ya casi toca descansar.	{nombre}, thanks for spending the day with me. Nearly time to rest.
 cie_sencillo	5		¡Buen trabajo hoy, {nombre}! Sin ruido, pero constante.	Good work today, {nombre}! Quiet, but steady.
 cie_sencillo	6	viernes	Se acaba el viernes, {nombre}. Lo que has hecho hoy ya nadie te lo quita.	Friday's winding down, {nombre}. What you did today is yours to keep.
+cie_sencillo	7		Día cerrado sin ruido. Mañana seguimos a la vez.	A quiet close to the day. Tomorrow we carry on side by side.
 cie_nada_pendiente	0		Nada pendiente, {nombre}. Puedes sellar el día.	Nothing pending, {nombre}. You can seal the day.
 cie_nada_pendiente	1		¡Todo en orden, {nombre}! Solo queda sellar el día.	All in order, {nombre}! Only sealing the day is left.
 cie_nada_pendiente	2		No queda nada por decidir. Cuando quieras, buenas noches.	Nothing left to decide. Whenever you like, goodnight.
@@ -35,6 +36,7 @@ cie_nada_pendiente	3		Aquí ya está todo. Sella cuando te apetezca, {nombre}.	I
 cie_nada_pendiente	4		Cierre limpio: ni una fila por mirar. Toca descansar.	A clean close: not a single row left to look at. Time to rest.
 cie_nada_pendiente	5		Hoy no se queda nada en el aire, {nombre}. Buenas noches cuando quieras.	Nothing's left hanging today, {nombre}. Goodnight whenever you're ready.
 cie_nada_pendiente	6		¡Cero pendientes, {nombre}! Sellar el día y a descansar.	Zero pending, {nombre}! Seal the day and off to rest.
+cie_nada_pendiente	7		¡Todo decidido! Solo queda sellar el día.	Everything's decided! All that's left is sealing the day.
 cie_animo_bien	0		Me alegro. Mañana seguimos al mismo ritmo.	I'm glad. Tomorrow we keep the same pace.
 cie_animo_bien	1		¡Qué bien oír eso! Mañana, a por otro igual.	Great to hear it! Tomorrow, another one just like it.
 cie_animo_bien	2		Me alegra mucho. Guardo este día como ejemplo para mañana.	That makes me really happy. I'll keep today as the example for tomorrow.
@@ -66,6 +68,8 @@ cie_sello	6	domingo	Domingo sellado: la semana se cierra aquí. Gracias por llev
 cie_sello	7	invierno	Fuera hace frío y aquí dentro el día queda sellado. A dormir, {nombre}.	It's cold outside, and in here the day is sealed. Off to sleep, {nombre}.
 cie_sello	8		Un día más para el jardín. Buenas noches, {nombre}.	One more day for the garden. Goodnight, {nombre}.
 cie_sello	9	finde	Fin de semana sellado, {nombre}. Descansa; yo ya me voy durmiendo.	Weekend sealed, {nombre}. Rest up; I'm already drifting off.
+cie_sello	10		¡Día sellado! Mañana seguimos.	Day sealed! Tomorrow we carry on.
+cie_sello	11		Día guardado. Me duermo con una sonrisa.	Day saved. I'm drifting off with a smile.
 cie_sello_perfecto	0		¡Día perfecto, {nombre}! Todo hecho, todo. Estoy que no quepo en mí.	A perfect day, {nombre}! Every single thing, done. I could burst.
 cie_sello_perfecto	1		Hoy no se ha escapado nada. Día perfecto, {nombre}. Buenas noches.	Nothing got away today. A perfect day, {nombre}. Goodnight.
 cie_sello_perfecto	2		¡Perfecto de principio a fin! Eso ha sido cosa tuya, {nombre}.	Perfect from start to finish! That was all you, {nombre}.
@@ -76,6 +80,8 @@ cie_sello_perfecto	6	viernes	Viernes perfecto. Cierras la semana sin dejar nada 
 cie_sello_perfecto	7	domingo	Domingo perfecto, {nombre}: la semana termina sin ningún cabo suelto.	Perfect Sunday, {nombre}: the week ends with no loose ends.
 cie_sello_perfecto	8		Cada hábito de hoy, hecho. Un día así se guarda, {nombre}.	Every habit today, done. A day like this one is a keeper, {nombre}.
 cie_sello_perfecto	9	invierno	Fuera hace frío y aquí dentro, un día perfecto. Qué calorcito, {nombre}.	Cold outside, and in here, a perfect day. How warm that feels, {nombre}.
+cie_sello_perfecto	10		¡Día perfecto! Me voy a dormir dando saltitos.	A perfect day! I'm off to sleep with a little bounce.
+cie_sello_perfecto	11		Día perfecto, de principio a fin. Qué gusto da sellarlo.	A perfect day, start to finish. Such a joy to seal it.
 cie_tareas_manana	0		Para mañana, {n|tarea|tareas}: {lista}.	Moving to tomorrow, {n|task|tasks}: {lista}.
 cie_tareas_manana	1		Mañana seguimos desde aquí: {lista}.	Tomorrow we pick it up from here: {lista}.
 cie_tareas_manana	2		Lo que queda de hoy te espera mañana: {lista}.	What's left of today will be waiting tomorrow: {lista}.

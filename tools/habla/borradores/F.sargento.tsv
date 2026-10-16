@@ -81,6 +81,7 @@ av_aceptado_cuerpo	4		Te aviso a las {hora}. Hasta entonces, a lo tuyo.	I'll nud
 av_aceptado_cuerpo	5		Lo acordado: a las {hora}. Lo gordo: {gordo}.	The deal: {hora}. The big thing: {gordo}.
 av_aceptado_cuerpo	6		{nombre}, ya está en marcha. Te aviso a las {hora}.	{nombre}, it's set. I'll nudge you at {hora}.
 av_aceptado_cuerpo	7		Te lo recuerdo a las {hora}. Ni un minuto más tarde.	I'll remind you at {hora}. Not a minute later.
+av_aceptado_cuerpo	8		Hora fijada: las {hora}. Ahí te aviso.	Time locked: {hora}. I'll nudge you then.
 av_ausencia	0		Aquí sigo, {nombre}. Hoy basta con una cosa pequeña.	Still here, {nombre}. One small thing is enough today.
 av_ausencia	1		Nadie lleva cuentas. Un hábito hoy y se retoma.	Nobody's keeping score. One habit today and you're back on.
 av_ausencia	2		Hace días que no hablamos. Empieza por el más fácil.	It's been a few days. Start with the easiest one.

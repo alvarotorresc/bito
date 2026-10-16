@@ -41,6 +41,7 @@ ap_noche	8		La noche sirve para soltar lo que queda del día, {nombre}.	Night is
 ap_noche	9	[madrugada]	Ya es de madrugada, {nombre}. Lo que falte puede esperar al sueño.	It's the small hours, {nombre}. Whatever's left can wait for sleep.
 ap_noche	10		Última parada del día, {nombre}. Te acompaño.	Last stop of the day, {nombre}. I'll go with you.
 ap_noche	11	[durmiendo]	Shh, que ya casi me duermo. Buenas noches.	Shh, I'm nearly asleep. Good night.
+ap_noche	12		Ya es de noche. Me alegra que pases por aquí.	It's night now. I'm glad you stopped by.
 ci_empuje	0		¡Tú puedes, y yo estoy aquí para verlo!	You've got this, and I'm right here to see it!
 ci_empuje	1		Un paso pequeño hoy ya es un paso.	One small step today is still a step.
 ci_empuje	2		Vamos a por ello, tú y yo.	Let's go get it, you and me.

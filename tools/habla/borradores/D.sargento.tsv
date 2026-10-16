@@ -7,6 +7,9 @@ fi_hoy_falta	4	[tarde]	Queda poco día. Reserva las {hora} y hazlo sin negociar.
 fi_hoy_falta	5		«{habito}» sigue abierto. Apunta las {hora} y cuenta con ello.	“{habito}” is still open. Pencil in {hora} and count on it.
 fi_hoy_falta	6	[manana]	Buena mañana para cerrarlo: las {hora}. Un compromiso y listo.	Good morning to settle it: {hora}. One commitment, done.
 fi_hoy_falta	7		Hoy toca y aún no está hecho. Las {hora} son tuyas; úsalas.	It's on for today and not done yet. {hora} is yours; use it.
+fi_hoy_falta	8		Hoy está pendiente. Hazlo y quítalo de en medio.	Still pending today. Do it and get it off your plate.
+fi_hoy_falta	9		Pendiente hoy: {habito}. Sin dar vueltas.	Pending today: {habito}. No dithering.
+fi_hoy_falta	10		Tu hábito de hoy sigue sin marcar. Ahora es buen momento.	Today's habit is still unmarked. Now is a good time.
 fi_objetivo	0		Un {pct} % en 30 días. ¿Y si lo dejamos en {objetivo}? Luego se sube.	{pct} % in 30 days. What if we make it {objetivo}? You can raise it later.
 fi_objetivo	1		Este objetivo pide más de lo que cabe ahora en tu mes. ¿Y si lo dejamos en {objetivo}?	This target asks for more than your month has room for. What if we make it {objetivo}?
 fi_objetivo	2		En 30 días, {pct} %. Una meta de {objetivo} encaja mejor. ¿La cambiamos?	30-day completion: {pct} %. A target of {objetivo} fits better. Change it?
@@ -34,6 +37,9 @@ fi_constancia	3		Cumplimiento de 30 días, {pct} %. Sigue sumando.	30-day comple
 fi_constancia	4	[lunes]	Lunes y {pct} % en 30 días. La semana empieza a escribirse ahora.	Monday and {pct} % over 30 days. The week starts writing itself now.
 fi_constancia	5		El mes marca {pct} %. Sin adornos. Sigue.	The month reads {pct} %. No frills. Carry on.
 fi_constancia	6	[noche]	Cierra el día y mira: {pct} % en 30 días. Mañana, uno más.	Close the day and look: {pct} % over 30 days. Tomorrow, one more.
+fi_constancia	7		Sin datos todavía. Los números se ganan marcando.	No data yet. Numbers are earned by marking.
+fi_constancia	8		Aún no hay cifra. Haz que la haya.	No figure yet. Make one.
+fi_constancia	9		Es pronto para medir. Sigue sumando y hablamos.	Too early to measure. Keep adding and we'll talk.
 fi_nuevo	0		Hábito nuevo. Lo difícil es repetirlo, no empezarlo.	New habit. The hard part is repeating it, not starting it.
 fi_nuevo	1		Los primeros días son los que cuentan. Uno detrás de otro.	The first days are the ones that count. One after another.
 fi_nuevo	2		Recién creado. Una semana seguida y deja de ser nuevo.	Just created. One week straight and it stops being new.
@@ -53,6 +59,9 @@ fi_pausa	1		Pausa desde el {fecha}. Parar a tiempo también es disciplina.	On pa
 fi_pausa	2		Este hábito descansa desde el {fecha}. Cuando quieras, lo retomamos.	This habit has rested since {fecha}. Whenever you say, we pick it back up.
 fi_pausa	3		Desde el {fecha}, en pausa. Sin prisa: la vuelta se prepara.	Paused since {fecha}. No hurry: the return gets planned.
 fi_pausa	4		Desde el {fecha} estos días no cuentan ni a favor ni en contra. Vuelve cuando toque.	Since {fecha} these days count neither for nor against you. Come back when it's time.
+fi_pausa	5		En pausa. Descansa bien; cuando vuelvas, a trabajar.	Paused. Rest well; when you're back, we work.
+fi_pausa	6		En pausa. Parar a tiempo también es disciplina.	On pause. Stopping in time is discipline too.
+fi_pausa	7		Este hábito descansa. Cuando quieras, lo retomamos.	This habit is resting. Whenever you say, we pick it back up.
 ca_radiante	0		Semana impecable. Ni un pero. Así se trabaja.	A flawless week. Not one slip. That's the standard.
 ca_radiante	1		{n|día perfecto|días perfectos} este mes. Así da gusto pasar revista.	{n|perfect day|perfect days} this month. Now that's an inspection I enjoy.
 ca_radiante	2		Cambio sobre la semana pasada: {pct} %. No encuentro ningún pero.	Change on last week: {pct} %. I can't find a single flaw.
@@ -60,6 +69,7 @@ ca_radiante	3		Esto es lo que pasa cuando haces lo que dices. Sigue.	This is wha
 ca_radiante	4		{n|día perfecto|días perfectos} en lo que va de mes. Impecable.	{n|perfect day|perfect days} so far this month. Spotless.
 ca_radiante	5	[lunes]	Arrancamos la semana desde lo alto. A sostenerlo.	We start the week from the top. Now hold it.
 ca_radiante	6	[finde]	Fin de semana con la semana en el bolsillo. No bajes la guardia.	Weekend, week in the bag. Don't drop your guard.
+ca_radiante	7		Semana en lo alto. Así se mantiene: haciendo.	Week at the top. That's how you hold it: by doing.
 ca_normal	0		Aceptable. Tú y yo sabemos que puedes más.	Acceptable. We both know you've got more.
 ca_normal	1		Este mes: {n|día perfecto|días perfectos}. Hay margen.	This month: {n|perfect day|perfect days}. There's room to grow.
 ca_normal	2		Cambio sobre la semana pasada: {pct} %. Con un poco más, sube.	Change on last week: {pct} %. A bit more and it climbs.

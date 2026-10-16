@@ -7,6 +7,9 @@ fi_hoy_falta	4	[noche]	Aún estamos a tiempo esta noche. ¿A las {hora}? Un empu
 fi_hoy_falta	5		Este lo hacemos hoy, tú y yo. ¿Te va bien a las {hora}?	We'll get this one done today, you and me. Does {hora} work?
 fi_hoy_falta	6		{habito}, hoy a las {hora}. ¡Aquí estaré animándote!	{habito}, today at {hora}. I'll be cheering from right here!
 fi_hoy_falta	7	[finde]	Finde tranquilo, pero a esto aún le falta su momento. ¿A las {hora}, sin prisa?	Easy weekend, but this one still needs its moment. {hora}, no rush?
+fi_hoy_falta	8		Hoy todavía está pendiente. ¿Le hacemos un hueco ahora? Voy contigo.	Still waiting today. Shall we make room for it now? I'm with you.
+fi_hoy_falta	9		{habito}, pendiente hoy. ¡Aún queda día para esto!	{habito}, still open today. There's still day left for this!
+fi_hoy_falta	10		Lo de hoy sigue esperándote. Cuando te venga bien, aquí estoy.	Today's one is still waiting for you. Whenever it suits you, I'm here.
 fi_objetivo	0		Este mes ha costado ({pct} %). ¿Y si lo dejamos en {objetivo}?	This month was a stretch ({pct} %). What if we set it to {objetivo}?
 fi_objetivo	1		¿Y si lo dejamos en {objetivo}? ¡Con una meta más ligera habrá más días que celebrar!	What if we set it to {objetivo}? With a lighter goal there'll be more days to celebrate!
 fi_objetivo	2		Probemos con {objetivo} una temporada. Volvemos a subirla cuando tú digas.	Let's try {objetivo} for a while. We raise it again whenever you say.
@@ -35,6 +38,9 @@ fi_constancia	3		Este último mes: {pct} %. ¡Y todavía queda lo mejor por escr
 fi_constancia	4		{pct} % en 30 días. Sea mucho o poco, cada marca la vi yo y la celebro.	{pct} % over 30 days. Big or small, I saw every mark and I celebrate it.
 fi_constancia	5	[lunes]	Lunes de balance: {pct} % en los últimos 30 días. Empezamos otra buena tanda.	Monday check-in: {pct} % over the last 30 days. Here comes another good stretch.
 fi_constancia	6		Si miramos el último mes, sale un {pct} %. Y hoy es otro día para sumar.	Looking at the last month, it comes to {pct} %. And today is another day to add.
+fi_constancia	7		Aún es pronto para sacar números. ¡Cada vez que lo marques cuenta!	It's still early for numbers. Every time you mark it counts!
+fi_constancia	8		{habito}: todavía sin cifra del mes. La vamos escribiendo a la vez.	{habito}: no monthly figure yet. We're writing it side by side.
+fi_constancia	9		Todavía no hay datos para medir la constancia. Aquí estoy para verlos llegar.	Not enough data yet to measure consistency. I'm here to watch it arrive.
 fi_nuevo	0		¡Hábito nuevo! Los primeros días son para coger carrerilla, y yo animo desde aquí.	A brand-new habit! The first days are for building momentum, and I'm cheering from right here.
 fi_nuevo	1		{habito}: página en blanco. Te acompaño desde el primer día.	{habito}: a blank page. I'm with you from day one.
 fi_nuevo	2		Esto acaba de empezar y ya me hace ilusión. ¡Mañana, otro paso!	This has only just begun and I'm already excited. Tomorrow, another step!
@@ -54,6 +60,9 @@ fi_pausa	1		Pausa desde el {fecha}. Descansar también es parte del camino, y yo
 fi_pausa	2		Descansando desde el {fecha}. Cuando quieras retomarlo, aquí estaremos. ¡Con ganas!	Resting since {fecha}. Whenever you want to pick it up, we'll be here. Ready and eager!
 fi_pausa	3		Desde el {fecha} está en pausa. Sin prisas: vuelve cuando te apetezca y seguimos.	Paused since {fecha}. No hurry: come back when it suits you and we carry on.
 fi_pausa	4		Pausado desde el {fecha}. Tu historial sigue aquí intacto, esperándote.	Paused since {fecha}. Your history is still here, untouched, waiting for you.
+fi_pausa	5		En pausa. Aquí te espero con todo igual que lo dejaste.	Paused. I'll be here, with everything just as you left it.
+fi_pausa	6		Descansando un tiempo. ¡Cuando quieras volver, aquí estaremos!	Resting for a while. Whenever you want to come back, we'll be here!
+fi_pausa	7		Está en pausa, y no pasa nada. Tu historial sigue intacto.	It's paused, and that's fine. Your history is still intact.
 ca_radiante	0		¡Menuda semana! De las que se enmarcan.	What a week! Honestly, frame this one.
 ca_radiante	1		Este mes ya van {n|día perfecto|días perfectos}. ¡Y esta semana está brillando!	This month is already at {n|perfect day|perfect days}. And this week is glowing!
 ca_radiante	2		Semana de las que dan ganas de aplaudir. Estoy aplaudiendo ahora mismo.	A week that makes you want to applaud. I'm applauding right now.

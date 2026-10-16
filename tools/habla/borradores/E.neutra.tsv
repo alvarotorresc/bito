@@ -69,6 +69,7 @@ cie_sello	6	[domingo]	La semana queda cerrada. Buenas noches, {nombre}.	The week
 cie_sello	7	[viernes]	Viernes cerrado. Buenas noches, y buen fin de semana.	Friday closed. Good night, and have a good weekend.
 cie_sello	8	[invierno]	Buenas noches, {nombre}. Que el frío se quede fuera.	Good night, {nombre}. Let the cold stay outside.
 cie_sello	9	[lunes]	Primer día de la semana, sellado. Buenas noches.	First day of the week, sealed. Good night.
+cie_sello	10		Día sellado. Hasta mañana.	Day sealed. See you tomorrow.
 cie_sello_perfecto	0		Día perfecto, {nombre}. Todo lo exigible, cumplido.	Perfect day, {nombre}. Everything required, done.
 cie_sello_perfecto	1		Todo lo del día, hecho. Buenas noches, {nombre}.	Everything for the day, done. Good night, {nombre}.
 cie_sello_perfecto	2		Ni un hábito pendiente hoy. Queda registrado.	Not one habit left today. It's on record.
