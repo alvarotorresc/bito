@@ -120,18 +120,24 @@ object Recuerdos {
             }?.let { Recuerdo(Bolsa.RE_GORDO_HECHO, it.id, mapOf(Hueco.TAREA to ValorHueco.Texto(tarea))) }
     }
 
-    /** Un aviso aceptado de ayer que se cumplió: `valor` = minuto, `ref` = hábito si sigue aquí. */
+    /**
+     * Un aviso aceptado de ayer que se cumplió: `valor` = minuto, `ref` = hábito. La frase nombra el hábito
+     * (`re_cumpliste_hora` pide `{habito}` y `{hora}`): uno cuyo hábito ya no está (archivado o borrado) no cuenta.
+     */
     private fun cumplisteHora(
         h: Hechos,
         eventos: List<EventoMemoria>,
     ): Recuerdo? {
-        val e =
+        val (e, habito) =
             eventos
                 .filter { it.tipo == TipoMemoria.ACEPTADO_CUMPLIDO && it.dia == h.hoy - 1 && it.valor != null }
-                .minByOrNull { it.creadoMillis } ?: return null
-        val huecos = mutableMapOf<Hueco, ValorHueco>(Hueco.HORA to ValorHueco.Hora(e.valor!!))
-        h.habitos.firstOrNull { it.id == e.ref }?.let { huecos[Hueco.HABITO] = ValorHueco.Texto(it.nombre) }
-        return Recuerdo(Bolsa.RE_CUMPLISTE_HORA, e.id, huecos)
+                .mapNotNull { e -> h.habitos.firstOrNull { it.id == e.ref }?.let { e to it } }
+                .minByOrNull { (e, _) -> e.creadoMillis } ?: return null
+        return Recuerdo(
+            Bolsa.RE_CUMPLISTE_HORA,
+            e.id,
+            mapOf(Hueco.HORA to ValorHueco.Hora(e.valor!!), Hueco.HABITO to ValorHueco.Texto(habito.nombre)),
+        )
     }
 
     private fun bienAyer(

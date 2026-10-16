@@ -218,14 +218,15 @@ object Motor {
 
     /**
      * §5.5, ayer regular: la primera propuesta con botones es la de menor objetivo de su situación,
-     * con el núcleo de arranque corto. Solo para hábitos: el núcleo lleva `{habito}`.
+     * con el núcleo de arranque corto. Solo para propuestas de un hábito que lo nombran: el núcleo pide `{habito}`
+     * (lo gordo sin empezar con un hábito delante va a su hábito, pero nombra lo gordo, no el hábito).
      */
     private fun masCorta(
         validas: List<Candidata>,
         h: Hechos,
     ): Candidata {
         val objetivos = h.habitos.associate { it.id to it.objetivo }
-        val deHabito = validas.filter { it.destino is Destino.Habito && it.ref in objetivos }
+        val deHabito = validas.filter { it.destino is Destino.Habito && it.ref in objetivos && Hueco.HABITO in it.huecos }
         if (deHabito.isEmpty()) return validas.sortedWith(POR_PESO).first()
         val corta = deHabito.sortedWith(compareBy<Candidata> { objetivos.getValue(it.ref!!) }.thenBy { it.ref }).first()
         return corta.copy(nucleo = Bolsa.NU_REGULAR)

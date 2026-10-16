@@ -119,10 +119,10 @@ class RecuerdosTest {
             ),
             elegible(h, listOf(cumplido)),
         )
-        assertEquals(
-            Recuerdo(Bolsa.RE_CUMPLISTE_HORA, "cumplido", mapOf(Hueco.HORA to ValorHueco.Hora(18 * 60 + 30))),
-            elegible(hechos(), listOf(cumplido)),
-        )
+        // Sin el hábito (archivado o borrado) no hay recuerdo: la frase lo nombra siempre.
+        assertNull(elegible(hechos(), listOf(cumplido)))
+        val deOtro = EventoMemoria("otro", TipoMemoria.ACEPTADO_CUMPLIDO, TODAY - 1, "borrado", 9 * 60, -1L)
+        assertEquals("cumplido", elegible(h, listOf(deOtro, cumplido))?.eventoId)
         assertNull(elegible(h, listOf(cumplido.copy(dia = TODAY))))
         assertNull(elegible(h, listOf(cumplido.copy(dia = TODAY - 2))))
     }

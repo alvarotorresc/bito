@@ -274,6 +274,14 @@ class MotorTest {
     }
 
     @Test
+    fun `regular yesterday leaves the big thing as it is even when it is a habit`() {
+        val h = hechos(habitos = listOf(habito("h1")), gordo = listOf(RefGordo(TipoRefGordo.HABITO, "h1")), animoAyer = 1)
+        val c = elegir(h, ahoraMin = 13 * 60)
+        assertEquals(Situacion.GORDO_SIN_EMPEZAR, c.situacion)
+        assertEquals(Bolsa.NU_GORDO_SIN_EMPEZAR, c.nucleo)
+    }
+
+    @Test
     fun `quit and limit habits are never proposed`() {
         val reglas = mapOf(Situacion.AYER_SE_ESCAPO to reglaQuePropone("x"))
         for (tipo in listOf(TipoHabito.DEJAR, TipoHabito.LIMITE)) {
