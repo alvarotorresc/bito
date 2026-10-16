@@ -7,7 +7,7 @@ import kotlin.math.abs
 
 /**
  * La cuenta atras es aritmetica sobre un fin guardado, no un contador que alguien baje: cualquiera
- * que sepa la hora puede decir cuanto queda. Dos relojes porque ninguno solo vale —
+ * que sepa la hora puede decir cuanto queda. Dos relojes porque ninguno solo vale:
  * elapsedRealtime se va a cero al reiniciar y currentTimeMillis salta si se cambia la hora.
  */
 object FocusClock {
