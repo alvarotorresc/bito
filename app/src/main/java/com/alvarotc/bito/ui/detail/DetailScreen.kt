@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -113,9 +114,10 @@ fun DetailScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val propuesta by viewModel.propuesta.collectAsStateWithLifecycle()
     // «Editar con el objetivo que sugiere Habi»: el efecto llega por el flujo, no por el estado.
+    val editarConObjetivo by rememberUpdatedState(alEditarConObjetivo)
     LaunchedEffect(viewModel) {
         viewModel.efectos.collect { efecto ->
-            if (efecto is Efecto.EditarHabito) alEditarConObjetivo(efecto.habitId, efecto.objetivoSugerido)
+            if (efecto is Efecto.EditarHabito) editarConObjetivo(efecto.habitId, efecto.objetivoSugerido)
         }
     }
     // Al volver de Editar, la nota espera al estado nuevo antes de pintarse.

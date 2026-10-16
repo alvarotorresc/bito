@@ -20,6 +20,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Metric
+import com.alvarotc.bito.domain.model.Period
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -197,12 +198,32 @@ class HabitFormViewModelTest {
     fun `the suggested target is clamped like the stepper`() =
         runTest {
             habitsRepo.create(
-                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+                habitEntity(id = "h1", metric = Metric.COUNT, direction = Direction.AT_LEAST, target = 8, createdOnDay = today),
             )
             val vm = newViewModel(habitId = "h1", objetivoSugerido = 0)
             advanceUntilIdle()
 
+            // Ni el guardado (8) ni la sugerencia (0): el mínimo del rango.
             assertEquals(1, vm.state.value.target)
+        }
+
+    @Test
+    fun `the suggested target above the weekly cap is clamped to the cap`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    metric = Metric.CHECK,
+                    direction = Direction.AT_LEAST,
+                    period = Period.WEEK,
+                    target = 3,
+                    createdOnDay = today,
+                ),
+            )
+            val vm = newViewModel(habitId = "h1", objetivoSugerido = 99)
+            advanceUntilIdle()
+
+            assertEquals(MAX_WEEKLY_TIMES, vm.state.value.target)
         }
 
     @Test

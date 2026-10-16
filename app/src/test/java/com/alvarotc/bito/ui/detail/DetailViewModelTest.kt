@@ -37,16 +37,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
@@ -403,32 +408,87 @@ class DetailViewModelTest {
             assertTrue(recibidos.isEmpty())
         }
 
+    /** Primera suscripción: la nota vieja al momento. Las siguientes: [siguientes] tras [retraso] ms (o nunca). */
+    private class FuenteTardia(
+        private val vieja: Propuesta,
+        private val siguientes: Propuesta?,
+        private val retraso: Long,
+    ) : FuentePropuestas {
+        var suscripciones = 0
+
+        override fun propuesta(
+            ambito: Ambito,
+            habitId: String?,
+        ): Flow<Propuesta?> =
+            flow {
+                suscripciones++
+                if (suscripciones == 1) {
+                    emit(vieja)
+                    awaitCancellation()
+                }
+                if (siguientes == null) awaitCancellation()
+                delay(retraso)
+                emit(siguientes)
+                awaitCancellation()
+            }
+
+        override suspend fun responder(
+            id: String,
+            respuesta: Respuesta,
+            hora: Int?,
+        ): Efecto = Efecto.EditarHabito("h1", 15)
+
+        override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    }
+
     @Test
-    fun `the note after editing waits for the new state`() =
+    fun `the note after editing stays hidden until the source answers with the new state`() =
         runTest {
             habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
             val vieja = Propuesta("FI_OBJETIVO:h1:1", TextoHabi(1), emptyList())
             val nueva = Propuesta("FI_CONSTANCIA:h1:1", TextoHabi(2), emptyList())
-            val fuente = FuenteControlable(vieja, Efecto.EditarHabito("h1", 15))
-            val vm = newViewModel("h1", propuestas = fuente)
+            val vm = newViewModel("h1", propuestas = FuenteTardia(vieja, nueva, retraso = 500))
             val vistas = mutableListOf<String?>()
             backgroundScope.launch { vm.propuesta.collect { vistas += it?.id } }
             advanceUntilIdle()
-            assertEquals("FI_OBJETIVO:h1:1", vm.propuesta.value?.id)
+            assertEquals(vieja.id, vm.propuesta.value?.id)
 
             val antesDeEditar = vistas.size
             vm.responder(Respuesta.VALE)
             advanceUntilIdle()
-            // Se va a Editar: el valor viejo ya no se enseña.
             assertNull(vm.propuesta.value)
 
-            // Al volver, el estado cambió; hasta entonces no se pinta nada.
-            fuente.actual.value = nueva
             vm.alVolver()
+            advanceTimeBy(100)
+            runCurrent()
+            // La fuente aún no contesta: ni la vieja ni nada.
+            assertNull(vm.propuesta.value)
+
+            advanceTimeBy(500)
+            runCurrent()
+            assertEquals(nueva.id, vm.propuesta.value?.id)
+            assertTrue("la vieja no se pinta ni un instante", vieja.id !in vistas.drop(antesDeEditar))
+        }
+
+    @Test
+    fun `the wait for the new state has a ceiling and then shows what there is`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val vieja = Propuesta("FI_OBJETIVO:h1:1", TextoHabi(1), emptyList())
+            val vm = newViewModel("h1", propuestas = FuenteTardia(vieja, siguientes = null, retraso = 0))
+            backgroundScope.launch { vm.propuesta.collect() }
             advanceUntilIdle()
 
-            assertEquals("FI_CONSTANCIA:h1:1", vm.propuesta.value?.id)
-            assertTrue("la nota vieja no vuelve a pintarse tras editar", vieja.id !in vistas.drop(antesDeEditar))
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+            vm.alVolver()
+            advanceTimeBy(DetailViewModel.TOPE_ESPERA_MS - 100)
+            runCurrent()
+            assertNull(vm.propuesta.value)
+
+            advanceTimeBy(200)
+            runCurrent()
+            assertEquals(vieja.id, vm.propuesta.value?.id)
         }
 
     @Test

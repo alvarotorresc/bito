@@ -29,6 +29,7 @@ import com.alvarotc.bito.ui.today.CardKind
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -36,10 +37,13 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -81,11 +85,14 @@ class DetailViewModel(
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    // Cambia cada vez que hay que volver a pedir la propuesta a la fuente desde cero.
-    private val refresco = MutableStateFlow(0)
+    /** LIBRE: se pinta lo que diga la fuente. OCULTA: se fue a Editar. ESPERA: de vuelta, hasta que conteste (o el tope). */
+    private enum class Fase { LIBRE, OCULTA, ESPERA }
 
     // Tras mandar a Editar, la nota se calla hasta que la ficha vuelva y la fuente conteste con el estado nuevo.
-    private val esperandoEdicion = MutableStateFlow(false)
+    private val fase = MutableStateFlow(Fase.LIBRE)
+
+    // Lo último que dijo la fuente; es lo que se enseña si tras el tope no ha contestado nada nuevo.
+    private var ultima: Propuesta? = null
 
     /** La propuesta de Habi para esta ficha; sin fuente o en modo lectura, nunca hay. */
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -93,11 +100,33 @@ class DetailViewModel(
         if (propuestas == null || lectura) {
             MutableStateFlow<Propuesta?>(null)
         } else {
-            combine(
-                refresco.flatMapLatest { propuestas.propuesta(Ambito.FICHA, habitId) },
-                esperandoEdicion,
-            ) { p, esperando -> if (esperando) null else p }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+            // Una sola colección de la fuente por fase: lo que se pinta y lo que se espera es lo mismo.
+            fase
+                .flatMapLatest { f ->
+                    when (f) {
+                        Fase.LIBRE -> propuestas.propuesta(Ambito.FICHA, habitId).onEach { ultima = it }
+                        Fase.OCULTA -> flowOf(null)
+                        Fase.ESPERA ->
+                            channelFlow {
+                                send(null)
+                                var llego = false
+                                val tope =
+                                    launch {
+                                        delay(TOPE_ESPERA_MS)
+                                        if (!llego) {
+                                            llego = true
+                                            send(ultima)
+                                        }
+                                    }
+                                propuestas.propuesta(Ambito.FICHA, habitId).collect {
+                                    llego = true
+                                    tope.cancel()
+                                    ultima = it
+                                    send(it)
+                                }
+                            }
+                    }
+                }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
         }
 
     private val _efectos = MutableSharedFlow<Efecto>(extraBufferCapacity = 4)
@@ -109,22 +138,17 @@ class DetailViewModel(
         val id = propuesta.value?.id ?: return
         viewModelScope.launch {
             val efecto = propuestas?.responder(id, r) ?: return@launch
-            if (efecto is Efecto.EditarHabito) esperandoEdicion.value = true
+            if (efecto is Efecto.EditarHabito) fase.value = Fase.OCULTA
             if (efecto != Efecto.Ninguno) _efectos.emit(efecto)
         }
     }
 
     /**
-     * La ficha vuelve a primer plano. Si venía de Editar, se pide la propuesta otra vez a la fuente (con
-     * `WhileSubscribed(5_000)` el valor guardado puede ser de antes de editar) y la nota espera a que conteste.
+     * La ficha vuelve a primer plano. Si venía de Editar, la fuente se pide otra vez y la nota sigue oculta hasta
+     * su primera respuesta o hasta [TOPE_ESPERA_MS]; con `WhileSubscribed(5_000)` lo guardado puede ser de antes de editar.
      */
     fun alVolver() {
-        if (!esperandoEdicion.value) return
-        viewModelScope.launch {
-            refresco.update { it + 1 }
-            propuestas?.propuesta(Ambito.FICHA, habitId)?.first()
-            esperandoEdicion.value = false
-        }
+        fase.compareAndSet(Fase.OCULTA, Fase.ESPERA)
     }
 
     init {
@@ -214,6 +238,8 @@ class DetailViewModel(
     fun unarchive() = write { _, _ -> habits.unarchive(habitId) }
 
     companion object {
+        const val TOPE_ESPERA_MS = 2_000L
+
         fun factory(
             container: AppContainer,
             habitId: String,
