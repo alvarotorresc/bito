@@ -121,7 +121,7 @@ class CabeceraSesionTest {
     @Test
     fun `the balance reads the bitos`() {
         montar()
-        compose.onNodeWithTag("ses-saldo").assertContentDescriptionEquals("140 bitos")
+        compose.onNodeWithTag("ses-saldo").assertContentDescriptionEquals("Tus bitos", "140 bitos")
     }
 
     @Test

@@ -126,13 +126,13 @@ class FueraAndroid internal constructor(
         sonando: Boolean,
     ) {
         val servicio = entorno.servicio
-        val estabaVivo = servicio.vivo()
+        val estabaVivo = servicio.pedido()
         val hayFondo = r.plan.fondo != SessionBackground.NONE
         // Fuera de los descansos manda lo que suena: un foco sin sonido (pérdida del foco de audio, Bito callado) no sostiene el servicio.
         val enDescanso = instante.actual is Tramo.Descanso
         val quiero = instante.actual != null && (sonando || (enDescanso && estabaVivo && hayFondo))
         when {
-            !quiero -> if (estabaVivo) servicio.parar()
+            !quiero -> if (servicio.pedido()) servicio.parar()
             !estabaVivo && entorno.visible() -> {
                 val aviso = PresenciaSesion.construir(entorno.context, r, ahora, entorno.titulo(r.plan.objetivo), entorno.voz())
                 if (aviso != null) servicio.arrancar(aviso, null)

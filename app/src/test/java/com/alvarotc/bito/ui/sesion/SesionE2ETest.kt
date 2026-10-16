@@ -132,6 +132,7 @@ class SesionE2ETest {
         NotificationChannels.ensure(app)
         Settings.Global.putInt(app.contentResolver, Settings.Global.BOOT_COUNT, 7)
         ServicioSesion.vivo.set(false)
+        ServicioSesion.pedido.set(false)
         runBlocking {
             container.settings.update {
                 it.copy(
@@ -156,6 +157,7 @@ class SesionE2ETest {
         contenedoresAparte.forEach { it.cerrarSesion() }
         servicios.clear()
         ServicioSesion.vivo.set(false)
+        ServicioSesion.pedido.set(false)
         AppVisibility.visible = false
         NavRequests.consume()
         EntradaSesion.consumir()
@@ -677,6 +679,7 @@ class SesionE2ETest {
         AlarmaSesion.cancelar(app)
         nm.cancelAll()
         ServicioSesion.vivo.set(false)
+        ServicioSesion.pedido.set(false)
         val aparte =
             object : ContextWrapper(app) {
                 override fun getFilesDir(): File = destino

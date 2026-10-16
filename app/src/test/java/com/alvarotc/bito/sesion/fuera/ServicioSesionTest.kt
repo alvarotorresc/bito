@@ -53,6 +53,7 @@ class ServicioSesionTest {
     @After
     fun tearDown() {
         ServicioSesion.vivo.set(false)
+        ServicioSesion.pedido.set(false)
         b.cerrar()
     }
 
@@ -300,6 +301,28 @@ class ServicioSesionTest {
         assertTrue(android.vivo())
         controlador.destroy()
         assertFalse(android.vivo())
+    }
+
+    @Test
+    fun `closing the session while the service is still being created drops it when it arrives`() {
+        b.visible = true
+        val real = ServicioAndroid(context)
+        val r = registroDeDosBloques(entrada = Entrada.RESPIRAR)
+        val dentro = FueraAndroid(b.entornoCon(real), CoroutineScope(Dispatchers.Unconfined))
+        runBlocking {
+            b.ahora = ahoraA(0)
+            dentro.alCambiar(r, true)
+        }
+        assertTrue("pedido aunque aun no exista", real.pedido())
+        assertFalse(real.vivo())
+
+        // «Saltar y volver a preparar» antes de que el servicio llegue a crearse.
+        runBlocking { dentro.alCambiar(null, false) }
+        assertFalse(real.pedido())
+        val controlador = servicioReal()
+
+        assertTrue("al llegar, suelta su aviso", shadowOf(controlador.get()).isForegroundStopped)
+        assertFalse(ServicioSesion.vivo.get())
     }
 
     @Test

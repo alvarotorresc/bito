@@ -43,7 +43,8 @@ class ServicioSesion : Service() {
         // Sin aviso también hay que entrar en primer plano (si no, Android se queja) y salir enseguida.
         val aviso = recibido ?: Notifier.notificacionSesion(this, "", "", null, Personality.NEUTRA)
         ServiceCompat.startForeground(this, Notifier.FOCUS_ID, aviso, ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
-        if (recibido == null) {
+        // Se pidió parar antes de que el servicio llegara a crearse: ya está en primer plano, así que suelta su aviso y sale.
+        if (recibido == null || soltarAlLlegar.getAndSet(false)) {
             soltar()
             return START_NOT_STICKY
         }
@@ -62,6 +63,7 @@ class ServicioSesion : Service() {
         manejador.removeCallbacksAndMessages(null)
         stopForeground(STOP_FOREGROUND_REMOVE)
         vivo.set(false)
+        pedido.set(false)
         stopSelf()
     }
 
@@ -69,6 +71,7 @@ class ServicioSesion : Service() {
         manejador.removeCallbacksAndMessages(null)
         if (instancia === this) instancia = null
         vivo.set(false)
+        pedido.set(false)
         super.onDestroy()
     }
 
@@ -80,6 +83,12 @@ class ServicioSesion : Service() {
 
         internal val vivo = AtomicBoolean(false)
 
+        /** Se ha pedido el servicio y puede que aún no exista (`startForegroundService` llega por el hilo principal). */
+        internal val pedido = AtomicBoolean(false)
+
+        /** Se pidió parar mientras el servicio estaba pedido pero sin crear: al llegar `onStartCommand`, suelta. */
+        private val soltarAlLlegar = AtomicBoolean(false)
+
         @Volatile private var instancia: ServicioSesion? = null
 
         fun arrancar(
@@ -87,6 +96,8 @@ class ServicioSesion : Service() {
             aviso: Notification,
             finElapsed: Long?,
         ) {
+            soltarAlLlegar.set(false)
+            pedido.set(true)
             val intent =
                 Intent(context, ServicioSesion::class.java)
                     .putExtra(EXTRA_AVISO, aviso)
@@ -96,7 +107,8 @@ class ServicioSesion : Service() {
 
         /** El servicio quita su aviso y se para; si no está vivo, es un `stopService` que no hace nada. */
         fun parar(context: Context) {
-            instancia?.soltar()
+            val servicio = instancia
+            if (servicio != null) servicio.soltar() else if (pedido.getAndSet(false)) soltarAlLlegar.set(true)
             context.stopService(Intent(context, ServicioSesion::class.java))
         }
     }
@@ -105,6 +117,9 @@ class ServicioSesion : Service() {
 /** Lo que [FueraAndroid] necesita del servicio; los tests lo sustituyen por un grabador. */
 internal interface ControlServicio {
     fun vivo(): Boolean
+
+    /** Pedido o vivo: entre `arrancar` y que el servicio se cree hay una ventana en que [vivo] aún dice que no. */
+    fun pedido(): Boolean = vivo()
 
     fun arrancar(
         aviso: Notification,
@@ -117,12 +132,14 @@ internal interface ControlServicio {
 internal class ServicioAndroid(private val context: Context) : ControlServicio {
     override fun vivo(): Boolean = ServicioSesion.vivo.get()
 
+    override fun pedido(): Boolean = ServicioSesion.vivo.get() || ServicioSesion.pedido.get()
+
     override fun arrancar(
         aviso: Notification,
         finElapsed: Long?,
     ) {
         // Arrancar desde segundo plano no está permitido: si falla, la sesión sigue con su aviso y sus alarmas.
-        runCatching { ServicioSesion.arrancar(context, aviso, finElapsed) }
+        runCatching { ServicioSesion.arrancar(context, aviso, finElapsed) }.onFailure { ServicioSesion.pedido.set(false) }
     }
 
     override fun parar() {

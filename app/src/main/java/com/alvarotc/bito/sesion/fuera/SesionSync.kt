@@ -149,11 +149,11 @@ object SesionSync {
     }
 }
 
-/** Quita el servicio si está vivo y dice si lo estaba: su aviso lo quita él, no un `cancel()` de la app. */
+/** Quita el servicio si está vivo o pedido y dice si lo estaba: su aviso lo quita él, no un `cancel()` de la app. */
 internal fun soltarServicio(e: EntornoFuera): Boolean {
-    val vivo = e.servicio.vivo()
-    if (vivo) e.servicio.parar()
-    return vivo
+    val pedido = e.servicio.pedido()
+    if (pedido) e.servicio.parar()
+    return pedido
 }
 
 /** Qué sesión ya avisó de su fin: una vez por sesión, aunque la app se abra y se cierre. */
