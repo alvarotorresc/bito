@@ -13,14 +13,23 @@
         todos los placeholders; la llamada de render siempre pasa los cuatro.
     -->
     <string name="notif_reminder_title_sargento_morning">En pie, %1$s. Hoy hay trabajo.</string>
+    <string name="notif_reminder_title_sargento_morning_sin_nombre">En pie. Hoy hay trabajo.</string>
     <string name="notif_reminder_title_sargento_afternoon">Media jornada, %1$s. Sin aflojar.</string>
+    <string name="notif_reminder_title_sargento_afternoon_sin_nombre">Media jornada. Sin aflojar.</string>
     <string name="notif_reminder_title_sargento_evening">Última llamada, %1$s.</string>
+    <string name="notif_reminder_title_sargento_evening_sin_nombre">Última llamada.</string>
     <string name="notif_reminder_title_cheerleader_morning">¡Buenos días, %1$s! Hoy pinta bien.</string>
+    <string name="notif_reminder_title_cheerleader_morning_sin_nombre">¡Buenos días! Hoy pinta bien.</string>
     <string name="notif_reminder_title_cheerleader_afternoon">¡Seguimos, %1$s! La tarde es nuestra.</string>
+    <string name="notif_reminder_title_cheerleader_afternoon_sin_nombre">¡Seguimos! La tarde es nuestra.</string>
     <string name="notif_reminder_title_cheerleader_evening">¡El último empujón, %1$s!</string>
+    <string name="notif_reminder_title_cheerleader_evening_sin_nombre">¡El último empujón!</string>
     <string name="notif_reminder_title_neutra_morning">Buenos días, %1$s. Tu día, a un vistazo.</string>
+    <string name="notif_reminder_title_neutra_morning_sin_nombre">Buenos días. Tu día, a un vistazo.</string>
     <string name="notif_reminder_title_neutra_afternoon">Media tarde, %1$s. Así vamos.</string>
+    <string name="notif_reminder_title_neutra_afternoon_sin_nombre">Media tarde. Así vamos.</string>
     <string name="notif_reminder_title_neutra_evening">Cae el día, %1$s. Esto queda.</string>
+    <string name="notif_reminder_title_neutra_evening_sin_nombre">Cae el día. Esto queda.</string>
 
     <plurals name="notif_reminder_body_sargento_morning">
         <item quantity="one">Un solo objetivo hoy: %2$s. A por él.</item>
@@ -117,20 +126,38 @@
         <item quantity="many">%1$s, hay %2$d cosas esperando.</item>
         <item quantity="other">%1$s, hay %2$d cosas esperando.</item>
     </plurals>
+    <plurals name="notif_tasks_title_sargento_sin_nombre">
+        <item quantity="one">Hay algo esperando.</item>
+        <item quantity="many">Hay %2$d cosas esperando.</item>
+        <item quantity="other">Hay %2$d cosas esperando.</item>
+    </plurals>
     <plurals name="notif_tasks_title_cheerleader">
         <item quantity="one">¿Le entramos, %1$s?</item>
         <item quantity="many">¿Le entramos, %1$s? Son %2$d.</item>
         <item quantity="other">¿Le entramos, %1$s? Son %2$d.</item>
+    </plurals>
+    <plurals name="notif_tasks_title_cheerleader_sin_nombre">
+        <item quantity="one">¿Le entramos?</item>
+        <item quantity="many">¿Le entramos? Son %2$d.</item>
+        <item quantity="other">¿Le entramos? Son %2$d.</item>
     </plurals>
     <plurals name="notif_tasks_title_neutra">
         <item quantity="one">Tienes una tarea, %1$s.</item>
         <item quantity="many">Tienes %2$d tareas, %1$s.</item>
         <item quantity="other">Tienes %2$d tareas, %1$s.</item>
     </plurals>
+    <plurals name="notif_tasks_title_neutra_sin_nombre">
+        <item quantity="one">Tienes una tarea.</item>
+        <item quantity="many">Tienes %2$d tareas.</item>
+        <item quantity="other">Tienes %2$d tareas.</item>
+    </plurals>
     <!-- notif_breathing_* — M11, el recordatorio diario opcional de respirar. %1$s = nombre. -->
     <string name="notif_breathing_title_sargento">%1$s, dos minutos.</string>
+    <string name="notif_breathing_title_sargento_sin_nombre">Dos minutos.</string>
     <string name="notif_breathing_title_cheerleader">¿Respiramos un rato, %1$s?</string>
+    <string name="notif_breathing_title_cheerleader_sin_nombre">¿Respiramos un rato?</string>
     <string name="notif_breathing_title_neutra">Hora de respirar, %1$s.</string>
+    <string name="notif_breathing_title_neutra_sin_nombre">Hora de respirar.</string>
     <string name="notif_breathing_body_sargento">Respira conmigo. Luego sigues.</string>
     <string name="notif_breathing_body_cheerleader">Te espero con los ojos cerrados.</string>
     <string name="notif_breathing_body_neutra">Cuando puedas.</string>

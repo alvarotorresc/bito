@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -45,6 +46,7 @@ class SelloCierreTest {
         logros: Boolean = true,
         gordo: List<String> = emptyList(),
         animo: Int? = null,
+        nombre: String = "Ana",
     ) = DatosSello(
         perfecto = perfecto,
         hechos = 3,
@@ -54,7 +56,7 @@ class SelloCierreTest {
         logros = if (logros) listOf(logro) else emptyList(),
         gordo = gordo,
         voz = Personality.NEUTRA,
-        nombre = "Ana",
+        nombre = nombre,
         animo = animo,
         dia = 20_300,
     )
@@ -89,6 +91,19 @@ class SelloCierreTest {
         assertTrue(hay("cierre-sello-logros"))
         rule.onNodeWithText(rule.activity.getString(BadgeStrings.badgeNameRes(logro.id)), substring = true).assertExists()
         assertEquals(listOf(Snd.BROTE, Snd.BROTE), sonido.snds())
+    }
+
+    @Test
+    fun `without a name the seal still speaks, in a phrase that asks for none`() {
+        var d by mutableStateOf(datos(nombre = ""))
+        rule.setContent { ConSistema(sonido, tacto) { SelloCierre(d, capas) } }
+        for (dia in 0 until 12) {
+            d = d.copy(dia = dia)
+            rule.waitForIdle()
+            val texto = rule.onNodeWithTag("cierre-sello-frase").fetchSemanticsNode().config[SemanticsProperties.Text].joinToString("")
+            assertTrue("día $dia sin frase", texto.isNotBlank())
+            assertFalse("día $dia deja un hueco: $texto", texto.contains("{") || texto.contains("Ana"))
+        }
     }
 
     @Test

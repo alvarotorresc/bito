@@ -46,6 +46,7 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.premios.HojaSaldo
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
@@ -130,11 +131,7 @@ fun HabiScreen(viewModel: HabiViewModel) {
                 // The Habi screen's OWN playful, name-addressed voice — distinct from the Stats
                 // commentator's mood-only bubble (HabiVoice.bubbleRes). No avatar slot here: the
                 // garden above already shows Habi, so a second mini-face would be redundant.
-                text =
-                    stringResource(
-                        HabiVoice.homeRes(state.spec.mood, state.spec.personality),
-                        state.userName.ifBlank { stringResource(R.string.habi_name_fallback) },
-                    ),
+                text = textoHabi(HabiVoice.conNombre(HabiVoice.homeRes(state.spec.mood, state.spec.personality), state.userName)),
                 modifier = Modifier.fillMaxWidth(),
             )
             PersonalityPills(

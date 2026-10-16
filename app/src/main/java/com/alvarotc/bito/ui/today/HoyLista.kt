@@ -75,6 +75,7 @@ import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.inicio.EntradaSesion
 import com.alvarotc.bito.ui.inicio.NavegacionInicio
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.sistema.BitoFormas
@@ -262,11 +263,10 @@ fun HoyLista(
     val textoRegistrado = stringResource(R.string.logged_snackbar)
     val textoLimite = stringResource(R.string.hoy_limite_pasado)
     val deshacer = stringResource(R.string.undo)
-    val respaldo = stringResource(R.string.habi_name_fallback)
     val textoCerrado = stringResource(R.string.habla_dia_cerrado)
     val textoDuerme = stringResource(R.string.habla_habi_duerme)
     val sellado = estado.todaySealed
-    val textoTarea = stringResource(HabiVoice.taskDoneRes(estado.spec.personality), estado.userName.ifBlank { respaldo })
+    val textoTarea = textoHabi(HabiVoice.conNombre(HabiVoice.taskDoneRes(estado.spec.personality), estado.userName))
 
     // Habi duerme con el día sellado: tocar a Habi solo da un tick y avisa.
     LaunchedEffect(viewModel) {

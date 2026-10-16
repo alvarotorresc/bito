@@ -36,6 +36,7 @@ import com.alvarotc.bito.ui.components.SegmentedPills
 import com.alvarotc.bito.ui.components.SpeechBubble
 import com.alvarotc.bito.ui.habi.HabiStage
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.theme.Papel
 import com.alvarotc.bito.ui.theme.Tarjeta
 import com.alvarotc.bito.ui.theme.Tinta
@@ -132,22 +133,18 @@ fun FocusScreen(
                 // from FocusViewModel's own heldDone snapshot at this point, not from a live
                 // session: Habi's own "hecha" phrase (same as Hoy's) in place of the countdown and
                 // its five buttons.
-                val fallbackName = stringResource(R.string.habi_name_fallback)
                 SpeechBubble(
                     speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
-                    text = stringResource(HabiVoice.taskDoneRes(state.spec.personality), state.userName.ifBlank { fallbackName }),
+                    text = textoHabi(HabiVoice.conNombre(HabiVoice.taskDoneRes(state.spec.personality), state.userName)),
                     modifier = Modifier.fillMaxWidth().testTag("focus-done-bubble"),
                 )
             } else if (state.running) {
                 if (justStarted) {
-                    val fallbackName = stringResource(R.string.habi_name_fallback)
                     SpeechBubble(
                         speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(state.spec.personality))),
                         text =
-                            stringResource(
-                                HabiVoice.taskFocusRes(state.spec.personality),
-                                state.userName.ifBlank { fallbackName },
-                                state.selectedMinutes,
+                            textoHabi(
+                                HabiVoice.conNombre(HabiVoice.taskFocusRes(state.spec.personality), state.userName, state.selectedMinutes),
                             ),
                         modifier = Modifier.fillMaxWidth(),
                     )

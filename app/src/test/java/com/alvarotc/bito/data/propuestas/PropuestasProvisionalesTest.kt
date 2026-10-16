@@ -1,6 +1,5 @@
 package com.alvarotc.bito.data.propuestas
 
-import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.model.DomainState
@@ -39,10 +38,12 @@ class PropuestasProvisionalesTest {
         }
 
     @Test
-    fun `without a name the fallback travels as a nested text`() =
+    fun `without a name the greeting is the nameless twin`() =
         runTest {
             val p = fuente("").propuesta(Ambito.HOY).first()!!
-            assertEquals(listOf<Any>(TextoHabi(R.string.habi_name_fallback)), (p.texto as TextoHabi.Recurso).args)
+            val texto = p.texto as TextoHabi.Recurso
+            assertEquals(HabiVoice.sinNombre(HabiVoice.greetingRes(Mood.NORMAL, Personality.NEUTRA)), texto.res)
+            assertEquals(emptyList<Any>(), texto.args)
         }
 
     @Test

@@ -197,7 +197,7 @@ class BreathingScreenTest {
         compose.waitForIdle()
 
         tag("breathing-done-bubble").assertExists()
-        text("There, champ.").assertExists()
+        text("There.").assertExists()
         text("This week: 1 session · 1 min").assertExists()
         text("Since the start: 1 session · 1 min").assertExists()
         tag("breathing-again").assertExists()

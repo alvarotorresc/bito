@@ -35,6 +35,7 @@ import com.alvarotc.bito.ui.camino.LogroUi
 import com.alvarotc.bito.ui.camino.LogrosArte
 import com.alvarotc.bito.ui.camino.ModoLogro
 import com.alvarotc.bito.ui.habi.HabiVoice
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Muelles
@@ -194,8 +195,7 @@ private fun VetaDeCola(
     personalidad: Personality,
     nombre: String,
 ) {
-    val respaldo = stringResource(R.string.habi_name_fallback)
-    val frasePerfecta = stringResource(HabiVoice.perfectDayRes(personalidad), nombre.ifBlank { respaldo })
+    val frasePerfecta = textoHabi(HabiVoice.conNombre(HabiVoice.perfectDayRes(personalidad), nombre))
     when (m.tipo) {
         TipoVeta.DIA ->
             Veta(m.tipo, stringResource(R.string.premios_dia_completo), stringResource(R.string.premios_dia_frase), m.bitos, {

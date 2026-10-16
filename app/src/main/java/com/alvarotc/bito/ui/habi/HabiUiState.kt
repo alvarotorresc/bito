@@ -42,8 +42,8 @@ data class HabiUiState(
     // What Habi is trying on before buying it — ephemeral UI state, never written to the DB
     // (docs/05 §4). Non-null both drives `spec.equipped` below AND opens the PurchaseSheet.
     val previewItemId: String? = null,
-    // Settings.userName, may be blank until M9's onboarding writes it — callers fall back to
-    // R.string.habi_name_fallback when interpolating a HabiVoice %1$s.
+    // Settings.userName, may be blank until M9's onboarding writes it — callers resolve HabiVoice
+    // texts with HabiVoice.conNombre, which uses the nameless twin when it is blank.
     val userName: String = "",
     // Pieza 1: el jardín de Habi, deducido del historial (o forzado desde el panel de depuración).
     val garden: GardenState = GardenState.INITIAL,

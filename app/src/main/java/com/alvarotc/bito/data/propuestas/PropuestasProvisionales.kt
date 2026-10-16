@@ -1,6 +1,5 @@
 package com.alvarotc.bito.data.propuestas
 
-import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.MoodEngine
@@ -39,7 +38,7 @@ class PropuestasProvisionales(
                 Ambito.HOY ->
                     Propuesta(
                         id = "saludo",
-                        texto = TextoHabi(HabiVoice.greetingRes(mood, prefs.personality), listOf(nombre(prefs.userName))),
+                        texto = HabiVoice.conNombre(HabiVoice.greetingRes(mood, prefs.personality), prefs.userName),
                         acciones = emptyList(),
                     )
                 Ambito.FICHA ->
@@ -65,6 +64,4 @@ class PropuestasProvisionales(
     ): Efecto = Efecto.Ninguno
 
     override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
-
-    private fun nombre(userName: String): Any = userName.ifBlank { TextoHabi(R.string.habi_name_fallback) }
 }

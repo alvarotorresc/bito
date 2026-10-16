@@ -11,7 +11,6 @@
     <string name="mood_label_wilted">con el ánimo bajo</string>
     <string name="mood_label_dramatic">pasándolo mal</string>
     <string name="habi_balance_points">bitos</string>
-    <string name="habi_name_fallback">campeón</string>
 
     <!--
         Textos con voz de personalidad de Habi (T13/T8, HabiVoice) — M9 draft copy — pending
@@ -67,17 +66,29 @@
     <string name="habi_home_neutra_dramatic_sin_nombre">Hace días que no te veía. Me alegra que estés aquí.</string>
 
     <string name="habi_greeting_sargento_radiant">Buen nivel, %1$s. Mantenlo.</string>
+    <string name="habi_greeting_sargento_radiant_sin_nombre">Buen nivel. Mantenlo.</string>
     <string name="habi_greeting_sargento_normal">En marcha, %1$s.</string>
+    <string name="habi_greeting_sargento_normal_sin_nombre">En marcha.</string>
     <string name="habi_greeting_sargento_wilted">%1$s, esos hábitos no se hacen solos.</string>
+    <string name="habi_greeting_sargento_wilted_sin_nombre">Esos hábitos no se hacen solos.</string>
     <string name="habi_greeting_sargento_dramatic">%1$s, se acabó el descanso.</string>
+    <string name="habi_greeting_sargento_dramatic_sin_nombre">Se acabó el descanso.</string>
     <string name="habi_greeting_cheerleader_radiant">¡Vas que vuelas, %1$s!</string>
+    <string name="habi_greeting_cheerleader_radiant_sin_nombre">¡Vas que vuelas!</string>
     <string name="habi_greeting_cheerleader_normal">Hola, %1$s. ¡A por hoy!</string>
+    <string name="habi_greeting_cheerleader_normal_sin_nombre">¡Hola! ¡A por hoy!</string>
     <string name="habi_greeting_cheerleader_wilted">Ánimo, %1$s. Hoy remontamos.</string>
+    <string name="habi_greeting_cheerleader_wilted_sin_nombre">Ánimo. Hoy remontamos.</string>
     <string name="habi_greeting_cheerleader_dramatic">¡Te echaba de menos, %1$s!</string>
+    <string name="habi_greeting_cheerleader_dramatic_sin_nombre">¡Te echaba de menos!</string>
     <string name="habi_greeting_neutra_radiant">Buena inercia, %1$s.</string>
+    <string name="habi_greeting_neutra_radiant_sin_nombre">Buena inercia.</string>
     <string name="habi_greeting_neutra_normal">Hola, %1$s.</string>
+    <string name="habi_greeting_neutra_normal_sin_nombre">Hola.</string>
     <string name="habi_greeting_neutra_wilted">%1$s, hoy es un buen día para retomar.</string>
+    <string name="habi_greeting_neutra_wilted_sin_nombre">Hoy es un buen día para retomar.</string>
     <string name="habi_greeting_neutra_dramatic">%1$s, qué bien verte de vuelta.</string>
+    <string name="habi_greeting_neutra_dramatic_sin_nombre">Qué bien verte de vuelta.</string>
 
     <string name="freezer_info_sargento">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes, %1$s.</string>
     <string name="freezer_info_sargento_sin_nombre">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes.</string>
@@ -99,8 +110,11 @@
     <string name="habi_sealed_neutra">Día sellado, %1$s. Hasta mañana.</string>
 
     <string name="habi_perfect_sargento">Día perfecto, %1$s. Así se hace. No te relajes.</string>
+    <string name="habi_perfect_sargento_sin_nombre">Día perfecto. Así se hace. No te relajes.</string>
     <string name="habi_perfect_cheerleader">¡Día perfecto, %1$s! Todo hecho, todo. Estoy que no quepo en mí.</string>
+    <string name="habi_perfect_cheerleader_sin_nombre">¡Día perfecto! Todo hecho, todo. Estoy que no quepo en mí.</string>
     <string name="habi_perfect_neutra">Día perfecto, %1$s. Todo lo exigible, cumplido.</string>
+    <string name="habi_perfect_neutra_sin_nombre">Día perfecto. Todo lo exigible, cumplido.</string>
 
     <string name="habi_perfect_notif_sargento">Día perfecto, %1$s. Impecable. Mañana igual.</string>
     <string name="habi_perfect_notif_sargento_sin_nombre">Día perfecto. Impecable. Mañana igual.</string>

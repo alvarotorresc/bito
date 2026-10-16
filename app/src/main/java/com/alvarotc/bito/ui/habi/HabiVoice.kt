@@ -9,7 +9,7 @@ import com.alvarotc.bito.domain.propuestas.TextoHabi
 /**
  * Resolves which string resource Habi speaks in each of its thirteen voiced contexts, by
  * [Personality] and (for three of the thirteen) [Mood]. `res/values{,-es}/strings_habi.xml` holds
- * the 66 mapped strings plus [R.string.habi_name_fallback] — M9 draft copy, pending architect
+ * the 66 mapped strings — M9 draft copy, pending architect
  * validation (docs/07-textos-personalidades.md).
  *
  * - [bubbleRes] — the Stats commentator's card AND the Habi screen's own bubble (T11) both used
@@ -270,6 +270,24 @@ object HabiVoice {
             R.string.freezer_info_neutra to R.string.freezer_info_neutra_sin_nombre,
             R.string.habi_task_done_neutra to R.string.habi_task_done_neutra_sin_nombre,
             R.string.habi_perfect_notif_neutra to R.string.habi_perfect_notif_neutra_sin_nombre,
+            R.string.habi_greeting_sargento_radiant to R.string.habi_greeting_sargento_radiant_sin_nombre,
+            R.string.habi_greeting_sargento_normal to R.string.habi_greeting_sargento_normal_sin_nombre,
+            R.string.habi_greeting_sargento_wilted to R.string.habi_greeting_sargento_wilted_sin_nombre,
+            R.string.habi_greeting_sargento_dramatic to R.string.habi_greeting_sargento_dramatic_sin_nombre,
+            R.string.habi_greeting_cheerleader_radiant to R.string.habi_greeting_cheerleader_radiant_sin_nombre,
+            R.string.habi_greeting_cheerleader_normal to R.string.habi_greeting_cheerleader_normal_sin_nombre,
+            R.string.habi_greeting_cheerleader_wilted to R.string.habi_greeting_cheerleader_wilted_sin_nombre,
+            R.string.habi_greeting_cheerleader_dramatic to R.string.habi_greeting_cheerleader_dramatic_sin_nombre,
+            R.string.habi_greeting_neutra_radiant to R.string.habi_greeting_neutra_radiant_sin_nombre,
+            R.string.habi_greeting_neutra_normal to R.string.habi_greeting_neutra_normal_sin_nombre,
+            R.string.habi_greeting_neutra_wilted to R.string.habi_greeting_neutra_wilted_sin_nombre,
+            R.string.habi_greeting_neutra_dramatic to R.string.habi_greeting_neutra_dramatic_sin_nombre,
+            R.string.habi_perfect_sargento to R.string.habi_perfect_sargento_sin_nombre,
+            R.string.habi_perfect_cheerleader to R.string.habi_perfect_cheerleader_sin_nombre,
+            R.string.habi_perfect_neutra to R.string.habi_perfect_neutra_sin_nombre,
+            R.string.onb_personality_preview_sargento to R.string.onb_personality_preview_sargento_sin_nombre,
+            R.string.onb_personality_preview_cheerleader to R.string.onb_personality_preview_cheerleader_sin_nombre,
+            R.string.onb_personality_preview_neutra to R.string.onb_personality_preview_neutra_sin_nombre,
         )
 
     @StringRes

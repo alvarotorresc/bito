@@ -46,7 +46,7 @@ class EfectosHoyTest {
             FuenteFalsa(
                 Propuesta(
                     "p",
-                    TextoHabi(R.string.habi_name_fallback),
+                    TextoHabi(R.string.habla_habi_duerme),
                     listOf(Accion(respuesta, TextoHabi(R.string.habla_vale), principal = true)),
                 ),
             )

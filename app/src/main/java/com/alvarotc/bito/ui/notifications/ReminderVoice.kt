@@ -73,6 +73,33 @@ object ReminderVoice {
                 }
         }
 
+    /** [titleRes] para quien no ha dado su nombre: la misma frase sin apodo y sin `%1$s`. */
+    @StringRes
+    fun titleSinNombreRes(
+        personality: Personality,
+        flavor: ReminderFlavor,
+    ): Int =
+        when (personality) {
+            Personality.SARGENTO ->
+                when (flavor) {
+                    ReminderFlavor.MORNING -> R.string.notif_reminder_title_sargento_morning_sin_nombre
+                    ReminderFlavor.AFTERNOON -> R.string.notif_reminder_title_sargento_afternoon_sin_nombre
+                    ReminderFlavor.EVENING -> R.string.notif_reminder_title_sargento_evening_sin_nombre
+                }
+            Personality.CHEERLEADER ->
+                when (flavor) {
+                    ReminderFlavor.MORNING -> R.string.notif_reminder_title_cheerleader_morning_sin_nombre
+                    ReminderFlavor.AFTERNOON -> R.string.notif_reminder_title_cheerleader_afternoon_sin_nombre
+                    ReminderFlavor.EVENING -> R.string.notif_reminder_title_cheerleader_evening_sin_nombre
+                }
+            Personality.NEUTRA ->
+                when (flavor) {
+                    ReminderFlavor.MORNING -> R.string.notif_reminder_title_neutra_morning_sin_nombre
+                    ReminderFlavor.AFTERNOON -> R.string.notif_reminder_title_neutra_afternoon_sin_nombre
+                    ReminderFlavor.EVENING -> R.string.notif_reminder_title_neutra_evening_sin_nombre
+                }
+        }
+
     @PluralsRes
     fun bodyRes(
         personality: Personality,
@@ -108,6 +135,15 @@ object ReminderVoice {
             Personality.NEUTRA -> R.plurals.notif_tasks_title_neutra
         }
 
+    /** [tasksTitleRes] sin nombre: `%2$d` sigue siendo el número de avisos (pásese un primer argumento vacío). */
+    @PluralsRes
+    fun tasksTitleSinNombreRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.plurals.notif_tasks_title_sargento_sin_nombre
+            Personality.CHEERLEADER -> R.plurals.notif_tasks_title_cheerleader_sin_nombre
+            Personality.NEUTRA -> R.plurals.notif_tasks_title_neutra_sin_nombre
+        }
+
     /** M11: el titulo del recordatorio diario de respirar. */
     @StringRes
     fun breathingTitleRes(personality: Personality): Int =
@@ -115,6 +151,15 @@ object ReminderVoice {
             Personality.SARGENTO -> R.string.notif_breathing_title_sargento
             Personality.CHEERLEADER -> R.string.notif_breathing_title_cheerleader
             Personality.NEUTRA -> R.string.notif_breathing_title_neutra
+        }
+
+    /** [breathingTitleRes] para quien no ha dado su nombre. */
+    @StringRes
+    fun breathingTitleSinNombreRes(personality: Personality): Int =
+        when (personality) {
+            Personality.SARGENTO -> R.string.notif_breathing_title_sargento_sin_nombre
+            Personality.CHEERLEADER -> R.string.notif_breathing_title_cheerleader_sin_nombre
+            Personality.NEUTRA -> R.string.notif_breathing_title_neutra_sin_nombre
         }
 
     /** M11: el cuerpo del recordatorio diario de respirar. */

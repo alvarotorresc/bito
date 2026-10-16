@@ -32,14 +32,14 @@ class TextoHabiUiTest {
     val compose = createComposeRule()
 
     @Test
-    fun `greeting shows the resolved fallback name, not the placeholder`() {
+    fun `a nested text argument is resolved, not left as a placeholder`() {
         val context = RuntimeEnvironment.getApplication() as Context
         val saludo = R.string.habi_greeting_neutra_normal
-        val esperado = context.getString(saludo, context.getString(R.string.habi_name_fallback))
+        val esperado = context.getString(saludo, context.getString(R.string.habi_balance_points))
         assertTrue(!esperado.contains("%1\$s"))
 
         compose.setContent {
-            Text(textoHabi(TextoHabi(saludo, listOf(TextoHabi(R.string.habi_name_fallback)))))
+            Text(textoHabi(TextoHabi(saludo, listOf(TextoHabi(R.string.habi_balance_points)))))
         }
 
         compose.onNodeWithText(esperado).assertExists()

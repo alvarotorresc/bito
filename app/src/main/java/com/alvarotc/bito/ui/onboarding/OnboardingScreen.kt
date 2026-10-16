@@ -84,6 +84,7 @@ import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.habitform.HabitPreset
 import com.alvarotc.bito.ui.habitform.labelRes
 import com.alvarotc.bito.ui.icons.BitoIcons
+import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.settings.AppLocale
 import com.alvarotc.bito.ui.theme.Borde
 import com.alvarotc.bito.ui.theme.Hoja
@@ -377,8 +378,8 @@ private fun StoryPagerScaffold(
                                 // a still-blank name gets rejected, by snapping back to this same
                                 // page instead of calling onNext(). Without this, dragging past
                                 // NAME with an empty field would still advance the step, and
-                                // finish() would persist userName = "" (every voiced string falls
-                                // back to "campeón" forever, exactly what 7e exists to prevent).
+                                // finish() would persist userName = "" (every voiced string would
+                                // lose the name forever, exactly what 7e exists to prevent).
                                 if (step == OnboardingStep.NAME && latestState.value.name.trim().isEmpty()) {
                                     // Child coroutine, not a direct suspending call here: a fast
                                     // second drag preempts this via HorizontalPager's own
@@ -663,10 +664,9 @@ private fun PersonalityStepContent(
         Spacer(Modifier.height(16.dp))
         HabiHeroCircle(personality = personality)
         Spacer(Modifier.height(16.dp))
-        val fallbackName = stringResource(R.string.habi_name_fallback)
         SpeechBubble(
             speaker = stringResource(R.string.habi_speaker, stringResource(HabiVoice.labelRes(personality))),
-            text = stringResource(HabiVoice.onboardingPreviewRes(personality), name.trim().ifEmpty { fallbackName }),
+            text = textoHabi(HabiVoice.conNombre(HabiVoice.onboardingPreviewRes(personality), name.trim())),
             modifier = Modifier.fillMaxWidth().testTag("onb-personality-bubble"),
         )
         Spacer(Modifier.height(20.dp))

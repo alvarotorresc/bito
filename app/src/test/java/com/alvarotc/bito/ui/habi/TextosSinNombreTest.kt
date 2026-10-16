@@ -64,6 +64,29 @@ class TextosSinNombreTest {
     }
 
     @Test
+    fun `greetings, perfect day sheets and onboarding previews have a nameless twin`() {
+        val textos =
+            Personality.entries.flatMap { p ->
+                Mood.entries.map { m -> HabiVoice.greetingRes(m, p) } +
+                    listOf(HabiVoice.perfectDayRes(p), HabiVoice.onboardingPreviewRes(p))
+            }
+        assertEquals(18, textos.size)
+        val campeon = Regex("campe[oó]n\\w*|champ\\w*", RegexOption.IGNORE_CASE)
+        for (res in textos) {
+            val gemelo = HabiVoice.sinNombre(res)
+            assertNotNull("${nombre(res)} no tiene gemelo sin nombre", gemelo)
+            assertEquals("${nombre(res)}_sin_nombre", nombre(gemelo!!))
+            for (qualifiers in listOf("en", "es")) {
+                val texto = contextoEn(qualifiers).getString(gemelo)
+                assertFalse("[$qualifiers] ${nombre(gemelo)} lleva hueco", texto.contains("%1\$s"))
+                assertFalse("[$qualifiers] ${nombre(gemelo)} campeon", campeon.containsMatchIn(texto))
+                assertFalse("[$qualifiers] ${nombre(gemelo)} raya larga", texto.contains('—'))
+                if (nombre(gemelo).contains("neutra")) assertFalse("[$qualifiers] ${nombre(gemelo)} exclamacion", texto.contains('!'))
+            }
+        }
+    }
+
+    @Test
     fun `sinNombre of a text without a twin is null`() {
         assertEquals(null, HabiVoice.sinNombre(R.string.habi_form_prompt_neutra))
     }

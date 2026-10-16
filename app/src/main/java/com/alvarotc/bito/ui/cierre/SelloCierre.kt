@@ -198,13 +198,30 @@ internal fun SelloCierre(
 private fun fraseSello(datos: DatosSello): String {
     val bolsa = if (datos.perfecto) Bolsa.CIE_SELLO_PERFECTO else Bolsa.CIE_SELLO
     val coletilla = coletillas[datos.animo]
+    val conNombre = datos.nombre.isNotBlank()
     val trozos =
         listOfNotNull(
-            ClaveTrozo(bolsa, datos.voz, indice(bolsa, datos)),
+            ClaveTrozo(bolsa, datos.voz, indiceSello(bolsa, datos, conNombre)),
             coletilla?.let { ClaveTrozo(it, datos.voz, indice(it, datos)) },
         )
-    val nombre = datos.nombre.ifBlank { stringResource(R.string.habi_name_fallback) }
-    return textoHabi(TextoHabi.Frase(trozos, mapOf(Hueco.NOMBRE to ValorHueco.Texto(nombre))))
+    val huecos = if (conNombre) mapOf(Hueco.NOMBRE to ValorHueco.Texto(datos.nombre)) else emptyMap()
+    return textoHabi(TextoHabi.Frase(trozos, huecos))
+}
+
+/**
+ * El índice de la frase del sello. Sin nombre solo cuentan las frases que no lo piden, para que el sello nunca
+ * se quede sin frase ni llame a nadie por un apodo.
+ */
+@Composable
+private fun indiceSello(
+    bolsa: Bolsa,
+    datos: DatosSello,
+    conNombre: Boolean,
+): Int {
+    if (conNombre) return indice(bolsa, datos)
+    val frases = stringArrayResource(BolsasRecursos.array(bolsa, datos.voz))
+    val sinNombre = frases.indices.filter { !frases[it].contains("{${Hueco.NOMBRE.clave}}") }
+    return if (sinNombre.isEmpty()) 0 else sinNombre[abs(datos.dia) % sinNombre.size]
 }
 
 /** El mismo índice que [AnimoCierre]: la frase del mismo día. */

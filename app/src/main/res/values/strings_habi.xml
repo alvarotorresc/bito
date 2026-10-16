@@ -11,7 +11,6 @@
     <string name="mood_label_wilted">feeling low</string>
     <string name="mood_label_dramatic">having a hard time</string>
     <string name="habi_balance_points">bitos</string>
-    <string name="habi_name_fallback">champ</string>
 
     <!--
         Habi's personality-voiced texts (T13/T8, HabiVoice) — M9 draft copy — pending architect
@@ -67,17 +66,29 @@
     <string name="habi_home_neutra_dramatic_sin_nombre">It\'s been a few days. Good to see you.</string>
 
     <string name="habi_greeting_sargento_radiant">Sharp, %1$s. Stay sharp.</string>
+    <string name="habi_greeting_sargento_radiant_sin_nombre">Sharp. Stay sharp.</string>
     <string name="habi_greeting_sargento_normal">Let\'s move, %1$s.</string>
+    <string name="habi_greeting_sargento_normal_sin_nombre">Let\'s move.</string>
     <string name="habi_greeting_sargento_wilted">%1$s, those habits won\'t do themselves.</string>
+    <string name="habi_greeting_sargento_wilted_sin_nombre">Those habits won\'t do themselves.</string>
     <string name="habi_greeting_sargento_dramatic">%1$s, break\'s over.</string>
+    <string name="habi_greeting_sargento_dramatic_sin_nombre">Break\'s over.</string>
     <string name="habi_greeting_cheerleader_radiant">You\'re on fire, %1$s!</string>
+    <string name="habi_greeting_cheerleader_radiant_sin_nombre">You\'re on fire!</string>
     <string name="habi_greeting_cheerleader_normal">Hey, %1$s! Today\'s ours.</string>
+    <string name="habi_greeting_cheerleader_normal_sin_nombre">Hey! Today\'s ours.</string>
     <string name="habi_greeting_cheerleader_wilted">Chin up, %1$s. Comeback starts today.</string>
+    <string name="habi_greeting_cheerleader_wilted_sin_nombre">Chin up. Comeback starts today.</string>
     <string name="habi_greeting_cheerleader_dramatic">Missed you, %1$s!</string>
+    <string name="habi_greeting_cheerleader_dramatic_sin_nombre">Missed you!</string>
     <string name="habi_greeting_neutra_radiant">Good momentum, %1$s.</string>
+    <string name="habi_greeting_neutra_radiant_sin_nombre">Good momentum.</string>
     <string name="habi_greeting_neutra_normal">Hi, %1$s.</string>
+    <string name="habi_greeting_neutra_normal_sin_nombre">Hi.</string>
     <string name="habi_greeting_neutra_wilted">%1$s, today\'s a good day to restart.</string>
+    <string name="habi_greeting_neutra_wilted_sin_nombre">Today\'s a good day to restart.</string>
     <string name="habi_greeting_neutra_dramatic">%1$s, welcome back.</string>
+    <string name="habi_greeting_neutra_dramatic_sin_nombre">Welcome back.</string>
 
     <string name="freezer_info_sargento">One freezer, one habit, one day. See a red day on the calendar? Tap it and use it. They\'re bought in the store. Don\'t waste them, %1$s.</string>
     <string name="freezer_info_sargento_sin_nombre">One freezer, one habit, one day. See a red day on the calendar? Tap it and use it. They\'re bought in the store. Don\'t waste them.</string>
@@ -99,8 +110,11 @@
     <string name="habi_sealed_neutra">Day sealed, %1$s. See you tomorrow.</string>
 
     <string name="habi_perfect_sargento">Perfect day, %1$s. That\'s how it\'s done. Don\'t get comfortable.</string>
+    <string name="habi_perfect_sargento_sin_nombre">Perfect day. That\'s how it\'s done. Don\'t get comfortable.</string>
     <string name="habi_perfect_cheerleader">A perfect day, %1$s! Every single thing, done. I could burst.</string>
+    <string name="habi_perfect_cheerleader_sin_nombre">A perfect day! Every single thing, done. I could burst.</string>
     <string name="habi_perfect_neutra">Perfect day, %1$s. Everything required, done.</string>
+    <string name="habi_perfect_neutra_sin_nombre">Perfect day. Everything required, done.</string>
 
     <string name="habi_perfect_notif_sargento">Perfect day, %1$s. Flawless. Same again tomorrow.</string>
     <string name="habi_perfect_notif_sargento_sin_nombre">Perfect day. Flawless. Same again tomorrow.</string>

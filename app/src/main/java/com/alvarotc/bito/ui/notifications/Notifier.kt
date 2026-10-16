@@ -71,8 +71,12 @@ object Notifier {
         minutesOfDay: Int,
     ) {
         val flavor = ReminderVoice.flavorOf(minutesOfDay)
-        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
-        val title = context.getString(ReminderVoice.titleRes(personality, flavor), name)
+        val title =
+            if (userName.isBlank()) {
+                context.getString(ReminderVoice.titleSinNombreRes(personality, flavor))
+            } else {
+                context.getString(ReminderVoice.titleRes(personality, flavor), userName)
+            }
         val pendingCount = payload.pendingNames.size
         val names = payload.pendingNames.take(ReminderVoice.MAX_NAMED_PENDING).joinToString(", ")
         val body =
@@ -281,8 +285,12 @@ object Notifier {
         personality: Personality,
         userName: String,
     ) {
-        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
-        val title = context.resources.getQuantityString(ReminderVoice.tasksTitleRes(personality), pendingCount, name, pendingCount)
+        val title =
+            if (userName.isBlank()) {
+                context.resources.getQuantityString(ReminderVoice.tasksTitleSinNombreRes(personality), pendingCount, "", pendingCount)
+            } else {
+                context.resources.getQuantityString(ReminderVoice.tasksTitleRes(personality), pendingCount, userName, pendingCount)
+            }
         val named = titles.take(ReminderVoice.MAX_NAMED_PENDING)
         val remaining = pendingCount - named.size
         val body =
@@ -314,10 +322,15 @@ object Notifier {
         personality: Personality,
         userName: String,
     ) {
-        val name = userName.ifBlank { context.getString(R.string.habi_name_fallback) }
+        val title =
+            if (userName.isBlank()) {
+                context.getString(ReminderVoice.breathingTitleSinNombreRes(personality))
+            } else {
+                context.getString(ReminderVoice.breathingTitleRes(personality), userName)
+            }
         val builder =
             baseBuilder(context, NotificationChannels.REMINDERS)
-                .setContentTitle(context.getString(ReminderVoice.breathingTitleRes(personality), name))
+                .setContentTitle(title)
                 .setContentText(context.getString(ReminderVoice.breathingBodyRes(personality)))
                 .setLargeIcon(iconoHabi(context, personality))
                 .setContentIntent(contentIntent(context, "breathing", 5))

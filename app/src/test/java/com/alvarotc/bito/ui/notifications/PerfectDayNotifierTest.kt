@@ -42,8 +42,8 @@ class PerfectDayNotifierTest {
         assertTrue(PerfectDayNotifier.bodyFor(context, named).contains("Álvaro"))
 
         val blank = Settings(userName = "", personality = Personality.SARGENTO)
-        val fallback = context.getString(R.string.habi_name_fallback)
-        assertTrue(PerfectDayNotifier.bodyFor(context, blank).contains(fallback))
+        val sinNombre = context.getString(R.string.habi_perfect_notif_sargento_sin_nombre)
+        assertEquals(sinNombre, PerfectDayNotifier.bodyFor(context, blank))
     }
 
     @Test

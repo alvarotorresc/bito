@@ -113,11 +113,7 @@ class TrayRefresherTest {
             ?.toString()
 
     /** The NEUTRA morning title an unnamed user gets — the default-settings voice of a 10:00 refresh. */
-    private fun morningTitleForFallbackName(): String =
-        context.getString(
-            R.string.notif_reminder_title_neutra_morning,
-            context.getString(R.string.habi_name_fallback),
-        )
+    private fun morningTitleForFallbackName(): String = context.getString(R.string.notif_reminder_title_neutra_morning_sin_nombre)
 
     @Test
     fun `a pending payload only refreshes an already shown notification`() =

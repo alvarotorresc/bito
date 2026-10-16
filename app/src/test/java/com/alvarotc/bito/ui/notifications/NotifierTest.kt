@@ -76,6 +76,13 @@ class NotifierTest {
     }
 
     @Test
+    fun `a blank name gets the nameless tasks title`() {
+        Notifier.showTasks(context, listOf("A", "B"), 2, Personality.NEUTRA, "")
+
+        assertEquals("You have 2 tasks.", postedTitle())
+    }
+
+    @Test
     fun `notices left unnamed add the more-tail`() {
         Notifier.showTasks(
             context,
@@ -104,11 +111,11 @@ class NotifierTest {
     }
 
     @Test
-    fun `a blank name falls back to Habi's word for the user`() {
+    fun `a blank name gets the nameless title`() {
         Notifier.showBreathing(context, Personality.SARGENTO, "")
 
         val notification = shadowOf(notificationManager).getNotification(Notifier.BREATHING_ID)!!
         val title = notification.extras.getCharSequence(Notification.EXTRA_TITLE).toString()
-        assertEquals("champ, two minutes.", title)
+        assertEquals("Two minutes.", title)
     }
 }

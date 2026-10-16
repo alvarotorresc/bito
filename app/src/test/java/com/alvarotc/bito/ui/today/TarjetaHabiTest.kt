@@ -78,7 +78,7 @@ class TarjetaHabiTest {
 
     @Test
     fun `a greeting without actions shows no buttons`() {
-        montar(FuenteFalsa(Propuesta("saludo", texto(R.string.habi_name_fallback), emptyList())))
+        montar(FuenteFalsa(Propuesta("saludo", texto(R.string.habla_habi_duerme), emptyList())))
         rule.onNodeWithTag("tarjeta-habi").assertIsDisplayed()
         rule.onAllNodesWithText("Vale").assertCountEquals(0)
         rule.onAllNodesWithText("Ahora").assertCountEquals(0)
@@ -93,7 +93,7 @@ class TarjetaHabiTest {
 
     @Test
     fun `the three answers are in a row and each one answers`() {
-        val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habi_name_fallback), todas))
+        val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habla_habi_duerme), todas))
         montar(fuente)
         val vale = rule.onNodeWithText("Vale").getBoundsInRoot()
         val hoyNo = rule.onNodeWithText("Hoy no").getBoundsInRoot()
@@ -112,7 +112,7 @@ class TarjetaHabiTest {
             FuenteFalsa(
                 Propuesta(
                     "p",
-                    texto(R.string.habi_name_fallback),
+                    texto(R.string.habla_habi_duerme),
                     listOf(
                         Accion(Respuesta.CERRAR_DIA, TextoHabi(R.string.today_close_day), principal = true),
                         Accion(Respuesta.LUEGO, TextoHabi(R.string.task_not_today)),
@@ -134,7 +134,7 @@ class TarjetaHabiTest {
             FuenteFalsa(
                 Propuesta(
                     "p",
-                    texto(R.string.habi_name_fallback),
+                    texto(R.string.habla_habi_duerme),
                     todas.map { if (it.principal) it.copy(etiqueta = texto(R.string.hoy_ahora)) else it },
                 ),
             ),
@@ -149,7 +149,7 @@ class TarjetaHabiTest {
         val fuente = FuenteFalsa(null)
         montar(fuente, sonido)
         assertTrue(Snd.BROTE !in sonido.snds())
-        fuente.flujo.value = Propuesta("nueva", texto(R.string.habi_name_fallback), todas)
+        fuente.flujo.value = Propuesta("nueva", texto(R.string.habla_habi_duerme), todas)
         rule.waitForIdle()
         rule.mainClock.advanceTimeBy(400)
         rule.onNodeWithTag("tarjeta-habi").assertIsDisplayed()
@@ -158,20 +158,20 @@ class TarjetaHabiTest {
 
     @Test
     fun `Vale relays to the new text`() {
-        val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habi_name_fallback), todas))
+        val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habla_habi_duerme), todas))
         montar(fuente)
-        rule.onNodeWithText("campeón").assertIsDisplayed()
+        rule.onNodeWithText("Habi duerme. Mañana más.").assertIsDisplayed()
         rule.onNodeWithText("Vale").performClick()
         fuente.flujo.value = Propuesta("dos", texto(R.string.hoy_tu_dia), emptyList())
         rule.waitForIdle()
         rule.mainClock.advanceTimeBy(600)
         rule.onNodeWithText("Tu día").assertIsDisplayed()
-        rule.onAllNodesWithText("campeón").assertCountEquals(0)
+        rule.onAllNodesWithText("Habi duerme. Mañana más.").assertCountEquals(0)
     }
 
     @Test
     fun `Hoy no swaps the card for the short line without buttons`() {
-        val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habi_name_fallback), todas))
+        val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habla_habi_duerme), todas))
         montar(fuente)
         rule.onNodeWithText("Hoy no").performClick()
         fuente.flujo.value = Propuesta("corta", texto(R.string.hoy_tu_dia), emptyList())
@@ -183,7 +183,7 @@ class TarjetaHabiTest {
 
     @Test
     fun `now in the list navigates to the session route`() {
-        val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habi_name_fallback), todas, destino = Destino.Tarea("t1")))
+        val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habla_habi_duerme), todas, destino = Destino.Tarea("t1")))
         fuente.efecto = Efecto.Sesion(Destino.Tarea("t1"))
         val b = BancoHoy(rule, tmp).also { banco = it }
         b.preparar(fuente)
@@ -197,7 +197,7 @@ class TarjetaHabiTest {
     @Test
     fun `a proposal that arrives after answering and an empty gap sprouts again`() {
         val sonido = SonidoGrabado()
-        val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habi_name_fallback), todas))
+        val fuente = FuenteFalsa(Propuesta("uno", texto(R.string.habla_habi_duerme), todas))
         montar(fuente, sonido)
         rule.onNodeWithText("Vale").performClick()
         val tras = sonido.snds().count { it == Snd.BROTE }
@@ -229,7 +229,7 @@ class TarjetaHabiTest {
 
     @Test
     fun `buttons are at least 44dp tall`() {
-        montar(FuenteFalsa(Propuesta("p", texto(R.string.habi_name_fallback), todas)))
+        montar(FuenteFalsa(Propuesta("p", texto(R.string.habla_habi_duerme), todas)))
         listOf("habi-vale", "habi-ahora", "habi-hoy_no").forEach {
             rule.onNodeWithTag(it).assertHeightIsAtLeast(44.dp)
         }
@@ -243,7 +243,7 @@ class TarjetaHabiTest {
                 Accion(Respuesta.OTRA_HORA, TextoHabi(R.string.habla_otra_hora)),
                 Accion(Respuesta.LUEGO, TextoHabi(R.string.habla_todavia_no)),
             )
-        montar(FuenteFalsa(Propuesta("p", texto(R.string.habi_name_fallback), largas)))
+        montar(FuenteFalsa(Propuesta("p", texto(R.string.habla_habi_duerme), largas)))
         val tarjeta = rule.onNodeWithTag("tarjeta-habi").getBoundsInRoot()
         listOf("habi-ahora", "habi-otra_hora", "habi-luego").forEach {
             val caja = rule.onNodeWithTag(it).getBoundsInRoot()
@@ -257,7 +257,7 @@ class TarjetaHabiTest {
         val tacto = TactoGrabado()
         val fuente =
             FuenteFalsa(
-                Propuesta("p", texto(R.string.habi_name_fallback), listOf(Accion(Respuesta.LUEGO, TextoHabi(R.string.habla_luego)))),
+                Propuesta("p", texto(R.string.habla_habi_duerme), listOf(Accion(Respuesta.LUEGO, TextoHabi(R.string.habla_luego)))),
             )
         montarConTacto(fuente, sonido, tacto)
         rule.onNodeWithTag("habi-luego").performClick()
@@ -270,7 +270,7 @@ class TarjetaHabiTest {
     fun `a Vale without an hour is the hard day one with tic and confirm`() {
         val sonido = SonidoGrabado()
         val tacto = TactoGrabado()
-        val fuente = FuenteFalsa(Propuesta("DIA_DURO:h1:20251015", texto(R.string.habi_name_fallback), todas, hora = null))
+        val fuente = FuenteFalsa(Propuesta("DIA_DURO:h1:20251015", texto(R.string.habla_habi_duerme), todas, hora = null))
         montarConTacto(fuente, sonido, tacto)
         rule.onNodeWithTag("habi-vale").performClick()
         assertTrue(Snd.TIC in sonido.snds())
@@ -281,7 +281,7 @@ class TarjetaHabiTest {
     fun `a Vale with an hour keeps the sprout sound of the relay`() {
         val sonido = SonidoGrabado()
         val tacto = TactoGrabado()
-        val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habi_name_fallback), todas, hora = 870))
+        val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habla_habi_duerme), todas, hora = 870))
         montarConTacto(fuente, sonido, tacto)
         rule.onNodeWithTag("habi-vale").performClick()
         assertTrue(Snd.BROTE in sonido.snds())
@@ -294,7 +294,7 @@ class TarjetaHabiTest {
             FuenteFalsa(
                 Propuesta(
                     "p",
-                    texto(R.string.habi_name_fallback),
+                    texto(R.string.habla_habi_duerme),
                     listOf(Accion(Respuesta.HECHO, TextoHabi(R.string.habla_hecho), principal = true)),
                 ),
             )
@@ -306,7 +306,7 @@ class TarjetaHabiTest {
         rule.mainClock.advanceTimeBy(40)
         // La tarjeta sigue encogiéndose, pero ya sin la frase ni el botón.
         rule.onNodeWithTag("tarjeta-habi").assertExists()
-        rule.onAllNodesWithText("campeón").assertCountEquals(0)
+        rule.onAllNodesWithText("Habi duerme. Mañana más.").assertCountEquals(0)
         rule.onAllNodesWithTag("habi-hecho").assertCountEquals(0)
     }
 
@@ -314,7 +314,7 @@ class TarjetaHabiTest {
     fun `a Vale without an hour in another situation does not fold the buttons`() {
         val sonido = SonidoGrabado()
         val tacto = TactoGrabado()
-        val fuente = FuenteFalsa(Propuesta("HABITO:h1:20251015", texto(R.string.habi_name_fallback), todas, hora = null))
+        val fuente = FuenteFalsa(Propuesta("HABITO:h1:20251015", texto(R.string.habla_habi_duerme), todas, hora = null))
         montarConTacto(fuente, sonido, tacto)
         rule.onNodeWithTag("habi-vale").performClick()
         assertTrue(Snd.TIC !in sonido.snds())
@@ -329,7 +329,7 @@ class TarjetaHabiTest {
             FuenteFalsa(
                 Propuesta(
                     "VUELTA:h1:20251015",
-                    texto(R.string.habi_name_fallback),
+                    texto(R.string.habla_habi_duerme),
                     listOf(Accion(Respuesta.HECHO, TextoHabi(R.string.habla_hecho), principal = true)),
                 ),
             )
@@ -362,7 +362,7 @@ class TarjetaHabiTest {
             FuenteFalsa(
                 Propuesta(
                     "DIA_DURO:h1:20251015",
-                    texto(R.string.habi_name_fallback),
+                    texto(R.string.habla_habi_duerme),
                     listOf(Accion(Respuesta.HECHO, TextoHabi(R.string.habla_hecho), principal = true)),
                 ),
             )
