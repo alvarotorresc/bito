@@ -233,8 +233,10 @@ class PremiosEnInicioTest {
     fun `the streak vein shows the habit name and its count`() {
         montar()
         runBlocking { db.habitDao().upsert(habitEntity(id = "make-bed", name = "Hacer la cama")) }
-        esperar { true }
-        avanzar(200)
+        // El estado del dominio combina un flujo de Room por tabla y cada uno vuelve a leer por su cuenta: si la fila del
+        // libro llegara antes que el hábito, la veta se derivaría sin nombre y no se rehace. Se da tiempo real a que el
+        // hábito llegue al modelo antes de escribir el libro (antes bastaba un fotograma y fallaba con la suite cargada).
+        dejarPasar()
         insertar(fila("r", 11, PointsReason.STREAK_MILESTONE, "make-bed:7", 5))
         esperar { hay("veta-RACHA") }
         rule.onNodeWithTag("veta-RACHA").assertExists()
