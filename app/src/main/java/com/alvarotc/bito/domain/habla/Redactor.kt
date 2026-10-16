@@ -50,7 +50,8 @@ object Redactor {
         if (apertura != null && Hueco.NOMBRE in apertura.huecos && nucleos.none { Hueco.NOMBRE !in it.huecos }) {
             apertura = elegirRotando(aperturas.sinNombre(), usos.de(bolsaApertura), azar)
         }
-        val nucleosPosibles = if (apertura != null && Hueco.NOMBRE in apertura.huecos) nucleos.sinNombre() else nucleos
+        // §5.13: con apertura, el nombre solo puede ir en ella; sin apertura, en el núcleo.
+        val nucleosPosibles = if (apertura != null) nucleos.sinNombre().ifEmpty { nucleos } else nucleos
         val nucleo = elegirNucleo(nucleosPosibles, usos.de(bolsaNucleo), ctx.hoy, azar)
 
         // Cierre o recuerdo.

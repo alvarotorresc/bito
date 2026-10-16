@@ -29,7 +29,7 @@ class RedactorTest {
     fun `same seed same phrase`() {
         val a = Redactor.redactar(cand, ctx(), catalogo, Memoria(), Random(42))
         val b = Redactor.redactar(cand, ctx(), catalogo, Memoria(), Random(42))
-        assertEquals(a.frase, b.frase)
+        assertEquals(a, b)
     }
 
     @Test
@@ -128,6 +128,24 @@ class RedactorTest {
             assertTrue(r.indice(Bolsa.AP_MANANA)!! >= 2)
             assertTrue(r.indice(Bolsa.NU_AYER_ESCAPO)!! >= 2)
             assertNull(r.frase.huecos[Hueco.NOMBRE])
+        }
+    }
+
+    @Test
+    fun `with an opening the nucleus never carries the name`() {
+        val conNombre =
+            (0 until 4).map {
+                TrozoInfo(
+                    it,
+                    emptySet(),
+                    if (it < 2) setOf(Hueco.NOMBRE, Hueco.HABITO) else setOf(Hueco.HABITO),
+                )
+            }
+        val cat = catalogoFalso(Bolsa.NU_AYER_ESCAPO to conNombre, Bolsa.AP_MANANA to lisos(4))
+        repeat(300) { semilla ->
+            val r = Redactor.redactar(cand, ctx(), cat, Memoria(), Random(semilla), forzarApertura = true)
+            assertTrue(r.indice(Bolsa.AP_MANANA) != null)
+            assertTrue("semilla $semilla", r.indice(Bolsa.NU_AYER_ESCAPO)!! >= 2)
         }
     }
 
