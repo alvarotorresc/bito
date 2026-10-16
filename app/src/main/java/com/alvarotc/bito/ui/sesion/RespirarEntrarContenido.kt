@@ -103,6 +103,7 @@ fun RespirarEntrarContenido(
             Modifier.testTag("e-saltar"),
             estilo = EstiloBoton.FANTASMA,
             alto = ALTO_SALTAR,
+            pildoraMock = true,
         )
     }
 }

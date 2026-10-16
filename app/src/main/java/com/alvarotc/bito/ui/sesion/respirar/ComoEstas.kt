@@ -125,6 +125,7 @@ fun ComoEstas(
                 alPulsar = { if (elegida == null) alSaltar() },
                 modifier = Modifier.testTag("a-saltar"),
                 estilo = EstiloBoton.FANTASMA,
+                pildoraMock = true,
             )
         }
     }

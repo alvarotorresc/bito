@@ -188,4 +188,26 @@ class InicioRespirarFocoTest {
 
         assertTrue("sumar:10" in motor.llamadas)
     }
+
+    /** El estilo con que se pinta el texto del botón con ese tag (su semántica fusiona la del texto). */
+    private fun estiloDe(tag: String): androidx.compose.ui.text.TextStyle {
+        val resultado = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule.onNodeWithTag(tag).fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult]
+            .action?.invoke(resultado)
+        return resultado.single().layoutInput.style
+    }
+
+    @Test
+    fun `He terminado is the dark mock pill at 16 sp and Saltar is the ghost one at 14 sp`() {
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-hecho") }
+        val hecho = estiloDe("f-hecho")
+        assertEquals(16f, hecho.fontSize.value, 0f)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFF4EAD8), hecho.color)
+
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 1_000L)
+        esperar { existe("e-saltar") }
+        assertEquals(14f, estiloDe("e-saltar").fontSize.value, 0f)
+    }
 }

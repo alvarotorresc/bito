@@ -46,6 +46,8 @@ enum class EstiloBoton { PRINCIPAL, NORMAL, FANTASMA, PELIGRO, BORRAR }
  * Píldora (G32). [apagado] no deshabilita: se puede pulsar y llama a [alPulsarApagado] para que la
  * pantalla explique qué falta (D13). [progreso] (0 a 1) pinta un relleno de agua de izquierda a derecha.
  * [llena] estira la píldora al ancho que le da quien la contiene (`.btnrow.llena .pill{flex:1}`).
+ * [pildoraMock] es la `.pill` de los mockups de la sesión: letra de 14 sp (16 sp con [llena], como
+ * `.btnrow.llena .pill`) y, en [EstiloBoton.PRINCIPAL], de tinta con letra clara (`.pill.main`).
  */
 @Composable
 fun Boton(
@@ -59,13 +61,14 @@ fun Boton(
     alto: Dp = Medidas.boton,
     progreso: () -> Float = { 0f },
     llena: Boolean = false,
+    pildoraMock: Boolean = false,
 ) {
     val colores = BitoTema.colores
     val tacto = LocalTacto.current
     val interaccion = remember { MutableInteractionSource() }
     val relleno =
         when (estilo) {
-            EstiloBoton.PRINCIPAL -> colores.agua
+            EstiloBoton.PRINCIPAL -> if (pildoraMock) colores.tinta else colores.agua
             EstiloBoton.NORMAL -> colores.canto
             EstiloBoton.PELIGRO -> colores.peligro
             EstiloBoton.FANTASMA, EstiloBoton.BORRAR -> Color.Transparent
@@ -74,6 +77,7 @@ fun Boton(
         when (estilo) {
             EstiloBoton.PELIGRO -> colores.canto
             EstiloBoton.BORRAR -> colores.peligroTexto
+            EstiloBoton.PRINCIPAL -> if (pildoraMock) colores.tintaClara else colores.tinta
             else -> colores.tinta
         }
     val conContorno = estilo != EstiloBoton.FANTASMA && estilo != EstiloBoton.BORRAR
@@ -109,7 +113,8 @@ fun Boton(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icono != null) Icon(icono, contentDescription = null, Modifier.size(20.dp), tint = tinta)
-            Text(texto, style = BitoTema.tipos.t16.fuerte(), color = tinta)
+            val letra = if (pildoraMock && !llena) BitoTema.tipos.t14 else BitoTema.tipos.t16
+            Text(texto, style = letra.fuerte(), color = tinta)
         }
     }
 }

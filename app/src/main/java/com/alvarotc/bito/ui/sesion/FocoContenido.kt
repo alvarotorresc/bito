@@ -342,6 +342,8 @@ fun FocoContenido(
                 .then(entorno.anclaMonedas?.let { Modifier.anclaParticula(it) } ?: Modifier),
         estilo = EstiloBoton.PRINCIPAL,
         alto = Medidas.botonHoja,
+        llena = true,
+        pildoraMock = true,
     )
 
     // 6. Lo dejo.
