@@ -401,7 +401,10 @@ class FuentePropuestasHabi(
                 }
             }
 
-        private suspend fun vale(minuto: Int?): Efecto {
+        private suspend fun vale(pedido: Int?): Efecto {
+            // §5.2: con dos avisos aceptados hoy (contados con la memoria de ahora, bajo el cerrojo), «Vale» ya no
+            // programa otro aunque la propuesta naciera con hora: queda como el «Vale» sin hora del día duro.
+            val minuto = pedido?.takeUnless { Motor.dosAvisosHoy(m, ctx) }
             when {
                 v.situacion == Situacion.PERMISO_AVISOS -> {
                     vigentes.borrar(v.ambito, clave)
@@ -434,6 +437,8 @@ class FuentePropuestasHabi(
             }
             val ref = v.ref ?: return Efecto.Ninguno
             val viejos = m.avisos.filter { it.habitId == ref && it.dia == ctx.hoy && it.estado == EstadoAviso.PENDIENTE }
+            // §5.2: el nuevo sustituye a los que se cancelan; si sin ellos ya hay dos (uno lanzado, por ejemplo), no hay tercero.
+            if (Motor.dosAvisosHoy(m.copy(avisos = m.avisos - viejos.toSet()), ctx)) return Efecto.Ninguno
             viejos.forEach { aceptados.cambiarEstado(it.id, EstadoAviso.CANCELADO) }
             if (viejos.isNotEmpty()) avisos.cancelarAceptados(viejos.map { it.id })
             aceptados.crear(aceptado(ref, minuto, viejos.firstOrNull()?.propuestaId ?: id))
