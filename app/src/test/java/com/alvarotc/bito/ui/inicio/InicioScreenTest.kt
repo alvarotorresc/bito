@@ -535,6 +535,47 @@ class InicioScreenTest {
     }
 
     @Test
+    fun `the streak vein of a habit makes its day N bold on Today`() {
+        banco.preparar(marcaCero = true)
+        runBlocking {
+            banco.habits.create(
+                com.alvarotc.bito.data.habitEntity(
+                    id = "make-bed",
+                    name = "Hacer la cama",
+                    metric = com.alvarotc.bito.domain.model.Metric.CHECK,
+                    target = 1,
+                    createdOnDay = banco.hoyLogico - 10,
+                ),
+            )
+            (1..3).forEach {
+                banco.db.entryDao().insert(
+                    com.alvarotc.bito.data.entryEntity(id = "e$it", habitId = "make-bed", logicalDay = banco.hoyLogico - it),
+                )
+            }
+        }
+        rule.setContent { ConSistema(banco.sonido, banco.tacto) { banco.Inicio(enPrimerPlano = true) } }
+        esperarTag("dia-n-make-bed")
+        if (hay("hoja-logro")) rule.onNodeWithText(contexto.getString(R.string.camino_seguir)).performClick()
+        avanzar(Duraciones.CERRAR_HOJA * 2L + 800L)
+        assertTrue(pesoDiaN("make-bed") != androidx.compose.ui.text.font.FontWeight.Bold)
+
+        libro(fila("r", 10, PointsReason.STREAK_MILESTONE, "make-bed:7", 5))
+        avanzarHasta("veta-RACHA")
+        rule.waitForIdle()
+        assertEquals(androidx.compose.ui.text.font.FontWeight.Bold, pesoDiaN("make-bed"))
+    }
+
+    private fun pesoDiaN(id: String): androidx.compose.ui.text.font.FontWeight? {
+        val resultados = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule
+            .onNodeWithTag("dia-n-$id")
+            .fetchSemanticsNode()
+            .config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult]
+            .action!!(resultados)
+        return resultados.first().layoutInput.style.fontWeight
+    }
+
+    @Test
     fun `the week vein speaks with Habi's real personality and the user's name`() {
         banco.preparar(marcaCero = true)
         runBlocking { banco.ajustes.update { it.copy(personality = Personality.SARGENTO, userName = "Marta") } }

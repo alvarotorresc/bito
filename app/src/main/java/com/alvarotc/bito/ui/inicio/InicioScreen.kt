@@ -87,8 +87,10 @@ import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.HojaSaldo
 import com.alvarotc.bito.ui.premios.LocalAnclas
+import com.alvarotc.bito.ui.premios.Momento
 import com.alvarotc.bito.ui.premios.PremiosEnInicio
 import com.alvarotc.bito.ui.premios.RegistroAnclas
+import com.alvarotc.bito.ui.premios.TipoVeta
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
@@ -282,6 +284,9 @@ fun InicioScreen(
 ) {
     val estado by hoy.uiState.collectAsStateWithLifecycle()
     val estadoCamino by camino.uiState.collectAsStateWithLifecycle()
+    // La veta de racha que suena ahora: el «día N» de su hábito sube y va en negrita en la lista (§7.3).
+    val momento by celebraciones.actual.collectAsStateWithLifecycle()
+    val vetaRachaDe = (momento as? Momento.Veta)?.takeIf { it.tipo == TipoVeta.RACHA }?.habitId
     val estadoActual = rememberUpdatedState(estado)
     val reducido = BitoTema.reducido
     val gesto = rememberGesto()
@@ -493,6 +498,7 @@ fun InicioScreen(
                             abrirGordo = gordo,
                             alGordoVisto = alGordoVisto,
                             hundida = { cierreEstado.c.value.coerceIn(0f, 1f) },
+                            vetaRachaDe = vetaRachaDe,
                         )
                     }
                 }
