@@ -15,6 +15,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -79,7 +80,11 @@ class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
         return efecto
     }
 
-    override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    val gordoGuardado = mutableListOf<List<RefGordo>>()
+
+    override suspend fun guardarGordo(refs: List<RefGordo>) {
+        gordoGuardado += refs
+    }
 }
 
 /** HoyLista real sobre Room en memoria, con grabadores de sonido, tacto, anclas y navegación. */
@@ -142,6 +147,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                 defaultDispatcher = dispatcherVM,
                 propuestas = fuente,
                 clockTicks = ticks,
+                gordo = LoGordoRepository(db, now = { fixedNow }),
             )
     }
 
@@ -180,8 +186,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         reducido: Boolean = false,
+        abrirGordo: Boolean = false,
     ) {
-        rule.setContent { Contenido(creado, alCreadoVisto, reducido) }
+        rule.setContent { Contenido(creado, alCreadoVisto, reducido, abrirGordo) }
         rule.waitForIdle()
     }
 
@@ -190,6 +197,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         reducido: Boolean = false,
+        abrirGordo: Boolean = false,
     ) {
         ConSistema(sonido, tacto, reducido) {
             CompositionLocalProvider(LocalAnclas provides registro) {
@@ -202,6 +210,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                         encabezado = {},
                         creado = creado,
                         alCreadoVisto = alCreadoVisto,
+                        abrirGordo = abrirGordo,
                     )
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
                 }

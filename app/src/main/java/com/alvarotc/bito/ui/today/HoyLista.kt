@@ -144,7 +144,7 @@ fun HoyLista(
     contentPadding: PaddingValues = PaddingValues(),
     creado: String? = null,
     alCreadoVisto: () -> Unit = {},
-    // El aviso de la mañana pide la hoja de lo gordo; la lista avisa de que lo vio (la hoja la abre la Tarea 24).
+    // El aviso de la mañana pide la hoja de lo gordo: la lista la abre y avisa de que lo vio.
     abrirGordo: Boolean = false,
     alGordoVisto: () -> Unit = {},
     // Lo que se ha hundido la lista porque se abre el cierre (0 nada, 1 del todo); se lee al dibujar. Cada fila
@@ -186,7 +186,12 @@ fun HoyLista(
             vistoCargando = false
         }
     }
-    LaunchedEffect(abrirGordo) { if (abrirGordo) alGordoVisto() }
+    LaunchedEffect(abrirGordo) {
+        if (abrirGordo) {
+            gordoAbierto = true
+            alGordoVisto()
+        }
+    }
     LaunchedEffect(viewModel) {
         viewModel.efectos.collect { efecto ->
             when (efecto) {
@@ -469,14 +474,15 @@ fun HoyLista(
 
     HojaLoGordo(
         abierta = gordoAbierto,
-        candidatos = emptyList(),
-        sugerencia = null,
-        elegidos = emptyList(),
+        candidatos = estado.candidatosGordo,
+        sugerencia = estado.sugerenciaGordo,
+        elegidos = estado.gordo,
         alGuardar = { refs ->
             gordoAbierto = false
             viewModel.guardarGordo(refs)
         },
         alCerrar = { gordoAbierto = false },
+        alAvisar = { texto -> scope.launch { avisos.mostrar(texto) } },
     )
     HojaOtraHora(
         abierta = horaAbierta,

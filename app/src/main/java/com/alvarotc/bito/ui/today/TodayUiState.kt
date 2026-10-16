@@ -10,6 +10,9 @@ import com.alvarotc.bito.domain.Sealing
 import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.Tasks
+import com.alvarotc.bito.domain.habla.CandidatoGordo
+import com.alvarotc.bito.domain.habla.LoGordo
+import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.DueKind
@@ -104,6 +107,10 @@ data class TodayUiState(
     val garden: GardenState = GardenState.INITIAL,
     val movimientos: List<Movimiento> = emptyList(),
     val economia: EconomyConfig = EconomyConfig(),
+    // Lo gordo (spec 5.4): los candidatos de la hoja, la sugerencia de Habi y lo que ya se eligió hoy. Sin elegir, vacío.
+    val candidatosGordo: List<CandidatoGordo> = emptyList(),
+    val sugerenciaGordo: RefGordo? = null,
+    val gordo: List<RefGordo> = emptyList(),
 )
 
 /**
@@ -124,6 +131,8 @@ fun buildTodayUiState(
     garden: GardenState = GardenState.INITIAL,
     movimientos: List<Movimiento> = emptyList(),
     economia: EconomyConfig = EconomyConfig(),
+    gordoHoy: List<RefGordo> = emptyList(),
+    gordoAyer: List<RefGordo> = emptyList(),
 ): TodayUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
@@ -159,6 +168,8 @@ fun buildTodayUiState(
                     dueDay = todayTask.task.dueDay,
                 )
             }
+    val candidatosGordo = LoGordo.candidatos(state, today)
+    val gordoAyerSinHacer = gordoAyer.filterNot { LoGordo.hecho(it, state, today) }
     return TodayUiState(
         today = today,
         ringDone = cards.count { it.doneToday },
@@ -177,6 +188,9 @@ fun buildTodayUiState(
         garden = garden,
         movimientos = movimientos,
         economia = economia,
+        candidatosGordo = candidatosGordo,
+        sugerenciaGordo = LoGordo.sugerencia(candidatosGordo, gordoAyerSinHacer, state, today),
+        gordo = gordoHoy,
     )
 }
 

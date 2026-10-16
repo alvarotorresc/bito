@@ -9,6 +9,7 @@ import com.alvarotc.bito.AppContainer
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.data.db.EntryEntity
 import com.alvarotc.bito.data.db.HabitEntity
+import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -36,6 +37,7 @@ import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.habi.minuteTicks
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,9 +47,12 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -79,6 +84,8 @@ class TodayViewModel(
     // con advanceUntilIdle no conviven con un bucle infinito). La fábrica pasa minuteTicks().
     clockTicks: Flow<Unit> = flowOf(Unit),
     private val economia: EconomyConfig = EconomyConfig(),
+    // Lo gordo de cada día; null en los tests que no lo usan.
+    private val gordo: LoGordoRepository? = null,
 ) : ViewModel() {
     private val jardinForzado = MutableStateFlow<GardenState?>(null)
 
@@ -90,6 +97,19 @@ class TodayViewModel(
         val saldo: Int,
     )
 
+    // Lo gordo de hoy y de ayer, siguiendo al día lógico (el corte y el reloj).
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val gordoDeDosDias: Flow<Pair<List<RefGordo>, List<RefGordo>>> =
+        if (gordo == null) {
+            flowOf(emptyList<RefGordo>() to emptyList())
+        } else {
+            combine(settings.settings, clockTicks) { prefs, _ -> LogicalDays.logicalDayOf(now(), prefs.dayCutoffMinutes, zone()) }
+                .distinctUntilChanged()
+                .flatMapLatest { hoy ->
+                    gordo.observe(listOf(hoy - 1, hoy)).map { porDia -> (porDia[hoy] ?: emptyList()) to (porDia[hoy - 1] ?: emptyList()) }
+                }
+        }
+
     val uiState: StateFlow<TodayUiState> =
         combine(
             combine(
@@ -99,11 +119,11 @@ class TodayViewModel(
                 rewards.observeOwnedItems(),
                 rewards.observeBalance(),
             ) { state, entities, prefs, owned, saldo -> Entradas(state, entities, prefs, owned, saldo) },
-            rewards.observeBadges(),
+            combine(rewards.observeBadges(), gordoDeDosDias) { badges, gordos -> badges to gordos },
             rewards.observeRecentMovements(5),
             jardinForzado,
             clockTicks,
-        ) { entradas, badges, recientes, forzado, _ ->
+        ) { entradas, (badges, gordos), recientes, forzado, _ ->
             val nowMillis = now()
             val zoneId = zone()
             val prefs = entradas.prefs
@@ -130,6 +150,8 @@ class TodayViewModel(
                 garden = garden,
                 movimientos = Movimientos.de(recientes, entradas.state, hoy),
                 economia = economia,
+                gordoHoy = gordos.first,
+                gordoAyer = gordos.second,
             )
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TodayUiState())
@@ -296,6 +318,7 @@ class TodayViewModel(
                         tasks = container.tasks,
                         propuestas = container.propuestas,
                         clockTicks = minuteTicks(),
+                        gordo = container.loGordo,
                     )
                 }
             }

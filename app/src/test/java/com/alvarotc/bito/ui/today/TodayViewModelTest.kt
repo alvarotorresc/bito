@@ -9,6 +9,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.habla.LoGordoRepository
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
@@ -21,7 +22,9 @@ import com.alvarotc.bito.data.taskEntity
 import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.Direction
+import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
@@ -98,6 +101,7 @@ class TodayViewModelTest {
     private fun newViewModel(
         propuestas: FuentePropuestas? = null,
         habiSounds: HabiSounds? = null,
+        gordo: LoGordoRepository? = null,
     ) = TodayViewModel(
         domainStateRepo,
         habitsRepo,
@@ -111,6 +115,7 @@ class TodayViewModelTest {
         defaultDispatcher = dispatcher,
         propuestas = propuestas,
         habiSounds = habiSounds,
+        gordo = gordo,
     )
 
     @Before
@@ -593,5 +598,70 @@ class TodayViewModelTest {
 
             assertEquals(4, ui.saldo)
             assertEquals(listOf(3, 1), ui.movimientos.map { it.delta })
+        }
+
+    private suspend fun sembrarGordo() {
+        tasksRepo.create(taskEntity(id = "hoy", title = "Informe", dueKind = DueKind.DATE, dueDay = today, createdOnDay = today - 5))
+        tasksRepo.create(taskEntity(id = "vieja", title = "Dentista", dueKind = DueKind.DATE, dueDay = today - 3, createdOnDay = today - 9))
+        habitsRepo.create(
+            habitEntity(
+                id = "leer",
+                name = "Leer",
+                metric = Metric.CHECK,
+                direction = Direction.AT_LEAST,
+                target = 1,
+                createdOnDay = today - 1,
+            ),
+        )
+    }
+
+    @Test
+    fun `the big thing candidates and the oldest overdue suggestion come from the domain`() =
+        runTest(dispatcher) {
+            sembrarGordo()
+            vm = newViewModel(gordo = LoGordoRepository(db, now = { fixedNow }))
+
+            val ui = state()
+
+            assertEquals(setOf("hoy", "vieja", "leer"), ui.candidatosGordo.map { it.ref.id }.toSet())
+            assertEquals(3, ui.candidatosGordo.size)
+            assertEquals(RefGordo(TipoRefGordo.TAREA, "vieja"), ui.sugerenciaGordo)
+            assertTrue(ui.gordo.isEmpty())
+        }
+
+    @Test
+    fun `yesterdays unfinished big thing is the suggestion over the overdue one`() =
+        runTest(dispatcher) {
+            sembrarGordo()
+            val repo = LoGordoRepository(db, now = { fixedNow })
+            repo.guardar(today - 1, listOf(RefGordo(TipoRefGordo.TAREA, "hoy")))
+            vm = newViewModel(gordo = repo)
+
+            val ui = state()
+
+            assertEquals(RefGordo(TipoRefGordo.TAREA, "hoy"), ui.sugerenciaGordo)
+        }
+
+    @Test
+    fun `what was chosen today shows up in the state`() =
+        runTest(dispatcher) {
+            sembrarGordo()
+            val repo = LoGordoRepository(db, now = { fixedNow })
+            vm = newViewModel(gordo = repo)
+            assertTrue(state().gordo.isEmpty())
+
+            repo.guardar(today, listOf(RefGordo(TipoRefGordo.HABITO, "leer"), RefGordo(TipoRefGordo.TAREA, "hoy")))
+            advanceUntilIdle()
+
+            assertEquals(listOf(RefGordo(TipoRefGordo.HABITO, "leer"), RefGordo(TipoRefGordo.TAREA, "hoy")), vm.uiState.value.gordo)
+        }
+
+    @Test
+    fun `without a big thing store the state has no candidates to show`() =
+        runTest(dispatcher) {
+            sembrarGordo()
+            val ui = state()
+            assertTrue(ui.gordo.isEmpty())
+            assertEquals(3, ui.candidatosGordo.size)
         }
 }
