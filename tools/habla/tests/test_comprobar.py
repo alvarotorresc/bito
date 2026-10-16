@@ -56,6 +56,28 @@ class ComprobarTest(unittest.TestCase):
         f = self.fallos(["nu_saludo\t0\t\tHola — qué tal 🙂\tHi."])
         self.assertTrue(any("lista negra" in x for x in f))
 
+    def test_sin_opcionales_falla_si_todo_lleva_un_hueco_opcional_o_etiqueta(self):
+        lineas = ["nu_regular\t%d\t\tHoy, poco: {habito}.\tToday, a little: {habito}." % i for i in range(6)]
+        lineas += ["nu_ayer_escapo\t0\t[lunes]\tLunes. «{habito}» espera.\tMonday. “{habito}” waits."]
+        lineas += ["nu_ayer_escapo\t%d\t\tAyer quedó «{habito}». Hoy, {minutos} min.\tYesterday “{habito}” waited. Today, {minutos} min." % i
+                   for i in range(1, 12)]
+        lineas += ["nu_ayer_escapo\t12\t\t«{habito}», ayer no. Hoy sí.\t“{habito}”, not yesterday. Today, yes."]
+        f = self.fallos(lineas, minimos=True)
+        self.assertTrue(any("sin opcionales" in x and "nu_ayer_escapo" in x for x in f), f)
+        self.assertFalse(any("sin opcionales" in x and "nu_regular" in x for x in f), f)
+
+    def test_sin_opcionales_pasa_con_tres_trozos_solo_con_obligatorios(self):
+        lineas = ["nu_ayer_escapo\t%d\t\tAyer quedó «{habito}». Hoy, {minutos} min.\tYesterday “{habito}” waited. Today, {minutos} min." % i
+                  for i in range(9)]
+        lineas += ["nu_ayer_escapo\t%d\t\t«{habito}», ayer no. Hoy sí.\t“{habito}”, not yesterday. Today, yes." % i
+                   for i in range(9, 12)]
+        f = self.fallos(lineas, minimos=True)
+        self.assertFalse(any("sin opcionales" in x for x in f), f)
+
+    def test_sin_opcionales_no_corre_sin_minimos(self):
+        f = self.fallos(["nu_ayer_escapo\t0\t\tAyer quedó «{habito}». Hoy, {minutos} min.\tYesterday “{habito}” waited. Today, {minutos} min."])
+        self.assertEqual([], f)
+
 def tsv_g(lineas):
     d = tempfile.mkdtemp()
     ruta = os.path.join(d, "G.neutra.tsv")
@@ -112,6 +134,12 @@ class BolsasTest(unittest.TestCase):
     def test_nombre_coincide_con_huecos(self):
         for b in comprobar.comun.cargar_bolsas().values():
             self.assertEqual(b["nombre"], "nombre" in b["huecos"], b["bolsa"])
+
+    def test_obligatorios_son_huecos_de_la_bolsa_y_nunca_el_nombre(self):
+        for b in comprobar.comun.cargar_bolsas().values():
+            self.assertIn("obligatorios", b, b["bolsa"])
+            self.assertTrue(set(b["obligatorios"]) <= set(b["huecos"]), b["bolsa"])
+            self.assertNotIn("nombre", b["obligatorios"], b["bolsa"])
 
 
 if __name__ == "__main__":

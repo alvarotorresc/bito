@@ -10,10 +10,14 @@ def tsv_valido():
     filas = []
     for i in range(8):
         filas.append(f"nu_saludo\t{i}\t\tHola {i}, {{nombre}}. Llevas {{hechos}} de {{total}}.\tHi, {{nombre}}. {{hechos}} of {{total}} so far.")
-    for i in range(8, 12):
+    for i in range(8, 9):
         filas.append(f"nu_saludo\t{i}\t\tHoy {i} llevas {{hechos}} de {{total}}.\tToday: {{hechos}} of {{total}}.")
-    for i in range(10):
+    for i in range(9, 12):
+        filas.append(f"nu_saludo\t{i}\t\tHoy {i}, sin prisa.\tToday {i}, no rush.")
+    for i in range(7):
         filas.append(f"nu_todo_hecho\t{i}\t\tTodo hecho {i}: {{n|bito|bitos}} para ti.\tAll done: {{n|bito|bitos}} for you.")
+    for i in range(7, 10):
+        filas.append(f"nu_todo_hecho\t{i}\t\tTodo hecho {i}.\tAll done {i}.")
     f = tempfile.NamedTemporaryFile("w", suffix=".neutra.tsv", delete=False, encoding="utf-8")
     f.write(CAB + "".join(l + "\n" for l in filas)); f.close()
     return f.name

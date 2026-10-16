@@ -24,6 +24,10 @@ LIBRES = {"habito", "tarea"}
 GLOBITOS_SESION = {"se_entrar", "de_habito", "de_habito_largo", "de_sin_pendientes",
                    "re_fin_respirar", "se_hecha_tarea", "se_hecha_habito"}
 RESPUESTAS_SESION = {"ce_mejor", "ce_igual", "ce_cuesta"}
+# HUECOS.md: un hueco opcional puede no llegar y entonces solo valen los trozos que no lo usan.
+# Cada bolsa y voz necesita este número de trozos sin etiqueta que usen solo sus huecos
+# obligatorios (`obligatorios` en bolsas.json), o el de su mínimo si es menor.
+MINIMO_SIN_OPCIONALES = 3
 
 
 def limite(bolsa):
@@ -159,6 +163,14 @@ def comprobar(rutas, minimos=True):
                 sin = len(fs) - con
                 if sin == 0 or sin < con:
                     fallos.append(f"{ruta}:{fs[0]['linea']}: hermano: {nombre} necesita al menos tantos items sin {{nombre}} como con él ({con} con, {sin} sin)")
+            if minimos:
+                obligatorios = set(bolsas[nombre].get("obligatorios", []))
+                pide = min(MINIMO_SIN_OPCIONALES, bolsas[nombre]["minimo"])
+                valen = [f for f in fs if not comun.etiquetas_de(f["etiquetas"])
+                         and set(comun.huecos_de(f["es"])) <= obligatorios]
+                if len(valen) < pide:
+                    fallos.append(f"{ruta}:{fs[0]['linea']}: sin opcionales: {nombre} tiene {len(valen)} trozos sin etiqueta "
+                                  f"y solo con {sorted(obligatorios)}; pide {pide}")
         grupo = comun.grupo_de(ruta)
         if minimos and grupo:
             for nombre, b in bolsas.items():
