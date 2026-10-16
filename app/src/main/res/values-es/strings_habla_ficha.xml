@@ -10,6 +10,9 @@
         <item>«{habito}» sigue abierto. Apunta las {hora} y cuenta con ello.</item>
         <item>[manana] Buena mañana para cerrarlo: las {hora}. Un compromiso y listo.</item>
         <item>Hoy toca y aún no está hecho. Las {hora} son tuyas; úsalas.</item>
+        <item>Hoy está pendiente. Hazlo y quítalo de en medio.</item>
+        <item>Pendiente hoy: {habito}. Sin dar vueltas.</item>
+        <item>Tu hábito de hoy sigue sin marcar. Ahora es buen momento.</item>
     </string-array>
     <string-array name="habla_fi_hoy_falta_cheerleader">
         <item>Hoy todavía está pendiente. ¿Lo dejamos para las {hora}? Voy contigo.</item>
@@ -20,6 +23,9 @@
         <item>Este lo hacemos hoy, tú y yo. ¿Te va bien a las {hora}?</item>
         <item>{habito}, hoy a las {hora}. ¡Aquí estaré animándote!</item>
         <item>[finde] Finde tranquilo, pero a esto aún le falta su momento. ¿A las {hora}, sin prisa?</item>
+        <item>Hoy todavía está pendiente. ¿Le hacemos un hueco ahora? Voy contigo.</item>
+        <item>{habito}, pendiente hoy. ¡Aún queda día para esto!</item>
+        <item>Lo de hoy sigue esperándote. Cuando te venga bien, aquí estoy.</item>
     </string-array>
     <string-array name="habla_fi_hoy_falta_neutra">
         <item>Hoy está pendiente. ¿Te aviso a las {hora}?</item>
@@ -31,6 +37,9 @@
         <item>{habito}, pendiente hoy. ¿Te aviso a las {hora}?</item>
         <item>[tarde] La tarde aún da para esto. A las {hora} te lo recuerdo.</item>
         <item>[viernes] Es viernes y esto sigue abierto. ¿Te aviso a las {hora}?</item>
+        <item>Hoy está pendiente. Ahora o más tarde, como prefieras.</item>
+        <item>Hoy aún no está hecho. Queda día para esto.</item>
+        <item>Hoy falta: {habito}. Cuando te venga bien.</item>
     </string-array>
     <string-array name="habla_fi_objetivo_sargento">
         <item>Un {pct} % en 30 días. ¿Y si lo dejamos en {objetivo}? Luego se sube.</item>
@@ -122,6 +131,9 @@
         <item>[lunes] Lunes y {pct} % en 30 días. La semana empieza a escribirse ahora.</item>
         <item>El mes marca {pct} %. Sin adornos. Sigue.</item>
         <item>[noche] Cierra el día y mira: {pct} % en 30 días. Mañana, uno más.</item>
+        <item>Sin datos todavía. Los números se ganan marcando.</item>
+        <item>Aún no hay cifra. Haz que la haya.</item>
+        <item>Es pronto para medir. Sigue sumando y hablamos.</item>
     </string-array>
     <string-array name="habla_fi_constancia_cheerleader">
         <item>Últimos 30 días: {pct} %. ¡Cada día suma y yo los cuento contigo!</item>
@@ -131,6 +143,9 @@
         <item>{pct} % en 30 días. Sea mucho o poco, cada marca la vi yo y la celebro.</item>
         <item>[lunes] Lunes de balance: {pct} % en los últimos 30 días. Empezamos otra buena tanda.</item>
         <item>Si miramos el último mes, sale un {pct} %. Y hoy es otro día para sumar.</item>
+        <item>Aún es pronto para sacar números. ¡Cada vez que lo marques cuenta!</item>
+        <item>{habito}: todavía sin cifra del mes. La vamos escribiendo a la vez.</item>
+        <item>Todavía no hay datos para medir la constancia. Aquí estoy para verlos llegar.</item>
     </string-array>
     <string-array name="habla_fi_constancia_neutra">
         <item>Últimos 30 días: {pct} % de cumplimiento.</item>
@@ -141,6 +156,9 @@
         <item>[lunes] Lunes de balance: {pct} % de los últimos 30 días.</item>
         <item>Si miras 30 días atrás, el cumplimiento es del {pct} %. Hoy suma uno más.</item>
         <item>[finde] Buen fin de semana para mirarlo: {pct} % en 30 días.</item>
+        <item>Aún no hay datos suficientes para medir la constancia.</item>
+        <item>Todavía es pronto para dar una cifra de constancia.</item>
+        <item>Sin cifra por ahora. Cada vez que lo marques, se irá formando.</item>
     </string-array>
     <string-array name="habla_fi_nuevo_sargento">
         <item>Hábito nuevo. Lo difícil es repetirlo, no empezarlo.</item>
@@ -202,6 +220,9 @@
         <item>Este hábito descansa desde el {fecha}. Cuando quieras, lo retomamos.</item>
         <item>Desde el {fecha}, en pausa. Sin prisa: la vuelta se prepara.</item>
         <item>Desde el {fecha} estos días no cuentan ni a favor ni en contra. Vuelve cuando toque.</item>
+        <item>En pausa. Descansa bien; cuando vuelvas, a trabajar.</item>
+        <item>En pausa. Parar a tiempo también es disciplina.</item>
+        <item>Este hábito descansa. Cuando quieras, lo retomamos.</item>
     </string-array>
     <string-array name="habla_fi_pausa_cheerleader">
         <item>En pausa desde el {fecha}. Aquí te espero con todo igual que lo dejaste.</item>
@@ -209,6 +230,9 @@
         <item>Descansando desde el {fecha}. Cuando quieras retomarlo, aquí estaremos. ¡Con ganas!</item>
         <item>Desde el {fecha} está en pausa. Sin prisas: vuelve cuando te apetezca y seguimos.</item>
         <item>Pausado desde el {fecha}. Tu historial sigue aquí intacto, esperándote.</item>
+        <item>En pausa. Aquí te espero con todo igual que lo dejaste.</item>
+        <item>Descansando un tiempo. ¡Cuando quieras volver, aquí estaremos!</item>
+        <item>Está en pausa, y no pasa nada. Tu historial sigue intacto.</item>
     </string-array>
     <string-array name="habla_fi_pausa_neutra">
         <item>En pausa desde el {fecha}. No cuenta ni resta mientras tanto.</item>
@@ -216,6 +240,9 @@
         <item>Pausado desde el {fecha}. Sin prisa: las pausas también forman parte del ritmo.</item>
         <item>De descanso desde el {fecha}. Los días de pausa no pesan en el cumplimiento.</item>
         <item>Pausa desde el {fecha}. El hábito espera; no corre ningún reloj.</item>
+        <item>En pausa. No cuenta ni resta mientras tanto.</item>
+        <item>En pausa. Cuando quieras retomarlo, aquí está.</item>
+        <item>Pausado. El hábito espera; no corre ningún reloj.</item>
     </string-array>
     <string-array name="habla_ca_radiante_sargento">
         <item>Semana impecable. Ni un pero. Así se trabaja.</item>
@@ -225,6 +252,7 @@
         <item>{n|día perfecto|días perfectos} en lo que va de mes. Impecable.</item>
         <item>[lunes] Arrancamos la semana desde lo alto. A sostenerlo.</item>
         <item>[finde] Fin de semana con la semana en el bolsillo. No bajes la guardia.</item>
+        <item>Semana en lo alto. Así se mantiene: haciendo.</item>
     </string-array>
     <string-array name="habla_ca_radiante_cheerleader">
         <item>¡Menuda semana! De las que se enmarcan.</item>
@@ -244,6 +272,7 @@
         <item>Casi todo lo previsto esta semana está hecho. Buen ritmo.</item>
         <item>[domingo] Domingo y semana en alto. El mes suma {n|día perfecto|días perfectos}.</item>
         <item>[invierno] Con el frío de fuera, la semana va firme por aquí.</item>
+        <item>Semana alta. Lo previsto se está cumpliendo casi entero.</item>
     </string-array>
     <string-array name="habla_ca_normal_sargento">
         <item>Aceptable. Tú y yo sabemos que puedes más.</item>
@@ -272,6 +301,7 @@
         <item>[viernes] Viernes. Semana normal, y todavía queda día para mover la cifra.</item>
         <item>[manana] Semana estable. Hoy puedes mantenerla tal cual o subirla un poco.</item>
         <item>[finde] Fin de semana con la semana estable: {n|día perfecto|días perfectos} este mes.</item>
+        <item>Semana estable, sin sobresaltos.</item>
     </string-array>
     <string-array name="habla_ca_mustio_sargento">
         <item>Mala semana. No la discutas: corrígela.</item>

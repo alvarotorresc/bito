@@ -17,6 +17,8 @@
         <item>[viernes] Friday. Counts the same as a Monday. {hechos} of {total}.</item>
         <item>[finde] Weekend. Same ground, different pace: {hechos} of {total}.</item>
         <item>[invierno] It\'s cold out there. In here, we work: {hechos} of {total}.</item>
+        <item>Hi. Let\'s work.</item>
+        <item>Here. Do your thing; I\'m keeping watch.</item>
     </string-array>
     <string-array name="habla_nu_saludo_cheerleader">
         <item>Hi, {nombre}! So good to see you.</item>
@@ -34,6 +36,8 @@
         <item>[viernes] Friday, {nombre}. {hechos} of {total}. Finish the week strong!</item>
         <item>[finde] Weekend. Today goes at its own pace: {hechos} of {total}. Enjoy it!</item>
         <item>[invierno] Cold out there, but in here we\'re at {hechos} of {total}. Cosy, isn\'t it!</item>
+        <item>Hi! I\'m right here with you.</item>
+        <item>So good to see you here. Your things, at your pace.</item>
     </string-array>
     <string-array name="habla_nu_saludo_neutra">
         <item>Hi, {nombre}.</item>
@@ -51,6 +55,8 @@
         <item>[viernes] Friday. Today counts the same as Monday: {hechos} of {total} so far.</item>
         <item>[finde] Weekend. Today goes at its own pace: {hechos} of {total}.</item>
         <item>[invierno] Cold out there. In here, we\'re at {hechos} of {total}.</item>
+        <item>Hi. Still here.</item>
+        <item>Hi. Nothing to suggest right now.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_sargento">
         <item>[esperando] My day is done. I\'m waiting on yours.</item>
@@ -153,6 +159,7 @@
         <item>[invierno] Winter night, day closed. Good night.</item>
         <item>[verano] There\'s still light, but the day is closed. Good night.</item>
         <item>“{tarea}”, first thing tomorrow. For now, rest.</item>
+        <item>Day closed. Tomorrow, we keep going.</item>
     </string-array>
     <string-array name="habla_nu_noche_cheerleader">
         <item>[durmiendo] Day closed. Falling asleep happy, see you tomorrow.</item>
@@ -168,6 +175,7 @@
         <item>[invierno] Winter night, day closed. Good night, wrap up warm!</item>
         <item>[verano] There\'s still a bit of light, but the day is closed. Good night!</item>
         <item>“{tarea}”, first thing tomorrow. For now, rest.</item>
+        <item>Day closed, and closed well! See you tomorrow.</item>
     </string-array>
     <string-array name="habla_nu_noche_neutra">
         <item>[durmiendo] Day closed. Good night.</item>
@@ -183,6 +191,7 @@
         <item>[invierno] Winter night, day closed. Good night.</item>
         <item>[verano] There\'s still a bit of light, but the day is closed. Good night.</item>
         <item>“{tarea}”, first thing tomorrow. For now, rest.</item>
+        <item>Day closed. See you tomorrow.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_sargento">
         <item>Okay. If you change your mind, I\'m here.</item>
@@ -237,6 +246,9 @@
         <item>[tarde] {hora}. I\'ll call it, and until then, get on with your day.</item>
         <item>[noche] At {hora}, before we close the day. I\'ll let you know.</item>
         <item>[finde] Done: {hora}. It\'s the weekend, but a time is a time.</item>
+        <item>Understood. Now, get to it.</item>
+        <item>Copy that. It\'s in your hands.</item>
+        <item>Noted. A promise made is a promise kept.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_cheerleader">
         <item>Done! I\'ll remind you at {hora}.</item>
@@ -249,6 +261,9 @@
         <item>[tarde] {hora} it is. I\'ll let you know; no hurry till then.</item>
         <item>[noche] At {hora}, before we close the day. I\'ll let you know!</item>
         <item>[finde] Done: reminder at {hora}. No rush, it\'s the weekend.</item>
+        <item>Great! It\'s noted.</item>
+        <item>Love that “okay”. I\'m right here with you.</item>
+        <item>Deal. This is going to go well.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_neutra">
         <item>Done. I\'ll remind you at {hora}.</item>
@@ -261,6 +276,9 @@
         <item>[tarde] {hora} it is. I\'ll let you know; no hurry till then.</item>
         <item>[noche] At {hora}, before we close the day. I\'ll let you know.</item>
         <item>[finde] Done: reminder at {hora}. No rush, it\'s the weekend.</item>
+        <item>Understood. That\'s settled.</item>
+        <item>All right. I\'ve made a note of it.</item>
+        <item>Done. All in order on my side.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_sargento">
         <item>Done. Reminder at {hora}. Meanwhile, the big thing: {gordo}.</item>

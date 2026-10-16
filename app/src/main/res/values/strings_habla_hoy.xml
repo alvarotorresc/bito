@@ -16,6 +16,7 @@
         <item>[noche] There\'s still tonight. “{habito}”, {minutos} min, and yesterday is fixed.</item>
         <item>[finde] Weekend, but “{habito}” still stands. It slipped yesterday: {minutos} min.</item>
         <item>No drama: “{habito}” slipped yesterday. It gets fixed today, at {hora}.</item>
+        <item>It slipped yesterday: {habito}. Today it doesn\'t.</item>
     </string-array>
     <string-array name="habla_nu_ayer_escapo_cheerleader">
         <item>{habito} got away yesterday. Today at {hora} we go get it, you and me.</item>
@@ -32,6 +33,7 @@
         <item>[tarde] Afternoon left: {habito}, at {hora}. Slipped yesterday; we\'ll make it.</item>
         <item>{habito}, {minutos} min at {hora}. It slipped; today, yes.</item>
         <item>[invierno] Cold makes it harder. It slipped: {habito}. Today at {hora}, together.</item>
+        <item>It slipped yesterday: {habito}. Today we make room for it, you and me.</item>
     </string-array>
     <string-array name="habla_nu_ayer_escapo_neutra">
         <item>Yesterday slipped by: {habito}. Today it\'s {minutos} min.</item>
@@ -47,6 +49,9 @@
         <item>[viernes] Friday. “{habito}” got away yesterday; {minutos} min and the week ends level.</item>
         <item>“{habito}” slipped yesterday. Today: {minutos} min at {hora}.</item>
         <item>[invierno] Cold out. “{habito}” was left yesterday; today it\'s {minutos} min.</item>
+        <item>Left undone yesterday: {habito}. There\'s room to pick it up today.</item>
+        <item>“{habito}” didn\'t happen yesterday. Today is another day.</item>
+        <item>“{habito}” got away yesterday. Today, whenever it suits you.</item>
     </string-array>
     <string-array name="habla_nu_elegir_gordo_sargento">
         <item>What\'s the big thing today? Pick one and defend it.</item>
@@ -104,6 +109,7 @@
         <item>[tarde] It\'s afternoon and the big thing hasn\'t started. There\'s time: {primer_paso}.</item>
         <item>[manana] The morning is yours. Get the big thing moving with this: {primer_paso}.</item>
         <item>[mediodia] Midday, and the big thing is still at zero. First step: {primer_paso}.</item>
+        <item>The big thing is still at zero: {gordo}. Start now.</item>
     </string-array>
     <string-array name="habla_nu_gordo_sin_empezar_cheerleader">
         <item>The big thing for today is still standing: {gordo}. First step: {primer_paso}.</item>
@@ -161,6 +167,7 @@
         <item>Your {hora} thing is about to land: {habito}.</item>
         <item>[finde] Weekends have their slot too: {habito}, around {hora}.</item>
         <item>A quiet reminder: {habito}, around {hora}.</item>
+        <item>Your usual moment is coming up: {habito}. Shall we?</item>
     </string-array>
     <string-array name="habla_nu_hora_habitual_neutra">
         <item>You usually do “{habito}” around {hora}. Not long now.</item>
@@ -174,6 +181,8 @@
         <item>[tarde] Afternoon. “{habito}” usually arrives at {hora}; not long now.</item>
         <item>[noche] Tonight, “{habito}” at your usual time, {hora}.</item>
         <item>[finde] It\'s the weekend, but “{habito}” still has its time: {hora}.</item>
+        <item>Your usual time for “{habito}” is coming up.</item>
+        <item>Your usual slot for “{habito}” is near. Whenever you like.</item>
     </string-array>
     <string-array name="habla_nu_vuelta_sargento">
         <item>{dias_fuera|day|days} have passed. Just one thing today: {habito}.</item>

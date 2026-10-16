@@ -17,6 +17,8 @@
         <item>[viernes] Viernes. Cuenta igual que un lunes. {hechos} de {total}.</item>
         <item>[finde] Fin de semana. Mismo sitio, otro ritmo: {hechos} de {total}.</item>
         <item>[invierno] Fuera hace frío. Aquí dentro se trabaja: {hechos} de {total}.</item>
+        <item>Hola. A trabajar.</item>
+        <item>Aquí estoy. Haz lo tuyo, que yo vigilo.</item>
     </string-array>
     <string-array name="habla_nu_saludo_cheerleader">
         <item>¡Hola, {nombre}! Qué bien verte.</item>
@@ -34,6 +36,8 @@
         <item>[viernes] Viernes, {nombre}. ¡{hechos} de {total}, a rematar la semana!</item>
         <item>[finde] Fin de semana. Lo de hoy, a su ritmo: {hechos} de {total}, ¡y a disfrutar!</item>
         <item>[invierno] Fuera hace frío, aquí vamos por {hechos} de {total}. ¡Qué bien se está!</item>
+        <item>¡Hola! Aquí estoy, contigo.</item>
+        <item>Qué bien verte por aquí. Lo tuyo, a tu ritmo.</item>
     </string-array>
     <string-array name="habla_nu_saludo_neutra">
         <item>Hola, {nombre}.</item>
@@ -51,6 +55,8 @@
         <item>[viernes] Viernes. Hoy cuenta igual que el lunes: {hechos} de {total} por ahora.</item>
         <item>[finde] Fin de semana. Lo de hoy, a su ritmo: {hechos} de {total}.</item>
         <item>[invierno] Fuera hace frío. Aquí dentro vamos por {hechos} de {total}.</item>
+        <item>Hola. Aquí sigo.</item>
+        <item>Hola. Ahora mismo no tengo nada que proponerte.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_sargento">
         <item>[esperando] Mi día está cumplido. Espero a que cumplas el tuyo.</item>
@@ -153,6 +159,7 @@
         <item>[invierno] Noche de invierno, día cerrado. Buenas noches.</item>
         <item>[verano] Aún queda luz, pero el día está cerrado. Buenas noches.</item>
         <item>«{tarea}», mañana a primera hora. Ahora, descansa.</item>
+        <item>Día cerrado. Mañana, a seguir.</item>
     </string-array>
     <string-array name="habla_nu_noche_cheerleader">
         <item>[durmiendo] Día cerrado. Me duermo feliz, hasta mañana.</item>
@@ -168,6 +175,7 @@
         <item>[invierno] Noche de invierno, día cerrado. Buenas noches, ¡a abrigarse!</item>
         <item>[verano] Aún queda algo de luz, pero el día está cerrado. ¡Buenas noches!</item>
         <item>«{tarea}», mañana a primera hora. Ahora, a descansar.</item>
+        <item>¡Día cerrado y bien cerrado! Hasta mañana.</item>
     </string-array>
     <string-array name="habla_nu_noche_neutra">
         <item>[durmiendo] Día cerrado. Buenas noches.</item>
@@ -183,6 +191,7 @@
         <item>[invierno] Noche de invierno, día cerrado. Buenas noches.</item>
         <item>[verano] Aún queda algo de luz, pero el día está cerrado. Buenas noches.</item>
         <item>«{tarea}», mañana a primera hora. Ahora, a descansar.</item>
+        <item>Día cerrado. Hasta mañana.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_sargento">
         <item>Vale. Si cambias de idea, aquí sigo.</item>
@@ -237,6 +246,9 @@
         <item>[tarde] A las {hora}. Te aviso, y hasta entonces, a lo tuyo.</item>
         <item>[noche] A las {hora}, antes de cerrar el día. Te aviso.</item>
         <item>[finde] Hecho: {hora}. Es fin de semana, pero la hora es la hora.</item>
+        <item>Entendido. Ahora, a ello.</item>
+        <item>Recibido. Queda en tu mano.</item>
+        <item>Anotado. Palabra dada, palabra cumplida.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_cheerleader">
         <item>¡Hecho! Te aviso a las {hora}.</item>
@@ -249,6 +261,9 @@
         <item>[tarde] A las {hora}. Te aviso, y hasta entonces, sin prisa.</item>
         <item>[noche] A las {hora}, antes de cerrar el día. ¡Te aviso!</item>
         <item>[finde] Hecho: te aviso a las {hora}. Sin prisa, que es fin de semana.</item>
+        <item>¡Genial! Queda apuntado.</item>
+        <item>Me encanta ese «vale». Aquí estoy contigo.</item>
+        <item>Trato hecho. Esto va a salir bien.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_neutra">
         <item>Hecho: te aviso a las {hora}.</item>
@@ -261,6 +276,9 @@
         <item>[tarde] A las {hora}. Te aviso, y hasta entonces, sin prisa.</item>
         <item>[noche] A las {hora}, antes de cerrar el día. Te aviso.</item>
         <item>[finde] Hecho: te aviso a las {hora}. Sin prisa, que es fin de semana.</item>
+        <item>Entendido. Queda así.</item>
+        <item>De acuerdo. Lo dejo apuntado.</item>
+        <item>Hecho. Por mi parte, todo en orden.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_sargento">
         <item>Hecho: te aviso a las {hora}. Mientras, lo gordo: {gordo}.</item>

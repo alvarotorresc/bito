@@ -113,6 +113,7 @@
         <item>{nombre}, gracias por pasar el día conmigo. Ya casi toca descansar.</item>
         <item>¡Buen trabajo hoy, {nombre}! Sin ruido, pero constante.</item>
         <item>[viernes] Se acaba el viernes, {nombre}. Lo que has hecho hoy ya nadie te lo quita.</item>
+        <item>Día cerrado sin ruido. Mañana seguimos a la vez.</item>
     </string-array>
     <string-array name="habla_cie_sencillo_neutra">
         <item>Repaso del día, {nombre}. Solo lo que queda.</item>
@@ -143,6 +144,7 @@
         <item>Cierre limpio: ni una fila por mirar. Toca descansar.</item>
         <item>Hoy no se queda nada en el aire, {nombre}. Buenas noches cuando quieras.</item>
         <item>¡Cero pendientes, {nombre}! Sellar el día y a descansar.</item>
+        <item>¡Todo decidido! Solo queda sellar el día.</item>
     </string-array>
     <string-array name="habla_cie_nada_pendiente_neutra">
         <item>Nada pendiente, {nombre}. Puedes sellar el día.</item>
@@ -260,6 +262,8 @@
         <item>[invierno] Fuera hace frío y aquí dentro el día queda sellado. A dormir, {nombre}.</item>
         <item>Un día más para el jardín. Buenas noches, {nombre}.</item>
         <item>[finde] Fin de semana sellado, {nombre}. Descansa; yo ya me voy durmiendo.</item>
+        <item>¡Día sellado! Mañana seguimos.</item>
+        <item>Día guardado. Me duermo con una sonrisa.</item>
     </string-array>
     <string-array name="habla_cie_sello_neutra">
         <item>Día sellado, {nombre}. Hasta mañana.</item>
@@ -272,6 +276,7 @@
         <item>[viernes] Viernes cerrado. Buenas noches, y buen fin de semana.</item>
         <item>[invierno] Buenas noches, {nombre}. Que el frío se quede fuera.</item>
         <item>[lunes] Primer día de la semana, sellado. Buenas noches.</item>
+        <item>Día sellado. Hasta mañana.</item>
     </string-array>
     <string-array name="habla_cie_sello_perfecto_sargento">
         <item>Día perfecto, {nombre}. Así se hace. No te relajes.</item>
@@ -298,6 +303,8 @@
         <item>[domingo] Domingo perfecto, {nombre}: la semana termina sin ningún cabo suelto.</item>
         <item>Cada hábito de hoy, hecho. Un día así se guarda, {nombre}.</item>
         <item>[invierno] Fuera hace frío y aquí dentro, un día perfecto. Qué calorcito, {nombre}.</item>
+        <item>¡Día perfecto! Me voy a dormir dando saltitos.</item>
+        <item>Día perfecto, de principio a fin. Qué gusto da sellarlo.</item>
     </string-array>
     <string-array name="habla_cie_sello_perfecto_neutra">
         <item>Día perfecto, {nombre}. Todo lo exigible, cumplido.</item>

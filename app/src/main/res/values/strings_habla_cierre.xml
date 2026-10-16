@@ -113,6 +113,7 @@
         <item>{nombre}, thanks for spending the day with me. Nearly time to rest.</item>
         <item>Good work today, {nombre}! Quiet, but steady.</item>
         <item>[viernes] Friday\'s winding down, {nombre}. What you did today is yours to keep.</item>
+        <item>A quiet close to the day. Tomorrow we carry on side by side.</item>
     </string-array>
     <string-array name="habla_cie_sencillo_neutra">
         <item>Closing the day, {nombre}. Just what\'s left.</item>
@@ -143,6 +144,7 @@
         <item>A clean close: not a single row left to look at. Time to rest.</item>
         <item>Nothing\'s left hanging today, {nombre}. Goodnight whenever you\'re ready.</item>
         <item>Zero pending, {nombre}! Seal the day and off to rest.</item>
+        <item>Everything\'s decided! All that\'s left is sealing the day.</item>
     </string-array>
     <string-array name="habla_cie_nada_pendiente_neutra">
         <item>Nothing pending, {nombre}. You can seal the day.</item>
@@ -260,6 +262,8 @@
         <item>[invierno] It\'s cold outside, and in here the day is sealed. Off to sleep, {nombre}.</item>
         <item>One more day for the garden. Goodnight, {nombre}.</item>
         <item>[finde] Weekend sealed, {nombre}. Rest up; I\'m already drifting off.</item>
+        <item>Day sealed! Tomorrow we carry on.</item>
+        <item>Day saved. I\'m drifting off with a smile.</item>
     </string-array>
     <string-array name="habla_cie_sello_neutra">
         <item>Day sealed, {nombre}. See you tomorrow.</item>
@@ -272,6 +276,7 @@
         <item>[viernes] Friday closed. Good night, and have a good weekend.</item>
         <item>[invierno] Good night, {nombre}. Let the cold stay outside.</item>
         <item>[lunes] First day of the week, sealed. Good night.</item>
+        <item>Day sealed. See you tomorrow.</item>
     </string-array>
     <string-array name="habla_cie_sello_perfecto_sargento">
         <item>Perfect day, {nombre}. That\'s how it\'s done. Don\'t get comfortable.</item>
@@ -298,6 +303,8 @@
         <item>[domingo] Perfect Sunday, {nombre}: the week ends with no loose ends.</item>
         <item>Every habit today, done. A day like this one is a keeper, {nombre}.</item>
         <item>[invierno] Cold outside, and in here, a perfect day. How warm that feels, {nombre}.</item>
+        <item>A perfect day! I\'m off to sleep with a little bounce.</item>
+        <item>A perfect day, start to finish. Such a joy to seal it.</item>
     </string-array>
     <string-array name="habla_cie_sello_perfecto_neutra">
         <item>Perfect day, {nombre}. Everything required, done.</item>

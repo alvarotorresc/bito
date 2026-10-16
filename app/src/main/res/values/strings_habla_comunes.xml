@@ -76,6 +76,7 @@
         <item>[madrugada] It\'s the small hours, {nombre}. Whatever\'s left can wait for sleep.</item>
         <item>Last stop of the day, {nombre}. I\'ll go with you.</item>
         <item>[durmiendo] Shh, I\'m nearly asleep. Good night.</item>
+        <item>It\'s night now. I\'m glad you stopped by.</item>
     </string-array>
     <string-array name="habla_ap_noche_neutra">
         <item>Good evening, {nombre}.</item>

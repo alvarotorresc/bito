@@ -76,6 +76,7 @@
         <item>[madrugada] Ya es de madrugada, {nombre}. Lo que falte puede esperar al sueño.</item>
         <item>Última parada del día, {nombre}. Te acompaño.</item>
         <item>[durmiendo] Shh, que ya casi me duermo. Buenas noches.</item>
+        <item>Ya es de noche. Me alegra que pases por aquí.</item>
     </string-array>
     <string-array name="habla_ap_noche_neutra">
         <item>Buenas noches, {nombre}.</item>

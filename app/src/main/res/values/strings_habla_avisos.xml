@@ -30,6 +30,8 @@
         <item>Good morning. I have an idea for today.</item>
         <item>{nombre}, shall we start the day?</item>
         <item>Good day, {nombre}. I\'ve been waiting.</item>
+        <item>Good morning! Today looks good.</item>
+        <item>New day. You and me.</item>
     </string-array>
     <string-array name="habla_av_manana_titulo_neutra">
         <item>Good morning</item>
@@ -206,6 +208,8 @@
         <item>[invierno] Cold night. A minute to close, then under the blanket, {nombre}.</item>
         <item>{nombre}, shall we close the day? I\'ll be with you through it.</item>
         <item>Your list for today: {hechos} of {total}. Now the close, which is short.</item>
+        <item>The day\'s wrapping up! One minute to close, then rest.</item>
+        <item>We close the day and carry on tomorrow, you and me.</item>
     </string-array>
     <string-array name="habla_av_noche_cuerpo_neutra">
         <item>Today: {hechos} of {total}. One minute to close the day.</item>
@@ -264,6 +268,7 @@
         <item>The deal: {hora}. The big thing: {gordo}.</item>
         <item>{nombre}, it\'s set. I\'ll nudge you at {hora}.</item>
         <item>I\'ll remind you at {hora}. Not a minute later.</item>
+        <item>Time locked: {hora}. I\'ll nudge you then.</item>
     </string-array>
     <string-array name="habla_av_aceptado_cuerpo_cheerleader">
         <item>The big thing today: {gordo}. I\'ll remind you when it\'s time.</item>
@@ -274,6 +279,8 @@
         <item>The big thing, no rush: {gordo}. At {hora}, I\'ll be right beside you.</item>
         <item>{nombre}, I\'ll remind you at {hora}. Count on me!</item>
         <item>One big thing, well chosen: {gordo}. See you at {hora}.</item>
+        <item>I\'ll remind you at {hora}. Meanwhile, carry on!</item>
+        <item>Done: at {hora}, I\'ll remember for you.</item>
     </string-array>
     <string-array name="habla_av_aceptado_cuerpo_neutra">
         <item>I\'ll remind you then. Until then, the day goes at your pace.</item>

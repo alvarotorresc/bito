@@ -16,6 +16,7 @@
         <item>[noche] Queda noche. «{habito}», {minutos} min, y se corrige lo de ayer.</item>
         <item>[finde] Es finde, pero «{habito}» sigue en pie. Ayer se escapó: {minutos} min.</item>
         <item>Sin dramas: ayer se escapó «{habito}». Se arregla hoy, a las {hora}.</item>
+        <item>Ayer se escapó: {habito}. Hoy no se escapa.</item>
     </string-array>
     <string-array name="habla_nu_ayer_escapo_cheerleader">
         <item>Ayer se escapó: {habito}. Hoy a las {hora} vamos a por ello, tú y yo.</item>
@@ -32,6 +33,7 @@
         <item>[tarde] Aún queda tarde: {habito}, a las {hora}. Ayer se escapó; hoy llegamos.</item>
         <item>{habito}, {minutos} min a las {hora}. Se escapó ayer; hoy sí.</item>
         <item>[invierno] Con frío todo cuesta más. Ayer se escapó: {habito}. Hoy, {hora}, juntos.</item>
+        <item>Ayer se escapó: {habito}. Hoy le hacemos sitio, tú y yo.</item>
     </string-array>
     <string-array name="habla_nu_ayer_escapo_neutra">
         <item>Ayer se quedó sin hacer: {habito}. Hoy son {minutos} min.</item>
@@ -47,6 +49,9 @@
         <item>[viernes] Viernes. «{habito}» se escapó ayer; {minutos} min y la semana acaba al día.</item>
         <item>Ayer no salió «{habito}». Hoy: {minutos} min a las {hora}.</item>
         <item>[invierno] Hace frío fuera. «{habito}» se quedó ayer; hoy son {minutos} min.</item>
+        <item>Ayer se quedó sin hacer: {habito}. Hoy hay sitio para retomarlo.</item>
+        <item>«{habito}» ayer no pudo ser. Hoy es otro día.</item>
+        <item>Ayer se escapó «{habito}». Hoy, cuando te venga bien.</item>
     </string-array>
     <string-array name="habla_nu_elegir_gordo_sargento">
         <item>¿Cuál es lo gordo de hoy? Elige una cosa y la defiendes.</item>
@@ -104,6 +109,7 @@
         <item>[tarde] Ya es tarde y lo gordo no ha arrancado. Hay tiempo: {primer_paso}.</item>
         <item>[manana] La mañana es tuya. Arranca lo gordo con esto: {primer_paso}.</item>
         <item>[mediodia] Mediodía, y lo gordo sigue a cero. Primer paso: {primer_paso}.</item>
+        <item>Lo gordo sigue a cero: {gordo}. Empieza ya.</item>
     </string-array>
     <string-array name="habla_nu_gordo_sin_empezar_cheerleader">
         <item>Lo gordo de hoy sigue en pie: {gordo}. El primer paso: {primer_paso}.</item>
@@ -161,6 +167,7 @@
         <item>Lo tuyo de las {hora} está al caer: {habito}.</item>
         <item>[finde] También en finde tienes tu sitio: {habito}, hacia las {hora}.</item>
         <item>Te lo recuerdo bajito: {habito}, hacia las {hora}.</item>
+        <item>Se acerca tu momento de siempre: {habito}. ¿Vamos?</item>
     </string-array>
     <string-array name="habla_nu_hora_habitual_neutra">
         <item>Sueles hacer «{habito}» sobre las {hora}. Ya queda poco.</item>
@@ -174,6 +181,8 @@
         <item>[tarde] Tarde. «{habito}» suele llegar a las {hora}; falta poco.</item>
         <item>[noche] Esta noche, «{habito}» a tu hora de siempre, las {hora}.</item>
         <item>[finde] Es fin de semana, pero «{habito}» sigue teniendo su hora: las {hora}.</item>
+        <item>Se acerca tu hora de siempre para «{habito}».</item>
+        <item>Se acerca el rato de siempre para «{habito}». Cuando quieras.</item>
     </string-array>
     <string-array name="habla_nu_vuelta_sargento">
         <item>Han pasado {dias_fuera|día|días}. Hoy, una sola cosa: {habito}.</item>

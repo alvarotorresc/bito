@@ -30,6 +30,8 @@
         <item>Buenos días. Tengo una idea para hoy.</item>
         <item>{nombre}, ¿empezamos el día?</item>
         <item>Buen día, {nombre}. Te esperaba.</item>
+        <item>¡Buenos días! Hoy pinta bien.</item>
+        <item>Un día nuevo. Tú y yo.</item>
     </string-array>
     <string-array name="habla_av_manana_titulo_neutra">
         <item>Buenos días</item>
@@ -206,6 +208,8 @@
         <item>[invierno] Noche de frío. Un minuto de cierre y a la manta, {nombre}.</item>
         <item>{nombre}, ¿cerramos el día? Yo te acompaño en el cierre.</item>
         <item>Tu lista de hoy: {hechos} de {total}. Ahora el cierre, que es corto.</item>
+        <item>¡Se acaba el día! Un minuto de cierre y a descansar.</item>
+        <item>Cerramos el día y mañana seguimos, tú y yo.</item>
     </string-array>
     <string-array name="habla_av_noche_cuerpo_neutra">
         <item>Hoy: {hechos} de {total}. Un minuto para cerrar el día.</item>
@@ -264,6 +268,7 @@
         <item>Lo acordado: a las {hora}. Lo gordo: {gordo}.</item>
         <item>{nombre}, ya está en marcha. Te aviso a las {hora}.</item>
         <item>Te lo recuerdo a las {hora}. Ni un minuto más tarde.</item>
+        <item>Hora fijada: las {hora}. Ahí te aviso.</item>
     </string-array>
     <string-array name="habla_av_aceptado_cuerpo_cheerleader">
         <item>Lo gordo de hoy: {gordo}. Yo te aviso cuando llegue la hora.</item>
@@ -274,6 +279,8 @@
         <item>Lo gordo, sin prisa: {gordo}. A las {hora}, estaré a tu lado.</item>
         <item>{nombre}, a las {hora} te aviso. ¡Cuenta conmigo!</item>
         <item>Una cosa gorda, bien elegida: {gordo}. Nos vemos a las {hora}.</item>
+        <item>A las {hora} te aviso yo. ¡Mientras, a lo tuyo!</item>
+        <item>Hecho: a las {hora} me acuerdo por ti.</item>
     </string-array>
     <string-array name="habla_av_aceptado_cuerpo_neutra">
         <item>Te aviso a esa hora. Mientras, el día sigue a tu ritmo.</item>
