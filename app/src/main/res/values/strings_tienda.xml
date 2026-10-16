@@ -34,12 +34,13 @@
     <string name="store_bar_price">%1$d bitos. You\'d have %2$d left.</string>
     <string name="store_bar_missing">It costs %1$d bitos and you have %2$d: %3$d short. Each habit done earns 1, and a perfect day earns 3 more.</string>
     <string name="store_bar_streak">It comes with a %1$d-day streak. Your best is %2$d: %3$d to go. Not for sale.</string>
-    <string name="store_bar_out_of_season">On sale from %1$s to %2$s. Once bought, it\'s yours all year.</string>
+    <string name="store_bar_out_of_season">On sale %1$s. Once bought, it\'s yours all year.</string>
     <string name="store_bar_in_season">%1$d bitos. You\'d have %2$d left. On sale until %3$s; after that it\'s yours all year.</string>
     <string name="store_bar_garden">%1$d bitos. You\'d have %2$d left. It stays where you see it.</string>
     <string name="store_bar_badge">Comes with the %1$s badge: %2$s. Not for sale.</string>
     <string name="store_season_long_dec">from December 1 to January 6</string>
     <string name="store_season_carnival">in the two weeks before Ash Wednesday</string>
+    <string name="store_season_fixed">from %1$s to %2$s</string>
     <string name="store_note_costumes">Costumes are bought in season and stay yours for good. You can try them on any time.</string>
     <string name="store_note_eyes">Only the iris changes; the shine stays.</string>
     <string name="store_welcome">This is where your bitos go. Trying things on costs nothing.</string>

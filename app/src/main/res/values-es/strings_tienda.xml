@@ -34,12 +34,13 @@
     <string name="store_bar_price">%1$d bitos. Te quedarían %2$d.</string>
     <string name="store_bar_missing">Cuesta %1$d bitos y tienes %2$d: te faltan %3$d. Cada hábito hecho da 1 y un día completo, 3 más.</string>
     <string name="store_bar_streak">Llega con una racha de %1$d días. Tu mejor racha es de %2$d: te faltan %3$d. No se compra.</string>
-    <string name="store_bar_out_of_season">A la venta del %1$s al %2$s. Una vez comprado se queda todo el año.</string>
+    <string name="store_bar_out_of_season">A la venta %1$s. Una vez comprado se queda todo el año.</string>
     <string name="store_bar_in_season">%1$d bitos. Te quedarían %2$d. A la venta hasta el %3$s; luego es tuyo todo el año.</string>
     <string name="store_bar_garden">%1$d bitos. Te quedarían %2$d. Se queda donde lo ves.</string>
     <string name="store_bar_badge">Llega con el logro %1$s: %2$s. No se compra.</string>
     <string name="store_season_long_dec">del 1 de diciembre al 6 de enero</string>
     <string name="store_season_carnival">en las dos semanas antes del Miércoles de Ceniza</string>
+    <string name="store_season_fixed">del %1$s al %2$s</string>
     <string name="store_note_costumes">Se compran en su temporada y se quedan para siempre. Probártelos se puede cuando quieras.</string>
     <string name="store_note_eyes">Solo cambia el iris; el brillo de los ojos se queda.</string>
     <string name="store_welcome">Aquí gastas los bitos que ganas. Probarte algo no cuesta nada.</string>

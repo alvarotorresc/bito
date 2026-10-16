@@ -30,7 +30,7 @@ class TextosTiendaTest {
             "store_label_season_carnival", "store_buy", "store_not_now", "store_take_off", "store_take_off_object",
             "store_garden_bubble_special", "store_bar_price", "store_bar_missing", "store_bar_streak",
             "store_bar_out_of_season", "store_bar_in_season", "store_bar_garden", "store_bar_badge",
-            "store_season_long_dec", "store_season_carnival", "store_note_costumes", "store_note_eyes",
+            "store_season_long_dec", "store_season_carnival", "store_season_fixed", "store_note_costumes", "store_note_eyes",
             "store_welcome", "store_slot_empty", "store_all_bought", "store_garden_for_you", "store_garden_hint1",
             "store_garden_badges", "store_garden_hint2", "store_garden_bench", "store_garden_can",
             "store_garden_in", "store_garden_bubble_bought",
