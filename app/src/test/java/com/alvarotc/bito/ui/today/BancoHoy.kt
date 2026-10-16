@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.ComposeContentTestRule
@@ -15,6 +18,9 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
+import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
+import com.alvarotc.bito.data.habla.LoGordoRepository
+import com.alvarotc.bito.data.habla.MemoriaRepository
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.JournalRepository
@@ -59,6 +65,10 @@ import java.time.ZoneId
 class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
     val flujo = MutableStateFlow(inicial)
     val respuestas = mutableListOf<Respuesta>()
+    val horas = mutableListOf<Int?>()
+
+    /** Lo que devuelve la siguiente respuesta; por defecto, nada que hacer. */
+    var efecto: Efecto = Efecto.Ninguno
 
     override fun propuesta(
         ambito: Ambito,
@@ -71,10 +81,15 @@ class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
         hora: Int?,
     ): Efecto {
         respuestas += respuesta
-        return Efecto.Ninguno
+        horas += hora
+        return efecto
     }
 
-    override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    val gordoGuardado = mutableListOf<List<RefGordo>>()
+
+    override suspend fun guardarGordo(refs: List<RefGordo>) {
+        gordoGuardado += refs
+    }
 }
 
 /** HoyLista real sobre Room en memoria, con grabadores de sonido, tacto, anclas y navegación. */
@@ -92,6 +107,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
     val registro = RegistroAnclas()
     val avisos = AvisoEstado()
     val llamadas = mutableListOf<String>()
+
+    /** El hábito cuya veta de racha dura ahora (el que Inicio pasa a la lista), si hay. */
+    var vetaRachaDe by mutableStateOf<String?>(null)
     var fichaAbierta: String? = null
     val navegar =
         NavegacionInicio(
@@ -137,6 +155,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                 defaultDispatcher = dispatcherVM,
                 propuestas = fuente,
                 clockTicks = ticks,
+                gordo = LoGordoRepository(db, now = { fixedNow }),
+                aceptados = AvisosAceptadosRepository(db),
+                memoria = MemoriaRepository(db, now = { fixedNow }),
             )
     }
 
@@ -175,8 +196,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         reducido: Boolean = false,
+        abrirGordo: Boolean = false,
     ) {
-        rule.setContent { Contenido(creado, alCreadoVisto, reducido) }
+        rule.setContent { Contenido(creado, alCreadoVisto, reducido, abrirGordo) }
         rule.waitForIdle()
     }
 
@@ -185,6 +207,8 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
         creado: String? = null,
         alCreadoVisto: () -> Unit = {},
         reducido: Boolean = false,
+        abrirGordo: Boolean = false,
+        alGordoVisto: () -> Unit = {},
     ) {
         ConSistema(sonido, tacto, reducido) {
             CompositionLocalProvider(LocalAnclas provides registro) {
@@ -197,6 +221,9 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                         encabezado = {},
                         creado = creado,
                         alCreadoVisto = alCreadoVisto,
+                        abrirGordo = abrirGordo,
+                        alGordoVisto = alGordoVisto,
+                        vetaRachaDe = vetaRachaDe,
                     )
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
                 }

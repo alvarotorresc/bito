@@ -491,4 +491,243 @@ class HoyListaTest {
         val abajo = rule.onNodeWithTag("tarea-$otra").getBoundsInRoot().top.value
         assertTrue(arriba < abajo)
     }
+
+    private fun esperarNodo(tag: String) {
+        rule.waitUntil(5_000) { rule.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().isNotEmpty() }
+    }
+
+    @Test
+    fun `the big thing tag reopens the sheet`() {
+        val fuente = FuenteFalsa()
+        banco.preparar(fuente)
+        runBlocking {
+            TasksRepository(banco.db).create(
+                taskEntity(
+                    id = "informe",
+                    title = "Informe trimestral",
+                    dueKind = DueKind.DATE,
+                    dueDay = banco.hoy,
+                    createdOnDay = banco.hoy,
+                ),
+            )
+            com.alvarotc.bito.data.habla.LoGordoRepository(banco.db, now = { banco.fixedNow })
+                .guardar(
+                    banco.hoy,
+                    listOf(com.alvarotc.bito.domain.habla.RefGordo(com.alvarotc.bito.domain.habla.TipoRefGordo.TAREA, "informe")),
+                )
+        }
+        banco.montar()
+        esperarNodo("gordo-etiqueta-informe")
+        rule.onAllNodesWithTag("hoja-gordo").assertCountEquals(0)
+        assertTrue(rule.onNodeWithTag("gordo-etiqueta-informe", useUnmergedTree = true).getBoundsInRoot().height >= 44.dp)
+        rule.onNodeWithTag("gordo-etiqueta-informe", useUnmergedTree = true).performClick()
+        banco.esperar()
+        rule.onNodeWithTag("hoja-gordo").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the accepted hour shows in the row`() {
+        banco.preparar()
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        runBlocking {
+            com.alvarotc.bito.data.habla.AvisosAceptadosRepository(banco.db).crear(
+                com.alvarotc.bito.domain.habla.AvisoAceptado(
+                    "a1",
+                    banco.hoy,
+                    "make-bed",
+                    14 * 60 + 30,
+                    0,
+                    com.alvarotc.bito.domain.habla.EstadoAviso.PENDIENTE,
+                    "HORA_HABITUAL:make-bed:${banco.hoy}",
+                    banco.fixedNow,
+                ),
+            )
+        }
+        banco.montar()
+        esperarNodo("hora-make-bed")
+        rule.onNodeWithTag("hora-make-bed").assertIsDisplayed()
+        rule.onNodeWithText("14:30").assertIsDisplayed()
+        rule.onAllNodesWithTag("hora-water").assertCountEquals(0)
+    }
+
+    @Test
+    fun `on a hard day the rest waits without hurry and can still be marked`() {
+        val fuente =
+            FuenteFalsa(
+                com.alvarotc.bito.domain.propuestas.Propuesta(
+                    id = "DIA_DURO:make-bed:${banco.hoy}",
+                    texto = com.alvarotc.bito.domain.propuestas.TextoHabi(com.alvarotc.bito.R.string.habla_vale),
+                    acciones = emptyList(),
+                ),
+            )
+        banco.preparar(fuente)
+        banco.sembrar(RealHabits.makeBed, RealHabits.water, RealHabits.reading)
+        runBlocking {
+            com.alvarotc.bito.data.repo.JournalRepository(banco.db).log(
+                com.alvarotc.bito.data.db.EntryEntity("e1", "reading", banco.hoy, 60, banco.fixedNow),
+            )
+        }
+        banco.montar()
+        esperarNodo("esperan-sin-prisa")
+        val seccion = androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("esperan-sin-prisa"))
+        rule.onNodeWithText("Esperan sin prisa").assertIsDisplayed()
+        // Lo que la tarjeta propone y lo que ya está hecho se quedan en su sitio.
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccion).assertExists()
+        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("fila-make-bed") and seccion).assertCountEquals(0)
+        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("fila-reading") and seccion).assertCountEquals(0)
+        rule.onNodeWithTag("fila-make-bed").assertExists()
+        rule.onNodeWithTag("fila-reading").assertExists()
+        // Tocables con el mismo gesto de marcar.
+        rule.onNodeWithTag("circulo-water").performClick()
+        banco.esperar()
+        assertTrue(banco.entradasDeHoy("water") >= 1)
+    }
+
+    private fun propuestaDe(id: String) =
+        com.alvarotc.bito.domain.propuestas.Propuesta(
+            id = id,
+            texto = com.alvarotc.bito.domain.propuestas.TextoHabi(com.alvarotc.bito.R.string.habla_vale),
+            acciones = emptyList(),
+        )
+
+    // Lo que el cuerpo real de la fuente escribe al responder (spec §5.11): `RESPUESTA` con el id de la propuesta.
+    private fun recordarRespuesta(
+        id: String,
+        dia: Int = banco.hoy,
+    ) = runBlocking {
+        com.alvarotc.bito.data.habla.MemoriaRepository(banco.db).anotar(
+            com.alvarotc.bito.domain.habla.EventoMemoria(
+                "r-$id",
+                com.alvarotc.bito.domain.habla.TipoMemoria.RESPUESTA,
+                dia,
+                id,
+                com.alvarotc.bito.domain.propuestas.Respuesta.VALE.ordinal,
+                banco.fixedNow,
+            ),
+        )
+    }
+
+    private fun seccionEsperan() = androidx.compose.ui.test.hasAnyAncestor(androidx.compose.ui.test.hasTestTag("esperan-sin-prisa"))
+
+    @Test
+    fun `after Vale and another situation the rest still waits all day`() {
+        val fuente = FuenteFalsa(propuestaDe("DIA_DURO:make-bed:${banco.hoy}"))
+        banco.preparar(fuente)
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        banco.montar()
+        esperarNodo("esperan-sin-prisa")
+        // «Vale»: la fuente recuerda la respuesta y la vigente pasa a la confirmación; luego llega otra situación.
+        recordarRespuesta("DIA_DURO:make-bed:${banco.hoy}")
+        fuente.flujo.value = propuestaDe("CONFIRMA_VALE:make-bed:${banco.hoy}")
+        banco.esperar()
+        fuente.flujo.value = propuestaDe("PERMISO_AVISOS::${banco.hoy}")
+        banco.esperar()
+        rule.onNodeWithTag("esperan-sin-prisa").assertExists()
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccionEsperan()).assertExists()
+        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("fila-make-bed") and seccionEsperan()).assertCountEquals(0)
+        // Hecho lo propuesto, el resto sigue esperando.
+        rule.onNodeWithTag("circulo-make-bed").performClick()
+        banco.esperar()
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccionEsperan()).assertExists()
+    }
+
+    @Test
+    fun `a hard day answered earlier today waits without a live proposal`() {
+        banco.preparar(FuenteFalsa())
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        recordarRespuesta("DIA_DURO:make-bed:${banco.hoy}")
+        banco.montar()
+        esperarNodo("esperan-sin-prisa")
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-water") and seccionEsperan()).assertExists()
+        rule.onAllNodes(androidx.compose.ui.test.hasTestTag("fila-make-bed") and seccionEsperan()).assertCountEquals(0)
+    }
+
+    @Test
+    fun `guard - yesterday's hard day does not make anything wait today`() {
+        banco.preparar(FuenteFalsa())
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        recordarRespuesta("DIA_DURO:make-bed:${banco.hoy - 1}", dia = banco.hoy - 1)
+        banco.montar()
+        esperarNodo("fila-water")
+        rule.onAllNodesWithTag("esperan-sin-prisa").assertCountEquals(0)
+    }
+
+    @Test
+    fun `a habit created on a hard day that waits without hurry is still found and shown`() {
+        banco.preparar(FuenteFalsa(propuestaDe("DIA_DURO:h1:${banco.hoy}")))
+        banco.sembrar(*(1..15).map { RealHabits.makeBed.copy(id = "h$it", name = "Hábito $it") }.toTypedArray())
+        var vistos = 0
+        banco.montar(creado = "h15", alCreadoVisto = { vistos++ })
+        banco.esperar(1500)
+        rule.onNode(androidx.compose.ui.test.hasTestTag("fila-h15") and seccionEsperan()).assertIsDisplayed()
+        assertEquals(1, vistos)
+    }
+
+    private fun sellarHoy() = runBlocking { com.alvarotc.bito.data.repo.JournalRepository(banco.db).sealDay(banco.hoy, banco.fixedNow) }
+
+    @Test
+    fun `at night sealed rows only tell the day is closed`() {
+        banco.preparar()
+        banco.sembrar(RealHabits.makeBed, RealHabits.water)
+        sellarHoy()
+        banco.montar()
+        esperarNodo("cerrar-dia")
+        rule.onNodeWithText("Día sellado").assertIsDisplayed()
+        rule.onNodeWithTag("circulo-make-bed").performClick()
+        rule.onNodeWithTag("paso-water").performClick()
+        banco.esperar()
+        assertEquals(0, banco.entradasDeHoy("make-bed"))
+        assertEquals(0, banco.entradasDeHoy("water"))
+        assertTrue(Haptica.TICK in banco.tacto.hapticas)
+        rule.onNodeWithText("El día está cerrado", substring = true).assertIsDisplayed()
+        // El nombre sigue abriendo la ficha.
+        rule.onNodeWithTag("nombre-make-bed").performClick()
+        assertEquals("make-bed", banco.fichaAbierta)
+    }
+
+    @Test
+    fun `tasks show tomorrow at night`() {
+        banco.preparar()
+        banco.sembrar(RealHabits.makeBed)
+        runBlocking {
+            TasksRepository(banco.db).create(
+                taskEntity(id = "t1", title = "Primera", dueKind = DueKind.DATE, dueDay = banco.hoy, createdOnDay = banco.hoy),
+            )
+        }
+        banco.montar()
+        esperarNodo("tarea-t1")
+        rule.onAllNodesWithTag("manana-t1", useUnmergedTree = true).assertCountEquals(0)
+        sellarHoy()
+        esperarNodo("manana-t1")
+        rule.onNodeWithTag("manana-t1", useUnmergedTree = true).assertIsDisplayed()
+        rule.onNodeWithText("mañana", useUnmergedTree = true).assertIsDisplayed()
+    }
+
+    @Test
+    fun `day N goes bold and up during the streak vein`() {
+        var veta by mutableStateOf(false)
+        val card = HabitCardUi("check", "H check", CardKind.CHECK, 0, 1, null, 1, Direction.AT_LEAST, Period.DAY, false, false, 5)
+        rule.setContent {
+            com.alvarotc.bito.ui.sistema.ConSistema {
+                FilaHabito(card, {}, {}, {}, {}, {}, rachaViva = veta)
+            }
+        }
+
+        fun peso(): androidx.compose.ui.text.font.FontWeight? {
+            val resultados = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+            rule.onNodeWithTag(
+                "dia-n-check",
+            ).fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult]
+                .action!!(resultados)
+            return resultados.first().layoutInput.style.fontWeight
+        }
+        val pesoNormal = peso()
+        val arriba = rule.onNodeWithTag("dia-n-check").getBoundsInRoot().top
+        veta = true
+        rule.waitForIdle()
+        assertEquals(androidx.compose.ui.text.font.FontWeight.Bold, peso())
+        assertTrue("sin veta no es negrita: $pesoNormal", pesoNormal != androidx.compose.ui.text.font.FontWeight.Bold)
+        val sube = arriba - rule.onNodeWithTag("dia-n-check").getBoundsInRoot().top
+        assertEquals(4f, sube.value, 0.5f)
+    }
 }

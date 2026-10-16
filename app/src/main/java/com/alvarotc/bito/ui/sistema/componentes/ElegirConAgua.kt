@@ -145,7 +145,7 @@ private fun Textos(
 
 /** El aro de 22 dp: el nivel de agua sube con `marcar` y baja con `hundir`; uno por opción. */
 @Composable
-private fun Aro(elegido: Boolean) {
+internal fun Aro(elegido: Boolean) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
     val nivel = remember { Animatable(if (elegido) 1f else 0f) }
