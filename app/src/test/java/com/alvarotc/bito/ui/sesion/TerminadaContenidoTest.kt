@@ -97,6 +97,8 @@ class TerminadaContenidoTest {
     ) = runBlocking {
         motor.preparar(destino)
         motor.cambiarBorrador(motor.borrador.value!!.copy(entrada = Entrada.DIRECTO, bloques = bloques))
+        // Lo cambiado en Preparar se guarda en Ajustes en segundo plano: se espera a que acabe antes de leerlos al empezar.
+        motor.borradorGuardado()
         assertNull(motor.empezar())
         banco.reloj.avanzar((bloques * 25 + (bloques - 1) * 5 + if (bloques % 4 == 0) 15 else 0) * MINUTO)
         motor.tic()
