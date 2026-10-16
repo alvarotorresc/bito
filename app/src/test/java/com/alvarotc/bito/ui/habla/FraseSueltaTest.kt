@@ -24,7 +24,7 @@ class FraseSueltaTest {
         nombre: String?,
         semilla: Long,
         huecos: Map<Hueco, ValorHueco> = emptyMap(),
-    ) = FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, catalogo, huecos, nombre, semilla)
+    ) = FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, nombre, semilla, catalogo, huecos)
 
     @Test
     fun `without a name only nameless items are chosen`() {
@@ -65,13 +65,13 @@ class FraseSueltaTest {
     @Test
     fun `with no item that fits it falls back to the nameless zero or to zero`() {
         val soloNombre = catalogoFalso(Bolsa.SE_ENTRAR to listOf(TrozoInfo(0, emptySet(), setOf(Hueco.NOMBRE))))
-        val f = FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, soloNombre, emptyMap(), null, 3)
+        val f = FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, null, 3, soloNombre)
         assertEquals(0, f.trozos.single().indice)
         val conSinNombre =
             catalogoFalso(
                 Bolsa.SE_ENTRAR to listOf(TrozoInfo(0, emptySet(), setOf(Hueco.TAREA)), TrozoInfo(1, emptySet(), emptySet())),
             )
-        val g = FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, conSinNombre, emptyMap(), null, 3)
+        val g = FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, null, 3, conSinNombre)
         assertEquals(1, g.trozos.single().indice)
     }
 }

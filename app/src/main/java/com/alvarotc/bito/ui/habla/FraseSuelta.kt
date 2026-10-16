@@ -19,10 +19,10 @@ object FraseSuelta {
     fun elegir(
         bolsa: Bolsa,
         voz: Personality,
-        catalogo: CatalogoHabla,
-        huecos: Map<Hueco, ValorHueco>,
         nombre: String?,
         semilla: Long,
+        catalogo: CatalogoHabla,
+        huecos: Map<Hueco, ValorHueco> = emptyMap(),
     ): TextoHabi.Frase {
         val rellenos = if (nombre != null) huecos + (Hueco.NOMBRE to ValorHueco.Texto(nombre)) else huecos - Hueco.NOMBRE
         val trozos = catalogo.trozos(bolsa, voz)
