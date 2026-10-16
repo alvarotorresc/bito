@@ -198,29 +198,28 @@ class PlanAvisosTest {
         assertEquals(12 * 60, PlanAvisos.ajustarConservado(12 * 60, ctx()))
     }
 
+    /** Los hechos de alguien cuyo último día activo fue hace [desdeUltimo] días lógicos (`hoy - último`). */
+    private fun ausente(desdeUltimo: Int): Hechos = hechos(habitos = listOf(habito()), diasSinActividad = desdeUltimo - 1)
+
+    /** Los valores de `hoy - último` de [rango] en que sale el aviso de la mañana. */
+    private fun conManana(rango: IntRange): List<Int> = rango.filter { manana(h = ausente(it)) != null }
+
     @Test
     fun `away three days the morning goes every other day`() {
-        assertEquals(8 * 60 + 30, manana(h = hechos(habitos = listOf(habito()), diasSinActividad = 3))?.minuto)
-        assertNull(manana(h = hechos(habitos = listOf(habito()), diasSinActividad = 4)))
-        assertEquals(8 * 60 + 30, manana(h = hechos(habitos = listOf(habito()), diasSinActividad = 5))?.minuto)
-        assertEquals(8 * 60 + 30, manana(h = hechos(habitos = listOf(habito()), diasSinActividad = 2))?.minuto)
+        // 2 es un día normal; desde 3 (el umbral de la vuelta y del ánimo DRAMATIC), en días alternos.
+        assertEquals(listOf(1, 2, 3, 5, 7, 9, 11, 13), conManana(1..13))
     }
 
     @Test
     fun `away fourteen days the morning goes on the weekday of the last active day`() {
-        // diasSinActividad = hoy - último activo - 1: con 20, hace 21 días, el mismo día de la semana.
-        val diasConManana = (14..34).filter { manana(h = hechos(habitos = listOf(habito()), diasSinActividad = it)) != null }
-
-        assertEquals(listOf(20, 27, 34), diasConManana)
+        assertEquals(listOf(14, 21, 28, 35), conManana(14..35))
     }
 
     @Test
     fun `no night while away`() {
-        val fuera = hechos(habitos = listOf(habito()), diasSinActividad = 3)
-
-        assertNull(PlanAvisos.de(fuera, Memoria(), ctx(ahoraMin = temprano)).de(TipoAviso.NOCHE))
-        val casi = conAlgo.copy(diasSinActividad = 2)
-        assertEquals(21 * 60 + 30, PlanAvisos.de(casi, Memoria(), ctx(ahoraMin = temprano)).de(TipoAviso.NOCHE)?.minuto)
+        assertNull(PlanAvisos.de(ausente(3), Memoria(), ctx(ahoraMin = temprano)).de(TipoAviso.NOCHE))
+        assertNull(PlanAvisos.de(ausente(21), Memoria(), ctx(ahoraMin = temprano)).de(TipoAviso.NOCHE))
+        assertEquals(21 * 60 + 30, PlanAvisos.de(ausente(2), Memoria(), ctx(ahoraMin = temprano)).de(TipoAviso.NOCHE)?.minuto)
     }
 
     @Test

@@ -93,21 +93,27 @@ object PlanAvisos {
         h: Hechos,
         ctx: Contexto,
     ): Int? {
-        if (h.diaSellado || h.habitos.none { it.exigibleHoy } || h.diasSinActividad >= Ritmo.DIAS_AUSENCIA) return null
+        if (h.diaSellado || h.habitos.none { it.exigibleHoy } || desdeUltimo(h) >= Ritmo.DIAS_AUSENCIA) return null
         return NocheEnSilencio.minuto(ctx.horaNoche, ctx.silencio, ctx.corteDia)
     }
 
     /**
-     * Día de ausencia en que no le toca al aviso de la mañana (§6.2, decisión 2 de §15): con
-     * [Ritmo.DIAS_AUSENCIA] días sale en días alternos; con [Ritmo.DIAS_AUSENCIA_SEMANAL], el mismo día de la
-     * semana que el último activo. `diasSinActividad` es `hoy - últimoActivo - 1`.
+     * Día de ausencia en que no le toca al aviso de la mañana (§6.2, decisión 2 de §15). La ausencia se mide como
+     * la vuelta y el ánimo DRAMATIC: `hoy - últimoActivo >= `[Ritmo.DIAS_AUSENCIA]. Desde ahí la mañana sale en
+     * días alternos empezando por el primero (3, 5, 7…); desde [Ritmo.DIAS_AUSENCIA_SEMANAL], solo el mismo día de
+     * la semana que el último activo (14, 21, 28…).
      */
     private fun ausenteSinTurno(h: Hechos): Boolean {
-        val dias = h.diasSinActividad
-        if (dias < Ritmo.DIAS_AUSENCIA) return false
-        val desdeUltimo = dias + 1
-        return if (dias >= Ritmo.DIAS_AUSENCIA_SEMANAL) desdeUltimo % 7 != 0 else desdeUltimo % 2 != 0
+        val desde = desdeUltimo(h)
+        return when {
+            desde < Ritmo.DIAS_AUSENCIA -> false
+            desde >= Ritmo.DIAS_AUSENCIA_SEMANAL -> desde % 7 != 0
+            else -> (desde - Ritmo.DIAS_AUSENCIA) % 2 != 0
+        }
     }
+
+    /** `hoy - últimoActivo`: `diasSinActividad` cuenta los días de en medio, uno menos. */
+    private fun desdeUltimo(h: Hechos): Int = h.diasSinActividad + 1
 
     /** Un minuto del día lógico pasado ya: el minuto de ahora todavía cuenta (la alarma puede estar sonando). */
     private fun yaPasado(
