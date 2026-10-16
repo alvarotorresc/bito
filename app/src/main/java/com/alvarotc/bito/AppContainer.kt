@@ -36,7 +36,6 @@ import com.alvarotc.bito.domain.habla.Contexto
 import com.alvarotc.bito.domain.habla.Contextos
 import com.alvarotc.bito.domain.habla.Hechos
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
-import com.alvarotc.bito.domain.sesion.TareasEmpezadas
 import com.alvarotc.bito.sesion.Aire
 import com.alvarotc.bito.sesion.EfectosSesion
 import com.alvarotc.bito.sesion.Fondo
@@ -57,13 +56,8 @@ import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.time.ZoneId
 
