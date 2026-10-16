@@ -88,13 +88,16 @@ object ReglasFicha {
     private fun objetivo(habito: HabitoHoy): Candidata? {
         val pct = habito.pct30 ?: return null
         if (habito.tipo.esDeQuitar() || pct >= OBJETIVO_PCT_MAX || habito.juzgados30 < OBJETIVO_JUZGADOS_MIN) return null
+        // La mitad, con el paso como mínimo; si eso no baja el objetivo, no hay nada que proponer.
+        val sugerido = maxOf(habito.paso, habito.objetivo / 2)
+        if (sugerido >= habito.objetivo) return null
         return nota(
             Situacion.FI_OBJETIVO,
             habito,
             huecos =
                 mapOf(
                     Hueco.PCT to ValorHueco.Numero(pct),
-                    Hueco.OBJETIVO to ValorHueco.Numero(maxOf(habito.paso, habito.objetivo / 2)),
+                    Hueco.OBJETIVO to ValorHueco.Numero(sugerido),
                 ),
             acciones = listOf(Respuesta.VALE, Respuesta.HOY_NO),
             destino = Destino.Habito(habito.id),

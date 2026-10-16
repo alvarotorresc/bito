@@ -96,9 +96,22 @@ class ReglasFichaTest {
             paso: Int,
         ) = nota(habito(hechoHoy = true, pct30 = 10, objetivo = objetivo, paso = paso))!!.huecos[Hueco.OBJETIVO]
         assertEquals(ValorHueco.Numero(4), sugerido(8, 1))
-        assertEquals(ValorHueco.Numero(1), sugerido(1, 1))
+        assertEquals(ValorHueco.Numero(1), sugerido(2, 1))
         assertEquals(ValorHueco.Numero(5), sugerido(9, 5))
         assertEquals(ValorHueco.Numero(4), sugerido(9, 1))
+    }
+
+    @Test
+    fun `the objective note does not come out when it would not lower the objective`() {
+        fun situacion(
+            objetivo: Int,
+            paso: Int,
+        ) = nota(habito(hechoHoy = true, pct30 = 10, objetivo = objetivo, paso = paso))!!.situacion
+        assertEquals(Situacion.FI_CONSTANCIA, situacion(1, 1))
+        assertEquals(Situacion.FI_CONSTANCIA, situacion(5, 5))
+        assertEquals(Situacion.FI_CONSTANCIA, situacion(4, 5))
+        assertEquals(Situacion.FI_OBJETIVO, situacion(2, 1))
+        assertEquals(Situacion.FI_OBJETIVO, situacion(6, 5))
     }
 
     @Test
