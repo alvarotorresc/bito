@@ -41,11 +41,76 @@ class NoMolestarTest {
     @Test
     fun `puts priority and returns the previous filter`() {
         concederPermiso(true)
-        manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_ALARMS)
         assertTrue(noMolestar.permitido())
-        assertEquals(NotificationManager.INTERRUPTION_FILTER_ALARMS, noMolestar.poner())
+        val previo = noMolestar.poner()
+        assertEquals(NotificationManager.INTERRUPTION_FILTER_ALL, previo)
         assertEquals(NotificationManager.INTERRUPTION_FILTER_PRIORITY, manager.currentInterruptionFilter)
-        assertTrue(noMolestar.activo())
+        assertTrue(noMolestar.activo(previo))
+    }
+
+    @Test
+    fun `a stricter filter is never loosened`() {
+        concederPermiso(true)
+        listOf(NotificationManager.INTERRUPTION_FILTER_ALARMS, NotificationManager.INTERRUPTION_FILTER_NONE).forEach { estricto ->
+            manager.setInterruptionFilter(estricto)
+            assertNull(noMolestar.poner())
+            assertEquals(estricto, manager.currentInterruptionFilter)
+        }
+    }
+
+    @Test
+    fun `a second instance with the record still sees it active`() {
+        concederPermiso(true)
+        val previo = NoMolestar(context).poner()
+        val otra = NoMolestar(context)
+        assertTrue(otra.activo(previo))
+        assertFalse(otra.activo())
+        assertFalse(otra.activo(null))
+    }
+
+    @Test
+    fun `an unknown current filter is left alone and never stored as previous`() {
+        val desconocido =
+            object : FiltroAndroid {
+                var puestos = 0
+
+                override fun permitido() = true
+
+                override fun actual() = NotificationManager.INTERRUPTION_FILTER_UNKNOWN
+
+                override fun poner(filtro: Int) {
+                    puestos++
+                }
+            }
+        assertNull(NoMolestar(desconocido).poner())
+        assertEquals(0, desconocido.puestos)
+    }
+
+    @Test
+    fun `any runtime failure from the system returns safely`() {
+        val roto =
+            object : FiltroAndroid {
+                override fun permitido() = true
+
+                override fun actual() = NotificationManager.INTERRUPTION_FILTER_PRIORITY
+
+                override fun poner(filtro: Int) = throw IllegalArgumentException("Invalid filter")
+            }
+        val seguro = NoMolestar(roto)
+        seguro.restaurar(NotificationManager.INTERRUPTION_FILTER_ALL)
+        seguro.restaurar(NotificationManager.INTERRUPTION_FILTER_UNKNOWN)
+        val sinServicio =
+            object : FiltroAndroid {
+                override fun permitido() = throw IllegalStateException("sistema muerto")
+
+                override fun actual() = throw IllegalStateException("sistema muerto")
+
+                override fun poner(filtro: Int) = throw IllegalStateException("sistema muerto")
+            }
+        val s2 = NoMolestar(sinServicio)
+        assertNull(s2.poner())
+        assertFalse(s2.activo(NotificationManager.INTERRUPTION_FILTER_ALL))
+        s2.restaurar(NotificationManager.INTERRUPTION_FILTER_ALL)
     }
 
     @Test
@@ -54,7 +119,7 @@ class NoMolestarTest {
         val previo = noMolestar.poner()
         noMolestar.restaurar(previo)
         assertEquals(NotificationManager.INTERRUPTION_FILTER_ALL, manager.currentInterruptionFilter)
-        assertFalse(noMolestar.activo())
+        assertFalse(noMolestar.activo(previo))
     }
 
     @Test
@@ -64,7 +129,7 @@ class NoMolestarTest {
         manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_NONE)
         noMolestar.restaurar(previo)
         assertEquals(NotificationManager.INTERRUPTION_FILTER_NONE, manager.currentInterruptionFilter)
-        assertFalse(noMolestar.activo())
+        assertFalse(noMolestar.activo(previo))
     }
 
     @Test

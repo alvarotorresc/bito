@@ -27,50 +27,61 @@ private class FiltroDelSistema(context: Context) : FiltroAndroid {
 
 /**
  * El filtro de interrupciones de Android durante la sesión (spec §10). No es el silencio de Bito
- * para sus avisos. Nunca lanza: sin permiso o con el permiso retirado, no hace nada.
+ * para sus avisos. Nunca lanza (ninguna RuntimeException del sistema): sin permiso o con el permiso retirado, no hace nada.
  */
 class NoMolestar internal constructor(private val filtro: FiltroAndroid) {
     constructor(context: Context) : this(FiltroDelSistema(context))
 
-    @Volatile
-    private var puesto = false
-
-    fun permitido(): Boolean = filtro.permitido()
+    fun permitido(): Boolean =
+        try {
+            filtro.permitido()
+        } catch (_: RuntimeException) {
+            false
+        }
 
     fun intentAjustes(): Intent = Intent(Settings.ACTION_NOTIFICATION_POLICY_ACCESS_SETTINGS)
 
-    /** Pone PRIORITY y devuelve el filtro previo; null si falla o no hay permiso. */
+    /**
+     * Pone PRIORITY y devuelve el filtro previo, que solo puede ser «todo permitido»: un filtro más
+     * estricto o desconocido no se toca (devuelve null), así que nunca se afloja lo que la persona puso.
+     * También null si falla o no hay permiso.
+     */
     fun poner(): Int? =
         try {
             if (!filtro.permitido()) {
                 null
             } else {
                 val previo = filtro.actual()
-                filtro.poner(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
-                puesto = true
-                previo
+                if (previo != NotificationManager.INTERRUPTION_FILTER_ALL) {
+                    null
+                } else {
+                    filtro.poner(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+                    previo
+                }
             }
-        } catch (_: SecurityException) {
+        } catch (_: RuntimeException) {
             null
         }
 
     /** Solo si el actual sigue siendo PRIORITY: si se cambió a mano, no se toca. */
     fun restaurar(previo: Int?) {
-        puesto = false
-        if (previo == null) return
+        if (previo == null || previo == NotificationManager.INTERRUPTION_FILTER_UNKNOWN) return
         try {
             if (filtro.actual() == NotificationManager.INTERRUPTION_FILTER_PRIORITY) filtro.poner(previo)
-        } catch (_: SecurityException) {
-            // Permiso retirado durante la sesión: no hay nada que restaurar.
+        } catch (_: RuntimeException) {
+            // Permiso retirado o sistema caído: no hay nada que restaurar.
         }
     }
 
-    /** El actual es PRIORITY y lo puso Bito. */
-    fun activo(): Boolean =
-        puesto &&
+    /**
+     * El actual es PRIORITY y lo puso Bito: lo dice el [filtroPrevio] del registro de la sesión
+     * (distinto de null), que sobrevive a que maten el proceso.
+     */
+    fun activo(filtroPrevio: Int? = null): Boolean =
+        filtroPrevio != null &&
             try {
                 filtro.actual() == NotificationManager.INTERRUPTION_FILTER_PRIORITY
-            } catch (_: SecurityException) {
+            } catch (_: RuntimeException) {
                 false
             }
 }

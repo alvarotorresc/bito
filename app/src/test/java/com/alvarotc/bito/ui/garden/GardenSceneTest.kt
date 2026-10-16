@@ -683,4 +683,31 @@ class GardenSceneTest {
         assertEquals(1f, quieto.scaleX, 0f)
         assertEquals(1f, quieto.scaleY, 0f)
     }
+
+    @Test
+    fun `the drawn Habi grows 5,4 percent in height and shrinks 2,7 in width keeping the feet`() {
+        var llenado by mutableStateOf(0.5f)
+        montar(respiracion = { llenado })
+        compose.waitForIdle()
+
+        val habi = { compose.onNodeWithContentDescription("Habi, doing okay").fetchSemanticsNode().boundsInRoot }
+        val reposo = habi()
+        // Los pies están al 88 % de la escena (calculado a mano, no con la función de la app).
+        val escena = compose.onNodeWithTag("garden-scene").fetchSemanticsNode().boundsInRoot
+        val pies = escena.top + escena.height * 0.88f
+        val origen = (pies - reposo.top) / reposo.height
+
+        llenado = 1f
+        compose.waitForIdle()
+        val lleno = habi()
+        assertEquals(1.054f, lleno.height / reposo.height, 0.001f)
+        assertEquals(0.973f, lleno.width / reposo.width, 0.001f)
+        assertEquals(pies, lleno.top + origen * lleno.height, 0.5f)
+
+        llenado = 0f
+        compose.waitForIdle()
+        val vacio = habi()
+        assertEquals(0.946f, vacio.height / reposo.height, 0.001f)
+        assertEquals(pies, vacio.top + origen * vacio.height, 0.5f)
+    }
 }

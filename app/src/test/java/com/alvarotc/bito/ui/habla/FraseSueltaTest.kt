@@ -1,10 +1,12 @@
 package com.alvarotc.bito.ui.habla
 
 import com.alvarotc.bito.domain.habla.Bolsa
+import com.alvarotc.bito.domain.habla.Etiqueta
 import com.alvarotc.bito.domain.habla.Hueco
 import com.alvarotc.bito.domain.habla.TrozoInfo
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.habla.catalogoFalso
+import com.alvarotc.bito.domain.habla.ctx
 import com.alvarotc.bito.domain.model.Personality
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -73,5 +75,29 @@ class FraseSueltaTest {
             )
         val g = FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, null, 3, conSinNombre)
         assertEquals(1, g.trozos.single().indice)
+    }
+
+    @Test
+    fun `a tagged item is only chosen when its context holds`() {
+        // ctx() es un viernes a las 10:00: el item LUNES no se cumple; el VIERNES, sí.
+        val etiquetados =
+            catalogoFalso(
+                Bolsa.SE_ENTRAR to
+                    listOf(
+                        TrozoInfo(0, setOf(Etiqueta.LUNES), emptySet()),
+                        TrozoInfo(1, setOf(Etiqueta.VIERNES), emptySet()),
+                        TrozoInfo(2, emptySet(), emptySet()),
+                    ),
+            )
+        val indices =
+            (0L until 80L).map {
+                FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, null, it, etiquetados, contexto = ctx()).trozos.single().indice
+            }
+        assertTrue(indices.none { it == 0 })
+        assertTrue(indices.any { it == 1 })
+        // Sin contexto, los etiquetados se excluyen.
+        (0L until 40L).forEach {
+            assertEquals(2, FraseSuelta.elegir(Bolsa.SE_ENTRAR, Personality.NEUTRA, null, it, etiquetados).trozos.single().indice)
+        }
     }
 }

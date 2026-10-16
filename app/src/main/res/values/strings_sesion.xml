@@ -40,8 +40,6 @@
     <string name="ses_x_de_y">%1$d of %2$d</string>
     <string name="ses_saltar">Skip</string>
     <string name="ses_saltar_y_volver">Skip and go back to setup</string>
-    <string name="ses_musica_poner">Play background music</string>
-    <string name="ses_musica_quitar">Turn the music off</string>
     <!-- Foco -->
     <string name="ses_de_min">of %1$d min</string>
     <string name="ses_en_pausa">paused</string>

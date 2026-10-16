@@ -1,7 +1,13 @@
 package com.alvarotc.bito.ui.sesion
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithTag
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Gesto
@@ -101,7 +107,8 @@ class CamaraSesionTest {
         assertEquals(384f, sueloEnPantalla(480f, 732f, 0f), 0.01f)
         val t = toma(Encuadre.FOCO, alto = 732f)
         assertEquals(1.85f, t.escala, 0.001f)
-        assertEquals(352f - t.escala * 0.88f * escenaH, t.ty, 0.1f)
+        // A mano: escenaH = 412 · 915 / 1225 = 307,74 y 352 − 1,85 · 0,88 · 307,74 = −149,0.
+        assertEquals(-149.0f, t.ty, 0.2f)
     }
 
     @Test
@@ -113,6 +120,30 @@ class CamaraSesionTest {
         // Y el encuadre sigue sin dejar asomar el borde por encima del suelo nuevo.
         val t = toma(Encuadre.FOCO, contenido = 500f)
         assertTrue(t.ty + t.escala * escenaH >= 415f + 8f)
+    }
+
+    @Test
+    fun `the modifier draws the scene at the Foco frame`() {
+        lateinit var camara: EstadoCamaraSesion
+        compose.setContent {
+            ConSistema(SonidoGrabado(), TactoGrabado(), false) {
+                camara = rememberEstadoCamaraSesion(Encuadre.FOCO)
+                val densidad = LocalDensity.current
+                Box(
+                    Modifier
+                        .size(with(densidad) { escenaW.toDp() }, with(densidad) { escenaH.toDp() })
+                        .camaraSesion(camara, with(densidad) { 915f.toDp() }, escenaW, escenaH)
+                        .testTag("escena"),
+                )
+            }
+        }
+        compose.waitForIdle()
+        // Escala, tx y ty de Foco de la tabla del mock (a mano), en la caja ya transformada.
+        val b = compose.onNodeWithTag("escena").fetchSemanticsNode().boundsInRoot
+        assertEquals(-247.25f, b.left, 0.5f)
+        assertEquals(-155.85f, b.top, 0.5f)
+        assertEquals(2.2002f * 412f, b.width, 0.5f)
+        assertEquals(2.2002f * 307.74f, b.height, 1f)
     }
 
     private lateinit var estado: EstadoCamaraSesion
