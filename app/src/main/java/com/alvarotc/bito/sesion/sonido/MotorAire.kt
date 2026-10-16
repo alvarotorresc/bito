@@ -137,12 +137,18 @@ class MotorAire(
         }
 
     private fun bucle() {
-        if (!foco.tomar(this)) {
-            synchronized(cerrojo) {
-                vivo = false
-                _sonando.value = false
+        // Bito callado (interruptor general o canal ambiente a 0) no pide el foco: no suena, así que
+        // no debe pausar la música de otra app. La vibración por fase sigue.
+        var conFoco = false
+        if (ganancia() > 0f) {
+            if (!foco.tomar(this)) {
+                synchronized(cerrojo) {
+                    vivo = false
+                    _sonando.value = false
+                }
+                return
             }
-            return
+            conFoco = true
         }
         val s = SintesisAire()
         val out = salida()
@@ -168,8 +174,12 @@ class MotorAire(
                     s.musica(musica)
                     parar = pararPedido
                 }
-                // Otra respiración tras perder el foco para siempre: se vuelve a pedir.
-                if (retomarFoco && !foco.tomar(this)) parar = true
+                // Otra respiración tras perder el foco para siempre, o el volumen que sube con el foco sin pedir:
+                // se pide ahora (solo si Bito puede sonar).
+                if (retomarFoco) conFoco = false
+                if (!conFoco && ganancia() > 0f) {
+                    if (foco.tomar(this)) conFoco = true else parar = true
+                }
                 if (parar) s.parar()
                 s.volumen = ganancia() * foco.factor
                 val punto = s.llenar(bloque, reloj() - p.ancla)

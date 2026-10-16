@@ -6,7 +6,6 @@ import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.sesion.Aire
 import com.alvarotc.bito.sesion.Fondo
-import com.alvarotc.bito.sesion.FondoMudo
 import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.sonido.AjustesSonido
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
@@ -39,10 +38,20 @@ fun crearAire(
     )
 }
 
-/** El carril de sonido sustituye el cuerpo por la implementación real. */
+/** El fondo del foco: pista o bucle corto, con el foco de audio que comparte con el aire. */
 @Suppress("UNUSED_PARAMETER")
 fun crearFondo(
     context: Context,
     sonido: MotorSonido,
     settings: SettingsRepository,
-): Fondo = FondoMudo
+): Fondo {
+    val ajustes = AtomicReference(AjustesSonido.de(Settings()))
+    val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    scope.launch { settings.settings.collect { ajustes.set(AjustesSonido.de(it)) } }
+    return FondoSesion(
+        salida = SalidaFondoAndroid(context.applicationContext),
+        foco = FocoAudio.de(context),
+        ganancia = { MotorAire.ganancia(ajustes.get()) },
+        scope = scope,
+    )
+}

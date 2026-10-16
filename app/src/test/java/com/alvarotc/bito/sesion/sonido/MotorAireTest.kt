@@ -10,10 +10,12 @@ import com.alvarotc.bito.ui.sistema.sonido.AjustesSonido
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
@@ -139,5 +141,26 @@ class MotorAireTest {
         assertEquals(1f, MotorAire.ganancia(base), 1e-6f)
         assertEquals(0f, MotorAire.ganancia(base.copy(general = false)), 0f)
         assertEquals(0f, MotorAire.ganancia(base.copy(volAmbiente = 0)), 0f)
+    }
+
+    @Test
+    fun `silent bito does not take audio focus`() {
+        val salida = SalidaFalsa(reloj)
+        val m =
+            MotorAire(
+                audio = audio,
+                foco = FocoAudio(PlataformaFocoAndroid(audio)),
+                tacto = tacto,
+                ganancia = { 0f },
+                salida = { salida },
+                reloj = { reloj.get() },
+                lanzar = { it.run() },
+            )
+        m.respirar(BreathingMode.SLEEP, anclaElapsed = reloj.get(), ciclos = 1, musica = true)
+        assertNull(shadowOf(audio).lastAudioFocusRequest)
+        // No suena, pero la vibración por fase sigue.
+        assertEquals(listOf(Haptica.TICK, Haptica.LOW), tacto.hapticas)
+        assertTrue(salida.pico(0, salida.bloques.size) < 1e-6f)
+        assertFalse(m.sonando.value)
     }
 }
