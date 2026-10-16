@@ -19,6 +19,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
 import com.alvarotc.bito.domain.propuestas.Respuesta
@@ -27,12 +28,17 @@ import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.today.CardKind
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -75,15 +81,50 @@ class DetailViewModel(
         }.flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** La propuesta de Habi para esta ficha; sin fuente, nunca hay. */
+    // Cambia cada vez que hay que volver a pedir la propuesta a la fuente desde cero.
+    private val refresco = MutableStateFlow(0)
+
+    // Tras mandar a Editar, la nota se calla hasta que la ficha vuelva y la fuente conteste con el estado nuevo.
+    private val esperandoEdicion = MutableStateFlow(false)
+
+    /** La propuesta de Habi para esta ficha; sin fuente o en modo lectura, nunca hay. */
+    @OptIn(ExperimentalCoroutinesApi::class)
     val propuesta: StateFlow<Propuesta?> =
-        propuestas?.propuesta(Ambito.FICHA, habitId)?.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
-            ?: MutableStateFlow<Propuesta?>(null)
+        if (propuestas == null || lectura) {
+            MutableStateFlow<Propuesta?>(null)
+        } else {
+            combine(
+                refresco.flatMapLatest { propuestas.propuesta(Ambito.FICHA, habitId) },
+                esperandoEdicion,
+            ) { p, esperando -> if (esperando) null else p }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+        }
+
+    private val _efectos = MutableSharedFlow<Efecto>(extraBufferCapacity = 4)
+
+    /** Lo que la pantalla debe hacer tras una respuesta (solo `EditarHabito` sale de la ficha). */
+    val efectos: SharedFlow<Efecto> = _efectos.asSharedFlow()
 
     fun responder(r: Respuesta) {
         val id = propuesta.value?.id ?: return
-        // El efecto de la respuesta se atiende más adelante; por ahora se ignora.
-        viewModelScope.launch { propuestas?.responder(id, r) }
+        viewModelScope.launch {
+            val efecto = propuestas?.responder(id, r) ?: return@launch
+            if (efecto is Efecto.EditarHabito) esperandoEdicion.value = true
+            if (efecto != Efecto.Ninguno) _efectos.emit(efecto)
+        }
+    }
+
+    /**
+     * La ficha vuelve a primer plano. Si venía de Editar, se pide la propuesta otra vez a la fuente (con
+     * `WhileSubscribed(5_000)` el valor guardado puede ser de antes de editar) y la nota espera a que conteste.
+     */
+    fun alVolver() {
+        if (!esperandoEdicion.value) return
+        viewModelScope.launch {
+            refresco.update { it + 1 }
+            propuestas?.propuesta(Ambito.FICHA, habitId)?.first()
+            esperandoEdicion.value = false
+        }
     }
 
     init {

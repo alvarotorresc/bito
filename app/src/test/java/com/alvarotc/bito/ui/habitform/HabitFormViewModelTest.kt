@@ -72,8 +72,19 @@ class HabitFormViewModelTest {
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "$name.preferences_pb") }
 
-    private fun newViewModel(habitId: String? = null) =
-        HabitFormViewModel(habitsRepo, settingsRepo, rewardsRepo, reconciler, habitId, now = { fixedNow }, zone = { utc })
+    private fun newViewModel(
+        habitId: String? = null,
+        objetivoSugerido: Int? = null,
+    ) = HabitFormViewModel(
+        habitsRepo,
+        settingsRepo,
+        rewardsRepo,
+        reconciler,
+        habitId,
+        now = { fixedNow },
+        zone = { utc },
+        objetivoSugerido = objetivoSugerido,
+    )
 
     @Before
     fun setUp() {
@@ -135,6 +146,81 @@ class HabitFormViewModelTest {
 
             val created = db.habitDao().all().single { it.name == "Nuevo" }
             assertEquals(4, created.sortOrder)
+        }
+
+    @Test
+    fun `the objective note opens the form with the suggested target without saving`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "Agua",
+                    metric = Metric.COUNT,
+                    direction = Direction.AT_LEAST,
+                    target = 8,
+                    createdOnDay = today,
+                ),
+            )
+
+            val vm = newViewModel(habitId = "h1", objetivoSugerido = 12)
+            advanceUntilIdle()
+
+            assertEquals(12, vm.state.value.target)
+            assertEquals("Agua", vm.state.value.name)
+            // La base de datos no cambia hasta guardar.
+            assertEquals(8, db.habitDao().all().single { it.id == "h1" }.target)
+        }
+
+    @Test
+    fun `the suggested target saves like any edit once the user confirms`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    name = "Agua",
+                    metric = Metric.COUNT,
+                    direction = Direction.AT_LEAST,
+                    target = 8,
+                    createdOnDay = today,
+                ),
+            )
+            val vm = newViewModel(habitId = "h1", objetivoSugerido = 12)
+            advanceUntilIdle()
+
+            vm.save(onSaved = {})
+            advanceUntilIdle()
+
+            assertEquals(12, db.habitDao().all().single { it.id == "h1" }.target)
+        }
+
+    @Test
+    fun `the suggested target is clamped like the stepper`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(id = "h1", metric = Metric.CHECK, direction = Direction.AT_LEAST, target = 1, createdOnDay = today),
+            )
+            val vm = newViewModel(habitId = "h1", objetivoSugerido = 0)
+            advanceUntilIdle()
+
+            assertEquals(1, vm.state.value.target)
+        }
+
+    @Test
+    fun `without a suggestion the stored target is kept`() =
+        runTest {
+            habitsRepo.create(
+                habitEntity(
+                    id = "h1",
+                    metric = Metric.COUNT,
+                    direction = Direction.AT_LEAST,
+                    target = 8,
+                    createdOnDay = today,
+                ),
+            )
+            val vm = newViewModel(habitId = "h1")
+            advanceUntilIdle()
+
+            assertEquals(8, vm.state.value.target)
         }
 
     @Test

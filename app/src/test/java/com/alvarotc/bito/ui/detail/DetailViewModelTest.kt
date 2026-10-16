@@ -38,8 +38,10 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.asExecutor
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -344,6 +346,117 @@ class DetailViewModelTest {
             vm.responder(Respuesta.VALE)
             advanceUntilIdle()
             assertEquals(listOf("p" to Respuesta.VALE), respondidas)
+        }
+
+    private class FuenteControlable(
+        inicial: Propuesta?,
+        var efecto: Efecto = Efecto.Ninguno,
+    ) : FuentePropuestas {
+        val actual = MutableStateFlow(inicial)
+        var suscripciones = 0
+
+        override fun propuesta(
+            ambito: Ambito,
+            habitId: String?,
+        ): Flow<Propuesta?> = actual.onStart { suscripciones++ }
+
+        override suspend fun responder(
+            id: String,
+            respuesta: Respuesta,
+            hora: Int?,
+        ): Efecto = efecto
+
+        override suspend fun guardarGordo(refs: List<RefGordo>) = Unit
+    }
+
+    @Test
+    fun `an answer with effect reaches the screen through the effects flow`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()), Efecto.EditarHabito("h1", 15))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            val recibidos = mutableListOf<Efecto>()
+            backgroundScope.launch { vm.efectos.collect { recibidos += it } }
+            advanceUntilIdle()
+
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+
+            assertEquals(listOf<Efecto>(Efecto.EditarHabito("h1", 15)), recibidos)
+        }
+
+    @Test
+    fun `an answer without effect emits nothing`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            val recibidos = mutableListOf<Efecto>()
+            backgroundScope.launch { vm.efectos.collect { recibidos += it } }
+            advanceUntilIdle()
+
+            vm.responder(Respuesta.HOY_NO)
+            advanceUntilIdle()
+
+            assertTrue(recibidos.isEmpty())
+        }
+
+    @Test
+    fun `the note after editing waits for the new state`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val vieja = Propuesta("FI_OBJETIVO:h1:1", TextoHabi(1), emptyList())
+            val nueva = Propuesta("FI_CONSTANCIA:h1:1", TextoHabi(2), emptyList())
+            val fuente = FuenteControlable(vieja, Efecto.EditarHabito("h1", 15))
+            val vm = newViewModel("h1", propuestas = fuente)
+            val vistas = mutableListOf<String?>()
+            backgroundScope.launch { vm.propuesta.collect { vistas += it?.id } }
+            advanceUntilIdle()
+            assertEquals("FI_OBJETIVO:h1:1", vm.propuesta.value?.id)
+
+            val antesDeEditar = vistas.size
+            vm.responder(Respuesta.VALE)
+            advanceUntilIdle()
+            // Se va a Editar: el valor viejo ya no se enseña.
+            assertNull(vm.propuesta.value)
+
+            // Al volver, el estado cambió; hasta entonces no se pinta nada.
+            fuente.actual.value = nueva
+            vm.alVolver()
+            advanceUntilIdle()
+
+            assertEquals("FI_CONSTANCIA:h1:1", vm.propuesta.value?.id)
+            assertTrue("la nota vieja no vuelve a pintarse tras editar", vieja.id !in vistas.drop(antesDeEditar))
+        }
+
+    @Test
+    fun `returning without having edited keeps the note`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()))
+            val vm = newViewModel("h1", propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+
+            vm.alVolver()
+            advanceUntilIdle()
+
+            assertEquals("p", vm.propuesta.value?.id)
+        }
+
+    @Test
+    fun `read mode never has a proposal nor asks the source`() =
+        runTest {
+            habitsRepo.create(habitEntity(id = "h1", metric = Metric.CHECK, target = 1, createdOnDay = today))
+            val fuente = FuenteControlable(Propuesta("p", TextoHabi(1), emptyList()))
+            val vm = newViewModel("h1", lectura = true, propuestas = fuente)
+            backgroundScope.launch { vm.propuesta.collect() }
+            advanceUntilIdle()
+
+            assertNull(vm.propuesta.value)
+            assertEquals(0, fuente.suscripciones)
         }
 
     @Test
