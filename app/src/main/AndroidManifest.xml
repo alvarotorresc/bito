@@ -15,6 +15,7 @@
     <!-- Feedback de registro (Ajustes › Al registrar): vibración controlada por el switch
          de la app, no por el ajuste global de vibración al tacto. -->
     <uses-permission android:name="android.permission.VIBRATE" />
+    <uses-permission android:name="android.permission.ACCESS_NOTIFICATION_POLICY" />
 
     <application
         android:name=".BitoApp"
