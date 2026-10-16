@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -258,6 +259,33 @@ class InicioSesionTest {
 
         assertFalse(existe("ses-tierra"))
         assertFalse("Terminada esperando no atrapa Atrás en Hoy", rule.activity.onBackPressedDispatcher.hasEnabledCallbacks())
+    }
+
+    @Test
+    fun `a session mode restored after the process died with nothing to show leaves for Today`() {
+        banco.preparar()
+        val tester = androidx.compose.ui.test.junit4.StateRestorationTester(rule)
+        var montajes = 0
+        tester.setContent {
+            // El segundo montaje es el de después de morir el proceso: el borrador (en memoria) ya no está.
+            if (remember { ++montajes } == 2) motor.borrador.value = null
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+            }
+        }
+        rule.waitForIdle()
+        pedir(Destino.Tarea("t1"))
+        assertTrue(existe("ses-b-prep"))
+
+        // El proceso muere: el modo sesión se guarda con la instancia, pero el borrador y la sesión viven en memoria.
+        tester.emulateSavedInstanceStateRestore()
+        rule.waitForIdle()
+        asentar()
+        rule.waitForIdle()
+
+        assertFalse("no se queda una tierra vacía", existe("ses-tierra"))
+        assertTrue("Hoy, con su píldora", existe("pildora-hoy"))
+        assertTrue("y con su +", existe("boton-crear"))
     }
 
     @Test

@@ -516,7 +516,13 @@ fun InicioScreen(
         respiracion.value = null
     }
     // Al abrir y en cada vuelta a primer plano la sesión se recupera del disco (cambio de día, app matada).
-    LaunchedEffect(motor) { motor?.recuperar() }
+    // El modo sesión se guarda con la instancia y la sesión no: si venía restaurado (el proceso murió) y tras recuperar no
+    // hay nada que enseñar (ni sesión ni borrador, o se cerró por el cambio de día), se sale a Hoy en vez de quedarse vacío.
+    val modoRestaurado = remember { sesionActiva }
+    LaunchedEffect(motor) {
+        motor?.recuperar()
+        if (motor != null && modoRestaurado && sesionActiva && motor.instante.value == null && motor.borrador.value == null) saliendo = true
+    }
     LifecycleEventEffect(Lifecycle.Event.ON_START) { if (motor != null) scope.launch { motor.recuperar() } }
     // Las peticiones de otras pantallas (Tareas, la notificación): se recupera primero para ver la sesión viva.
     val peticion by EntradaSesion.pendiente.collectAsStateWithLifecycle()
