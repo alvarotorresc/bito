@@ -6,6 +6,7 @@ import android.content.Intent
 import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.sesion.fuera.SesionSync
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -39,10 +40,12 @@ class BootReceiver : BroadcastReceiver() {
         val container = (context.applicationContext as BitoApp).container
         reprogramar(context, container.settings, container.habits, container.avisosHabi)
 
-        // Tras reiniciar, las alarmas y las notificaciones se pierden las dos. Una sesion de foco
-        // cuyo fin sigue en el futuro se reprograma y se vuelve a postear; una que ya paso se
-        // limpia SIN notificar: un «se acabo el tiempo» de hace seis horas es exactamente el
-        // ruido que esta app rechaza.
+        // La sesión de la pieza 5: tras reiniciar se pierden las alarmas y las notificaciones; la viva se rearma y la
+        // que acabó avisa.
+        recuperarSesion(context)
+
+        // El foco de antes, hasta que la sesión nueva lo sustituya del todo. Una sesion que ya paso se limpia SIN
+        // notificar: un «se acabo el tiempo» de hace seis horas es exactamente el ruido que esta app rechaza.
         val session = container.focus.session.first()
         if (session != null) {
             if (session.endsAtMillis > System.currentTimeMillis()) {
@@ -56,6 +59,9 @@ class BootReceiver : BroadcastReceiver() {
     }
 
     companion object {
+        /** La sesión de foco, recalculada con el reloj de pared (el contador de arranques ya cambió). */
+        internal suspend fun recuperarSesion(context: Context) = SesionSync.recuperar(context)
+
         /** Lo que se reprograma tras reiniciar: los recordatorios de siempre y los avisos de Habi. La costura que prueban los tests. */
         internal suspend fun reprogramar(
             context: Context,
