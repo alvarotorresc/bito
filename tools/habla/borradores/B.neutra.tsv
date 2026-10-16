@@ -1,0 +1,110 @@
+bolsa	indice	etiquetas	es	en
+nu_ayer_escapo	0		Ayer se quedó sin hacer: {habito}. Hoy son {minutos} min.	Yesterday slipped by: {habito}. Today it's {minutos} min.
+nu_ayer_escapo	1	[lunes]	Lunes. «{habito}» se quedó ayer en el tintero; hoy hay sitio.	Monday. “{habito}” got left on the shelf yesterday; there's room today.
+nu_ayer_escapo	2		«{habito}» ayer no pudo ser. Hoy bastan {minutos} min.	“{habito}” didn't happen yesterday. {minutos} min is enough today.
+nu_ayer_escapo	3		Ayer se escapó «{habito}». Hoy, {hora}: {minutos} min.	“{habito}” got away yesterday. Today, {hora}: {minutos} min.
+nu_ayer_escapo	4		Un día sin «{habito}» es solo un día. Hoy, {minutos} min y queda al día.	A day without “{habito}” is just a day. {minutos} min today evens it out.
+nu_ayer_escapo	5		{habito}, a las {hora}: {minutos} min cierran el hueco de ayer.	{habito}, at {hora}: {minutos} min and yesterday's gap closes.
+nu_ayer_escapo	6		Ayer faltó «{habito}». Hoy cabe en {minutos} min, cuando quieras.	“{habito}” was missing yesterday. Today it fits in {minutos} min, any time.
+nu_ayer_escapo	7	[manana]	Es temprano. «{habito}» se quedó ayer; hoy cabe en {minutos} min.	It's early. “{habito}” was left yesterday; today it fits in {minutos} min.
+nu_ayer_escapo	8	[tarde]	Ayer se escapó «{habito}». Esta tarde cabe en {minutos} min.	“{habito}” got away yesterday. This afternoon it fits in {minutos} min.
+nu_ayer_escapo	9	[finde]	Es fin de semana. «{habito}» cabe hoy en {minutos} min, sin horarios.	Weekend. “{habito}” fits in {minutos} min today, no schedule.
+nu_ayer_escapo	10	[viernes]	Viernes. «{habito}» se escapó ayer; {minutos} min y la semana acaba al día.	Friday. “{habito}” got away yesterday; {minutos} min and the week ends level.
+nu_ayer_escapo	11		Ayer no salió «{habito}». Hoy: {minutos} min a las {hora}.	“{habito}” slipped yesterday. Today: {minutos} min at {hora}.
+nu_ayer_escapo	12	[invierno]	Hace frío fuera. «{habito}» se quedó ayer; hoy son {minutos} min.	Cold out. “{habito}” was left yesterday; today it's {minutos} min.
+nu_elegir_gordo	0		¿Qué es lo gordo de hoy? Elige una cosa, o hasta tres.	What's the big thing today? Pick one, or up to three.
+nu_elegir_gordo	1		Hay hueco para elegir lo gordo de hoy. Sugiero: «{tarea}».	There's room to pick today's big thing. My suggestion: “{tarea}”.
+nu_elegir_gordo	2		Lo gordo de hoy sigue sin elegir. Elegirlo lleva diez segundos.	Today's big thing is still open. Picking it takes ten seconds.
+nu_elegir_gordo	3		Si hoy solo pudiera salir una cosa, ¿cuál? Esa es lo gordo.	If only one thing could happen today, which one? That's the big thing.
+nu_elegir_gordo	4		Una candidata a lo gordo: «{tarea}». Tú decides.	A candidate for the big thing: “{tarea}”. Your call.
+nu_elegir_gordo	5		Elegir lo gordo da un norte al día. Se me ocurre: «{tarea}».	Picking the big thing gives the day a direction. I'd suggest: “{tarea}”.
+nu_elegir_gordo	6	[manana]	Buen momento para elegir lo gordo, antes de que el día se llene.	Good moment to pick the big thing, before the day fills up.
+nu_elegir_gordo	7	[lunes]	Lunes. Una cosa gorda para empezar la semana; sugiero «{tarea}».	Monday. One big thing to start the week; I'd suggest “{tarea}”.
+nu_elegir_gordo	8	[viernes]	Viernes. Lo gordo de hoy puede ser el último cabo suelto de la semana.	Friday. Today's big thing can be the last loose end of the week.
+nu_elegir_gordo	9		Pueden ser hasta tres, aunque con una basta. ¿Cuál es lo gordo de hoy?	Up to three, though one is enough. What's today's big thing?
+nu_elegir_gordo	10	[finde]	Fin de semana: lo gordo puede ser algo pequeño. ¿Lo eliges?	Weekend: the big thing can be a small one. Pick it?
+nu_gordo_sin_empezar	0		Lo gordo sigue por empezar: {gordo}. Primer paso: {primer_paso}.	The big thing hasn't started: {gordo}. First step: {primer_paso}.
+nu_gordo_sin_empezar	1		Lo gordo sigue intacto: {gordo}. 25 minutos bastan para arrancar.	The big thing is untouched: {gordo}. 25 minutes is enough to get going.
+nu_gordo_sin_empezar	2		Para arrancar con lo gordo ({gordo}) basta esto: {primer_paso}.	To get going on the big thing ({gordo}), this is enough: {primer_paso}.
+nu_gordo_sin_empezar	3		Primer paso de lo gordo: {primer_paso}. Es pequeño a propósito.	First step for the big thing: {primer_paso}. It's small on purpose.
+nu_gordo_sin_empezar	4		Una sesión corta con lo gordo y el resto del día pesa menos: {gordo}.	One short session on the big thing and the rest of the day weighs less: {gordo}.
+nu_gordo_sin_empezar	5		Sigue sin empezar: {gordo}. ¿Probamos 25 minutos?	Still not started: {gordo}. Shall we try 25 minutes?
+nu_gordo_sin_empezar	6	[manana]	Aún es temprano para lo gordo: {gordo}. Empezar ahora deja libre la tarde.	It's still early for the big thing: {gordo}. Starting now frees up the afternoon.
+nu_gordo_sin_empezar	7	[mediodia]	Mediodía y lo gordo sin tocar: {gordo}. Un primer paso: {primer_paso}.	Midday, big thing untouched: {gordo}. One first step: {primer_paso}.
+nu_gordo_sin_empezar	8	[tarde]	La tarde aún da para lo gordo: {gordo}. Empezar es solo: {primer_paso}.	Afternoon still has room for the big thing: {gordo}. Start with: {primer_paso}.
+nu_gordo_sin_empezar	9		Lo gordo espera: {gordo}. No hace falta terminarlo, solo empezarlo.	The big thing is waiting: {gordo}. It doesn't need finishing, only starting.
+nu_gordo_sin_empezar	10	[viernes]	Viernes: lo gordo de hoy sigue esperando. Un paso lo mueve: {primer_paso}.	Friday: today's big thing is still waiting. One step moves it: {primer_paso}.
+nu_hora_habitual	0		Sueles hacer «{habito}» sobre las {hora}. Ya queda poco.	You usually do “{habito}” around {hora}. Not long now.
+nu_hora_habitual	1		Tu hora de siempre para «{habito}» es a las {hora}, y se acerca.	Your usual time for “{habito}” is {hora}, and it's coming up.
+nu_hora_habitual	2		{habito} suele caer sobre las {hora}. Ya falta poco.	{habito} usually lands around {hora}. Not long to go.
+nu_hora_habitual	3		Aviso sin sonido: «{habito}», que sueles hacer a las {hora}.	A quiet heads-up: “{habito}”, which you usually do at {hora}.
+nu_hora_habitual	4		Dentro de poco, «{habito}». Es lo que sueles hacer a esta hora.	Soon, “{habito}”. It's what you usually do around now.
+nu_hora_habitual	5		Ahora o luego, como prefieras: «{habito}» toca sobre las {hora}.	Now or later, as you prefer: “{habito}” comes up around {hora}.
+nu_hora_habitual	6	[manana]	Mañana tranquila. «{habito}» suele ser a las {hora}.	Quiet morning. “{habito}” usually comes at {hora}.
+nu_hora_habitual	7	[mediodia]	Mediodía. Tu «{habito}» de siempre cae cerca: a las {hora}.	Midday. Your usual “{habito}” is close: {hora}.
+nu_hora_habitual	8	[tarde]	Tarde. «{habito}» suele llegar a las {hora}; falta poco.	Afternoon. “{habito}” usually arrives at {hora}; not long now.
+nu_hora_habitual	9	[noche]	Esta noche, «{habito}» a tu hora de siempre, las {hora}.	Tonight, “{habito}” at your usual time, {hora}.
+nu_hora_habitual	10	[finde]	Es fin de semana, pero «{habito}» sigue teniendo su hora: las {hora}.	It's the weekend, but “{habito}” still has its time: {hora}.
+nu_vuelta	0		Han pasado {dias_fuera|día|días}. Hoy, una sola cosa: «{habito}».	It's been {dias_fuera|day|days}. Today, just one thing: “{habito}”.
+nu_vuelta	1		Vuelves tras {dias_fuera|día|días}. Para empezar, solo esto: {habito}.	You're back after {dias_fuera|day|days}. To begin, only this: {habito}.
+nu_vuelta	2		Me alegra verte. Hoy basta con una cosa pequeña: «{habito}».	Good to see you. One small thing is enough today: “{habito}”.
+nu_vuelta	3		Después de {dias_fuera|día|días}, empezamos por lo que mejor se te da: «{habito}».	After {dias_fuera|day|days}, we start with what you do best: “{habito}”.
+nu_vuelta	4		«{habito}» es lo que mejor se te da. Empezamos por ahí.	“{habito}” is what you do best. Let's start there.
+nu_vuelta	5		Sin prisa por ponerte al día. Hoy, solo: {habito}.	No hurry to catch up. Today, just: {habito}.
+nu_vuelta	6	[lunes]	Vuelves en lunes, tras {dias_fuera|día|días}. Una cosa, «{habito}», y el resto espera.	Back on a Monday, after {dias_fuera|day|days}. One thing, “{habito}”, and the rest waits.
+nu_vuelta	7		Basta una para retomar el hilo: «{habito}».	One is enough to pick the thread back up: “{habito}”.
+nu_vuelta	8	[noche]	Queda un rato de hoy, y para volver basta «{habito}».	There's a little of today left, and “{habito}” is enough to get back.
+nu_vuelta	9	[finde]	Es fin de semana y estás de vuelta. Solo «{habito}»; lo demás, a tu ritmo.	It's the weekend and you're back. Just “{habito}”; the rest at your pace.
+nu_dia_duro	0		Hoy, menos. Una sola cosa: «{habito}». El resto espera sin prisa.	Less today. Just one thing: “{habito}”. The rest can wait.
+nu_dia_duro	1		Ayer fue duro, así que hoy va ligero: «{habito}», y ya.	Yesterday was hard, so today goes light: “{habito}”, and that's it.
+nu_dia_duro	2		Lo que dijiste anoche cuenta: hoy, menos. Propongo «{habito}».	What you said last night counts: less today. I suggest “{habito}”.
+nu_dia_duro	3		Tras un día duro, una cosa es suficiente: {habito}.	After a hard day, one thing is enough: {habito}.
+nu_dia_duro	4		Los demás hábitos esperan. Hoy solo: {habito}.	The other habits can wait. Today, only: {habito}.
+nu_dia_duro	5		Sin lista larga hoy. Una cosa, «{habito}», a la hora que sea.	No long list today. One thing, “{habito}”, at whatever time.
+nu_dia_duro	6	[manana]	Empieza el día con calma: solo «{habito}», nada más por ahora.	Start the day gently: just “{habito}”, nothing else for now.
+nu_dia_duro	7	[lunes]	Un lunes tras un día duro. «{habito}» y poco más.	A Monday after a hard day. “{habito}” and not much else.
+nu_dia_duro	8	[invierno]	Hace frío fuera y ayer fue duro. Hoy, algo pequeño: «{habito}».	Cold out, and yesterday was hard. Today, something small: “{habito}”.
+nu_dia_duro	9		No hace falta más que esto hoy: «{habito}».	Nothing more than this is needed today: “{habito}”.
+nu_racha_cerca	0		«{habito}»: racha de {racha}. El hito vale {bitos|bito|bitos}.	“{habito}”: streak of {racha}. The milestone is worth {bitos|bito|bitos}.
+nu_racha_cerca	1		«{habito}» lleva una racha de {racha}. Hoy la aseguras.	“{habito}” has a streak of {racha}. Today you secure it.
+nu_racha_cerca	2		Con {faltan|vez|veces} más, «{habito}» llega al hito: {bitos|bito|bitos}.	With {faltan} more, “{habito}” reaches the milestone: {bitos|bito|bitos}.
+nu_racha_cerca	3		Hacer «{habito}» hoy mantiene una racha de {racha}.	Doing “{habito}” today keeps a streak of {racha} going.
+nu_racha_cerca	4		Estás a {faltan} de un hito en «{habito}». Hoy cuenta.	You're {faltan} from a milestone in “{habito}”. Today counts.
+nu_racha_cerca	5		{habito}, racha de {racha}. El hito está cerca y da {bitos|bito|bitos}.	{habito}, streak of {racha}. The milestone is near: {bitos|bito|bitos}.
+nu_racha_cerca	6	[noche]	Aún da tiempo hoy: «{habito}» sostiene una racha de {racha}.	There's still time today: “{habito}” holds a streak of {racha}.
+nu_racha_cerca	7	[manana]	Buen día para asegurar «{habito}»: el hito queda a {faltan}.	Good day to secure “{habito}”: the milestone is {faltan} away.
+nu_racha_cerca	8	[viernes]	Viernes. «{habito}» sigue en racha ({racha}) y el hito queda cerca.	Friday. “{habito}” is on a streak ({racha}), milestone near.
+nu_racha_cerca	9		El hito de «{habito}» vale {bitos|bito|bitos} y queda a {faltan}.	The milestone for “{habito}” is worth {bitos|bito|bitos}, {faltan} away.
+nu_dia_flojo	0		El {dia_semana} es más cuesta arriba para «{habito}». Mejor pronto.	{dia_semana}s tend to be tougher for “{habito}”. Better early.
+nu_dia_flojo	1		«{habito}» suele costar más cada {dia_semana}. Hoy, a una hora temprana.	“{habito}” tends to be harder on {dia_semana}s. Today, at an early hour.
+nu_dia_flojo	2		Hay días con más cuesta, y el {dia_semana} es uno de ellos para «{habito}».	Some days are steeper, and {dia_semana}s are one for “{habito}”.
+nu_dia_flojo	3		Con «{habito}», el {dia_semana} pide empezar antes.	With “{habito}”, {dia_semana}s call for an earlier start.
+nu_dia_flojo	4		Es {dia_semana}: con «{habito}», mejor pronto que tarde.	It's {dia_semana}: with “{habito}”, sooner beats later.
+nu_dia_flojo	5		Hacer «{habito}» temprano lo deja resuelto antes de que el día se complique.	Doing “{habito}” early settles it before the day gets complicated.
+nu_dia_flojo	6	[manana]	Aún es temprano: buen momento para «{habito}», que el {dia_semana} cuesta más.	Still early: a good moment for “{habito}”, harder on {dia_semana}s.
+nu_dia_flojo	7	[tarde]	Queda tarde para «{habito}». Cada {dia_semana}, mejor no dejarlo para la noche.	Afternoon left for “{habito}”. On {dia_semana}s, better not leave it for night.
+nu_dia_flojo	8		Un día de los que cuestan para «{habito}». Con hora temprana, pesa menos.	One of the days that are harder for “{habito}”. At an early hour, it weighs less.
+nu_tarea_vence	0		«{tarea}» ya tiene fecha. Empezar hoy la deja atrás.	“{tarea}” already has a date. Starting today leaves it behind.
+nu_tarea_vence	1		Una tarea con fecha: «{tarea}». Con empezarla hoy ya hay avance.	A task with a date: “{tarea}”. Starting it today is already progress.
+nu_tarea_vence	2		«{tarea}» lleva la fecha encima. Un primer paso hoy la afloja.	“{tarea}” has its date bearing down. A first step today loosens it.
+nu_tarea_vence	3		De las tareas, «{tarea}» es la que pide atención hoy.	Of your tasks, “{tarea}” is the one that needs attention today.
+nu_tarea_vence	4		Para hoy queda: {tarea}. Una sesión corta ya la mueve.	Left for today: {tarea}. A short session already moves it.
+nu_tarea_vence	5		Si hoy sale una tarea, que sea «{tarea}»: su fecha ya está aquí.	If one task gets done today, make it “{tarea}”: its date is here.
+nu_tarea_vence	6	[manana]	Por la mañana cuesta menos empezar «{tarea}», que tiene fecha.	It's easier to start “{tarea}” in the morning, and it has a date.
+nu_tarea_vence	7	[tarde]	La tarde da para empezar «{tarea}», que ya tiene fecha.	The afternoon has room to start “{tarea}”, which already has a date.
+nu_tarea_vence	8	[viernes]	Viernes: sacar «{tarea}» hoy deja libre el fin de semana.	Friday: getting “{tarea}” done today leaves the weekend free.
+nu_regular	0		Algo corto para arrancar: «{habito}».	Something short to get started: “{habito}”.
+nu_regular	1		Para entrar en materia, lo más pequeño: «{habito}».	To ease in, the smallest one: “{habito}”.
+nu_regular	2		Ayer fue regular, así que hoy empezamos por poco: {habito}.	Yesterday was so-so, so we start small today: {habito}.
+nu_regular	3		«{habito}» pesa poco. Empezamos por ahí.	“{habito}” is light. Let's start there.
+nu_regular	4		Un arranque suave: «{habito}», y luego lo que venga.	A gentle start: “{habito}”, then whatever comes.
+nu_regular	5	[manana]	Por la mañana, calentamos con «{habito}».	In the morning, we warm up with “{habito}”.
+nu_regular	6		Empezar poco también es empezar: «{habito}».	Starting small is still starting: “{habito}”.
+nu_permiso_avisos	0		Para avisarte a tiempo necesito el permiso de notificaciones. ¿Lo activamos?	To remind you on time I need notification permission. Shall we turn it on?
+nu_permiso_avisos	1		Sin permiso de notificaciones no puedo avisarte. Se activa en un toque.	Without notification permission I can't send reminders. It takes one tap.
+nu_permiso_avisos	2		Los avisos de Habi están activos, pero el móvil no los deja salir. Falta un permiso.	Habi's reminders are on, but the phone won't let them through. A permission is missing.
+nu_permiso_avisos	3		Un permiso y los avisos llegan. Cuando quieras.	One permission and the reminders arrive. Whenever you like.
+nu_permiso_alarmas	0		Para avisarte a la hora exacta hace falta el permiso de alarmas. ¿Lo concedemos?	For reminders at the exact time I need the alarms permission. Shall we grant it?
+nu_permiso_alarmas	1		Sin el permiso de alarmas, los avisos pueden llegar tarde. Es un permiso del sistema.	Without the alarms permission, reminders can arrive late. It's a system permission.
+nu_permiso_alarmas	2		Tu móvil necesita un permiso para que los avisos suenen a su hora.	Your phone needs a permission for reminders to ring on time.
+nu_permiso_alarmas	3		Falta el permiso de alarmas. Con ese permiso, cada aviso llega a su hora exacta.	The alarms permission is missing. With it, each reminder arrives at its exact time.

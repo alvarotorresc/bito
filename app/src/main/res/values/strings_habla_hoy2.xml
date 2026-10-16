@@ -1,76 +1,331 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
 <resources>
-    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
     <string-array name="habla_nu_saludo_sargento">
-        <item>Let\'s move, {nombre}.</item>
+        <item>Hi, {nombre}. Let\'s work.</item>
+        <item>{nombre}. Nothing to suggest right now. Carry on.</item>
+        <item>Today: {hechos} of {total}. What\'s left is left. No shortcuts.</item>
+        <item>{hechos} of {total}. The next one is yours to call.</item>
+        <item>Here, {nombre}. You\'re at {hechos} of {total}. Keep going.</item>
+        <item>Do your thing, {nombre}. If I spot something, I\'ll say it straight.</item>
+        <item>No proposals for now. Today\'s list is all yours.</item>
+        <item>[manana] First hours win the day. You\'re at {hechos} of {total}.</item>
+        <item>[mediodia] Midday. {hechos} of {total}. The afternoon is for the rest.</item>
+        <item>[tarde] Mid-afternoon, {nombre}. {hechos} of {total}. Time left.</item>
+        <item>[noche] It\'s night. Today: {hechos} of {total}. Whatever\'s left, no panic.</item>
+        <item>[lunes] Monday. The week starts today: {hechos} of {total}.</item>
+        <item>[viernes] Friday. Counts the same as a Monday. {hechos} of {total}.</item>
+        <item>[finde] Weekend. Same ground, different pace: {hechos} of {total}.</item>
+        <item>[invierno] It\'s cold out there. In here, we work: {hechos} of {total}.</item>
     </string-array>
     <string-array name="habla_nu_saludo_cheerleader">
-        <item>Hey, {nombre}! Today\'s ours.</item>
+        <item>Hi, {nombre}! So good to see you.</item>
+        <item>Hi, {nombre}. Nothing to suggest right now, so carry on. You\'re doing great!</item>
+        <item>Today: {hechos} of {total}. Every one counts!</item>
+        <item>{hechos} of {total} so far. The next one, whenever you fancy it.</item>
+        <item>Right here, {nombre}. You\'re at {hechos} of {total}!</item>
+        <item>Cheering from right here, {nombre}. You do, I clap.</item>
+        <item>Nothing to suggest for now. I\'m right here if you need me.</item>
+        <item>[manana] Good morning! {hechos} of {total} already, and the day\'s only just started.</item>
+        <item>[mediodia] Midday: {hechos} of {total}. And the whole afternoon ahead for the rest!</item>
+        <item>[tarde] Mid-afternoon, {nombre}: {hechos} of {total}, and counting!</item>
+        <item>[noche] It\'s evening now. Today: {hechos} of {total}. Whatever\'s left, no stress.</item>
+        <item>[lunes] Monday! First lap of the week: {hechos} of {total}.</item>
+        <item>[viernes] Friday, {nombre}. {hechos} of {total}. Finish the week strong!</item>
+        <item>[finde] Weekend. Today goes at its own pace: {hechos} of {total}. Enjoy it!</item>
+        <item>[invierno] Cold out there, but in here we\'re at {hechos} of {total}. Cosy, isn\'t it!</item>
     </string-array>
     <string-array name="habla_nu_saludo_neutra">
         <item>Hi, {nombre}.</item>
+        <item>Hi, {nombre}. Nothing to suggest right now.</item>
+        <item>Today: {hechos} of {total}. The rest, at your own pace.</item>
+        <item>{hechos} of {total} so far. The next one, whenever it suits you.</item>
+        <item>Still here, {nombre}. You\'re at {hechos} of {total} today.</item>
+        <item>I\'ll let you get on with it, {nombre}. If I spot something, I\'ll say.</item>
+        <item>Nothing to suggest for now. Today\'s list moves at your pace.</item>
+        <item>[manana] The day is under way: {hechos} of {total} so far.</item>
+        <item>[mediodia] Midday. {hechos} of {total} done; the afternoon has room for the rest.</item>
+        <item>[tarde] Mid-afternoon, {nombre}. So far: {hechos} of {total}.</item>
+        <item>[noche] It\'s evening now. Today: {hechos} of {total}. Whatever\'s left, no rush.</item>
+        <item>[lunes] Monday. First lap of the week: {hechos} of {total}.</item>
+        <item>[viernes] Friday. Today counts the same as Monday: {hechos} of {total} so far.</item>
+        <item>[finde] Weekend. Today goes at its own pace: {hechos} of {total}.</item>
+        <item>[invierno] Cold out there. In here, we\'re at {hechos} of {total}.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_sargento">
-        <item>My day\'s done. Close yours when it\'s time.</item>
+        <item>[esperando] My day is done. I\'m waiting on yours.</item>
+        <item>Everything\'s done for today. Close the day when you like.</item>
+        <item>Today\'s habits: complete. Only the close is left, and it\'s short.</item>
+        <item>Nothing pending. The close can wait.</item>
+        <item>Today\'s work, done. All that\'s left is closing the day.</item>
+        <item>[esperando] I\'ve done mine. I\'ll wait here while you close the day.</item>
+        <item>[esperando] My shift is over. You close yours and we both rest.</item>
+        <item>[manana] All done before lunch. The close can wait for tonight.</item>
+        <item>[tarde] All done and it\'s still afternoon. The rest of the day is yours.</item>
+        <item>[noche] All done. One minute to close, then rest.</item>
+        <item>[viernes] Friday, all done. Close it out and let the weekend start.</item>
+        <item>[domingo] Sunday, all done. The week ends when you close today.</item>
+        <item>[invierno] All done, and it\'s getting dark out. Close whenever you like.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_cheerleader">
-        <item>I\'m all done for today. Staying right here till we close!</item>
+        <item>[esperando] I\'m all done for today. Staying right here till we close!</item>
+        <item>Everything\'s done for today! Close the day whenever you like.</item>
+        <item>Today\'s habits are done. Only the close is left, and it\'s super short.</item>
+        <item>No habits left for today. The close can wait until you fancy it!</item>
+        <item>Today\'s done, start to finish. Closing the day is all that\'s left.</item>
+        <item>[esperando] I\'m done with mine. I\'ll wait right here until you close the day.</item>
+        <item>[esperando] My day\'s over, and yours nearly is. Close it and we both get to rest!</item>
+        <item>[manana] All done before lunch! The close can wait until tonight.</item>
+        <item>[tarde] All done, and it\'s still afternoon. The rest of the day is yours, enjoy it!</item>
+        <item>[noche] All done. One minute to close the day, then rest. You\'ve earned it!</item>
+        <item>[viernes] Friday, all done! Just the close left.</item>
+        <item>[domingo] Sunday, all done. The week ends with today\'s close, and on a high note!</item>
+        <item>[invierno] All done, and it\'s getting dark out. The close, whenever you like.</item>
     </string-array>
     <string-array name="habla_nu_todo_hecho_neutra">
-        <item>I\'ve finished my day. I\'ll stay here, waiting on yours.</item>
+        <item>[esperando] I\'ve finished my day. I\'ll stay here, waiting on yours.</item>
+        <item>Everything\'s done for today. Close the day whenever you like.</item>
+        <item>Today\'s habits are done. Only the close is left, and it\'s short.</item>
+        <item>No habits left for today. The close can wait until it suits you.</item>
+        <item>Today\'s done. Closing the day is all that\'s left.</item>
+        <item>[esperando] I\'m done with mine. I\'ll wait here until you close the day.</item>
+        <item>[esperando] My day\'s over too. When you close yours, we both get to rest.</item>
+        <item>[manana] All done before lunch. The close can wait until tonight.</item>
+        <item>[tarde] All done, and it\'s still afternoon. The rest of the day is yours.</item>
+        <item>[noche] All done. One minute to close the day, then rest.</item>
+        <item>[viernes] Friday, all done. Just the close left.</item>
+        <item>[domingo] Sunday, all done. The week ends with today\'s close.</item>
+        <item>[invierno] All done, and it\'s getting dark out. The close, whenever you like.</item>
     </string-array>
     <string-array name="habla_nu_cerrar_dia_sargento">
-        <item>All that is left is closing the day.</item>
+        <item>Time to close the day. To decide: {n|thing|things}.</item>
+        <item>To decide: {n|thing|things}. One minute and the day is sealed.</item>
+        <item>Closing time: {n|thing|things}, then bed.</item>
+        <item>Today\'s close has {n|thing|things}. Settle it and that\'s it.</item>
+        <item>Before bed, the close: {n|thing|things}. Nothing settles itself.</item>
+        <item>What\'s left of today fits in the close: {n|thing|things}.</item>
+        <item>[noche] It\'s night. Closing takes a minute: {n|thing|things}.</item>
+        <item>[madrugada] It\'s late. Close the day: {n|thing|things}, then sleep.</item>
+        <item>[lunes] First close of the week: {n|thing|things}. Start it right.</item>
+        <item>[viernes] Friday night. Close out {n|thing|things} and the weekend is yours.</item>
+        <item>[domingo] Sunday. Closing today leaves the week in order: {n|thing|things}.</item>
+        <item>[invierno] Long winter night. The close takes a minute: {n|thing|things}.</item>
     </string-array>
     <string-array name="habla_nu_cerrar_dia_cheerleader">
-        <item>All that is left is closing the day.</item>
+        <item>Shall we close the day? Just {n|thing|things} to decide.</item>
+        <item>Left to decide: {n|thing|things}. One minute and the day is sealed!</item>
+        <item>Time to close the day: {n|thing|things}, then bed.</item>
+        <item>Today\'s close has {n|thing|things} in it. We\'ll do it when you say.</item>
+        <item>Before bed, the close: {n|thing|things} and the day is wrapped!</item>
+        <item>What\'s left of today fits in the close: {n|thing|things}.</item>
+        <item>[noche] It\'s night now. Closing the day takes a minute: {n|thing|things}.</item>
+        <item>[madrugada] It got late. To close the day: {n|thing|things}, then bed.</item>
+        <item>[lunes] First close of the week! {n|thing|things} to decide.</item>
+        <item>[viernes] Friday night. We close the day with {n|thing|things}, and the weekend begins!</item>
+        <item>[domingo] Sunday. Closing today leaves the week in order: {n|thing|things} to decide.</item>
+        <item>[invierno] Long winter night. The close takes a minute: {n|thing|things}.</item>
     </string-array>
     <string-array name="habla_nu_cerrar_dia_neutra">
-        <item>All that is left is closing the day.</item>
+        <item>Shall we close the day? To decide: {n|thing|things}.</item>
+        <item>Left to decide: {n|thing|things}. One minute and the day is sealed.</item>
+        <item>Time to close the day: {n|thing|things}, then bed.</item>
+        <item>Today\'s close has {n|thing|things} in it. We\'ll do it when you say.</item>
+        <item>Before bed, the close: {n|thing|things} to decide.</item>
+        <item>What\'s left of today fits in the close: {n|thing|things}.</item>
+        <item>[noche] It\'s night now. Closing the day takes a minute: {n|thing|things}.</item>
+        <item>[madrugada] It got late. To close the day: {n|thing|things}, then bed.</item>
+        <item>[lunes] First close of the week: {n|thing|things} to decide.</item>
+        <item>[viernes] Friday night. We close the day with {n|thing|things}, and the weekend begins.</item>
+        <item>[domingo] Sunday. Closing today leaves the week in order: {n|thing|things} to decide.</item>
+        <item>[invierno] Long winter night. The close takes a minute: {n|thing|things}.</item>
     </string-array>
     <string-array name="habla_nu_noche_sargento">
-        <item>Lights out. You should do the same.</item>
+        <item>[durmiendo] Day closed. Good night.</item>
+        <item>Day closed. Tomorrow we start with “{tarea}”.</item>
+        <item>[durmiendo] Going to sleep. Tomorrow, first thing.</item>
+        <item>The day is sealed. Rest up.</item>
+        <item>Today is counted, and counted right. Rest.</item>
+        <item>[durmiendo] Eyes closed. Tomorrow, right here.</item>
+        <item>[noche] Day closed. What\'s left of the night is for resting.</item>
+        <item>[madrugada] It\'s late and the day is closed. Sleep, now.</item>
+        <item>[viernes] Friday\'s closed. Good night.</item>
+        <item>[domingo] Sunday\'s closed. New week tomorrow.</item>
+        <item>[invierno] Winter night, day closed. Good night.</item>
+        <item>[verano] There\'s still light, but the day is closed. Good night.</item>
+        <item>“{tarea}”, first thing tomorrow. For now, rest.</item>
     </string-array>
     <string-array name="habla_nu_noche_cheerleader">
-        <item>Falling asleep happy. See you tomorrow!</item>
+        <item>[durmiendo] Day closed. Falling asleep happy, see you tomorrow.</item>
+        <item>Day closed. Tomorrow we start with “{tarea}”!</item>
+        <item>[durmiendo] I\'m off to sleep. More tomorrow, you and me.</item>
+        <item>The day is sealed. See you tomorrow!</item>
+        <item>Today\'s on the books, and it\'s a good page. Get some rest.</item>
+        <item>[durmiendo] Closing my eyes, happy. Same place tomorrow.</item>
+        <item>[noche] Day closed. The rest of the night is for resting.</item>
+        <item>[madrugada] It\'s late and the day is closed. Off to bed!</item>
+        <item>[viernes] Friday\'s closed! Good night.</item>
+        <item>[domingo] Sunday\'s closed. A new week starts tomorrow, and we start it side by side.</item>
+        <item>[invierno] Winter night, day closed. Good night, wrap up warm!</item>
+        <item>[verano] There\'s still a bit of light, but the day is closed. Good night!</item>
+        <item>“{tarea}”, first thing tomorrow. For now, rest.</item>
     </string-array>
     <string-array name="habla_nu_noche_neutra">
-        <item>Day closed. Good night.</item>
+        <item>[durmiendo] Day closed. Good night.</item>
+        <item>Day closed. Tomorrow we start with “{tarea}”.</item>
+        <item>[durmiendo] I\'m off to sleep. More tomorrow.</item>
+        <item>The day is sealed. See you tomorrow.</item>
+        <item>Today\'s on the books. Get some rest.</item>
+        <item>[durmiendo] Closing my eyes. Same place tomorrow.</item>
+        <item>[noche] Day closed. The rest of the night is for resting.</item>
+        <item>[madrugada] It\'s late and the day is closed. Time for bed.</item>
+        <item>[viernes] Friday\'s closed. Good night.</item>
+        <item>[domingo] Sunday\'s closed. A new week starts tomorrow.</item>
+        <item>[invierno] Winter night, day closed. Good night.</item>
+        <item>[verano] There\'s still a bit of light, but the day is closed. Good night.</item>
+        <item>“{tarea}”, first thing tomorrow. For now, rest.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_sargento">
-        <item>Okay, tomorrow then.</item>
+        <item>Okay. If you change your mind, I\'m here.</item>
+        <item>Understood. Tell me when you\'re ready.</item>
+        <item>All right. We leave it there.</item>
+        <item>Noted. The rest stands.</item>
+        <item>Your call on the pace. I\'m staying put.</item>
+        <item>Okay, parked. But I\'m keeping an eye on it.</item>
+        <item>Understood. Not everything has to be decided now.</item>
+        <item>[manana] All right. Plenty of day ahead.</item>
+        <item>[tarde] Okay. The afternoon is still yours.</item>
+        <item>[noche] Understood. At this hour, no rush.</item>
+        <item>[finde] Noted. Weekends have their own pace.</item>
+        <item>[lunes] Okay. Mondays are slow starters. Start anyway, when you can.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_cheerleader">
-        <item>Okay, tomorrow then.</item>
+        <item>Okay, no problem. I\'m here whenever you want!</item>
+        <item>Understood. I\'m here whenever you want.</item>
+        <item>All right. We\'ll leave it there, no drama.</item>
+        <item>Noted. Everything else stays as it is, and it all still counts!</item>
+        <item>No problem. You set the pace, I\'ll walk beside you.</item>
+        <item>Okay, parking it. I\'ll be around.</item>
+        <item>Got it. Not everything needs deciding right now.</item>
+        <item>[manana] All right. There\'s plenty of day left!</item>
+        <item>[tarde] Okay. The afternoon\'s still yours.</item>
+        <item>[noche] Understood. At this hour, better not to rush.</item>
+        <item>[finde] Noted. Weekends have their own pace, and I like it!</item>
+        <item>[lunes] Okay. Mondays are hard to get going, I know.</item>
     </string-array>
     <string-array name="habla_nu_tras_hoy_no_neutra">
-        <item>Okay, tomorrow then.</item>
+        <item>Okay. If you change your mind, I\'m here.</item>
+        <item>Understood. I\'m here whenever you want.</item>
+        <item>All right. We\'ll leave it there.</item>
+        <item>Noted. Everything else stays as it is.</item>
+        <item>No problem. You set the pace.</item>
+        <item>Okay, parking it. I\'ll be around.</item>
+        <item>Got it. Not everything needs deciding now.</item>
+        <item>[manana] All right. There\'s plenty of day left.</item>
+        <item>[tarde] Okay. The afternoon\'s still yours.</item>
+        <item>[noche] Understood. At this hour, better not to rush.</item>
+        <item>[finde] Noted. Weekends have their own pace.</item>
+        <item>[lunes] Okay. Mondays take a while to get going.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_sargento">
-        <item>Done, I\'ll remind you at {hora}.</item>
+        <item>Done. Reminder at {hora}. Answer it when it rings.</item>
+        <item>Noted. I\'ll remind you at {hora}.</item>
+        <item>{hora}, then. I\'ll call it, you do it.</item>
+        <item>Set for {hora}. Until then, on to something else.</item>
+        <item>Okay, noted.</item>
+        <item>Done. It\'s on the list.</item>
+        <item>[manana] I\'ll remind you at {hora}. Make use of the morning.</item>
+        <item>[tarde] {hora}. I\'ll call it, and until then, get on with your day.</item>
+        <item>[noche] At {hora}, before we close the day. I\'ll let you know.</item>
+        <item>[finde] Done: {hora}. It\'s the weekend, but a time is a time.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_cheerleader">
-        <item>Done, I\'ll remind you at {hora}.</item>
+        <item>Done! I\'ll remind you at {hora}.</item>
+        <item>Noted. I\'ll remind you at {hora}.</item>
+        <item>{hora}, then. I\'ll do the remembering for both of us!</item>
+        <item>Set for {hora}. Until then, no need to keep it in mind.</item>
+        <item>Okay, noted.</item>
+        <item>All right. It\'s written down, count on me!</item>
+        <item>[manana] Done: I\'ll remind you at {hora}. The morning is yours.</item>
+        <item>[tarde] {hora} it is. I\'ll let you know; no hurry till then.</item>
+        <item>[noche] At {hora}, before we close the day. I\'ll let you know!</item>
+        <item>[finde] Done: reminder at {hora}. No rush, it\'s the weekend.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_neutra">
-        <item>Done, I\'ll remind you at {hora}.</item>
+        <item>Done. I\'ll remind you at {hora}.</item>
+        <item>Noted. I\'ll remind you at {hora}.</item>
+        <item>{hora}, then. I\'ll let you know.</item>
+        <item>Set for {hora}. Until then, no need to keep it in mind.</item>
+        <item>Okay, noted.</item>
+        <item>All right. It\'s written down.</item>
+        <item>[manana] Done: I\'ll remind you at {hora}. The morning is yours.</item>
+        <item>[tarde] {hora} it is. I\'ll let you know; no hurry till then.</item>
+        <item>[noche] At {hora}, before we close the day. I\'ll let you know.</item>
+        <item>[finde] Done: reminder at {hora}. No rush, it\'s the weekend.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_sargento">
-        <item>I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+        <item>Done. Reminder at {hora}. Meanwhile, the big thing: {gordo}.</item>
+        <item>Noted for {hora}. The big thing isn\'t going anywhere: {gordo}.</item>
+        <item>{hora}, then. That leaves room for the big thing: {gordo}.</item>
+        <item>Set for {hora}. Until then, one session on the big thing: {gordo}.</item>
+        <item>Done: {hora}. And meanwhile, 25 minutes on the big thing: {gordo}.</item>
+        <item>Okay, noted. Today\'s big thing is still this: {gordo}.</item>
+        <item>[manana] Reminder at {hora}. Mornings are made for the big thing: {gordo}.</item>
+        <item>[tarde] {hora}, done. There\'s still afternoon for the big thing: {gordo}.</item>
+        <item>[lunes] Noted: {hora}. To open the week, the big thing: {gordo}.</item>
+        <item>[viernes] Done: {hora}. Friday\'s big thing: {gordo}.</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_cheerleader">
-        <item>I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+        <item>Done! I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+        <item>Noted for {hora}. Until then, the big thing is still there: {gordo}.</item>
+        <item>{hora}, then. That leaves room now for the big thing: {gordo}.</item>
+        <item>Set for {hora}. If you fancy a session, the big thing: {gordo}.</item>
+        <item>Done: {hora}. Meanwhile, 25 minutes on the big thing: {gordo}. Go!</item>
+        <item>Okay, noted. Today\'s big thing is still this: {gordo}.</item>
+        <item>[manana] I\'ll remind you at {hora}. Mornings suit the big thing: {gordo}!</item>
+        <item>[tarde] {hora}, done. There\'s still afternoon left for the big thing: {gordo}.</item>
+        <item>[lunes] Noted: {hora}. To start the week, the big thing: {gordo}!</item>
+        <item>[viernes] Done: {hora}. Friday\'s big thing: {gordo}. Let\'s go get it!</item>
     </string-array>
     <string-array name="habla_nu_confirma_vale_gordo_neutra">
-        <item>I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+        <item>Done. I\'ll remind you at {hora}. Meanwhile, the big thing: {gordo}.</item>
+        <item>Noted for {hora}. Until then, the big thing is still there: {gordo}.</item>
+        <item>{hora}, then. That leaves room now for the big thing: {gordo}.</item>
+        <item>Set for {hora}. If you fancy a session, the big thing: {gordo}.</item>
+        <item>Done: {hora}. In the meantime, 25 minutes on the big thing: {gordo}.</item>
+        <item>Okay, noted. Today\'s big thing is still this: {gordo}.</item>
+        <item>[manana] I\'ll remind you at {hora}. Mornings suit the big thing: {gordo}.</item>
+        <item>[tarde] {hora}, done. There\'s still afternoon left for the big thing: {gordo}.</item>
+        <item>[lunes] Noted: {hora}. To start the week, the big thing: {gordo}.</item>
+        <item>[viernes] Done: {hora}. Friday\'s big thing: {gordo}.</item>
     </string-array>
     <string-array name="habla_nu_gordo_elegido_sargento">
-        <item>Today\'s big thing is set: {gordo}.</item>
+        <item>Today\'s big thing: {gordo}. First step: {primer_paso}. Start there.</item>
+        <item>Today\'s big thing: {gordo}. One 25-minute session. No excuses.</item>
+        <item>Chosen. The big thing: {gordo}. Everything else counts the same.</item>
+        <item>The big thing is settled: {gordo}. Starting is enough.</item>
+        <item>The big thing: {gordo}. To get going: {primer_paso}.</item>
+        <item>[manana] Today\'s big thing: {gordo}. The whole morning ahead.</item>
+        <item>[lunes] Monday\'s big thing: {gordo}. First step: {primer_paso}. Now.</item>
+        <item>[viernes] Friday\'s big thing: {gordo}. One session and the week closes lighter.</item>
     </string-array>
     <string-array name="habla_nu_gordo_elegido_cheerleader">
-        <item>Today\'s big thing is set: {gordo}.</item>
+        <item>Today\'s big thing: {gordo}! First step: {primer_paso}.</item>
+        <item>Today\'s big thing: {gordo}. A 25-minute session is a great start.</item>
+        <item>Chosen. The big thing: {gordo}. Everything else counts just as much.</item>
+        <item>The big thing is settled: {gordo}. Starting is already a lot!</item>
+        <item>The big thing: {gordo}. To get going: {primer_paso}.</item>
+        <item>[manana] Today\'s big thing: {gordo}. The whole morning ahead, and me right with you!</item>
+        <item>[lunes] Monday\'s big thing: {gordo}. First step: {primer_paso}.</item>
+        <item>[viernes] Friday\'s big thing: {gordo}. One session and the week ends lighter!</item>
     </string-array>
     <string-array name="habla_nu_gordo_elegido_neutra">
-        <item>Today\'s big thing is set: {gordo}.</item>
+        <item>Today\'s big thing: {gordo}. First step: {primer_paso}. That\'s enough to start.</item>
+        <item>Today\'s big thing: {gordo}. A 25-minute session is a good start.</item>
+        <item>Chosen. The big thing: {gordo}. Everything else counts just the same.</item>
+        <item>The big thing is settled: {gordo}. Starting is enough.</item>
+        <item>The big thing: {gordo}. To get going: {primer_paso}.</item>
+        <item>[manana] Today\'s big thing: {gordo}. The whole morning ahead.</item>
+        <item>[lunes] Monday\'s big thing: {gordo}. First step: {primer_paso}.</item>
+        <item>[viernes] Friday\'s big thing: {gordo}. One session and the week ends lighter.</item>
     </string-array>
 </resources>

@@ -1,103 +1,330 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
 <resources>
-    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
     <string-array name="habla_cie_gordo_hecho_sargento">
-        <item>The big thing is done.</item>
+        <item>The big thing, done. That was the hard part, {nombre}.</item>
+        <item>Done: {gordo}. That\'s the day holding up on its own.</item>
+        <item>The big thing is out of the way. Everything else weighs less.</item>
+        <item>You said you\'d do it and you did: {gordo}. That\'s how it\'s done.</item>
+        <item>Only a matter of time, {nombre}. The big thing, closed.</item>
+        <item>The big thing, crossed off. Tomorrow we find the next one.</item>
+        <item>[lunes] Monday and the big thing is done. That\'s how a week starts.</item>
+        <item>[viernes] Friday, and the big thing isn\'t waiting for Monday. Well played.</item>
+        <item>The big thing no longer weighs on you. Close the day with a clear head.</item>
+        <item>[domingo] Sunday, and the big thing done. The week closes clean.</item>
     </string-array>
     <string-array name="habla_cie_gordo_hecho_cheerleader">
-        <item>The big thing is done.</item>
+        <item>The big thing, done, {nombre}! That one was all you.</item>
+        <item>Today\'s big thing is done: {gordo}. Crossing it off feels good.</item>
+        <item>[lunes] Monday and the big thing is done, {nombre}! That\'s how you start a week.</item>
+        <item>You picked the big thing and did it: {gordo}. I just watched, grinning.</item>
+        <item>{nombre}, the big thing is down: {gordo}. Now you can breathe.</item>
+        <item>The hard part of the day is done: {gordo}. Well played.</item>
+        <item>[viernes] Big thing done, and it\'s Friday. You\'ve earned your evening, {nombre}.</item>
+        <item>That was no small thing: {gordo}. You saw it through from start to finish.</item>
     </string-array>
     <string-array name="habla_cie_gordo_hecho_neutra">
-        <item>The big thing is done.</item>
+        <item>Today\'s big thing is done: {gordo}. Everything else is a bonus.</item>
+        <item>The big thing is done, {nombre}. The rest of the day weighs less.</item>
+        <item>The big thing is sorted: {gordo}. You close the day with the hard part done.</item>
+        <item>You got the big thing done today: {gordo}. It shows.</item>
+        <item>{gordo}: done. What you picked as today\'s big thing is closed.</item>
+        <item>[lunes] Monday, and the big thing is done: {gordo}. The week starts with a head start.</item>
+        <item>[viernes] Friday with the big thing done: {gordo}. The weekend starts light.</item>
+        <item>[domingo] Sunday, and the big thing is done: {gordo}. The week closes in order.</item>
+        <item>[invierno] Cold out, and the big thing is done: {gordo}. Good moment to close.</item>
     </string-array>
     <string-array name="habla_cie_logro_sargento">
-        <item>What slipped yesterday got done today.</item>
+        <item>It slipped yesterday and you did it today: {habito}. That counts.</item>
+        <item>Not yesterday, but today: “{habito}”. That\'s how you correct course.</item>
+        <item>Today you did what got left out yesterday: {habito}. No comment needed.</item>
+        <item>{habito}: it got away yesterday, not today. Noted, {nombre}.</item>
+        <item>You picked “{habito}” back up the very next day. Few do.</item>
+        <item>Yesterday\'s miss, made up today: {habito}. That\'s how it\'s built.</item>
+        <item>You didn\'t let yesterday decide for you. Today it\'s done: {habito}.</item>
+        <item>[lunes] Monday, winning ground back: “{habito}” done. Good start.</item>
+        <item>It got away yesterday, you caught it today. That\'s the difference.</item>
     </string-array>
     <string-array name="habla_cie_logro_cheerleader">
-        <item>What slipped yesterday got done today.</item>
+        <item>It got away yesterday, today you did it: {habito}. That counts, {nombre}.</item>
+        <item>Not yesterday, but today! “{habito}” done. That\'s how you come back.</item>
+        <item>“{habito}” got away yesterday. Today you caught it on the fly.</item>
+        <item>{habito}, done. It slipped away yesterday, and today you went back for it.</item>
+        <item>One day slips by; what matters is coming back. Today you did: “{habito}”.</item>
+        <item>{nombre}, that\'s getting back on the horse! “{habito}” done after yesterday.</item>
+        <item>Yesterday it got left behind; today you picked it back up: {habito}.</item>
     </string-array>
     <string-array name="habla_cie_logro_neutra">
-        <item>What slipped yesterday got done today.</item>
+        <item>Today you did what slipped away yesterday: {habito}. That counts.</item>
+        <item>It didn\'t happen yesterday, but it did today: {habito}. Nothing owed.</item>
+        <item>{habito}, done today after slipping away yesterday. Noted.</item>
+        <item>One day it slips, the next you pick it back up: {habito}. That\'s how it works.</item>
+        <item>It didn\'t work out yesterday, but today it did: “{habito}”. That\'s enough.</item>
+        <item>[lunes] Monday, and you picked up yesterday\'s slip: {habito}. Good start.</item>
+        <item>[noche] Before we close: “{habito}” happened today, though not yesterday.</item>
     </string-array>
     <string-array name="habla_cie_racha_avanza_sargento">
-        <item>The streak keeps growing.</item>
+        <item>{habito}: a streak of {racha}. Don\'t let go.</item>
+        <item>A streak of {racha} on “{habito}”. Only a matter of time.</item>
+        <item>A streak of {racha}, {nombre}. This isn\'t luck anymore.</item>
+        <item>“{habito}” count: {racha}. Keep adding.</item>
+        <item>{racha} in a row without dropping it. That\'s consistency.</item>
+        <item>Today makes {racha} on “{habito}”. Keep it alive.</item>
+        <item>[lunes] Monday and a streak of {racha} on “{habito}”. That\'s how you start a week.</item>
+        <item>[finde] Weekend and the streak holds: {habito}, {racha}.</item>
+        <item>Your streak on “{habito}” reaches {racha}. That\'s built, not handed out.</item>
+        <item>A streak of {racha} on “{habito}”. On to the next one.</item>
     </string-array>
     <string-array name="habla_cie_racha_avanza_cheerleader">
-        <item>The streak keeps growing.</item>
+        <item>A streak of {racha} with “{habito}”, {nombre}!</item>
+        <item>“{habito}” hits {racha}. That\'s habit by now, not luck.</item>
+        <item>Round number: a streak of {racha} on “{habito}”. You mean it!</item>
+        <item>{habito}: {racha} in a row. You put in every single one.</item>
+        <item>Look, {nombre}: {racha} in a row on “{habito}”. Your work.</item>
+        <item>[domingo] Sunday, a streak of {racha} on “{habito}”. A strong end to the week.</item>
+        <item>Another round number! “{habito}” is at {racha}, {nombre}.</item>
     </string-array>
     <string-array name="habla_cie_racha_avanza_neutra">
-        <item>The streak keeps growing.</item>
+        <item>{habito}: a streak of {racha}. A round number.</item>
+        <item>A streak of {racha} with “{habito}”. Steady going, {nombre}.</item>
+        <item>{habito} is at {racha} in a row, and today counts.</item>
+        <item>A streak of {racha} on “{habito}”. And it keeps going.</item>
+        <item>{nombre}, a streak of {racha} on “{habito}”. Still counting.</item>
+        <item>[domingo] You close the week with {racha} in a row of “{habito}”.</item>
+        <item>[lunes] Monday and a round streak: “{habito}”, {racha} in a row.</item>
     </string-array>
     <string-array name="habla_cie_sencillo_sargento">
         <item>Let\'s close the day, {nombre}. No excuses.</item>
+        <item>Go over what\'s left and decide. One minute.</item>
+        <item>Last stretch of the day. Whatever\'s left gets decided here.</item>
+        <item>Look at the rows, answer straight and close. That\'s all.</item>
+        <item>Everything in its place, then rest.</item>
+        <item>Today is nearly written. What\'s left is yours to decide.</item>
+        <item>[lunes] First close of the week. Do it properly.</item>
+        <item>[viernes] Friday. Close it tidy and the weekend starts clean.</item>
+        <item>[domingo] Sunday. A good close leaves the week in order.</item>
+        <item>[invierno] It\'s dark out already. In here, we close today.</item>
     </string-array>
     <string-array name="habla_cie_sencillo_cheerleader">
-        <item>Time to close the day, {nombre}! Whatever\'s left, we finish it now.</item>
+        <item>Quiet day, {nombre}. Just showing up is a lot.</item>
+        <item>One more day in the pocket. Big or small, it adds up.</item>
+        <item>We\'re closing the day together, {nombre}. I liked walking alongside you.</item>
+        <item>No fireworks today, and that\'s fine. Ordinary days are the ones that count.</item>
+        <item>{nombre}, thanks for spending the day with me. Nearly time to rest.</item>
+        <item>Good work today, {nombre}! Quiet, but steady.</item>
+        <item>[viernes] Friday\'s winding down, {nombre}. What you did today is yours to keep.</item>
     </string-array>
     <string-array name="habla_cie_sencillo_neutra">
-        <item>Day review, {nombre}. Just what\'s left.</item>
+        <item>Closing the day, {nombre}. Just what\'s left.</item>
+        <item>This is what\'s left to decide. The rest is already done.</item>
+        <item>One last look at the day, {nombre}. No rush.</item>
+        <item>These rows are the only thing still open. They go quickly.</item>
+        <item>The day is almost closed. Only these decisions remain.</item>
+        <item>[noche] It\'s night already. A short pass, then rest.</item>
+        <item>[viernes] Friday: a quick pass and the weekend starts clean.</item>
+        <item>[invierno] With this cold, a short pass: only what\'s still open.</item>
     </string-array>
     <string-array name="habla_cie_nada_pendiente_sargento">
         <item>All clear. No complaints from me today, {nombre}.</item>
+        <item>Nothing to decide. You can seal the day.</item>
+        <item>No loose ends. Nice and clean, {nombre}.</item>
+        <item>Everything\'s answered. All that\'s left is goodnight.</item>
+        <item>Zero loose ends. Seal it and sleep.</item>
+        <item>Nothing to fix today. Rest properly.</item>
+        <item>[lunes] Monday with nothing pending. Good starting point, {nombre}.</item>
+        <item>[viernes] Friday with nothing pending. The weekend starts with a clean slate.</item>
+        <item>[domingo] Sunday with nothing pending. The week stays in order.</item>
     </string-array>
     <string-array name="habla_cie_nada_pendiente_cheerleader">
-        <item>{nombre}, you\'ve got it all done! Seal it and rest up.</item>
+        <item>Nothing pending, {nombre}. You can seal the day.</item>
+        <item>All in order, {nombre}! Only sealing the day is left.</item>
+        <item>Nothing left to decide. Whenever you like, goodnight.</item>
+        <item>It\'s all here. Seal it whenever you feel like it, {nombre}.</item>
+        <item>A clean close: not a single row left to look at. Time to rest.</item>
+        <item>Nothing\'s left hanging today, {nombre}. Goodnight whenever you\'re ready.</item>
+        <item>Zero pending, {nombre}! Seal the day and off to rest.</item>
     </string-array>
     <string-array name="habla_cie_nada_pendiente_neutra">
         <item>Nothing pending, {nombre}. You can seal the day.</item>
+        <item>Nothing left to decide. The day can be sealed.</item>
+        <item>Everything is in its place, {nombre}. Whenever you like, good night.</item>
+        <item>No rows today: everything\'s decided. Only sealing is left.</item>
+        <item>Nothing left to go through. Close whenever you like.</item>
+        <item>[viernes] Nothing pending. Seal the day and the weekend begins.</item>
+        <item>[lunes] First day of the week and nothing pending. Seal it without hurry.</item>
+        <item>[invierno] Nothing pending. Seal the day and shelter from the cold.</item>
     </string-array>
     <string-array name="habla_cie_animo_bien_sargento">
-        <item>Glad to hear it. Tomorrow we keep the same pace.</item>
+        <item>Good. Same pace tomorrow.</item>
+        <item>Glad to hear it. Don\'t let it drop.</item>
+        <item>A good day. Take note and repeat tomorrow.</item>
+        <item>That\'s what I wanted to hear. Same again tomorrow.</item>
+        <item>Good. Keep that feeling, it\'s fuel.</item>
+        <item>Glad to hear it. Good days get earned too.</item>
+        <item>Right, a good day. No lowering your guard.</item>
     </string-array>
     <string-array name="habla_cie_animo_bien_cheerleader">
-        <item>Glad to hear it. Tomorrow we keep the same pace.</item>
+        <item>I\'m glad. Tomorrow we keep the same pace.</item>
+        <item>Great to hear it! Tomorrow, another one just like it.</item>
+        <item>That makes me really happy. I\'ll keep today as the example for tomorrow.</item>
+        <item>Just what I wanted to hear. Tomorrow we repeat the recipe.</item>
+        <item>A properly good day! What a nice way to close it.</item>
+        <item>Glad to hear it, and it shows. Tomorrow we keep this pace, you and me.</item>
+        <item>Good to know. A fair share of that good day came from you. Rest well.</item>
     </string-array>
     <string-array name="habla_cie_animo_bien_neutra">
-        <item>Glad to hear it. Tomorrow we keep the same pace.</item>
+        <item>Glad to hear it. Tomorrow, same pace.</item>
+        <item>Noting it down: today was a good day.</item>
+        <item>A good day, then. Sleep well.</item>
+        <item>Good to know. See you tomorrow.</item>
+        <item>That\'s good. It stays on record.</item>
+        <item>[viernes] A good day to end the week. Time to rest.</item>
+        <item>[domingo] And the week ends well. I\'m glad.</item>
     </string-array>
     <string-array name="habla_cie_animo_regular_sargento">
-        <item>Okay. Tomorrow I\'ll suggest something short to get going.</item>
+        <item>So-so, fine. Tomorrow, something short to get going.</item>
+        <item>Neither good nor bad. Tomorrow we start with something short.</item>
+        <item>Understood. An average day still gets closed. Tomorrow, a short start.</item>
+        <item>Noted. Tomorrow you start with something short.</item>
+        <item>Days like this pass. Tomorrow, a small first step.</item>
+        <item>Fine. Nothing more needed: close it and tomorrow we start gently.</item>
+        <item>Meh. Tomorrow we start with something short and see.</item>
     </string-array>
     <string-array name="habla_cie_animo_regular_cheerleader">
         <item>Okay. Tomorrow I\'ll suggest something short to get going.</item>
+        <item>So-so counts too. Tomorrow we start with something small.</item>
+        <item>Days like that happen. Tomorrow, something short to warm up, you and me.</item>
+        <item>Understood. Tomorrow we start with something light.</item>
+        <item>Neither good nor bad, fair enough. Tomorrow I\'ll find an easy start.</item>
+        <item>Thanks for telling me. Tomorrow we start gently and see how it goes.</item>
+        <item>So-so can be turned around bit by bit. Tomorrow, one short first step.</item>
     </string-array>
     <string-array name="habla_cie_animo_regular_neutra">
-        <item>Okay. Tomorrow I\'ll suggest something short to get going.</item>
+        <item>Okay. Tomorrow I\'ll suggest something short to start.</item>
+        <item>Understood. Tomorrow, something short to begin.</item>
+        <item>An in-between day counts too. Tomorrow we start with something small.</item>
+        <item>Thanks for saying so. Tomorrow we start gently.</item>
+        <item>Noted. Tomorrow, one short thing to warm up.</item>
+        <item>[domingo] An average Sunday. Tomorrow the week starts with something short.</item>
+        <item>[invierno] Some days are like that, more so in this cold. Tomorrow, something short to start.</item>
     </string-array>
     <string-array name="habla_cie_animo_duro_sargento">
-        <item>Thanks for telling me. Tomorrow I\'ll suggest less.</item>
+        <item>Thanks for saying it. Tomorrow, less.</item>
+        <item>Hard day, understood. Tomorrow I\'ll ask for less.</item>
+        <item>That counts too: you made it to the end. Tomorrow, a lighter load.</item>
+        <item>Noted. Tomorrow the bar comes down a notch.</item>
+        <item>One hard day doesn\'t erase the rest. Tomorrow, less.</item>
+        <item>Thanks for being straight with me. Rest; tomorrow, something lighter.</item>
+        <item>That\'s enough for today, no more weight. Tomorrow, less.</item>
     </string-array>
     <string-array name="habla_cie_animo_duro_cheerleader">
         <item>Thanks for telling me. Tomorrow I\'ll suggest less.</item>
+        <item>It was a hard day, and there\'s no need to dress it up. Tomorrow, fewer things.</item>
+        <item>I\'m sorry. I\'ll stay with you a while. Tomorrow, only what\'s needed.</item>
+        <item>It clearly weighed on you. Tomorrow we travel lighter, you and me.</item>
+        <item>Thanks for saying it straight. Tomorrow, one thing at a time.</item>
+        <item>Hard days get closed too, and this one nearly is. Tomorrow, less.</item>
+        <item>I\'m here. No need to say more. Tomorrow I\'ll suggest little.</item>
     </string-array>
     <string-array name="habla_cie_animo_duro_neutra">
         <item>Thanks for telling me. Tomorrow I\'ll suggest less.</item>
+        <item>I\'m sorry. Tomorrow I\'ll suggest less.</item>
+        <item>A hard day doesn\'t erase the others. Tomorrow, fewer things.</item>
+        <item>Noted. Rest up; tomorrow will weigh less.</item>
+        <item>I understand. Tomorrow we take it slow, with fewer suggestions.</item>
+        <item>[viernes] A hard week, then. Rest; tomorrow, take it easy.</item>
+        <item>[noche] It\'s late and it was a hard day. Rest; tomorrow, less.</item>
     </string-array>
     <string-array name="habla_cie_sello_sargento">
         <item>Day closed, {nombre}. Tomorrow, more.</item>
+        <item>Closed. Rest up, tomorrow counts too.</item>
+        <item>See you tomorrow, {nombre}. I\'ll be here.</item>
+        <item>Sealed. What\'s done today stays done.</item>
+        <item>Goodnight. Today stays on the record.</item>
+        <item>That\'s it for today. Sleep well.</item>
+        <item>Another day on the board, {nombre}.</item>
+        <item>[lunes] Monday closed. The week is under way.</item>
+        <item>[viernes] Friday sealed. The weekend is yours.</item>
+        <item>[domingo] Sunday closed. New week tomorrow.</item>
+        <item>[invierno] Sealed. It\'s cold outside; the day is kept safe.</item>
+        <item>[finde] Weekend day closed. Rest properly.</item>
     </string-array>
     <string-array name="habla_cie_sello_cheerleader">
-        <item>That\'s a wrap, {nombre}! Tomorrow we go again.</item>
+        <item>That\'s another day in the pocket, {nombre}! Tomorrow we go on.</item>
+        <item>Day sealed. Thanks for today, {nombre}. I\'m drifting off peacefully.</item>
+        <item>Done and sealed. Whatever kind of day it was, it\'s closed now. See you tomorrow.</item>
+        <item>Goodnight, {nombre}. You left today properly closed, and it shows.</item>
+        <item>[lunes] Day one of the week, sealed. That\'s how you start, {nombre}!</item>
+        <item>[viernes] Friday sealed. Weekend ahead, {nombre}, and well earned.</item>
+        <item>[domingo] Sunday sealed: the week closes right here. Thanks for taking me along.</item>
+        <item>[invierno] It\'s cold outside, and in here the day is sealed. Off to sleep, {nombre}.</item>
+        <item>One more day for the garden. Goodnight, {nombre}.</item>
+        <item>[finde] Weekend sealed, {nombre}. Rest up; I\'m already drifting off.</item>
     </string-array>
     <string-array name="habla_cie_sello_neutra">
         <item>Day sealed, {nombre}. See you tomorrow.</item>
+        <item>Until tomorrow, {nombre}. The day is saved.</item>
+        <item>Day saved. Good night.</item>
+        <item>All written down, {nombre}. Time to rest.</item>
+        <item>Closed for today. Tomorrow, a fresh page.</item>
+        <item>Sleep well, {nombre}. We carry on tomorrow.</item>
+        <item>[domingo] The week is closed. Good night, {nombre}.</item>
+        <item>[viernes] Friday closed. Good night, and have a good weekend.</item>
+        <item>[invierno] Good night, {nombre}. Let the cold stay outside.</item>
+        <item>[lunes] First day of the week, sealed. Good night.</item>
     </string-array>
     <string-array name="habla_cie_sello_perfecto_sargento">
         <item>Perfect day, {nombre}. That\'s how it\'s done. Don\'t get comfortable.</item>
+        <item>Not one habit left behind. Only a matter of time, {nombre}.</item>
+        <item>All done, no excuses. Same again tomorrow.</item>
+        <item>Flawless. That\'s what comes out when you don\'t haggle with yourself.</item>
+        <item>Nothing left over today. Bank it and sleep.</item>
+        <item>That\'s how you close a day, {nombre}.</item>
+        <item>Everything in its place. Rest; tomorrow, repeat.</item>
+        <item>[lunes] Perfect Monday. You\'ve set the bar for the week.</item>
+        <item>[viernes] A clean sweep on Friday. Take the weekend debt-free.</item>
+        <item>[domingo] Perfect Sunday. The week ends as it should.</item>
+        <item>[finde] Weekend, and still everything done. That\'s discipline.</item>
+        <item>[invierno] Cold out, full day in. Well played, {nombre}.</item>
     </string-array>
     <string-array name="habla_cie_sello_perfecto_cheerleader">
         <item>A perfect day, {nombre}! Every single thing, done. I could burst.</item>
+        <item>Nothing got away today. A perfect day, {nombre}. Goodnight.</item>
+        <item>Perfect from start to finish! That was all you, {nombre}.</item>
+        <item>All done and all sealed. I\'m falling asleep with a huge smile.</item>
+        <item>Perfect day. I\'m whispering so I don\'t wake the garden: congratulations, {nombre}!</item>
+        <item>[lunes] A perfect Monday, {nombre}! The week is off to a head start.</item>
+        <item>[viernes] Perfect Friday. You close out the week leaving nothing behind, {nombre}.</item>
+        <item>[domingo] Perfect Sunday, {nombre}: the week ends with no loose ends.</item>
+        <item>Every habit today, done. A day like this one is a keeper, {nombre}.</item>
+        <item>[invierno] Cold outside, and in here, a perfect day. How warm that feels, {nombre}.</item>
     </string-array>
     <string-array name="habla_cie_sello_perfecto_neutra">
         <item>Perfect day, {nombre}. Everything required, done.</item>
+        <item>Everything for the day, done. Good night, {nombre}.</item>
+        <item>Not one habit left today. It\'s on record.</item>
+        <item>A full day, {nombre}. See you tomorrow.</item>
+        <item>It all happened today. For the record, and sleep well.</item>
+        <item>A round day: nothing required was left undone.</item>
+        <item>[viernes] The week ends with a full day. Good night.</item>
+        <item>[domingo] The week ends on a perfect day, {nombre}.</item>
+        <item>[lunes] A perfect Monday, {nombre}. The week starts well.</item>
     </string-array>
     <string-array name="habla_cie_tareas_manana_sargento">
-        <item>For tomorrow: {lista}.</item>
+        <item>Moving to tomorrow: {lista}.</item>
+        <item>{n|task|tasks} for tomorrow: {lista}. That\'s where we start.</item>
+        <item>Waiting for you tomorrow: {lista}.</item>
+        <item>Not done today, first thing tomorrow: {lista}.</item>
     </string-array>
     <string-array name="habla_cie_tareas_manana_cheerleader">
-        <item>For tomorrow: {lista}.</item>
+        <item>Moving to tomorrow, {n|task|tasks}: {lista}.</item>
+        <item>Tomorrow we pick it up from here: {lista}.</item>
+        <item>What\'s left of today will be waiting tomorrow: {lista}.</item>
     </string-array>
     <string-array name="habla_cie_tareas_manana_neutra">
-        <item>For tomorrow: {lista}.</item>
+        <item>Moving to tomorrow: {lista}.</item>
+        <item>Left for tomorrow, {n|task|tasks}: {lista}.</item>
+        <item>Waiting for you tomorrow: {lista}. No rush.</item>
+        <item>What\'s pending waits until tomorrow: {lista}.</item>
     </string-array>
 </resources>

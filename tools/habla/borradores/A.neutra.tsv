@@ -1,0 +1,117 @@
+bolsa	indice	etiquetas	es	en
+ap_manana	0		Buenos días, {nombre}.	Good morning, {nombre}.
+ap_manana	1		Buenos días. El día está por empezar.	Good morning. The day is just getting started.
+ap_manana	2		Empieza un día nuevo, {nombre}.	A new day begins, {nombre}.
+ap_manana	3		Buenos días. Sin prisa, que hay tiempo.	Good morning. No rush; there's time.
+ap_manana	4		Buenos días. Un día más, y se hace de uno en uno.	Good morning. One more day, taken one step at a time.
+ap_manana	5	[despierta]	Acabo de despertarme. Buenos días, {nombre}.	I just woke up. Good morning, {nombre}.
+ap_manana	6	[despierta]	Ya estoy en pie. Empezamos cuando quieras.	I'm up. We start whenever you like.
+ap_manana	7	[lunes]	Lunes por la mañana. Una semana entera por delante.	Monday morning. A whole week ahead.
+ap_manana	8	[viernes]	Viernes por la mañana. Último tramo de la semana.	Friday morning. The last stretch of the week.
+ap_manana	9	[finde]	Mañana de fin de semana. Hoy el ritmo lo marcas tú.	Weekend morning. Today you set the pace.
+ap_manana	10	[invierno]	Mañana fría. Buen momento para empezar con algo pequeño.	Cold morning. A good moment to start with something small.
+ap_manana	11	[verano]	Mañana de verano. Aprovechamos la luz, {nombre}.	Summer morning. Let's make use of the light, {nombre}.
+ap_manana	12	[primavera]	Mañana de primavera. Se nota que el día alarga.	Spring morning. You can tell the days are getting longer.
+ap_manana	13	[otono]	Mañana de otoño. Empezamos con calma, {nombre}.	Autumn morning. We start calmly, {nombre}.
+ap_mediodia	0		Mediodía, {nombre}.	Midday, {nombre}.
+ap_mediodia	1		Ya es mediodía. Buen momento para ver cómo va el día.	It's midday. A good moment to see how the day is going.
+ap_mediodia	2		Mitad del día. Lo que ya has hecho cuenta.	Halfway through the day. What you've already done counts.
+ap_mediodia	3		Pausa de mediodía, {nombre}.	Midday break, {nombre}.
+ap_mediodia	4		Es mediodía. Un vistazo rápido y seguimos.	It's midday. A quick look and we carry on.
+ap_mediodia	5		Aquí sigo, a mitad del día. ¿Cómo vamos, {nombre}?	Still here, halfway through the day. How are we doing, {nombre}?
+ap_mediodia	6	[lunes]	Lunes a mediodía. La semana ya está en marcha.	Monday midday. The week is already under way.
+ap_mediodia	7	[viernes]	Viernes a mediodía. Queda poco para el fin de semana.	Friday midday. Not long until the weekend.
+ap_mediodia	8	[verano]	Mediodía de verano. Lo que cueste más, mejor para después.	Summer midday. Whatever takes more effort can wait until later.
+ap_mediodia	9	[invierno]	Mediodía de invierno, {nombre}. Aún queda tarde por delante.	Winter midday, {nombre}. There's still an afternoon ahead.
+ap_mediodia	10	[finde]	Mediodía de fin de semana. Sin horarios, solo lo de hoy.	Weekend midday. No schedules, just today.
+ap_tarde	0		Buenas tardes, {nombre}.	Good afternoon, {nombre}.
+ap_tarde	1		Buenas tardes. Queda tarde por delante.	Good afternoon. There's afternoon left.
+ap_tarde	2		Entramos en la tarde. Todavía hay margen.	We're into the afternoon. There's still room.
+ap_tarde	3		Tarde ya. Un repaso breve de cómo vamos, {nombre}.	Afternoon already. A short look at how we're doing, {nombre}.
+ap_tarde	4		Media tarde. Buen momento para lo que falte.	Mid-afternoon. A good moment for whatever is left.
+ap_tarde	5	[lunes]	Lunes por la tarde. Ya queda menos para acabar el día.	Monday afternoon. Not much left of the day.
+ap_tarde	6	[viernes]	Viernes por la tarde, {nombre}. La semana casi está.	Friday afternoon, {nombre}. The week is nearly done.
+ap_tarde	7	[finde]	Tarde de fin de semana. Se puede ir despacio.	Weekend afternoon. It's fine to go slowly.
+ap_tarde	8	[otono]	Tarde de otoño, anochece pronto. Lo que falte, mejor con luz.	Autumn afternoon, it gets dark early. Whatever is left, better done in daylight.
+ap_tarde	9	[primavera]	Tarde de primavera. Da gusto que el día alargue.	Spring afternoon. It's nice that the days are longer.
+ap_tarde	10	[esperando]	Mi día ya está hecho. Buenas tardes, {nombre}.	My day is already done. Good afternoon, {nombre}.
+ap_noche	0		Buenas noches, {nombre}.	Good evening, {nombre}.
+ap_noche	1		Ya es de noche.	It's evening now.
+ap_noche	2		Cae la noche. Un último vistazo al día.	Night is falling. One last look at the day.
+ap_noche	3		Buenas noches. Lo de hoy ya casi está.	Good evening. Today is almost done.
+ap_noche	4	[esperando]	Estoy aquí esperando el cierre. Buenas noches, {nombre}.	I'm here, waiting for the close. Good evening, {nombre}.
+ap_noche	5	[esperando]	Mi día ya terminó. Espero al tuyo.	My day is over. I'm waiting on yours.
+ap_noche	6	[durmiendo]	Me voy a dormir. Buenas noches, {nombre}.	I'm off to sleep. Good night, {nombre}.
+ap_noche	7	[durmiendo]	Cierro los ojos un rato. Hasta mañana.	I'm closing my eyes for a while. See you tomorrow.
+ap_noche	8	[domingo]	Domingo por la noche. Mañana empieza otra semana, pero eso es mañana.	Sunday night. Another week starts tomorrow, but that's tomorrow.
+ap_noche	9	[viernes]	Viernes por la noche. El fin de semana ya está aquí.	Friday night. The weekend is here.
+ap_noche	10	[invierno]	Noche de invierno. Se agradece estar dentro.	Winter night. It's good to be indoors.
+ap_noche	11	[madrugada]	Es tarde, {nombre}. Lo que quede puede esperar a mañana.	It's late, {nombre}. Whatever is left can wait until tomorrow.
+ap_noche	12	[lunes]	Lunes por la noche. El primer día de la semana, casi cerrado.	Monday night. The first day of the week, nearly closed.
+ci_empuje	0		Con uno basta para arrancar.	One is enough to get started.
+ci_empuje	1		Empieza por lo más pequeño.	Start with the smallest one.
+ci_empuje	2		Cinco minutos ya cuentan.	Five minutes already count.
+ci_empuje	3		Cuando quieras, empezamos por ahí.	Whenever you're ready, we start there.
+ci_empuje	4		Un paso pequeño y ya has arrancado.	One small step and you're under way.
+ci_empuje	5		No hace falta más que empezar.	All it takes is starting.
+ci_empuje	6		Lo siguiente está a un toque.	The next one is a tap away.
+ci_empuje	7		Si hoy haces solo uno, que sea el más sencillo.	If you only do one today, make it the easiest.
+ci_empuje	8		Ahora o más tarde: hoy hay hueco para ello.	Now or later: there's room for it today.
+ci_empuje	9	[noche]	Aún hay tiempo de hacer uno antes de dormir.	There's still time to do one before bed.
+ci_empuje	10	[manana]	La mañana es buen momento para quitarse el primero.	Morning is a good time to get the first one out of the way.
+ci_empuje	11	[lunes]	Un primer paso en lunes ya pone la semana en marcha.	A first step on a Monday already gets the week moving.
+ci_empuje	12	[finde]	En fin de semana, con uno basta.	At the weekend, one is enough.
+ci_calma	0		Sin prisa.	No rush.
+ci_calma	1		A tu ritmo.	At your own pace.
+ci_calma	2		Lo que no salga hoy puede esperar.	Whatever doesn't happen today can wait.
+ci_calma	3		Aquí estaré, vayas al ritmo que vayas.	I'll be here, whatever your pace.
+ci_calma	4		Con lo que hay hoy, ya es bastante.	What there is today is enough.
+ci_calma	5		Respira, que el día es largo.	Breathe; the day is long.
+ci_calma	6		No hay nada urgente.	Nothing here is urgent.
+ci_calma	7		Si hoy toca ir despacio, se va despacio.	If today calls for going slowly, we go slowly.
+ci_calma	8	[noche]	Ya casi es hora de descansar.	Almost time to rest.
+ci_calma	9	[finde]	Es fin de semana: hay sitio para respirar.	It's the weekend: there's room to breathe.
+ci_calma	10	[invierno]	Hace frío fuera; dentro se está bien.	It's cold outside; in here is fine.
+ci_calma	11	[tarde]	La tarde es larga, hay margen.	The afternoon is long; there's room.
+ci_calma	12	[domingo]	Domingo: un día para ir sin prisa.	Sunday: a day for going without hurry.
+re_vuelta	0		Hace un tiempo volviste tras unos días fuera, y desde entonces no has parado.	A while back you returned after some days away, and you haven't stopped since.
+re_vuelta	1		Volviste después de unos días fuera y has sostenido el ritmo desde entonces.	You came back after some days away and have kept the rhythm ever since.
+re_vuelta	2		Volver tras unos días fuera no es poca cosa. Desde entonces, constancia.	Coming back after some days away is no small thing. Steadiness ever since.
+re_vuelta	3		Desde que volviste, la racha de «{habito}» ya suma {racha}.	Since you came back, the streak on “{habito}” has reached {racha}.
+re_vuelta	4		Volviste, y se nota: el ritmo de estas semanas lo dice.	You came back, and it shows: the last few weeks say so.
+re_vuelta	5		Aquel día en que volviste marcó el principio de esta etapa.	The day you came back marked the start of this stretch.
+re_duro_pasado	0		Hace unos días el día fue duro, y lo atravesaste igual. Hoy se nota.	A few days ago the day was hard, and you got through it anyway. Today shows it.
+re_duro_pasado	1		Recuerdo que hubo un día difícil hace poco. Hoy va mejor, y eso también cuenta.	I remember a hard day not long ago. Today is going better, and that counts too.
+re_duro_pasado	2		Un día duro no se lleva el resto. Lo de estos días lo demuestra.	One hard day doesn't take the rest with it. These last few days show it.
+re_duro_pasado	3		Pasaste un día duro hace poco y has seguido. Eso pesa más de lo que parece.	You had a hard day not long ago and kept going. That weighs more than it seems.
+re_duro_pasado	4		Hubo un día duro, y aquí estás con otro bien llevado.	There was a hard day, and here you are with another one well handled.
+re_duro_pasado	5		Aquel día duro quedó atrás. Lo de hoy lo deja claro.	That hard day is behind you. Today makes it clear.
+re_racha_recuperada	0		«{habito}» había perdido su racha y hoy ya va por {racha}. Eso es volver a levantarla.	“{habito}” had lost its streak and today it's at {racha}. That's building it back up.
+re_racha_recuperada	1		{habito}: la racha rota ya quedó atrás, y hoy suma {racha} otra vez.	{habito}: the broken streak is behind you, and today it adds up to {racha} again.
+re_racha_recuperada	2		Recuperar la racha de «{habito}» costó, y hoy vas por {racha}.	Getting the streak on “{habito}” back took effort, and today you're at {racha}.
+re_racha_recuperada	3		La racha de «{habito}» volvió a crecer: {racha} ya.	The streak on “{habito}” is growing again: {racha} now.
+re_racha_recuperada	4		Hoy «{habito}» vuelve a pasar de siete veces seguidas.	Today “{habito}” is past seven in a row again.
+re_racha_recuperada	5		Reconstruir una racha lleva tiempo, y la de «{habito}» ya va por {racha}.	Rebuilding a streak takes time, and the one on “{habito}” is already at {racha}.
+re_cumpliste_hora	0		Ayer quedaste a las {hora} y cumpliste a esa hora.	Yesterday you set {hora} and you kept to it.
+re_cumpliste_hora	1		Ayer pusiste hora, las {hora}, y la respetaste.	Yesterday you picked a time, {hora}, and you honoured it.
+re_cumpliste_hora	2		Lo de ayer a las {hora} salió como lo habías dicho.	Yesterday's {hora} went just as you'd said.
+re_cumpliste_hora	3		Ayer te comprometiste a las {hora} y llegaste. Eso da confianza.	Yesterday you committed to {hora} and showed up. That builds trust.
+re_cumpliste_hora	4		Cumplir la hora que dices tiene mérito, y ayer lo hiciste a las {hora}.	Keeping the time you say takes something, and yesterday you did, at {hora}.
+re_cumpliste_hora	5		Ayer hubo hora acordada y se cumplió.	Yesterday there was a time agreed, and it was kept.
+re_gordo_hecho	0		Ayer hiciste lo gordo, y eso se sostiene hoy.	Yesterday you did the big thing, and that carries into today.
+re_gordo_hecho	1		Lo gordo de ayer quedó hecho. Se nota que empezar así ayuda.	Yesterday's big thing got done. Starting that way clearly helps.
+re_gordo_hecho	2		Ayer cerraste lo gordo del día. Ese tipo de días suma.	Yesterday you finished the day's big thing. Days like that add up.
+re_gordo_hecho	3		Ayer lo gordo del día se hizo, y el resto fue más fácil.	Yesterday the day's big thing got done, and the rest came easier.
+re_gordo_hecho	4		Lo gordo de ayer ya está en el pasado, hecho.	Yesterday's big thing is already in the past, done.
+re_gordo_hecho	5		Hace un día elegiste lo gordo y lo sacaste adelante. Se agradece repetir.	A day ago you chose the big thing and saw it through. Doing it again would be welcome.
+re_bien_ayer	0		Ayer terminaste el día bien. Hoy parte de ahí.	Yesterday you ended the day well. Today starts from there.
+re_bien_ayer	1		Me alegro de que ayer fuera un buen día. Hoy parte de ahí.	I'm glad yesterday was a good day. Today starts from there.
+re_bien_ayer	2		Ayer cerraste el día con buen pie. Eso ayuda a empezar hoy.	Yesterday you closed the day on a good note. That helps today's start.
+re_bien_ayer	3		Un buen día ayer, y hoy sigue el mismo ritmo.	A good day yesterday, and today keeps the same rhythm.
+re_bien_ayer	4		Ayer te fue bien, y lo recuerdo.	Yesterday went well for you, and I remember it.
+re_bien_ayer	5		El día de ayer salió bueno. Hoy se puede seguir en esa línea.	Yesterday turned out good. Today can follow the same line.
+re_patron_animo	0		Hoy es {dia_semana}, un día que a veces pesa más. Saberlo ya ayuda.	Today is {dia_semana}, a day that sometimes weighs more. Knowing that already helps.
+re_patron_animo	1		Hoy es {dia_semana}: suele ser un día cuesta arriba. Ir paso a paso basta.	Today is {dia_semana}, often an uphill day. Going step by step is enough.
+re_patron_animo	2		Hoy es {dia_semana}, y este día ha costado otras veces. Hoy puede ser distinto, y si no, también está bien.	Today is {dia_semana}, and this day has been hard before. Today may be different, and if not, that's fine too.
+re_patron_animo	3		Hoy es {dia_semana}. Suele ser un día algo pesado, así que cualquier avance es suficiente.	Today is {dia_semana}. It tends to be a heavier day, so any progress is enough.
+re_patron_animo	4		Es {dia_semana}, un día que ha sido difícil otras veces. Lo vamos llevando.	It's {dia_semana}, a day that has been hard before. We'll manage it as we go.

@@ -1,112 +1,422 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Generado por tools/habla/volcar.py; no editar a mano -->
 <resources>
-    <!-- Provisional Habi bags, one item per bag and voice. Replaced wholesale by the final texts. -->
     <string-array name="habla_nu_ayer_escapo_sargento">
-        <item>Yesterday this one slipped: {habito}.</item>
+        <item>It got away yesterday: {habito}. Let\'s catch it today.</item>
+        <item>{habito}, today at {hora}. No debate.</item>
+        <item>Didn\'t happen yesterday: {habito}. Today it\'s {minutos} min. You have them.</item>
+        <item>One bad day isn\'t a bad week. “{habito}”, today at {hora}.</item>
+        <item>It stayed out yesterday: {habito}. Today it goes in, at {hora}.</item>
+        <item>On today\'s list: {habito}. {minutos} min, no more.</item>
+        <item>It slipped yesterday, so we fix it today: {habito}.</item>
+        <item>You were on a roll. It slipped yesterday: {habito}. Today, at {hora}.</item>
+        <item>[lunes] Monday. “{habito}” slipped yesterday; today it gets fixed at {hora}.</item>
+        <item>[viernes] Friday. It slipped yesterday: {habito}. Don\'t let it cross into the weekend.</item>
+        <item>[manana] Morning. It slipped yesterday: {habito}. Get it out of the way early.</item>
+        <item>[noche] There\'s still tonight. “{habito}”, {minutos} min, and yesterday is fixed.</item>
+        <item>[finde] Weekend, but “{habito}” still stands. It slipped yesterday: {minutos} min.</item>
+        <item>No drama: “{habito}” slipped yesterday. It gets fixed today, at {hora}.</item>
     </string-array>
     <string-array name="habla_nu_ayer_escapo_cheerleader">
-        <item>Yesterday this one slipped: {habito}.</item>
+        <item>{habito} got away yesterday. Today at {hora} we go get it, you and me.</item>
+        <item>Yesterday wasn\'t the day. Today is: {habito}, at {hora}.</item>
+        <item>Left undone yesterday: {habito}. Today it\'s {minutos} min, I\'m with you.</item>
+        <item>{habito} sat on the back burner. Today at {hora}, then onward.</item>
+        <item>[manana] Fresh morning, fresh try: {habito}, at {hora}. You can do this.</item>
+        <item>[lunes] New week. Yesterday slipped away: {habito}. Today, at {hora}, we begin.</item>
+        <item>[finde] Weekend, so no rush. It slipped yesterday: {habito}. Today, at {hora}.</item>
+        <item>Yesterday slipped away: {habito}. Today\'s a great day to get back to it!</item>
+        <item>Room today for this: {habito}. Yesterday didn\'t work out; it\'s {minutos} min.</item>
+        <item>You had a good rhythm and yesterday slipped: {habito}. We pick back up today.</item>
+        <item>My plan for {hora}: {habito}. It slipped yesterday; today, you and me.</item>
+        <item>[tarde] Afternoon left: {habito}, at {hora}. Slipped yesterday; we\'ll make it.</item>
+        <item>{habito}, {minutos} min at {hora}. It slipped; today, yes.</item>
+        <item>[invierno] Cold makes it harder. It slipped: {habito}. Today at {hora}, together.</item>
     </string-array>
     <string-array name="habla_nu_ayer_escapo_neutra">
-        <item>Yesterday this one slipped: {habito}.</item>
+        <item>Yesterday slipped by: {habito}. Today it\'s {minutos} min.</item>
+        <item>[lunes] Monday. “{habito}” got left on the shelf yesterday; there\'s room today.</item>
+        <item>“{habito}” didn\'t happen yesterday. {minutos} min is enough today.</item>
+        <item>“{habito}” got away yesterday. Today, {hora}: {minutos} min.</item>
+        <item>A day without “{habito}” is just a day. {minutos} min today evens it out.</item>
+        <item>{habito}, at {hora}: {minutos} min and yesterday\'s gap closes.</item>
+        <item>“{habito}” was missing yesterday. Today it fits in {minutos} min, any time.</item>
+        <item>[manana] It\'s early. “{habito}” was left yesterday; today it fits in {minutos} min.</item>
+        <item>[tarde] “{habito}” got away yesterday. This afternoon it fits in {minutos} min.</item>
+        <item>[finde] Weekend. “{habito}” fits in {minutos} min today, no schedule.</item>
+        <item>[viernes] Friday. “{habito}” got away yesterday; {minutos} min and the week ends level.</item>
+        <item>“{habito}” slipped yesterday. Today: {minutos} min at {hora}.</item>
+        <item>[invierno] Cold out. “{habito}” was left yesterday; today it\'s {minutos} min.</item>
     </string-array>
     <string-array name="habla_nu_elegir_gordo_sargento">
-        <item>What\'s the big thing today?</item>
+        <item>What\'s the big thing today? Pick one and defend it.</item>
+        <item>Today needs one big thing. Pick it before the day picks for you.</item>
+        <item>My pick for the big thing: “{tarea}”. Argue with it or lock it in.</item>
+        <item>The big thing comes first. “{tarea}”? Your call.</item>
+        <item>One to three. One is enough. Choose today\'s big thing.</item>
+        <item>No big thing, and the day drifts. Pick one.</item>
+        <item>“{tarea}” has been waiting. Obvious pick for the big thing.</item>
+        <item>The big thing won\'t pick itself. Which one is it?</item>
+        <item>[manana] Fresh morning, clear head. Pick the big thing before the day fills up.</item>
+        <item>[lunes] Monday. One big thing and the week starts for real.</item>
+        <item>[viernes] Friday. Pick the big thing and end the week with something done.</item>
+        <item>[finde] Weekend or not, one big thing. Just one.</item>
     </string-array>
     <string-array name="habla_nu_elegir_gordo_cheerleader">
-        <item>What\'s the big thing today?</item>
+        <item>What\'s the big thing today? Pick up to three, and the rest can follow.</item>
+        <item>One question before we start: what\'s going to be the big thing today?</item>
+        <item>My pick for the big thing today: “{tarea}”. But you have the last word.</item>
+        <item>[manana] Good morning. If only one or two things went right today, which would they be?</item>
+        <item>Choose the big thing and the day sorts itself out. I\'d start with: {tarea}.</item>
+        <item>[lunes] Monday, and one thing to set the tone. Which one?</item>
+        <item>The big thing today is the one that, once done, makes the day count. Which is it?</item>
+        <item>I\'ve got a favorite for the big thing today: “{tarea}”. Shall we pick it?</item>
+        <item>[invierno] It\'s cold out, so let\'s decide early: what\'s the big thing today?</item>
+        <item>[viernes] Friday. Get one big thing done today and the weekend starts light. Which one?</item>
+        <item>Pick the big thing and I\'m right behind you! Just one, the heaviest.</item>
+        <item>A few things are waiting. Which one do you want done today, no matter what?</item>
+        <item>[finde] A weekend with things to do. Pick one big thing and take the rest at your pace.</item>
+        <item>My suggestion for the big thing is this one: {tarea}. You decide.</item>
     </string-array>
     <string-array name="habla_nu_elegir_gordo_neutra">
-        <item>What\'s the big thing today?</item>
+        <item>What\'s the big thing today? Pick one, or up to three.</item>
+        <item>There\'s room to pick today\'s big thing. My suggestion: “{tarea}”.</item>
+        <item>Today\'s big thing is still open. Picking it takes ten seconds.</item>
+        <item>If only one thing could happen today, which one? That\'s the big thing.</item>
+        <item>A candidate for the big thing: “{tarea}”. Your call.</item>
+        <item>Picking the big thing gives the day a direction. I\'d suggest: “{tarea}”.</item>
+        <item>[manana] Good moment to pick the big thing, before the day fills up.</item>
+        <item>[lunes] Monday. One big thing to start the week; I\'d suggest “{tarea}”.</item>
+        <item>[viernes] Friday. Today\'s big thing can be the last loose end of the week.</item>
+        <item>Up to three, though one is enough. What\'s today\'s big thing?</item>
+        <item>[finde] Weekend: the big thing can be a small one. Pick it?</item>
     </string-array>
     <string-array name="habla_nu_gordo_sin_empezar_sargento">
-        <item>Today\'s big thing: {gordo}.</item>
+        <item>The big thing is still untouched: {gordo}. Start with the first step.</item>
+        <item>First step: {primer_paso}. Just that one.</item>
+        <item>The big thing won\'t do itself. First step: {primer_paso}.</item>
+        <item>Twenty-five minutes and the big thing is off zero. Start with: {primer_paso}.</item>
+        <item>I\'m not asking you to finish. I\'m asking you to start: {primer_paso}.</item>
+        <item>The big thing is waiting. The first step is short: {primer_paso}.</item>
+        <item>Starting is the hard part, and you know it. “{primer_paso}”, now.</item>
+        <item>{gordo}: not started. One first step changes the day.</item>
+        <item>The hours pass and the big thing sits still. Move it: {primer_paso}.</item>
+        <item>[tarde] It\'s afternoon and the big thing hasn\'t started. There\'s time: {primer_paso}.</item>
+        <item>[manana] The morning is yours. Get the big thing moving with this: {primer_paso}.</item>
+        <item>[mediodia] Midday, and the big thing is still at zero. First step: {primer_paso}.</item>
     </string-array>
     <string-array name="habla_nu_gordo_sin_empezar_cheerleader">
-        <item>Today\'s big thing: {gordo}.</item>
+        <item>The big thing for today is still standing: {gordo}. First step: {primer_paso}.</item>
+        <item>Starting is the hard part, and the first step is small: {primer_paso}. I\'ll be with you.</item>
+        <item>The big thing hasn\'t started yet: {gordo}. One first step and you\'re in.</item>
+        <item>[mediodia] Midday. The big thing hasn\'t got going yet: {gordo}. The afternoon has plenty of room.</item>
+        <item>You only have to start: {primer_paso}. That alone sets the big thing in motion.</item>
+        <item>Shall we try a first step? This one: {primer_paso}. The rest follows on its own.</item>
+        <item>[tarde] There\'s afternoon left for the big thing: {gordo}. Shall we get going?</item>
+        <item>The big thing is waiting, no hurry, and so am I. We start when you say.</item>
+        <item>Let\'s go for the big thing! First step: {primer_paso}.</item>
+        <item>You picked the big thing a while ago: {gordo}. One small step and everything moves.</item>
+        <item>[manana] Morning, the big thing is waiting: {gordo}. First step, short: {primer_paso}.</item>
+        <item>The big thing is counting on you today. A small piece is enough to get in.</item>
+        <item>[lunes] Monday means the big thing: {gordo}. You start like this: {primer_paso}.</item>
+        <item>Choosing the big thing was already a step. The next one: {primer_paso}.</item>
     </string-array>
     <string-array name="habla_nu_gordo_sin_empezar_neutra">
-        <item>Today\'s big thing: {gordo}.</item>
+        <item>The big thing hasn\'t started: {gordo}. First step: {primer_paso}.</item>
+        <item>The big thing is untouched: {gordo}. 25 minutes is enough to get going.</item>
+        <item>To get going on the big thing ({gordo}), this is enough: {primer_paso}.</item>
+        <item>First step for the big thing: {primer_paso}. It\'s small on purpose.</item>
+        <item>One short session on the big thing and the rest of the day weighs less: {gordo}.</item>
+        <item>Still not started: {gordo}. Shall we try 25 minutes?</item>
+        <item>[manana] It\'s still early for the big thing: {gordo}. Starting now frees up the afternoon.</item>
+        <item>[mediodia] Midday, big thing untouched: {gordo}. One first step: {primer_paso}.</item>
+        <item>[tarde] Afternoon still has room for the big thing: {gordo}. Start with: {primer_paso}.</item>
+        <item>The big thing is waiting: {gordo}. It doesn\'t need finishing, only starting.</item>
+        <item>[viernes] Friday: today\'s big thing is still waiting. One step moves it: {primer_paso}.</item>
     </string-array>
     <string-array name="habla_nu_hora_habitual_sargento">
-        <item>Your usual time is near: {habito}.</item>
+        <item>Your usual time is coming up: {habito}, around {hora}.</item>
+        <item>{habito} usually lands at {hora}. Almost time.</item>
+        <item>Your usual time: {habito}. No second-guessing.</item>
+        <item>You usually do it around {hora}: “{habito}”. That\'s now.</item>
+        <item>Almost time. “{habito}” is waiting, as usual.</item>
+        <item>Routine: {habito}, around {hora}. What repeats, sticks.</item>
+        <item>The usual hour is here. On today\'s list: {habito}.</item>
+        <item>{habito}, around {hora}, as usual. Do it early and move on.</item>
+        <item>[manana] Morning. Nearly your usual hour: {habito}.</item>
+        <item>[tarde] Afternoon. Nearly your usual hour: {habito}.</item>
+        <item>[noche] Evening. Your usual hour is here: {habito}. Get it done.</item>
+        <item>[finde] Weekend or not, your usual hour is here: {habito}.</item>
     </string-array>
     <string-array name="habla_nu_hora_habitual_cheerleader">
-        <item>Your usual time is near: {habito}.</item>
+        <item>Your usual time is coming up: {habito}, at {hora}.</item>
+        <item>Around {hora} is your usual slot: {habito}.</item>
+        <item>{habito}, around {hora}, like always. Start early if you like; I\'m here.</item>
+        <item>You\'ve got a regular date: {habito}, around {hora}. Shall we?</item>
+        <item>[manana] Your morning has its moment: {habito}, around {hora}.</item>
+        <item>[tarde] The afternoon moves on and your time nears: {habito}, around {hora}.</item>
+        <item>Almost your usual time! Today it\'s: {habito}.</item>
+        <item>Around {hora} is usually your moment. Today: {habito}.</item>
+        <item>A gentle nudge ahead of your usual time: {habito}. If it suits you, now works.</item>
+        <item>Your {hora} thing is about to land: {habito}.</item>
+        <item>[finde] Weekends have their slot too: {habito}, around {hora}.</item>
+        <item>A quiet reminder: {habito}, around {hora}.</item>
     </string-array>
     <string-array name="habla_nu_hora_habitual_neutra">
-        <item>Your usual time is near: {habito}.</item>
+        <item>You usually do “{habito}” around {hora}. Not long now.</item>
+        <item>Your usual time for “{habito}” is {hora}, and it\'s coming up.</item>
+        <item>{habito} usually lands around {hora}. Not long to go.</item>
+        <item>A quiet heads-up: “{habito}”, which you usually do at {hora}.</item>
+        <item>Soon, “{habito}”. It\'s what you usually do around now.</item>
+        <item>Now or later, as you prefer: “{habito}” comes up around {hora}.</item>
+        <item>[manana] Quiet morning. “{habito}” usually comes at {hora}.</item>
+        <item>[mediodia] Midday. Your usual “{habito}” is close: {hora}.</item>
+        <item>[tarde] Afternoon. “{habito}” usually arrives at {hora}; not long now.</item>
+        <item>[noche] Tonight, “{habito}” at your usual time, {hora}.</item>
+        <item>[finde] It\'s the weekend, but “{habito}” still has its time: {hora}.</item>
     </string-array>
     <string-array name="habla_nu_vuelta_sargento">
-        <item>Today is a good day to come back.</item>
+        <item>{dias_fuera|day|days} have passed. Just one thing today: {habito}.</item>
+        <item>You\'re back after {dias_fuera|day|days}. That was the hard part. Now: {habito}.</item>
+        <item>You\'re back. One small thing to get going: {habito}.</item>
+        <item>Break\'s over. One thing: {habito}.</item>
+        <item>{dias_fuera|day|days} away, and nothing is erased. Start with “{habito}”.</item>
+        <item>Nothing to catch up on: just “{habito}”.</item>
+        <item>Coming back is the hard part, and you\'ve done it. Now: {habito}.</item>
+        <item>One thing and the day already counts: {habito}.</item>
+        <item>[lunes] Back on a Monday. Start with “{habito}”; the rest comes later.</item>
+        <item>[manana] Morning. You\'re back; we start with “{habito}”.</item>
+        <item>After {dias_fuera|day|days}, small rules: “{habito}”.</item>
+        <item>Any {dia_semana} is a good day to come back: “{habito}”.</item>
     </string-array>
     <string-array name="habla_nu_vuelta_cheerleader">
-        <item>Today is a good day to come back.</item>
+        <item>So good to have you back. Just one small thing: {habito}.</item>
+        <item>It\'s been {dias_fuera|day|days}, and I\'m still here. We start with one: {habito}.</item>
+        <item>Today we ease back in with something small: {habito}. You and me, no rush.</item>
+        <item>Coming back is the hard part, and you\'ve done it. Now, one thing: {habito}.</item>
+        <item>[manana] Good morning. So glad to see you here. First thing: {habito}.</item>
+        <item>One small thing to pick the thread back up: {habito}. The rest can wait.</item>
+        <item>You\'re back! One thing to find your rhythm: {habito}.</item>
+        <item>[lunes] Monday, and you\'re back. One small thing is enough to start: {habito}.</item>
+        <item>After {dias_fuera} days away, your spot is still here. Today: {habito}.</item>
+        <item>Nothing to catch up on. Just this, today: {habito}.</item>
     </string-array>
     <string-array name="habla_nu_vuelta_neutra">
-        <item>Today is a good day to come back.</item>
+        <item>It\'s been {dias_fuera|day|days}. Today, just one thing: “{habito}”.</item>
+        <item>You\'re back after {dias_fuera|day|days}. To begin, only this: {habito}.</item>
+        <item>Good to see you. One small thing is enough today: “{habito}”.</item>
+        <item>After {dias_fuera|day|days}, we start with what you do best: “{habito}”.</item>
+        <item>“{habito}” is what you do best. Let\'s start there.</item>
+        <item>No hurry to catch up. Today, just: {habito}.</item>
+        <item>[lunes] Back on a Monday, after {dias_fuera|day|days}. One thing, “{habito}”, and the rest waits.</item>
+        <item>One is enough to pick the thread back up: “{habito}”.</item>
+        <item>[noche] There\'s a little of today left, and “{habito}” is enough to get back.</item>
+        <item>[finde] It\'s the weekend and you\'re back. Just “{habito}”; the rest at your pace.</item>
     </string-array>
     <string-array name="habla_nu_dia_duro_sargento">
-        <item>Today, no rush. One thing is enough.</item>
+        <item>Yesterday was hard. Just one thing today: {habito}.</item>
+        <item>You said “Hard” yesterday. Today I\'m asking for less: {habito}.</item>
+        <item>I\'m lowering the bar: {habito}. Nothing else.</item>
+        <item>A hard day doesn\'t need making up. You carry on. Today: {habito}.</item>
+        <item>Everything else waits. “{habito}”, and you\'ve done your bit.</item>
+        <item>Yesterday was heavy. Today\'s light: {habito}.</item>
+        <item>Only one thing: {habito}. The rest can wait.</item>
+        <item>After a day like that, small and good: “{habito}”.</item>
+        <item>[manana] A gentle morning. One thing: {habito}.</item>
+        <item>[viernes] Friday after a hard day. One thing and you\'re done: {habito}.</item>
+        <item>[noche] There\'s still tonight. One short thing: {habito}.</item>
     </string-array>
     <string-array name="habla_nu_dia_duro_cheerleader">
-        <item>Today, no rush. One thing is enough.</item>
+        <item>Yesterday was a hard one, so today we go lighter. One thing: {habito}.</item>
+        <item>Today I\'m asking for little: {habito}. The rest can wait, no hurry.</item>
+        <item>After a hard day, just the basics. Only this: {habito}. I\'m right beside you.</item>
+        <item>We\'re in this together, you and me. Today, one thing only: {habito}.</item>
+        <item>[manana] Morning. Yesterday was heavy, so today is light: {habito}.</item>
+        <item>Yesterday was tough. Today, something small that\'s within reach: {habito}.</item>
+        <item>That\'s all for today: {habito}. One thing, and the day counts.</item>
+        <item>Today less is more: {habito}. The rest of the list isn\'t going anywhere.</item>
+        <item>[finde] After a hard day, the weekend goes slowly. One thing: {habito}.</item>
+        <item>[invierno] It\'s cold and yesterday was hard. Today, just one thing: {habito}.</item>
     </string-array>
     <string-array name="habla_nu_dia_duro_neutra">
-        <item>Today, no rush. One thing is enough.</item>
+        <item>Less today. Just one thing: “{habito}”. The rest can wait.</item>
+        <item>Yesterday was hard, so today goes light: “{habito}”, and that\'s it.</item>
+        <item>What you said last night counts: less today. I suggest “{habito}”.</item>
+        <item>After a hard day, one thing is enough: {habito}.</item>
+        <item>The other habits can wait. Today, only: {habito}.</item>
+        <item>No long list today. One thing, “{habito}”, at whatever time.</item>
+        <item>[manana] Start the day gently: just “{habito}”, nothing else for now.</item>
+        <item>[lunes] A Monday after a hard day. “{habito}” and not much else.</item>
+        <item>[invierno] Cold out, and yesterday was hard. Today, something small: “{habito}”.</item>
+        <item>Nothing more than this is needed today: “{habito}”.</item>
     </string-array>
     <string-array name="habla_nu_racha_cerca_sargento">
-        <item>Your streak is close to a milestone: {habito}.</item>
+        <item>Streak of {racha}. {faltan} to the milestone: {bitos} bitos.</item>
+        <item>On “{habito}” you\'re {faltan} from the milestone. Lock in the streak today.</item>
+        <item>Milestone in sight: {bitos} bitos. Today, lock in “{habito}”.</item>
+        <item>Streak of {racha}. Not the time to let go: “{habito}”, today.</item>
+        <item>{faltan} to your milestone. Today counts: “{habito}”.</item>
+        <item>Almost. {faltan} left: {bitos} bitos await. Lock in “{habito}”.</item>
+        <item>{habito}: streak of {racha}, {faltan} to go. Add one today.</item>
+        <item>The streak is worth {racha}. Today you keep it going with “{habito}”.</item>
+        <item>[finde] A streak of {racha} doesn\'t take weekends off. “{habito}”, today.</item>
+        <item>[lunes] Monday and a streak of {racha}. “{habito}” keeps it alive.</item>
     </string-array>
     <string-array name="habla_nu_racha_cerca_cheerleader">
-        <item>Your streak is close to a milestone: {habito}.</item>
+        <item>Streak of {racha}, {faltan} from the next milestone: {habito}.</item>
+        <item>What a streak! {racha} and climbing. Secure it today: {habito}.</item>
+        <item>Milestone in sight: the next step pays {bitos} bitos. Today: {habito}.</item>
+        <item>That streak of {racha} is all you. Today, keep it going: {habito}.</item>
+        <item>{faltan} from the milestone, {bitos} bitos waiting: {habito}.</item>
+        <item>[manana] Good morning, with a streak of {racha}. Today we secure it: {habito}.</item>
+        <item>Every step of your streak of {racha} is yours. Today, one more: {habito}.</item>
+        <item>You\'re almost at the milestone. One more step without letting go: {habito}.</item>
+        <item>[finde] Weekend, and a streak of {racha}. Secure it today: {habito}.</item>
+        <item>{racha} and counting! {faltan} from the milestone: {habito}.</item>
     </string-array>
     <string-array name="habla_nu_racha_cerca_neutra">
-        <item>Your streak is close to a milestone: {habito}.</item>
+        <item>“{habito}”: streak of {racha}. The milestone is worth {bitos|bito|bitos}.</item>
+        <item>“{habito}” has a streak of {racha}. Today you secure it.</item>
+        <item>With {faltan} more, “{habito}” reaches the milestone: {bitos|bito|bitos}.</item>
+        <item>Doing “{habito}” today keeps a streak of {racha} going.</item>
+        <item>You\'re {faltan} from a milestone in “{habito}”. Today counts.</item>
+        <item>{habito}, streak of {racha}. The milestone is near: {bitos|bito|bitos}.</item>
+        <item>[noche] There\'s still time today: “{habito}” holds a streak of {racha}.</item>
+        <item>[manana] Good day to secure “{habito}”: the milestone is {faltan} away.</item>
+        <item>[viernes] Friday. “{habito}” is on a streak ({racha}), milestone near.</item>
+        <item>The milestone for “{habito}” is worth {bitos|bito|bitos}, {faltan} away.</item>
     </string-array>
     <string-array name="habla_nu_dia_flojo_sargento">
-        <item>Today is a bit harder. Start with something small.</item>
+        <item>This {dia_semana} usually trips you up: “{habito}”. Do it early.</item>
+        <item>A typical {dia_semana} trips you up on “{habito}”. Do it early today.</item>
+        <item>Fact: this {dia_semana} is harder. Do “{habito}” early and it\'s over.</item>
+        <item>The numbers say a {dia_semana} is hard. They don\'t decide: “{habito}”, early.</item>
+        <item>Do it before the {dia_semana} gets complicated: “{habito}”.</item>
+        <item>“{habito}” and {dia_semana}: a tough pair. Break it up today, first thing.</item>
+        <item>It\'s {dia_semana}: that\'s where “{habito}” tends to slip. Get ahead of it.</item>
+        <item>[manana] Good time to get ahead. “{habito}”, and this {dia_semana} turns around.</item>
+        <item>This {dia_semana} is your weak spot for “{habito}”. Change that today.</item>
     </string-array>
     <string-array name="habla_nu_dia_flojo_cheerleader">
-        <item>Today is a bit harder. Start with something small.</item>
+        <item>Every {dia_semana} is a bit harder, and we know it. Early today: {habito}.</item>
+        <item>An uphill {dia_semana}? We get ahead of it: {habito}, early if we can.</item>
+        <item>For you, {dia_semana} is harder. Today we tackle it early: {habito}.</item>
+        <item>It\'s {dia_semana}, so let\'s start early. Today: {habito}.</item>
+        <item>The numbers say this day is harder, but the numbers don\'t decide: {habito}.</item>
+        <item>[manana] Morning. Get it done early and {dia_semana} stops being a weight: {habito}.</item>
+        <item>A good {dia_semana} starts early. My suggestion: {habito}.</item>
+        <item>Every {dia_semana} can change the pattern. Today: {habito}, and soon.</item>
+        <item>Let\'s take on this {dia_semana}! The sooner the better: {habito}.</item>
+        <item>[invierno] It\'s cold and it\'s {dia_semana}: a double uphill. Early and together: {habito}.</item>
     </string-array>
     <string-array name="habla_nu_dia_flojo_neutra">
-        <item>Today is a bit harder. Start with something small.</item>
+        <item>{dia_semana}s tend to be tougher for “{habito}”. Better early.</item>
+        <item>“{habito}” tends to be harder on {dia_semana}s. Today, at an early hour.</item>
+        <item>Some days are steeper, and {dia_semana}s are one for “{habito}”.</item>
+        <item>With “{habito}”, {dia_semana}s call for an earlier start.</item>
+        <item>It\'s {dia_semana}: with “{habito}”, sooner beats later.</item>
+        <item>Doing “{habito}” early settles it before the day gets complicated.</item>
+        <item>[manana] Still early: a good moment for “{habito}”, harder on {dia_semana}s.</item>
+        <item>[tarde] Afternoon left for “{habito}”. On {dia_semana}s, better not leave it for night.</item>
+        <item>One of the days that are harder for “{habito}”. At an early hour, it weighs less.</item>
     </string-array>
     <string-array name="habla_nu_tarea_vence_sargento">
-        <item>A task is due: {tarea}.</item>
+        <item>“{tarea}” is up against its date. Start now.</item>
+        <item>{tarea}: the deadline is closing in. One first step and it\'s moving.</item>
+        <item>This won\'t go away: “{tarea}”. Start, even if it\'s small.</item>
+        <item>Pending, with a date: “{tarea}”. The sooner, the lighter.</item>
+        <item>“{tarea}” is up. Ten minutes change the picture.</item>
+        <item>The date on “{tarea}” won\'t move. You can: start.</item>
+        <item>{tarea} needs attention today. Give it a while.</item>
+        <item>You don\'t need to finish “{tarea}”. You need to start.</item>
+        <item>[manana] Early on, the deadline weighs less: “{tarea}”.</item>
+        <item>[tarde] The afternoon has room for “{tarea}”. Start before it runs out.</item>
     </string-array>
     <string-array name="habla_nu_tarea_vence_cheerleader">
-        <item>A task is due: {tarea}.</item>
+        <item>This task is asking for its turn: “{tarea}”. Shall we start it?</item>
+        <item>Deadline in play: “{tarea}”. One good push and the worry is gone.</item>
+        <item>One task can\'t wait much longer: “{tarea}”. You can handle this!</item>
+        <item>This one\'s up today: “{tarea}”. Starting is the hard part; I start with you.</item>
+        <item>[manana] Good morning. Before the day fills up, this one: “{tarea}”.</item>
+        <item>A task with a date, and me itching to see you cross it off: “{tarea}”.</item>
+        <item>[tarde] Still on the list, and there\'s afternoon left: “{tarea}”. Shall we dig in?</item>
+        <item>This gets heavier the longer it waits: “{tarea}”. Today is a good day to put it down.</item>
+        <item>One short focus block can handle this: “{tarea}”.</item>
+        <item>[lunes] Monday and a date looming: “{tarea}”. Better to start today than pile up.</item>
+        <item>[viernes] Friday. If this one gets done today, the weekend is all yours: “{tarea}”.</item>
     </string-array>
     <string-array name="habla_nu_tarea_vence_neutra">
-        <item>A task is due: {tarea}.</item>
+        <item>“{tarea}” already has a date. Starting today leaves it behind.</item>
+        <item>A task with a date: “{tarea}”. Starting it today is already progress.</item>
+        <item>“{tarea}” has its date bearing down. A first step today loosens it.</item>
+        <item>Of your tasks, “{tarea}” is the one that needs attention today.</item>
+        <item>Left for today: {tarea}. A short session already moves it.</item>
+        <item>If one task gets done today, make it “{tarea}”: its date is here.</item>
+        <item>[manana] It\'s easier to start “{tarea}” in the morning, and it has a date.</item>
+        <item>[tarde] The afternoon has room to start “{tarea}”, which already has a date.</item>
+        <item>[viernes] Friday: getting “{tarea}” done today leaves the weekend free.</item>
     </string-array>
     <string-array name="habla_nu_regular_sargento">
-        <item>Something short to get going today: {habito}.</item>
+        <item>Short start: {habito}. Just that, to get going.</item>
+        <item>Something small first: {habito}.</item>
+        <item>Start with the easy one: “{habito}”.</item>
+        <item>Little and early: “{habito}”.</item>
+        <item>Slowly, but we start: {habito}.</item>
+        <item>One step to warm up: “{habito}”.</item>
+        <item>{habito}, and the day is already moving.</item>
     </string-array>
     <string-array name="habla_nu_regular_cheerleader">
-        <item>Something short to get going today: {habito}.</item>
+        <item>Yesterday was so-so, so today we start short: {habito}.</item>
+        <item>A small start for today, like I said: {habito}.</item>
+        <item>Starting small is still starting: {habito}. The rest follows.</item>
+        <item>[manana] Good morning. Something short to warm up today: {habito}.</item>
+        <item>No big plans to start. Just this: {habito}.</item>
+        <item>Little by little! First stop: {habito}.</item>
+        <item>[lunes] A gentle Monday: one short thing to start. This one: {habito}.</item>
     </string-array>
     <string-array name="habla_nu_regular_neutra">
-        <item>Something short to get going today: {habito}.</item>
+        <item>Something short to get started: “{habito}”.</item>
+        <item>To ease in, the smallest one: “{habito}”.</item>
+        <item>Yesterday was so-so, so we start small today: {habito}.</item>
+        <item>“{habito}” is light. Let\'s start there.</item>
+        <item>A gentle start: “{habito}”, then whatever comes.</item>
+        <item>[manana] In the morning, we warm up with “{habito}”.</item>
+        <item>Starting small is still starting: “{habito}”.</item>
     </string-array>
     <string-array name="habla_nu_permiso_avisos_sargento">
-        <item>To remind you I need permission for notifications.</item>
+        <item>No permission, no reminders. Your call.</item>
+        <item>I can remind you, but your phone blocks me until you allow it.</item>
+        <item>Reminders help me keep you on track. Will you allow them?</item>
+        <item>One timely nudge beats a thousand good intentions. Allow them.</item>
     </string-array>
     <string-array name="habla_nu_permiso_avisos_cheerleader">
-        <item>To remind you I need permission for notifications.</item>
+        <item>Can I give you a nudge? With notifications on, I can be there right when it counts.</item>
+        <item>Without permission for notifications, I can\'t reach you on time. Shall we turn it on?</item>
+        <item>Notifications are off on your phone. If you allow them, I\'ll nudge you at the time you pick.</item>
+        <item>One permission and I can remind you at your time: you choose when, I handle the rest.</item>
     </string-array>
     <string-array name="habla_nu_permiso_avisos_neutra">
-        <item>To remind you I need permission for notifications.</item>
+        <item>To remind you on time I need notification permission. Shall we turn it on?</item>
+        <item>Without notification permission I can\'t send reminders. It takes one tap.</item>
+        <item>Habi\'s reminders are on, but the phone won\'t let them through. A permission is missing.</item>
+        <item>One permission and the reminders arrive. Whenever you like.</item>
     </string-array>
     <string-array name="habla_nu_permiso_alarmas_sargento">
-        <item>To remind you right on time I need permission for alarms.</item>
+        <item>To remind you at the exact time I need the alarms permission.</item>
+        <item>Without the alarms permission, my reminder arrives whenever the phone feels like it.</item>
+        <item>Agreed time, reminder at that time. For that, I need the alarms permission.</item>
+        <item>We set a time and I can\'t keep it without the alarms permission.</item>
     </string-array>
     <string-array name="habla_nu_permiso_alarmas_cheerleader">
-        <item>To remind you right on time I need permission for alarms.</item>
+        <item>To remind you right at the agreed time, your phone needs to allow alarms.</item>
+        <item>Without the alarms permission, my reminder might arrive late. Shall we allow it?</item>
+        <item>We agreed on a time and I want to keep it with you. One alarms permission is missing.</item>
+        <item>One last permission, alarms, and my reminders arrive right on the minute.</item>
     </string-array>
     <string-array name="habla_nu_permiso_alarmas_neutra">
-        <item>To remind you right on time I need permission for alarms.</item>
+        <item>For reminders at the exact time I need the alarms permission. Shall we grant it?</item>
+        <item>Without the alarms permission, reminders can arrive late. It\'s a system permission.</item>
+        <item>Your phone needs a permission for reminders to ring on time.</item>
+        <item>The alarms permission is missing. With it, each reminder arrives at its exact time.</item>
     </string-array>
 </resources>

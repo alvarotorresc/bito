@@ -1,0 +1,84 @@
+bolsa	indice	etiquetas	es	en
+fi_hoy_falta	0		Hoy todavía está pendiente. ¿Lo dejamos para las {hora}? Voy contigo.	It's still waiting today. Shall we pencil it in for {hora}? I'm right there with you.
+fi_hoy_falta	1		¡Hoy hay hueco a las {hora}! ¿Te lo apunto?	There's a gap at {hora} today! Want me to pencil it in?
+fi_hoy_falta	2	[manana]	Buenos días. A las {hora} esto encaja de maravilla, y se hace casi solo.	Good morning. {hora} looks like a great slot for this, and it'll almost do itself.
+fi_hoy_falta	3		Lo de hoy sigue esperándote y a las {hora} pinta bien. ¿Quedamos ahí?	Today's one is still ahead of you, and {hora} looks good. Shall we meet there?
+fi_hoy_falta	4	[noche]	Aún estamos a tiempo esta noche. ¿A las {hora}? Un empujoncito y ya está.	We still have time tonight. {hora}? One small push and it's done.
+fi_hoy_falta	5		Este lo hacemos hoy, tú y yo. ¿Te va bien a las {hora}?	We'll get this one done today, you and me. Does {hora} work?
+fi_hoy_falta	6		{habito}, hoy a las {hora}. ¡Aquí estaré animándote!	{habito}, today at {hora}. I'll be cheering from right here!
+fi_hoy_falta	7	[finde]	Finde tranquilo, pero a esto aún le falta su momento. ¿A las {hora}, sin prisa?	Easy weekend, but this one still needs its moment. {hora}, no rush?
+fi_objetivo	0		Este mes ha costado ({pct} %). ¿Y si lo dejamos en {objetivo}?	This month was a stretch ({pct} %). What if we set it to {objetivo}?
+fi_objetivo	1		¿Y si lo dejamos en {objetivo}? ¡Con una meta más ligera habrá más días que celebrar!	What if we set it to {objetivo}? With a lighter goal there'll be more days to celebrate!
+fi_objetivo	2		Probemos con {objetivo} una temporada. Volvemos a subirla cuando tú digas.	Let's try {objetivo} for a while. We raise it again whenever you say.
+fi_objetivo	3		Idea: {objetivo} de meta. Más fácil de cumplir, y así se crea constancia.	Idea: {objetivo} as the goal. Easier to hit, and that's how consistency grows.
+fi_objetivo	4		Un {pct} % en 30 días, y sigues aquí. ¿Bajamos la meta a {objetivo}?	{pct} % in 30 days, and you're still here. Lower the goal to {objetivo}?
+fi_objetivo	5		Sin presión: {objetivo} de meta y vemos cómo se siente. Tú mandas.	No pressure: {objetivo} as the goal, and we see how it feels. You call it.
+fi_objetivo	6		{habito}: ¿y si la meta fuera {objetivo}? Quiero verte ganar más días.	{habito}: what if the goal were {objetivo}? I want to see you win more days.
+fi_racha_vs_mejor	0		¡Vas por una racha de {racha}! Tu mejor racha: {mejor}.	You're on a streak of {racha}! Your best streak: {mejor}.
+fi_racha_vs_mejor	1		Racha actual: {racha}. Tu récord está en {mejor}, y yo apuesto por ti.	Streak now: {racha}. Your record is {mejor}, and I'm betting on you.
+fi_racha_vs_mejor	2		¡{racha|vez|veces} sin fallar y cada una cuenta! Tu mejor racha fue de {mejor}.	{racha|time|times} without a miss, and each counts! Your best was {mejor}.
+fi_racha_vs_mejor	3		Qué bien se te da esto: {racha|vez|veces} seguidas. Tu marca de siempre: {mejor}.	You're really good at this: {racha} in a row. Your all-time mark: {mejor}.
+fi_racha_vs_mejor	4		Cada paso de esta racha de {racha} es obra tuya. Tu mejor racha: {mejor}.	Every step of this streak of {racha} is yours. Best streak: {mejor}.
+fi_racha_vs_mejor	5	[lunes]	Lunes y con una racha de {racha}. ¡Así da gusto empezar la semana!	Monday, and on a streak of {racha}. What a way to start the week!
+fi_racha_vs_mejor	6		Mejor racha: {mejor}. Ahora: {racha}. Seguimos tú y yo.	Best streak: {mejor}. Right now: {racha}. We keep going, you and me.
+fi_mejor_dia	0		Tu mejor día para esto es el {dia_semana}. ¡Se te da de maravilla!	Your best day for this one is {dia_semana}. You absolutely shine!
+fi_mejor_dia	1		Dato curioso: el {dia_semana} es cuando más cumples. Me encanta verlo.	Fun fact: {dia_semana} is when you do it most. I love seeing it.
+fi_mejor_dia	2		El {dia_semana} lo bordas. Los demás días pueden tomar nota.	You nail it on {dia_semana}. The other days can take notes.
+fi_mejor_dia	3		Tu día fuerte es el {dia_semana}. ¡Apóyate en ese día si la semana se complica!	Your power day is {dia_semana}. Lean on it when the week gets tough!
+fi_mejor_dia	4		{habito}: el {dia_semana} es tu mejor día de la semana, y se nota.	{habito}: {dia_semana} is your best day of the week, and it shows.
+fi_mejor_dia	5		El {dia_semana} cumples más que ningún otro día. Ese día pondré ánimo extra.	You do best on {dia_semana}. I'll bring extra cheering that day.
+fi_mejor_dia	6		Hay días que pesan y días que fluyen: el {dia_semana} fluye. ¡Vamos a por más así!	Some days drag and some flow, and {dia_semana} flows. Let's get more like it!
+fi_constancia	0		Últimos 30 días: {pct} %. ¡Cada día suma y yo los cuento contigo!	Last 30 days: {pct} %. Every day adds up, and I'm counting them with you!
+fi_constancia	1		Un {pct} % en 30 días. Lo que de verdad cuenta es seguir, y aquí seguimos.	{pct} % over 30 days. What really counts is keeping going, and we are.
+fi_constancia	2		{habito}: {pct} % en el último mes. Un número es un punto de partida.	{habito}: {pct} % this past month. A number is just a starting point.
+fi_constancia	3		Este último mes: {pct} %. ¡Y todavía queda lo mejor por escribir!	This past month: {pct} %. And the best part is still to be written!
+fi_constancia	4		{pct} % en 30 días. Sea mucho o poco, cada marca la vi yo y la celebro.	{pct} % over 30 days. Big or small, I saw every mark and I celebrate it.
+fi_constancia	5	[lunes]	Lunes de balance: {pct} % en los últimos 30 días. Empezamos otra buena tanda.	Monday check-in: {pct} % over the last 30 days. Here comes another good stretch.
+fi_constancia	6		Si miramos el último mes, sale un {pct} %. Y hoy es otro día para sumar.	Looking at the last month, it comes to {pct} %. And today is another day to add.
+fi_nuevo	0		¡Hábito nuevo! Los primeros días son para coger carrerilla, y yo animo desde aquí.	A brand-new habit! The first days are for building momentum, and I'm cheering from right here.
+fi_nuevo	1		{habito}: página en blanco. Te acompaño desde el primer día.	{habito}: a blank page. I'm with you from day one.
+fi_nuevo	2		Esto acaba de empezar y ya me hace ilusión. ¡Mañana, otro paso!	This has only just begun and I'm already excited. Tomorrow, another step!
+fi_nuevo	3		Empezar es lo difícil, y eso ya lo has hecho. El resto lo vamos viendo, tú y yo.	Starting is the hard part, and you've already done it. The rest we figure out together.
+fi_nuevo	4	[lunes]	Hábito nuevo y lunes: buen momento para arrancar. ¡Vamos con todo!	New habit and a Monday: a great time to start. Let's go all in!
+fi_nuevo	5		Primeros días, primeras marcas. Aquí no hay prisa: hay equipo.	First days, first marks. No rush here: we're a team.
+fi_nuevo	6		Un hábito recién estrenado es lo mío. Cada día que lo repitas, más se afianza.	A freshly started habit is my favourite thing. Each day you repeat it, it takes firmer root.
+fi_limpio	0		¡{n|día limpio|días limpios}! Cada uno es un día que has ganado.	{n|clean day|clean days}! Every one is a day you've won.
+fi_limpio	1		Llevas {n|día limpio|días limpios}. Se nota la fuerza que hay detrás.	You're at {n|clean day|clean days}. The strength behind that shows.
+fi_limpio	2		{n|día limpio|días limpios} ya. Eso lo has hecho tú, nadie más.	{n|clean day|clean days} already. You did that, nobody else.
+fi_limpio	3		Va creciendo la cuenta: {n|día limpio|días limpios}. ¡Qué orgullo de equipo!	The count keeps growing: {n|clean day|clean days}. What team pride!
+fi_limpio	4		Dejar algo es de lo más duro, y llevas {n|día|días}. Estoy a tu lado.	Quitting something is hard, and you're at {n|day|days}. I'm beside you.
+fi_limpio	5	[noche]	Otra noche más con la cuenta intacta: {n|día limpio|días limpios}. A dormir con la cabeza alta.	Another night with the count intact: {n|clean day|clean days}. Sleep with your head held high.
+fi_limpio	6	[manana]	Buenos días. {n|día limpio|días limpios} y hoy sumamos uno más. ¡Vamos!	Good morning. {n|clean day|clean days}, and today we add one more. Let's go!
+fi_pausa	0		En pausa desde el {fecha}. Aquí te espero con todo igual que lo dejaste.	Paused since {fecha}. I'll be here, with everything just as you left it.
+fi_pausa	1		Pausa desde el {fecha}. Descansar también es parte del camino, y yo guardo el sitio.	On pause since {fecha}. Resting is part of the journey too, and I'm keeping your spot.
+fi_pausa	2		Descansando desde el {fecha}. Cuando quieras retomarlo, aquí estaremos. ¡Con ganas!	Resting since {fecha}. Whenever you want to pick it up, we'll be here. Ready and eager!
+fi_pausa	3		Desde el {fecha} está en pausa. Sin prisas: vuelve cuando te apetezca y seguimos.	Paused since {fecha}. No hurry: come back when it suits you and we carry on.
+fi_pausa	4		Pausado desde el {fecha}. Tu historial sigue aquí intacto, esperándote.	Paused since {fecha}. Your history is still here, untouched, waiting for you.
+ca_radiante	0		¡Menuda semana! De las que se enmarcan.	What a week! Honestly, frame this one.
+ca_radiante	1		Este mes ya van {n|día perfecto|días perfectos}. ¡Y esta semana está brillando!	This month is already at {n|perfect day|perfect days}. And this week is glowing!
+ca_radiante	2		Semana de las que dan ganas de aplaudir. Estoy aplaudiendo ahora mismo.	A week that makes you want to applaud. I'm applauding right now.
+ca_radiante	3		{n|día perfecto|días perfectos} este mes y contando. Esto se te da de lujo.	{n|perfect day|perfect days} this month and counting. You're really good at this.
+ca_radiante	4		Mira cómo luce el Camino ahora mismo: de lo mejor que he visto. ¡Y todo es tuyo!	Look at how the Path looks right now: the best I've seen. And all of it is yours!
+ca_radiante	5	[lunes]	Semana nueva sobre una semana redonda: el impulso se nota desde el primer día.	A new week on top of a perfect one: you can feel the momentum from day one.
+ca_radiante	6	[finde]	La semana ha ido de lujo, así que este finde toca presumir un poquito.	The week went brilliantly, so this weekend calls for a little bragging.
+ca_normal	0		Buena semana. ¡Y la que viene, mejor!	Good week. And the next one? Even better!
+ca_normal	1		Semana de las que construyen: {n|día perfecto|días perfectos} este mes. Sigo a tu lado.	A week that builds things: {n|perfect day|perfect days} this month. I'm right beside you.
+ca_normal	2		Ritmo constante, y eso vale más que un día espectacular.	Steady rhythm, and that's worth more than one spectacular day.
+ca_normal	3		Base sólida: {n|día perfecto|días perfectos} este mes, y cada semana construye sobre la anterior.	Solid base: {n|perfect day|perfect days} this month, and each week builds on the last.
+ca_normal	4		Ni más ni menos que una semana de las tuyas: sólida. ¡Me gusta!	Just one of your weeks: solid. I like it!
+ca_normal	5		Hay semanas de récord y semanas de constancia. Esta es de las segundas, y también se celebra.	Some weeks are for records, others for consistency. This is the second kind, and it earns a cheer.
+ca_normal	6		Camino tranquilo y paso firme. Un día perfecto más y el mes se pone aún mejor.	Calm road, steady steps. One more perfect day and the month gets even better.
+ca_mustio	0		Semana dura, no te lo voy a negar. Mañana empezamos otra, tú y yo.	A tough week, and I won't sugarcoat it. Tomorrow we start a new one, you and me.
+ca_mustio	1		Ha sido una semana cuesta arriba. Estoy contigo, y hoy mismo podemos mover una pieza.	It's been an uphill week. I'm with you, and today we can move one piece.
+ca_mustio	2		Semana floja, sí. Pero seguimos aquí los dos, y eso ya es base.	A slow week, yes. But we're both still here, and that's a foundation.
+ca_mustio	3		No ha sido tu semana, y está bien reconocerlo. Un solo hábito hoy ya cambia el rumbo.	It wasn't your week, and it's fine to say so. A single habit today already shifts the course.
+ca_mustio	4		Hay semanas que se tuercen. Esta se torció, pero el Camino sigue delante y yo contigo.	Some weeks go sideways. This one did, but the Path is still ahead and I'm right there with you.
+ca_mustio	5		Semana difícil. Si hoy hacemos una cosa pequeña, ya es un punto de giro. ¿Cuál eliges?	A hard week. If we do one small thing today, that's already a turning point. Which one do you pick?
+ca_mustio	6	[domingo]	Domingo para respirar: la semana fue dura y mañana se abre una nueva, en blanco.	Sunday to catch your breath: the week was hard, and tomorrow a fresh blank one opens.
+ca_ausencia	0		¡Tres días sin verte! Te he echado de menos. Vuelve, que esto sin ti no es lo mismo.	Three days without you! I missed you. Come back, it's not the same around here.
+ca_ausencia	1		Te echo de menos por aquí. Cuando quieras volver, el Camino te espera tal cual.	I miss you around here. Whenever you want to return, the Path is waiting just as it was.
+ca_ausencia	2		Me alegro de verte por aquí. Todo está como lo dejaste, y yo con ganas de retomar.	So good to see you here. Everything is as you left it, and I'm eager to pick things up.
+ca_ausencia	3		Hay ausencias que pesan, y a veces la vida manda. Aquí sigo cuando vuelvas, sin cuentas pendientes.	Some absences weigh, and sometimes life takes over. I'm here when you're back, no scores to settle.
+ca_ausencia	4		¡Has vuelto! Me hacía falta verte por aquí. Empezamos por algo chiquito.	You're back! I really needed to see you around. We'll start with something tiny.
+ca_ausencia	5		Una pausa larga se arregla con un paso pequeño. Hoy mismo, si te apetece.	A long break mends with one small step. Today, if you feel like it.
+ca_ausencia	6		Todo lo que hiciste sigue aquí y sigue contando. Cuando vuelvas, seguimos juntos.	Everything you did is still here and still counts. When you're back, we carry on together.
