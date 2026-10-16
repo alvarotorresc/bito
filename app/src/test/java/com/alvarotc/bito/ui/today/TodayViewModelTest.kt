@@ -664,4 +664,21 @@ class TodayViewModelTest {
             assertTrue(ui.gordo.isEmpty())
             assertEquals(3, ui.candidatosGordo.size)
         }
+
+    @Test
+    fun `a done big thing chosen today stays among the rows so saving keeps it`() =
+        runTest(dispatcher) {
+            sembrarGordo()
+            val repo = LoGordoRepository(db, now = { fixedNow })
+            repo.guardar(today, listOf(RefGordo(TipoRefGordo.TAREA, "hoy")))
+            tasksRepo.markDone("hoy", today, fixedNow)
+            vm = newViewModel(gordo = repo)
+
+            val ui = state()
+
+            val fila = ui.candidatosGordo.single { it.ref.id == "hoy" }
+            assertEquals("Informe", fila.nombre)
+            assertEquals(listOf(RefGordo(TipoRefGordo.TAREA, "hoy")), ui.gordo)
+            assertEquals(setOf("hoy", "vieja", "leer"), ui.candidatosGordo.map { it.ref.id }.toSet())
+        }
 }

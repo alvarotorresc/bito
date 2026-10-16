@@ -13,6 +13,8 @@ import com.alvarotc.bito.domain.Tasks
 import com.alvarotc.bito.domain.habla.CandidatoGordo
 import com.alvarotc.bito.domain.habla.LoGordo
 import com.alvarotc.bito.domain.habla.RefGordo
+import com.alvarotc.bito.domain.habla.SubtituloGordo
+import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.DueKind
@@ -188,7 +190,7 @@ fun buildTodayUiState(
         garden = garden,
         movimientos = movimientos,
         economia = economia,
-        candidatosGordo = candidatosGordo,
+        candidatosGordo = elegidosFueraDeCandidatos(state, gordoHoy, candidatosGordo) + candidatosGordo,
         sugerenciaGordo = LoGordo.sugerencia(candidatosGordo, gordoAyerSinHacer, state, today),
         gordo = gordoHoy,
     )
@@ -241,4 +243,24 @@ internal fun cardOf(
         failed = failed,
         streak = Streaks.streaksOf(state, habit, today).current,
     )
+}
+
+/**
+ * Lo gordo elegido hoy que ya no es candidato (hecho, o fuera de las puertas de hoy): sigue siendo fila de la hoja,
+ * para que reabrir y guardar no lo pierda. Va al principio, marcado como el resto de lo elegido.
+ */
+private fun elegidosFueraDeCandidatos(
+    state: DomainState,
+    elegidos: List<RefGordo>,
+    candidatos: List<CandidatoGordo>,
+): List<CandidatoGordo> {
+    val presentes = candidatos.map { it.ref }.toSet()
+    return elegidos.filter { it !in presentes }.mapNotNull { ref ->
+        when (ref.tipo) {
+            TipoRefGordo.TAREA ->
+                state.tasks.firstOrNull { it.id == ref.id }?.let { CandidatoGordo(ref, it.title, SubtituloGordo.Tarea) }
+            TipoRefGordo.HABITO ->
+                state.habits.firstOrNull { it.id == ref.id }?.let { CandidatoGordo(ref, it.name, SubtituloGordo.Habito) }
+        }
+    }
 }

@@ -90,4 +90,26 @@ class HoyGordoTest {
         }
         rule.onNodeWithText("Lo gordo de hoy: Llamar al dentista, Informe trimestral.").assertIsDisplayed()
     }
+
+    @Test
+    fun `reopening with a done big thing and saving keeps it`() {
+        val fuente = FuenteFalsa()
+        val b = BancoHoy(rule, tmp).also { banco = it }
+        b.preparar(fuente)
+        runBlocking {
+            val tareas = TasksRepository(b.db)
+            tareas.create(
+                taskEntity(id = "informe", title = "Informe trimestral", dueKind = DueKind.DATE, dueDay = b.hoy, createdOnDay = b.hoy - 3),
+            )
+            tareas.markDone("informe", b.hoy, b.fixedNow)
+            com.alvarotc.bito.data.habla.LoGordoRepository(b.db, now = { b.fixedNow })
+                .guardar(b.hoy, listOf(RefGordo(TipoRefGordo.TAREA, "informe")))
+        }
+        b.montar(abrirGordo = true)
+        esperarHoja()
+        rule.onNodeWithTag("gordo-informe").assertIsOn()
+        rule.onNodeWithTag("hoja-gordo-guardar").performClick()
+        rule.waitUntil(5_000) { fuente.gordoGuardado.isNotEmpty() }
+        assertEquals(listOf(listOf(RefGordo(TipoRefGordo.TAREA, "informe"))), fuente.gordoGuardado)
+    }
 }
