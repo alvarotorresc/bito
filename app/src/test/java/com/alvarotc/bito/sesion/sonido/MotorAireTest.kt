@@ -163,4 +163,77 @@ class MotorAireTest {
         assertTrue(salida.pico(0, salida.bloques.size) < 1e-6f)
         assertFalse(m.sonando.value)
     }
+
+    private fun motorCon(
+        salida: SalidaAudio,
+        ganancia: () -> Float = { 1f },
+        plataforma: PlataformaFoco = PlataformaFocoAndroid(audio),
+    ) = MotorAire(
+        audio = audio,
+        foco = FocoAudio(plataforma),
+        tacto = tacto,
+        ganancia = ganancia,
+        salida = { salida },
+        reloj = { reloj.get() },
+        lanzar = { it.run() },
+    )
+
+    @Test
+    fun `an audio track that fails to open ends cleanly and can start again`() {
+        var abrirFalla = true
+        val buena = SalidaFalsa(reloj)
+        val rota =
+            object : SalidaAudio {
+                override fun abrir() = if (abrirFalla) throw IllegalStateException("sin pista") else buena.abrir()
+
+                override fun escribir(muestras: FloatArray) = buena.escribir(muestras)
+
+                override fun cerrar() = buena.cerrar()
+            }
+        val m = motorCon(rota)
+        m.respirar(BreathingMode.CALM, anclaElapsed = reloj.get(), ciclos = 1, musica = false)
+        assertFalse(m.sonando.value)
+        abrirFalla = false
+        m.respirar(BreathingMode.CALM, anclaElapsed = reloj.get(), ciclos = 1, musica = false)
+        assertTrue(buena.bloques.size > 1000)
+    }
+
+    @Test
+    fun `an audio track that fails while writing ends cleanly`() {
+        var n = 0
+        val m =
+            motorCon(
+                object : SalidaAudio {
+                    override fun abrir() = Unit
+
+                    override fun escribir(muestras: FloatArray) {
+                        if (++n == 20) throw IllegalStateException("pista muerta")
+                    }
+
+                    override fun cerrar() = Unit
+                },
+            )
+        m.respirar(BreathingMode.CALM, anclaElapsed = reloj.get(), ciclos = 1, musica = false)
+        assertFalse(m.sonando.value)
+        assertEquals(20, n)
+    }
+
+    @Test
+    fun `a denied audio focus is asked once, not on every block`() {
+        var pedidos = 0
+        val plataforma =
+            object : PlataformaFoco {
+                override fun pedir(escucha: (Int) -> Unit): Boolean {
+                    pedidos++
+                    return false
+                }
+
+                override fun soltar() = Unit
+            }
+        var volumen = 0f
+        val salida = SalidaFalsa(reloj) { if (it == 5) volumen = 1f }
+        val m = motorCon(salida, ganancia = { volumen }, plataforma = plataforma)
+        m.respirar(BreathingMode.CALM, anclaElapsed = reloj.get(), ciclos = 1, musica = false)
+        assertEquals(1, pedidos)
+    }
 }

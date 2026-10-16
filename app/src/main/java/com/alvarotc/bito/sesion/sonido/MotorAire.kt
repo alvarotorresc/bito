@@ -6,6 +6,7 @@ import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Process
 import android.os.SystemClock
+import android.util.Log
 import com.alvarotc.bito.domain.model.BreathPhase
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.sesion.Aire
@@ -156,6 +157,8 @@ class MotorAire(
         var visto = -1
         var ultimoPaso = -1
         var terminado = false
+        // El foco denegado en mitad del bucle no se reintenta hasta la siguiente respiración.
+        var focoNegado = false
         try {
             out.abrir()
             while (true) {
@@ -170,6 +173,7 @@ class MotorAire(
                         s.respirar(p.modo, p.ciclos, musica)
                         retomarFoco = sinFoco
                         sinFoco = false
+                        focoNegado = false
                     }
                     s.musica(musica)
                     parar = pararPedido
@@ -177,8 +181,13 @@ class MotorAire(
                 // Otra respiración tras perder el foco para siempre, o el volumen que sube con el foco sin pedir:
                 // se pide ahora (solo si Bito puede sonar).
                 if (retomarFoco) conFoco = false
-                if (!conFoco && ganancia() > 0f) {
-                    if (foco.tomar(this)) conFoco = true else parar = true
+                if (!conFoco && !focoNegado && ganancia() > 0f) {
+                    if (foco.tomar(this)) {
+                        conFoco = true
+                    } else {
+                        focoNegado = true
+                        parar = true
+                    }
                 }
                 if (parar) s.parar()
                 s.volumen = ganancia() * foco.factor
@@ -193,8 +202,12 @@ class MotorAire(
                     break
                 }
             }
+        } catch (e: RuntimeException) {
+            // El `AudioTrack` puede no abrirse o morir a medias (servidor de audio ocupado, algunos fabricantes):
+            // la respiración acaba sin tono en vez de tumbar el proceso desde el hilo de audio.
+            Log.w(ETIQUETA, "el audio de la respiración falló", e)
         } finally {
-            out.cerrar()
+            runCatching { out.cerrar() }
             // Si el audio falla a medias, el siguiente respirar debe poder arrancar otro hilo.
             if (!terminado) terminar(null)
         }
@@ -211,6 +224,8 @@ class MotorAire(
         }
 
     companion object {
+        private const val ETIQUETA = "MotorAire"
+
         /** El canal ambiente con el interruptor general y su volumen; el modo silencio del móvil no lo calla (spec §9.1). */
         fun ganancia(a: AjustesSonido): Float = Ganancia.canal(Canal.AMBIENTE, a, timbreNormal = true)
 
