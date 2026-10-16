@@ -120,6 +120,11 @@ class FocoAudio(
         @Volatile
         private var unico: FocoAudio? = null
 
+        /** Los tests que pasan por las fábricas sueltan el del proceso para no dejar una sombra vieja a los siguientes. */
+        internal fun reiniciarParaTests() {
+            unico = null
+        }
+
         /** El del proceso. */
         fun de(context: Context): FocoAudio =
             unico ?: synchronized(this) {

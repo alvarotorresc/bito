@@ -197,6 +197,7 @@ class FondoSesionTest {
         fondo.callar()
         // El `Bucle` del motor de sonido se funde en `segundoPlano()`: el fondo de la sesión no puede pasar por él.
         assertEquals(0, sonido.bucles)
+        FocoAudio.reiniciarParaTests()
     }
 
     @Test
