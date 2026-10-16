@@ -143,7 +143,10 @@ class SesionStoreTest {
             val store = SesionStore(ds)
             val r = registro(Objetivo.Libre)
             store.guardar(r)
-            val a = async(Dispatchers.Default) { repeat(40) { i -> store.actualizar(r.id) { it.copy(eventos = it.eventos + Evento.Sumar(i * 1L, 1)) } } }
+            val a =
+                async(
+                    Dispatchers.Default,
+                ) { repeat(40) { i -> store.actualizar(r.id) { it.copy(eventos = it.eventos + Evento.Sumar(i * 1L, 1)) } } }
             val b = async(Dispatchers.Default) { repeat(40) { store.actualizar(r.id) { it.copy(inicioDia = it.inicioDia + 1) } } }
             a.await()
             b.await()

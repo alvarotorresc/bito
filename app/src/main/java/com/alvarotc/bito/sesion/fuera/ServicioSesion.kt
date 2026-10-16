@@ -108,7 +108,11 @@ class ServicioSesion : Service() {
         /** El servicio quita su aviso y se para; si no está vivo, es un `stopService` que no hace nada. */
         fun parar(context: Context) {
             val servicio = instancia
-            if (servicio != null) servicio.soltar() else if (pedido.getAndSet(false)) soltarAlLlegar.set(true)
+            if (servicio != null) {
+                servicio.soltar()
+            } else if (pedido.getAndSet(false)) {
+                soltarAlLlegar.set(true)
+            }
             context.stopService(Intent(context, ServicioSesion::class.java))
         }
     }

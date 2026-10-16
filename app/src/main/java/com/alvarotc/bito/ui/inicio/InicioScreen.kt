@@ -72,7 +72,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
@@ -89,7 +88,6 @@ import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.sesion.Instante
 import com.alvarotc.bito.domain.sesion.PlanSesion
 import com.alvarotc.bito.domain.sesion.RegistroSesion
-import com.alvarotc.bito.domain.sesion.Tramo
 import com.alvarotc.bito.ui.camino.CaminoContenido
 import com.alvarotc.bito.ui.camino.CaminoViewModel
 import com.alvarotc.bito.ui.cierre.CierreContenido
