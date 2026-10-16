@@ -15,6 +15,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicReference
 
+// Hasta la primera emisión de los ajustes no se decide nada con un estado de relleno: Bito callado.
+private val SIN_AJUSTES = AjustesSonido.de(Settings()).copy(general = false)
+
 /**
  * El aire de la sesión y de respirar. No usa la ganancia de [sonido]: esa calla con el móvil en
  * silencio y el tono no (spec §9.1), así que lee el canal ambiente de los ajustes guardados.
@@ -26,7 +29,7 @@ fun crearAire(
     tacto: Tacto,
     settings: SettingsRepository,
 ): Aire {
-    val ajustes = AtomicReference(AjustesSonido.de(Settings()))
+    val ajustes = AtomicReference(SIN_AJUSTES)
     CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
         settings.settings.collect { ajustes.set(AjustesSonido.de(it)) }
     }
@@ -45,13 +48,20 @@ fun crearFondo(
     sonido: MotorSonido,
     settings: SettingsRepository,
 ): Fondo {
-    val ajustes = AtomicReference(AjustesSonido.de(Settings()))
+    val ajustes = AtomicReference(SIN_AJUSTES)
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    scope.launch { settings.settings.collect { ajustes.set(AjustesSonido.de(it)) } }
-    return FondoSesion(
-        salida = SalidaFondoAndroid(context.applicationContext),
-        foco = FocoAudio.de(context),
-        ganancia = { MotorAire.ganancia(ajustes.get()) },
-        scope = scope,
-    )
+    val fondo =
+        FondoSesion(
+            salida = SalidaFondoAndroid(context.applicationContext),
+            foco = FocoAudio.de(context),
+            ganancia = { MotorAire.ganancia(ajustes.get()) },
+            scope = scope,
+        )
+    scope.launch {
+        settings.settings.collect {
+            ajustes.set(AjustesSonido.de(it))
+            fondo.alCambiarGanancia()
+        }
+    }
+    return fondo
 }

@@ -179,21 +179,6 @@ class FondoSesionTest {
         }
 
     @Test
-    fun `going to background does not stop it`() =
-        runTest {
-            val m = montar()
-            m.fondo.sonar(SessionBackground.BROWN)
-            advanceTimeBy(2_000)
-            val fuente = m.salida.cortos.single().second
-
-            // El motor de sonido de la app funde sus bucles al salir de la app; el fondo de la sesión no depende de él.
-            advanceTimeBy(2_000)
-            assertEquals(SessionBackground.BROWN, m.fondo.sonando.value)
-            assertFalse(fuente.cerrada)
-            assertTrue(fuente.ultimo > 0.99f)
-        }
-
-    @Test
     fun `the real factory never goes through the app loops`() {
         val sonido = MotorSonidoQueGraba()
         val almacen =
@@ -201,6 +186,7 @@ class FondoSesionTest {
                 carpeta.newFile("ajustes.preferences_pb")
             }
         val fondo = crearFondo(context, sonido, SettingsRepository(almacen))
+        assertTrue("el fondo real es FondoSesion, no un mudo", fondo is FondoSesion)
         fondo.sonar(SessionBackground.RAIN)
         fondo.muestra(SessionBackground.CAFE)
         fondo.callar()
@@ -311,7 +297,74 @@ class FondoSesionTest {
             m.fondo.sonar(SessionBackground.BROWN)
             advanceTimeBy(100)
             assertEquals(Snd.FONDO_MARRON, m.salida.cortos.single().first)
+            advanceTimeBy(500)
             assertTrue(m.salida.pistas.single().second.cerrada)
+        }
+
+    @Test
+    fun `changing the background fades the old one in about 30 ms instead of cutting it`() =
+        runTest {
+            val m = montar()
+            m.fondo.sonar(SessionBackground.RAIN)
+            advanceTimeBy(4_000)
+            val vieja = m.salida.pistas.single().second
+            assertTrue(vieja.ultimo > 0.99f)
+
+            m.fondo.sonar(SessionBackground.BROWN)
+            advanceTimeBy(32)
+            // Constante de 30 ms: a los 32 ms queda cerca del 35 %, no el 100 % ni el 0 %.
+            assertFalse(vieja.cerrada)
+            assertTrue("fundiendo: ${vieja.ultimo}", vieja.ultimo in 0.15f..0.6f)
+            advanceTimeBy(400)
+            assertTrue(vieja.cerrada)
+            // Sin escalón: ningún paso baja más de la mitad de golpe.
+            assertTrue(vieja.volumenes.zipWithNext().all { (a, b) -> a.second - b.second < 0.7f })
+            // La nueva entra con su 400 ms.
+            val nueva = m.salida.cortos.single().second
+            advanceTimeBy(4_000)
+            assertTrue(nueva.ultimo > 0.99f)
+        }
+
+    @Test
+    fun `a steady background stops waking up every 16 ms`() =
+        runTest {
+            val m = montar()
+            m.fondo.sonar(SessionBackground.BROWN)
+            advanceTimeBy(5_000)
+            val fuente = m.salida.cortos.single().second
+            val pasos = fuente.volumenes.size
+            advanceTimeBy(20_000)
+            assertEquals("sigue despertando: ${fuente.volumenes.size - pasos} pasos de más", pasos, fuente.volumenes.size)
+            assertTrue(fuente.ultimo > 0.99f)
+        }
+
+    @Test
+    fun `a parked background wakes up with focus changes, gain changes and a new sonar`() =
+        runTest {
+            val m = montar()
+            m.fondo.sonar(SessionBackground.BROWN)
+            advanceTimeBy(5_000)
+            val fuente = m.salida.cortos.single().second
+
+            cambiar(AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK)
+            advanceTimeBy(1_500)
+            assertEquals(0.3f, fuente.ultimo, 0.01f)
+
+            cambiar(AudioManager.AUDIOFOCUS_GAIN)
+            advanceTimeBy(1_500)
+            assertTrue(fuente.ultimo > 0.99f)
+
+            ganancia = 0.5f
+            m.fondo.alCambiarGanancia()
+            advanceTimeBy(2_000)
+            assertEquals(0.5f, fuente.ultimo, 0.01f)
+
+            m.fondo.callar()
+            advanceTimeBy(3_000)
+            assertTrue(fuente.cerrada)
+            m.fondo.sonar(SessionBackground.BROWN)
+            advanceTimeBy(3_000)
+            assertEquals(0.5f, m.salida.cortos.last().second.ultimo, 0.01f)
         }
 
     @Test
@@ -327,6 +380,7 @@ class FondoSesionTest {
 
             // Si sube el volumen durante la sesión, entonces sí.
             ganancia = 1f
+            m.fondo.alCambiarGanancia()
             advanceTimeBy(1_000)
             assertNotNull(shadowOf(audio).lastAudioFocusRequest)
             assertEquals(SessionBackground.RAIN, m.fondo.sonando.value)

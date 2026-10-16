@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.abs
 import kotlin.math.exp
 
 /** Lo que suena de un fondo ya abierto: se le sube y baja el volumen y se cierra. */
@@ -78,8 +79,16 @@ class FondoSesion(
     private var conFoco = false
     private var perdido = false
     private var ultimoFactor = 1f
-    private var bucle: Job? = null
+    private var latiendo = false
     private var muestra: Job? = null
+
+    // Fuentes de un fondo anterior que se funden en seco (30 ms) mientras entra el nuevo.
+    private class Saliente(
+        val fuente: FuenteFondo,
+        var volumen: Float,
+    )
+
+    private val salientes = mutableListOf<Saliente>()
 
     override fun sonar(tipo: SessionBackground) {
         if (tipo == SessionBackground.NONE) {
@@ -128,12 +137,31 @@ class FondoSesion(
             muestra = null
             _sonando.value = null
             tau = TAU_FOCO
+            arrancarBucle()
         }
+
+    /** El factor del foco cambió: si el bucle estaba aparcado, se despierta. */
+    override fun alCambiarFactor() = despertar()
+
+    /** La ganancia del canal cambió (ajustes): si el bucle estaba aparcado, se despierta. */
+    fun alCambiarGanancia() = despertar()
+
+    private fun despertar() =
+        synchronized(cerrojo) {
+            if (querido != null || fuente != null || salientes.isNotEmpty()) arrancarBucle()
+        }
+
+    // Siempre con el cerrojo. El bucle se aparca cuando no hay nada que mover y vuelve con estas llamadas.
+    private fun arrancarBucle() {
+        if (latiendo) return
+        latiendo = true
+        scope.launch { latir() }
+    }
 
     // Siempre con el cerrojo.
     private fun empezar(tipo: SessionBackground) {
         if (abierto != tipo) {
-            fuente?.cerrar()
+            fuente?.let { salientes += Saliente(it, volumen) }
             fuente = null
             abierto = null
             volumen = 0f
@@ -142,7 +170,7 @@ class FondoSesion(
         perdido = false
         tau = TAU_ENTRA
         ultimoFactor = foco.factor
-        if (bucle?.isActive != true) bucle = scope.launch { latir() }
+        arrancarBucle()
     }
 
     // Siempre con el cerrojo.
@@ -151,13 +179,35 @@ class FondoSesion(
         querido = null
         tau = if (seco) TAU_SECO else TAU_SALE
         _sonando.value = null
-        if (bucle?.isActive != true) bucle = scope.launch { latir() }
+        arrancarBucle()
     }
 
     private suspend fun latir() {
         while (true) {
             if (paso()) return
             delay(PASO_MS)
+        }
+    }
+
+    // Siempre con el cerrojo.
+    private fun aparcar(): Boolean {
+        latiendo = false
+        return true
+    }
+
+    // Siempre con el cerrojo.
+    private fun fundirSalientes() {
+        val k = 1f - exp(-PASO_MS / TAU_SECO)
+        val it = salientes.iterator()
+        while (it.hasNext()) {
+            val v = it.next()
+            v.volumen -= v.volumen * k
+            if (v.volumen < SILENCIO) {
+                v.fuente.cerrar()
+                it.remove()
+            } else {
+                v.fuente.volumen(v.volumen)
+            }
         }
     }
 
@@ -183,15 +233,18 @@ class FondoSesion(
             }
             val objetivo = if (tipo != null && conFoco && !perdido) ganancia() * foco.factor else 0f
             volumen += (objetivo - volumen) * (1f - exp(-PASO_MS / tau))
+            if (abs(objetivo - volumen) < SILENCIO) volumen = objetivo
             fuente?.volumen(volumen)
+            fundirSalientes()
             val callado = volumen < SILENCIO
+            val reposo = tipo != null && !perdido && volumen == objetivo && foco.factor == ultimoFactor && salientes.isEmpty()
             when {
                 // Callado del todo, o perdido para siempre: se cierra y se suelta el foco.
                 callado && (tipo == null || perdido) -> {
                     cerrarFuente()
                     soltarFoco()
                     querido = null
-                    true
+                    if (salientes.isEmpty()) aparcar() else false
                 }
                 // Bito callado: sin volumen no se retiene el foco; se vuelve a pedir si el volumen sube.
                 callado && conFoco && ganancia() == 0f -> {
@@ -199,6 +252,8 @@ class FondoSesion(
                     soltarFoco()
                     false
                 }
+                // En su volumen y sin nada que cambiar: no despierta cada 16 ms toda la sesión.
+                reposo && (fuente != null || (!conFoco && ganancia() == 0f)) -> aparcar()
                 else -> false
             }
         }
@@ -297,8 +352,11 @@ class PistaEncadenada private constructor(
             }
             nuevo.volumen(vol)
             siguiente = nuevo
-            actual.encadenar(nuevo)
-            actual.alAcabar(::avanzar)
+            // Un jugador liberado en una carrera con `cerrar` no debe tumbar el hilo principal: la pista se queda en silencio.
+            runCatching {
+                actual.encadenar(nuevo)
+                actual.alAcabar(::avanzar)
+            }
             viejo.liberar()
         }
 

@@ -56,6 +56,9 @@ class FocoAudio(
 ) {
     fun interface Usuario {
         fun alPerder()
+
+        /** [factor] cambió (pérdida temporal, `CAN_DUCK` o vuelta del foco). Para quien aparca su bucle. */
+        fun alCambiarFactor() = Unit
     }
 
     private val usuarios = mutableSetOf<Usuario>()
@@ -86,9 +89,9 @@ class FocoAudio(
 
     private fun alCambiar(cambio: Int) {
         when (cambio) {
-            AudioManager.AUDIOFOCUS_GAIN -> factor = 1f
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> factor = 0f
-            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> factor = AGACHADO
+            AudioManager.AUDIOFOCUS_GAIN -> cambiarFactor(1f)
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> cambiarFactor(0f)
+            AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> cambiarFactor(AGACHADO)
             AudioManager.AUDIOFOCUS_LOSS -> {
                 val perdidos =
                     synchronized(this) {
@@ -99,6 +102,15 @@ class FocoAudio(
                 perdidos.forEach { it.alPerder() }
             }
         }
+    }
+
+    private fun cambiarFactor(nuevo: Float) {
+        val a =
+            synchronized(this) {
+                factor = nuevo
+                usuarios.toList()
+            }
+        a.forEach { it.alCambiarFactor() }
     }
 
     companion object {
