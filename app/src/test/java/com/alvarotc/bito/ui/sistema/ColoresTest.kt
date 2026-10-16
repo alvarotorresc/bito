@@ -20,6 +20,7 @@ class ColoresTest {
         assertEquals(Color(0xFF4A2C22), BitoClaro.contorno)
         assertEquals(Color(0xFF8E2F22), BitoClaro.peligro)
         assertEquals(0.38f, BitoClaro.velo.alpha, 0.01f)
+        assertEquals(Color(0xFFCFC5B8), BitoClaro.vetaFria)
     }
 
     @Test
