@@ -110,9 +110,12 @@ class MotorSesionAndroid(
      * Con la sesión en un foco sin pausa, un fondo que sigue callado es una pérdida: se avisa a lo de fuera. Se mira al
      * entrar en el cerrojo, no al emitirse: el motor cambia de tramo (calla y suena de nuevo) antes de que esto corra.
      */
-    private suspend fun alPerderseElFondo() =
+    internal suspend fun alPerderseElFondo() =
         enCerrojo {
+            // Con la app fuera, lo de fuera lo lleva el receptor y el instante de aquí sería viejo (el tic no lo actualiza).
+            if (!delante()) return@enCerrojo
             val r = _registro.value ?: return@enCerrojo
+            // El último tramo anunciado, no el del reloj: es el que el fondo acompaña (el tic aún puede no haber cruzado la frontera).
             val inst = _instante.value ?: return@enCerrojo
             if (inst.actual is Tramo.Foco && !inst.pausado && fondo.sonando.value == null) fuera.alCambiar(r, sonando())
         }
@@ -176,8 +179,10 @@ class MotorSesionAndroid(
                 val ahora = reloj()
                 val inst = RelojSesion.en(viva, ahora)
                 efectos.intento(viva.plan.objetivo, hoyDe(ahora, settings.settings.first()), ahora.paredMillis)
-                aviso = AvisoSesion.ComoIntento(efectos.nombre(viva.plan.objetivo))
-                cerrarAqui(viva, inst, ahora, ResultadoSesion.CAMBIADA)
+                // Una sesión libre no es un intento de nada: sin aviso.
+                aviso = if (viva.plan.objetivo == Objetivo.Libre) null else AvisoSesion.ComoIntento(efectos.nombre(viva.plan.objetivo))
+                // Si no hay borrador (se abre la respiración suelta), no viene otra detrás: se cierra del todo.
+                cerrarAqui(viva, inst, ahora, ResultadoSesion.CAMBIADA, sigue = _borrador.value != null)
             }
             _borrador.value?.let { arrancar(it) }
             ResultadoAccion(bitos = 0, celebraciones = false, aviso = aviso)
@@ -188,8 +193,8 @@ class MotorSesionAndroid(
             val (r, ahora, inst) = vivoAhora() ?: return@enCerrojo
             if (inst.actual !is Tramo.Respirar) return@enCerrojo
             // Todavía no hubo foco: cerrarAqui no escribe fila. Se calla el aire, se devuelve No molestar y se borra el registro.
-            cerrarAqui(r, inst, ahora, ResultadoSesion.SIN_RESPUESTA)
-            _borrador.value = r.plan
+            // El borrador vuelve en el mismo paso que se va la sesión: la pantalla no ve nunca un hueco.
+            cerrarAqui(r, inst, ahora, ResultadoSesion.SIN_RESPUESTA, borradorTras = r.plan)
         }
 
     override suspend fun pausar() =
@@ -230,7 +235,8 @@ class MotorSesionAndroid(
             _registro.value = r2
             val nuevo = RelojSesion.en(r2, ahora)
             _instante.value = nuevo
-            anunciar(r2, inst.tramo, nuevo, gesto = Haptica.TICK)
+            // Saltar el descanso ya hace su tick en la pantalla: el motor suena la frontera de siempre (brote y rise).
+            anunciar(r2, inst.tramo, nuevo, gesto = if (inst.actual is Tramo.Respirar) Haptica.TICK else null)
         }
 
     override suspend fun empezarDescanso() =
@@ -265,7 +271,7 @@ class MotorSesionAndroid(
         enCerrojo {
             val r = vivaAqui() ?: return@enCerrojo
             val ahora = reloj()
-            cerrarAqui(r, RelojSesion.en(r, ahora), ahora, ResultadoSesion.SIN_RESPUESTA)
+            cerrarAqui(r, RelojSesion.en(r, ahora), ahora, ResultadoSesion.SIN_RESPUESTA, sigue = true)
             arrancar(
                 r.plan.copy(
                     minutosFoco = MINUTOS_OTRA,
@@ -297,16 +303,8 @@ class MotorSesionAndroid(
                 return@enCerrojo
             }
             publicar(r, inst)
-            when (val tramo = inst.actual) {
-                is Tramo.Respirar ->
-                    if (!aire.sonando.value) {
-                        aire.respirar(BreathingMode.CALM, r.anclaElapsed, tramo.ciclos, settings.settings.first().breathingMusicEnabled)
-                    }
-                is Tramo.Foco -> if (!inst.pausado && fondo.sonando.value == null) fondo.sonar(r.plan.fondo)
-                is Tramo.Descanso -> Unit
-                null -> noMolestar.restaurar(r.filtroPrevio)
-            }
-            fuera.alCambiar(r, sonando())
+            val vigente = reconciliar(r, inst)
+            fuera.alCambiar(vigente, sonando())
         }
 
     /**
@@ -339,6 +337,9 @@ class MotorSesionAndroid(
             if (adoptarAlVolver || ultimo == null) {
                 adoptarAlVolver = false
                 anunciado = r.id to inst.tramo
+                // Sin sonar la frontera, pero el audio y lo de fuera se ponen como pide el tramo en que se vuelve.
+                val vigente = reconciliar(r, inst)
+                fuera.alCambiar(vigente, sonando())
             } else if (inst.tramo != ultimo) {
                 anunciar(r, ultimo, inst)
             }
@@ -380,9 +381,10 @@ class MotorSesionAndroid(
                 arranques = ahora.arranques,
             )
         store.guardar(r)
-        _borrador.value = null
         val inst = RelojSesion.en(r, ahora)
+        // Primero la sesión y luego se vacía el borrador: la pantalla no ve nunca un hueco entre las dos.
         publicar(r, inst)
+        _borrador.value = null
         when (val tramo = inst.actual) {
             is Tramo.Respirar -> aire.respirar(BreathingMode.CALM, r.anclaElapsed, tramo.ciclos, ajustes.breathingMusicEnabled)
             is Tramo.Foco -> fondo.sonar(plan.fondo)
@@ -415,20 +417,30 @@ class MotorSesionAndroid(
         return minutosQueCuentan(inst.focoMillis)
     }
 
-    /** Todas las salidas: callar, devolver No molestar, la fila de `sesiones`, borrar y avisar a lo de fuera. */
+    /**
+     * Todas las salidas: callar, devolver No molestar, la fila de `sesiones`, borrar y avisar a lo de fuera. La sesión
+     * se publica como cerrada al final, tras avisar fuera (que puede suspender): hasta entonces la pantalla sigue en
+     * ella y lo que haga la UI después de la acción no pierde su bloque. Con [sigue] viene otra sesión detrás (la
+     * publica quien llama): ni se publica el hueco ni se avisa de un cierre. [borradorTras] se pone en el mismo
+     * paso que se vacía la sesión.
+     */
     private suspend fun cerrarAqui(
         r: RegistroSesion,
         inst: Instante,
         ahora: Ahora,
         resultado: ResultadoSesion,
+        sigue: Boolean = false,
+        borradorTras: PlanSesion? = null,
     ) {
         aire.parar()
         fondo.callar(seco = true)
         noMolestar.restaurar(r.filtroPrevio)
         efectos.guardarFila(r, inst, ahora.paredMillis, resultado)
         store.borrar()
-        limpiar()
+        if (sigue) return
         fuera.alCambiar(null, false)
+        if (borradorTras != null) _borrador.value = borradorTras
+        limpiar()
     }
 
     /** Lo que suena y vibra al cruzar una frontera (spec §7). [gesto] sustituye la háptica cuando la frontera la cruza un toque. */
@@ -439,6 +451,7 @@ class MotorSesionAndroid(
         gesto: Haptica? = null,
     ) {
         val previo = Tramos.de(r.plan).getOrNull(desde)
+        var vigente = r
         when (inst.actual) {
             is Tramo.Foco ->
                 if (previo is Tramo.Respirar) {
@@ -456,13 +469,62 @@ class MotorSesionAndroid(
             null -> {
                 if (previo is Tramo.Respirar) aire.parar()
                 fondo.callar()
-                noMolestar.restaurar(r.filtroPrevio)
+                vigente = devolverNoMolestar(r)
                 sonar(Snd.CAMPANILLA, gesto ?: Haptica.CONFIRM)
             }
             is Tramo.Respirar -> Unit
         }
         anunciado = r.id to inst.tramo
-        fuera.alCambiar(r, sonando())
+        fuera.alCambiar(vigente, sonando())
+    }
+
+    /**
+     * Deja el audio y No molestar como pide el tramo en que se vuelve a la sesión, sin sonar la frontera. Lo usan
+     * recuperar y la adopción del tic. Devuelve el registro vigente.
+     */
+    private suspend fun reconciliar(
+        r: RegistroSesion,
+        inst: Instante,
+    ): RegistroSesion {
+        when (val tramo = inst.actual) {
+            is Tramo.Respirar ->
+                if (!aire.sonando.value) {
+                    aire.respirar(BreathingMode.CALM, r.anclaElapsed, tramo.ciclos, settings.settings.first().breathingMusicEnabled)
+                }
+            is Tramo.Foco -> {
+                if (aire.sonando.value) aire.parar()
+                if (inst.pausado) {
+                    if (fondo.sonando.value != null) fondo.callar()
+                } else if (fondo.sonando.value == null) {
+                    fondo.sonar(r.plan.fondo)
+                }
+            }
+            is Tramo.Descanso -> callarTodo()
+            null -> {
+                callarTodo()
+                return devolverNoMolestar(r)
+            }
+        }
+        return r
+    }
+
+    private fun callarTodo() {
+        if (aire.sonando.value) aire.parar()
+        if (fondo.sonando.value != null) fondo.callar()
+    }
+
+    /**
+     * Devuelve No molestar una sola vez por sesión (RF4): al devolverlo el registro deja de llevar el filtro previo, así
+     * que ni recuperar ni la respuesta lo vuelven a tocar, y lo que la persona ponga a mano después se queda. Sin el
+     * filtro previo tampoco hay etiqueta de No molestar.
+     */
+    private suspend fun devolverNoMolestar(r: RegistroSesion): RegistroSesion {
+        val previo = r.filtroPrevio ?: return r
+        noMolestar.restaurar(previo)
+        val devuelto = r.copy(filtroPrevio = null)
+        store.guardar(devuelto)
+        if (_registro.value?.id == r.id) _registro.value = devuelto
+        return devuelto
     }
 
     private suspend fun vivaAqui(): RegistroSesion? = _registro.value ?: store.leer()

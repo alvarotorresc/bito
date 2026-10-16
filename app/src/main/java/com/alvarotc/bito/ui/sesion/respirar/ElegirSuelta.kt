@@ -95,7 +95,7 @@ fun ElegirSuelta(
             elegida = MODOS.indexOf(modo),
             alElegir = { alModo(MODOS[it]) },
             modifier = Modifier.escalon(1).padding(top = ARRIBA_SEGMENTADO).fillMaxWidth().testTag("r-modo"),
-            repartir = true,
+            anchoCompleto = true,
         )
         TextoRodillo(
             stringResource(ritmoDeModo(modo)),
@@ -117,6 +117,8 @@ fun ElegirSuelta(
             modifier = Modifier.escalon(4).padding(top = ARRIBA_BOTONES).fillMaxWidth().testTag("r-empezar"),
             estilo = EstiloBoton.PRINCIPAL,
             alto = Medidas.botonHoja,
+            llena = true,
+            pildoraMock = true,
         )
         if (semana != null) {
             Text(

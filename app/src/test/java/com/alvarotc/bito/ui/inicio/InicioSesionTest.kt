@@ -5,9 +5,11 @@ import androidx.activity.ComponentActivity
 import androidx.compose.foundation.clickable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.test.assertContentDescriptionEquals
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -17,7 +19,11 @@ import androidx.compose.ui.test.performSemanticsAction
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.propuestas.Destino
+import com.alvarotc.bito.domain.sesion.ANCLA_ELAPSED
+import com.alvarotc.bito.domain.sesion.Ahora
 import com.alvarotc.bito.domain.sesion.Entrada
+import com.alvarotc.bito.domain.sesion.INICIO_PARED
+import com.alvarotc.bito.domain.sesion.RelojSesion
 import com.alvarotc.bito.domain.sesion.planSesion
 import com.alvarotc.bito.sesion.AireMudo
 import com.alvarotc.bito.ui.sesion.BloqueSesion
@@ -30,6 +36,7 @@ import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -209,6 +216,218 @@ class InicioSesionTest {
         assertTrue(rule.onAllNodes(androidx.compose.ui.test.hasText("Sigue en marcha", substring = true)).fetchSemanticsNodes().isEmpty())
         assertTrue("la sesión sigue esperando su respuesta", motor.registro.value != null)
         assertEquals(emptyList<String>(), motor.llamadas.filter { it != "recuperar" })
+    }
+
+    private fun atrasDelSistema() {
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        asentar()
+        rule.waitForIdle()
+    }
+
+    private fun avisosSigueEnMarcha() =
+        rule.onAllNodes(androidx.compose.ui.test.hasText("Sigue en marcha", substring = true)).fetchSemanticsNodes().size
+
+    @Test
+    fun `in Today with a live focus back is not the session's and Camino closes first`() {
+        motor.viva(directo)
+        montar()
+        pedir(null)
+        atras()
+        assertEquals(1, avisosSigueEnMarcha())
+
+        assertFalse("en Hoy nadie atrapa Atrás", rule.activity.onBackPressedDispatcher.hasEnabledCallbacks())
+
+        rule.onNodeWithTag("pildora-camino").performClick()
+        asentar()
+        rule.waitForIdle()
+        rule.onNodeWithTag("inicio-camino").assertExists()
+        atrasDelSistema()
+        rule.onNodeWithTag("inicio-hoy").assertExists()
+        rule.onNodeWithTag("inicio-camino").assertDoesNotExist()
+    }
+
+    @Test
+    fun `back from prepare leaves no draft trapping back in Today`() {
+        montar()
+        pedir(Destino.Tarea("t1"))
+        atras()
+
+        assertFalse(existe("ses-tierra"))
+        assertFalse("el borrador no atrapa Atrás en Hoy", rule.activity.onBackPressedDispatcher.hasEnabledCallbacks())
+    }
+
+    @Test
+    fun `back from finished leaves nothing trapping back in Today`() {
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 60 * MINUTO)
+        montar()
+        pedir(null)
+        atras()
+
+        assertFalse(existe("ses-tierra"))
+        assertFalse("Terminada esperando no atrapa Atrás en Hoy", rule.activity.onBackPressedDispatcher.hasEnabledCallbacks())
+    }
+
+    @Test
+    fun `a session mode restored after the process died with nothing to show leaves for Today`() {
+        banco.preparar()
+        val tester = androidx.compose.ui.test.junit4.StateRestorationTester(rule)
+        var montajes = 0
+        tester.setContent {
+            // El segundo montaje es el de después de morir el proceso: el borrador (en memoria) ya no está.
+            if (remember { ++montajes } == 2) motor.borrador.update { null }
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+            }
+        }
+        rule.waitForIdle()
+        pedir(Destino.Tarea("t1"))
+        assertTrue(existe("ses-b-prep"))
+
+        // El proceso muere: el modo sesión se guarda con la instancia, pero el borrador y la sesión viven en memoria.
+        tester.emulateSavedInstanceStateRestore()
+        rule.waitForIdle()
+        asentar()
+        rule.waitForIdle()
+
+        assertFalse("no se queda una tierra vacía", existe("ses-tierra"))
+        assertTrue("Hoy, con su píldora", existe("pildora-hoy"))
+        assertTrue("y con su +", existe("boton-crear"))
+    }
+
+    private fun tictacSinRecomponer(): Pair<Int, Int> {
+        val registro = motor.registro.value!!
+        rule.waitForIdle()
+        val antes = banco.sonda.recomposiciones
+
+        // El tic del motor real: un instante nuevo cada 250 ms del mismo tramo y con la sesión (el registro) sin cambiar.
+        repeat(20) { i ->
+            val ms = 1_000L + 250L * i
+            rule.runOnUiThread {
+                motor.instante.value = RelojSesion.en(registro, Ahora(INICIO_PARED + ms, ANCLA_ELAPSED + ms))
+            }
+            rule.waitForIdle()
+        }
+        return antes to banco.sonda.recomposiciones
+    }
+
+    @Test
+    fun `the ticks of a live session do not recompose Today`() {
+        motor.viva(directo)
+        montar()
+
+        val (antes, despues) = tictacSinRecomponer()
+
+        assertEquals("Hoy no se recompone con los tics", antes, despues)
+    }
+
+    @Test
+    fun `the ticks of a live session do not recompose the Inicio inside the session either`() {
+        motor.viva(directo)
+        montar()
+        pedir(null)
+
+        val (antes, despues) = tictacSinRecomponer()
+
+        assertEquals("el Inicio no se recompone con los tics", antes, despues)
+    }
+
+    @Test
+    fun `from breathing to focus the camera stays silent because the motor already sounds the boundary`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 1_000L)
+        montar()
+        pedir(null)
+        asentar()
+        banco.sonido.sonados.clear()
+        banco.tacto.hapticas.clear()
+
+        rule.runOnUiThread { motor.viva(planSesion(entrada = Entrada.RESPIRAR), 61_000L) }
+        rule.waitUntil(5_000) { existe("ses-b-foco") }
+        asentar()
+
+        assertEquals(emptyList<Snd>(), banco.sonido.snds())
+        assertEquals(emptyList<Haptica>(), banco.tacto.hapticas)
+    }
+
+    @Test
+    fun `coming back to the app with the stretch already changed adopts the camera without sound`() {
+        motor.viva(directo)
+        montar()
+        pedir(null)
+        asentar()
+        banco.sonido.sonados.clear()
+        banco.tacto.hapticas.clear()
+
+        // La app se va, la frontera pasa sin ella (la hace el receptor) y al volver el motor adopta el descanso.
+        rule.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.CREATED)
+        rule.runOnUiThread { motor.viva(directo, 25 * MINUTO + 1_000) }
+        rule.activityRule.scenario.moveToState(androidx.lifecycle.Lifecycle.State.RESUMED)
+        rule.waitUntil(5_000) { existe("ses-b-descanso") }
+        asentar()
+        rule.waitForIdle()
+
+        assertEquals(emptyList<Snd>(), banco.sonido.snds())
+        assertEquals(emptyList<Haptica>(), banco.tacto.hapticas)
+    }
+
+    @Test
+    fun `a session mode restored after the process died zooms in without the entering sound`() {
+        motor.viva(directo)
+        banco.preparar()
+        val tester = androidx.compose.ui.test.junit4.StateRestorationTester(rule)
+        tester.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+            }
+        }
+        rule.waitForIdle()
+        pedir(null)
+        asentar()
+        banco.sonido.sonados.clear()
+        banco.tacto.hapticas.clear()
+
+        tester.emulateSavedInstanceStateRestore()
+        rule.waitForIdle()
+        asentar()
+        rule.waitForIdle()
+
+        assertTrue("sigue en la sesión", existe("ses-b-foco"))
+        assertEquals("la cámara no suena el zoom de entrar", emptyList<Snd>(), banco.sonido.snds())
+    }
+
+    @Test
+    fun `the live region stays mounted through breathing and only its text changes`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 1_000L)
+        montar()
+        pedir(null)
+        asentar()
+
+        assertTrue("montada también en Respirar, donde no dice nada", existe("ses-anuncio"))
+        rule.onNodeWithTag("ses-anuncio", useUnmergedTree = true)
+            .assertContentDescriptionEquals("")
+
+        rule.runOnUiThread { motor.viva(planSesion(entrada = Entrada.RESPIRAR), 61_000L) }
+        rule.waitUntil(5_000) { existe("ses-b-foco") }
+        asentar()
+
+        assertTrue(existe("ses-anuncio"))
+        rule.onNodeWithTag("ses-anuncio", useUnmergedTree = true).assertContentDescriptionEquals("Bloque 1 de 4")
+    }
+
+    @Test
+    fun `a cold start from a pending request still zooms in with its sound`() {
+        banco.preparar()
+        // El aviso de la sesión abre la app: la petición ya está pendiente al montar.
+        EntradaSesion.pedir(Destino.Tarea("t1"))
+        rule.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+            }
+        }
+        rule.waitUntil(5_000) { existe("ses-tierra") }
+        asentar()
+        rule.waitForIdle()
+
+        assertTrue("el zoom de entrar suena", Snd.ZOOM in banco.sonido.snds())
     }
 
     @Test

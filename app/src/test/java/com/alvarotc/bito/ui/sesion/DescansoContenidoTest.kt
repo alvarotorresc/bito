@@ -7,9 +7,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.width
 import com.alvarotc.bito.data.DAY_ZERO
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.habla.AvisosAceptadosRepository
@@ -61,6 +65,7 @@ class DescansoContenidoTest {
 
     private lateinit var banco: BancoSesion
     private lateinit var motor: MotorSesionAndroid
+    private val grabadores = com.alvarotc.bito.sesion.Grabadores()
     private lateinit var fuente: FuentePropuestasHabi
     private val sonido = SonidoGrabado()
     private val tacto = TactoGrabado()
@@ -72,7 +77,7 @@ class DescansoContenidoTest {
     fun setUp() {
         banco = BancoSesion(tmp.root)
         banco.permisoNoMolestar(false)
-        motor = banco.motor()
+        motor = banco.motor(grabadores)
         val ctx = banco.context
         fuente =
             FuentePropuestasHabi(
@@ -268,6 +273,36 @@ class DescansoContenidoTest {
         compose.onNodeWithTag("d-saltar").performClick()
         compose.waitUntil(10_000) { motor.instante.value?.actual == Tramo.Foco(2, 25) }
         assertTrue(Haptica.TICK in tacto.hapticas)
+    }
+
+    @Test
+    fun `skipping ticks once on the screen and the motor adds brote and rise, not a second tick`() {
+        enElDescanso()
+        montar()
+        grabadores.tacto.hapticas.clear()
+        grabadores.sonido.sonidos.clear()
+
+        compose.onNodeWithTag("d-saltar").performClick()
+        compose.waitUntil(10_000) { motor.instante.value?.actual == Tramo.Foco(2, 25) }
+
+        assertEquals("el tick es de la pantalla", listOf(Haptica.TICK), tacto.hapticas)
+        assertEquals("el motor suena la frontera de siempre", listOf(Haptica.RISE), grabadores.tacto.hapticas.toList())
+        assertEquals(listOf(com.alvarotc.bito.ui.sistema.sonido.Snd.BROTE), grabadores.sonido.sonidos.toList())
+    }
+
+    @Test
+    fun `skip the break is the ghost pill of the mock, centered and not full width`() {
+        enElDescanso()
+        montar()
+
+        val salto = compose.onNodeWithTag("d-saltar").getUnclippedBoundsInRoot()
+        val raiz = compose.onRoot().getUnclippedBoundsInRoot()
+        assertTrue("no ocupa todo el ancho: ${salto.width}", salto.width < raiz.width - 80.dp)
+        assertEquals("centrado", (raiz.left + raiz.right).value / 2f, (salto.left + salto.right).value / 2f, 1f)
+        val estilo = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithTag("d-saltar").fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult]
+            .action?.invoke(estilo)
+        assertEquals("letra de 14 sp como e-saltar", 14f, estilo.single().layoutInput.style.fontSize.value, 0f)
     }
 
     private fun contextoDelBloque1() =

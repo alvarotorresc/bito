@@ -213,6 +213,9 @@ internal class SondaJardin {
 
     /** El ánimo con el que se pinta a Habi (radiante en Terminada, el del día fuera de ella). */
     var moodHabi: () -> Mood = { Mood.NORMAL }
+
+    /** Cuántas veces se ha recompuesto el jardín compartido: el Inicio no ha de recomponerse con cada tic de la sesión. */
+    var recomposiciones: Int = 0
 }
 
 /** La escala de Habi que respira, con su origen vertical (fracción de su lienzo) en los pies. */

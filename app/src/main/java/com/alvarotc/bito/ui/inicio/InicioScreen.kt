@@ -41,6 +41,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableFloatState
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -53,6 +54,7 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -98,6 +100,7 @@ import com.alvarotc.bito.ui.cierre.CierreViewModel
 import com.alvarotc.bito.ui.cierre.rememberEstadoCierre
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.garden.GardenDebugPanel
+import com.alvarotc.bito.ui.garden.LocalSondaJardin
 import com.alvarotc.bito.ui.habi.HabiVoice
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
@@ -115,6 +118,7 @@ import com.alvarotc.bito.ui.sesion.BloqueSesion
 import com.alvarotc.bito.ui.sesion.CabeceraSesion
 import com.alvarotc.bito.ui.sesion.CaraHabi
 import com.alvarotc.bito.ui.sesion.Encuadre
+import com.alvarotc.bito.ui.sesion.EstadoSesionUi
 import com.alvarotc.bito.ui.sesion.HojaOcupadaPorSuelta
 import com.alvarotc.bito.ui.sesion.LocalApoyoDescanso
 import com.alvarotc.bito.ui.sesion.LocalBloqueRetenido
@@ -129,7 +133,8 @@ import com.alvarotc.bito.ui.sesion.RegistroHoja
 import com.alvarotc.bito.ui.sesion.SalidaSesion
 import com.alvarotc.bito.ui.sesion.SesionContenido
 import com.alvarotc.bito.ui.sesion.SesionInicio
-import com.alvarotc.bito.ui.sesion.estadoSesionUi
+import com.alvarotc.bito.ui.sesion.TramoVisto
+import com.alvarotc.bito.ui.sesion.estadoSesionDeTramo
 import com.alvarotc.bito.ui.sesion.rememberAtrasSesion
 import com.alvarotc.bito.ui.sesion.rememberEstadoCamaraSesion
 import com.alvarotc.bito.ui.sesion.respirar.GestosHabi
@@ -404,7 +409,9 @@ fun InicioScreen(
 
     // ── La sesión vive aquí dentro (spec §4.2): el mismo jardín y la misma Habi, con la cámara. ──
     val motor = sesion?.motor
-    val instante by remember(motor) { motor?.instante ?: MutableStateFlow<Instante?>(null) }.collectAsStateWithLifecycle()
+    val instanteSesion = remember(motor) { motor?.instante ?: MutableStateFlow<Instante?>(null) }.collectAsStateWithLifecycle()
+    // Solo el tramo: cada tic emite un instante nuevo y el Inicio no se recompone con él; la cuenta la lee quien la pinta.
+    val tramoVisto by remember(instanteSesion) { derivedStateOf { TramoVisto.de(instanteSesion.value) } }
     val borrador by remember(motor) { motor?.borrador ?: MutableStateFlow<PlanSesion?>(null) }.collectAsStateWithLifecycle()
     val registroSesion by remember(motor) { motor?.registro ?: MutableStateFlow<RegistroSesion?>(null) }.collectAsStateWithLifecycle()
     var sesionActiva by rememberSaveable { mutableStateOf(false) }
@@ -436,7 +443,10 @@ fun InicioScreen(
         label = "hoy-sesion",
     )
     val retenido = remember { BloqueRetenido() }
-    val estadoSesion = estadoSesionUi(instante, borrador, preparando, hojasSesion.abierta).conRetenido(retenido.bloque, retenido.encuadre)
+    val sondaRecomposiciones = LocalSondaJardin.current
+    SideEffect { sondaRecomposiciones?.let { it.recomposiciones++ } }
+    val estadoSesion =
+        estadoSesionDeTramo(tramoVisto, borrador, preparando, hojasSesion.abierta).conRetenido(retenido.bloque, retenido.encuadre)
     val estadoVista = if (saliendo) estadoSesion.copy(bloque = null) else estadoSesion
 
     fun entrarEnSesion(vistaPreparar: Boolean) {
@@ -478,10 +488,16 @@ fun InicioScreen(
     val abrirSesionActual = rememberUpdatedState(::abrirSesion)
     val salidaSesion = remember { SalidaSesion(::volverAHoy) { texto -> scope.launch { avisos.mostrar(texto) } } }
 
+    // Mientras se vuelve a la sesión (la app estuvo fuera o el proceso murió) el motor adopta el tramo sin sonar la frontera.
+    val modoRestaurado = remember { sesionActiva }
+    val volviendoALaSesion = remember { intArrayOf(if (modoRestaurado) 1 else 0) }
     // La cámara sigue al bloque; al volver a Hoy llega a su encuadre y solo entonces se sale del modo sesión.
     LaunchedEffect(sesionActiva, saliendo, estadoSesion.encuadre) {
         if (!sesionActiva) return@LaunchedEffect
-        camara.ir(if (saliendo) Encuadre.HOY else estadoSesion.encuadre, gesto)
+        val destinoCamara = if (saliendo) Encuadre.HOY else estadoSesion.encuadre
+        // Sin sonido de cámara cuando no hay frontera viva (se vuelve a la sesión) ni en Respirar → Foco, que ya suena el motor.
+        val muda = volviendoALaSesion[0] > 0 || (camara.destino == Encuadre.RESPIRAR && destinoCamara == Encuadre.FOCO)
+        camara.ir(destinoCamara, if (muda) null else gesto)
         if (saliendo) {
             sesionActiva = false
             saliendo = false
@@ -515,8 +531,26 @@ fun InicioScreen(
         respiracion.value = null
     }
     // Al abrir y en cada vuelta a primer plano la sesión se recupera del disco (cambio de día, app matada).
-    LaunchedEffect(motor) { motor?.recuperar() }
-    LifecycleEventEffect(Lifecycle.Event.ON_START) { if (motor != null) scope.launch { motor.recuperar() } }
+    // El modo sesión se guarda con la instancia y la sesión no: si venía restaurado (el proceso murió) y tras recuperar no
+    // hay nada que enseñar (ni sesión ni borrador, o se cerró por el cambio de día), se sale a Hoy en vez de quedarse vacío.
+    LaunchedEffect(motor) {
+        motor?.recuperar()
+        if (motor != null && modoRestaurado && sesionActiva && motor.instante.value == null && motor.borrador.value == null) saliendo = true
+        if (modoRestaurado) quitarAdopcion(volviendoALaSesion)
+    }
+    // El primer ON_START es el de montar (ya cubierto por el modo restaurado): solo las vueltas de segundo plano son una adopción.
+    val primerInicio = remember { booleanArrayOf(true) }
+    LifecycleEventEffect(Lifecycle.Event.ON_START) {
+        if (motor != null) {
+            val vuelta = !primerInicio[0]
+            primerInicio[0] = false
+            if (vuelta) volviendoALaSesion[0]++
+            scope.launch {
+                motor.recuperar()
+                if (vuelta) quitarAdopcion(volviendoALaSesion)
+            }
+        }
+    }
     // Las peticiones de otras pantallas (Tareas, la notificación): se recupera primero para ver la sesión viva.
     val peticion by EntradaSesion.pendiente.collectAsStateWithLifecycle()
     LaunchedEffect(peticion, sesion) {
@@ -535,7 +569,9 @@ fun InicioScreen(
     }
     val atrasSesion =
         if (motor != null) {
-            rememberAtrasSesion(estadoVista, motor, hojasSesion, ::volverAHoy) { avisos.mostrar(it) }
+            // Fuera del modo sesión (Hoy) el motor puede tener sesión o borrador, pero Atrás ya no es de la sesión.
+            val deLaSesion = if (sesionActiva) estadoVista else EstadoSesionUi(null)
+            rememberAtrasSesion(deLaSesion, motor, hojasSesion, ::volverAHoy) { avisos.mostrar(it) }
         } else {
             null
         }
@@ -613,6 +649,7 @@ fun InicioScreen(
             .onGloballyPositioned { origen = it.positionInRoot() }
             .testTag("inicio"),
     ) {
+        SideEffect { sondaRecomposiciones?.let { it.recomposiciones++ } }
         val alto = constraints.maxHeight.toFloat()
         val ancho = constraints.maxWidth.toFloat()
         val escenaAlto = ancho / GardenArt.SCENE_ASPECT
@@ -813,7 +850,7 @@ fun InicioScreen(
                         saldo = if (respira) null else estado.saldo,
                         modifier = Modifier.align(Alignment.TopStart),
                     )
-                    AnuncioTramo(instante, registroSesion)
+                    AnuncioTramo(tramoVisto, registroSesion)
                 }
                 if (sueltaActiva && sesion != null) {
                     SueltaEnInicio(sesion, camara, respiracion, gestosHabi) { sueltaSaliendo = true }
@@ -1041,29 +1078,35 @@ private fun Context.actividad(): Activity? {
  */
 @Composable
 private fun AnuncioTramo(
-    instante: Instante?,
+    tramo: TramoVisto?,
     registro: RegistroSesion?,
 ) {
     val recursos = LocalContext.current.resources
     val texto =
-        remember(registro?.id, instante?.actual) {
+        remember(registro?.id, tramo) {
             val plan = registro?.plan
-            when (val actual = instante?.actual) {
+            when (val actual = tramo?.actual) {
                 is Tramo.Foco -> plan?.let { recursos.getString(R.string.ses_bloque_n_de_m, actual.bloque, it.bloques) }
                 is Tramo.Descanso -> recursos.getQuantityString(R.plurals.sesr_anuncio_descanso, actual.minutos, actual.minutos)
                 is Tramo.Respirar -> null
-                null -> if (instante != null) recursos.getString(R.string.sesr_anuncio_terminada) else null
+                null -> if (tramo != null) recursos.getString(R.string.sesr_anuncio_terminada) else null
             }
         }
-    if (texto != null) {
-        Box(
-            Modifier
-                .size(1.dp)
-                .testTag("ses-anuncio")
-                .semantics {
-                    liveRegion = LiveRegionMode.Polite
-                    contentDescription = texto
-                },
-        )
-    }
+    // Siempre montada: un nodo vivo que aparece de golpe puede no anunciarse; solo cambia su texto (vacío en Respirar).
+    Box(
+        Modifier
+            .size(1.dp)
+            .testTag("ses-anuncio")
+            .semantics {
+                liveRegion = LiveRegionMode.Polite
+                contentDescription = texto.orEmpty()
+            },
+    )
+}
+
+/** Cuando ya se pintó el cambio de tramo de la vuelta (dos fotogramas tras recuperar), el cambio siguiente es una frontera viva. */
+private suspend fun quitarAdopcion(contador: IntArray) {
+    withFrameNanos { }
+    withFrameNanos { }
+    contador[0] = (contador[0] - 1).coerceAtLeast(0)
 }

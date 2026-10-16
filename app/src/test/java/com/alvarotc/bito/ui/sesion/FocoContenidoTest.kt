@@ -31,6 +31,10 @@ import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.premios.RegistroAnclas
 import com.alvarotc.bito.ui.sistema.ConSistema
+import com.alvarotc.bito.ui.sistema.Haptica
+import com.alvarotc.bito.ui.sistema.SonidoGrabado
+import com.alvarotc.bito.ui.sistema.TactoGrabado
+import com.alvarotc.bito.ui.sistema.sonido.Snd
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -58,6 +62,8 @@ class FocoContenidoTest {
     private val volvio = mutableListOf<String>()
     private val avisos = mutableListOf<String>()
     private val saltos = mutableListOf<Float>()
+    private val sonido = SonidoGrabado()
+    private val tacto = TactoGrabado()
     private var masOtro = 0
     private var instante by mutableStateOf<Instante?>(null)
     private val directo = planSesion(entrada = Entrada.DIRECTO)
@@ -82,7 +88,7 @@ class FocoContenidoTest {
         instante = instanteInicial
         compose.mainClock.autoAdvance = false
         compose.setContent {
-            ConSistema(reducido = reducido) {
+            ConSistema(sonido, tacto, reducido) {
                 CompositionLocalProvider(LocalAnclas provides anclas) {
                     Column(Modifier.width(380.dp)) {
                         FocoContenido(
@@ -342,6 +348,32 @@ class FocoContenidoTest {
         val antes = saltos.size
         avanzar(60_000)
         assertEquals("quieto en pausa", antes, saltos.size)
+    }
+
+    @Test
+    fun `he terminado rings the bell, confirms and Habi hops 0 point 38 at 420 ms like the mock`() {
+        motor.respuesta = ResultadoAccion(bitos = 3, celebraciones = false, aviso = AvisoSesion.Hecho("Informe trimestral"))
+        montar()
+
+        compose.onNodeWithTag("f-hecho").performClick()
+        avanzar(100)
+
+        assertEquals(listOf(Snd.CAMPANILLA), sonido.snds())
+        assertEquals(listOf(Haptica.CONFIRM), tacto.hapticas)
+        assertEquals("el salto espera a los 420 ms", emptyList<Float>(), saltos)
+
+        avanzar(400)
+        assertEquals(listOf(0.38f), saltos)
+    }
+
+    @Test
+    fun `with reduced motion the Hecha hop is immediate`() {
+        montar(reducido = true)
+
+        compose.onNodeWithTag("f-hecho").performClick()
+        avanzar(100)
+
+        assertEquals(listOf(0.38f), saltos)
     }
 
     @Test

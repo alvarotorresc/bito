@@ -111,6 +111,7 @@ class MotorSesionFalso : MotorSesion {
 
     override suspend fun volverAPreparar() {
         llamadas += "volverAPreparar"
+        // Como el real: el borrador vuelve en el mismo paso que se va la sesión, antes de vaciarla (nunca un hueco).
         borrador.value = registro.value?.plan
         registro.value = null
         instante.value = null

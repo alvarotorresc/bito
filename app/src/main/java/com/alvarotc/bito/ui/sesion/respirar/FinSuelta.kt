@@ -103,6 +103,8 @@ fun FinSuelta(
                 Modifier.weight(1f).testTag("sf-listo"),
                 estilo = EstiloBoton.PRINCIPAL,
                 alto = Medidas.botonHoja,
+                llena = true,
+                pildoraMock = true,
             )
         }
     }
