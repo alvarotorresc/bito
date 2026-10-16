@@ -50,18 +50,17 @@ class MemoriaRepository(
             }
         }
 
-    /** Una por `combinacion`: un trozo por bolsa de la misma frase cuenta como una propuesta mostrada. */
+    /**
+     * Una por frase redactada: de cada frase solo el uso del núcleo lleva `situacion`, así que dos usos
+     * con situación son dos redacciones, aunque compartan combinación (la misma o en otra bolsa).
+     */
     private fun mostradas(
         usos: List<UsoTrozo>,
         hoy: LogicalDay,
     ): List<Mostrada> =
         usos
             .filter { it.dia == hoy && it.situacion != null }
-            .groupBy { it.combinacion }
-            .map { (_, grupo) ->
-                val primero = grupo.minBy { it.usadoMillis }
-                Mostrada(primero.situacion!!, null, primero.usadoMillis)
-            }
+            .map { Mostrada(it.situacion!!, null, it.usadoMillis) }
 
     suspend fun anotar(evento: EventoMemoria) = dao.insertarEvento(evento.aEntidad())
 

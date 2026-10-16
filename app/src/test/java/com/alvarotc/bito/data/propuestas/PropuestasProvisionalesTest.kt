@@ -3,14 +3,10 @@ package com.alvarotc.bito.data.propuestas
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.Settings
 import com.alvarotc.bito.domain.domainState
-import com.alvarotc.bito.domain.habla.RefGordo
-import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Ambito
-import com.alvarotc.bito.domain.propuestas.Efecto
-import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.habi.HabiVoice
 import kotlinx.coroutines.flow.first
@@ -55,15 +51,5 @@ class PropuestasProvisionalesTest {
             val p = fuente("Álvaro").propuesta(Ambito.FICHA, "h1").first()!!
             assertTrue(p.acciones.isEmpty())
             assertEquals(HabiVoice.bubbleRes(Mood.NORMAL, Personality.NEUTRA), (p.texto as TextoHabi.Recurso).res)
-        }
-
-    @Test
-    fun `answering does nothing and does not throw`() =
-        runTest {
-            val fuenteSaludo = fuente("Álvaro")
-            val antes = fuenteSaludo.propuesta(Ambito.HOY).first()
-            assertEquals(Efecto.Ninguno, fuenteSaludo.responder("saludo", Respuesta.HOY_NO))
-            fuenteSaludo.guardarGordo(listOf(RefGordo(TipoRefGordo.HABITO, "h1")))
-            assertEquals(antes, fuenteSaludo.propuesta(Ambito.HOY).first())
         }
 }

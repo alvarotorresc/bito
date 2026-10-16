@@ -100,7 +100,7 @@ class MemoriaRepositoryTest {
         }
 
     @Test
-    fun `shown today counts one per combination of today with a situation`() =
+    fun `shown today counts one per drafted phrase of today`() =
         runTest {
             repo.anotarUsos(
                 listOf(
@@ -114,7 +114,24 @@ class MemoriaRepositoryTest {
 
             val memoria = repo.observe(flowOf(HOY)).first()
 
-            assertEquals(2, memoria.mostradasHoy.size)
+            assertEquals(3, memoria.mostradasHoy.size)
             assertEquals(5, memoria.usos.size)
+        }
+
+    @Test
+    fun `two phrases with the same combination both count`() =
+        runTest {
+            repo.anotarUsos(
+                listOf(
+                    uso(1, "-|2|-", situacion = Situacion.SALUDO),
+                    UsoTrozo(Personality.NEUTRA, Bolsa.NU_AYER_ESCAPO, 2, "-|2|-", HOY, AHORA + 1, Situacion.AYER_SE_ESCAPO),
+                    UsoTrozo(Personality.NEUTRA, Bolsa.NU_AYER_ESCAPO, 2, "-|2|-", HOY, AHORA + 2, Situacion.AYER_SE_ESCAPO),
+                ),
+            )
+
+            val mostradas = repo.observe(flowOf(HOY)).first().mostradasHoy
+
+            assertEquals(3, mostradas.size)
+            assertEquals(2, mostradas.count { it.situacion == Situacion.AYER_SE_ESCAPO })
         }
 }
