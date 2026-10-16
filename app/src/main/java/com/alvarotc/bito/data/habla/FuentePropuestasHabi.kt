@@ -257,7 +257,10 @@ class FuentePropuestasHabi(
         }
     }
 
-    /** Hecho hoy según los datos, no según los hechos (que en este carril aún son provisionales). */
+    /**
+     * Hecho en su periodo según los datos (`Compliance`), sin pasar por los hechos: la validez no depende de cómo se
+     * calculen (la fuente los recibe inyectados) y cierra igual la propuesta de un hábito semanal o mensual ya cumplido.
+     */
     private fun hecho(
         ref: String,
         state: DomainState,
