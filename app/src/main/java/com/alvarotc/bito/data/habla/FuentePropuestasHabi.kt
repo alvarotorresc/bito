@@ -143,7 +143,7 @@ class FuentePropuestasHabi(
     ): Propuesta? {
         val v = vigentes.leer(ambito, clave)
         if (v != null) {
-            when (validez(v, state, ctx)) {
+            when (validez(v, state, ctx, h)) {
                 Validez.VALE -> return pintar(v, h, ctx)
                 Validez.HECHA -> {
                     vigentes.borrar(ambito, clave)
@@ -158,7 +158,7 @@ class FuentePropuestasHabi(
         val m = memoria.observe(flowOf(ctx.hoy)).first()
         val hAlDia = hechos(state, m, ctx, recs)
         val c = motor.elegir(ambito, hAlDia, m, ctx, habitId) ?: return null
-        if (validez(sinRedactar(c, ambito, clave, ctx), state, ctx) != Validez.VALE) return null
+        if (validez(sinRedactar(c, ambito, clave, ctx), state, ctx, hAlDia) != Validez.VALE) return null
         return pintar(redactarYGuardar(c, ambito, clave, ctx, hAlDia, m), hAlDia, ctx)
     }
 
@@ -168,6 +168,7 @@ class FuentePropuestasHabi(
         v: PropuestaVigente,
         state: DomainState,
         ctx: Contexto,
+        h: Hechos,
     ): Validez =
         when {
             v.dia != ctx.hoy -> Validez.NO_VALE
@@ -176,8 +177,22 @@ class FuentePropuestasHabi(
             !refExiste(v.ref, state) -> Validez.NO_VALE
             !trozosExisten(v) -> Validez.NO_VALE
             v.situacion in PROPONEN_HACER && v.ref != null && hecho(v.ref, state, ctx.hoy) -> Validez.HECHA
+            ofreceOtraHora(v, h) -> Validez.NO_VALE
             else -> Validez.VALE
         }
+
+    /**
+     * Una vigente que ofrece «Vale, a las…» a un hábito que ya tiene un aviso aceptado pendiente hoy (aceptado desde otro
+     * ámbito o desde un aviso): no vale, el motor la rehace sin hora. La confirmación es la de ese aviso: sigue.
+     */
+    private fun ofreceOtraHora(
+        v: PropuestaVigente,
+        h: Hechos,
+    ): Boolean =
+        v.situacion != Situacion.CONFIRMA_VALE &&
+            v.hora != null &&
+            Respuesta.VALE in v.acciones &&
+            h.habitos.any { it.id == v.ref && it.avisoPendienteHoy }
 
     /** `NOCHE` pide el día sellado; el cierre, que no lo esté; el resto cae al sellar o al llegar la noche. */
     private fun faseVale(

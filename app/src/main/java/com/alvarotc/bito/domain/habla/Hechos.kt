@@ -65,6 +65,8 @@ data class HabitoHoy(
     val bitosHito: Int?,
     val rachaHoyRedonda: Boolean,
     val rachaRotaRecuperada: Boolean,
+    /** Tiene hoy un «Vale, a las…» aceptado que aún no ha sonado: no se le ofrece otra hora (§5.2). */
+    val avisoPendienteHoy: Boolean = false,
 )
 
 /** Una tarea de hoy vista por Habi. */
@@ -154,10 +156,11 @@ data class Hechos(
             caros: (Habit) -> CarosDeHabito,
         ): Hechos {
             val hoy = ctx.hoy
+            val conAvisoPendiente = memoria.avisos.filter { it.dia == hoy && it.estado == EstadoAviso.PENDIENTE }.map { it.habitId }.toSet()
             val habitos =
                 state.habits
                     .filter { it.status != HabitStatus.ARCHIVED && Compliance.isAliveOn(it, hoy) }
-                    .map { habitoHoy(state, it, ctx, recordatorios[it.id], caros(it)) }
+                    .map { habitoHoy(state, it, ctx, recordatorios[it.id], caros(it), it.id in conAvisoPendiente) }
             val tareas = tareasDeHoy(state, hoy)
             val diaSellado = Sealing.isSealed(state, hoy)
             val gordo = memoria.gordo[hoy].orEmpty()
@@ -327,6 +330,7 @@ data class Hechos(
             ctx: Contexto,
             recordatorio: Int?,
             caros: CarosDeHabito,
+            avisoPendienteHoy: Boolean,
         ): HabitoHoy {
             val hoy = ctx.hoy
             val diario = habit.period == Period.DAY
@@ -381,6 +385,7 @@ data class Hechos(
                     racha.current > 0 && racha.current % Ritmo.RACHA_REDONDA_CADA == 0 && compliance == ComplianceStatus.FULFILLED,
                 rachaRotaRecuperada =
                     racha.current == Ritmo.RACHA_RECUPERADA && Streaks.hasResurrected(state, habit, hoy, Ritmo.RACHA_ROTA_MIN),
+                avisoPendienteHoy = avisoPendienteHoy,
             )
         }
 

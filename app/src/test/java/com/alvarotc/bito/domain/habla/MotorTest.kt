@@ -1,6 +1,9 @@
 package com.alvarotc.bito.domain.habla
 
+import com.alvarotc.bito.domain.RealHabits
 import com.alvarotc.bito.domain.TODAY
+import com.alvarotc.bito.domain.domainState
+import com.alvarotc.bito.domain.entryOn
 import com.alvarotc.bito.domain.habla.reglas.ReglaAyerSeEscapo
 import com.alvarotc.bito.domain.habla.reglas.ReglaGordoSinEmpezar
 import com.alvarotc.bito.domain.propuestas.Ambito
@@ -298,5 +301,66 @@ class MotorTest {
         assertEquals(Situacion.NOCHE, c.situacion)
         assertTrue(c.acciones.isEmpty())
         assertFalse(c.situacion.conBotones)
+    }
+
+    // I1: un hábito con un «Vale, a las…» pendiente hoy no vuelve a recibir oferta de hora, ni en Hoy ni en su ficha.
+
+    private val leer = RealHabits.readBeforeSleep
+
+    /** Leer se escapó ayer tras cumplirse los tres días anteriores: «ayer se escapó» con hora a las 10:00. */
+    private val escapado = domainState(habits = listOf(leer), entries = (2..4).map { entryOn(leer, TODAY - it) })
+
+    private fun avisoDe(
+        habitId: String,
+        estado: EstadoAviso = EstadoAviso.PENDIENTE,
+        dia: Int = TODAY,
+    ) = AvisoAceptado("a:$habitId:$dia:$estado", dia, habitId, 14 * 60 + 30, 0, estado, "p", 1L)
+
+    private fun hoyCon(m: Memoria): Candidata {
+        val c = ctx()
+        return Motor.elegir(Ambito.HOY, Hechos.de(escapado, m, c, emptyMap()), m, c)!!
+    }
+
+    private fun fichaCon(m: Memoria): Candidata? {
+        val c = ctx()
+        return Motor.elegir(Ambito.FICHA, Hechos.de(escapado, m, c, emptyMap()), m, c, leer.id)
+    }
+
+    @Test
+    fun `a habit with a pending accepted notice today gets no hour in Hoy`() {
+        val sinAviso = hoyCon(Memoria())
+        assertEquals(Situacion.AYER_SE_ESCAPO, sinAviso.situacion)
+        assertTrue(sinAviso.hora != null && Respuesta.VALE in sinAviso.acciones)
+
+        val conAviso = hoyCon(Memoria(avisos = listOf(avisoDe(leer.id))))
+
+        assertEquals(Situacion.AYER_SE_ESCAPO, conAviso.situacion)
+        assertEquals(leer.id, conAviso.ref)
+        assertNull(conAviso.hora)
+        assertFalse(Respuesta.VALE in conAviso.acciones)
+        assertFalse(Hueco.HORA in conAviso.huecos)
+    }
+
+    @Test
+    fun `a habit with a pending accepted notice today has no today-missing note in its detail`() {
+        assertEquals(Situacion.FI_HOY_FALTA, fichaCon(Memoria())?.situacion)
+
+        val conAviso = fichaCon(Memoria(avisos = listOf(avisoDe(leer.id))))
+
+        assertTrue(conAviso?.situacion != Situacion.FI_HOY_FALTA)
+    }
+
+    @Test
+    fun `a fired, cancelled, old or other habit notice keeps the hour`() {
+        for (aviso in listOf(
+            avisoDe(leer.id, EstadoAviso.LANZADO),
+            avisoDe(leer.id, EstadoAviso.CANCELADO),
+            avisoDe(leer.id, dia = TODAY - 1),
+            avisoDe("otro"),
+        )) {
+            val m = Memoria(avisos = listOf(aviso))
+            assertTrue("$aviso", hoyCon(m).hora != null)
+            assertEquals("$aviso", Situacion.FI_HOY_FALTA, fichaCon(m)?.situacion)
+        }
     }
 }

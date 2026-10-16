@@ -44,6 +44,7 @@ import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -196,12 +197,40 @@ class FuenteMotorRealTest {
             assertEquals(listOf(minuto), vivos.map { it.minuto })
             assertEquals(EstadoAviso.PENDIENTE, vivos.single().estado)
 
-            // Pasada la espera, la siguiente propuesta con botones aún puede ofrecer hora: solo suena un aviso.
+            // Pasada la espera, el mismo hábito vuelve sin hora: ya tiene su aviso pendiente (I1 de la review final).
             ahora += 91 * 60_000L
             val siguiente = f.hoy()!!
             assertTrue(siguiente.id, situacion(siguiente) == Situacion.AYER_SE_ESCAPO.name)
-            assertNotNull(siguiente.hora)
-            assertTrue(siguiente.acciones.any { it.respuesta == Respuesta.VALE })
+            assertEquals(primera.id.split(':')[1], siguiente.id.split(':')[1])
+            assertNull(siguiente.hora)
+            assertTrue(siguiente.acciones.none { it.respuesta == Respuesta.VALE })
+            // Otro hábito aún puede ofrecer hora: los cancelados no cuentan y solo suena un aviso.
+            val otro = if (primera.id.split(':')[1] == leer.id) meditar else leer
+            val nota = f.propuesta(Ambito.FICHA, otro.id).first()!!
+            assertEquals(Situacion.FI_HOY_FALTA.name, situacion(nota))
+            assertNotNull(nota.hora)
+        }
+
+    // I1 de la review final: un hábito con un «Vale, a las…» pendiente hoy no recibe otra oferta de hora.
+
+    @Test
+    fun `vale in Hoy takes the hour away from the note already waiting in the detail of that habit`() =
+        prueba {
+            val f = fuente()
+            val p = f.hoy()!!
+            assertEquals(Situacion.AYER_SE_ESCAPO.name, situacion(p))
+            val habito = p.id.split(':')[1]
+            // La ficha se abrió antes: su nota con hora queda guardada como vigente.
+            val antes = f.propuesta(Ambito.FICHA, habito).first()!!
+            assertEquals(Situacion.FI_HOY_FALTA.name, situacion(antes))
+
+            f.responder(p.id, Respuesta.VALE)
+            assertEquals(1, avisosDeHoy().size)
+
+            val despues = f.propuesta(Ambito.FICHA, habito).first()
+            assertTrue(despues?.id.orEmpty(), situacion(despues) != Situacion.FI_HOY_FALTA.name)
+            assertNull(despues?.hora)
+            assertTrue(despues?.acciones.orEmpty().none { it.respuesta == Respuesta.VALE && despues?.hora != null })
         }
 
     // A5: con el día sellado y sin vigente de noche, Hoy da la noche (nada que el motor proponga se pierde).

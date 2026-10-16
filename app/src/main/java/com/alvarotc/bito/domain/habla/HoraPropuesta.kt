@@ -12,12 +12,14 @@ object HoraPropuesta {
     /**
      * La primera que sirva, por este orden: la hora habitual del hábito, su recordatorio propio y los
      * momentos del día (14:30 antes de las 14:00, 18:30 antes de las 18:00, 21:00 antes de las 20:30).
-     * Sirve si está en [ventana] y fuera del silencio. Null si ninguna sirve: la propuesta sale sin hora.
+     * Sirve si está en [ventana] y fuera del silencio. Null si ninguna sirve: la propuesta sale sin hora. Con un aviso
+     * aceptado pendiente hoy, tampoco: ya tiene su hora y un segundo «Vale» daría dos avisos del mismo hábito.
      */
     fun de(
         habito: HabitoHoy,
         ctx: Contexto,
     ): Int? {
+        if (habito.avisoPendienteHoy) return null
         val ventana = ventana(ctx) ?: return null
         val momentos =
             listOfNotNull(
