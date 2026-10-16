@@ -181,7 +181,8 @@ class MotorSesionAndroid(
                 efectos.intento(viva.plan.objetivo, hoyDe(ahora, settings.settings.first()), ahora.paredMillis)
                 // Una sesión libre no es un intento de nada: sin aviso.
                 aviso = if (viva.plan.objetivo == Objetivo.Libre) null else AvisoSesion.ComoIntento(efectos.nombre(viva.plan.objetivo))
-                cerrarAqui(viva, inst, ahora, ResultadoSesion.CAMBIADA, sigue = true)
+                // Si no hay borrador (se abre la respiración suelta), no viene otra detrás: se cierra del todo.
+                cerrarAqui(viva, inst, ahora, ResultadoSesion.CAMBIADA, sigue = _borrador.value != null)
             }
             _borrador.value?.let { arrancar(it) }
             ResultadoAccion(bitos = 0, celebraciones = false, aviso = aviso)

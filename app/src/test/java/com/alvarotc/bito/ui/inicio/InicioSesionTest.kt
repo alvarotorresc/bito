@@ -413,6 +413,23 @@ class InicioSesionTest {
     }
 
     @Test
+    fun `a cold start from a pending request still zooms in with its sound`() {
+        banco.preparar()
+        // El aviso de la sesión abre la app: la petición ya está pendiente al montar.
+        EntradaSesion.pedir(Destino.Tarea("t1"))
+        rule.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+            }
+        }
+        rule.waitUntil(5_000) { existe("ses-tierra") }
+        asentar()
+        rule.waitForIdle()
+
+        assertTrue("el zoom de entrar suena", Snd.ZOOM in banco.sonido.snds())
+    }
+
+    @Test
     fun `the session locks portrait and releases it`() {
         montar()
         assertEquals(ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED, rule.activity.requestedOrientation)

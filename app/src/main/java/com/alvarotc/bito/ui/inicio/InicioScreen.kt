@@ -538,12 +538,16 @@ fun InicioScreen(
         if (motor != null && modoRestaurado && sesionActiva && motor.instante.value == null && motor.borrador.value == null) saliendo = true
         if (modoRestaurado) quitarAdopcion(volviendoALaSesion)
     }
+    // El primer ON_START es el de montar (ya cubierto por el modo restaurado): solo las vueltas de segundo plano son una adopción.
+    val primerInicio = remember { booleanArrayOf(true) }
     LifecycleEventEffect(Lifecycle.Event.ON_START) {
         if (motor != null) {
-            volviendoALaSesion[0]++
+            val vuelta = !primerInicio[0]
+            primerInicio[0] = false
+            if (vuelta) volviendoALaSesion[0]++
             scope.launch {
                 motor.recuperar()
-                quitarAdopcion(volviendoALaSesion)
+                if (vuelta) quitarAdopcion(volviendoALaSesion)
             }
         }
     }
