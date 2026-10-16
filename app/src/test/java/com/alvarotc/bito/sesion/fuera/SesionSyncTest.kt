@@ -118,6 +118,32 @@ class SesionSyncTest {
     }
 
     @Test
+    fun `giving back do not disturb with an old copy does not bring a closed session back`() {
+        shadowOf(b.manager).setNotificationPolicyAccessGranted(true)
+        b.manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        val vieja = registroDeDosBloques(filtroPrevio = NotificationManager.INTERRUPTION_FILTER_ALL)
+        // El motor cerró la sesión (la borró) después de que esta copia se leyera.
+        runBlocking {
+            SesionSync.aplicar(b.entorno, vieja, ahoraA(56 * MIN), restaurarDnd = true)
+        }
+        assertNull("la sesión cerrada no vuelve al store", runBlocking { b.store.leer() })
+    }
+
+    @Test
+    fun `giving back do not disturb keeps the events another writer added meanwhile`() {
+        shadowOf(b.manager).setNotificationPolicyAccessGranted(true)
+        b.manager.setInterruptionFilter(NotificationManager.INTERRUPTION_FILTER_PRIORITY)
+        val vieja = registroDeDosBloques(filtroPrevio = NotificationManager.INTERRUPTION_FILTER_ALL)
+        guardar(vieja.copy(eventos = listOf(com.alvarotc.bito.domain.sesion.Evento.Sumar(60_000L, 5))))
+        runBlocking {
+            SesionSync.aplicar(b.entorno, vieja, ahoraA(61 * MIN), restaurarDnd = true)
+        }
+        val guardado = runBlocking { b.store.leer() }!!
+        assertNull(guardado.filtroPrevio)
+        assertEquals(1, guardado.eventos.size)
+    }
+
+    @Test
     fun `with the app in front an ended session posts nothing`() {
         guardar(registroDeDosBloques())
         b.visible = true

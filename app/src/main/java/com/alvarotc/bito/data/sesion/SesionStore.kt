@@ -44,6 +44,30 @@ class SesionStore(private val dataStore: DataStore<Preferences>) {
         }
     }
 
+    /**
+     * Cambia el registro guardado sin que nadie se lo pise: lee, aplica [cambio] y escribe dentro de una sola edición.
+     * Solo actúa si lo guardado es la sesión [id]: una cerrada (o sustituida) no vuelve, ni se reescribe con una copia
+     * vieja. [cambio] recibe lo que hay guardado ahora; si devuelve null, la sesión se cierra (se borra). Devuelve lo
+     * que queda guardado, o null si no se cambió nada o se cerró.
+     */
+    suspend fun actualizar(
+        id: String,
+        cambio: (RegistroSesion) -> RegistroSesion?,
+    ): RegistroSesion? {
+        var resultado: RegistroSesion? = null
+        dataStore.edit { prefs ->
+            val actual = prefs[CLAVE]?.let(::decodificar)?.takeIf { it.id == id } ?: return@edit
+            val nuevo = cambio(actual)
+            if (nuevo == null) {
+                prefs.remove(CLAVE)
+            } else {
+                prefs[CLAVE] = json.encodeToString(RegistroDto.serializer(), RegistroDto.de(nuevo))
+                resultado = nuevo
+            }
+        }
+        return resultado
+    }
+
     suspend fun borrar() {
         dataStore.edit { prefs -> prefs.remove(CLAVE) }
     }

@@ -13,12 +13,15 @@ import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.domain.sesion.PlanSesion
 import com.alvarotc.bito.domain.sesion.RegistroSesion
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -109,6 +112,44 @@ class SesionStoreTest {
             job.cancelAndJoin()
             assertEquals(1, emitidos.size)
             assertTrue(emitidos.single() != null)
+        }
+
+    @Test
+    fun `updating only touches the stored session with that id and never brings a closed one back`() =
+        runTest {
+            val store = SesionStore(dataStore("actualizar"))
+            val r = registro(Objetivo.Libre, filtroPrevio = 2)
+            assertNull(store.actualizar(r.id) { it.copy(filtroPrevio = null) })
+            assertNull(store.leer())
+
+            store.guardar(r)
+            assertNull(store.actualizar("otra") { it.copy(filtroPrevio = null) })
+            assertEquals(r, store.leer())
+
+            assertEquals(r.copy(filtroPrevio = null), store.actualizar(r.id) { it.copy(filtroPrevio = null) })
+            assertEquals(r.copy(filtroPrevio = null), store.leer())
+
+            assertNull(store.actualizar(r.id) { null })
+            assertNull(store.leer())
+            assertNull(store.actualizar(r.id) { it.copy(filtroPrevio = 9) })
+            assertNull(store.leer())
+        }
+
+    @Test
+    fun `two writers updating at once lose nothing`() =
+        runBlocking {
+            val ds =
+                PreferenceDataStoreFactory.create(scope = CoroutineScope(Dispatchers.IO + Job())) { File(tmp.root, "dos.preferences_pb") }
+            val store = SesionStore(ds)
+            val r = registro(Objetivo.Libre)
+            store.guardar(r)
+            val a = async(Dispatchers.Default) { repeat(40) { i -> store.actualizar(r.id) { it.copy(eventos = it.eventos + Evento.Sumar(i * 1L, 1)) } } }
+            val b = async(Dispatchers.Default) { repeat(40) { store.actualizar(r.id) { it.copy(inicioDia = it.inicioDia + 1) } } }
+            a.await()
+            b.await()
+            val final = store.leer()!!
+            assertEquals(40, final.eventos.size)
+            assertEquals(r.inicioDia + 40, final.inicioDia)
         }
 
     @Test
