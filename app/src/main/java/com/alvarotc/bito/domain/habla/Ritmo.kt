@@ -7,7 +7,7 @@ object Ritmo {
     const val ESPERA_TRAS_RESPONDER_MIN = 90
     const val TOPE_ACEPTADOS_DIA = 2
 
-    /** §5.6: días lógicos sin actividad para la vuelta (el umbral de DRAMATIC). */
+    /** §5.6: días lógicos sin actividad para la vuelta (el umbral de DRAMATIC: `hoy - ultimaActividad >= 3`, que es `diasSinActividad >= 2` en [Hechos]). */
     const val DIAS_AUSENCIA = 3
     const val DIAS_AUSENCIA_SEMANAL = 14
     const val PERMISO_CADA_DIAS = 7
@@ -47,6 +47,14 @@ object Ritmo {
     const val HORA_ANTES_NOCHE = 15
     const val HORA_HABITUAL_REGISTROS = 5
     const val HORA_HABITUAL_DIAS = 30
+
+    /** §5.1 n.º 9 y §5.6: racha redonda (múltiplo de) y racha recuperada. */
+    const val RACHA_REDONDA_CADA = 5
+    const val RACHA_RECUPERADA = 8
+    const val RACHA_ROTA_MIN = 7
+
+    /** §4.3: cuántos periodos juzgados cuentan para el cumplimiento reciente. */
+    const val PERIODOS_JUZGADOS = 30
 
     /** §6.1: «Más tarde» en un aviso aceptado. */
     const val MAS_TARDE_MIN = 30
