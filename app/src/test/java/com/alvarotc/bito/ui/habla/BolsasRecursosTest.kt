@@ -68,4 +68,21 @@ class BolsasRecursosTest {
         val item = contextEs.resources.getStringArray(BolsasRecursos.array(Bolsa.NU_SALUDO, Personality.NEUTRA))[0]
         assertEquals("Hola, {nombre}.", item)
     }
+
+    @Test
+    fun `every session bag has an array per voice`() {
+        val sesion =
+            listOf(
+                Bolsa.SE_ENTRAR, Bolsa.DE_HABITO, Bolsa.DE_HABITO_LARGO, Bolsa.DE_SIN_PENDIENTES, Bolsa.SE_HECHA_TAREA,
+                Bolsa.SE_HECHA_HABITO, Bolsa.CE_MEJOR, Bolsa.CE_IGUAL, Bolsa.CE_CUESTA, Bolsa.RE_FIN_RESPIRAR,
+                Bolsa.RE_RESPIRAR_MEJOR,
+            )
+        sesion.forEach { b ->
+            Personality.entries.forEach { v ->
+                val id = BolsasRecursos.array(b, v)
+                assertTrue("${b.clave} ${v.name}", contextEs.resources.getStringArray(id).isNotEmpty())
+                assertTrue("${b.clave} ${v.name}", contextEn.resources.getStringArray(id).isNotEmpty())
+            }
+        }
+    }
 }

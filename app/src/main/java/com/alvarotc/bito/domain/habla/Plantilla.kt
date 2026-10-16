@@ -69,6 +69,8 @@ object Plantilla {
             is ValorHueco.Lista -> lista(v.v, idioma)
             is ValorHueco.DiaSemana -> dia(v.v, idioma, locale)
             is ValorHueco.Fecha -> fecha(v.epochDay, idioma, locale)
+            // El nombre del modo vive en los recursos: la pantalla lo cambia por un Texto antes de rellenar.
+            is ValorHueco.Modo -> v.modo.name.lowercase(locale)
         }
 
     /** Une los trozos con un espacio, sin vacíos ni espacios dobles. */

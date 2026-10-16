@@ -46,4 +46,8 @@ object Prioridades {
             Situacion.CIE_NADA_PENDIENTE,
             Situacion.CIE_SENCILLO,
         )
+
+    /** Descanso de la sesión: el hábito largo, el corto y, si no queda nada, el de «sin pendientes». */
+    val DESCANSO: List<Situacion> =
+        listOf(Situacion.DESCANSO_HABITO_LARGO, Situacion.DESCANSO_HABITO, Situacion.DESCANSO_SIN_PENDIENTES)
 }

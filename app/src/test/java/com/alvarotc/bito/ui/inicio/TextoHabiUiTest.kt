@@ -13,6 +13,7 @@ import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.ClaveTrozo
 import com.alvarotc.bito.domain.habla.Hueco
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.ui.habla.BolsasRecursos
@@ -167,5 +168,30 @@ class TextoHabiUiTest {
         val en = base.createConfigurationContext(config).resources
         val t = frase(clave(Bolsa.NU_SALUDO, 0), huecos = mapOf(Hueco.NOMBRE to ValorHueco.Texto("Álvaro")))
         assertEquals("Hi, Álvaro.", resolverTextoHabi(t, en))
+    }
+
+    @Test
+    fun `a mode value renders in the active language`() {
+        val t = frase(clave(Bolsa.RE_RESPIRAR_MEJOR, 0), huecos = mapOf(Hueco.MODO to ValorHueco.Modo(BreathingMode.CALM)))
+        val base = RuntimeEnvironment.getApplication() as Context
+        val config = android.content.res.Configuration(base.resources.configuration)
+        config.setLocale(java.util.Locale.ENGLISH)
+        val en = base.createConfigurationContext(config).resources
+        assertTrue(resolverTextoHabi(t, en).contains(en.getString(R.string.ses_modo_calm)))
+        pinta(t)
+        val calmarme = (base.resources).getString(R.string.ses_modo_calm)
+        assertEquals("Calmarme", calmarme)
+        assertTrue(resolverTextoHabi(t, base.resources).contains("Calmarme"))
+        compose.onNodeWithTag("t").assertTextEquals(resolverTextoHabi(t, base.resources))
+    }
+
+    @Test
+    fun `the three modes have their own name`() {
+        val r = (RuntimeEnvironment.getApplication() as Context).resources
+        val nombres =
+            BreathingMode.entries.map {
+                resolverTextoHabi(frase(clave(Bolsa.RE_RESPIRAR_MEJOR, 0), huecos = mapOf(Hueco.MODO to ValorHueco.Modo(it))), r)
+            }
+        assertEquals(3, nombres.toSet().size)
     }
 }

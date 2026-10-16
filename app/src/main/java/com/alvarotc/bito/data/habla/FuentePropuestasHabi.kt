@@ -41,6 +41,7 @@ import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
@@ -109,6 +110,7 @@ class FuentePropuestasHabi(
     override fun propuesta(
         ambito: Ambito,
         habitId: String?,
+        descanso: ContextoDescanso?,
     ): Flow<Propuesta?> {
         if (ambito == Ambito.FICHA && habitId == null) return flowOf(null)
         val clave = if (ambito == Ambito.FICHA) habitId.orEmpty() else ""

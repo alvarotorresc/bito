@@ -95,10 +95,23 @@ sealed interface Efecto {
     ) : Efecto
 }
 
+/**
+ * Lo que la fuente necesita saber de un descanso de la sesión: [excluir] es el hábito que no debe
+ * proponerse (el que ya se propuso o se acaba de hacer), [largo] distingue el descanso largo.
+ */
+data class ContextoDescanso(
+    val sesionId: String,
+    val bloque: Int,
+    val largo: Boolean,
+    val minutos: Int,
+    val excluir: String?,
+)
+
 interface FuentePropuestas {
     fun propuesta(
         ambito: Ambito,
         habitId: String? = null,
+        descanso: ContextoDescanso? = null,
     ): Flow<Propuesta?>
 
     suspend fun responder(

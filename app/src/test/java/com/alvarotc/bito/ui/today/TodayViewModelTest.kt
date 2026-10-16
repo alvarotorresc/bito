@@ -32,6 +32,7 @@ import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -456,6 +457,7 @@ class TodayViewModelTest {
                     override fun propuesta(
                         ambito: Ambito,
                         habitId: String?,
+                        descanso: ContextoDescanso?,
                     ): Flow<Propuesta?> {
                         ambitos += ambito
                         return flowOf(Propuesta("p", TextoHabi(1), emptyList()))
@@ -491,6 +493,7 @@ class TodayViewModelTest {
         override fun propuesta(
             ambito: Ambito,
             habitId: String?,
+            descanso: ContextoDescanso?,
         ): Flow<Propuesta?> = flowOf(Propuesta("p", TextoHabi(1), emptyList()))
 
         override suspend fun responder(

@@ -13,7 +13,7 @@ class SituacionTest {
         setOf(Situacion.CERRAR_DIA, Situacion.TODO_HECHO, Situacion.CONFIRMA_VALE, Situacion.GORDO_ELEGIDO, Situacion.PERMISO_AVISOS)
 
     @Test
-    fun `there are thirty four situations`() = assertEquals(34, Situacion.entries.size)
+    fun `there are thirty seven situations`() = assertEquals(37, Situacion.entries.size)
 
     @Test
     fun `every situation with buttons has a core bag`() =
@@ -21,7 +21,11 @@ class SituacionTest {
 
     @Test
     fun `every core bag is a core piece`() =
-        Situacion.entries.forEach { s -> s.nucleo?.let { assertEquals(s.name, TipoTrozo.NUCLEO, it.tipo) } }
+        // Las del descanso tiran de una bolsa suelta, no de un núcleo.
+        Situacion.entries.filter { it.ambito != Ambito.DESCANSO }.forEach {
+                s ->
+            s.nucleo?.let { assertEquals(s.name, TipoTrozo.NUCLEO, it.tipo) }
+        }
 
     @Test
     fun `core bags follow the names of section 8_1`() {

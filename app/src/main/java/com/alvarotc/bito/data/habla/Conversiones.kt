@@ -19,6 +19,7 @@ import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.UsoTrozo
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Ambito
 import com.alvarotc.bito.domain.propuestas.Destino
@@ -71,6 +72,7 @@ private fun ValorHueco.aJson(): JsonObject =
             JsonObject(mapOf("t" to JsonPrimitive("lista"), "v" to JsonArray(v.map { JsonPrimitive(it) })))
         is ValorHueco.DiaSemana -> JsonObject(mapOf("t" to JsonPrimitive("dia"), "v" to JsonPrimitive(v.name)))
         is ValorHueco.Fecha -> JsonObject(mapOf("t" to JsonPrimitive("fecha"), "v" to JsonPrimitive(epochDay)))
+        is ValorHueco.Modo -> JsonObject(mapOf("t" to JsonPrimitive("modo"), "v" to JsonPrimitive(modo.name)))
     }
 
 /** Un hueco desconocido o un valor roto se salta; un JSON ilegible da un mapa vacio. */
@@ -94,6 +96,7 @@ private fun valorDeJson(o: JsonObject): ValorHueco? {
         "lista" -> ValorHueco.Lista(v.jsonArray.map { it.jsonPrimitive.content })
         "dia" -> ValorHueco.DiaSemana(DayOfWeek.valueOf(v.jsonPrimitive.content))
         "fecha" -> ValorHueco.Fecha(v.jsonPrimitive.long)
+        "modo" -> ValorHueco.Modo(BreathingMode.valueOf(v.jsonPrimitive.content))
         else -> null
     }
 }

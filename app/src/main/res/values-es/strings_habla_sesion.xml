@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Semillas provisionales (un item por bolsa y voz); el volcado final las sustituye -->
+<resources>
+    <string-array name="habla_se_entrar_sargento">
+        <item>{nombre}, {minutos} minutos. Empieza.</item>
+    </string-array>
+    <string-array name="habla_se_entrar_cheerleader">
+        <item>¡Vamos allá, {nombre}! Yo me quedo aquí contigo.</item>
+    </string-array>
+    <string-array name="habla_se_entrar_neutra">
+        <item>Aquí estoy, {nombre}. Tú a lo tuyo.</item>
+    </string-array>
+    <string-array name="habla_de_habito_sargento">
+        <item>Te queda esto: {habito}. Aprovecha el descanso.</item>
+    </string-array>
+    <string-array name="habla_de_habito_cheerleader">
+        <item>Te queda esto: {habito}. ¿Lo hacemos ahora, que es el descanso?</item>
+    </string-array>
+    <string-array name="habla_de_habito_neutra">
+        <item>Te queda esto: {habito}. ¿Lo hacemos ahora, que es el descanso?</item>
+    </string-array>
+    <string-array name="habla_de_habito_largo_sargento">
+        <item>Te queda esto: {habito}. Hay {minutos} minutos por delante.</item>
+    </string-array>
+    <string-array name="habla_de_habito_largo_cheerleader">
+        <item>Te queda esto: {habito}. Hay {minutos} min por delante, ¡de sobra!</item>
+    </string-array>
+    <string-array name="habla_de_habito_largo_neutra">
+        <item>Te queda esto: {habito}. Hay {minutos} min por delante.</item>
+    </string-array>
+    <string-array name="habla_de_sin_pendientes_sargento">
+        <item>Hoy todo regado. Levántate, estira las piernas y bebe agua.</item>
+    </string-array>
+    <string-array name="habla_de_sin_pendientes_cheerleader">
+        <item>Hoy ya está todo regado. ¡Levántate, estira las piernas y bebe un poco de agua!</item>
+    </string-array>
+    <string-array name="habla_de_sin_pendientes_neutra">
+        <item>Hoy ya está todo regado. Levántate, estira las piernas y bebe un poco de agua.</item>
+    </string-array>
+    <string-array name="habla_se_hecha_tarea_sargento">
+        <item>Hecha, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_se_hecha_tarea_cheerleader">
+        <item>¡Hecha, {nombre}!</item>
+    </string-array>
+    <string-array name="habla_se_hecha_tarea_neutra">
+        <item>Hecha, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_se_hecha_habito_sargento">
+        <item>Hecho, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_se_hecha_habito_cheerleader">
+        <item>¡Hecho, {nombre}!</item>
+    </string-array>
+    <string-array name="habla_se_hecha_habito_neutra">
+        <item>Hecho, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_ce_mejor_sargento">
+        <item>Bien. Eso era lo que tocaba.</item>
+    </string-array>
+    <string-array name="habla_ce_mejor_cheerleader">
+        <item>¡Me alegro mucho! Aquí sigo cuando quieras.</item>
+    </string-array>
+    <string-array name="habla_ce_mejor_neutra">
+        <item>Me alegro. Aquí sigo cuando quieras.</item>
+    </string-array>
+    <string-array name="habla_ce_igual_sargento">
+        <item>Vale. A veces hace falta otra vuelta.</item>
+    </string-array>
+    <string-array name="habla_ce_igual_cheerleader">
+        <item>Vale. A veces hace falta otra vuelta, y aquí estoy.</item>
+    </string-array>
+    <string-array name="habla_ce_igual_neutra">
+        <item>Vale. A veces hace falta otra vuelta.</item>
+    </string-array>
+    <string-array name="habla_ce_cuesta_sargento">
+        <item>Entendido. Otra vez, más despacio. Dormir es el ritmo más largo.</item>
+    </string-array>
+    <string-array name="habla_ce_cuesta_cheerleader">
+        <item>Sin prisa. ¿Otra vez, más despacio? Dormir es el ritmo más largo, y voy contigo.</item>
+    </string-array>
+    <string-array name="habla_ce_cuesta_neutra">
+        <item>Sin prisa. ¿Otra vez, más despacio? Dormir es el ritmo más largo.</item>
+    </string-array>
+    <string-array name="habla_re_fin_respirar_sargento">
+        <item>Ya está, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_re_fin_respirar_cheerleader">
+        <item>¡Ya está, {nombre}! Qué bien sienta esto.</item>
+    </string-array>
+    <string-array name="habla_re_fin_respirar_neutra">
+        <item>Ya está, {nombre}.</item>
+    </string-array>
+    <string-array name="habla_re_respirar_mejor_sargento">
+        <item>Ayer respirar te sentó bien. «{modo}» sigue aquí.</item>
+    </string-array>
+    <string-array name="habla_re_respirar_mejor_cheerleader">
+        <item>Ayer respirar te sentó bien. «{modo}» sigue aquí, ¡cuando quieras!</item>
+    </string-array>
+    <string-array name="habla_re_respirar_mejor_neutra">
+        <item>Ayer respirar te sentó bien. «{modo}» sigue aquí.</item>
+    </string-array>
+    <string name="ses_modo_calm">Calmarme</string>
+    <string name="ses_modo_sleep">Dormir</string>
+    <string name="ses_modo_focus">Centrarme</string>
+</resources>
