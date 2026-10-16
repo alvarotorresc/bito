@@ -107,12 +107,12 @@ import com.alvarotc.bito.ui.premios.Momento
 import com.alvarotc.bito.ui.premios.PremiosEnInicio
 import com.alvarotc.bito.ui.premios.RegistroAnclas
 import com.alvarotc.bito.ui.premios.TipoVeta
+import com.alvarotc.bito.ui.sesion.ApoyoDescanso
 import com.alvarotc.bito.ui.sesion.BloqueDeSesion
 import com.alvarotc.bito.ui.sesion.BloqueRetenido
 import com.alvarotc.bito.ui.sesion.BloqueSesion
 import com.alvarotc.bito.ui.sesion.CabeceraSesion
 import com.alvarotc.bito.ui.sesion.Encuadre
-import com.alvarotc.bito.ui.sesion.ApoyoDescanso
 import com.alvarotc.bito.ui.sesion.LocalApoyoDescanso
 import com.alvarotc.bito.ui.sesion.LocalBloqueRetenido
 import com.alvarotc.bito.ui.sesion.LocalMotorSesion

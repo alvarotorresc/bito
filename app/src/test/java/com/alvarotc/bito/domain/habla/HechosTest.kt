@@ -9,8 +9,8 @@ import com.alvarotc.bito.domain.createdOn
 import com.alvarotc.bito.domain.datedTask
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entriesOn
-import com.alvarotc.bito.domain.habla.reglas.ReglaGordoSinEmpezar
 import com.alvarotc.bito.domain.entryOn
+import com.alvarotc.bito.domain.habla.reglas.ReglaGordoSinEmpezar
 import com.alvarotc.bito.domain.millisOn
 import com.alvarotc.bito.domain.model.DaySeal
 import com.alvarotc.bito.domain.model.DomainState

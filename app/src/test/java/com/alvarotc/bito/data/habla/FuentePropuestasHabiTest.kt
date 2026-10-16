@@ -32,8 +32,8 @@ import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.habla.habito
 import com.alvarotc.bito.domain.habla.hechos
-import com.alvarotc.bito.domain.habla.tarea
 import com.alvarotc.bito.domain.habla.idPropuesta
+import com.alvarotc.bito.domain.habla.tarea
 import com.alvarotc.bito.domain.millisOn
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.Habit
@@ -691,7 +691,9 @@ class FuentePropuestasHabiTest {
             // Pasa por la anti-repetición: el trozo gastado queda anotado con su situación.
             assertTrue(m.usos.any { it.situacion == Situacion.DESCANSO_HABITO })
             // Y la respuesta no es de las que hacen esperar 90 min.
-            assertTrue(m.eventos.none { it.tipo == TipoMemoria.RESPUESTA && it.valor in setOf(Respuesta.VALE.ordinal, Respuesta.AHORA.ordinal) })
+            assertTrue(
+                m.eventos.none { it.tipo == TipoMemoria.RESPUESTA && it.valor in setOf(Respuesta.VALE.ordinal, Respuesta.AHORA.ordinal) },
+            )
         }
 
     @Test

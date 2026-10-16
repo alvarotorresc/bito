@@ -19,10 +19,10 @@ import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.UsoTrozo
 import com.alvarotc.bito.domain.habla.ValorHueco
+import com.alvarotc.bito.domain.habla.reglas.ReglaDescanso
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.propuestas.Ambito
-import com.alvarotc.bito.domain.habla.reglas.ReglaDescanso
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import kotlinx.serialization.json.Json

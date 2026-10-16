@@ -66,6 +66,7 @@ class DescansoContenidoTest {
     private val tacto = TactoGrabado()
     private var tarjetas by mutableStateOf(emptyList<HabitCardUi>())
     private val marcadas = mutableListOf<String>()
+    private val saltos = mutableListOf<Float>()
 
     @Before
     fun setUp() {
@@ -141,12 +142,19 @@ class DescansoContenidoTest {
             )
         compose.setContent {
             ConSistema(sonido, tacto) {
-                CompositionLocalProvider(LocalMotorSesion provides motor, LocalApoyoDescanso provides apoyo) {
-                    DescansoContenido()
+                CompositionLocalProvider(
+                    LocalMotorSesion provides motor,
+                    LocalApoyoDescanso provides apoyo,
+                    LocalSaltoHabi provides { saltos += it },
+                ) {
+                    // Como la tierra: las piezas en columna.
+                    androidx.compose.foundation.layout.Column { DescansoContenido() }
                 }
             }
         }
-        compose.waitUntil(10_000) { compose.onAllNodes(androidx.compose.ui.test.hasTestTag("tarjeta-habi")).fetchSemanticsNodes().isNotEmpty() }
+        compose.waitUntil(
+            10_000,
+        ) { compose.onAllNodes(androidx.compose.ui.test.hasTestTag("tarjeta-habi")).fetchSemanticsNodes().isNotEmpty() }
     }
 
     private fun texto(tag: String): String =
@@ -173,13 +181,25 @@ class DescansoContenidoTest {
         habito("estirar", "Estirar")
         enElDescanso()
         montar()
-        compose.waitUntil(10_000) { compose.onAllNodes(androidx.compose.ui.test.hasTestTag("circulo-estirar")).fetchSemanticsNodes().isNotEmpty() }
-        val frase = fuente.let { runBlocking { it.propuesta(Ambito.DESCANSO, descanso = contextoDelBloque1()).first { p -> p != null }!!.texto } }
+        compose.waitUntil(
+            10_000,
+        ) { compose.onAllNodes(androidx.compose.ui.test.hasTestTag("circulo-estirar")).fetchSemanticsNodes().isNotEmpty() }
+        val frase =
+            fuente.let {
+                runBlocking {
+                    it.propuesta(Ambito.DESCANSO, descanso = contextoDelBloque1()).first {
+                            p ->
+                        p != null
+                    }!!.texto
+                }
+            }
         compose.onNodeWithTag("circulo-estirar").performClick()
         compose.waitUntil(10_000) { tarjetas.firstOrNull { it.id == "estirar" }?.doneToday == true }
         assertTrue(Snd.GORGOTEO in sonido.snds())
         assertTrue(Haptica.TICKS in tacto.hapticas)
         assertEquals(1, marcadas.size)
+        compose.mainClock.advanceTimeBy(1_000)
+        assertEquals(listOf(0.24f, 0.11f), saltos)
         // La tarjeta conserva su frase tras marcar.
         val despues = runBlocking { fuente.propuesta(Ambito.DESCANSO, descanso = contextoDelBloque1()).first { p -> p != null }!!.texto }
         assertEquals(frase, despues)
@@ -187,6 +207,21 @@ class DescansoContenidoTest {
         compose.onNodeWithTag("circulo-estirar").performClick()
         compose.waitForIdle()
         assertEquals(1, marcadas.size)
+    }
+
+    @Test
+    fun `arriving live Habi jumps 0,24`() {
+        enElDescanso()
+        montar()
+        assertEquals(listOf(0.24f), saltos)
+    }
+
+    @Test
+    fun `opening mid break there is no arrival jump`() {
+        enElDescanso()
+        avanzar(10_000)
+        montar()
+        assertEquals(emptyList<Float>(), saltos)
     }
 
     @Test

@@ -38,13 +38,14 @@ object ReglaDescanso {
         val descartados = hoyNoDeHoy(m, ctx)
         val candidatos =
             h.habitos.filter { it.id != d.excluir && it.id !in descartados && it.puedeProponerseEnDescanso() }
-        val elegido = preferidos(candidatos, d).sortedWith(orden(ctx)).firstOrNull()
-            ?: return Candidata(
-                situacion = Situacion.DESCANSO_SIN_PENDIENTES,
-                ref = ref,
-                huecos = emptyMap(),
-                acciones = emptyList(),
-            )
+        val elegido =
+            preferidos(candidatos, d).sortedWith(orden(ctx)).firstOrNull()
+                ?: return Candidata(
+                    situacion = Situacion.DESCANSO_SIN_PENDIENTES,
+                    ref = ref,
+                    huecos = emptyMap(),
+                    acciones = emptyList(),
+                )
         return Candidata(
             situacion = if (d.largo) Situacion.DESCANSO_HABITO_LARGO else Situacion.DESCANSO_HABITO,
             ref = "$ref:${elegido.id}",

@@ -6,13 +6,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -32,6 +31,7 @@ import com.alvarotc.bito.domain.sesion.Tramos
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
 import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.cifra
@@ -43,6 +43,7 @@ import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.today.FilaHabito
 import com.alvarotc.bito.ui.today.HabitCardUi
 import com.alvarotc.bito.ui.today.TarjetaHabi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
@@ -88,12 +89,13 @@ internal fun DescansoContenido() {
     val motor = LocalMotorSesion.current ?: return
     val instante by motor.instante.collectAsState()
     val registro by motor.registro.collectAsState()
-    var ultimo by remember { mutableStateOf<DatosDescanso?>(null) }
+    // No es estado: se escribe al componer y un estado así volvería a componer sin fin.
+    val ultimo = remember { arrayOfNulls<DatosDescanso>(1) }
     val tramo = instante?.actual as? Tramo.Descanso
     val r = registro
     val i = instante
-    if (tramo != null && r != null && i != null) ultimo = DatosDescanso(r, i, tramo)
-    val datos = ultimo ?: return
+    if (tramo != null && r != null && i != null) ultimo[0] = DatosDescanso(r, i, tramo)
+    val datos = ultimo[0] ?: return
     Piezas(datos)
 }
 
@@ -106,7 +108,15 @@ private fun Piezas(d: DatosDescanso) {
     val alcance = rememberCoroutineScope()
     val apoyo = LocalApoyoDescanso.current
     val anclas = LocalAnclas.current
+    val saltoHabi = LocalSaltoHabi.current
+    val reducido = BitoTema.reducido
     val espera = d.instante.esperandoDescanso
+
+    // Llegada con la sesión en vivo: Habi salta 0,24 (la campanilla y el click son del motor). Al abrir la app en mitad
+    // del descanso, o al recuperarla, no: solo si el descanso acaba de empezar.
+    LaunchedEffect(Unit) {
+        if (d.instante.duracionTramoMillis - d.instante.restaMillis < LLEGADA_VIVA_MS) saltoHabi(SALTO_LLEGADA)
+    }
     val resta = if (espera) d.tramo.minutos * MILLIS_MINUTO else d.instante.restaMillis
 
     // Reloj: la cifra como en Foco y, al lado, «de descanso» o «de descanso largo».
@@ -160,7 +170,14 @@ private fun Piezas(d: DatosDescanso) {
             if (!card.doneToday) {
                 anclas?.gota(ClavesAncla.fila(card.id))
                 gesto(Snd.GORGOTEO, Haptica.TICKS)
-                alcance.launch { apoyo?.marcar?.invoke(id) }
+                alcance.launch {
+                    apoyo?.marcar?.invoke(id)
+                }
+                // Habi salta 0,11 cuando la gota llega a la planta.
+                alcance.launch {
+                    delay(if (reducido) Duraciones.REDUCIDO.toLong() else (Duraciones.GOTA_RETRASO + Duraciones.GOTA).toLong())
+                    saltoHabi(SALTO_MARCA)
+                }
             }
         }
         FilaHabito(
@@ -216,3 +233,8 @@ private fun Piezas(d: DatosDescanso) {
 }
 
 private const val MILLIS_MINUTO = 60_000L
+
+// Sin token: lo que lleva el descanso en marcha para contarlo como recién llegado, y los saltos de Habi del mock.
+private const val LLEGADA_VIVA_MS = 2_000L
+private const val SALTO_LLEGADA = 0.24f
+private const val SALTO_MARCA = 0.11f
