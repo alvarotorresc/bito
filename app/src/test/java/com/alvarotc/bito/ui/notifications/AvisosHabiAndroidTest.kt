@@ -36,6 +36,7 @@ import com.alvarotc.bito.domain.habla.tarea
 import com.alvarotc.bito.domain.millisOn
 import com.alvarotc.bito.domain.propuestas.Accion
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
@@ -126,6 +127,7 @@ class AvisosHabiAndroidTest {
         override fun propuesta(
             ambito: Ambito,
             habitId: String?,
+            descanso: ContextoDescanso?,
         ): Flow<Propuesta?> = if (ambito == Ambito.HOY) hoy else flowOf(null)
 
         override suspend fun responder(

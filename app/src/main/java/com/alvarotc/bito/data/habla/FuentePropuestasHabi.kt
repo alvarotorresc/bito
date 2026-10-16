@@ -34,13 +34,16 @@ import com.alvarotc.bito.domain.habla.TipoMemoria
 import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.habla.cercaDeLaNoche
+import com.alvarotc.bito.domain.habla.conEmpezadas
 import com.alvarotc.bito.domain.habla.idPropuesta
+import com.alvarotc.bito.domain.habla.reglas.ReglaDescanso
 import com.alvarotc.bito.domain.habla.reglas.Respuestas
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.HabitStatus
 import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.TaskStatus
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
@@ -101,6 +104,10 @@ class FuentePropuestasHabi(
     private val ticks: Flow<Unit> = flowOf(Unit),
     // Donde corre todo (hechos, motor, redactor, replanificar): nunca en el hilo de quien escucha. Los tests pasan el suyo.
     private val despachador: CoroutineDispatcher = Dispatchers.Default,
+    // Las tareas con una sesión hoy, cerrada o viva (Review Focus 1): cuentan como empezadas para lo gordo sin empezar.
+    private val empezadas: Flow<Set<String>> = flowOf(emptySet()),
+    // El descanso de la sesión no pasa por [motor] (que no lo conoce): los tests pueden inyectar el suyo.
+    private val elegirDescanso: (Hechos, Memoria, Contexto, ContextoDescanso) -> Candidata = Motor::elegirDescanso,
 ) : FuentePropuestas {
     private val cerrojo = Mutex()
 
@@ -109,18 +116,25 @@ class FuentePropuestasHabi(
     override fun propuesta(
         ambito: Ambito,
         habitId: String?,
+        descanso: ContextoDescanso?,
     ): Flow<Propuesta?> {
         if (ambito == Ambito.FICHA && habitId == null) return flowOf(null)
+        if (ambito == Ambito.DESCANSO && descanso == null) return flowOf(null)
         val clave = if (ambito == Ambito.FICHA) habitId.orEmpty() else ""
         // El día lógico también sigue al reloj: a medianoche (o al corte) la memoria pasa al día nuevo.
         val dia = combine(ajustes, ticks) { prefs, _ -> diaDe(prefs) }.distinctUntilChanged()
         // Cada tick vuelve a mirar la vigente: si sigue valiendo sale igual (y `distinctUntilChanged` la calla);
         // si ha caducado o ha llegado la noche, el motor elige otra en ese minuto.
-        return combine(estado, ajustes, recordatorios, memoria.observe(dia), ticks) { state, prefs, recs, m, _ ->
-            val ctx = contexto(state, prefs)
-            val h = hechos(state, m, ctx, recs)
-            enCerrojo { vigenteODeNuevo(ambito, clave, habitId, state, ctx, h, recs) }
-        }.distinctUntilChanged()
+        val entradas =
+            combine(estado, ajustes, recordatorios, memoria.observe(dia), empezadas) { state, prefs, recs, m, emp ->
+                Entradas(state, prefs, recs, m, emp)
+            }
+        return entradas
+            .combine(ticks) { e, _ ->
+                val ctx = contexto(e.state, e.prefs)
+                val h = hechosDe(e.state, e.memoria, ctx, e.recordatorios, e.empezadas)
+                enCerrojo { vigenteODeNuevo(ambito, clave, habitId, descanso, e.state, ctx, h, e.recordatorios, e.empezadas) }
+            }.distinctUntilChanged()
             .flowOn(despachador)
     }
 
@@ -136,14 +150,16 @@ class FuentePropuestasHabi(
         ambito: Ambito,
         clave: String,
         habitId: String?,
+        descanso: ContextoDescanso?,
         state: DomainState,
         ctx: Contexto,
         h: Hechos,
         recs: Map<String, Int>,
+        emp: Set<String>,
     ): Propuesta? {
         val v = vigentes.leer(ambito, clave)
         if (v != null) {
-            when (validez(v, state, ctx, h)) {
+            when (validez(v, state, ctx, h, descanso)) {
                 Validez.VALE -> return pintar(v, h, ctx)
                 Validez.HECHA -> {
                     vigentes.borrar(ambito, clave)
@@ -156,11 +172,33 @@ class FuentePropuestasHabi(
             }
         }
         val m = memoria.observe(flowOf(ctx.hoy)).first()
-        val hAlDia = hechos(state, m, ctx, recs)
-        val c = motor.elegir(ambito, hAlDia, m, ctx, habitId) ?: return null
-        if (validez(sinRedactar(c, ambito, clave, ctx), state, ctx, hAlDia) != Validez.VALE) return null
+        val hAlDia = hechosDe(state, m, ctx, recs, emp)
+        val c =
+            if (ambito == Ambito.DESCANSO) {
+                descanso?.let { elegirDescanso(hAlDia, m, ctx, it) }
+            } else {
+                motor.elegir(ambito, hAlDia, m, ctx, habitId)
+            } ?: return null
+        if (validez(sinRedactar(c, ambito, clave, ctx), state, ctx, hAlDia, descanso) != Validez.VALE) return null
         return pintar(redactarYGuardar(c, ambito, clave, ctx, hAlDia, m), hAlDia, ctx)
     }
+
+    /** Los hechos de hoy con las tareas de una sesión de hoy ya empezadas. */
+    private fun hechosDe(
+        state: DomainState,
+        m: Memoria,
+        ctx: Contexto,
+        recs: Map<String, Int>,
+        emp: Set<String>,
+    ): Hechos = hechos(state, m, ctx, recs).conEmpezadas(emp)
+
+    private class Entradas(
+        val state: DomainState,
+        val prefs: Settings,
+        val recordatorios: Map<String, Int>,
+        val memoria: Memoria,
+        val empezadas: Set<String>,
+    )
 
     // Validez (spec §4.5).
 
@@ -169,8 +207,10 @@ class FuentePropuestasHabi(
         state: DomainState,
         ctx: Contexto,
         h: Hechos,
+        descanso: ContextoDescanso? = null,
     ): Validez =
         when {
+            v.ambito == Ambito.DESCANSO -> validezDescanso(v, state, ctx, descanso)
             v.dia != ctx.hoy -> Validez.NO_VALE
             v.ambito == Ambito.HOY && !faseVale(v, ctx) -> Validez.NO_VALE
             caducada(v, ctx) -> Validez.NO_VALE
@@ -180,6 +220,23 @@ class FuentePropuestasHabi(
             ofreceOtraHora(v, h) -> Validez.NO_VALE
             else -> Validez.VALE
         }
+
+    /**
+     * La del descanso vale mientras sea de hoy y de este descanso (`ref` = sesión, bloque y hábito) y su hábito siga vivo;
+     * hecho o no, conserva su frase: marcarlo no la cierra (spec §12). Su `ref` no es un hábito, así que no pasa por
+     * [refExiste].
+     */
+    private fun validezDescanso(
+        v: PropuestaVigente,
+        state: DomainState,
+        ctx: Contexto,
+        descanso: ContextoDescanso?,
+    ): Validez {
+        val habito = (v.destino as? Destino.Habito)?.id
+        val sigueVivo = habito == null || state.habits.any { it.id == habito && it.status != HabitStatus.ARCHIVED }
+        val esteDescanso = descanso == null || ReglaDescanso.esDe(v.ref, descanso)
+        return if (v.dia == ctx.hoy && esteDescanso && sigueVivo && trozosExisten(v)) Validez.VALE else Validez.NO_VALE
+    }
 
     /**
      * Una vigente que ofrece «Vale, a las…» a un hábito que ya tiene un aviso aceptado pendiente hoy (aceptado desde otro
@@ -404,7 +461,7 @@ class FuentePropuestasHabi(
                 )
             }
             val m = memoria.observe(flowOf(ctx.hoy)).first()
-            val h = hechos(state, m, ctx, recordatorios.first())
+            val h = hechosDe(state, m, ctx, recordatorios.first(), empezadas.first())
             Respondiendo(v, clave, state, ctx, h, m).con(respuesta, hora)
         }
 
@@ -490,8 +547,13 @@ class FuentePropuestasHabi(
 
         /** «Hecho» marca (CHECK uno, el resto un paso) y, en la vuelta, recuerda los días fuera (spec §5.6). */
         private suspend fun hecho(): Efecto {
-            val habito = state.habits.firstOrNull { it.id == v.ref } ?: return Efecto.Ninguno
+            // En el descanso el hábito va en el destino (la `ref` es la del descanso) y la propuesta se queda: la
+            // tarjeta conserva su frase (spec §12).
+            val enDescanso = v.ambito == Ambito.DESCANSO
+            val id = if (enDescanso) (v.destino as? Destino.Habito)?.id else v.ref
+            val habito = state.habits.firstOrNull { it.id == id } ?: return Efecto.Ninguno
             registrar(habito.id, if (habito.metric == Metric.CHECK) 1 else habito.step)
+            if (enDescanso) return Efecto.Ninguno
             if (v.situacion == Situacion.VUELTA) {
                 val dias = (v.huecos[Hueco.DIAS_FUERA] as? ValorHueco.Numero)?.v ?: h.diasSinActividad
                 memoria.anotar(EventoMemoria("VUELTA:${ctx.hoy}", TipoMemoria.VUELTA, ctx.hoy, habito.id, dias, ctx.ahoraMillis))
@@ -529,7 +591,7 @@ class FuentePropuestasHabi(
             val ctx = contexto(state, ajustes.first())
             gordo.guardar(ctx.hoy, refs)
             val m = memoria.observe(flowOf(ctx.hoy)).first()
-            val h = hechos(state, m, ctx, recordatorios.first())
+            val h = hechosDe(state, m, ctx, recordatorios.first(), empezadas.first())
             // Sin nada que nombrar (una tarea borrada), la tarjeta sigue como estaba.
             Respuestas.gordoElegido(h)?.let { redactarYGuardar(it, Ambito.HOY, "", ctx, h, m) }
             avisos.replanificar()

@@ -13,6 +13,14 @@ class PrioridadesTest {
             Ambito.FICHA to Prioridades.FICHA,
             Ambito.CAMINO to Prioridades.CAMINO,
             Ambito.CIERRE to Prioridades.CIERRE,
+            Ambito.DESCANSO to Prioridades.DESCANSO,
+        )
+
+    @Test
+    fun `the break puts the long habit first, then the short one, then nothing pending`() =
+        assertEquals(
+            listOf(Situacion.DESCANSO_HABITO_LARGO, Situacion.DESCANSO_HABITO, Situacion.DESCANSO_SIN_PENDIENTES),
+            Prioridades.DESCANSO,
         )
 
     @Test

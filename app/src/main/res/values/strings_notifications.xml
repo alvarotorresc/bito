@@ -79,9 +79,6 @@
 
     <string name="notif_perfect_day_title">Perfect day</string>
 
-    <!-- Focus session tray: the permanent notification while it runs, and the one-shot when time's up. -->
-    <string name="notif_focus_running">In progress</string>
-    <string name="notif_focus_over">Time\'s up</string>
 
     <!--
         Noon TASKS notice, in Habi's voice. Titles: %1$s = the user's name, %2$d = how many tasks. The body itself is

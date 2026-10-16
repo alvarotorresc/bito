@@ -92,4 +92,20 @@ class NavRequestsTest {
         assertEquals("today", NavRequests.destino("today"))
         assertEquals("tasks", NavRequests.destino("tasks"))
     }
+
+    @Test
+    fun `NavRequests keeps focus and breathing`() {
+        NavRequests.open("focus")
+        assertEquals("focus", NavRequests.pending.value)
+        NavRequests.open("breathing")
+        assertEquals("breathing", NavRequests.pending.value)
+    }
+
+    @Test
+    fun `focus and breathing open Today where the session and the loose breathing live`() {
+        assertEquals("today", NavRequests.destino("focus"))
+        assertEquals(true, NavRequests.vaAHoy("focus"))
+        assertEquals("today", NavRequests.destino("breathing"))
+        assertEquals(true, NavRequests.vaAHoy("breathing"))
+    }
 }

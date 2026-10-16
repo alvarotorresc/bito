@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertHeightIsEqualTo
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
@@ -34,6 +35,9 @@ import com.alvarotc.bito.ui.garden.GardenScene
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.premios.TipoVeta
 import com.alvarotc.bito.ui.premios.Veta
+import com.alvarotc.bito.ui.sesion.Encuadre
+import com.alvarotc.bito.ui.sesion.EstadoCamaraSesion
+import com.alvarotc.bito.ui.sesion.rememberEstadoCamaraSesion
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.componentes.CalendarioGotas
 import com.alvarotc.bito.ui.today.HojaLoGordo
@@ -154,5 +158,28 @@ class ContratosInicioTest {
             }
         }
         rule.onNodeWithTag("escena").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the shared garden with a camera ends at the floor of the encuadre`() {
+        lateinit var camara: EstadoCamaraSesion
+        rule.setContent {
+            ConSistema {
+                camara = rememberEstadoCamaraSesion(Encuadre.PREPARAR)
+                JardinCompartido(
+                    GardenState.INITIAL,
+                    HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
+                    q = { 0f },
+                    encogido = { 0f },
+                    modifier = Modifier.size(300.dp, 450.dp),
+                    animado = false,
+                    camara = camara,
+                )
+            }
+        }
+        rule.waitForIdle()
+
+        // El suelo de Preparar (398 en 915 dp) escalado a esta pantalla de 450 dp: el jardín acaba en el suelo, no en el 40 % de Hoy.
+        rule.onNodeWithTag("jardin-alto").assertHeightIsEqualTo((398f * 450f / 915f).dp)
     }
 }

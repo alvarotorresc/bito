@@ -10,6 +10,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ContenedoresDeSesion
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.habitEntity
@@ -40,6 +41,9 @@ import java.time.ZoneId
 @Config(sdk = [35], qualifiers = "w411dp-h891dp", application = Application::class)
 class HabiConduceRutasE2ETest {
     @get:Rule
+    val sesiones = ContenedoresDeSesion()
+
+    @get:Rule
     val compose = createComposeRule()
 
     private val app get() = ApplicationProvider.getApplicationContext<Application>()
@@ -54,7 +58,7 @@ class HabiConduceRutasE2ETest {
     }
 
     private fun montar(semilla: suspend AppContainer.() -> Unit = {}) {
-        container = AppContainer(app)
+        container = sesiones.registrar(AppContainer(app))
         runBlocking {
             container.settings.update { it.copy(onboardingDone = true) }
             container.semilla()

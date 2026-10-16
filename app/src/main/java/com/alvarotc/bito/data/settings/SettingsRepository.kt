@@ -10,6 +10,7 @@ import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.domain.sesion.Entrada
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -17,7 +18,7 @@ enum class BackupFrequency { DAILY, WEEKLY }
 
 enum class AutoBackupError { FOLDER, WRITE, MISSING_KEY }
 
-/** Sonido de fondo de la sesión (decisión 5). La vista previa suena en Ajustes; el uso es de la pieza 5. */
+/** Sonido de fondo de la sesión (decisión 5). La vista previa suena en Ajustes y suena de verdad dentro de la sesión. */
 enum class SessionBackground { RAIN, BROWN, CAFE, NONE }
 
 /** Rangos de las claves de la pieza 2 (spec §5.1.3). Se acotan al leer, así un valor fuera de rango nunca llega a la interfaz. */
@@ -66,11 +67,11 @@ data class Settings(
     val gardenWaterHighMark: Double = 0.0,
     /** Pieza 4 (§10.2). Hora del aviso de Habi de la mañana (6:00 a 11:00); la de la noche es [habiNightMinutes]. */
     val habiMorningMinutes: Int = 8 * 60 + 30,
-    /** No molestar propio (D10): solo se guarda hasta la pieza 5. */
+    /** No molestar propio (D10): el silencio de Bito para sus avisos. No es el filtro de interrupciones de Android ([sessionDnd]). */
     val dndEnabled: Boolean = false,
     val dndFromMinutes: Int = 23 * 60,
     val dndToMinutes: Int = 7 * 60 + 30,
-    /** Pomodoro (D9): 4 bloques de 25 + 5 y descanso largo de 15. Solo se guarda hasta la pieza 5. */
+    /** Pomodoro (D9): 4 bloques de 25 + 5 y descanso largo de 15. Son lo que propone Preparar al abrir una sesión. */
     val pomoFocus: Int = 25,
     val pomoShort: Int = 5,
     val pomoLong: Int = 15,
@@ -87,6 +88,10 @@ data class Settings(
     val reduceMotion: Boolean = false,
     /** Pieza 3 (§6.1): lo último celebrado del libro. Fuera de la copia. */
     val celebratedLedgerMark: MarcaLibro? = null,
+    /** Pieza 5 (§14): cómo se entra al primer foco. Lo último elegido en Preparar. */
+    val sessionEntry: Entrada = Entrada.RESPIRAR,
+    /** Pieza 5 (§14): pedir a Android el No molestar mientras dura la sesión. Es otro que [dndEnabled]. */
+    val sessionDnd: Boolean = false,
 )
 
 class SettingsRepository(private val dataStore: DataStore<Preferences>) {
@@ -138,6 +143,8 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         val sessionBackground = stringPreferencesKey("session_background")
         val reduceMotion = booleanPreferencesKey("reduce_motion")
         val celebratedLedgerMark = stringPreferencesKey("celebrated_ledger_mark")
+        val sessionEntry = stringPreferencesKey("session_entry")
+        val sessionDnd = booleanPreferencesKey("session_dnd")
 
         /**
          * One-shot marker for [seedDefaultReminders]. Deliberately NOT a [Settings] field: a
@@ -273,6 +280,10 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
                     ?: defaults.sessionBackground,
             reduceMotion = this[Keys.reduceMotion] ?: defaults.reduceMotion,
             celebratedLedgerMark = MarcaLibro.decodificar(this[Keys.celebratedLedgerMark]),
+            sessionEntry =
+                this[Keys.sessionEntry]?.let { name -> runCatching { Entrada.valueOf(name) }.getOrNull() }
+                    ?: defaults.sessionEntry,
+            sessionDnd = this[Keys.sessionDnd] ?: defaults.sessionDnd,
         )
     }
 
@@ -319,5 +330,7 @@ class SettingsRepository(private val dataStore: DataStore<Preferences>) {
         prefs[Keys.sessionBackground] = sessionBackground.name
         prefs[Keys.reduceMotion] = reduceMotion
         celebratedLedgerMark?.let { prefs[Keys.celebratedLedgerMark] = it.codificar() } ?: prefs.remove(Keys.celebratedLedgerMark)
+        prefs[Keys.sessionEntry] = sessionEntry.name
+        prefs[Keys.sessionDnd] = sessionDnd
     }
 }

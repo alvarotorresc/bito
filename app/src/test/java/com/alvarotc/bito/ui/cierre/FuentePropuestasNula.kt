@@ -2,6 +2,7 @@ package com.alvarotc.bito.ui.cierre
 
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -14,6 +15,7 @@ internal object FuentePropuestasNula : FuentePropuestas {
     override fun propuesta(
         ambito: Ambito,
         habitId: String?,
+        descanso: ContextoDescanso?,
     ): Flow<Propuesta?> = flowOf(null)
 
     override suspend fun responder(

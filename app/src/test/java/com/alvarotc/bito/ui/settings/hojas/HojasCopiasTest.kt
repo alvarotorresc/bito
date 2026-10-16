@@ -209,12 +209,13 @@ class HojasCopiasTest {
         vm.loadImport(resolver, uri)
         rule.waitForIdle()
 
-        // Ahora hay 3 hábitos; la copia trae 1. Ni registros ni recuerdos de Habi en ninguno de los dos.
+        // Ahora hay 3 hábitos; la copia trae 1. Ni registros, ni recuerdos de Habi, ni sesiones de foco en ninguno de los dos.
         rule.onNodeWithText("Hábitos").assertIsDisplayed()
         rule.onNodeWithText("Recuerdos de Habi").assertIsDisplayed()
+        rule.onNodeWithText("Sesiones de foco").assertIsDisplayed()
         rule.onNodeWithText("3").assertIsDisplayed()
         rule.onNodeWithText("1").assertIsDisplayed()
-        assertEquals(4, rule.onAllNodesWithText("0").fetchSemanticsNodes().size)
+        assertEquals(6, rule.onAllNodesWithText("0").fetchSemanticsNodes().size)
     }
 
     @Test

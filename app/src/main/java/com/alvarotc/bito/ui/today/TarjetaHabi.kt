@@ -75,6 +75,8 @@ fun TarjetaHabi(
     alSaltoHabi: () -> Unit = {},
     // Cada vez que sube, el permiso se acaba de resolver: la tarjeta se llena de agua clara y vuelve (240 ms, §9).
     aguaClara: Int = 0,
+    // La sesión pinta la tarjeta dentro de su descanso: allí la llegada no suena (la campanilla es del motor).
+    sonidoAlLlegar: Boolean = true,
 ) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
@@ -113,7 +115,7 @@ fun TarjetaHabi(
             valeDuro = false
             sinTexto = false
             if (respondida == null) {
-                gesto(Snd.BROTE, Haptica.TICK)
+                if (sonidoAlLlegar) gesto(Snd.BROTE, Haptica.TICK)
                 brote.snapTo(0f)
                 brote.animateTo(1f, tween(if (reducido) Duraciones.REDUCIDO else ENTRAR_MS, easing = Curvas.drawer))
             }

@@ -101,23 +101,6 @@
     <string name="habi_task_done_cheerleader_sin_nombre">¡Fuera! Qué gusto.</string>
     <string name="habi_task_done_neutra">Hecha, %1$s.</string>
     <string name="habi_task_done_neutra_sin_nombre">Hecha.</string>
-    <!-- habi_breathing_done_* — M11, la frase de cierre tras respirar, completa o parada. Ninguna
-         felicita por «haberlo conseguido», ninguna reprocha haber parado, ninguna promete calma. -->
-    <string name="habi_breathing_done_sargento">Bien respirado, %1$s. A lo tuyo.</string>
-    <string name="habi_breathing_done_sargento_sin_nombre">Bien respirado. A lo tuyo.</string>
-    <string name="habi_breathing_done_cheerleader">¡Qué bien sienta esto, %1$s!</string>
-    <string name="habi_breathing_done_cheerleader_sin_nombre">¡Qué bien sienta esto!</string>
-    <string name="habi_breathing_done_neutra">Ya está, %1$s.</string>
-    <string name="habi_breathing_done_neutra_sin_nombre">Ya está.</string>
-
-    <!-- habi_task_focus_* — T19, la frase de entrada de FocusScreen, dicha una vez al empezar la
-         sesion. %1$s = el nombre del usuario, %2$d = los minutos elegidos; solo el sargento usa %2$d. -->
-    <string name="habi_task_focus_sargento">%1$s, %2$d minutos. Empieza.</string>
-    <string name="habi_task_focus_sargento_sin_nombre">%2$d minutos. Empieza.</string>
-    <string name="habi_task_focus_cheerleader">¡Vamos allá, %1$s! Yo me quedo aquí contigo.</string>
-    <string name="habi_task_focus_cheerleader_sin_nombre">¡Vamos allá! Yo me quedo aquí contigo.</string>
-    <string name="habi_task_focus_neutra">Aquí estoy, %1$s. Tú a lo tuyo.</string>
-    <string name="habi_task_focus_neutra_sin_nombre">Aquí estoy. Tú a lo tuyo.</string>
 
     <string name="store_title">Tienda</string>
     <string name="store_axis_colors">Colores</string>

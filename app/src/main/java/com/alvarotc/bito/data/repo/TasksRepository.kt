@@ -4,6 +4,7 @@ import androidx.room.withTransaction
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.TaskEntity
 import com.alvarotc.bito.data.db.TaskEventEntity
+import com.alvarotc.bito.data.sesion.SesionesRepository
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.TaskEventKind
@@ -18,7 +19,10 @@ import java.util.UUID
  * canSave, como HabitFormModel), primer paso en blanco guardado como null, y eventos que no se
  * editan ni se borran (T4) — editar toca SOLO la fila de tasks.
  */
-class TasksRepository(private val db: BitoDatabase) {
+class TasksRepository(
+    private val db: BitoDatabase,
+    private val sesiones: SesionesRepository = SesionesRepository(db),
+) {
     fun observeTasks(): Flow<List<TaskEntity>> = db.taskDao().observeAll()
 
     suspend fun task(id: String): TaskEntity? = db.taskDao().byId(id)
@@ -40,13 +44,14 @@ class TasksRepository(private val db: BitoDatabase) {
     }
 
     /**
-     * El ForeignKey CASCADE se lleva su historia; sus filas de lo gordo, en la misma transaccion.
+     * El ForeignKey CASCADE se lleva su historia; sus filas de lo gordo y sus sesiones de foco, en la misma transaccion.
      * No descuenta puntos (regla E3).
      */
     suspend fun delete(id: String) =
         db.withTransaction {
             db.taskDao().delete(id)
             db.hablaDao().borrarGordoDeRef(id)
+            sesiones.borrarDe(id)
         }
 
     suspend fun markDone(

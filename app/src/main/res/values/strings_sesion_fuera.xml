@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Textos del carril fuera de la app (prefijo sesf_). Antes de crear una clave, buscar en strings_sesion.xml. -->
+    <!-- Aviso fijo en pausa: «En pausa · 15:00» (la cifra queda quieta). -->
+    <string name="sesf_pausa_resta">%1$s · %2$s</string>
+</resources>

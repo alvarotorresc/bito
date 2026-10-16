@@ -121,3 +121,29 @@ val MIGRATION_4_5 =
             )
         }
     }
+
+/**
+ * 5 -> 6 (pieza 5): la tabla de sesiones de foco y su indice. Solo CREA: ninguna fila existente
+ * se toca, ninguna columna cambia.
+ *
+ * El DDL esta copiado LITERAL de app/schemas/.../6.json (sustituyendo `${TABLE_NAME}` por el
+ * nombre real). Si no coincide caracter a caracter, Room aborta al abrir con
+ * IllegalStateException («Migration didn't properly handle...») y la app NO ARRANCA para quien
+ * ya tenga la version anterior instalada. Nada de fallbackToDestructiveMigration: eso borraria
+ * sus datos.
+ */
+val MIGRATION_5_6 =
+    object : Migration(5, 6) {
+        override fun migrate(db: SupportSQLiteDatabase) {
+            db.execSQL(
+                "CREATE TABLE IF NOT EXISTS `sesiones` (`id` TEXT NOT NULL, `objetivo_tipo` TEXT NOT NULL, " +
+                    "`objetivo_id` TEXT, `dia` INTEGER NOT NULL, `inicio_millis` INTEGER NOT NULL, " +
+                    "`fin_millis` INTEGER NOT NULL, `minutos_foco` INTEGER NOT NULL, " +
+                    "`bloques_hechos` INTEGER NOT NULL, `bloques_plan` INTEGER NOT NULL, " +
+                    "`resultado` TEXT NOT NULL, PRIMARY KEY(`id`))",
+            )
+            db.execSQL(
+                "CREATE INDEX IF NOT EXISTS `index_sesiones_objetivo_id_dia` ON `sesiones` (`objetivo_id`, `dia`)",
+            )
+        }
+    }

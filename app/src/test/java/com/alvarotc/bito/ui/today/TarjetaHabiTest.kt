@@ -182,7 +182,7 @@ class TarjetaHabiTest {
     }
 
     @Test
-    fun `now in the list navigates to the session route`() {
+    fun `now in the list opens the session with the task`() {
         val fuente = FuenteFalsa(Propuesta("p", texto(R.string.habla_habi_duerme), todas, destino = Destino.Tarea("t1")))
         fuente.efecto = Efecto.Sesion(Destino.Tarea("t1"))
         val b = BancoHoy(rule, tmp).also { banco = it }
@@ -190,7 +190,7 @@ class TarjetaHabiTest {
         runBlocking { TasksRepository(b.db).create(taskEntity(id = "t1", createdOnDay = b.hoy)) }
         b.montar()
         rule.onNodeWithText("Ahora").performClick()
-        assertEquals(listOf("ruta:focus?taskId=t1"), b.llamadas)
+        assertEquals(listOf("sesion:Tarea(id=t1)"), b.llamadas)
         assertEquals(listOf(Respuesta.AHORA), fuente.respuestas)
     }
 

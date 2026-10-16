@@ -165,6 +165,9 @@ class GardenSceneTest {
         destacar: GardenSpecial? = null,
         dormido: Boolean = false,
         onHabiTap: () -> Unit = {},
+        respiracion: (() -> Float)? = null,
+        animada: Boolean = false,
+        saltoAmplitud: Float? = null,
     ) {
         jardin = garden
         compose.setContent {
@@ -173,7 +176,7 @@ class GardenSceneTest {
                     GardenScene(
                         garden = jardin,
                         spec = spec,
-                        animated = false,
+                        animated = animada,
                         onHabiTap = onHabiTap,
                         modifier = Modifier.width(400.dp),
                         alTocarFondo = alTocarFondo,
@@ -184,6 +187,8 @@ class GardenSceneTest {
                         saltoHabi = salto,
                         fiesta = fiesta,
                         dormido = dormido,
+                        respiracion = respiracion,
+                        saltoAmplitud = saltoAmplitud,
                     )
                 }
             }
@@ -287,6 +292,35 @@ class GardenSceneTest {
 
         assertTrue(Snd.POSAR in sonido.snds())
         assertTrue(Haptica.THUD in tacto.hapticas)
+    }
+
+    @Test
+    fun `a hop with an amplitude rises that fraction of Habi and lands`() {
+        montar(animada = true, saltoAmplitud = 0.11f)
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(100)
+
+        compose.runOnUiThread { salto++ }
+        compose.mainClock.advanceTimeByFrame()
+        repeat(30) { compose.mainClock.advanceTimeBy(30) }
+
+        assertEquals("el pico es la amplitud pedida", 0.11f, sonda.salto.picoFraccion, 0.01f)
+        assertEquals("aterriza", 0f, sonda.salto.fraccion, 0.005f)
+        assertEquals(1, sonda.saltosHabi())
+    }
+
+    @Test
+    fun `a hop without amplitude keeps today's reaction and never uses the arc`() {
+        montar(animada = true)
+        compose.mainClock.autoAdvance = false
+        compose.mainClock.advanceTimeBy(100)
+
+        compose.runOnUiThread { salto++ }
+        compose.mainClock.advanceTimeByFrame()
+        repeat(30) { compose.mainClock.advanceTimeBy(30) }
+
+        assertEquals(0f, sonda.salto.picoFraccion, 0f)
+        assertEquals(1, sonda.saltosHabi())
     }
 
     @Test
@@ -640,4 +674,72 @@ class GardenSceneTest {
         a: Int,
         b: Int,
     ): Boolean = (0..3).any { abs((a shr (it * 8) and 0xFF) - (b shr (it * 8) and 0xFF)) > 2 }
+
+    @Test
+    fun `breathing closes the eyes and stretches from the feet`() {
+        var llenado by mutableStateOf(1f)
+        montar(respiracion = { llenado })
+
+        assertEquals(1f, sonda.ojosCerradosHabi(), 0f)
+        val lleno = sonda.estiramientoHabi()
+        assertEquals(1.054f, lleno.scaleY, 0.0001f)
+        assertEquals(0.973f, lleno.scaleX, 0.0001f)
+        // El origen son los pies de Habi (88 % de la escena), no el borde de abajo de su lienzo.
+        val widthPx = with(compose.density) { 400.dp.toPx() }
+        val sceneH = widthPx / GardenArt.SCENE_ASPECT
+        val caja = habiRect(widthPx, sceneH)
+        assertEquals((sceneH * 0.88f - caja.top) / caja.height, lleno.origenY, 0.0001f)
+
+        // Vacío: se encoge lo mismo hacia abajo. El llenado se lee al dibujar, sin recomponer.
+        llenado = 0f
+        val vacio = sonda.estiramientoHabi()
+        assertEquals(0.946f, vacio.scaleY, 0.0001f)
+        assertEquals(1.027f, vacio.scaleX, 0.0001f)
+    }
+
+    @Test
+    fun `breathing in reduced motion stretches half as much`() {
+        montar(reducido = true, respiracion = { 1f })
+
+        val lleno = sonda.estiramientoHabi()
+        assertEquals(1.027f, lleno.scaleY, 0.0001f)
+        assertEquals(0.9865f, lleno.scaleX, 0.0001f)
+    }
+
+    @Test
+    fun `without breathing nothing changes`() {
+        montar()
+
+        assertEquals(0f, sonda.ojosCerradosHabi(), 0f)
+        val quieto = sonda.estiramientoHabi()
+        assertEquals(1f, quieto.scaleX, 0f)
+        assertEquals(1f, quieto.scaleY, 0f)
+    }
+
+    @Test
+    fun `the drawn Habi grows 5,4 percent in height and shrinks 2,7 in width keeping the feet`() {
+        var llenado by mutableStateOf(0.5f)
+        montar(respiracion = { llenado })
+        compose.waitForIdle()
+
+        val habi = { compose.onNodeWithContentDescription("Habi, doing okay").fetchSemanticsNode().boundsInRoot }
+        val reposo = habi()
+        // Los pies están al 88 % de la escena (calculado a mano, no con la función de la app).
+        val escena = compose.onNodeWithTag("garden-scene").fetchSemanticsNode().boundsInRoot
+        val pies = escena.top + escena.height * 0.88f
+        val origen = (pies - reposo.top) / reposo.height
+
+        llenado = 1f
+        compose.waitForIdle()
+        val lleno = habi()
+        assertEquals(1.054f, lleno.height / reposo.height, 0.001f)
+        assertEquals(0.973f, lleno.width / reposo.width, 0.001f)
+        assertEquals(pies, lleno.top + origen * lleno.height, 0.5f)
+
+        llenado = 0f
+        compose.waitForIdle()
+        val vacio = habi()
+        assertEquals(0.946f, vacio.height / reposo.height, 0.001f)
+        assertEquals(pies, vacio.top + origen * vacio.height, 0.5f)
+    }
 }

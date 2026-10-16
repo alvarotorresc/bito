@@ -1,6 +1,7 @@
 package com.alvarotc.bito.ui.notifications
 
 import android.annotation.SuppressLint
+import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -338,50 +339,76 @@ object Notifier {
     }
 
     /**
-     * El temporizador de foco, mientras dura. La cuenta atras la pinta SystemUI, no Bito: el
-     * proceso puede morir y el reloj sigue bajando. setAutoCancel(false) es obligatorio — lo
-     * hereda en true de baseBuilder, y una permanente que se borra al tocarla no es permanente.
+     * El aviso fijo de la sesión (pieza 5): canal `sesion`, fijo, público, sin sonido ni botones. Con
+     * [finParedMillis] la cuenta atrás la pinta Android; sin él (en pausa) la cifra queda quieta en [cuerpo].
+     * Tocarla abre Hoy con la petición `focus`. La misma notificación es la del servicio de la sesión.
      */
-    fun showFocus(
+    fun notificacionSesion(
         context: Context,
-        taskTitle: String,
-        endsAtMillis: Long,
-    ) {
+        titulo: String,
+        cuerpo: String,
+        finParedMillis: Long?,
+        personality: Personality,
+    ): Notification {
         val builder =
-            baseBuilder(context, NotificationChannels.REMINDERS)
-                .setContentTitle(taskTitle)
-                .setContentText(context.getString(R.string.notif_focus_running))
+            baseBuilder(context, NotificationChannels.SESION)
+                .setContentTitle(titulo)
+                .setContentText(cuerpo)
+                .setLargeIcon(iconoHabi(context, personality))
                 .setContentIntent(contentIntent(context, "focus", 4))
                 .setAutoCancel(false)
                 .setOngoing(true)
                 .setSilent(true)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+        if (finParedMillis != null) {
+            builder
                 .setUsesChronometer(true)
                 .setChronometerCountDown(true)
                 .setShowWhen(true)
-                .setWhen(endsAtMillis)
-        notify(context, FOCUS_ID, builder)
+                .setWhen(finParedMillis)
+        } else {
+            builder.setShowWhen(false)
+        }
+        return builder.build()
     }
 
-    /** «Se acabo el tiempo»: ya no es permanente y se va al tocarla. */
-    fun showFocusOver(
+    fun mostrarSesion(
         context: Context,
-        taskTitle: String,
+        titulo: String,
+        cuerpo: String,
+        finParedMillis: Long?,
+        personality: Personality,
+    ) = publicar(context, FOCUS_ID, notificacionSesion(context, titulo, cuerpo, finParedMillis, personality))
+
+    /** «Se acabó el tiempo»: Habi radiante, canal `habi` (suena), en el mismo id; tocarla abre la sesión terminada. */
+    fun mostrarSesionFin(
+        context: Context,
+        titulo: String,
+        personality: Personality,
     ) {
         val builder =
-            baseBuilder(context, NotificationChannels.REMINDERS)
-                .setContentTitle(taskTitle)
-                .setContentText(context.getString(R.string.notif_focus_over))
+            baseBuilder(context, NotificationChannels.HABI)
+                .setContentTitle(titulo)
+                .setContentText(context.getString(R.string.ses_notif_fin))
+                .setLargeIcon(iconoHabi(context, personality, mood = Mood.RADIANT))
                 .setContentIntent(contentIntent(context, "focus", 4))
-                // setOnlyAlertOnce(false) es obligatorio — lo hereda en true de baseBuilder, y esta
-                // notificacion postea bajo el mismo FOCUS_ID que ya ocupa la permanente; sin esto,
-                // sustituye a showFocus en silencio (sin sonido, sin vibracion, sin heads-up), y un
-                // aviso de fin que no avisa no es un aviso de fin.
+                // Comparte id con el aviso fijo: sin esto sustituiría al fijo sin avisar.
                 .setOnlyAlertOnce(false)
         notify(context, FOCUS_ID, builder)
     }
 
-    /** Clears the focus tray. */
-    fun cancelFocus(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
+    fun cancelarSesion(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
+
+    @SuppressLint("MissingPermission")
+    private fun publicar(
+        context: Context,
+        id: Int,
+        notification: Notification,
+    ) {
+        val manager = NotificationManagerCompat.from(context)
+        if (!manager.areNotificationsEnabled()) return
+        manager.notify(id, notification)
+    }
 
     /** Lado en píxeles del icono grande: Habi sin accesorios (spec pieza 2 §5.6). */
     private const val ICONO_PX = 192

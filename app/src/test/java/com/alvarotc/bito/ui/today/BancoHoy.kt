@@ -32,6 +32,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -73,6 +74,7 @@ class FuenteFalsa(inicial: Propuesta? = null) : FuentePropuestas {
     override fun propuesta(
         ambito: Ambito,
         habitId: String?,
+        descanso: ContextoDescanso?,
     ): Flow<Propuesta?> = flujo
 
     override suspend fun responder(
@@ -126,7 +128,6 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
             abrirTareas = { llamadas += "tareas" },
             crearHabito = { llamadas += "crearHabito" },
             crearTarea = { llamadas += "crearTarea" },
-            abrirRuta = { llamadas += "ruta:$it" },
         )
 
     private fun almacen(): DataStore<Preferences> =
@@ -238,6 +239,7 @@ class BancoHoy(private val rule: ComposeContentTestRule, private val tmp: Tempor
                             alGordoVisto = alGordoVisto,
                             vetaRachaDe = vetaRachaDe,
                             alSaltoHabi = { saltos += it },
+                            abrirSesion = { llamadas += "sesion:$it" },
                         )
                     }
                     AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))

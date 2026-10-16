@@ -1,6 +1,7 @@
 package com.alvarotc.bito.domain.habla
 
 import com.alvarotc.bito.domain.TODAY
+import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.propuestas.Respuesta
 import org.junit.Assert.assertEquals
@@ -216,5 +217,36 @@ class RecuerdosTest {
         assertNull(elegible(sinHacer, aceptadoSinCumplir, enCierre = true))
         val completo = ev("completo", TipoMemoria.GORDO_HECHO, TODAY - 1, 22)
         assertEquals(Bolsa.RE_GORDO_HECHO, elegible(sinHacer, aceptadoSinCumplir + completo, enCierre = true)?.bolsa)
+    }
+
+    private fun comoEstas(
+        id: String,
+        haceDias: Int,
+        valor: Int,
+        modo: String? = "CALM",
+    ) = ev(id, TipoMemoria.COMO_ESTAS, TODAY - haceDias, valor, modo)
+
+    @Test
+    fun `a better from yesterday can come back as a memory with its mode`() {
+        val r = elegible(eventos = listOf(comoEstas("ce", 1, 0, "SLEEP")))
+        assertEquals(Recuerdo(Bolsa.RE_RESPIRAR_MEJOR, "ce", mapOf(Hueco.MODO to ValorHueco.Modo(BreathingMode.SLEEP))), r)
+        // También de hace días, dentro del tope.
+        assertEquals(Bolsa.RE_RESPIRAR_MEJOR, elegible(eventos = listOf(comoEstas("ce", 20, 0)))?.bolsa)
+        assertNull(elegible(eventos = listOf(comoEstas("ce", Ritmo.RECUERDO_MAX_DIAS + 1, 0))))
+    }
+
+    @Test
+    fun `only the good is recalled and never from today`() {
+        assertNull(elegible(eventos = listOf(comoEstas("igual", 1, 1))))
+        assertNull(elegible(eventos = listOf(comoEstas("cuesta", 1, 2))))
+        assertNull(elegible(eventos = listOf(comoEstas("hoy", 0, 0))))
+        assertNull(elegible(eventos = listOf(comoEstas("sinModo", 1, 0, modo = null))))
+    }
+
+    @Test
+    fun `never the same event twice`() {
+        val ce = comoEstas("ce", 1, 0)
+        assertNotNull(elegible(eventos = listOf(ce)))
+        assertNull(elegible(eventos = listOf(ce, mencion("ce", haceDias = 3))))
     }
 }

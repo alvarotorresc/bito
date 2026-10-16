@@ -1,0 +1,342 @@
+package com.alvarotc.bito.ui.inicio
+
+import androidx.activity.ComponentActivity
+import androidx.compose.runtime.remember
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.domain.sesion.ANCLA_ELAPSED
+import com.alvarotc.bito.domain.sesion.Ahora
+import com.alvarotc.bito.domain.sesion.Entrada
+import com.alvarotc.bito.domain.sesion.INICIO_PARED
+import com.alvarotc.bito.domain.sesion.RelojSesion
+import com.alvarotc.bito.domain.sesion.planSesion
+import com.alvarotc.bito.sesion.AireGrabado
+import com.alvarotc.bito.sesion.AvisoSesion
+import com.alvarotc.bito.sesion.ResultadoAccion
+import com.alvarotc.bito.ui.sesion.MotorSesionFalso
+import com.alvarotc.bito.ui.sesion.SesionInicio
+import com.alvarotc.bito.ui.sistema.ConSistema
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Rule
+import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
+
+/** Respirar para entrar y Foco con sus bloques de verdad, dentro del Inicio y con el motor falso. */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [35], qualifiers = "es-w411dp-h891dp")
+class InicioRespirarFocoTest {
+    @get:Rule
+    val rule = createAndroidComposeRule<ComponentActivity>()
+
+    @get:Rule
+    val tmp = TemporaryFolder()
+
+    private lateinit var banco: BancoInicio
+    private val motor = MotorSesionFalso()
+    private val aire = AireGrabado()
+
+    @Before
+    fun setUp() {
+        banco = BancoInicio(tmp)
+    }
+
+    @After
+    fun tearDown() {
+        EntradaSesion.consumir()
+        banco.cerrar()
+    }
+
+    private fun existe(tag: String) = rule.onAllNodes(hasTestTag(tag)).fetchSemanticsNodes().isNotEmpty()
+
+    /** Respirar pide un fotograma tras otro mientras dura: con el reloj a mano se avanza hasta que pasa lo esperado. */
+    private fun esperar(condicion: () -> Boolean) {
+        repeat(200) {
+            if (condicion()) return
+            rule.mainClock.advanceTimeBy(50)
+        }
+        assertTrue("no llegó a tiempo", condicion())
+    }
+
+    private fun montar(sesion: () -> SesionInicio = { SesionInicio(motor, aire, banco.ajustes) }) {
+        banco.preparar()
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = remember { sesion() }, enPrimerPlano = true)
+            }
+        }
+        rule.mainClock.advanceTimeBy(100)
+        EntradaSesion.pedir(null)
+        esperar { existe("ses-tierra") }
+    }
+
+    @Test
+    fun `no balance in entry breathing but the music button is there`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 0L)
+        montar()
+        esperar { existe("e-fase") }
+
+        assertFalse(existe("ses-saldo"))
+        assertTrue(existe("ses-musica"))
+        assertTrue(existe("e-saltar"))
+    }
+
+    @Test
+    fun `back from breathing says skip and back to prepare`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 0L)
+        montar()
+
+        val etiqueta = rule.onNodeWithTag("ses-atras").fetchSemanticsNode().config[SemanticsProperties.ContentDescription].single()
+        assertEquals("Saltar y volver a preparar", etiqueta)
+    }
+
+    @Test
+    fun `music button toggles the air and saves the setting`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 0L)
+        montar()
+        val antes = runBlocking { banco.ajustes.settings.first().breathingMusicEnabled }
+
+        rule.onNodeWithTag("ses-musica").performClick()
+        esperar { runBlocking { banco.ajustes.settings.first().breathingMusicEnabled } != antes }
+
+        assertTrue("musica:${!antes}" in aire.llamadas)
+        assertEquals(!antes, runBlocking { banco.ajustes.settings.first().breathingMusicEnabled })
+    }
+
+    @Test
+    fun `skip in the real block asks the motor to skip`() {
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 0L)
+        montar()
+        esperar { existe("e-saltar") }
+
+        rule.onNodeWithTag("e-saltar").performClick()
+        esperar { "saltar" in motor.llamadas }
+
+        assertTrue("saltar" in motor.llamadas)
+    }
+
+    @Test
+    fun `focus shows its clock and buttons and no background tag when Bito is quiet`() {
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 25 * 60_000L - (18 * 60_000L + 42_000L))
+        montar()
+        esperar { existe("f-t") }
+
+        rule.onNodeWithTag("f-t").assertTextEquals("18:42")
+        rule.onNodeWithTag("f-hecho").assertTextEquals("He terminado")
+        assertTrue(existe("ses-saldo"))
+        assertFalse("con Bito callado no hay etiqueta de fondo", existe("f-et-fondo"))
+        assertFalse(existe("f-et-dnd"))
+    }
+
+    @Test
+    fun `he terminado in the real block holds Hecha and goes back to today with its notice`() {
+        motor.respuesta = ResultadoAccion(3, false, AvisoSesion.Hecho("Informe"))
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-hecho") }
+
+        rule.onNodeWithTag("f-hecho").performClick()
+        rule.mainClock.advanceTimeBy(1_500)
+        assertTrue("sigue la sesión en pantalla a 1,5 s", existe("ses-tierra"))
+
+        rule.mainClock.advanceTimeBy(1_500)
+        esperar { existe("pildora-hoy") }
+        rule.onNodeWithText("Informe, hecho.").assertExists()
+    }
+
+    @Test
+    fun `Habi is radiant in the finished block and plain in focus`() {
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-hecho") }
+        assertEquals(Mood.NORMAL, banco.sonda.moodHabi())
+
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 25 * 60_000L + 1_000L)
+        esperar { existe("t-preg") }
+        esperar { banco.sonda.moodHabi() == Mood.RADIANT }
+
+        assertEquals(Mood.RADIANT, banco.sonda.moodHabi())
+    }
+
+    @Test
+    fun `plus Otro opens the more minutes sheet, Sumar adds them and Back closes it first`() {
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-otro") }
+
+        rule.onNodeWithTag("f-otro").performClick()
+        esperar { rule.onAllNodes(hasText("¿Cuántos minutos más?")).fetchSemanticsNodes().isNotEmpty() }
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        esperar { rule.onAllNodes(hasText("¿Cuántos minutos más?")).fetchSemanticsNodes().isEmpty() }
+        assertTrue("Atrás solo cerró la hoja", existe("f-hecho"))
+
+        rule.onNodeWithTag("f-otro").performClick()
+        esperar { rule.onAllNodes(hasText("Sumar")).fetchSemanticsNodes().isNotEmpty() }
+        rule.onNodeWithText("Sumar").performClick()
+        esperar { "sumar:10" in motor.llamadas }
+
+        assertTrue("sumar:10" in motor.llamadas)
+    }
+
+    /** El estilo con que se pinta el texto del botón con ese tag (su semántica fusiona la del texto). */
+    private fun estiloDe(tag: String): androidx.compose.ui.text.TextStyle {
+        val resultado = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        rule.onNodeWithTag(tag).fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult]
+            .action?.invoke(resultado)
+        return resultado.single().layoutInput.style
+    }
+
+    @Test
+    fun `He terminado is the dark mock pill at 16 sp and Saltar is the ghost one at 14 sp`() {
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-hecho") }
+        val hecho = estiloDe("f-hecho")
+        assertEquals(16f, hecho.fontSize.value, 0f)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFF4EAD8), hecho.color)
+
+        motor.viva(planSesion(entrada = Entrada.RESPIRAR), 1_000L)
+        esperar { existe("e-saltar") }
+        assertEquals(14f, estiloDe("e-saltar").fontSize.value, 0f)
+    }
+
+    @Test
+    fun `during Hecha Habi is radiant and Back goes to Today without saying the session keeps running`() {
+        motor.respuesta = ResultadoAccion(3, false, AvisoSesion.Hecho("Informe"))
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-hecho") }
+        assertEquals(Mood.NORMAL, banco.sonda.moodHabi())
+
+        rule.onNodeWithTag("f-hecho").performClick()
+        rule.mainClock.advanceTimeBy(500)
+        esperar { banco.sonda.moodHabi() == Mood.RADIANT }
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        esperar { existe("pildora-hoy") }
+
+        assertFalse(rule.onAllNodes(hasText("Sigue en marcha", substring = true)).fetchSemanticsNodes().isNotEmpty())
+        esperar { banco.sonda.moodHabi() == Mood.NORMAL }
+    }
+
+    /** Todo `.pill.main` del mock: tinta oscura con letra clara de 16 sp (en `.btnrow.llena`). */
+    private fun assertPildoraOscura(tag: String) {
+        val estilo = estiloDe(tag)
+        assertEquals("$tag a 16 sp", 16f, estilo.fontSize.value, 0f)
+        assertEquals("$tag con letra clara", androidx.compose.ui.graphics.Color(0xFFF4EAD8), estilo.color)
+    }
+
+    @Test
+    fun `Empezar in prepare is the dark mock pill`() {
+        montar()
+        esperar { existe("p-empezar") }
+
+        assertPildoraOscura("p-empezar")
+    }
+
+    @Test
+    fun `Si terminado in finished is the dark mock pill`() {
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 60 * 60_000L)
+        montar()
+        esperar { existe("t-si") }
+
+        assertPildoraOscura("t-si")
+    }
+
+    @Test
+    fun `Empezar el descanso is the dark mock pill`() {
+        motor.viva(planSesion(entrada = Entrada.DIRECTO, descansoSolo = false), 25 * 60_000L + 1_000L)
+        montar()
+        esperar { existe("d-empezar") }
+
+        assertPildoraOscura("d-empezar")
+    }
+
+    @Test
+    fun `the focus greeting waits for the day context and asks for it once`() {
+        val contexto = kotlinx.coroutines.CompletableDeferred<com.alvarotc.bito.domain.habla.Contexto?>()
+        var pedidos = 0
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 1_000L)
+        banco.preparar()
+        rule.mainClock.autoAdvance = false
+        val recursos = rule.activity.resources
+        rule.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(
+                    sesion =
+                        SesionInicio(
+                            motor,
+                            aire,
+                            banco.ajustes,
+                            catalogo = com.alvarotc.bito.data.habla.CatalogoRecursos { recursos },
+                            contextoDelDia = {
+                                pedidos++
+                                contexto.await()
+                            },
+                        ),
+                    enPrimerPlano = true,
+                )
+            }
+        }
+        rule.mainClock.advanceTimeBy(100)
+        EntradaSesion.pedir(null)
+        esperar { existe("f-hecho") }
+
+        rule.mainClock.advanceTimeBy(2_000)
+        assertFalse("sin el contexto del día no se elige la frase", existe("globito"))
+        assertTrue("se pidió el contexto", pedidos >= 1)
+
+        contexto.complete(null)
+        esperar { existe("globito") }
+
+        assertEquals("y una sola vez", 1, pedidos)
+    }
+
+    @Test
+    fun `the do not disturb label is asked of the system once per stretch and not on every tick`() {
+        var lecturas = 0
+        val filtro =
+            object : com.alvarotc.bito.sesion.FiltroAndroid {
+                override fun permitido() = true
+
+                override fun actual(): Int {
+                    lecturas++
+                    return android.app.NotificationManager.INTERRUPTION_FILTER_PRIORITY
+                }
+
+                override fun poner(filtro: Int) = Unit
+            }
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 1_000L)
+        motor.registro.value = motor.registro.value!!.copy(filtroPrevio = android.app.NotificationManager.INTERRUPTION_FILTER_ALL)
+        montar { SesionInicio(motor, aire, banco.ajustes, noMolestar = com.alvarotc.bito.sesion.NoMolestar(filtro)) }
+        esperar { existe("f-hecho") }
+        assertTrue("con No molestar puesto sale su etiqueta", existe("f-et-dnd"))
+        val registro = motor.registro.value!!
+        val antes = lecturas
+
+        repeat(20) { i ->
+            val ms = 2_000L + 250L * i
+            rule.runOnUiThread {
+                motor.instante.value = RelojSesion.en(registro, Ahora(INICIO_PARED + ms, ANCLA_ELAPSED + ms))
+            }
+            rule.mainClock.advanceTimeBy(50)
+        }
+
+        assertEquals("el sistema no se pregunta con cada tic", antes, lecturas)
+    }
+}

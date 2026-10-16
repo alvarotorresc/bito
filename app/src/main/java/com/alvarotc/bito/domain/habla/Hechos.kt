@@ -134,7 +134,8 @@ data class Hechos(
             memoria: Memoria,
             ctx: Contexto,
             recordatorios: Map<String, Int>,
-        ): Hechos = deConCaros(state, memoria, ctx, recordatorios) { habit -> CarosDeHabito.calcular(state, habit, ctx) }
+            empezadas: Set<String> = emptySet(),
+        ): Hechos = deConCaros(state, memoria, ctx, recordatorios, empezadas) { habit -> CarosDeHabito.calcular(state, habit, ctx) }
 
         /**
          * Los días fuera si un registro en [dia] (con [state] aún sin él) es el primero tras la ausencia (spec §5.11):
@@ -169,6 +170,7 @@ data class Hechos(
             memoria: Memoria,
             ctx: Contexto,
             recordatorios: Map<String, Int>,
+            empezadas: Set<String> = emptySet(),
             caros: (Habit) -> CarosDeHabito,
         ): Hechos {
             val hoy = ctx.hoy
@@ -177,7 +179,7 @@ data class Hechos(
                 state.habits
                     .filter { it.status != HabitStatus.ARCHIVED && Compliance.isAliveOn(it, hoy) }
                     .map { habitoHoy(state, it, ctx, recordatorios[it.id], caros(it), it.id in conAvisoPendiente) }
-            val tareas = tareasDeHoy(state, hoy)
+            val tareas = tareasDeHoy(state, hoy, empezadas)
             val diaSellado = Sealing.isSealed(state, hoy)
             val gordo = memoria.gordo[hoy].orEmpty()
             val gordoAyerSinHacer =
@@ -268,12 +270,17 @@ data class Hechos(
                     else -> !h.hechoHoy
                 }
 
-        /** `Tasks.todayTasks` y a continuación las que se hicieron hoy. «Empezada» es un intento registrado hoy. */
+        /**
+         * `Tasks.todayTasks` y a continuación las que se hicieron hoy. «Empezada» es un intento registrado hoy o una
+         * sesión de hoy ([empezadas]: la cerrada con foco y la viva, que aún no ha escrito su fila).
+         */
         private fun tareasDeHoy(
             state: DomainState,
             hoy: LogicalDay,
+            empezadas: Set<String>,
         ): List<TareaHoy> {
-            val intentadas = state.taskEvents.filter { it.kind == TaskEventKind.ATTEMPT && it.logicalDay == hoy }.map { it.taskId }.toSet()
+            val intentadas =
+                state.taskEvents.filter { it.kind == TaskEventKind.ATTEMPT && it.logicalDay == hoy }.map { it.taskId }.toSet() + empezadas
             val abiertas =
                 Tasks.todayTasks(state, hoy).map { t ->
                     TareaHoy(
@@ -461,3 +468,14 @@ data class Hechos(
         }
     }
 }
+
+/**
+ * Los mismos hechos con las tareas de [empezadas] (las de una sesión de hoy, cerrada o viva) marcadas como empezadas.
+ * La fuente lo aplica a unos hechos ya calculados, para no depender de cómo los calcule quien se los pase.
+ */
+fun Hechos.conEmpezadas(empezadas: Set<String>): Hechos =
+    if (empezadas.isEmpty() || tareas.none { it.id in empezadas && !it.empezada }) {
+        this
+    } else {
+        copy(tareas = tareas.map { if (it.id in empezadas) it.copy(empezada = true) else it })
+    }

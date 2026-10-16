@@ -59,18 +59,6 @@ class HabiVoiceTest {
     }
 
     @Test
-    fun `taskFocusRes resolves a distinct resource per personality`() {
-        assertAllDistinctPersonalityOnly(HabiVoice::taskFocusRes)
-    }
-
-    @Test
-    fun `breathingDoneRes resolves a distinct resource per personality`() {
-        val ids = Personality.entries.map { HabiVoice.breathingDoneRes(it) }
-
-        assertEquals(Personality.entries.size, ids.toSet().size)
-    }
-
-    @Test
     fun `labelRes maps each personality to its label`() {
         assertEquals(R.string.personality_sargento, HabiVoice.labelRes(Personality.SARGENTO))
         assertEquals(R.string.personality_cheerleader, HabiVoice.labelRes(Personality.CHEERLEADER))
@@ -107,7 +95,6 @@ class HabiVoiceTest {
                 HabiVoice::perfectDayNotifRes,
                 HabiVoice::badgeUnlockedRes,
                 HabiVoice::taskDoneRes,
-                HabiVoice::taskFocusRes,
             )
         for (resolve in personalityOnlyRes) {
             assertAllDistinctPersonalityOnly(resolve)
@@ -115,16 +102,16 @@ class HabiVoiceTest {
     }
 
     /**
-     * The full 42-string mapping (12 + 12 + 3 * 6) never collides with itself — bubbleRes and
+     * The full 39-string mapping (12 + 12 + 3 * 5) never collides with itself — bubbleRes and
      * homeRes are two DIFFERENT mood-bearing contexts that intentionally give the same
      * (personality, mood) pair two different resources (e.g. the Stats commentator's
      * `habi_bubble_sargento_normal` is not the Habi screen's `habi_home_sargento_normal`), and
-     * freezerInfoRes plus the five celebration/badge/task functions are six DIFFERENT
-     * personality-only contexts, so the whole 42-id set — not just each function on its own —
+     * freezerInfoRes plus the four celebration/badge/task functions are five DIFFERENT
+     * personality-only contexts, so the whole 39-id set — not just each function on its own —
      * must have zero duplicate ids.
      */
     @Test
-    fun `the full 42-string mapping has no collisions across contexts`() {
+    fun `the full 39-string mapping has no collisions across contexts`() {
         val moodRes = listOf(HabiVoice::bubbleRes, HabiVoice::homeRes)
         val personalityOnlyRes =
             listOf(
@@ -133,13 +120,12 @@ class HabiVoiceTest {
                 HabiVoice::perfectDayNotifRes,
                 HabiVoice::badgeUnlockedRes,
                 HabiVoice::taskDoneRes,
-                HabiVoice::taskFocusRes,
             )
         val ids =
             moodRes.flatMap { fn -> Personality.entries.flatMap { p -> Mood.entries.map { m -> fn(m, p) } } } +
                 personalityOnlyRes.flatMap { fn -> Personality.entries.map { p -> fn(p) } }
 
-        assertEquals(12 + 12 + 3 * 6, ids.size)
+        assertEquals(12 + 12 + 3 * 5, ids.size)
         assertEquals(ids.size, ids.toSet().size)
     }
 

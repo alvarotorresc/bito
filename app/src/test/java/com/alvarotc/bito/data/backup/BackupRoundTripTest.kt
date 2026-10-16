@@ -15,6 +15,7 @@ import com.alvarotc.bito.data.db.HabiMemoriaEntity
 import com.alvarotc.bito.data.db.HablaUsadaEntity
 import com.alvarotc.bito.data.db.LoGordoEntity
 import com.alvarotc.bito.data.db.PropuestaVigenteEntity
+import com.alvarotc.bito.data.db.SesionEntity
 import com.alvarotc.bito.data.db.TimeBucket
 import com.alvarotc.bito.data.entryEntity
 import com.alvarotc.bito.data.freezerUseEntity
@@ -37,6 +38,7 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.model.TaskEventKind
 import com.alvarotc.bito.domain.model.TaskStatus
+import com.alvarotc.bito.domain.sesion.Entrada
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -104,6 +106,9 @@ class BackupRoundTripTest {
             badgesSeenUntilMillis = 4321L,
             // Fuera de su default (0.0): si no viajara en el fichero, el ida y vuelta lo delataria.
             gardenWaterHighMark = 37.5,
+            // Fuera de su default (RESPIRAR, false): si no viajaran, el ida y vuelta lo delataria.
+            sessionEntry = Entrada.DIRECTO,
+            sessionDnd = true,
         )
 
     @Before
@@ -204,6 +209,9 @@ class BackupRoundTripTest {
             ),
         )
 
+        db.sesionDao().insert(SesionEntity("s2", "LIBRE", null, DAY_ZERO + 1, 9_000L, 9_900_000L, 15, 1, 2, "SIN_RESPUESTA"))
+        db.sesionDao().insert(SesionEntity("s1", "TAREA", "t1", DAY_ZERO, 4_000L, 5_500_000L, 25, 2, 4, "HECHA"))
+
         settingsRepo.update { seededSettings }
     }
 
@@ -219,6 +227,7 @@ class BackupRoundTripTest {
             db.badgeDao().all().sortedBy { it.toString() },
             db.customizationItemDao().all().sortedBy { it.toString() },
             db.breathingSessionDao().all().sortedBy { it.toString() },
+            db.sesionDao().all().sortedBy { it.toString() },
         )
 
     @Test
@@ -253,7 +262,7 @@ class BackupRoundTripTest {
         runTest {
             seedEverything()
             val before = snapshotAllTables()
-            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 6", "\"schemaVersion\": 3")
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 7", "\"schemaVersion\": 3")
 
             assertFailsWith<BackupFormatException> { backup.import(older) }
 
@@ -266,12 +275,72 @@ class BackupRoundTripTest {
         runTest {
             seedEverything()
             val before = snapshotAllTables()
-            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 6", "\"schemaVersion\": 4")
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 7", "\"schemaVersion\": 4")
 
             assertFailsWith<BackupFormatException> { backup.import(older) }
 
             assertEquals(before, snapshotAllTables())
             assertEquals(seededSettings, settingsRepo.settings.first())
+        }
+
+    @Test
+    fun `a version 6 backup is rejected before anything is wiped`() =
+        runTest {
+            seedEverything()
+            val before = snapshotAllTables()
+            val older = backup.exportJson(nowMillis = 1_000L).replace("\"schemaVersion\": 7", "\"schemaVersion\": 6")
+
+            assertFailsWith<BackupFormatException> { backup.import(older) }
+
+            assertEquals(before, snapshotAllTables())
+        }
+
+    @Test
+    fun `backup round trip keeps sessions and the two new settings`() =
+        runTest {
+            seedEverything()
+            val exported = backup.exportJson(nowMillis = 1_000L)
+            assertTrue(exported.contains("\"sessionEntry\": \"DIRECTO\""))
+            db.sesionDao().deleteAll()
+            settingsRepo.update { it.copy(sessionEntry = Entrada.RESPIRAR, sessionDnd = false) }
+
+            backup.import(exported)
+
+            assertEquals(listOf("s1", "s2"), db.sesionDao().all().map { it.id }.sorted())
+            val back = settingsRepo.settings.first()
+            assertEquals(Entrada.DIRECTO, back.sessionEntry)
+            assertTrue(back.sessionDnd)
+            assertEquals(2, backup.preview(exported).sesiones)
+        }
+
+    @Test
+    fun `restoring calls cerrarSesionViva first`() =
+        runTest {
+            seedEverything()
+            val exported = backup.exportJson(nowMillis = 1_000L)
+            var sesionesAlLlamar = -1
+            val conHook =
+                BackupRepository(
+                    db,
+                    settingsRepo,
+                    keyStore,
+                    "0.3.0-test",
+                    cerrarSesionViva = { sesionesAlLlamar = db.sesionDao().all().size },
+                )
+
+            conHook.import(exported)
+
+            // Todavia estaban las dos filas: el hook corre antes de vaciar nada.
+            assertEquals(2, sesionesAlLlamar)
+        }
+
+    @Test
+    fun `a corrupt file does not call cerrarSesionViva`() =
+        runTest {
+            var llamado = false
+            val conHook = BackupRepository(db, settingsRepo, keyStore, "0.3.0-test", cerrarSesionViva = { llamado = true })
+            assertFailsWith<BackupFormatException> { conHook.import("garbage") }
+            assertEquals(false, llamado)
         }
 
     @Test

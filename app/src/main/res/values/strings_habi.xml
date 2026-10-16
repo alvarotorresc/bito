@@ -101,23 +101,6 @@
     <string name="habi_task_done_cheerleader_sin_nombre">Gone! That feels good.</string>
     <string name="habi_task_done_neutra">Done, %1$s.</string>
     <string name="habi_task_done_neutra_sin_nombre">Done.</string>
-    <!-- habi_breathing_done_* — M11, the closing line after a breathing session, complete or stopped.
-         None congratulates on "making it", none scolds for stopping, none promises calm or sleep. -->
-    <string name="habi_breathing_done_sargento">Well breathed, %1$s. Back to it.</string>
-    <string name="habi_breathing_done_sargento_sin_nombre">Well breathed. Back to it.</string>
-    <string name="habi_breathing_done_cheerleader">That felt good, %1$s!</string>
-    <string name="habi_breathing_done_cheerleader_sin_nombre">That felt good!</string>
-    <string name="habi_breathing_done_neutra">There, %1$s.</string>
-    <string name="habi_breathing_done_neutra_sin_nombre">There.</string>
-
-    <!-- habi_task_focus_* — T19, FocusScreen's entrance line, spoken once when a session starts.
-         %1$s = the user's name, %2$d = the chosen minutes; only sargento uses %2$d. -->
-    <string name="habi_task_focus_sargento">%1$s, %2$d minutes. Begin.</string>
-    <string name="habi_task_focus_sargento_sin_nombre">%2$d minutes. Begin.</string>
-    <string name="habi_task_focus_cheerleader">Here we go, %1$s! I\'m right here with you.</string>
-    <string name="habi_task_focus_cheerleader_sin_nombre">Here we go! I\'m right here with you.</string>
-    <string name="habi_task_focus_neutra">I\'m here, %1$s. Go ahead.</string>
-    <string name="habi_task_focus_neutra_sin_nombre">I\'m here. Go ahead.</string>
 
     <string name="store_title">Store</string>
     <string name="store_axis_colors">Colors</string>

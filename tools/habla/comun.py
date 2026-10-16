@@ -32,7 +32,7 @@ def voz_de(ruta):
 
 def grupo_de(ruta):
     partes = os.path.basename(ruta).split(".")
-    if len(partes) >= 3 and re.fullmatch(r"[A-F]", partes[0]):
+    if len(partes) >= 3 and re.fullmatch(r"[A-G]", partes[0]):
         return partes[0]
     return None
 

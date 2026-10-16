@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.AppContainer
+import com.alvarotc.bito.ContenedoresDeSesion
 import com.alvarotc.bito.data.db.EntryEntity
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.habla.aDominio
@@ -21,6 +22,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -36,6 +38,9 @@ import java.time.ZoneId
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = Application::class)
 class VueltaDesdeLaListaTest {
+    @get:Rule
+    val sesiones = ContenedoresDeSesion()
+
     private val app get() = ApplicationProvider.getApplicationContext<Application>()
     private val zona = ZoneId.systemDefault()
     private val hoy = LogicalDays.logicalDayOf(System.currentTimeMillis(), 0, zona)
@@ -48,7 +53,7 @@ class VueltaDesdeLaListaTest {
 
     @Before
     fun setUp() {
-        c = AppContainer(app)
+        c = sesiones.registrar(AppContainer(app))
         runBlocking {
             c.settings.update { it.copy(onboardingDone = true, dayCutoffMinutes = 0) }
             c.habits.create(habitEntity(id = "agua", name = "Agua", createdOnDay = hoy - 20))

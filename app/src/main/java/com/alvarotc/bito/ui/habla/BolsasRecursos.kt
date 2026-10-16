@@ -310,6 +310,83 @@ object BolsasRecursos {
                 )
             Bolsa.AV_AUSENCIA ->
                 trio(voz, R.array.habla_av_ausencia_sargento, R.array.habla_av_ausencia_cheerleader, R.array.habla_av_ausencia_neutra)
+            Bolsa.SE_ENTRAR ->
+                trio(
+                    voz,
+                    R.array.habla_se_entrar_sargento,
+                    R.array.habla_se_entrar_cheerleader,
+                    R.array.habla_se_entrar_neutra,
+                )
+            Bolsa.DE_HABITO ->
+                trio(
+                    voz,
+                    R.array.habla_de_habito_sargento,
+                    R.array.habla_de_habito_cheerleader,
+                    R.array.habla_de_habito_neutra,
+                )
+            Bolsa.DE_HABITO_LARGO ->
+                trio(
+                    voz,
+                    R.array.habla_de_habito_largo_sargento,
+                    R.array.habla_de_habito_largo_cheerleader,
+                    R.array.habla_de_habito_largo_neutra,
+                )
+            Bolsa.DE_SIN_PENDIENTES ->
+                trio(
+                    voz,
+                    R.array.habla_de_sin_pendientes_sargento,
+                    R.array.habla_de_sin_pendientes_cheerleader,
+                    R.array.habla_de_sin_pendientes_neutra,
+                )
+            Bolsa.SE_HECHA_TAREA ->
+                trio(
+                    voz,
+                    R.array.habla_se_hecha_tarea_sargento,
+                    R.array.habla_se_hecha_tarea_cheerleader,
+                    R.array.habla_se_hecha_tarea_neutra,
+                )
+            Bolsa.SE_HECHA_HABITO ->
+                trio(
+                    voz,
+                    R.array.habla_se_hecha_habito_sargento,
+                    R.array.habla_se_hecha_habito_cheerleader,
+                    R.array.habla_se_hecha_habito_neutra,
+                )
+            Bolsa.CE_MEJOR ->
+                trio(
+                    voz,
+                    R.array.habla_ce_mejor_sargento,
+                    R.array.habla_ce_mejor_cheerleader,
+                    R.array.habla_ce_mejor_neutra,
+                )
+            Bolsa.CE_IGUAL ->
+                trio(
+                    voz,
+                    R.array.habla_ce_igual_sargento,
+                    R.array.habla_ce_igual_cheerleader,
+                    R.array.habla_ce_igual_neutra,
+                )
+            Bolsa.CE_CUESTA ->
+                trio(
+                    voz,
+                    R.array.habla_ce_cuesta_sargento,
+                    R.array.habla_ce_cuesta_cheerleader,
+                    R.array.habla_ce_cuesta_neutra,
+                )
+            Bolsa.RE_FIN_RESPIRAR ->
+                trio(
+                    voz,
+                    R.array.habla_re_fin_respirar_sargento,
+                    R.array.habla_re_fin_respirar_cheerleader,
+                    R.array.habla_re_fin_respirar_neutra,
+                )
+            Bolsa.RE_RESPIRAR_MEJOR ->
+                trio(
+                    voz,
+                    R.array.habla_re_respirar_mejor_sargento,
+                    R.array.habla_re_respirar_mejor_cheerleader,
+                    R.array.habla_re_respirar_mejor_neutra,
+                )
         }
 
     @ArrayRes

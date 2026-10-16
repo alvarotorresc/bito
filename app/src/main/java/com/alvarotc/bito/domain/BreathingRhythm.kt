@@ -57,15 +57,28 @@ object BreathingRhythm {
             BreathingMode.FOCUS -> 8
         }
 
-    fun totalMillis(mode: BreathingMode): Long = cycleMillis(mode) * cycles(mode)
+    fun totalMillis(mode: BreathingMode): Long = totalMillis(mode, cycles(mode))
+
+    /** Lo mismo con otro numero de ciclos: la sesion entra con 6 de Calmarme (60 s). */
+    fun totalMillis(
+        mode: BreathingMode,
+        ciclos: Int,
+    ): Long = cycleMillis(mode) * ciclos
 
     fun at(
         mode: BreathingMode,
         elapsedMillis: Long,
+    ): Point = at(mode, elapsedMillis, cycles(mode))
+
+    /** Lo mismo con otro numero de ciclos (la entrada de la sesion, 6 de Calmarme). */
+    fun at(
+        mode: BreathingMode,
+        elapsedMillis: Long,
+        ciclos: Int,
     ): Point {
         val stepList = steps(mode)
-        val cycleCount = cycles(mode)
-        val total = totalMillis(mode)
+        val cycleCount = ciclos
+        val total = totalMillis(mode, ciclos)
         val t = elapsedMillis.coerceAtLeast(0L)
         if (t >= total) {
             return Point(

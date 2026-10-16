@@ -12,6 +12,7 @@ import com.alvarotc.bito.domain.model.Metric
 import com.alvarotc.bito.domain.model.Period
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
+import com.alvarotc.bito.domain.sesion.Entrada
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -47,6 +48,7 @@ class BackupCodecTest {
                     BackupHabiMemoria("m2", "HECHO", 101, "agua", null, 12L),
                 ),
             loGordo = listOf(BackupLoGordo(100, 0, "HABITO", "agua", 13L)),
+            sesiones = listOf(BackupSesion("s1", "TAREA", "t1", 100, 14L, 15L, 25, 1, 4, "HECHA")),
             settings =
                 BackupSettings(
                     userName = "Alvaro", dayCutoffMinutes = 180, languageTag = "es",
@@ -59,6 +61,7 @@ class BackupCodecTest {
                     dndToMinutes = 7 * 60 + 30, pomoFocus = 25, pomoShort = 5, pomoLong = 15, pomoRounds = 4,
                     pomoAutoBreak = true, soundEnabled = true, volHabi = 8, volEffects = 7, volAmbient = 6,
                     vibStrength = 7, sessionBackground = SessionBackground.RAIN, reduceMotion = false,
+                    sessionEntry = Entrada.RESPIRAR, sessionDnd = false,
                 ),
         )
 
@@ -72,7 +75,7 @@ class BackupCodecTest {
     fun `encoded backup is human readable json`() {
         val text = BackupCodec.encode(sampleFile())
         assertTrue(text.contains("\n")) // pretty-printed (§5.1 data sovereignty)
-        assertTrue(text.contains("\"schemaVersion\": 6"))
+        assertTrue(text.contains("\"schemaVersion\": 7"))
         assertTrue(text.contains("\"Beber agua\""))
     }
 
@@ -91,7 +94,7 @@ class BackupCodecTest {
     @Test
     fun `preview counts what the confirmation sheet shows`() {
         val preview = BackupCodec.decode(BackupCodec.encode(sampleFile())).toPreview()
-        assertEquals(BackupPreview("2026-08-15T10:00:00Z", "0.3.0", 1, 1, 2), preview)
+        assertEquals(BackupPreview("2026-08-15T10:00:00Z", "0.3.0", 1, 1, 2, 1), preview)
     }
 
     @Test
@@ -121,26 +124,33 @@ class BackupCodecTest {
     }
 
     @Test
-    fun `the schema version is 6 since the memory of Habi`() {
-        assertEquals(6, BackupCodec.SCHEMA_VERSION)
+    fun `the schema version is 7 since the focus sessions`() {
+        assertEquals(7, BackupCodec.SCHEMA_VERSION)
+    }
+
+    @Test
+    fun `a version 6 file is rejected as older, not imported`() {
+        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 7", "\"schemaVersion\": 6")
+        val error = assertFailsWith<BackupFormatException> { BackupCodec.decode(older) }
+        assertTrue(error.message!!.contains("older"))
     }
 
     @Test
     fun `a version 5 file is rejected as older, not imported`() {
-        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 6", "\"schemaVersion\": 5")
+        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 7", "\"schemaVersion\": 5")
         val error = assertFailsWith<BackupFormatException> { BackupCodec.decode(older) }
         assertTrue(error.message!!.contains("older"))
     }
 
     @Test
     fun `a version 4 file is rejected as older, not imported`() {
-        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 6", "\"schemaVersion\": 4")
+        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 7", "\"schemaVersion\": 4")
         assertFailsWith<BackupFormatException> { BackupCodec.decode(older) }
     }
 
     @Test
     fun `a version 3 file is rejected as older, not imported`() {
-        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 6", "\"schemaVersion\": 3")
+        val older = BackupCodec.encode(sampleFile()).replace("\"schemaVersion\": 7", "\"schemaVersion\": 3")
         val error = assertFailsWith<BackupFormatException> { BackupCodec.decode(older) }
         assertTrue(error.message!!.contains("older"))
     }

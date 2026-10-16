@@ -76,10 +76,13 @@ import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.GrowthStage
+import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.ui.habi.ColorTint
 import com.alvarotc.bito.ui.habi.HabiArt
 import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiBreath
 import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.SondaSalto
 import com.alvarotc.bito.ui.habi.rememberArte
 import com.alvarotc.bito.ui.premios.ClavesAncla
 import com.alvarotc.bito.ui.premios.LocalAnclas
@@ -181,6 +184,9 @@ internal class SondaJardin {
     var wiltDibujado: () -> Float = { 0f }
     var saltosHabi: () -> Int = { 0 }
 
+    /** El salto de Habi pedido con amplitud, como se dibuja. */
+    val salto = SondaSalto()
+
     /** Cuántas veces se ha aplastado Habi para dormirse («Hasta mañana»). */
     var aplastadosHabi: () -> Int = { 0 }
 
@@ -198,6 +204,39 @@ internal class SondaJardin {
 
     /** Las claves de los especiales que se han destacado, en orden. */
     val destacados = mutableListOf<String>()
+
+    /** El estiramiento de Habi que respira, leído como al dibujar (1, 1 sin respiración). */
+    var estiramientoHabi: () -> EstiramientoHabi = { EstiramientoHabi(1f, 1f, 1f) }
+
+    /** El cierre de los ojos que se le pide a Habi: 1 mientras respira, 0 si no. */
+    var ojosCerradosHabi: () -> Float = { 0f }
+
+    /** El ánimo con el que se pinta a Habi (radiante en Terminada, el del día fuera de ella). */
+    var moodHabi: () -> Mood = { Mood.NORMAL }
+
+    /** Cuántas veces se ha recompuesto el jardín compartido: el Inicio no ha de recomponerse con cada tic de la sesión. */
+    var recomposiciones: Int = 0
+}
+
+/** La escala de Habi que respira, con su origen vertical (fracción de su lienzo) en los pies. */
+internal data class EstiramientoHabi(val scaleX: Float, val scaleY: Float, val origenY: Float)
+
+// Respirar (spec §3.3.3): Habi se estira 0,054 en alto y la mitad en ancho; reducido, a media amplitud.
+private const val ESTIRA_RESPIRA = 0.054f
+private const val ESTIRA_RESPIRA_REDUCIDO = 0.027f
+
+// Los ojos cerrados y quieto de la respiración: sin la respiración propia de Habi, que la lleva la escena.
+private val RESPIRA_OJOS_CERRADOS = HabiBreath(fill = 0f, amplitude = 0f, eyeClosure = 1f)
+
+/** `respirarHabi()` del mock: con el llenado [fill] (0..1), `scaleY = 1 + a·(2f − 1)` y `scaleX = 1 − a/2·(2f − 1)`. */
+internal fun estiramientoRespiracion(
+    fill: Float,
+    reducido: Boolean,
+    origenY: Float,
+): EstiramientoHabi {
+    val a = if (reducido) ESTIRA_RESPIRA_REDUCIDO else ESTIRA_RESPIRA
+    val k = 2f * fill.coerceIn(0f, 1f) - 1f
+    return EstiramientoHabi(scaleX = 1f - a * 0.5f * k, scaleY = 1f + a * k, origenY = origenY)
 }
 
 internal val LocalSondaJardin = staticCompositionLocalOf<SondaJardin?> { null }
@@ -301,6 +340,11 @@ fun GardenScene(
     aplastarHabi: Int = 0,
     // Habi duerme (Hoy de noche, día sellado): tocarlo lo aplasta un 4 % en vez de hacerlo saltar (G17, §5.10).
     dormido: Boolean = false,
+    // La sesión: el llenado de la respiración (0..1), leído al dibujar. No nulo = Habi con los ojos cerrados, sin
+    // parpadeo ni gestos propios, estirándose desde los pies con cada fotograma (spec §3.3.3, §8.2 y §13).
+    respiracion: (() -> Float)? = null,
+    // La amplitud (fracción del alto de Habi) del salto de cada incremento de [saltoHabi]; null = el salto de siempre.
+    saltoAmplitud: Float? = null,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -325,6 +369,7 @@ fun GardenScene(
     var globo by remember { mutableStateOf<GlobitoDePlanta?>(null) }
     var globoTick by remember { mutableIntStateOf(0) }
     var habiNudge by remember { mutableIntStateOf(0) }
+    var habiAmplitud by remember { mutableStateOf<Float?>(null) }
     var habiTouch by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
     LaunchedEffect(bubble, bubbleTick) {
         if (bubble != null) {
@@ -376,6 +421,7 @@ fun GardenScene(
         } else {
             gesto(Snd.PLANTA, Haptica.TICK)
             if (!reducido) {
+                habiAmplitud = null
                 habiNudge++
                 garden.plots.indices.forEach { i ->
                     launch {
@@ -391,7 +437,10 @@ fun GardenScene(
     // Habi salta por el mismo camino que el toque; solo una subida cuenta (el valor inicial ya está contestado).
     var ultimoSalto by remember { mutableIntStateOf(saltoHabi) }
     LaunchedEffect(saltoHabi) {
-        if (saltoHabi > ultimoSalto) habiNudge++
+        if (saltoHabi > ultimoSalto) {
+            habiAmplitud = saltoAmplitud
+            habiNudge++
+        }
         ultimoSalto = saltoHabi
     }
 
@@ -402,7 +451,12 @@ fun GardenScene(
         val sube = fiesta > ultimaFiesta
         ultimaFiesta = fiesta
         if (!sube) return@LaunchedEffect
-        if (!reducido) habiNudge++
+        if (!reducido) {
+            run {
+                habiAmplitud = null
+                habiNudge++
+            }
+        }
         garden.plots.indices.forEach { i ->
             launch {
                 delay(OLA_MS * i)
@@ -455,7 +509,12 @@ fun GardenScene(
         val idx = creciendo ?: return@LaunchedEffect
         val plot = jardinActual.plots.getOrNull(idx) ?: return@LaunchedEffect
         gesto(Snd.BROTE, Haptica.TICKS)
-        if (plot.stage == GrowthStage.SEED) habiNudge++
+        if (plot.stage == GrowthStage.SEED) {
+            run {
+                habiAmplitud = null
+                habiNudge++
+            }
+        }
         launch { crece.fundido.animateTo(1f, tween(if (reducido) Duraciones.REDUCIDO else VIEJA_MS)) }
         launch { crece.p.animateTo(1f, if (reducido) tween(Duraciones.REDUCIDO) else Muelles.hoja<Float>()) }
         delay(VIEJA_MS.toLong())
@@ -515,6 +574,7 @@ fun GardenScene(
     SideEffect {
         sonda?.wiltDibujado = { wiltAnim.value }
         sonda?.saltosHabi = { habiNudge }
+        sonda?.moodHabi = { spec.mood }
         sonda?.aplastadosHabi = { aplastados }
         sonda?.noche = { nocheAhora() }
         sonda?.arteListo = { listoAhora }
@@ -608,13 +668,37 @@ fun GardenScene(
         }
 
         val density = LocalDensity.current
+        // Los pies de Habi dentro de su lienzo: el origen del estiramiento de la respiración.
+        val piesHabi = (sceneH * habiDepth / 100f - habi.top) / habi.height
+        val respira = respiracion
+        // Lo que se le pasa a HabiAvatar: la sonda lee este mismo valor, no una copia.
+        val respiraHabi = if (respira != null) RESPIRA_OJOS_CERRADOS else null
+        SideEffect {
+            sonda?.estiramientoHabi = {
+                respira?.let { estiramientoRespiracion(it(), reducido, piesHabi) } ?: EstiramientoHabi(1f, 1f, piesHabi)
+            }
+            sonda?.ojosCerradosHabi = { respiraHabi?.eyeClosure ?: 0f }
+        }
         HabiAvatar(
             spec = spec,
+            breath = respiraHabi,
             modifier =
                 Modifier
                     .offset { IntOffset(habi.left.roundToInt(), habi.top.roundToInt()) }
                     .size(with(density) { habi.width.toDp() }, with(density) { habi.height.toDp() })
-                    .graphicsLayer {
+                    .then(
+                        if (respira == null) {
+                            Modifier
+                        } else {
+                            // El llenado se lee aquí, en la fase de dibujo: respirar no recompone (riesgo 8).
+                            Modifier.graphicsLayer {
+                                val e = estiramientoRespiracion(respira(), reducido, piesHabi)
+                                transformOrigin = TransformOrigin(0.5f, e.origenY)
+                                scaleX = e.scaleX
+                                scaleY = e.scaleY
+                            }
+                        },
+                    ).graphicsLayer {
                         val a = aplastado.value
                         transformOrigin = TransformOrigin(0.5f, 1f)
                         scaleY = a
@@ -627,6 +711,8 @@ fun GardenScene(
             delighted = delighted,
             nudge = habiNudge,
             nudgeTouch = habiTouch,
+            nudgeSalto = habiAmplitud,
+            sondaSalto = sonda?.salto,
         )
 
         // La capa de delante recoge todos los toques: la caja del lienzo de Habi es mucho mayor que su
@@ -661,7 +747,14 @@ fun GardenScene(
                                             ((action.y - habi.top) / habi.height).coerceIn(0f, 1f),
                                         )
                                     // Dormido (G17) solo se aplasta: el tick y el aviso los da quien recibe el toque.
-                                    if (dormidoAhora) aplastarHabiAhora() else habiNudge++
+                                    if (dormidoAhora) {
+                                        aplastarHabiAhora()
+                                    } else {
+                                        run {
+                                            habiAmplitud = null
+                                            habiNudge++
+                                        }
+                                    }
                                     alTocarHabi()
                                 }
                             is SceneTap.Sway -> {

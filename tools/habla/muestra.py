@@ -26,6 +26,11 @@ ESCENARIOS = [
      "habito": "Estiramientos largos", "tarea": "Renovar el carné", "n": 4},
 ]
 
+# Modos de respirar para `{modo}` (ES, EN); cada escenario usa uno.
+MODOS = [("Calmarme", "Calm"), ("Dormir", "Sleep"), ("Centrarme", "Focus")]
+for _i, _esc in enumerate(ESCENARIOS):
+    _esc["modo"] = MODOS[_i % len(MODOS)]
+
 
 def _valores(esc, idioma):
     v = {
@@ -35,6 +40,7 @@ def _valores(esc, idioma):
         "dia_semana": "lunes" if idioma == "es" else "Monday", "hechos": 3, "total": 5,
         "mejor": 21, "pct": 80, "objetivo": 30, "fecha": "3 de noviembre" if idioma == "es" else "November 3",
         "lista": [esc["tarea"], "Regar las plantas", "Llamar a mamá"],
+        "modo": esc["modo"][0] if idioma == "es" else esc["modo"][1],
     }
     if esc["nombre"]:
         v["nombre"] = esc["nombre"]

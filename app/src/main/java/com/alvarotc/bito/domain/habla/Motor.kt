@@ -2,6 +2,7 @@ package com.alvarotc.bito.domain.habla
 
 import com.alvarotc.bito.domain.habla.reglas.ReglaAyerSeEscapo
 import com.alvarotc.bito.domain.habla.reglas.ReglaCerrarDia
+import com.alvarotc.bito.domain.habla.reglas.ReglaDescanso
 import com.alvarotc.bito.domain.habla.reglas.ReglaDiaDuro
 import com.alvarotc.bito.domain.habla.reglas.ReglaDiaFlojo
 import com.alvarotc.bito.domain.habla.reglas.ReglaElegirGordo
@@ -18,13 +19,14 @@ import com.alvarotc.bito.domain.habla.reglas.ReglasCierre
 import com.alvarotc.bito.domain.habla.reglas.ReglasFicha
 import com.alvarotc.bito.domain.habla.reglas.Respuestas
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.propuestas.Respuesta
 
 /**
  * Elige qué dice Habi en un ámbito (spec §4.3, §5.2): la primera situación de [Prioridades] con
  * candidatas que pase los enfriamientos. La ficha, Camino y el cierre salen de sus reglas; el
- * descanso no dice nada.
+ * descanso, de [ReglaDescanso] (necesita el [ContextoDescanso]; sin él no dice nada).
  */
 object Motor {
     fun elegir(
@@ -33,14 +35,23 @@ object Motor {
         m: Memoria,
         ctx: Contexto,
         habitId: String? = null,
+        descanso: ContextoDescanso? = null,
     ): Candidata? =
         when (ambito) {
             Ambito.HOY -> elegirHoy(h, m, ctx)
             Ambito.FICHA -> elegirFicha(h, m, ctx, habitId)
             Ambito.CAMINO -> primeraPorPrioridad(Prioridades.CAMINO, ReglasCamino.candidatas(h, m, ctx))
             Ambito.CIERRE -> primeraPorPrioridad(Prioridades.CIERRE, ReglasCierre.candidatas(h, m, ctx))
-            Ambito.DESCANSO -> null
+            Ambito.DESCANSO -> descanso?.let { ReglaDescanso.candidata(h, m, ctx, it) }
         }
+
+    /** El descanso de la sesión: es el camino que usa la fuente (el motor inyectable de Hoy y la ficha no lo conoce). */
+    fun elegirDescanso(
+        h: Hechos,
+        m: Memoria,
+        ctx: Contexto,
+        descanso: ContextoDescanso,
+    ): Candidata = ReglaDescanso.candidata(h, m, ctx, descanso)
 
     /** Las reglas de Hoy, por situación. */
     internal val REGLAS_HOY: Map<Situacion, Regla> =
@@ -63,6 +74,7 @@ object Motor {
     private const val MILLIS_MIN = 60_000L
     private const val FICHA_OCULTA_DIAS = 7
     private const val ANIMO_REGULAR = 1
+    private const val COMO_ESTAS_CUESTA = 2
     private val POR_PESO = compareByDescending<Candidata> { it.peso }.thenBy { it.ref }
     private val RESPUESTAS_QUE_ESPERAN = setOf(Respuesta.VALE, Respuesta.AHORA, Respuesta.LUEGO, Respuesta.HOY_NO)
 
@@ -91,7 +103,9 @@ object Motor {
                     .filterNot { proponeLimiteODejar(it, h) }
                     .filter { if (situacion.cuentaTope) !bloqueadas && !descartadaHoy(it, m, ctx) else !luegoReciente(it, m, ctx) }
             if (validas.isEmpty()) continue
-            val regular = h.animoAyer == ANIMO_REGULAR && situacion.cuentaTope && primeraDelDia
+            val regular =
+                situacion.cuentaTope &&
+                    ((h.animoAyer == ANIMO_REGULAR && primeraDelDia) || cuestaTrasRespirar(m, ctx))
             val elegida = if (regular) masCorta(validas, h) else validas.sortedWith(POR_PESO).first()
             return sinHoraSiHayDosAvisos(elegida, m, ctx)
         }
@@ -205,6 +219,21 @@ object Motor {
     }
 
     private fun respuestaDe(e: EventoMemoria): Respuesta? = e.valor?.let { Respuesta.entries.getOrNull(it) }
+
+    /**
+     * §21.10: «Aún me cuesta» en «¿Cómo estás ahora?» hace que la siguiente propuesta con botones de ese día sea la más
+     * corta. Vale mientras no se haya mostrado, desde la última respuesta así, ninguna que cuente para el tope.
+     */
+    private fun cuestaTrasRespirar(
+        m: Memoria,
+        ctx: Contexto,
+    ): Boolean {
+        val cuesta =
+            m.eventos
+                .filter { it.tipo == TipoMemoria.COMO_ESTAS && it.dia == ctx.hoy && it.valor == COMO_ESTAS_CUESTA }
+                .maxOfOrNull { it.creadoMillis } ?: return false
+        return m.mostradasHoy.none { it.situacion.cuentaTope && it.millis >= cuesta }
+    }
 
     /** Dejar del todo y dejar con límite nunca se proponen, lo diga la regla que lo diga. */
     private fun proponeLimiteODejar(

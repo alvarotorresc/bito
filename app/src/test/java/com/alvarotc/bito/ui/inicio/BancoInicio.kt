@@ -32,6 +32,9 @@ import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabiNulo
 import com.alvarotc.bito.ui.premios.CelebracionesViewModel
 import com.alvarotc.bito.ui.premios.RegistroAnclas
+import com.alvarotc.bito.ui.sesion.BloqueDeSesion
+import com.alvarotc.bito.ui.sesion.BloqueSesion
+import com.alvarotc.bito.ui.sesion.SesionInicio
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
@@ -86,7 +89,6 @@ internal class BancoInicio(
             abrirTareas = { llamadas += "tareas" },
             crearHabito = { llamadas += "crearHabito" },
             crearTarea = { llamadas += "crearTarea" },
-            abrirRuta = { llamadas += "ruta:$it" },
         )
 
     private fun almacen(nombre: String): DataStore<Preferences> =
@@ -186,6 +188,8 @@ internal class BancoInicio(
         alCierreVisto: () -> Unit = {},
         gordo: Boolean = false,
         alGordoVisto: () -> Unit = {},
+        sesion: SesionInicio? = null,
+        contenidoSesion: @Composable (BloqueSesion) -> Unit = { BloqueDeSesion(it) },
     ) = CompositionLocalProvider(LocalSondaJardin provides sonda) {
         InicioScreen(
             hoy,
@@ -201,6 +205,8 @@ internal class BancoInicio(
             cierreViewModel = cierre,
             gordo = gordo,
             alGordoVisto = alGordoVisto,
+            sesion = sesion,
+            contenidoSesion = contenidoSesion,
         )
     }
 }

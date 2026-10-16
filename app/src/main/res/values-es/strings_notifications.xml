@@ -84,10 +84,6 @@
 
     <string name="notif_perfect_day_title">Día perfecto</string>
 
-    <!-- Bandeja de la sesion de foco: la permanente mientras dura, y la de un solo toque al acabar. -->
-    <string name="notif_focus_running">En marcha</string>
-    <string name="notif_focus_over">Se acabó el tiempo</string>
-
     <!--
         Aviso de TAREAS de mediodia, con la voz de Habi. Titulos: %1$s = nombre del usuario, %2$d = cuantas tareas. El
         cuerpo en si son los titulos nombrados, unidos por quien llama, no un recurso — este

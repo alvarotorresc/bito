@@ -7,11 +7,13 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.runtime.getValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.lifecycleScope
 import com.alvarotc.bito.ui.AppVisibility
 import com.alvarotc.bito.ui.BitoNavHost
 import com.alvarotc.bito.ui.NavRequests
 import com.alvarotc.bito.ui.notifications.Notifier
 import com.alvarotc.bito.ui.theme.BitoTheme
+import kotlinx.coroutines.launch
 
 // AppCompatActivity, not ComponentActivity: per-app language needs somewhere to persist the
 // chosen locale that survives process death and applies before the first frame, and this class
@@ -59,6 +61,8 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         AppVisibility.visible = true
+        // La sesión viva vuelve al motor desde cualquier pantalla, no solo desde el Inicio.
+        lifecycleScope.launch { runCatching { AppStartup.recuperarMotor((application as BitoApp).container) } }
     }
 
     override fun onStop() {
