@@ -381,8 +381,16 @@ object Notifier {
         notify(context, FOCUS_ID, builder)
     }
 
-    /** Clears the focus tray. */
-    fun cancelFocus(context: Context) = NotificationManagerCompat.from(context).cancel(FOCUS_ID)
+    /**
+     * Clears the old focus notice. Shares [FOCUS_ID] with the session notice, so it only cancels what is the old
+     * focus one (channel `reminders`): a session notice, or its end, is never taken down from here.
+     */
+    @SuppressLint("MissingPermission")
+    fun cancelFocus(context: Context) {
+        val manager = NotificationManagerCompat.from(context)
+        val activo = manager.activeNotifications.firstOrNull { it.id == FOCUS_ID } ?: return
+        if (activo.notification.channelId == NotificationChannels.REMINDERS) manager.cancel(FOCUS_ID)
+    }
 
     /**
      * El aviso fijo de la sesión (pieza 5): canal `sesion`, fijo, público, sin sonido ni botones. Con

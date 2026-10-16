@@ -17,7 +17,7 @@ object NotificationChannels {
     /** El canal del repaso diario, que los avisos de Habi sustituyen (spec §6.4). Se borra, no hay usuarios que conservar. */
     private const val REVIEW_ANTIGUO = "review"
 
-    /** Creates all the channels if missing and drops the old review one. Idempotent — safe to call on every app start and before every notification. */
+    /** Creates all the channels if missing and drops the old review one. Idempotent, safe to call on every app start and before every notification. */
     fun ensure(context: Context) {
         val manager = NotificationManagerCompat.from(context)
         manager.deleteNotificationChannel(REVIEW_ANTIGUO)
