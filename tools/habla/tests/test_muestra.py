@@ -20,6 +20,21 @@ def tsv_valido():
 
 
 class MuestraTest(unittest.TestCase):
+    def test_hueco_modo_con_los_tres_modos(self):
+        filas = [f"re_respirar_mejor\t{i}\t\tTras {{modo}} {i} vas mejor.\tAfter {{modo}} {i} you feel better." for i in range(6)]
+        d = tempfile.mkdtemp()
+        ruta = os.path.join(d, "G.neutra.tsv")
+        with open(ruta, "w", encoding="utf-8") as f:
+            f.write(CAB + "".join(l + "\n" for l in filas))
+        det = muestra.componer_detalle(ruta, n=6, semilla=1)
+        self.assertEqual(6, len(det))
+        es = " ".join(x["es"] for x in det)
+        en = " ".join(x["en"] for x in det)
+        for m in ("Calmarme", "Dormir", "Centrarme"):
+            self.assertIn(m, es)
+        for m in ("Calm", "Sleep", "Focus"):
+            self.assertIn(m, en)
+
     def test_treinta_frases_deterministas_y_sin_marcas(self):
         ruta = tsv_valido()
         a = muestra.componer(ruta, n=30, semilla=1)
