@@ -236,6 +236,7 @@ fun TerminadaContenido(sonda: SondaTerminada? = null) {
             estilo = EstiloBoton.PRINCIPAL,
             alto = Medidas.botonHoja,
             llena = true,
+            pildoraMock = true,
         )
     }
 

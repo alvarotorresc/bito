@@ -228,4 +228,37 @@ class InicioRespirarFocoTest {
         assertFalse(rule.onAllNodes(hasText("Sigue en marcha", substring = true)).fetchSemanticsNodes().isNotEmpty())
         esperar { banco.sonda.moodHabi() == Mood.NORMAL }
     }
+
+    /** Todo `.pill.main` del mock: tinta oscura con letra clara de 16 sp (en `.btnrow.llena`). */
+    private fun assertPildoraOscura(tag: String) {
+        val estilo = estiloDe(tag)
+        assertEquals("$tag a 16 sp", 16f, estilo.fontSize.value, 0f)
+        assertEquals("$tag con letra clara", androidx.compose.ui.graphics.Color(0xFFF4EAD8), estilo.color)
+    }
+
+    @Test
+    fun `Empezar in prepare is the dark mock pill`() {
+        montar()
+        esperar { existe("p-empezar") }
+
+        assertPildoraOscura("p-empezar")
+    }
+
+    @Test
+    fun `Si terminado in finished is the dark mock pill`() {
+        motor.viva(planSesion(bloques = 1, entrada = Entrada.DIRECTO), 60 * 60_000L)
+        montar()
+        esperar { existe("t-si") }
+
+        assertPildoraOscura("t-si")
+    }
+
+    @Test
+    fun `Empezar el descanso is the dark mock pill`() {
+        motor.viva(planSesion(entrada = Entrada.DIRECTO, descansoSolo = false), 25 * 60_000L + 1_000L)
+        montar()
+        esperar { existe("d-empezar") }
+
+        assertPildoraOscura("d-empezar")
+    }
 }

@@ -228,6 +228,8 @@ private fun Piezas(d: DatosDescanso) {
             Modifier.fillMaxWidth().padding(top = Medidas.e8).testTag("d-empezar"),
             estilo = EstiloBoton.PRINCIPAL,
             alto = Medidas.botonHoja,
+            llena = true,
+            pildoraMock = true,
         )
     }
 }

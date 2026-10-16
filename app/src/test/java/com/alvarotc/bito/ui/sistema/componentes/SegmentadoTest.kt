@@ -46,7 +46,7 @@ class SegmentadoTest {
         assertEquals(1, sonido.snds().size) // elegir la que ya está no suena
     }
 
-    private fun anchos(repartir: Boolean): List<Float> {
+    private fun anchos(anchoCompleto: Boolean): List<Float> {
         rule.setContent {
             ConSistema(SonidoGrabado(), TactoGrabado()) {
                 Segmentado(
@@ -54,7 +54,7 @@ class SegmentadoTest {
                     0,
                     {},
                     modifier = Modifier.width(300.dp),
-                    repartir = repartir,
+                    anchoCompleto = anchoCompleto,
                 )
             }
         }
@@ -64,13 +64,13 @@ class SegmentadoTest {
 
     @Test
     fun `by default options keep their own width`() {
-        val a = anchos(repartir = false)
+        val a = anchos(anchoCompleto = false)
         assertTrue("distintos: $a", a[0] < a[1] - 8f)
     }
 
     @Test
     fun `sharing the width gives every option the same share of the full width`() {
-        val a = anchos(repartir = true)
+        val a = anchos(anchoCompleto = true)
         assertEquals(a[0], a[1], 1.5f)
         assertEquals(a[1], a[2], 1.5f)
         // Ocupan todo el ancho (300 dp) menos el relleno del contorno.

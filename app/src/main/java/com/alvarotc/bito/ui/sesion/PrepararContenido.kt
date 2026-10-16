@@ -267,6 +267,8 @@ fun PrepararContenido(
         modifier = Modifier.fillMaxWidth().padding(top = EMPEZAR_ARRIBA).testTag("p-empezar"),
         estilo = EstiloBoton.PRINCIPAL,
         alto = Medidas.botonHoja,
+        llena = true,
+        pildoraMock = true,
     )
 
     // Las hojas no son piezas: viven en su propia ventana.

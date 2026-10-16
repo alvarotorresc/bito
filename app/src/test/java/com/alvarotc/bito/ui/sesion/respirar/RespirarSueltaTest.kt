@@ -366,4 +366,28 @@ class RespirarSueltaTest {
             }
         }
     }
+
+    /** El estilo con que se pinta el texto del botón con ese tag (su semántica fusiona la del texto). */
+    private fun estiloDe(tag: String): androidx.compose.ui.text.TextStyle {
+        val resultado = mutableListOf<androidx.compose.ui.text.TextLayoutResult>()
+        compose.onNodeWithTag(tag).fetchSemanticsNode().config[androidx.compose.ui.semantics.SemanticsActions.GetTextLayoutResult]
+            .action?.invoke(resultado)
+        return resultado.single().layoutInput.style
+    }
+
+    @Test
+    fun `Empezar and Listo are the dark mock pill`() {
+        montar()
+        assertEquals(16f, estiloDe("r-empezar").fontSize.value, 0f)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFF4EAD8), estiloDe("r-empezar").color)
+
+        empezar()
+        m.avanzar(compose, 120_000)
+        esperar("a-saltar")
+        compose.onNodeWithTag("a-saltar").performClick()
+        esperar("sf-listo")
+
+        assertEquals(16f, estiloDe("sf-listo").fontSize.value, 0f)
+        assertEquals(androidx.compose.ui.graphics.Color(0xFFF4EAD8), estiloDe("sf-listo").color)
+    }
 }

@@ -49,14 +49,14 @@ fun Segmentado(
     alElegir: (Int) -> Unit,
     modifier: Modifier = Modifier,
     habilitado: Boolean = true,
-    // Para las pantallas que lo piden más ancho o más bajo (Preparar): a todo el ancho, alto total, relleno y lados de cada opción.
+    // Para las pantallas que lo piden más ancho o más bajo (Preparar, Respirar): a todo el ancho y con el ancho repartido a
+    // partes iguales entre las opciones (`.seg` a todo el ancho); por defecto cada opción mide lo suyo. Y alto total, relleno
+    // y lados de cada opción.
     anchoCompleto: Boolean = false,
     alto: Dp? = null,
     relleno: Dp = Medidas.e4,
     ladosOpcion: Dp = Medidas.e16,
     alVolverAElegir: (Int) -> Unit = {},
-    /** Reparte el ancho a partes iguales entre las opciones (`.seg` a todo el ancho); por defecto cada una mide lo suyo. */
-    repartir: Boolean = false,
 ) {
     val colores = BitoTema.colores
     val reducido = BitoTema.reducido
@@ -91,12 +91,12 @@ fun Segmentado(
                     .background(colores.agua),
             )
         }
-        Row(Modifier.selectableGroup().then(if (anchoCompleto || repartir) Modifier.fillMaxWidth() else Modifier)) {
+        Row(Modifier.selectableGroup().then(if (anchoCompleto) Modifier.fillMaxWidth() else Modifier)) {
             opciones.forEachIndexed { i, texto ->
                 Box(
                     Modifier
                         .onGloballyPositioned { medidas[i] = it.positionInParent().x to it.size.width.toFloat() }
-                        .then(if (anchoCompleto || repartir) Modifier.weight(1f) else Modifier)
+                        .then(if (anchoCompleto) Modifier.weight(1f) else Modifier)
                         .height(altoOpcion)
                         .clip(BitoFormas.canto)
                         .selectable(
