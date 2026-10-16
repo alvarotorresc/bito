@@ -12,7 +12,8 @@ import com.alvarotc.bito.domain.model.Mood
 
 /**
  * §5.8: el comentario de Camino según el ánimo de la semana; la ausencia manda. Sin acciones.
- * `{pct}` falta si la semana no tiene variación: el redactor filtra los trozos que lo piden.
+ * `{pct}` falta si la semana no tiene variación y `{n}` (días perfectos del mes) si vale 0 (HUECOS.md): el
+ * redactor filtra los trozos que los piden.
  */
 object ReglasCamino : Regla {
     override fun candidatas(
@@ -33,7 +34,7 @@ object ReglasCamino : Regla {
                 ref = null,
                 huecos =
                     buildMap {
-                        put(Hueco.N, ValorHueco.Numero(h.diasPerfectosMes))
+                        if (h.diasPerfectosMes > 0) put(Hueco.N, ValorHueco.Numero(h.diasPerfectosMes))
                         h.deltaSemanaPct?.let { put(Hueco.PCT, ValorHueco.Numero(it)) }
                     },
                 acciones = emptyList(),

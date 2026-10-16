@@ -49,4 +49,11 @@ class ReglasCaminoTest {
         assertFalse(Hueco.PCT in c.huecos)
         assertEquals(ValorHueco.Numero(3), c.huecos[Hueco.N])
     }
+
+    @Test
+    fun `without perfect days this month the count hole is left out`() {
+        val c = comenta(Mood.WILTED, perfectos = 0)
+        assertFalse(Hueco.N in c.huecos)
+        assertEquals(ValorHueco.Numero(12), c.huecos[Hueco.PCT])
+    }
 }
