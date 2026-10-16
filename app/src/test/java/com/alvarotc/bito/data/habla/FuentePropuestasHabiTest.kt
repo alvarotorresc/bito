@@ -10,6 +10,7 @@ import com.alvarotc.bito.domain.TODAY
 import com.alvarotc.bito.domain.archivedOn
 import com.alvarotc.bito.domain.domainState
 import com.alvarotc.bito.domain.entryOn
+import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.Candidata
 import com.alvarotc.bito.domain.habla.CatalogoHabla
@@ -17,6 +18,7 @@ import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
 import com.alvarotc.bito.domain.habla.ClaveTrozo
 import com.alvarotc.bito.domain.habla.Contexto
 import com.alvarotc.bito.domain.habla.ElegirCandidata
+import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.EventoMemoria
 import com.alvarotc.bito.domain.habla.Hechos
 import com.alvarotc.bito.domain.habla.Hueco
@@ -284,6 +286,24 @@ class FuentePropuestasHabiTest {
             val respuesta = eventos(TipoMemoria.RESPUESTA).single()
             assertEquals(p.id, respuesta.ref)
             assertEquals(Respuesta.VALE.ordinal, respuesta.valor)
+        }
+
+    @Test
+    fun `vale without an hour leaves no confirmation`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer, agua))
+            val p = f.hoy()
+            // Dos avisos aceptados hoy: «Vale» ya no programa otro y se queda sin hora (§5.2).
+            listOf("a1", "a2").forEach {
+                aceptados.crear(AvisoAceptado(it, TODAY, agua.id, 18 * 60, 0, EstadoAviso.PENDIENTE, "otra:$it", ahora))
+            }
+
+            f.responder(p.id, Respuesta.VALE, p.hora)
+
+            assertEquals(2, aceptados.pendientes().size)
+            val vigente = vigentes.leer(Ambito.HOY)
+            assertTrue(vigente?.situacion != Situacion.CONFIRMA_VALE)
+            assertEquals(1, eventos(TipoMemoria.RESPUESTA).size)
         }
 
     @Test

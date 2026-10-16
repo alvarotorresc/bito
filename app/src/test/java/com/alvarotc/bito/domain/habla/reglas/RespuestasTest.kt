@@ -68,10 +68,12 @@ class RespuestasTest {
     }
 
     @Test
-    fun `without hour the confirmation has no hour hole`() {
-        val c = Respuestas.confirmaVale(candidata, null, conGordo(emptyList()))
-        assertNull(c.hora)
-        assertNull(c.huecos[Hueco.HORA])
+    fun `with the big thing left but nothing to name it is the plain confirmation`() {
+        val c = Respuestas.confirmaVale(candidata, 900, conGordo(listOf(RefGordo(TipoRefGordo.TAREA, "borrada"))))
+        assertEquals(Bolsa.NU_CONFIRMA_VALE, c.nucleo)
+        assertEquals(listOf(Respuesta.OTRA_HORA), c.acciones)
+        assertNull(c.huecos[Hueco.GORDO])
+        assertEquals(ValorHueco.Hora(900), c.huecos[Hueco.HORA])
     }
 
     @Test

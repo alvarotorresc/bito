@@ -16,17 +16,19 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
  */
 object Respuestas {
     /**
-     * Tras «Vale, a las…». Con lo gordo sin hacer, ofrece la sesión de lo gordo o luego (`{gordo}` es
-     * lo que queda por hacer; la hora es la del hábito, nunca la de lo gordo); sin él, solo «Otra hora».
+     * Tras «Vale, a las…», con la hora recién aceptada para el hábito: `{hora}` va siempre (HUECOS.md), así que
+     * un «Vale» sin hora no tiene confirmación. Con lo gordo sin hacer y algo que nombrar, ofrece la sesión de lo
+     * gordo o luego (`{gordo}` es lo que queda; la hora es la del hábito, nunca la de lo gordo); si no, solo
+     * «Otra hora».
      */
     fun confirmaVale(
         c: Candidata,
-        hora: Int?,
+        hora: Int,
         h: Hechos,
     ): Candidata {
-        val huecos = hora?.let { mapOf(Hueco.HORA to ValorHueco.Hora(it)) }.orEmpty()
-        val pendientes = h.gordo.filter { it !in h.gordoHecho }
-        if (pendientes.isEmpty()) {
+        val huecos = mapOf(Hueco.HORA to ValorHueco.Hora(hora))
+        val nombres = h.gordo.filter { it !in h.gordoHecho }.mapNotNull { nombreDeGordo(it, h) }
+        if (nombres.isEmpty()) {
             return Candidata(
                 situacion = Situacion.CONFIRMA_VALE,
                 ref = c.ref,
@@ -36,11 +38,10 @@ object Respuestas {
                 nucleo = Bolsa.NU_CONFIRMA_VALE,
             )
         }
-        val nombres = pendientes.mapNotNull { nombreDeGordo(it, h) }
         return Candidata(
             situacion = Situacion.CONFIRMA_VALE,
             ref = c.ref,
-            huecos = if (nombres.isEmpty()) huecos else huecos + (Hueco.GORDO to ValorHueco.Lista(nombres)),
+            huecos = huecos + (Hueco.GORDO to ValorHueco.Lista(nombres)),
             acciones = listOf(Respuesta.AHORA, Respuesta.LUEGO),
             destino = Destino.LoGordo,
             hora = hora,

@@ -14,7 +14,7 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
 
 /**
  * §5.1 n.º 3 y §5.5: ayer fue «Duro», así que hoy una sola cosa, con el criterio de la vuelta.
- * «Vale» va sin hora: solo deja la confirmación.
+ * «Vale» va sin hora: no programa nada ni deja confirmación (su bolsa pide `{hora}`).
  */
 object ReglaDiaDuro : Regla {
     private val TIPOS = setOf(TipoHabito.CHECK, TipoHabito.CONTADOR, TipoHabito.DURACION)
