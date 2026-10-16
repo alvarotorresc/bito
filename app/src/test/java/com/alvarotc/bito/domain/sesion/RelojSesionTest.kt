@@ -1,6 +1,7 @@
 package com.alvarotc.bito.domain.sesion
 
 import com.alvarotc.bito.domain.BreathingRhythm
+import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.BreathPhase
 import com.alvarotc.bito.domain.model.BreathingMode
 import com.alvarotc.bito.domain.sesion.Tramo.Descanso
@@ -10,6 +11,7 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.ZoneOffset
 
 /** El tiempo de la sesión como función pura de su plan y sus eventos (spec §6, §11.5). */
 class RelojSesionTest {
@@ -303,5 +305,36 @@ class RelojSesionTest {
         val dormir = BreathingRhythm.at(BreathingMode.SLEEP, 7_500L, 6)
         assertEquals(BreathPhase.HOLD, dormir.phase)
         assertEquals(1f, dormir.fill, 1e-3f)
+    }
+
+    @Test
+    fun `an ended session is quiet on the logical day it ended, not on the day it is read`() {
+        val r = registroSesion()
+        val fin = 7_860_000L
+        val leida = RelojSesion.en(r, ahoraTras(fin + 100 * 60 * min))
+        assertNull(leida.actual)
+
+        val dia = RelojSesion.diaDeQuietud(r, leida, ahoraTras(fin + 100 * 60 * min), 0, ZoneOffset.UTC)
+
+        assertEquals(LogicalDays.logicalDayOf(INICIO_PARED + fin, 0, ZoneOffset.UTC), dia)
+    }
+
+    @Test
+    fun `a running session is not quiet`() {
+        val r = registroSesion()
+        val ahora = ahoraTras(10 * min)
+        assertNull(RelojSesion.diaDeQuietud(r, RelojSesion.en(r, ahora), ahora, 0, ZoneOffset.UTC))
+    }
+
+    @Test
+    fun `a paused session is quiet from its pause`() {
+        val r = registroSesion(eventos = listOf(Evento.Pausa(10 * min)))
+        val ahora = ahoraTras(3_000 * min)
+        val inst = RelojSesion.en(r, ahora)
+        assertTrue(inst.pausado)
+
+        val dia = RelojSesion.diaDeQuietud(r, inst, ahora, 0, ZoneOffset.UTC)
+
+        assertEquals(LogicalDays.logicalDayOf(INICIO_PARED + 10 * min, 0, ZoneOffset.UTC), dia)
     }
 }

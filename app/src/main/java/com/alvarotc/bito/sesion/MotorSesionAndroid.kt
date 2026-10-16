@@ -598,45 +598,12 @@ class MotorSesionAndroid(
         ajustes: Settings,
     ): LogicalDay = LogicalDays.logicalDayOf(ahora.paredMillis, ajustes.dayCutoffMinutes, zona())
 
-    /**
-     * El día lógico en que la sesión quedó quieta, si lo está: Terminada espera hasta que ese día cambie, y una sesión en
-     * pausa o con el descanso esperando (el reloj parado) también. null si corre.
-     */
     private fun diaDeQuietud(
         r: RegistroSesion,
         inst: Instante,
         ahora: Ahora,
         ajustes: Settings,
-    ): LogicalDay? {
-        val desde =
-            when {
-                inst.actual == null -> primerMomento(r, ahora) { it.actual == null }
-                inst.esperandoDescanso -> primerMomento(r, ahora) { it.tramo >= inst.tramo }
-                inst.pausado -> {
-                    val entrada = primerMomento(r, ahora) { it.tramo >= inst.tramo }
-                    val pausas = r.eventos.filter { it is Evento.Pausa && it.enMillis <= inst.transcurridoMillis }
-                    val pausa = pausas.maxOfOrNull { it.enMillis }
-                    maxOf(entrada, pausa ?: entrada)
-                }
-                else -> return null
-            }
-        return LogicalDays.logicalDayOf(RelojSesion.paredDe(r, desde, ahora), ajustes.dayCutoffMinutes, zona())
-    }
-
-    /** Los ms de sesión del primer instante que cumple [cumple] (los tramos solo avanzan, así que se busca a medias). */
-    private fun primerMomento(
-        r: RegistroSesion,
-        ahora: Ahora,
-        cumple: (Instante) -> Boolean,
-    ): Long {
-        var bajo = 0L
-        var alto = RelojSesion.transcurrido(r, ahora)
-        while (bajo < alto) {
-            val medio = bajo + (alto - bajo) / 2
-            if (cumple(RelojSesion.enSesion(r, medio))) alto = medio else bajo = medio + 1
-        }
-        return alto
-    }
+    ): LogicalDay? = RelojSesion.diaDeQuietud(r, inst, ahora, ajustes.dayCutoffMinutes, zona())
 
     private suspend fun <T> enCerrojo(bloque: suspend () -> T): T = withContext(NonCancellable) { cerrojo.withLock { bloque() } }
 

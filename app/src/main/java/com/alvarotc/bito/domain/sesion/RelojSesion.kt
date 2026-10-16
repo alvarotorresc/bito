@@ -1,7 +1,10 @@
 package com.alvarotc.bito.domain.sesion
 
 import com.alvarotc.bito.domain.BreathingRhythm
+import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.model.BreathingMode
+import com.alvarotc.bito.domain.model.LogicalDay
+import java.time.ZoneId
 import kotlin.math.abs
 
 /**
@@ -101,6 +104,47 @@ object RelojSesion {
         msSesion: Long,
         ahora: Ahora,
     ): Long = ahora.paredMillis + (msSesion - transcurrido(r, ahora))
+
+    /**
+     * El día lógico en que la sesión quedó quieta, si lo está: Terminada espera hasta que ese día cambie, y una sesión en
+     * pausa o con el descanso esperando (el reloj parado) también. null si corre.
+     */
+    fun diaDeQuietud(
+        r: RegistroSesion,
+        inst: Instante,
+        ahora: Ahora,
+        corteDiaMinutos: Int,
+        zona: ZoneId,
+    ): LogicalDay? {
+        val desde =
+            when {
+                inst.actual == null -> primerMomento(r, ahora) { it.actual == null }
+                inst.esperandoDescanso -> primerMomento(r, ahora) { it.tramo >= inst.tramo }
+                inst.pausado -> {
+                    val entrada = primerMomento(r, ahora) { it.tramo >= inst.tramo }
+                    val pausas = r.eventos.filter { it is Evento.Pausa && it.enMillis <= inst.transcurridoMillis }
+                    val pausa = pausas.maxOfOrNull { it.enMillis }
+                    maxOf(entrada, pausa ?: entrada)
+                }
+                else -> return null
+            }
+        return LogicalDays.logicalDayOf(paredDe(r, desde, ahora), corteDiaMinutos, zona)
+    }
+
+    /** Los ms de sesión del primer instante que cumple [cumple] (los tramos solo avanzan, así que se busca a medias). */
+    private fun primerMomento(
+        r: RegistroSesion,
+        ahora: Ahora,
+        cumple: (Instante) -> Boolean,
+    ): Long {
+        var bajo = 0L
+        var alto = transcurrido(r, ahora)
+        while (bajo < alto) {
+            val medio = bajo + (alto - bajo) / 2
+            if (cumple(enSesion(r, medio))) alto = medio else bajo = medio + 1
+        }
+        return alto
+    }
 
     private fun duracionBase(tramo: Tramo): Long =
         when (tramo) {
