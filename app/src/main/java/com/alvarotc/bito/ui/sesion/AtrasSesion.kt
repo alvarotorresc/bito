@@ -31,10 +31,13 @@ enum class AtrasSesion {
 fun atrasDe(
     bloque: BloqueSesion?,
     hojaAbierta: Boolean,
+    sesionCerrada: Boolean = false,
 ): AtrasSesion? =
     when {
         hojaAbierta -> AtrasSesion.CERRAR_HOJA
         bloque == null -> null
+        // Lo que se queda en pantalla tras cerrarse la sesión (el «Hecha» de Foco): no sigue nada en marcha.
+        sesionCerrada -> AtrasSesion.A_HOY
         bloque == BloqueSesion.PREPARAR || bloque == BloqueSesion.TERMINADA -> AtrasSesion.A_HOY
         bloque == BloqueSesion.RESPIRAR -> AtrasSesion.A_PREPARAR
         else -> AtrasSesion.SIGUE_EN_MARCHA
@@ -56,9 +59,9 @@ fun rememberAtrasSesion(
     val recursos = LocalContext.current.resources
     val hoy = rememberUpdatedState(volverAHoy)
     val avisa = rememberUpdatedState(avisar)
-    val que = atrasDe(estado.bloque, estado.hojaAbierta || hojas.abierta)
+    val que = atrasDe(estado.bloque, estado.hojaAbierta || hojas.abierta, estado.cerrada)
     val pulsar: () -> Unit = {
-        when (atrasDe(estado.bloque, estado.hojaAbierta || hojas.abierta)) {
+        when (atrasDe(estado.bloque, estado.hojaAbierta || hojas.abierta, estado.cerrada)) {
             AtrasSesion.CERRAR_HOJA -> hojas.cerrar()
             AtrasSesion.A_HOY -> hoy.value()
             AtrasSesion.A_PREPARAR -> scope.launch { motor.volverAPreparar() }

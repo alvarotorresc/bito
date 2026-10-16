@@ -436,7 +436,7 @@ fun InicioScreen(
         label = "hoy-sesion",
     )
     val retenido = remember { BloqueRetenido() }
-    val estadoSesion = estadoSesionUi(instante, borrador, preparando, hojasSesion.abierta).conRetenido(retenido.bloque)
+    val estadoSesion = estadoSesionUi(instante, borrador, preparando, hojasSesion.abierta).conRetenido(retenido.bloque, retenido.encuadre)
     val estadoVista = if (saliendo) estadoSesion.copy(bloque = null) else estadoSesion
 
     fun entrarEnSesion(vistaPreparar: Boolean) {

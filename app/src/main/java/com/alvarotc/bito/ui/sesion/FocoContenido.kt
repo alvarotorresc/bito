@@ -187,6 +187,8 @@ class EntornoFoco(
     val anclaMonedas: String?,
     /** El aviso G9 con su texto resuelto. */
     val textoAviso: (AvisoSesion) -> String,
+    /** La cara de Habi: radiante con el «Hecha». */
+    val cara: CaraHabi = CaraHabi(),
 )
 
 /** Los textos de Habi que Foco necesita (ya resueltos con su voz): el globito de entrada y el «Hecha». */
@@ -320,7 +322,9 @@ fun FocoContenido(
             if (!cerrando) {
                 cerrando = true
                 scope.launch {
-                    entorno.retenido.retener(BloqueSesion.FOCO)
+                    // Como `terminada(true)` del mock: la cámara pasa ya a Terminada y Habi se pone radiante.
+                    entorno.retenido.retener(BloqueSesion.FOCO, Encuadre.TERMINADA)
+                    entorno.cara.radiante = true
                     try {
                         val minutos = FormatoSesion.minutosDeFoco(instante.focoMillis)
                         val resultado = entorno.motor.heTerminado()
@@ -734,6 +738,7 @@ internal fun FocoBloque(alMasOtro: () -> Unit = {}) {
                     Objetivo.Libre -> null
                 },
             textoAviso = { it.texto(recursos) },
+            cara = LocalCaraHabi.current,
         )
     FocoContenido(
         instante = instante,

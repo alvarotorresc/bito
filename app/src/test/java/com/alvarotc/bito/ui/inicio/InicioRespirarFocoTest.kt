@@ -210,4 +210,22 @@ class InicioRespirarFocoTest {
         esperar { existe("e-saltar") }
         assertEquals(14f, estiloDe("e-saltar").fontSize.value, 0f)
     }
+
+    @Test
+    fun `during Hecha Habi is radiant and Back goes to Today without saying the session keeps running`() {
+        motor.respuesta = ResultadoAccion(3, false, AvisoSesion.Hecho("Informe"))
+        motor.viva(planSesion(entrada = Entrada.DIRECTO), 60_000L)
+        montar()
+        esperar { existe("f-hecho") }
+        assertEquals(Mood.NORMAL, banco.sonda.moodHabi())
+
+        rule.onNodeWithTag("f-hecho").performClick()
+        rule.mainClock.advanceTimeBy(500)
+        esperar { banco.sonda.moodHabi() == Mood.RADIANT }
+        rule.runOnUiThread { rule.activity.onBackPressedDispatcher.onBackPressed() }
+        esperar { existe("pildora-hoy") }
+
+        assertFalse(rule.onAllNodes(hasText("Sigue en marcha", substring = true)).fetchSemanticsNodes().isNotEmpty())
+        esperar { banco.sonda.moodHabi() == Mood.NORMAL }
+    }
 }

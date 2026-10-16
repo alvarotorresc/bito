@@ -53,6 +53,7 @@ class FocoContenidoTest {
     private val motor = MotorSesionFalso()
     private val anclas = RegistroAnclas()
     private val retenido = BloqueRetenido()
+    private val cara = CaraHabi()
     private val sonda = SondaFoco()
     private val volvio = mutableListOf<String>()
     private val avisos = mutableListOf<String>()
@@ -95,6 +96,7 @@ class FocoContenidoTest {
                                     motor = motor,
                                     salida = SalidaSesion({ volvio += "hoy" }, { avisos += it }),
                                     retenido = retenido,
+                                    cara = cara,
                                     saltarHabi = { saltos += it },
                                     alMasOtro = { masOtro++ },
                                     anclaHabi = { if (habiConocida) habi else null },
@@ -354,6 +356,8 @@ class FocoContenidoTest {
         assertTrue("heTerminado" in motor.llamadas)
         assertNull("el motor ya cerró como el real", motor.instante.value)
         assertEquals(BloqueSesion.FOCO, retenido.bloque)
+        assertEquals("la cámara pasa a Terminada como el mock", Encuadre.TERMINADA, retenido.encuadre)
+        assertTrue("Habi radiante como en Terminada", cara.radiante)
         compose.onNodeWithTag("t-preg").assertTextEquals("Hecha, Ana.")
         compose.onNodeWithTag("t-min").assertTextEquals("6 min")
         assertFalse("sin botones", existe("f-hecho"))
@@ -367,6 +371,7 @@ class FocoContenidoTest {
         assertEquals(listOf("hoy"), volvio)
         assertEquals(listOf("Informe trimestral, hecho."), avisos)
         assertNull(retenido.bloque)
+        assertNull("suelta la cámara", retenido.encuadre)
     }
 
     @Test

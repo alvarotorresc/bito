@@ -24,11 +24,22 @@ enum class BloqueSesion(val id: String, val encuadre: Encuadre) {
 data class EstadoSesionUi(
     val bloque: BloqueSesion?,
     val hojaAbierta: Boolean = false,
+    /** La cámara que pide un bloque retenido distinta de la suya (el «Hecha» de Foco lleva la de Terminada). */
+    val encuadreRetenido: Encuadre? = null,
+    /** El motor ya cerró la sesión y [bloque] es solo lo que se queda en pantalla un rato. */
+    val cerrada: Boolean = false,
 ) {
-    val encuadre: Encuadre get() = bloque?.encuadre ?: Encuadre.HOY
+    val encuadre: Encuadre get() = encuadreRetenido ?: bloque?.encuadre ?: Encuadre.HOY
 
-    /** Sin bloque por haberse cerrado la sesión, sigue el [retenido] (si hay uno). */
-    fun conRetenido(retenido: BloqueSesion?): EstadoSesionUi = if (bloque == null && retenido != null) copy(bloque = retenido) else this
+    /**
+     * Sin bloque por haberse cerrado la sesión, sigue el [retenido] (si hay uno) con su [encuadre] o el suyo. La
+     * sesión ya está cerrada: Atrás no dice que siga en marcha.
+     */
+    fun conRetenido(
+        retenido: BloqueSesion?,
+        encuadre: Encuadre? = null,
+    ): EstadoSesionUi =
+        if (bloque == null && retenido != null) copy(bloque = retenido, encuadreRetenido = encuadre, cerrada = true) else this
 }
 
 /**
@@ -41,20 +52,30 @@ class BloqueRetenido {
     var bloque: BloqueSesion? by mutableStateOf(null)
         private set
 
-    fun retener(b: BloqueSesion) {
+    /** La cámara con la que se queda el bloque retenido, si no es la suya. */
+    var encuadre: Encuadre? by mutableStateOf(null)
+        private set
+
+    fun retener(
+        b: BloqueSesion,
+        encuadre: Encuadre? = null,
+    ) {
         bloque = b
+        this.encuadre = encuadre
     }
 
     fun soltar() {
         bloque = null
+        encuadre = null
     }
 
     /** Retiene [b] [ms] milisegundos y lo suelta. */
     suspend fun conservar(
         b: BloqueSesion,
         ms: Long,
+        encuadre: Encuadre? = null,
     ) {
-        retener(b)
+        retener(b, encuadre)
         try {
             kotlinx.coroutines.delay(ms)
         } finally {

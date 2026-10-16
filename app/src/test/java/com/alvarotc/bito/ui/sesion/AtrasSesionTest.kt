@@ -104,4 +104,36 @@ class AtrasSesionTest {
         assertEquals("con la hoja abierta no sale a Hoy", 0, aHoy)
         assertNotNull(motor.registro.value)
     }
+
+    @Test
+    fun `back while Hecha holds the closed session goes to Today with no keeps-running notice`() {
+        val motor = MotorSesionFalso()
+        val avisos = mutableListOf<String>()
+        var aHoy = 0
+        var accion: AccionAtras? = null
+        // El motor ya cerró la sesión; Foco se queda en pantalla 2200 ms con su «Hecha».
+        val estado = EstadoSesionUi(null).conRetenido(BloqueSesion.FOCO, Encuadre.TERMINADA)
+        rule.setContent {
+            ConSistema {
+                accion = rememberAtrasSesion(estado, motor, RegistroHoja(), { aHoy++ }, { avisos += it })
+                Box {}
+            }
+        }
+        rule.waitForIdle()
+
+        rule.runOnIdle { accion!!.alPulsar() }
+        rule.waitForIdle()
+
+        assertEquals(1, aHoy)
+        assertEquals("la sesión ya está cerrada: nada sigue en marcha", emptyList<String>(), avisos)
+    }
+
+    @Test
+    fun `a retained focus holds the finished camera and a plain one keeps its own`() {
+        val retenido = EstadoSesionUi(null).conRetenido(BloqueSesion.FOCO, Encuadre.TERMINADA)
+        assertEquals(BloqueSesion.FOCO, retenido.bloque)
+        assertEquals(Encuadre.TERMINADA, retenido.encuadre)
+        assertEquals(Encuadre.TERMINADA, EstadoSesionUi(null).conRetenido(BloqueSesion.TERMINADA).encuadre)
+        assertEquals(Encuadre.FOCO, EstadoSesionUi(BloqueSesion.FOCO).conRetenido(null).encuadre)
+    }
 }
