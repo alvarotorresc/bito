@@ -141,6 +141,10 @@ class AvisosHabiAndroid(
      * «Vale» desde la mañana. Con [Ritmo.TOPE_ACEPTADOS_DIA] avisos ya hoy (en cualquier estado menos cancelado) no se
      * acepta otro. Si tras responder no hay aviso nuevo de esa propuesta (id de otro día, RF4, o día duro sin hora),
      * solo se quita la notificación; si lo hay, la mañana pasa a ser la del aceptado y se programa su alarma.
+     *
+     * Un «Vale» tocado después de su hora se pospone desde ahora con [PlanAvisos.posponer] (gasta uno de sus «Más
+     * tarde»: es la única forma de guardar el minuto nuevo); si ya no cabe hoy, el aviso se cancela y solo se quita
+     * la notificación.
      */
     private suspend fun vale(intent: Intent) {
         val propuestaId = intent.getStringExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID) ?: return
@@ -157,14 +161,25 @@ class AvisosHabiAndroid(
             Notifier.cancelManana(context)
             return
         }
-        val huecos = huecosAceptado(p, nuevo.minuto)
+        var minuto = nuevo.minuto
+        if (orden(minuto, p.ctx) < orden(p.ctx.ahoraMin, p.ctx)) {
+            val pospuesto = PlanAvisos.posponer(nuevo, p.ctx)
+            if (pospuesto == null) {
+                repo.cambiarEstado(nuevo.id, EstadoAviso.CANCELADO)
+                Notifier.cancelManana(context)
+                return
+            }
+            repo.posponer(nuevo.id, pospuesto)
+            minuto = pospuesto
+        }
+        val huecos = huecosAceptado(p, minuto)
         Notifier.showAceptado(
             context,
             redactar(Bolsa.AV_ACEPTADO_TITULO, Situacion.CONFIRMA_VALE, huecos, p, titulo = true),
             redactar(Bolsa.AV_ACEPTADO_CUERPO, Situacion.CONFIRMA_VALE, huecos, p, titulo = false),
             p.ctx.voz,
         )
-        programar(Slot(SlotKind.ACEPTADO, nuevo.id, nuevo.minuto), p.ctx.ahoraMillis, p.ctx)
+        programar(Slot(SlotKind.ACEPTADO, nuevo.id, minuto), p.ctx.ahoraMillis, p.ctx)
     }
 
     private suspend fun hoyNo(intent: Intent) {
@@ -176,7 +191,10 @@ class AvisosHabiAndroid(
         Notifier.cancelManana(context)
     }
 
-    /** «Más tarde»: [PlanAvisos.posponer] decide si se puede; el aviso vuelve a pendiente con su minuto nuevo. */
+    /**
+     * «Más tarde»: [PlanAvisos.posponer] decide si se puede (desde su minuto o desde ahora si se toca tarde); el aviso
+     * vuelve a pendiente con su minuto nuevo.
+     */
     private suspend fun masTarde(intent: Intent) {
         val id = intent.getStringExtra(AvisoHabiReceiver.EXTRA_AVISO_ID) ?: return
         val p = plan()

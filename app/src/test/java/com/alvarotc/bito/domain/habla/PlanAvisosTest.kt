@@ -179,6 +179,16 @@ class PlanAvisosTest {
     }
 
     @Test
+    fun `later pressed after its time counts from now`() {
+        assertEquals(15 * 60 + 40, PlanAvisos.posponer(aceptado(minuto = 14 * 60 + 30), ctx(ahoraMin = 15 * 60 + 10)))
+        // Con el corte a las 3:00, las 0:10 van detrás de las 23:30 del mismo día lógico.
+        val madrugada = ctx(ahoraMin = 10, horaNoche = 2 * 60 + 30, corteDia = 3 * 60)
+        assertEquals(40, PlanAvisos.posponer(aceptado(minuto = 23 * 60 + 30), madrugada))
+        // Antes de su hora sigue contando desde su minuto.
+        assertEquals(15 * 60, PlanAvisos.posponer(aceptado(minuto = 14 * 60 + 30), ctx(ahoraMin = 12 * 60)))
+    }
+
+    @Test
     fun `later never crosses the silence nor the night`() {
         val noche = ctx(horaNoche = 21 * 60 + 30)
         // 21:15 es justo 15 min antes de la noche: vale; 21:16 ya no.

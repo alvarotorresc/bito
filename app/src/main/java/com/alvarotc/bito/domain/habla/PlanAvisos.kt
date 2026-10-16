@@ -71,13 +71,14 @@ object PlanAvisos {
     /**
      * «Más tarde» en un aviso aceptado (§6.2, decisión 1 de §15): [Ritmo.MAS_TARDE_MIN] más, como mucho
      * [Ritmo.MAS_TARDE_VECES] veces, sin cruzar el silencio y al menos [Ritmo.HORA_ANTES_NOCHE] antes de la noche.
+     * Cuenta desde su minuto o desde ahora si ya pasó: un toque tardío no programa un minuto vencido.
      */
     fun posponer(
         aviso: AvisoAceptado,
         ctx: Contexto,
     ): Int? {
         if (aviso.pospuesto >= Ritmo.MAS_TARDE_VECES) return null
-        val desde = orden(aviso.minuto, ctx)
+        val desde = maxOf(orden(aviso.minuto, ctx), orden(ctx.ahoraMin, ctx))
         val hasta = desde + Ritmo.MAS_TARDE_MIN
         if (hasta > orden(ctx.horaNoche, ctx) - Ritmo.HORA_ANTES_NOCHE) return null
         val silencio = ctx.silencio

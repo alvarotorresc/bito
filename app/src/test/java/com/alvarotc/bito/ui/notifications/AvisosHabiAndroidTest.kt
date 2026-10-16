@@ -527,6 +527,54 @@ class AvisosHabiAndroidTest {
         }
 
     @Test
+    fun `later pressed after its time still reminds today`() =
+        runTest(dispatcher) {
+            aceptado()
+            ahoraMin = 15 * 60 + 10
+
+            avisos.accion(accion(AvisoHabiReceiver.ACTION_MAS_TARDE) { putExtra(AvisoHabiReceiver.EXTRA_AVISO_ID, "a1") })
+            avisos.replanificar()
+
+            assertEquals(millisOn(TODAY, 15, 40), alarma(SlotKind.ACEPTADO, "a1")?.millis)
+        }
+
+    @Test
+    fun `OK tapped after its hour reminds from now and keeps the alarm`() =
+        runTest(dispatcher) {
+            ahoraMin = 15 * 60
+            Notifier.showManana(context, vigente, TextoHabi(R.string.habla_ahora), ctx().voz, hechosHoy.animoSemana)
+
+            avisos.accion(
+                accion(AvisoHabiReceiver.ACTION_VALE) {
+                    putExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID, vigente.id)
+                    putExtra(AvisoHabiReceiver.EXTRA_HORA, hora)
+                },
+            )
+            avisos.replanificar()
+
+            assertEquals(millisOn(TODAY, 15, 30), alarma(SlotKind.ACEPTADO, "${vigente.id}:$hora")?.millis)
+            assertEquals("I'll remind you at 15:30.", publicada(Notifier.MANANA_ID)?.titulo())
+        }
+
+    @Test
+    fun `OK tapped too late for today is not taken`() =
+        runTest(dispatcher) {
+            ahoraMin = 21 * 60
+            Notifier.showManana(context, vigente, TextoHabi(R.string.habla_ahora), ctx().voz, hechosHoy.animoSemana)
+
+            avisos.accion(
+                accion(AvisoHabiReceiver.ACTION_VALE) {
+                    putExtra(AvisoHabiReceiver.EXTRA_PROPUESTA_ID, vigente.id)
+                    putExtra(AvisoHabiReceiver.EXTRA_HORA, hora)
+                },
+            )
+
+            assertNull(publicada(Notifier.MANANA_ID))
+            assertTrue(alarmas().none { it.kind == SlotKind.ACEPTADO.name })
+            assertEquals(EstadoAviso.CANCELADO, repo.observeDe(TODAY).first().single().estado)
+        }
+
+    @Test
     fun `Tomorrow on the night notice takes it away`() =
         runTest(dispatcher) {
             publicarFalsa(Notifier.NOCHE_ID)
