@@ -115,6 +115,7 @@ import com.alvarotc.bito.ui.sesion.BloqueSesion
 import com.alvarotc.bito.ui.sesion.CabeceraSesion
 import com.alvarotc.bito.ui.sesion.CaraHabi
 import com.alvarotc.bito.ui.sesion.Encuadre
+import com.alvarotc.bito.ui.sesion.EstadoSesionUi
 import com.alvarotc.bito.ui.sesion.HojaOcupadaPorSuelta
 import com.alvarotc.bito.ui.sesion.LocalApoyoDescanso
 import com.alvarotc.bito.ui.sesion.LocalBloqueRetenido
@@ -129,7 +130,6 @@ import com.alvarotc.bito.ui.sesion.RegistroHoja
 import com.alvarotc.bito.ui.sesion.SalidaSesion
 import com.alvarotc.bito.ui.sesion.SesionContenido
 import com.alvarotc.bito.ui.sesion.SesionInicio
-import com.alvarotc.bito.ui.sesion.EstadoSesionUi
 import com.alvarotc.bito.ui.sesion.estadoSesionUi
 import com.alvarotc.bito.ui.sesion.rememberAtrasSesion
 import com.alvarotc.bito.ui.sesion.rememberEstadoCamaraSesion
@@ -537,7 +537,8 @@ fun InicioScreen(
     val atrasSesion =
         if (motor != null) {
             // Fuera del modo sesión (Hoy) el motor puede tener sesión o borrador, pero Atrás ya no es de la sesión.
-            rememberAtrasSesion(if (sesionActiva) estadoVista else EstadoSesionUi(null), motor, hojasSesion, ::volverAHoy) { avisos.mostrar(it) }
+            val deLaSesion = if (sesionActiva) estadoVista else EstadoSesionUi(null)
+            rememberAtrasSesion(deLaSesion, motor, hojasSesion, ::volverAHoy) { avisos.mostrar(it) }
         } else {
             null
         }
