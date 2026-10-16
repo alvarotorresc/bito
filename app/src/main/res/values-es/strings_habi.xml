@@ -101,9 +101,6 @@
     <string name="habi_task_done_cheerleader_sin_nombre">¡Fuera! Qué gusto.</string>
     <string name="habi_task_done_neutra">Hecha, %1$s.</string>
     <string name="habi_task_done_neutra_sin_nombre">Hecha.</string>
-    <!-- habi_breathing_done_* — M11, la frase de cierre tras respirar, completa o parada. Ninguna
-         felicita por «haberlo conseguido», ninguna reprocha haber parado, ninguna promete calma. -->
-    <string name="habi_breathing_done_neutra">Ya está, %1$s.</string>
 
     <string name="store_title">Tienda</string>
     <string name="store_axis_colors">Colores</string>

@@ -136,12 +136,13 @@ fun CabeceraSesion(
                 )
             }
             if (saldo != null) {
+                val etiquetaSaldo = stringResource(R.string.ses_tus_bitos)
                 Box(
                     Modifier
                         .padding(start = if (musica != null) ENTRE_BOTONES else 0.dp)
                         .testTag("ses-saldo")
                         .anclaParticula(ClavesAncla.SALDO)
-                        .semantics(mergeDescendants = true) {}
+                        .semantics(mergeDescendants = true) { contentDescription = etiquetaSaldo }
                         .height(ALTO_SALDO)
                         .background(CantoSobreArte, BitoFormas.canto)
                         .border(Medidas.linea, colores.contorno, BitoFormas.canto)

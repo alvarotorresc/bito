@@ -8,7 +8,6 @@
     <string name="breathing_phase_inhale">Inhala</string>
     <string name="breathing_phase_hold">Mantén</string>
     <string name="breathing_phase_exhale">Exhala</string>
-    <string name="breathing_cycle_of">Ciclo %1$d de %2$d</string>
     <string name="breathing_start">Empezar</string>
     <string name="breathing_stop">Parar</string>
     <string name="breathing_again">Otra vez</string>

@@ -102,7 +102,7 @@ class ReminderReceiver : BroadcastReceiver() {
             when (outcome) {
                 is ReminderUseCase.Outcome.Stale -> Unit
                 is ReminderUseCase.Outcome.Remind -> {
-                    // The slot's own configured hour picks the flavor — the alarm fires at it, so
+                    // The slot's own configured hour picks the flavor: the alarm fires at it, so
                     // "when this was scheduled for" and "now" agree up to alarm-delivery slop.
                     Notifier.showReminder(
                         context,

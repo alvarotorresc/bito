@@ -181,7 +181,6 @@ Third-party licenses:
 
 - [Outfit](https://github.com/Outfitio/Outfit-Fonts) typeface, under [OFL](./THIRD_PARTY_LICENSES/outfit-OFL.txt).
 - [Lucide](https://lucide.dev) icons, under [ISC](./THIRD_PARTY_LICENSES/lucide-ISC.txt).
-- "Angelic Pad Loop" by [PhonZz](https://freesound.org/people/PhonZz/sounds/242773/) on Freesound, the breathing exercise's background track, under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 - "PNW rain perfect loop 114" by [deadrobotmusic](https://freesound.org/people/deadrobotmusic/sounds/549909/) on Freesound, the session's rain background track, under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 - "QUIET CAFE, CHATTER, MILK FROTHING MACHINE, atmos" by [Anya_Media](https://freesound.org/people/Anya_Media/sounds/437461/) on Freesound, the session's café background track, under [CC0](https://creativecommons.org/publicdomain/zero/1.0/).
 

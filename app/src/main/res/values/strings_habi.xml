@@ -101,9 +101,6 @@
     <string name="habi_task_done_cheerleader_sin_nombre">Gone! That feels good.</string>
     <string name="habi_task_done_neutra">Done, %1$s.</string>
     <string name="habi_task_done_neutra_sin_nombre">Done.</string>
-    <!-- habi_breathing_done_* — M11, the closing line after a breathing session, complete or stopped.
-         None congratulates on "making it", none scolds for stopping, none promises calm or sleep. -->
-    <string name="habi_breathing_done_neutra">There, %1$s.</string>
 
     <string name="store_title">Store</string>
     <string name="store_axis_colors">Colors</string>

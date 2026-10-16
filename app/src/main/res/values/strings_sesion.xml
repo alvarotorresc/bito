@@ -34,9 +34,6 @@
     <string name="ses_empezar">Start</string>
     <string name="ses_hoja_sin_paso">No first step</string>
     <!-- Respirar para entrar -->
-    <string name="ses_inhala">Breathe in</string>
-    <string name="ses_manten">Hold</string>
-    <string name="ses_exhala">Breathe out</string>
     <string name="ses_x_de_y">%1$d of %2$d</string>
     <string name="ses_saltar">Skip</string>
     <string name="ses_saltar_y_volver">Skip and go back to setup</string>
@@ -126,7 +123,6 @@
     <string name="ses_ajustes_no_molestar">Do not disturb in sessions</string>
     <string name="ses_volver">Back</string>
     <string name="ses_tus_bitos">Your bitos</string>
-    <string name="ses_crear">Create</string>
     <!-- Nombres de los modos de respirar (también los usa TextoHabiUi para el hueco {modo}) -->
     <string name="ses_modo_calm">Calm down</string>
     <string name="ses_modo_sleep">Sleep</string>

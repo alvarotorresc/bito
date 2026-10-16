@@ -125,6 +125,18 @@ class CabeceraSesionTest {
     }
 
     @Test
+    fun `the balance is labelled Tus bitos for a screen reader`() {
+        montar()
+        compose
+            .onNodeWithTag("ses-saldo")
+            .assert(
+                SemanticsMatcher("lleva la etiqueta «Tus bitos»") {
+                    SemanticsProperties.ContentDescription in it.config && "Tus bitos" in it.config[SemanticsProperties.ContentDescription]
+                },
+            )
+    }
+
+    @Test
     fun `the sky fade sits under the header`() {
         montar()
         compose.onNodeWithTag("ses-cielo").assertHeightIsEqualTo(96.dp).assertWidthIsEqualTo(412.dp)
