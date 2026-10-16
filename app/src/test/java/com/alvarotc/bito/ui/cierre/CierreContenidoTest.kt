@@ -16,6 +16,7 @@ import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -202,6 +203,8 @@ class CierreContenidoTest {
         banco.preparar(habitos = 1)
         montarAbierto()
         esperar("cierre-cerrar")
+        // El ✕ dice adónde lleva (decisión de Álvaro).
+        rule.onNodeWithContentDescription("Back to Today").assertExists()
         rule.onNodeWithTag("cierre-cerrar").performClick()
         assertEquals(1, cerrados.intValue)
         assertTrue(Snd.ASCENSO in banco.sonido.snds())
