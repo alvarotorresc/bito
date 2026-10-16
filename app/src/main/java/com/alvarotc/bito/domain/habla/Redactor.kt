@@ -54,7 +54,8 @@ object Redactor {
         val nucleo = elegirNucleo(nucleosPosibles, usos.de(bolsaNucleo), ctx.hoy, azar)
 
         // Cierre o recuerdo.
-        val recuerdos = recuerdo?.takeIf { admiteRecuerdo(c, bolsaNucleo) }?.let { trozosRecuerdo(it, c, catalogo, voz, ctx) }.orEmpty()
+        val admitido = recuerdo?.takeIf { Recuerdos.admite(c.situacion, bolsaNucleo) }
+        val recuerdos = admitido?.let { trozosRecuerdo(it, c, catalogo, voz, ctx) }.orEmpty()
         var cola: Bolsa? = null
         var final: TrozoInfo? = null
         var huecosFrase = huecos
@@ -128,10 +129,6 @@ object Redactor {
 
     private const val PRIMO = 31L
 
-    /** Situaciones en las que un recuerdo puede sustituir al cierre (spec §5.11). El sello es su núcleo. */
-    private val CON_RECUERDO = setOf(Situacion.SALUDO, Situacion.AYER_SE_ESCAPO, Situacion.VUELTA)
-    private val SELLOS = setOf(Bolsa.CIE_SELLO, Bolsa.CIE_SELLO_PERFECTO)
-
     /**
      * Nunca delante de un saludo (que ya saluda), ni forzada. Si no, solo en Hoy y con núcleo de tipo
      * NUCLEO; los títulos de aviso la fuerzan.
@@ -160,11 +157,6 @@ object Redactor {
             Franja.TARDE -> Bolsa.AP_TARDE
             Franja.NOCHE -> Bolsa.AP_NOCHE
         }
-
-    private fun admiteRecuerdo(
-        c: Candidata,
-        bolsaNucleo: Bolsa,
-    ): Boolean = c.situacion in CON_RECUERDO || c.situacion.ambito == Ambito.CIERRE || bolsaNucleo in SELLOS
 
     /**
      * Los trozos del recuerdo que se pueden decir con sus huecos y los de la candidata. Un hueco que
