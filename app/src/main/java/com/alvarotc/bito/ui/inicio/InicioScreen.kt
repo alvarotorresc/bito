@@ -524,9 +524,10 @@ fun InicioScreen(
     // El estado en carga trae el jardín inicial, no el tuyo: si contara como anterior, cada arranque celebraría todo el jardín.
     LaunchedEffect(estado.garden, estado.loading) { if (!estado.loading) celebraciones.jardin(estado.garden) }
     val enHoyQuieto by remember { derivedStateOf { q.value == 0f } }
-    DisposableEffect(enPrimerPlano, enHoyQuieto, cierreAbierto) {
-        // Primero el cierre y luego Hoy: así no se suelta un momento que el cierre retiene en el mismo paso.
-        celebraciones.retenerCierre(cierreAbierto)
+    DisposableEffect(enPrimerPlano, enHoyQuieto, cierreAbierto, sesionActiva) {
+        // Primero el cierre y luego Hoy: así no se suelta un momento que el cierre retiene en el mismo paso. Dentro de
+        // la sesión pasa lo mismo que con el cierre: solo salen las monedas y el resto espera a volver a Hoy (G14).
+        celebraciones.retenerCierre(cierreAbierto || sesionActiva)
         celebraciones.enHoy(enPrimerPlano && enHoyQuieto)
         onDispose { celebraciones.enHoy(false) }
     }

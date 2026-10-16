@@ -14,6 +14,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
+import com.alvarotc.bito.data.pointsLedgerEntity
+import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.domain.propuestas.Destino
 import com.alvarotc.bito.domain.sesion.Entrada
 import com.alvarotc.bito.domain.sesion.planSesion
@@ -30,6 +32,7 @@ import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -334,5 +337,39 @@ class InicioSesionTest {
         assertEquals(antes + 1, banco.sonda.saltosHabi())
         assertTrue(datos != null)
         assertFalse(datos!!.noMolestarActivo(motor.registro.value))
+    }
+
+    @Test
+    fun `celebrations wait until Today and only the coins show inside the session`() {
+        banco.preparar(marcaCero = true)
+        rule.setContent {
+            ConSistema(banco.sonido, banco.tacto) {
+                banco.Inicio(sesion = SesionInicio(motor, AireMudo, banco.ajustes), enPrimerPlano = true)
+            }
+        }
+        rule.waitForIdle()
+        pedir(Destino.Tarea("t1"))
+
+        runBlocking {
+            banco.db.pointsLedgerDao().insertAll(
+                listOf(
+                    pointsLedgerEntity(
+                        id = "w",
+                        delta = 10,
+                        reason = PointsReason.PERFECT_DAY,
+                        refId = "week:${banco.hoyLogico}",
+                        logicalDay = banco.hoyLogico,
+                        createdAtMillis = 10,
+                    ),
+                ),
+            )
+        }
+        rule.waitForIdle()
+        assertFalse("dentro de la sesión la veta espera", existe("veta-SEMANA"))
+        assertEquals(null, banco.celebraciones.actual.value)
+
+        atras()
+        rule.waitUntil(5_000) { existe("veta-SEMANA") }
+        assertTrue("al volver a Hoy sale la veta", existe("veta-SEMANA"))
     }
 }
