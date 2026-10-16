@@ -110,6 +110,8 @@ import com.alvarotc.bito.ui.premios.TipoVeta
 import com.alvarotc.bito.ui.sesion.BloqueSesion
 import com.alvarotc.bito.ui.sesion.CabeceraSesion
 import com.alvarotc.bito.ui.sesion.Encuadre
+import com.alvarotc.bito.ui.sesion.ApoyoDescanso
+import com.alvarotc.bito.ui.sesion.LocalApoyoDescanso
 import com.alvarotc.bito.ui.sesion.LocalMotorSesion
 import com.alvarotc.bito.ui.sesion.LocalRegistroHoja
 import com.alvarotc.bito.ui.sesion.LocalRespiracionJardin
@@ -400,6 +402,15 @@ fun InicioScreen(
     val camara = rememberEstadoCamaraSesion()
     val altoContenido = remember { mutableIntStateOf(0) }
     val respiracion = remember { mutableStateOf<(() -> Float)?>(null) }
+    // El descanso de la sesión pinta la propuesta y la fila de Hoy: lee del mismo estado y marca por la misma fuente.
+    val apoyoDescanso =
+        remember(hoy) {
+            ApoyoDescanso(
+                propuesta = hoy::propuestaDescanso,
+                tarjetas = { estadoActual.value.cards },
+                marcar = hoy::marcarEnDescanso,
+            )
+        }
     val hoyAlfa by animateFloatAsState(
         if (sesionActiva && !saliendo) 0f else 1f,
         if (reducido) tween(Duraciones.REDUCIDO) else tween(160, easing = Curvas.out),
@@ -659,6 +670,7 @@ fun InicioScreen(
                             LocalRegistroHoja provides hojasSesion,
                             LocalSalidaSesion provides SalidaSesion(::volverAHoy),
                             LocalRespiracionJardin provides respiracion,
+                            LocalApoyoDescanso provides apoyoDescanso,
                         ) {
                             SesionContenido(estadoVista, alAlto = { altoContenido.intValue = it })
                         }

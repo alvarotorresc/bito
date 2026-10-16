@@ -29,7 +29,9 @@ import com.alvarotc.bito.data.sesion.SesionesRepository
 import com.alvarotc.bito.data.sesion.ahoraDelSistema
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
+import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
+import com.alvarotc.bito.domain.sesion.TareasEmpezadas
 import com.alvarotc.bito.sesion.Aire
 import com.alvarotc.bito.sesion.EfectosSesion
 import com.alvarotc.bito.sesion.Fondo
@@ -50,9 +52,15 @@ import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import java.time.ZoneId
 
 /** Hand-built DI (tech doc §1.4: no framework — constructors). */
 class AppContainer(context: Context) {
@@ -165,8 +173,19 @@ class AppContainer(context: Context) {
             registrar = { habitId, cantidad -> registrarVuelta.log(habitId, cantidad) },
             // Con la app abierta, la tarjeta cambia sola con la hora (la noche, las caducidades).
             ticks = ticksDeMinuto(System::currentTimeMillis),
+            empezadas = tareasEmpezadasHoy(),
         )
     }
+
+    /** Las tareas con una sesión hoy, cerrada o viva: para Habi, algo en lo que ya se está no está «sin empezar». */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private fun tareasEmpezadasHoy(): Flow<Set<String>> =
+        settings.settings
+            .map { LogicalDays.logicalDayOf(System.currentTimeMillis(), it.dayCutoffMinutes, ZoneId.systemDefault()) }
+            .distinctUntilChanged()
+            .flatMapLatest { dia ->
+                combine(sesiones.deDia(dia), sesionStore.registro) { cerradas, viva -> TareasEmpezadas.de(cerradas, viva) }
+            }
 
     private val registrarVuelta by lazy { QuickActionUseCase(journal, reconciler, domainState, habits, settings) }
 

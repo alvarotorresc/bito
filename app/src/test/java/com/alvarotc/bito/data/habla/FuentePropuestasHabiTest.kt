@@ -32,6 +32,7 @@ import com.alvarotc.bito.domain.habla.TipoRefGordo
 import com.alvarotc.bito.domain.habla.ValorHueco
 import com.alvarotc.bito.domain.habla.habito
 import com.alvarotc.bito.domain.habla.hechos
+import com.alvarotc.bito.domain.habla.tarea
 import com.alvarotc.bito.domain.habla.idPropuesta
 import com.alvarotc.bito.domain.millisOn
 import com.alvarotc.bito.domain.model.DomainState
@@ -133,6 +134,9 @@ class FuentePropuestasHabiTest {
             }
         }
 
+    /** Los hechos que veía el motor en su última elección de Hoy. */
+    private var hechosVistosHoy: Hechos? = null
+
     /** El hilo de cada elección del motor. */
     private val hilosMotor = CopyOnWriteArrayList<String>()
 
@@ -140,7 +144,8 @@ class FuentePropuestasHabiTest {
         ElegirCandidata { ambito, h, m, _, habitId ->
             hilosMotor += Thread.currentThread().name
             when (ambito) {
-                Ambito.HOY ->
+                Ambito.HOY -> {
+                    hechosVistosHoy = h
                     if (alarmas) {
                         Candidata(Situacion.PERMISO_AVISOS, null, emptyMap(), listOf(Respuesta.VALE), nucleo = Bolsa.NU_PERMISO_ALARMAS)
                     } else if (conTope && m.mostradasHoy.any { it.situacion.cuentaTope }) {
@@ -148,6 +153,7 @@ class FuentePropuestasHabiTest {
                     } else {
                         candidataHoy(h)
                     }
+                }
                 Ambito.FICHA -> {
                     usosVistosFicha += m.usos.count { it.situacion != null }
                     h.habitos.firstOrNull { it.id == habitId }?.let {
@@ -208,6 +214,7 @@ class FuentePropuestasHabiTest {
                             hechoHoy = state.entries.any { it.habitId == h.id && it.logicalDay == ctx.hoy },
                         )
                     },
+                tareas = listOf(tarea("t1")),
                 gordo = m.gordo[ctx.hoy].orEmpty(),
                 diasSinActividad = if (vuelta) 4 else 0,
             )
@@ -236,6 +243,7 @@ class FuentePropuestasHabiTest {
         nombre: String = "Álvaro",
         permisos: PermisosAvisos = PermisosAvisos(notificaciones = true, alarmasExactas = true),
         despachador: CoroutineDispatcher = Dispatchers.Default,
+        empezadas: Flow<Set<String>> = flowOf(emptySet()),
     ) = FuentePropuestasHabi(
         estado = estado,
         ajustes = flowOf(Settings(userName = nombre, personality = Personality.NEUTRA)),
@@ -253,6 +261,7 @@ class FuentePropuestasHabiTest {
         motor = motorFalso,
         hechos = hechosFalsos,
         despachador = despachador,
+        empezadas = empezadas,
     )
 
     private fun marcar(h: Habit) {
@@ -568,17 +577,6 @@ class FuentePropuestasHabiTest {
             assertEquals(creada, vigentes.leer(Ambito.HOY)!!.creadoMillis)
         }
 
-    @Test
-    fun `the source still says nothing in a break`() =
-        prueba {
-            assertNull(fuente(estadoCon(agua)).propuesta(Ambito.DESCANSO).first())
-            assertNull(
-                fuente(estadoCon(agua))
-                    .propuesta(Ambito.DESCANSO, descanso = ContextoDescanso("s1", 1, false, 5, null))
-                    .first(),
-            )
-        }
-
     // «Ayer se escapó» de un hábito de marcar: la Neutra aún no tiene frases sin {minutos} que valgan cualquier día.
     @Test
     fun `the current proposal is kept and counted once against the daily cap`() =
@@ -646,5 +644,113 @@ class FuentePropuestasHabiTest {
             val f = fuente(estadoCon(agua), permisos = PermisosAvisos(notificaciones = true, alarmasExactas = false))
             val p = f.propuesta(Ambito.HOY).first()
             assertTrue(p?.id.orEmpty(), p?.id?.startsWith("PERMISO_AVISOS:") == true)
+        }
+
+    @Test
+    fun `a live session marks its task as started in what the motor sees`() =
+        prueba {
+            fuente(estadoCon(leerFalladoAyer), empezadas = flowOf(setOf("t1"))).hoy()
+            assertEquals(true, hechosVistosHoy!!.tareas.single().empezada)
+        }
+
+    // El descanso de la sesión (spec §12).
+
+    private val descanso = ContextoDescanso("s1", 1, largo = false, minutos = 5, excluir = null)
+
+    private suspend fun FuentePropuestasHabi.enDescanso(d: ContextoDescanso = descanso): Propuesta =
+        propuesta(Ambito.DESCANSO, descanso = d).first { it != null }!!
+
+    @Test
+    fun `a break without context says nothing`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer))
+            assertNull(f.propuesta(Ambito.DESCANSO).first())
+        }
+
+    @Test
+    fun `a break proposes a pending habit with real words and its own id`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer))
+            val p = f.enDescanso()
+            assertEquals("DESCANSO_HABITO:s1:1:${leerFalladoAyer.id}:$TODAY", p.id)
+            assertTrue(p.acciones.isEmpty())
+            assertEquals(Destino.Habito(leerFalladoAyer.id), p.destino)
+            val vigente = vigentes.leer(Ambito.DESCANSO)!!
+            assertEquals("s1:1:${leerFalladoAyer.id}", vigente.ref)
+            assertEquals("", vigente.habitId)
+        }
+
+    @Test
+    fun `a break proposal does not count for the daily cap or the 90 min`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer))
+            f.enDescanso()
+            f.responder(f.enDescanso().id, Respuesta.HECHO)
+            val m = memoria.observe(flowOf(TODAY)).first()
+            assertTrue(m.mostradasHoy.none { it.situacion.cuentaTope })
+            // Pasa por la anti-repetición: el trozo gastado queda anotado con su situación.
+            assertTrue(m.usos.any { it.situacion == Situacion.DESCANSO_HABITO })
+            // Y la respuesta no es de las que hacen esperar 90 min.
+            assertTrue(m.eventos.none { it.tipo == TipoMemoria.RESPUESTA && it.valor in setOf(Respuesta.VALE.ordinal, Respuesta.AHORA.ordinal) })
+        }
+
+    @Test
+    fun `the break keeps its phrase after marking another thing`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer, RealHabits.meditate))
+            val antes = f.enDescanso()
+            val propuesto = (antes.destino as Destino.Habito).id
+            marcar(listOf(leerFalladoAyer, RealHabits.meditate).first { it.id == propuesto })
+            val despues = f.enDescanso()
+            assertEquals(antes.id, despues.id)
+            assertEquals(antes.texto, despues.texto)
+        }
+
+    @Test
+    fun `marking in the break writes a HECHO answer and registers the habit`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer))
+            val p = f.enDescanso()
+            val efecto = f.responder(p.id, Respuesta.HECHO)
+            assertEquals(Efecto.Ninguno, efecto)
+            assertEquals(listOf(leerFalladoAyer.id to 1), registros)
+            val respuesta = eventos(TipoMemoria.RESPUESTA).single()
+            assertEquals(p.id, respuesta.ref)
+            assertEquals(Respuesta.HECHO.ordinal, respuesta.valor)
+            // La tarjeta conserva su frase.
+            assertEquals(p.texto, f.enDescanso().texto)
+        }
+
+    @Test
+    fun `the next break proposes another habit once the first is done`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer, RealHabits.meditate))
+            val primero = f.enDescanso()
+            val hecho = (primero.destino as Destino.Habito).id
+            marcar(listOf(leerFalladoAyer, RealHabits.meditate).first { it.id == hecho })
+            val segundo = f.enDescanso(descanso.copy(bloque = 2))
+            assertTrue(segundo.id.contains(":s1:2:") && segundo.id.endsWith(":$TODAY"))
+            assertNotEquals(hecho, (segundo.destino as? Destino.Habito)?.id)
+        }
+
+    @Test
+    fun `with nothing pending the break says to get up and has no habit`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer))
+            marcar(leerFalladoAyer)
+            val p = f.enDescanso()
+            assertTrue(p.id, p.id.startsWith("DESCANSO_SIN_PENDIENTES:s1:1:"))
+            assertNull(p.destino)
+        }
+
+    @Test
+    fun `a habit that disappears makes the break choose again`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer, RealHabits.meditate))
+            val primero = f.enDescanso()
+            val propuesto = (primero.destino as Destino.Habito).id
+            estado.value = estado.value.copy(habits = estado.value.habits.filter { it.id != propuesto })
+            val otro = f.enDescanso()
+            assertNotEquals(propuesto, (otro.destino as? Destino.Habito)?.id)
         }
 }

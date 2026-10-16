@@ -35,6 +35,7 @@ import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.propuestas.Ambito
+import com.alvarotc.bito.domain.propuestas.ContextoDescanso
 import com.alvarotc.bito.domain.propuestas.Efecto
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
 import com.alvarotc.bito.domain.propuestas.Propuesta
@@ -249,6 +250,15 @@ class TodayViewModel(
             val efecto = propuestas?.responder(id, r, hora) ?: return@launch
             if (efecto != Efecto.Ninguno) efectosInternos.send(efecto)
         }
+    }
+
+    /** La propuesta de Habi para un descanso de la sesión (spec §12); sin fuente, nada. */
+    fun propuestaDescanso(descanso: ContextoDescanso): Flow<Propuesta?> =
+        propuestas?.propuesta(Ambito.DESCANSO, descanso = descanso) ?: flowOf(null)
+
+    /** Marcar en el descanso lo propuesto: registra el hábito y deja la respuesta; la tarjeta conserva su frase. */
+    fun marcarEnDescanso(propuestaId: String) {
+        viewModelScope.launch { propuestas?.responder(propuestaId, Respuesta.HECHO) }
     }
 
     /** Lo gordo que el usuario guarda en la hoja. */

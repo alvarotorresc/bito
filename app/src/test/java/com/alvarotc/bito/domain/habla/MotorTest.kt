@@ -363,4 +363,38 @@ class MotorTest {
             assertEquals("$aviso", Situacion.FI_HOY_FALTA, fichaCon(m)?.situacion)
         }
     }
+
+    private fun comoEstas(
+        valor: Int,
+        millis: Long,
+        dia: Int = TODAY,
+    ) = EventoMemoria("COMO_ESTAS:$millis", TipoMemoria.COMO_ESTAS, dia, "CALM", valor, millis)
+
+    @Test
+    fun `after Aun me cuesta today the next proposal with buttons is the shortest`() {
+        val largo = escapado("largo", racha = 9, tipo = TipoHabito.CONTADOR, objetivo = 20)
+        val habitos = listOf(largo, escapado("corto", tipo = TipoHabito.CONTADOR, objetivo = 5))
+        val h = hechos(habitos = habitos, animoAyer = 0)
+        val cuesta = comoEstas(2, minAntes(30))
+
+        // Aunque ya se haya mostrado una propuesta antes de respirar, la siguiente es la más corta.
+        val antes = Memoria(eventos = listOf(cuesta), mostradasHoy = listOf(mostrada(Situacion.TAREA_VENCE, minAntes(100))))
+        val siguiente = elegir(h, antes)
+        assertEquals("corto", siguiente.ref)
+        assertEquals(Bolsa.NU_REGULAR, siguiente.nucleo)
+
+        // Una vez mostrada una después, vuelve a mandar lo de siempre.
+        val despues = antes.copy(mostradasHoy = antes.mostradasHoy + mostrada(Situacion.TAREA_VENCE, minAntes(10)))
+        assertEquals("largo", elegir(h, despues).ref)
+    }
+
+    @Test
+    fun `better or same or an answer of another day does not shorten the proposal`() {
+        val largo = escapado("largo", racha = 9, tipo = TipoHabito.CONTADOR, objetivo = 20)
+        val habitos = listOf(largo, escapado("corto", tipo = TipoHabito.CONTADOR, objetivo = 5))
+        val h = hechos(habitos = habitos, animoAyer = 0)
+        assertEquals("largo", elegir(h, Memoria(eventos = listOf(comoEstas(0, minAntes(30))))).ref)
+        assertEquals("largo", elegir(h, Memoria(eventos = listOf(comoEstas(1, minAntes(30))))).ref)
+        assertEquals("largo", elegir(h, Memoria(eventos = listOf(comoEstas(2, minAntes(30), dia = TODAY - 1)))).ref)
+    }
 }
