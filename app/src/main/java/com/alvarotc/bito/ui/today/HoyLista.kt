@@ -163,7 +163,8 @@ fun HoyLista(
     hundida: () -> Float = { 0f },
     // El hábito cuya veta de racha dura ahora: su «día N» sube y va en negrita.
     vetaRachaDe: String? = null,
-    // Habi salta en el jardín del Inicio: al resolver el permiso (sin voz) y tras «Hecho» en la vuelta (con su voz).
+    // Lo que pide al jardín del Inicio: el salto de Habi al resolver el permiso (sin voz) y, tras «Hecho» en la vuelta,
+    // la voz del salto que el jardín ya da al revivir (con voz).
     alSaltoHabi: (conVoz: Boolean) -> Unit = {},
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()

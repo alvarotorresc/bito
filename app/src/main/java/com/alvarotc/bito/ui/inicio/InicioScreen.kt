@@ -500,10 +500,14 @@ fun InicioScreen(
                             alGordoVisto = alGordoVisto,
                             hundida = { cierreEstado.c.value.coerceIn(0f, 1f) },
                             vetaRachaDe = vetaRachaDe,
-                            // El salto de Habi en el jardín; la voz, en el mismo fotograma, solo tras «Hecho» en la vuelta.
+                            // Permiso resuelto: Habi salta. «Hecho» en la vuelta: el jardín que revive ya hace saltar a
+                            // Habi (GardenScene, al bajar el mustio), así que aquí solo suena su voz; dos saltos no.
                             alSaltoHabi = { conVoz ->
-                                if (!reducido) salto++
-                                if (conVoz) gesto(Snd.HABI)
+                                if (conVoz) {
+                                    gesto(Snd.HABI)
+                                } else if (!reducido) {
+                                    salto++
+                                }
                             },
                         )
                     }

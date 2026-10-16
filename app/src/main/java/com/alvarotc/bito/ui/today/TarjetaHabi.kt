@@ -71,7 +71,7 @@ fun TarjetaHabi(
     propuesta: Propuesta?,
     alResponder: (Respuesta) -> Unit,
     modifier: Modifier = Modifier,
-    // «Hecho» en la vuelta: Habi salta con el jardín 1,1 s después (el salto y su voz los pone el Inicio).
+    // «Hecho» en la vuelta: 1,1 s después, la voz de Habi al saltar con el jardín que revive (la pone el Inicio).
     alSaltoHabi: () -> Unit = {},
     // Cada vez que sube, el permiso se acaba de resolver: la tarjeta se llena de agua clara y vuelve (240 ms, §9).
     aguaClara: Int = 0,
