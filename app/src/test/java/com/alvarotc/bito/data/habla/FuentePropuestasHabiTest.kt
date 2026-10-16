@@ -45,12 +45,17 @@ import com.alvarotc.bito.domain.propuestas.Respuesta
 import com.alvarotc.bito.domain.propuestas.TextoHabi
 import com.alvarotc.bito.domain.testZone
 import com.alvarotc.bito.ui.notifications.AvisosHabi
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
@@ -61,6 +66,10 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.time.Duration.Companion.seconds
 
 private const val A_LAS_1430 = 14 * 60 + 30
 
@@ -90,6 +99,14 @@ class FuentePropuestasHabiTest {
     /** Con [conTope], el motor da un saludo en cuanto hoy se ha mostrado una propuesta que cuenta para el tope (§5.2). */
     private var conTope = false
 
+    /** Cuántos usos con situación (redacciones) veía el motor en cada elección de la ficha. */
+    private val usosVistosFicha = mutableListOf<Int>()
+
+    /** Armado, la siguiente llamada a los hechos (fuera del cerrojo, con la foto ya tomada) avisa y espera. */
+    private val pararHechos = AtomicBoolean(false)
+    private val hechosParados = CountDownLatch(1)
+    private val soltarHechos = CountDownLatch(1)
+
     private val leerFalladoAyer: Habit = RealHabits.readBeforeSleep
     private val agua: Habit = RealHabits.water.copy(step = 2)
 
@@ -113,7 +130,8 @@ class FuentePropuestasHabiTest {
                     } else {
                         candidataHoy(h)
                     }
-                Ambito.FICHA ->
+                Ambito.FICHA -> {
+                    usosVistosFicha += m.usos.count { it.situacion != null }
                     h.habitos.firstOrNull { it.id == habitId }?.let {
                         Candidata(
                             Situacion.FI_OBJETIVO,
@@ -122,6 +140,7 @@ class FuentePropuestasHabiTest {
                             listOf(Respuesta.VALE, Respuesta.HOY_NO),
                         )
                     }
+                }
                 else -> null
             }
         }
@@ -154,6 +173,10 @@ class FuentePropuestasHabiTest {
     /** Hechos sacados del estado: los hábitos no archivados, hechos si tienen un registro hoy. */
     private val hechosFalsos: (DomainState, Memoria, Contexto, Map<String, Int>) -> Hechos =
         { state, m, ctx, _ ->
+            if (pararHechos.compareAndSet(true, false)) {
+                hechosParados.countDown()
+                soltarHechos.await(5, TimeUnit.SECONDS)
+            }
             hechos(
                 habitos =
                     state.habits.filter { it.status != HabitStatus.ARCHIVED }.map { h ->
@@ -217,11 +240,14 @@ class FuentePropuestasHabiTest {
     private suspend fun eventos(tipo: TipoMemoria): List<EventoMemoria> =
         db.hablaDao().todosEventos().mapNotNull { it.aDominio() }.filter { it.tipo == tipo }
 
+    /** Con tope de reloj real: si una regresión deja la propuesta en `null`, el test falla en 10 s y no en 60. */
+    private fun prueba(cuerpo: suspend TestScope.() -> Unit) = runTest(timeout = 10.seconds, testBody = cuerpo)
+
     private suspend fun FuentePropuestasHabi.hoy(): Propuesta = propuesta(Ambito.HOY).first { it != null }!!
 
     @Test
     fun `the current proposal does not change when something else is marked`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer, agua))
             val antes = f.propuesta(Ambito.HOY).first { it != null }!!
             marcar(agua) // otro hábito
@@ -233,7 +259,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `answering changes the current proposal`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             val p = f.propuesta(Ambito.HOY).first { it != null }!!
             f.responder(p.id, Respuesta.VALE, p.hora)
@@ -251,7 +277,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `the confirmation is the new current proposal`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer, agua))
             val p = f.hoy()
             f.responder(p.id, Respuesta.VALE, p.hora)
@@ -264,19 +290,21 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `doing the proposed thing from the list closes the card`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             f.hoy()
             marcar(leerFalladoAyer)
-            assertNull(f.propuesta(Ambito.HOY).first())
-            val despues = f.propuesta(Ambito.HOY).first()!!
+            // Lo que ve la tarjeta: un solo colector, `null` una vez y después lo siguiente.
+            val (cerrada, despues) = f.propuesta(Ambito.HOY).take(2).toList()
+            assertNull(cerrada)
+            despues!!
             // Lo que toque después, nunca una frase de premio por lo que se acaba de hacer.
             assertTrue(despues.id, despues.id.startsWith("SALUDO:"))
         }
 
     @Test
     fun `the morning notice and the card share the current proposal`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             val tarjeta = async { f.propuesta(Ambito.HOY).first { it != null }!! }
             val aviso = async { f.propuesta(Ambito.HOY).first { it != null }!! }
@@ -289,7 +317,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `answering a proposal id from another day is ignored`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             val p = f.hoy()
 
@@ -307,7 +335,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `a proposal about an archived habit stops being valid`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer, agua))
             val p = f.hoy()
             estado.value = estado.value.copy(habits = listOf(leerFalladoAyer.archivedOn(TODAY), agua))
@@ -318,7 +346,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `a stored phrase pointing past the bag is redrafted`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             vigentes.guardar(
                 PropuestaVigente(
@@ -346,7 +374,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `other hour with an hour moves the accepted notice`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             val p = f.hoy()
             f.responder(p.id, Respuesta.VALE, p.hora)
@@ -355,6 +383,7 @@ class FuentePropuestasHabiTest {
             val elegir = f.responder(confirmacion.id, Respuesta.OTRA_HORA)
             assertEquals(Efecto.ElegirHora(10 * 60 + 30, 21 * 60 + 15, A_LAS_1430), elegir)
 
+            ahora += 60_000
             assertEquals(Efecto.Ninguno, f.responder(confirmacion.id, Respuesta.OTRA_HORA, 17 * 60))
 
             val aviso = aceptados.pendientes().single()
@@ -364,11 +393,13 @@ class FuentePropuestasHabiTest {
             val vigente = vigentes.leer(Ambito.HOY)!!
             assertEquals(Situacion.CONFIRMA_VALE, vigente.situacion)
             assertEquals(17 * 60, vigente.hora)
+            // Pedir el selector no es una respuesta: solo cuentan el «Vale» y la hora elegida.
+            assertEquals(2, eventos(TipoMemoria.RESPUESTA).size)
         }
 
     @Test
     fun `the objective note opens the editor with the suggested target without saving`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(agua))
             val nota = f.propuesta(Ambito.FICHA, agua.id).first { it != null }!!
             assertTrue(nota.id.startsWith("FI_OBJETIVO:${agua.id}:"))
@@ -383,7 +414,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `saving the big thing makes it current`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             f.hoy()
             val refs = listOf(RefGordo(TipoRefGordo.TAREA, "t1"), RefGordo(TipoRefGordo.HABITO, leerFalladoAyer.id))
@@ -398,7 +429,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `a memory mentioned is written once`() =
-        runTest {
+        prueba {
             memoria.anotar(EventoMemoria("animo-ayer", TipoMemoria.ANIMO, TODAY - 1, null, 0, ahora))
             val f = fuente(estadoCon(agua))
             val p = f.hoy()
@@ -417,7 +448,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `saying not today leaves the short phrase`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             val p = f.hoy()
 
@@ -431,7 +462,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `now opens a session with the proposed habit`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             val p = f.hoy()
             assertEquals(Efecto.Sesion(Destino.Habito(leerFalladoAyer.id)), f.responder(p.id, Respuesta.AHORA))
@@ -439,7 +470,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `done on the comeback logs the step and remembers the days away`() =
-        runTest {
+        prueba {
             vuelta = true
             val f = fuente(estadoCon(agua))
             val p = f.hoy()
@@ -454,7 +485,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `with an empty catalogue the proposal stays put`() =
-        runTest {
+        prueba {
             catalogo = CatalogoHablaVacio
             val f = fuente(estadoCon(leerFalladoAyer, agua))
             val antes = f.hoy()
@@ -469,13 +500,13 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `the rest says nothing`() =
-        runTest {
+        prueba {
             assertNull(fuente(estadoCon(agua)).propuesta(Ambito.DESCANSO).first())
         }
 
     @Test
     fun `the current proposal is kept and counted once against the daily cap`() =
-        runTest {
+        prueba {
             conTope = true
             val f = fuente(estadoCon(leerFalladoAyer, agua))
             val p = f.hoy()
@@ -492,7 +523,7 @@ class FuentePropuestasHabiTest {
 
     @Test
     fun `an answer lasts the wait after answering and then the motor decides again`() =
-        runTest {
+        prueba {
             val f = fuente(estadoCon(leerFalladoAyer))
             val p = f.hoy()
             f.responder(p.id, Respuesta.HOY_NO)
@@ -500,5 +531,34 @@ class FuentePropuestasHabiTest {
             assertTrue(f.hoy().id.startsWith("TRAS_HOY_NO:"))
             ahora += 60_000L
             assertEquals(p.id, f.hoy().id)
+        }
+
+    @Test
+    fun `a candidate born expired is neither shown nor stored`() =
+        prueba {
+            ahora = millisOn(TODAY, 21, 10) // noche a las 21:30: AYER_SE_ESCAPO caduca a las 21:00
+            val f = fuente(estadoCon(leerFalladoAyer, agua))
+            assertNull(f.propuesta(Ambito.HOY).first())
+            assertNull(vigentes.leer(Ambito.HOY))
+            marcar(agua)
+            assertNull(f.propuesta(Ambito.HOY).first())
+            assertNull(vigentes.leer(Ambito.HOY))
+            assertTrue(memoria.observe(flowOf(TODAY)).first().usos.isEmpty())
+        }
+
+    @Test
+    fun `a draft reads the memory inside the lock and sees what another scope just wrote`() =
+        prueba {
+            val f = fuente(estadoCon(leerFalladoAyer, agua))
+            pararHechos.set(true)
+            // La ficha toma su foto de la memoria y se queda parada antes del cerrojo.
+            val ficha = async(Dispatchers.IO) { f.propuesta(Ambito.FICHA, agua.id).first { it != null } }
+            withContext(Dispatchers.IO) { assertTrue(hechosParados.await(5, TimeUnit.SECONDS)) }
+            // Mientras, Hoy redacta y anota su uso.
+            assertTrue(f.hoy().id.startsWith("AYER_SE_ESCAPO:"))
+            soltarHechos.countDown()
+            ficha.await()
+
+            assertEquals(1, usosVistosFicha.first())
         }
 }

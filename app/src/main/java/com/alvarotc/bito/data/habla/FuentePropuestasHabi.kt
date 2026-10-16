@@ -107,14 +107,17 @@ class FuentePropuestasHabi(
         return combine(estado, ajustes, recordatorios, memoria.observe(dia)) { state, prefs, recs, m ->
             val ctx = contexto(state, prefs)
             val h = hechos(state, m, ctx, recs)
-            enCerrojo { vigenteODeNuevo(ambito, clave, habitId, state, ctx, h, m) }
+            enCerrojo { vigenteODeNuevo(ambito, clave, habitId, state, ctx, h, recs) }
         }.distinctUntilChanged()
     }
 
     /**
      * La vigente si vale (sin escribir nada, para no provocar otra emisión). Si lo propuesto ya está
      * hecho, se borra y se emite `null` una vez: la tarjeta se cierra sin texto y la emisión que
-     * provoca el borrado trae lo que toque. Si no vale por otra cosa, se redacta otra.
+     * provoca el borrado trae lo que toque. Si no vale por otra cosa, se redacta otra con la memoria
+     * releída dentro del cerrojo: la foto de la emisión puede no ver lo que otro ámbito o una respuesta
+     * acaban de escribir. Una candidata que ya nace sin valer (caducada, hecha) no se redacta ni se
+     * guarda: se emite `null` sin escribir nada, o cada emisión redactaría otra y gastaría el tope.
      */
     private suspend fun vigenteODeNuevo(
         ambito: Ambito,
@@ -123,7 +126,7 @@ class FuentePropuestasHabi(
         state: DomainState,
         ctx: Contexto,
         h: Hechos,
-        m: Memoria,
+        recs: Map<String, Int>,
     ): Propuesta? {
         val v = vigentes.leer(ambito, clave)
         if (v != null) {
@@ -136,8 +139,11 @@ class FuentePropuestasHabi(
                 Validez.NO_VALE -> vigentes.borrar(ambito, clave)
             }
         }
-        val c = motor.elegir(ambito, h, m, ctx, habitId) ?: return null
-        return pintar(redactarYGuardar(c, ambito, clave, ctx, h, m), h, ctx)
+        val m = memoria.observe(flowOf(ctx.hoy)).first()
+        val hAlDia = hechos(state, m, ctx, recs)
+        val c = motor.elegir(ambito, hAlDia, m, ctx, habitId) ?: return null
+        if (validez(sinRedactar(c, ambito, clave, ctx), state, ctx) != Validez.VALE) return null
+        return pintar(redactarYGuardar(c, ambito, clave, ctx, hAlDia, m), hAlDia, ctx)
     }
 
     // Validez (spec §4.5).
@@ -268,6 +274,14 @@ class FuentePropuestasHabi(
         )
     }
 
+    /** La vigente que sería [c] antes de redactarla: sin trozos, para mirar su validez. */
+    private fun sinRedactar(
+        c: Candidata,
+        ambito: Ambito,
+        clave: String,
+        ctx: Contexto,
+    ) = PropuestaVigente(ambito, clave, ctx.hoy, c.situacion, c.ref, emptyList(), c.huecos, c.acciones, c.destino, c.hora, ctx.ahoraMillis)
+
     /** Redacta [c], la guarda como vigente y anota los usos y el recuerdo mencionado. */
     private suspend fun redactarYGuardar(
         c: Candidata,
@@ -320,9 +334,19 @@ class FuentePropuestasHabi(
             val ctx = contexto(state, ajustes.first())
             // Review Focus 4: un id de otro día u otra propuesta no hace nada.
             if (v.dia != ctx.hoy || idDe(v) != id) return@enCerrojo Efecto.Ninguno
-            memoria.anotar(
-                EventoMemoria("RESPUESTA:$id:${ctx.ahoraMillis}", TipoMemoria.RESPUESTA, ctx.hoy, id, respuesta.ordinal, ctx.ahoraMillis),
-            )
+            // «Otra hora» sin hora solo pide el selector: la respuesta se anota cuando llega la hora.
+            if (respuesta != Respuesta.OTRA_HORA || hora != null) {
+                memoria.anotar(
+                    EventoMemoria(
+                        "RESPUESTA:$id:${ctx.ahoraMillis}",
+                        TipoMemoria.RESPUESTA,
+                        ctx.hoy,
+                        id,
+                        respuesta.ordinal,
+                        ctx.ahoraMillis,
+                    ),
+                )
+            }
             val m = memoria.observe(flowOf(ctx.hoy)).first()
             val h = hechos(state, m, ctx, recordatorios.first())
             Respondiendo(v, clave, state, ctx, h, m).con(respuesta, hora)
