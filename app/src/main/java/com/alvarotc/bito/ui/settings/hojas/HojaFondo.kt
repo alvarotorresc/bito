@@ -44,6 +44,13 @@ fun HojaFondo(
     elegido: SessionBackground,
     alElegir: (SessionBackground) -> Unit,
     alCerrar: () -> Unit,
+    // La hoja de Preparar: otros textos y opciones, sin estrato ni «Hecho», y la muestra la da el fondo de la sesión.
+    titulo: String? = null,
+    descripcion: String? = null,
+    opcionesPropias: List<OpcionAgua>? = null,
+    conEstrato: Boolean = true,
+    conHecho: Boolean = true,
+    muestra: ((SessionBackground) -> Unit)? = null,
 ) {
     val motor = LocalSonido.current
     val scope = rememberCoroutineScope()
@@ -52,7 +59,7 @@ fun HojaFondo(
     LaunchedEffect(abierta) { if (!abierta) vista.parar() }
 
     val opciones =
-        listOf(
+        opcionesPropias ?: listOf(
             opcion(SessionBackground.RAIN, R.string.hojas_fondo_lluvia, R.string.hojas_fondo_lluvia_nota),
             opcion(SessionBackground.BROWN, R.string.hojas_fondo_marron, R.string.hojas_fondo_marron_nota),
             opcion(SessionBackground.CAFE, R.string.hojas_fondo_cafe, R.string.hojas_fondo_cafe_nota),
@@ -61,12 +68,16 @@ fun HojaFondo(
     Hoja(
         abierta = abierta,
         alCerrar = alCerrar,
-        seccion = BitoTema.colores.estratos.sonido,
-        etiqueta = stringResource(R.string.hojas_estrato_sonido),
-        titulo = stringResource(R.string.hojas_fondo_titulo),
+        seccion = if (conEstrato) BitoTema.colores.estratos.sonido else null,
+        etiqueta = if (conEstrato) stringResource(R.string.hojas_estrato_sonido) else null,
+        titulo = titulo ?: stringResource(R.string.hojas_fondo_titulo),
     ) {
         Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(Medidas.e8)) {
-            Text(stringResource(R.string.hojas_fondo_desc), style = BitoTema.tipos.t14, color = BitoTema.colores.tintaSuave)
+            Text(
+                descripcion ?: stringResource(R.string.hojas_fondo_desc),
+                style = if (conEstrato) BitoTema.tipos.t14 else BitoTema.tipos.t16,
+                color = BitoTema.colores.tintaSuave,
+            )
             ElegirConAgua(
                 opciones = opciones,
                 elegida = elegido.name,
@@ -74,6 +85,10 @@ fun HojaFondo(
                     val nuevo = SessionBackground.valueOf(clave)
                     alElegir(nuevo)
                     vista.parar()
+                    if (muestra != null) {
+                        muestra(nuevo)
+                        return@ElegirConAgua
+                    }
                     nuevo.sonido()?.let { snd ->
                         val bucle = motor.bucle(snd)
                         bucle.empezar()
@@ -87,7 +102,7 @@ fun HojaFondo(
                     }
                 },
             )
-            BotonesHoja(stringResource(R.string.hojas_rec_hecho), { cerrar() })
+            if (conHecho) BotonesHoja(stringResource(R.string.hojas_rec_hecho), { cerrar() })
         }
     }
 }

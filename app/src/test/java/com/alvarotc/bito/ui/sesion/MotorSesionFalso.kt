@@ -10,6 +10,7 @@ import com.alvarotc.bito.domain.sesion.RegistroSesion
 import com.alvarotc.bito.domain.sesion.RelojSesion
 import com.alvarotc.bito.domain.sesion.planSesion
 import com.alvarotc.bito.domain.sesion.registroSesion
+import com.alvarotc.bito.sesion.AvisoSesion
 import com.alvarotc.bito.sesion.Conflicto
 import com.alvarotc.bito.sesion.MotorSesion
 import com.alvarotc.bito.sesion.ResultadoAccion
@@ -36,13 +37,19 @@ class MotorSesionFalso : MotorSesion {
         borrador.value = plan
     }
 
-    override suspend fun empezar(): Conflicto? = null.also { llamadas += "empezar" }
+    /** Lo que `empezar` devuelve: null = empieza sin más. */
+    var conflicto: Conflicto? = null
+
+    /** El aviso que trae `dejarlaYEmpezar`. */
+    var avisoAlDejarla: AvisoSesion? = null
+
+    override suspend fun empezar(): Conflicto? = conflicto.also { llamadas += "empezar" }
 
     override suspend fun seguirConLaViva() {
         llamadas += "seguirConLaViva"
     }
 
-    override suspend fun dejarlaYEmpezar(): ResultadoAccion = SIN_EFECTO.also { llamadas += "dejarlaYEmpezar" }
+    override suspend fun dejarlaYEmpezar(): ResultadoAccion = SIN_EFECTO.copy(aviso = avisoAlDejarla).also { llamadas += "dejarlaYEmpezar" }
 
     override suspend fun pausar() {
         llamadas += "pausar"

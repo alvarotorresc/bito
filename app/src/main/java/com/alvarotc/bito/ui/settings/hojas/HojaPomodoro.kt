@@ -8,6 +8,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.alvarotc.bito.R
+import com.alvarotc.bito.sesion.NoMolestar
+import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.sesion.HojasNoMolestar
+import com.alvarotc.bito.ui.sesion.rememberFlujoNoMolestar
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.componentes.BotonesHoja
@@ -31,8 +35,13 @@ fun HojaPomodoro(
     valores: Pomodoro,
     alCambiar: (Pomodoro) -> Unit,
     alCerrar: () -> Unit,
+    noMolestar: NoMolestar? = null,
+    sesionNoMolestar: Boolean = false,
+    alCambiarNoMolestar: (Boolean) -> Unit = {},
+    spec: HabiSpec? = null,
 ) {
     val minutos = stringResource(R.string.hojas_pomo_minutos)
+    val flujo = rememberFlujoNoMolestar()
     Hoja(
         abierta = abierta,
         alCerrar = alCerrar,
@@ -65,8 +74,26 @@ fun HojaPomodoro(
                     { alCambiar(valores.copy(descansoSolo = it)) },
                     subtitulo = stringResource(R.string.hojas_pomo_solo_nota),
                 )
+                // «No molestar en las sesiones»: el mismo valor que el interruptor de Preparar y pide el permiso igual.
+                if (noMolestar != null) {
+                    FilaInterruptor(
+                        stringResource(R.string.ses_ajustes_no_molestar),
+                        sesionNoMolestar,
+                        alCambiarNoMolestar,
+                        bloqueada = { nuevo -> nuevo && !noMolestar.permitido() },
+                        alBloqueada = { flujo.pedir() },
+                    )
+                }
             }
             BotonesHoja(stringResource(R.string.hojas_rec_hecho), { cerrar() })
         }
+    }
+    if (noMolestar != null && spec != null) {
+        HojasNoMolestar(
+            flujo = flujo,
+            noMolestar = noMolestar,
+            spec = spec,
+            alActivar = { alCambiarNoMolestar(true) },
+        )
     }
 }

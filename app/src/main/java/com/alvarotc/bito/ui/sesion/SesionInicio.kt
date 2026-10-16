@@ -33,6 +33,7 @@ class SesionInicio(
     private val objetivos: suspend (Objetivo) -> DatosObjetivo? = { null },
     val catalogo: CatalogoHabla? = null,
     private val contextoDelDia: suspend () -> Contexto? = { null },
+    private val tareasHoy: suspend () -> List<OpcionTarea> = { emptyList() },
 ) {
     /** El fondo que suena ahora; null con Bito callado o con el foco perdido. */
     val fondoSonando: StateFlow<SessionBackground?> get() = fondo.sonando
@@ -43,4 +44,7 @@ class SesionInicio(
     suspend fun objetivo(objetivo: Objetivo): DatosObjetivo? = objetivos(objetivo)
 
     suspend fun contexto(): Contexto? = contextoDelDia()
+
+    /** Las tareas que tocan hoy, para la hoja «¿En qué te concentras?» de Preparar. */
+    suspend fun tareasDeHoy(): List<OpcionTarea> = tareasHoy()
 }

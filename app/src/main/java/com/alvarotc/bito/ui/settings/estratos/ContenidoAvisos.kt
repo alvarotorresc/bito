@@ -32,6 +32,10 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import com.alvarotc.bito.R
 import com.alvarotc.bito.data.settings.Settings
+import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.Mood
+import com.alvarotc.bito.sesion.NoMolestar
+import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.settings.SettingsViewModel
 import com.alvarotc.bito.ui.settings.hojas.HojaAvisosHabi
 import com.alvarotc.bito.ui.settings.hojas.HojaNoMolestar
@@ -250,6 +254,10 @@ fun ContenidoAvisos(
         valores = Pomodoro(settings.pomoFocus, settings.pomoShort, settings.pomoLong, settings.pomoRounds, settings.pomoAutoBreak),
         alCambiar = { settingsViewModel.setPomodoro(it.foco, it.corto, it.largo, it.rondas, it.descansoSolo) },
         alCerrar = { hoja = null },
+        noMolestar = remember(context) { NoMolestar(context) },
+        sesionNoMolestar = settings.sessionDnd,
+        alCambiarNoMolestar = settingsViewModel::setSessionDnd,
+        spec = HabiSpec(Mood.NORMAL, settings.personality, EquippedSet()),
     )
     HojaHoraRespiracion(
         abierta = hoja == HojaAvisos.RESPIRACION,

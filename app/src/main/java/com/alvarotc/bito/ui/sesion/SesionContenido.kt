@@ -181,7 +181,7 @@ private fun ColumnaBrota(
 @Composable
 internal fun BloqueDeSesion(bloque: BloqueSesion) {
     when (bloque) {
-        BloqueSesion.PREPARAR -> Unit
+        BloqueSesion.PREPARAR -> PrepararDeSesion()
         BloqueSesion.RESPIRAR -> Unit
         BloqueSesion.FOCO -> Unit
         BloqueSesion.DESCANSO -> Unit
