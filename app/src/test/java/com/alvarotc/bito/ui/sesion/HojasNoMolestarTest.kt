@@ -16,6 +16,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.height
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.habi.SondaSalto
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
@@ -42,6 +43,7 @@ class HojasNoMolestarTest {
     private val avisos = mutableListOf<String>()
     private var activado by mutableStateOf(false)
     private var ahoraNo = 0
+    private val sondaSalto = SondaSalto()
     private lateinit var flujo: FlujoNoMolestar
 
     private fun montar(personalidad: Personality = Personality.NEUTRA) {
@@ -57,6 +59,7 @@ class HojasNoMolestarTest {
                             alActivar = { activado = true },
                             alAhoraNo = { ahoraNo++ },
                             aviso = { avisos += it },
+                            sondaSalto = sondaSalto,
                         )
                     }
                 }
@@ -153,6 +156,19 @@ class HojasNoMolestarTest {
         compose.onNodeWithText("Vale").performClick()
         compose.waitForIdle()
         assertEquals(PasoPermiso.NINGUNO, flujo.paso)
+    }
+
+    @Test
+    fun `Listo makes Habi jump a quarter of her height`() {
+        montar()
+        compose.onNodeWithText("Dar permiso").performClick()
+        compose.waitForIdle()
+        permiso.concederAlLanzar = true
+        compose.onNodeWithText("Dar permiso").performClick()
+        compose.waitUntil(5_000) { sondaSalto.picoFraccion > 0f }
+        compose.waitForIdle()
+
+        assertEquals(0.24f, sondaSalto.picoFraccion, 0.01f)
     }
 
     @Test

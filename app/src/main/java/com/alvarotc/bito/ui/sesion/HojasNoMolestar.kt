@@ -32,6 +32,7 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.sesion.NoMolestar
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
+import com.alvarotc.bito.ui.habi.SondaSalto
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
@@ -63,6 +64,9 @@ fun rememberFlujoNoMolestar(): FlujoNoMolestar = remember { FlujoNoMolestar() }
 private val ALTO_HUECO = 140.dp
 private val FORMA_HUECO = RoundedCornerShape(topStart = 70.dp, topEnd = 70.dp, bottomStart = 18.dp, bottomEnd = 18.dp)
 
+// `hb.jump(.24)` al entrar en «Listo».
+private const val SALTO_LISTO = 0.24f
+
 // `habiEn` pone a Habi al 86 % del alto del hueco con los pies al 98 %.
 private const val HABI_ALTO = 0.86f
 private const val HABI_PIES = 0.98f
@@ -85,6 +89,7 @@ fun HojasNoMolestar(
     alActivar: () -> Unit,
     alAhoraNo: () -> Unit = {},
     aviso: ((String) -> Unit)? = null,
+    sondaSalto: SondaSalto? = null,
 ) {
     val gesto = rememberGesto()
     val avisoListo = stringResource(R.string.ses_aviso_dnd_listo)
@@ -179,7 +184,7 @@ fun HojasNoMolestar(
                 }
             } else {
                 Column(Modifier.fillMaxWidth()) {
-                    HuecoHabi(spec.copy(mood = Mood.RADIANT), salta = true)
+                    HuecoHabi(spec.copy(mood = Mood.RADIANT), salta = true, sondaSalto = sondaSalto)
                     TituloDeHoja(stringResource(R.string.ses_dnd_listo_titulo))
                     Descripcion(stringResource(R.string.ses_dnd_listo_frase))
                     BotonesHoja(
@@ -220,6 +225,7 @@ private fun Descripcion(texto: String) {
 private fun HuecoHabi(
     spec: HabiSpec,
     salta: Boolean,
+    sondaSalto: SondaSalto? = null,
 ) {
     var reaccion by remember { mutableIntStateOf(0) }
     LaunchedEffect(salta) { if (salta) reaccion = 1 }
@@ -241,6 +247,9 @@ private fun HuecoHabi(
                 .testTag("dnd-habi"),
             animated = !BitoTema.reducido,
             nudge = reaccion,
+            // `hb.jump(.24)` del mock: el salto de Listo, no la reacción al toque.
+            nudgeSalto = if (salta) SALTO_LISTO else null,
+            sondaSalto = sondaSalto,
         )
     }
 }
