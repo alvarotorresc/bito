@@ -8,6 +8,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.sesion.FormatoSesion
+import com.alvarotc.bito.sesion.AvisoSesion
 import com.alvarotc.bito.sesion.MotorSesion
 import kotlinx.coroutines.launch
 
@@ -64,7 +65,7 @@ fun rememberAtrasSesion(
             AtrasSesion.SIGUE_EN_MARCHA -> {
                 val resta = FormatoSesion.cuenta(motor.instante.value?.restaMillis ?: 0L)
                 hoy.value()
-                scope.launch { avisa.value(recursos.getString(R.string.ses_aviso_sigue, resta)) }
+                scope.launch { avisa.value(AvisoSesion.SigueEnMarcha(resta).texto(recursos)) }
             }
             null -> Unit
         }

@@ -39,7 +39,6 @@ import com.alvarotc.bito.domain.sesion.FormatoSesion
 import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.domain.sesion.PlanSesion
 import com.alvarotc.bito.domain.sesion.TextoBloques
-import com.alvarotc.bito.sesion.AvisoSesion
 import com.alvarotc.bito.sesion.Conflicto
 import com.alvarotc.bito.sesion.FondoMudo
 import com.alvarotc.bito.sesion.MotorSesion
@@ -254,7 +253,7 @@ fun PrepararContenido(
     }
     // 8. Empezar (el motor pone el brote y el confirm)
     val libre = stringResource(R.string.ses_solo_foco)
-    val formatoIntento = stringResource(R.string.ses_aviso_intento)
+    val recursos = LocalContext.current.resources
     Boton(
         texto = stringResource(R.string.ses_empezar),
         alPulsar = {
@@ -304,7 +303,7 @@ fun PrepararContenido(
         alDejar = {
             alcance.launch {
                 val resultado = motor.dejarlaYEmpezar()
-                (resultado.aviso as? AvisoSesion.ComoIntento)?.let { datos.aviso(formatoIntento.format(it.nombre)) }
+                resultado.aviso?.let { datos.aviso(it.texto(recursos)) }
             }
         },
         alCerrar = { hoja = HojaPreparar.NINGUNA },

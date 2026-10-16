@@ -1,6 +1,5 @@
 package com.alvarotc.bito.ui.sesion
 
-import android.content.res.Resources
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
@@ -35,7 +34,6 @@ import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.sesion.FormatoSesion
 import com.alvarotc.bito.domain.sesion.Objetivo
 import com.alvarotc.bito.domain.sesion.TextoMinutos
-import com.alvarotc.bito.sesion.AvisoSesion
 import com.alvarotc.bito.ui.habla.FraseSuelta
 import com.alvarotc.bito.ui.inicio.textoHabi
 import com.alvarotc.bito.ui.premios.ClavesAncla
@@ -142,7 +140,7 @@ fun TerminadaContenido(sonda: SondaTerminada? = null) {
                 val resultado = motor.siTerminado()
                 delay(VUELTA_A_HOY_MS)
                 salida.volverAHoy()
-                textoAviso(resultado.aviso, recursos)?.let(salida.avisar)
+                resultado.aviso?.texto(recursos)?.let(salida.avisar)
             } finally {
                 retenido.soltar()
             }
@@ -155,7 +153,7 @@ fun TerminadaContenido(sonda: SondaTerminada? = null) {
         scope.launch {
             val resultado = motor.sigoLuego()
             salida.volverAHoy()
-            textoAviso(resultado.aviso, recursos)?.let(salida.avisar)
+            resultado.aviso?.texto(recursos)?.let(salida.avisar)
         }
     }
 
@@ -296,14 +294,3 @@ private fun cifraDeFoco(minutos: Int): String {
         }
     return stringResource(id, *texto.args.toTypedArray())
 }
-
-/** El aviso G9 que acompaña a la vuelta a Hoy; Terminada solo produce «hecho» y «queda para luego». */
-private fun textoAviso(
-    aviso: AvisoSesion?,
-    recursos: Resources,
-): String? =
-    when (aviso) {
-        is AvisoSesion.Hecho -> recursos.getString(R.string.ses_aviso_hecho, aviso.nombre)
-        AvisoSesion.QuedaParaLuego -> recursos.getString(R.string.ses_aviso_luego)
-        else -> null
-    }
