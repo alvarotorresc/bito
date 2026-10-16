@@ -301,4 +301,55 @@ class MotorSesionArreglosTest {
             motor.recuperar()
             assertTrue("al volver, recuperar lo levanta", motor.tickerActivo)
         }
+
+    private suspend fun comprobarCierreAlCambiarDeDia(dejarParada: suspend () -> Unit) {
+        directo()
+        empezarTarea(bloques = 2)
+        dejarParada()
+        val nuevo = Grabadores()
+        val otro = banco.motor(nuevo)
+        banco.reloj.avanzar(24 * 60 * MINUTO)
+
+        otro.recuperar()
+
+        assertNull(banco.store.leer())
+        assertNull(otro.registro.value)
+        assertEquals(com.alvarotc.bito.domain.sesion.ResultadoSesion.SIN_RESPUESTA.name, banco.db.sesionDao().all().single().resultado)
+        assertEquals(1, banco.db.taskEventDao().all().count { it.kind == com.alvarotc.bito.domain.model.TaskEventKind.ATTEMPT })
+        assertTrue(nuevo.sonido.sonidos.isEmpty())
+        assertEquals(listOf(null), nuevo.fuera.cambios)
+    }
+
+    @Test
+    fun `a paused session is closed as an attempt when the logical day changes`() =
+        runTest {
+            comprobarCierreAlCambiarDeDia {
+                avanzarYTic(10 * MINUTO)
+                motor.pausar()
+                banco.reloj.avanzar(5 * MINUTO)
+            }
+        }
+
+    @Test
+    fun `a break waiting to start is closed as an attempt when the logical day changes`() =
+        runTest {
+            banco.settings.update { it.copy(pomoAutoBreak = false) }
+            comprobarCierreAlCambiarDeDia {
+                avanzarYTic(25 * MINUTO + 1_000)
+                assertTrue(motor.instante.value?.esperandoDescanso == true)
+            }
+        }
+
+    @Test
+    fun `a paused session of today is kept`() =
+        runTest {
+            directo()
+            empezarTarea(bloques = 2)
+            avanzarYTic(10 * MINUTO)
+            motor.pausar()
+            val otro = banco.motor(Grabadores())
+            banco.reloj.avanzar(5 * MINUTO)
+            otro.recuperar()
+            assertTrue(otro.instante.value?.pausado == true)
+        }
 }

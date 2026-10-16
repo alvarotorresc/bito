@@ -300,7 +300,7 @@ class MotorSesionAndroid(
             val inst = RelojSesion.en(r, ahora)
             val ajustes = settings.settings.first()
             val hoy = hoyDe(ahora, ajustes)
-            if (inst.actual == null && diaDeLlegada(r, ahora, ajustes) != hoy) {
+            if (diaDeQuietud(r, inst, ahora, ajustes)?.let { it != hoy } == true) {
                 efectos.intento(r.plan.objetivo, hoy, ahora.paredMillis)
                 cerrarAqui(r, inst, ahora, ResultadoSesion.SIN_RESPUESTA)
                 return@enCerrojo
@@ -596,19 +596,43 @@ class MotorSesionAndroid(
         ajustes: Settings,
     ): LogicalDay = LogicalDays.logicalDayOf(ahora.paredMillis, ajustes.dayCutoffMinutes, zona())
 
-    /** El día lógico en que la sesión llegó a Terminada: Terminada espera hasta que ese día cambie. */
-    private fun diaDeLlegada(
+    /**
+     * El día lógico en que la sesión quedó quieta, si lo está: Terminada espera hasta que ese día cambie, y una sesión en
+     * pausa o con el descanso esperando (el reloj parado) también. null si corre.
+     */
+    private fun diaDeQuietud(
         r: RegistroSesion,
+        inst: Instante,
         ahora: Ahora,
         ajustes: Settings,
-    ): LogicalDay {
+    ): LogicalDay? {
+        val desde =
+            when {
+                inst.actual == null -> primerMomento(r, ahora) { it.actual == null }
+                inst.esperandoDescanso -> primerMomento(r, ahora) { it.tramo >= inst.tramo }
+                inst.pausado -> {
+                    val entrada = primerMomento(r, ahora) { it.tramo >= inst.tramo }
+                    val pausa = r.eventos.filter { it is Evento.Pausa && it.enMillis <= inst.transcurridoMillis }.maxOfOrNull { it.enMillis }
+                    maxOf(entrada, pausa ?: entrada)
+                }
+                else -> return null
+            }
+        return LogicalDays.logicalDayOf(RelojSesion.paredDe(r, desde, ahora), ajustes.dayCutoffMinutes, zona())
+    }
+
+    /** Los ms de sesión del primer instante que cumple [cumple] (los tramos solo avanzan, así que se busca a medias). */
+    private fun primerMomento(
+        r: RegistroSesion,
+        ahora: Ahora,
+        cumple: (Instante) -> Boolean,
+    ): Long {
         var bajo = 0L
         var alto = RelojSesion.transcurrido(r, ahora)
         while (bajo < alto) {
             val medio = bajo + (alto - bajo) / 2
-            if (RelojSesion.enSesion(r, medio).actual == null) alto = medio else bajo = medio + 1
+            if (cumple(RelojSesion.enSesion(r, medio))) alto = medio else bajo = medio + 1
         }
-        return LogicalDays.logicalDayOf(RelojSesion.paredDe(r, alto, ahora), ajustes.dayCutoffMinutes, zona())
+        return alto
     }
 
     private suspend fun <T> enCerrojo(bloque: suspend () -> T): T = withContext(NonCancellable) { cerrojo.withLock { bloque() } }
