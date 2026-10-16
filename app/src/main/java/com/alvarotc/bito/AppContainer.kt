@@ -72,10 +72,12 @@ class AppContainer(context: Context) {
         BackupRepository(database, settings, keyStore, BuildConfig.VERSION_NAME, cancelarAvisos = { avisosHabi.cancelarAceptados(it) })
     val reconciler = PointsReconciler(domainState, rewards, settings = settings, despachador = Dispatchers.Default)
 
-    // Los avisos de Habi. Perezoso: la restauración y la fuente lo piden, el arranque no.
-    val avisosHabi: AvisosHabi by lazy {
+    // Los avisos de Habi. Perezoso: la restauración y la fuente lo piden, el arranque no. Los receptores usan esta
+    // misma instancia, con el catálogo real.
+    val avisosHabiAndroid: AvisosHabiAndroid by lazy {
         AvisosHabiAndroid(context.applicationContext, contenedor = { this }, catalogo = { catalogoHabla })
     }
+    val avisosHabi: AvisosHabi get() = avisosHabiAndroid
 
     // Las bolsas de Habi del idioma activo. AppStartup lo precarga tras el primer fotograma; si algo lo pide
     // antes, lee esa bolsa en el momento (nunca queda vacío).

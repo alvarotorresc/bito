@@ -43,7 +43,7 @@ class ReminderReceiver : BroadcastReceiver() {
         val key = intent.getStringExtra(ReminderScheduler.EXTRA_KEY) ?: return
         NotificationChannels.ensure(context)
         val container = (context.applicationContext as BitoApp).container
-        val avisos = AvisosHabiAndroid(context.applicationContext, contenedor = { container })
+        val avisos = container.avisosHabiAndroid
         val useCase =
             ReminderUseCase(container.domainState, container.habits, container.settings) { kind, key -> avisos.evaluar(kind, key) }
         when (val outcome = useCase.evaluate(kindName, key)) {

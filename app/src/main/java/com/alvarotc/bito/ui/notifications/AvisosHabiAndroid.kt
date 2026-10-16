@@ -10,7 +10,6 @@ import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.Bolsa
 import com.alvarotc.bito.domain.habla.Candidata
 import com.alvarotc.bito.domain.habla.CatalogoHabla
-import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
 import com.alvarotc.bito.domain.habla.Contexto
 import com.alvarotc.bito.domain.habla.Contextos
 import com.alvarotc.bito.domain.habla.EstadoAviso
@@ -57,7 +56,7 @@ class AvisosHabiAndroid(
     private val plan: suspend () -> PlanDeHoy = { planDeHoyDe(contenedor()) },
     private val fuente: () -> FuentePropuestas = { contenedor().propuestas },
     private val aceptados: () -> AvisosAceptadosRepository = { contenedor().avisosAceptados },
-    private val catalogo: () -> CatalogoHabla = { CatalogoHablaVacio },
+    private val catalogo: () -> CatalogoHabla,
 ) : AvisosHabi {
     /**
      * Programa lo que queda de hoy y quita lo que ya no toca: la mañana y la noche que hoy no salen pasan a mañana a su

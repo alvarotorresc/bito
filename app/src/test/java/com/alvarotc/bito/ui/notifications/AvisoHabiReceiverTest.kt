@@ -7,6 +7,7 @@ import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.TODAY
+import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
 import com.alvarotc.bito.domain.habla.Memoria
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.habla.Situacion
@@ -85,6 +86,7 @@ class AvisoHabiReceiverTest {
             plan = { PlanDeHoy(hechos(), Memoria(), ctx()) },
             fuente = { fuente },
             aceptados = { error("una respuesta que no es «Vale» no toca los aceptados") },
+            catalogo = { CatalogoHablaVacio },
         )
 
     @Before

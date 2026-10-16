@@ -18,6 +18,7 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.TODAY
 import com.alvarotc.bito.domain.habla.AvisoAceptado
 import com.alvarotc.bito.domain.habla.Bolsa
+import com.alvarotc.bito.domain.habla.CatalogoHablaVacio
 import com.alvarotc.bito.domain.habla.ClaveTrozo
 import com.alvarotc.bito.domain.habla.EstadoAviso
 import com.alvarotc.bito.domain.habla.Hechos
@@ -150,6 +151,7 @@ class AvisosHabiAndroidTest {
             },
             fuente = { fuente },
             aceptados = { repo },
+            catalogo = { CatalogoHablaVacio },
         )
     }
 

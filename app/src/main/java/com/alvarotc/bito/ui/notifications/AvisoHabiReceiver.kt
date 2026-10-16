@@ -26,7 +26,7 @@ class AvisoHabiReceiver : BroadcastReceiver() {
                 runCatching {
                     val container = (context.applicationContext as BitoApp).container
                     NotificationChannels.ensure(context)
-                    AvisosHabiAndroid(context.applicationContext, contenedor = { container }).accion(intent)
+                    container.avisosHabiAndroid.accion(intent)
                 }
             } finally {
                 pendingResult.finish()
