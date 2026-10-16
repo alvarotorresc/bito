@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Preparar -->
+    <string name="ses_preparar_titulo">What are you focusing on?</string>
+    <string name="ses_cambiar">Change</string>
+    <string name="ses_primer_paso">First step: %1$s</string>
+    <string name="ses_sin_primer_paso">No first step noted</string>
+    <string name="ses_tiempo">Time</string>
+    <string name="ses_min">%1$d min</string>
+    <string name="ses_otro">Other</string>
+    <string name="ses_para_entrar">To get in</string>
+    <string name="ses_respirar_1">Breathe 1 min</string>
+    <string name="ses_directo">Straight in</string>
+    <string name="ses_solo_foco">Focus only</string>
+    <string name="ses_bloques">Blocks</string>
+    <string name="ses_bloques_uno">One block, no break</string>
+    <string name="ses_bloques_pocos">%1$d of %2$d min, %3$d break between them</string>
+    <string name="ses_bloques_muchos">%1$d of %2$d min: %3$d break between them and %4$d after every %5$d</string>
+    <string name="ses_un_bloque_menos">One block less</string>
+    <string name="ses_un_bloque_mas">One block more</string>
+    <string name="ses_fondo">Background sound</string>
+    <string name="ses_fondo_ninguno">None</string>
+    <string name="ses_fondo_lluvia">Rain</string>
+    <string name="ses_fondo_marron">Brown noise</string>
+    <string name="ses_fondo_cafe">Café</string>
+    <string name="ses_fondo_ninguno_desc">Silence</string>
+    <string name="ses_fondo_lluvia_desc">Fine rain on the garden</string>
+    <string name="ses_fondo_marron_desc">A low, steady rumble</string>
+    <string name="ses_fondo_cafe_desc">A murmur of people, far away</string>
+    <string name="ses_fondo_hoja_desc">It plays during focus and stops during breaks.</string>
+    <string name="ses_no_molestar">Do not disturb</string>
+    <string name="ses_dnd_sub">Silences your phone while it lasts</string>
+    <string name="ses_dnd_sin_permiso">No permission: the session runs anyway</string>
+    <string name="ses_empezar">Start</string>
+    <string name="ses_hoja_sin_paso">No first step</string>
+    <!-- Respirar para entrar -->
+    <string name="ses_inhala">Breathe in</string>
+    <string name="ses_manten">Hold</string>
+    <string name="ses_exhala">Breathe out</string>
+    <string name="ses_x_de_y">%1$d of %2$d</string>
+    <string name="ses_saltar">Skip</string>
+    <string name="ses_saltar_y_volver">Skip and go back to setup</string>
+    <string name="ses_musica_poner">Play background music</string>
+    <string name="ses_musica_quitar">Turn the music off</string>
+    <!-- Foco -->
+    <string name="ses_de_min">of %1$d min</string>
+    <string name="ses_en_pausa">paused</string>
+    <string name="ses_sin_primer_paso_foco">No first step: start with whatever is at hand</string>
+    <string name="ses_pausa">Pause</string>
+    <string name="ses_seguir">Resume</string>
+    <string name="ses_mas_5">+5</string>
+    <string name="ses_mas_15">+15</string>
+    <string name="ses_mas_30">+30</string>
+    <string name="ses_mas_otro">+ Other</string>
+    <string name="ses_he_terminado">I\'m done</string>
+    <string name="ses_lo_dejo">Something came up, I\'m stopping</string>
+    <string name="ses_bloque_n_de_m">Block %1$d of %2$d</string>
+    <!-- Descanso -->
+    <string name="ses_de_descanso">of break</string>
+    <string name="ses_de_descanso_largo">of long break</string>
+    <string name="ses_despues">Next: %1$d min of focus, block %2$d of %3$d</string>
+    <string name="ses_ronda_hecha">Round of %1$d blocks done. After that, we close the session.</string>
+    <string name="ses_saltar_descanso">Skip the break</string>
+    <string name="ses_empezar_descanso">Start the break</string>
+    <!-- Terminada -->
+    <string name="ses_de_foco">of focus</string>
+    <string name="ses_h">%1$d h</string>
+    <string name="ses_h_min">%1$d h %2$d min</string>
+    <string name="ses_has_acabado">%1$s: are you done?</string>
+    <string name="ses_sigo_luego">I\'ll continue later</string>
+    <string name="ses_si_terminado">Yes, done</string>
+    <string name="ses_otra_5">Another 5 min</string>
+    <string name="ses_listo">Done</string>
+    <!-- Hojas: minutos -->
+    <string name="ses_minutos_titulo">How many minutes?</string>
+    <string name="ses_minutos_desc">In steps of 5, up to 3 hours.</string>
+    <string name="ses_minutos_mas_titulo">How many more minutes?</string>
+    <string name="ses_minutos_mas_desc">They add to what is left.</string>
+    <string name="ses_cancelar">Cancel</string>
+    <string name="ses_sumar">Add</string>
+    <string name="ses_menos">Less</string>
+    <string name="ses_mas">More</string>
+    <!-- Hojas: ya tienes algo en marcha -->
+    <string name="ses_ocupado_titulo">You already have something running</string>
+    <string name="ses_ocupado_resta">%1$s: %2$d min left of %3$d.</string>
+    <string name="ses_ocupado_seguir">Keep going with %1$s</string>
+    <string name="ses_ocupado_seguir_desc">You go back to that session as it is</string>
+    <string name="ses_ocupado_dejar">Drop it and start this one</string>
+    <string name="ses_ocupado_dejar_desc">What you have done counts as an attempt</string>
+    <!-- Hojas: permiso de No molestar -->
+    <string name="ses_permiso_titulo">Do not disturb during the session</string>
+    <string name="ses_permiso_desc">Android asks for your permission to silence alerts. It is only on while the session lasts; when it ends, everything goes back as it was.</string>
+    <string name="ses_ahora_no">Not now</string>
+    <string name="ses_dar_permiso">Give permission</string>
+    <string name="ses_dnd_no_titulo">Do not disturb is still off</string>
+    <string name="ses_dnd_no_neutra">Without that permission I can\'t silence your phone during the session. Everything else works the same.</string>
+    <string name="ses_dnd_no_cheerleader">Without that permission I can\'t silence your phone while you work. But the session runs just the same!</string>
+    <string name="ses_dnd_no_sargento">Without that permission your phone may ring during the session. The session goes on.</string>
+    <string name="ses_dnd_no_nota">It\'s optional. You can grant it any time from Settings.</string>
+    <string name="ses_dnd_seguir_sin">Continue without silencing</string>
+    <string name="ses_dnd_listo_titulo">All set</string>
+    <string name="ses_dnd_listo_frase">I\'ll silence your phone for each session and put it back the way it was when it ends.</string>
+    <string name="ses_vale">Okay</string>
+    <!-- Respirar suelta (los nombres de los modos, ses_modo_*, al final) -->
+    <string name="ses_musica_fondo">Background music</string>
+    <string name="ses_musica_fondo_desc">Rises as you breathe in, stays while you hold, falls as you breathe out</string>
+    <string name="ses_ciclo_quedan">Cycle %1$d of %2$d. %3$s left</string>
+    <string name="ses_como_estas">How are you now?</string>
+    <string name="ses_mejor">Better</string>
+    <string name="ses_igual">The same</string>
+    <string name="ses_cuesta">Still hard</string>
+    <!-- Avisos al volver a Hoy -->
+    <string name="ses_aviso_sigue">Still running: %1$s in the notification.</string>
+    <string name="ses_aviso_hecho">%1$s, done.</string>
+    <string name="ses_aviso_lo_dejamos">We stop here. Your %1$d min count.</string>
+    <string name="ses_aviso_otra_vez_sera">We stop here. Maybe next time.</string>
+    <string name="ses_aviso_luego">It stays in your day for later.</string>
+    <string name="ses_aviso_intento">%1$s: stays as an attempt.</string>
+    <string name="ses_aviso_dnd_listo">All set: your phone is silenced when you start.</string>
+    <string name="ses_aviso_dnd_sin">Okay: the session starts without silencing your phone.</string>
+    <!-- Notificación fija -->
+    <string name="ses_notif_en_marcha">Running</string>
+    <string name="ses_notif_en_pausa">Paused</string>
+    <string name="ses_notif_descanso">Break</string>
+    <string name="ses_notif_fin">Time is up</string>
+    <string name="ses_canal">Session in progress</string>
+    <!-- Ajustes y lectores de pantalla -->
+    <string name="ses_ajustes_no_molestar">Do not disturb in sessions</string>
+    <string name="ses_volver">Back</string>
+    <string name="ses_tus_bitos">Your bitos</string>
+    <string name="ses_crear">Create</string>
+    <!-- Nombres de los modos de respirar (también los usa TextoHabiUi para el hueco {modo}) -->
+    <string name="ses_modo_calm">Calm down</string>
+    <string name="ses_modo_sleep">Sleep</string>
+    <string name="ses_modo_focus">Focus</string>
+</resources>

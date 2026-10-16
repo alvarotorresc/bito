@@ -24,10 +24,18 @@ import com.alvarotc.bito.data.repo.JournalRepository
 import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.repo.TasksRepository
+import com.alvarotc.bito.data.sesion.SesionStore
 import com.alvarotc.bito.data.sesion.SesionesRepository
 import com.alvarotc.bito.data.settings.FocusStore
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.propuestas.FuentePropuestas
+import com.alvarotc.bito.sesion.Aire
+import com.alvarotc.bito.sesion.Fondo
+import com.alvarotc.bito.sesion.FueraDeLaApp
+import com.alvarotc.bito.sesion.NoMolestar
+import com.alvarotc.bito.sesion.fuera.crearFuera
+import com.alvarotc.bito.sesion.sonido.crearAire
+import com.alvarotc.bito.sesion.sonido.crearFondo
 import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.notifications.AvisosHabi
 import com.alvarotc.bito.ui.notifications.AvisosHabiAndroid
@@ -70,12 +78,20 @@ class AppContainer(context: Context) {
                 corteDia = { settings.settings.first().dayCutoffMinutes },
             ),
         )
-    val focus =
-        FocusStore(
-            PreferenceDataStoreFactory.create {
-                context.filesDir.resolve("focus.preferences_pb")
-            },
-        )
+
+    // Un solo DataStore por archivo: el foco viejo y la sesión nueva comparten `focus.preferences_pb`.
+    private val focusDataStore =
+        PreferenceDataStoreFactory.create {
+            context.filesDir.resolve("focus.preferences_pb")
+        }
+    val focus = FocusStore(focusDataStore)
+
+    // La sesión (pieza 5). Perezosos: el arranque no los toca.
+    val sesionStore: SesionStore by lazy { SesionStore(focusDataStore) }
+    val noMolestar: NoMolestar by lazy { NoMolestar(context.applicationContext) }
+    val aire: Aire by lazy { crearAire(context.applicationContext, sonido, tacto, settings) }
+    val fondo: Fondo by lazy { crearFondo(context.applicationContext, sonido, settings) }
+    val fuera: FueraDeLaApp by lazy { crearFuera(context.applicationContext, sesionStore, noMolestar, settings) }
 
     // Perezosos: alarmas y widgets arrancan el proceso sin tocar el audio (35 OGG) ni el vibrador.
     val sonido: MotorSonido by lazy { crearMotorSonido(context.applicationContext, settings) }

@@ -355,7 +355,4 @@
         <item>«{modo}» ya te ha funcionado alguna vez. Ahí sigue.</item>
         <item>[noche] Por si esta noche cuesta: «{modo}» ya te sentó bien una vez.</item>
     </string-array>
-    <string name="ses_modo_calm">Calmarme</string>
-    <string name="ses_modo_sleep">Dormir</string>
-    <string name="ses_modo_focus">Centrarme</string>
 </resources>

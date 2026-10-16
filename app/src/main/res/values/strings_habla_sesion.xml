@@ -355,7 +355,4 @@
         <item>“{modo}” has worked for you before. It\'s still there.</item>
         <item>[noche] In case tonight is hard: “{modo}” helped you once before.</item>
     </string-array>
-    <string name="ses_modo_calm">Calm down</string>
-    <string name="ses_modo_sleep">Sleep</string>
-    <string name="ses_modo_focus">Focus</string>
 </resources>
