@@ -23,6 +23,7 @@ import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.habla.TipoRefGordo
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.DueKind
 import com.alvarotc.bito.domain.model.GardenState
@@ -608,6 +609,16 @@ class TodayViewModelTest {
             vm.forzarJardin(null)
             advanceUntilIdle()
             assertTrue(vm.uiState.value.garden != forzado)
+        }
+
+    @Test
+    fun `a placed garden object reaches todays garden`() =
+        runTest(dispatcher) {
+            db.customizationItemDao().upsert(
+                com.alvarotc.bito.data.customizationItemEntity("garden-banco", CustomizationCategory.GARDEN_OBJECT, equipped = true),
+            )
+
+            assertEquals(setOf("banco"), state().garden.objects)
         }
 
     @Test

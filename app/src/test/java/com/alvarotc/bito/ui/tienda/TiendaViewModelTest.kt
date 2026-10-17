@@ -446,6 +446,7 @@ class TiendaViewModelTest {
             vm.comprarCongelador()
             advanceUntilIdle()
             val primera = db.pointsLedgerDao().all().single { it.reason == PointsReason.BUY_FREEZER }.refId
+            ahora += 600
             vm.comprarCongelador()
             advanceUntilIdle()
             vm.deshacerCongelador()
@@ -588,6 +589,118 @@ class TiendaViewModelTest {
             vm.comprar("costume-calabaza")
             advanceUntilIdle()
             assertNull("purchase lo rechaza igual", fila("costume-calabaza"))
+        }
+
+    @Test
+    fun `buying a piece in a covered slot removes the costume and wears it`() =
+        runTest {
+            saldo(100)
+            tener("costume-calabaza", puesto = true)
+            val vm = arrancar(nuevo())
+            vm.tocarPieza("head-gorro-lana")
+            advanceUntilIdle()
+            vm.comprar("head-gorro-lana")
+            advanceUntilIdle()
+
+            assertNull(vm.uiState.value.puestos.costume)
+            assertEquals("head-gorro-lana", vm.uiState.value.puestos.head)
+            assertEquals("head-gorro-lana", vm.uiState.value.look.head)
+            assertFalse(fila("costume-calabaza")!!.equipped)
+        }
+
+    @Test
+    fun `buying never shows Habi without the piece in between`() =
+        runTest {
+            saldo(100)
+            val vm = arrancar(nuevo())
+            vm.tocarPieza("head-gorro-lana")
+            advanceUntilIdle()
+            val emisiones = mutableListOf<TiendaUiState>()
+            backgroundScope.launch { vm.uiState.collect { emisiones += it } }
+            advanceUntilIdle()
+            val desde = emisiones.size
+            vm.comprar("head-gorro-lana")
+            advanceUntilIdle()
+            assertTrue("hubo emisiones tras comprar", emisiones.size > desde || emisiones.last().puestos.head != null)
+            assertTrue("ninguna emisión sin la pieza", emisiones.drop((desde - 1).coerceAtLeast(0)).none { it.look.head == null })
+            assertEquals("head-gorro-lana", emisiones.last().look.head)
+        }
+
+    @Test
+    fun `buying the bench never makes it vanish in between`() =
+        runTest {
+            saldo(100)
+            val vm = arrancar(nuevo())
+            vm.tocarPieza("garden-banco")
+            advanceUntilIdle()
+            val emisiones = mutableListOf<TiendaUiState>()
+            backgroundScope.launch { vm.uiState.collect { emisiones += it } }
+            advanceUntilIdle()
+            val desde = emisiones.size
+            vm.comprar("garden-banco")
+            advanceUntilIdle()
+            emisiones.drop((desde - 1).coerceAtLeast(0)).forEach {
+                assertTrue(
+                    "el banco está en la prueba o ya colocado",
+                    it.prueba is PruebaTienda.Objeto || "garden-banco" in it.objetosJardin,
+                )
+            }
+            assertTrue("garden-banco" in emisiones.last().objetosJardin)
+        }
+
+    @Test
+    fun `every collector of the events receives each one`() =
+        runTest {
+            saldo(100)
+            val vm = arrancar(nuevo())
+            val a = recoger(vm)
+            val b = recoger(vm)
+            vm.tocarPieza("head-gorro-lana")
+            advanceUntilIdle()
+            vm.comprar("head-gorro-lana")
+            advanceUntilIdle()
+
+            assertEquals(listOf<EventoTienda>(EventoTienda.Comprado("head-gorro-lana")), a)
+            assertEquals(a, b)
+        }
+
+    @Test
+    fun `a real double tap on the freezer pays once`() =
+        runTest {
+            saldo(300)
+            val vm = arrancar(nuevo())
+            vm.comprarCongelador()
+            advanceUntilIdle()
+            ahora += 150
+            vm.comprarCongelador()
+            advanceUntilIdle()
+
+            assertEquals(1, db.pointsLedgerDao().all().count { it.reason == PointsReason.BUY_FREEZER })
+            ahora += 600
+            vm.comprarCongelador()
+            advanceUntilIdle()
+            assertEquals(
+                "pasado el vuelo, otro toque es otra compra",
+                2,
+                db.pointsLedgerDao().all().count { it.reason == PointsReason.BUY_FREEZER },
+            )
+        }
+
+    @Test
+    fun `a purchase refused at midnight turns the bar out of season at once`() =
+        runTest {
+            ahora = millis(2025, 11, 2, 23, 59)
+            saldo(300)
+            val vm = arrancar(nuevo())
+            vm.tocarPieza("costume-calabaza")
+            advanceUntilIdle()
+            assertTrue(vm.uiState.value.barra is BarraPrueba.Comprar)
+
+            ahora = millis(2025, 11, 3, 0, 1)
+            vm.comprar("costume-calabaza")
+            advanceUntilIdle()
+
+            assertEquals(MotivoNoSeCompra.TEMPORADA, (vm.uiState.value.barra as BarraPrueba.NoSeCompra).motivo)
         }
 
     @Test
