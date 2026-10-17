@@ -19,6 +19,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.Sealing
+import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.DomainState
@@ -89,6 +90,7 @@ class TiendaViewModel(
         val saldo: Int,
         val ajustes: Settings,
         val recientes: List<PointsLedgerEntry>,
+        val logros: Set<String>,
     )
 
     val uiState: StateFlow<TiendaUiState> =
@@ -98,9 +100,13 @@ class TiendaViewModel(
                 rewards.observeOwnedItems(),
                 rewards.observeBalance(),
                 settings.settings,
-                rewards.observeRecentMovements(MOVIMIENTOS),
-                ::Datos,
-            ),
+                combine(
+                    rewards.observeRecentMovements(MOVIMIENTOS),
+                    rewards.observeBadges(),
+                ) { r, b -> r to b.mapTo(mutableSetOf()) { it.badgeId } },
+            ) { estado, filas, saldo, ajustes, (recientes, logros) ->
+                Datos(estado, filas, saldo, ajustes, recientes, logros)
+            },
             pestana,
             luz.filterNotNull(),
             pruebaElegida,
@@ -142,8 +148,24 @@ class TiendaViewModel(
             hoy = hoy,
             movimientos = Movimientos.de(datos.recientes, datos.estado, dia),
             economia = economy,
+            jardin = jardinDe(datos, dia),
+            voz = datos.ajustes.personality,
         )
     }
+
+    /** El jardín de Hoy (mismo cálculo que `TodayViewModel`): lo colocado y los especiales ganados. */
+    private fun jardinDe(
+        datos: Datos,
+        dia: Int,
+    ) = GardenEngine.gardenOf(
+        datos.estado,
+        dia,
+        Instant.ofEpochMilli(reloj.ahora()).atZone(reloj.zona()).toLocalDateTime(),
+        StatsEngine.lastActivityDay(datos.estado),
+        datos.logros,
+        datos.ajustes.gardenWaterHighMark,
+        datos.filas.filter { it.category == CustomizationCategory.GARDEN_OBJECT && it.equipped }.map { it.itemId },
+    )
 
     /** El valor de antes del primero real. Nada se decide con él: [TiendaUiState.cargado] es falso. */
     private fun relleno(): TiendaUiState =

@@ -8,6 +8,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.data.customizationItemEntity
+import com.alvarotc.bito.data.db.BadgeEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.db.DaySealEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
@@ -17,7 +18,9 @@ import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.HabiCatalog
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -585,6 +588,26 @@ class TiendaViewModelTest {
             vm.comprar("costume-calabaza")
             advanceUntilIdle()
             assertNull("purchase lo rechaza igual", fila("costume-calabaza"))
+        }
+
+    @Test
+    fun `the state carries the garden of today with placed objects and earned specials`() =
+        runTest {
+            tener("garden-banco", puesto = true)
+            db.badgeDao().insert(BadgeEntity("streak-7", ahora))
+            val vm = arrancar(nuevo())
+
+            assertEquals(setOf("banco"), vm.uiState.value.jardin.objects)
+            assertTrue(GardenSpecial.LANTERN in vm.uiState.value.jardin.specials)
+        }
+
+    @Test
+    fun `the state carries the voice chosen in settings`() =
+        runTest {
+            assertEquals(Personality.NEUTRA, arrancar(nuevo()).uiState.value.voz)
+            settingsRepo.update { it.copy(personality = Personality.SARGENTO) }
+            advanceUntilIdle()
+            assertEquals(Personality.SARGENTO, arrancar(nuevo()).uiState.value.voz)
         }
 
     @Test
