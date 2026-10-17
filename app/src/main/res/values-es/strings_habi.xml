@@ -63,11 +63,11 @@
 
 
     <string name="freezer_info_sargento">Un congelador, un hábito, un día. ¿Ves un día sin hacer en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes, %1$s.</string>
-    <string name="freezer_info_sargento_sin_nombre">Un congelador, un hábito, un día. ¿Ves un día en rojo en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes.</string>
+    <string name="freezer_info_sargento_sin_nombre">Un congelador, un hábito, un día. ¿Ves un día sin hacer en el calendario? Tócalo y úsalo. Se compran en la tienda. No los malgastes.</string>
     <string name="freezer_info_cheerleader">¡Un congelador te salva la racha si fallas UN día en UN hábito! Toca el día sin hacer del calendario, dale a «Usar congelador» y listo. Los tienes en la tienda. Yo que tú tendría siempre uno a mano, %1$s.</string>
-    <string name="freezer_info_cheerleader_sin_nombre">¡Un congelador te salva la racha si fallas UN día en UN hábito! Toca el día en rojo del calendario, dale a «Usar congelador» y listo. Los tienes en la tienda. Yo que tú tendría siempre uno a mano.</string>
-    <string name="freezer_info_neutra">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día en rojo en el calendario y elige «Usar congelador». Se compran en la tienda de Habi, %1$s.</string>
-    <string name="freezer_info_neutra_sin_nombre">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día en rojo en el calendario y elige «Usar congelador». Se compran en la tienda de Habi.</string>
+    <string name="freezer_info_cheerleader_sin_nombre">¡Un congelador te salva la racha si fallas UN día en UN hábito! Toca el día sin hacer del calendario, dale a «Usar congelador» y listo. Los tienes en la tienda. Yo que tú tendría siempre uno a mano.</string>
+    <string name="freezer_info_neutra">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día sin hacer en el calendario y elige «Usar congelador». Se compran en la tienda de Habi, %1$s.</string>
+    <string name="freezer_info_neutra_sin_nombre">Un congelador protege un día fallado: la racha lo salta en vez de romperse. Para usarlo, toca un día sin hacer en el calendario y elige «Usar congelador». Se compran en la tienda de Habi.</string>
 
 
 

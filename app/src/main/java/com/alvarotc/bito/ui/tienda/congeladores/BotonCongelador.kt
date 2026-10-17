@@ -1,7 +1,15 @@
 package com.alvarotc.bito.ui.tienda.congeladores
 
+import android.os.Build
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterExitState
+import androidx.compose.animation.SizeTransform
+import androidx.compose.animation.core.animateDp
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
@@ -59,11 +68,13 @@ private val MONEDA = 18.dp
 private val AIRE_LINEA = 10.dp
 private val ALTO_LINEA = 40.dp
 private const val ALFA_APAGADO = 0.5f
+private val DESENFOQUE_RELEVO = 2.dp
 
 /**
  * El botón directo «Un congelador» con su línea de confirmación (J22). Un toque con saldo llama a [alComprar]. Sin
  * saldo se atenúa a 0,5 pero sigue vivo: al tocarlo tiembla, la línea pasa a negrita y tinta plena y solo vibra
- * (sin sonido, sin rojo). [tintaSuave] es la de la banda donde se coloca.
+ * (sin sonido, sin rojo). Con [comprando] hay una compra en el aire y el botón no atiende otro toque hasta que
+ * llega. [tintaSuave] es la de la banda donde se coloca.
  */
 @Composable
 fun BotonCongelador(
@@ -72,8 +83,10 @@ fun BotonCongelador(
     alComprar: () -> Unit,
     modifier: Modifier = Modifier,
     tintaSuave: Color = BitoTema.colores.tintaSuave,
+    comprando: Boolean = false,
 ) {
     val colores = BitoTema.colores
+    val reducido = BitoTema.reducido
     val gesto = rememberGesto()
     val sinSaldo = saldo < precio
     var toques by remember { mutableIntStateOf(0) }
@@ -106,7 +119,7 @@ fun BotonCongelador(
                 .clip(forma)
                 .background(colores.canto)
                 .border(BorderStroke(Medidas.linea, colores.contorno), forma)
-                .clickable(interactionSource = interaccion, indication = null, role = Role.Button) {
+                .clickable(interactionSource = interaccion, indication = null, role = Role.Button, enabled = !comprando) {
                     if (sinSaldo) {
                         tocado = true
                         toques++
@@ -134,20 +147,31 @@ fun BotonCongelador(
                 Text(precio.toString(), style = BitoTema.tipos.t14.copy(fontWeight = FontWeight.Bold), color = colores.tinta)
             }
         }
-        Text(
-            linea,
-            modifier =
-                Modifier
-                    .testTag("tc-linea")
-                    .fillMaxWidth()
-                    .padding(top = AIRE_LINEA)
-                    .heightIn(min = ALTO_LINEA),
-            style =
-                BitoTema.tipos.t14.copy(
-                    lineHeight = 19.6.sp,
-                    fontWeight = if (tocado) FontWeight.Bold else FontWeight.Normal,
-                ),
-            color = if (tocado) colores.tinta else tintaSuave,
-        )
+        // El relevo de la línea (J22): 140 ms fuera con 2 dp de desenfoque y 180 dentro; reducido, fundidos de 150 ms.
+        AnimatedContent(
+            targetState = linea,
+            modifier = Modifier.fillMaxWidth().padding(top = AIRE_LINEA).heightIn(min = ALTO_LINEA),
+            transitionSpec = {
+                val entra = if (reducido) Duraciones.REDUCIDO else Duraciones.RELEVO_ENTRA
+                val sale = if (reducido) Duraciones.REDUCIDO else Duraciones.RELEVO_SALE
+                (fadeIn(tween(entra, delayMillis = sale)) togetherWith fadeOut(tween(sale))).using(SizeTransform(clip = false))
+            },
+            label = "tc-linea-relevo",
+        ) { texto ->
+            val desenfoque by transition.animateDp(label = "tc-linea-blur") {
+                if (it == EnterExitState.Visible) 0.dp else DESENFOQUE_RELEVO
+            }
+            val enBlur = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !reducido
+            Text(
+                texto,
+                modifier = Modifier.testTag("tc-linea").fillMaxWidth().then(if (enBlur) Modifier.blur(desenfoque) else Modifier),
+                style =
+                    BitoTema.tipos.t14.copy(
+                        lineHeight = 19.6.sp,
+                        fontWeight = if (tocado) FontWeight.Bold else FontWeight.Normal,
+                    ),
+                color = if (tocado) colores.tinta else tintaSuave,
+            )
+        }
     }
 }
