@@ -79,9 +79,10 @@ class HojaLogroTest {
     }
 
     @Test
-    fun `new mode says what it planted`() {
-        montar(ModoLogro.NUEVO, logro("streak-7", true, Progreso(7, 7)))
-        rule.onNodeWithText(cadena(R.string.camino_planto, cadena(R.string.camino_especial_farolillo))).assertExists()
+    fun `new mode says what it won in the prize row`() {
+        montar(ModoLogro.NUEVO, logro("first-week", true, Progreso(7, 7)))
+        rule.onNodeWithText(cadena(R.string.store_reward_special, cadena(R.string.camino_especial_caminito))).assertExists()
+        rule.onNodeWithText(cadena(R.string.store_reward_special_under)).assertExists()
     }
 
     @Test

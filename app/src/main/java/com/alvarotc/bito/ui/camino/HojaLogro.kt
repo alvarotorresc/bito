@@ -30,6 +30,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.ui.premios.FilaPremio
+import com.alvarotc.bito.ui.premios.premioDeLogro
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
@@ -116,7 +118,11 @@ private fun HojaScope.ContenidoLogro(
                 )
             }
         }
-        if (especial != null) FilaEspecial(especial, plantado = conseguido || nuevo)
+        val premio = if (nuevo) premioDeLogro(logro.def.id) else null
+        when {
+            premio != null -> FilaPremio(premio)
+            especial != null -> FilaEspecial(especial, plantado = conseguido || nuevo)
+        }
         Spacer(Modifier.height(Medidas.e16))
         val verlo = stringResource(R.string.camino_verlo)
         val irAlJardin = {
