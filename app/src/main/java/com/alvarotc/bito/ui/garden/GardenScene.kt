@@ -1042,6 +1042,7 @@ private fun DrawScope.drawItem(
         val llegada = fx.llegada?.takeIf { it.especial == special.special }
         if (llegada != null) posarLlegada(llegada, r, base, fx.reducido, pose)
     }
+    if (item is SceneItem.Objeto) drawSombraObjeto(r)
     drawPieza(image, r, plant != null, wilt, filtro, giro, pose)
     val llegada = fx.llegada
     if (special != null && llegada != null && llegada.especial == special.special && !fx.reducido) {
@@ -1050,6 +1051,25 @@ private fun DrawScope.drawItem(
             Llegada.ASIENTA -> drawSalpicadura(llegada.p.value, r, fx.salpicadura)
             else -> Unit
         }
+    }
+}
+
+// La sombra de un objeto de jardín (sin token), como `--sombra-objeto` del mock: una elipse del 110 % del ancho
+// y el 18 % del ancho de alto, centrada en el pie, con un degradado radial de rgba(60,40,20,.30) a transparente.
+private const val SOMBRA_OBJETO_ANCHO = 1.1f
+private const val SOMBRA_OBJETO_ALTO = 0.18f
+private val SOMBRA_OBJETO = Color(red = 60, green = 40, blue = 20, alpha = 77)
+
+/** La sombra que cae bajo el pie de un objeto de jardín de caja [r]. */
+private fun DrawScope.drawSombraObjeto(r: SceneRect) {
+    val ancho = r.width * SOMBRA_OBJETO_ANCHO
+    val centro = Offset(r.left + r.width / 2f, r.top + r.height)
+    withTransform({ scale(1f, SOMBRA_OBJETO_ALTO / SOMBRA_OBJETO_ANCHO, pivot = centro) }) {
+        drawCircle(
+            brush = Brush.radialGradient(listOf(SOMBRA_OBJETO, SOMBRA_OBJETO.copy(alpha = 0f)), center = centro, radius = ancho / 2f),
+            radius = ancho / 2f,
+            center = centro,
+        )
     }
 }
 
