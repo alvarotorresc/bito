@@ -117,12 +117,7 @@ object BarrasTienda {
     fun nombreDe(
         itemId: String,
         res: Resources,
-    ): String =
-        when (itemId) {
-            "garden-banco" -> res.getString(R.string.store_garden_bench)
-            "garden-regadera" -> res.getString(R.string.store_garden_can)
-            else -> res.getString(itemNameRes(itemId))
-        }
+    ): String = res.getString(itemNameRes(itemId))
 
     private fun nombreDeEspecial(special: GardenSpecial): Int =
         when (special) {

@@ -231,7 +231,7 @@ private fun Cuerpo(
             alQuitar = quitarPrueba,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
-        AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
+        AvisoHost(avisos, Modifier.align(Alignment.BottomCenter).testTag("aviso-deshacer"))
         CapaMoneda(vuelo)
     }
     HojaSaldo(
@@ -269,6 +269,7 @@ private fun EscenaConCabecera(
     Box(Modifier.fillMaxWidth().height(alto).clipToBounds().testTag("tienda-escena")) {
         AnimatedContent(
             targetState = estado.pestana,
+            modifier = Modifier.fillMaxWidth().height(alto - COSTRA),
             transitionSpec = {
                 val haciaJardin = targetState == PestanaTienda.JARDIN
                 val desdeJardin = initialState == PestanaTienda.JARDIN
@@ -282,8 +283,17 @@ private fun EscenaConCabecera(
             },
             label = "tienda-escena",
         ) { pestana ->
-            EscenaEscalada(alto, Modifier.fillMaxSize()) { paneles(pestana).Escena(ctx, Modifier.fillMaxSize()) }
+            EscenaEscalada(alto - COSTRA, Modifier.fillMaxSize()) { paneles(pestana).Escena(ctx, Modifier.fillMaxSize()) }
         }
+        // La costra es de la pantalla: una sola, quieta bajo la escena mientras el armario y el jardín se cambian.
+        Box(
+            Modifier
+                .align(Alignment.BottomCenter)
+                .testTag("tcostra")
+                .fillMaxWidth()
+                .height(COSTRA)
+                .background(BitoTema.colores.costra),
+        )
         val noche = enJardin && luzEstado.destino == LuzTienda.NOCHE
         val tinta by animateColorAsState(
             if (noche) BitoTema.colores.tintaClara else BitoTema.colores.tinta,
@@ -296,14 +306,14 @@ private fun EscenaConCabecera(
 
 private const val CAMBIO_TINTA = 300
 
-/** La escena a su alto de 306 dp; si hay menos sitio se encoge proporcional desde arriba (H1). */
+/** La escena a su alto de 300 dp; si hay menos sitio se encoge proporcional desde arriba (H1). */
 @Composable
 private fun EscenaEscalada(
     alto: Dp,
     modifier: Modifier,
     contenido: @Composable () -> Unit,
 ) {
-    val completa = ESCENA + COSTRA
+    val completa = ESCENA
     if (alto >= completa) {
         contenido()
         return

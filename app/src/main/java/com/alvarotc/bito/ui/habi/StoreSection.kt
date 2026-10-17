@@ -437,6 +437,8 @@ fun itemNameRes(id: String): Int =
         "costume-calabaza" -> R.string.item_costume_calabaza
         "costume-reno" -> R.string.item_costume_reno
         "costume-dinosaurio" -> R.string.item_costume_dinosaurio
+        "garden-banco" -> R.string.store_garden_bench
+        "garden-regadera" -> R.string.store_garden_can
         // Inalcanzable para un artículo real: cae a un texto que existe en vez de romper con un id corrupto.
         else -> R.string.store_title
     }

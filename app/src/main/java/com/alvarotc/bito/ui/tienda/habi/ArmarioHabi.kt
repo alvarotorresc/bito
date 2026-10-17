@@ -86,6 +86,7 @@ internal fun ArmarioHabi(
         estado = armario,
         capaSuperior = { CapasDelCambio(cambio, armario) },
         modifier = modifier,
+        conCostra = false,
     )
 }
 

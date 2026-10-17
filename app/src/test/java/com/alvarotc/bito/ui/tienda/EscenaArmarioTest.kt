@@ -79,6 +79,20 @@ class EscenaArmarioTest {
     }
 
     @Test
+    fun `without the crust the cabinet is just the 300 scene`() {
+        rule.setContent {
+            ConSistema(sonido, tacto, false) {
+                Box(Modifier.width(412.dp)) {
+                    EscenaArmario(look = EquippedSet(), luz = { 0f }, estado = EscenaArmarioEstado(), conCostra = false)
+                }
+            }
+        }
+        rule.waitForIdle()
+        rule.onNodeWithTag("tcostra").assertDoesNotExist()
+        assertEquals(300f, rule.onNodeWithTag("tscene").getUnclippedBoundsInRoot().height.value, 0.5f)
+    }
+
+    @Test
     fun `the niche is 332 by 236 with the arch radii and Habi is 165`() {
         montar()
         val nicho = rule.onNodeWithTag("tnicho").getUnclippedBoundsInRoot()
