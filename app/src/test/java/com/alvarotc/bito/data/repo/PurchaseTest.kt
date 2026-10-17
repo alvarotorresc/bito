@@ -84,6 +84,34 @@ class PurchaseTest {
         }
 
     @Test
+    fun `buying over a costume removes it and wears the piece in one go`() =
+        runTest {
+            saldo(200)
+            db.customizationItemDao().upsert(
+                com.alvarotc.bito.data.db.CustomizationItemEntity("costume-calabaza", CustomizationCategory.COSTUME, 1L, equipped = true),
+            )
+            db.customizationItemDao().upsert(
+                com.alvarotc.bito.data.db.CustomizationItemEntity("neck-bufanda", CustomizationCategory.NECK, 1L, equipped = true),
+            )
+            assertTrue(rewards.purchaseOverCostume(HabiCatalog.byId("head-gorro-lana")!!, DAY_ZERO, 10L))
+            assertFalse(db.customizationItemDao().byId("costume-calabaza")!!.equipped)
+            assertTrue(db.customizationItemDao().byId("head-gorro-lana")!!.equipped)
+            assertTrue("lo demás sigue puesto", db.customizationItemDao().byId("neck-bufanda")!!.equipped)
+            assertEquals(140, balance())
+        }
+
+    @Test
+    fun `a refused purchase over a costume leaves the costume on`() =
+        runTest {
+            saldo(10)
+            db.customizationItemDao().upsert(
+                com.alvarotc.bito.data.db.CustomizationItemEntity("costume-calabaza", CustomizationCategory.COSTUME, 1L, equipped = true),
+            )
+            assertFalse(rewards.purchaseOverCostume(HabiCatalog.byId("head-gorro-lana")!!, DAY_ZERO, 10L))
+            assertTrue(db.customizationItemDao().byId("costume-calabaza")!!.equipped)
+        }
+
+    @Test
     fun `equip and unequip never take a garden object off`() =
         runTest {
             saldo(200)

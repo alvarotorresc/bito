@@ -27,7 +27,7 @@ class ContextoPanel(
 )
 
 /**
- * Lo que da cada pestaña a la pantalla: lo que va en la escena (412 x 300 dp, con su costra si la lleva) y lo
+ * Lo que da cada pestaña a la pantalla: lo que va en la escena (412 x 300 dp, sin la costra: la pinta la pantalla una vez) y lo
  * que va en el catálogo (desde 404 dp hasta abajo, única zona con scroll).
  */
 interface PanelTienda {

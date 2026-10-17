@@ -13,7 +13,7 @@ object PanelHabi : PanelTienda {
         ctx: ContextoPanel,
         modifier: Modifier,
     ) {
-        EscenaArmario(look = ctx.estado.look, luz = ctx.luz, estado = ctx.armario, modifier = modifier)
+        EscenaArmario(look = ctx.estado.look, luz = ctx.luz, estado = ctx.armario, modifier = modifier, conCostra = false)
     }
 
     @Composable

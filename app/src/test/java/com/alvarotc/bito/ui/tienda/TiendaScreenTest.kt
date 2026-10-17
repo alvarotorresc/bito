@@ -9,6 +9,7 @@ import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.dp
@@ -99,6 +100,20 @@ class TiendaScreenTest {
     }
 
     @Test
+    fun `the crust is drawn once under the scene in every tab and does not move when switching`() {
+        montar()
+        PestanaTienda.entries.forEach { pestana ->
+            poner(estadoTienda(pestana = pestana))
+            rule.mainClock.advanceTimeBy(100)
+            assertEquals("una sola costra en $pestana a medio cambio", 1, rule.onAllNodesWithTag("tcostra").fetchSemanticsNodes().size)
+            rule.mainClock.advanceTimeBy(600)
+            assertEquals("una sola costra en $pestana", 1, rule.onAllNodesWithTag("tcostra").fetchSemanticsNodes().size)
+            assertEquals(300f, bounds("tcostra").top.value, 0.5f)
+            assertEquals(6f, bounds("tcostra").height.value, 0.5f)
+        }
+    }
+
+    @Test
     @Config(sdk = [35], qualifiers = "es-w412dp-h500dp")
     fun `on a short screen the scene drops to 260 before the catalog goes under 120 dp`() {
         estado = estadoTienda(prueba = gorro, barra = barraComprar)
@@ -145,6 +160,12 @@ class TiendaScreenTest {
         atras()
         assertEquals(1, acciones.quitadas)
         assertEquals(1, salidas)
+    }
+
+    @Test
+    fun `the notice host carries the undo tag`() {
+        montar()
+        rule.onNodeWithTag("aviso-deshacer").assertExists()
     }
 
     @Test

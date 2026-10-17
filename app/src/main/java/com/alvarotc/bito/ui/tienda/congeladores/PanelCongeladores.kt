@@ -75,7 +75,7 @@ object PanelCongeladores : PanelTienda {
         ctx: ContextoPanel,
         modifier: Modifier,
     ) {
-        EscenaArmario(look = ctx.estado.puestos, luz = ctx.luz, estado = ctx.armario, modifier = modifier)
+        EscenaArmario(look = ctx.estado.puestos, luz = ctx.luz, estado = ctx.armario, modifier = modifier, conCostra = false)
     }
 
     @Composable
