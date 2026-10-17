@@ -231,7 +231,7 @@ private fun Cuerpo(
             alQuitar = quitarPrueba,
             modifier = Modifier.align(Alignment.BottomCenter),
         )
-        AvisoHost(avisos, Modifier.align(Alignment.BottomCenter))
+        AvisoHost(avisos, Modifier.align(Alignment.BottomCenter).testTag("aviso-deshacer"))
         CapaMoneda(vuelo)
     }
     HojaSaldo(

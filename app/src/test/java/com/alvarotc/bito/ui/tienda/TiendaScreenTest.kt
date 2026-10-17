@@ -163,6 +163,12 @@ class TiendaScreenTest {
     }
 
     @Test
+    fun `the notice host carries the undo tag`() {
+        montar()
+        rule.onNodeWithTag("aviso-deshacer").assertExists()
+    }
+
+    @Test
     fun `back with the undo notice visible leaves`() {
         estado = estadoTienda(prueba = gorro, barra = barraComprar)
         val conAviso = PanelFalso("HABI") { it.avisos.mostrar("Congelador comprado", "Deshacer") }
