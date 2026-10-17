@@ -112,12 +112,10 @@ class HojaLogroTest {
     }
 
     @Test
-    fun `buttons follow D12`() {
+    fun `a new sheet has only Seguir and no see it in the garden`() {
         montar(ModoLogro.NUEVO, logro("streak-7", true, Progreso(7, 7)))
-
-        fun arriba(texto: String) = rule.onNodeWithText(texto).fetchSemanticsNode().boundsInRoot.top
-        val verlo = cadena(R.string.camino_verlo)
-        assertTrue(arriba(cadena(R.string.camino_seguir)) > arriba(verlo))
+        rule.onNodeWithText(cadena(R.string.camino_seguir)).assertExists()
+        rule.onNodeWithText(cadena(R.string.camino_verlo)).assertDoesNotExist()
     }
 
     @Test

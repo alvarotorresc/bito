@@ -22,7 +22,11 @@ internal class AvisoDeshacer(
         alDeshacer: () -> Unit,
     ) {
         retirar()
-        trabajo = ambito.launch { avisos.mostrar(texto, accion, alDeshacer) }
+        lateinit var propio: Job
+        // El aviso retenido en su salida sigue aceptando el toque: solo deshace quien aún tiene su trabajo vivo.
+        val alAccion = { if (trabajo === propio && propio.isActive) alDeshacer() }
+        propio = ambito.launch { avisos.mostrar(texto, accion, alAccion) }
+        trabajo = propio
     }
 
     fun retirar() {

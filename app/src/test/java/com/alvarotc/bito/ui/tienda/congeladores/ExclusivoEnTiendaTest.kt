@@ -42,6 +42,7 @@ class ExclusivoEnTiendaTest {
         t.avanzarHasta { "head-flor" in t.vm.uiState.value.poseidos }
         t.avanzar(400)
         assertEquals(StoreItemState.Owned, estadoDe("head-flor"))
+        assertEquals("en silencio: sin sonido ni vibración", emptyList<Any>(), t.sonido.snds() + t.tacto.hapticas)
         rule.onNodeWithTag("hoja-logro", useUnmergedTree = true).assertDoesNotExist()
         rule.onNodeWithTag("aviso", useUnmergedTree = true).assertDoesNotExist()
     }

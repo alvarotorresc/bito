@@ -41,6 +41,7 @@ import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.sistema.BitoColores
 import com.alvarotc.bito.ui.sistema.BitoTema
@@ -54,6 +55,8 @@ import com.alvarotc.bito.ui.tienda.ContextoPanel
 import com.alvarotc.bito.ui.tienda.EscenaArmarioEstado
 import com.alvarotc.bito.ui.tienda.RelojTienda
 import com.alvarotc.bito.ui.tienda.SaldoConRodillo
+import com.alvarotc.bito.ui.tienda.TiendaAcciones
+import com.alvarotc.bito.ui.tienda.TiendaUiState
 import com.alvarotc.bito.ui.tienda.TiendaViewModel
 import com.alvarotc.bito.ui.tienda.VueloMoneda
 import com.alvarotc.bito.ui.tienda.origenMoneda
@@ -167,6 +170,10 @@ internal class TiendaReal(
     lateinit var db: BitoDatabase
     lateinit var rewards: RewardsRepository
     lateinit var vm: TiendaViewModel
+    lateinit var ajustes: SettingsRepository
+
+    /** Mientras sea verdad, el modelo no recibe los toques de «Un congelador» (el rebote o la escritura en curso). */
+    var ignorarCompras = false
     lateinit var vista: View
     lateinit var colores: BitoColores
     var panelVisible by mutableStateOf(true)
@@ -208,6 +215,8 @@ internal class TiendaReal(
         saldo: Int,
         congeladores: Int = 0,
         reducido: Boolean = false,
+        voz: Personality = Personality.NEUTRA,
+        transformar: (TiendaUiState) -> TiendaUiState = { it },
     ) {
         Dispatchers.setMain(despachador)
         val contexto = ApplicationProvider.getApplicationContext<Context>()
@@ -221,7 +230,7 @@ internal class TiendaReal(
                 .allowMainThreadQueries()
                 .build()
         rewards = RewardsRepository(db)
-        val ajustes =
+        ajustes =
             SettingsRepository(
                 PreferenceDataStoreFactory.create(scope = CoroutineScope(UnconfinedTestDispatcher(planificador) + Job())) {
                     File(carpeta, "congeladores.preferences_pb")
@@ -232,11 +241,12 @@ internal class TiendaReal(
                 domainState = DomainStateRepository(db),
                 rewards = rewards,
                 settings = ajustes,
-                reloj = RelojTienda(ahora = { ahora }, zona = { utc }),
+                reloj = RelojTienda(ahora = { ahora + planificador.currentTime }, zona = { utc }),
                 recursos = { contextoEs.resources },
                 saved = SavedStateHandle(),
                 defaultDispatcher = despachador,
             )
+        ejecutar { ajustes.update { it.copy(personality = voz) } }
         ejecutar {
             db.pointsLedgerDao().insert(pointsLedgerEntity(id = "saldo", delta = saldo, logicalDay = hoy))
             repeat(congeladores) {
@@ -260,8 +270,14 @@ internal class TiendaReal(
                     val estado by vm.uiState.collectAsState()
                     Box(Modifier.fillMaxSize().background(Color.White)) {
                         if (estado.cargado) {
+                            val acciones =
+                                object : TiendaAcciones by vm {
+                                    override fun comprarCongelador() {
+                                        if (!ignorarCompras) vm.comprarCongelador()
+                                    }
+                                }
                             val ctx =
-                                ContextoPanel(estado, vm, vm.eventos, { 0f }, vuelo, armario, avisos, sonido, tacto)
+                                ContextoPanel(transformar(estado), acciones, vm.eventos, { 0f }, vuelo, armario, avisos, sonido, tacto)
                             Column(Modifier.width(412.dp)) {
                                 Box(Modifier.height(64.dp)) { SaldoConRodillo(estado.saldo, Modifier.origenMoneda(vuelo)) }
                                 if (panelVisible) PanelCongeladores.Catalogo(ctx, Modifier.fillMaxWidth().height(700.dp))

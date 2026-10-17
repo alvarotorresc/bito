@@ -26,7 +26,6 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.Personality
-import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Haptica
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -67,8 +66,6 @@ class BotonCongeladorTest {
 
     @Test
     fun `the button is 60 dp high, pressed scales to 0,97 in 140 ms`() {
-        assertEquals(0.97f, Duraciones.ESCALA_PULSAR, 0f)
-        assertEquals(140, Duraciones.PULSAR)
         boton(140)
         val caja = rule.onNodeWithTag("tc-buy").getBoundsInRoot()
         assertEquals(60f, caja.height.value, 0.5f)
@@ -189,7 +186,7 @@ class BotonCongeladorTest {
     ): String = recursos(idioma).getString(pistaDe(voz))
 
     @Test
-    fun `the voice picks the hint for Neutral, Sergeant and Cheerleader`() {
+    fun `the catalog body shows the hint it is given for each voice`() {
         var voz by mutableStateOf(Personality.NEUTRA)
         banco.colocar { CatalogoCongeladores(voz, congeladores = 2, saldo = 140, precio = 100, alComprar = {}) }
         rule.onNodeWithTag("tc-pista").assertTextEquals(

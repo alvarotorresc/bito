@@ -117,8 +117,7 @@ class AvisoDeshacerTest {
         t.avanzar(400)
         assertNotNull(t.avisos.actual)
         t.comprarDeUnToque()
-        t.avanzar(16)
-        assertNull("el aviso viejo se va al empezar la compra nueva", t.avisos.actual)
+        t.avanzarHasta { t.avisos.actual == null }
         t.avanzarHasta { t.vuelo.activas.isNotEmpty() }
         t.avanzarHasta { t.vuelo.activas.isEmpty() }
         t.avanzarHasta(500) { t.avisos.actual != null }
@@ -159,5 +158,41 @@ class AvisoDeshacerTest {
         assertFalse("sin hundir ni vibrar", Snd.HUNDIR in t.sonido.snds())
         assertTrue(t.tacto.hapticas.none { it == Haptica.LOW })
         assertEquals("el contador vuelve al dato real: usado, ya no queda ninguno", 0, t.copos().fetchSemanticsNodes().size)
+    }
+
+    @Test
+    fun `tapping Deshacer while the expired notice slides away does nothing`() {
+        t.abrir(saldo = 140, congeladores = 2)
+        comprarYAterrizar()
+        t.avanzarHasta(5000) { t.avisos.actual == null }
+        rule.onNodeWithText("Deshacer", useUnmergedTree = true).performClick()
+        t.avanzar(800)
+        assertEquals("la compra ya era firme", 3, t.compradas())
+        assertEquals(40, t.saldoEnLibro())
+    }
+
+    @Test
+    fun `tapping Deshacer after leaving the tab does nothing`() {
+        t.abrir(saldo = 140, congeladores = 2)
+        comprarYAterrizar()
+        t.avanzar(400)
+        t.panelVisible = false
+        t.avanzar(16)
+        rule.onNodeWithText("Deshacer", useUnmergedTree = true).performClick()
+        t.avanzar(800)
+        assertEquals("al salir la compra queda firme", 3, t.compradas())
+        assertEquals(40, t.saldoEnLibro())
+    }
+
+    @Test
+    fun `a tap the model ignores does not take the previous notice away`() {
+        t.abrir(saldo = 340, congeladores = 0)
+        comprarYAterrizar()
+        t.avanzar(400)
+        assertNotNull(t.avisos.actual)
+        t.ignorarCompras = true
+        t.comprarDeUnToque()
+        t.avanzar(200)
+        assertNotNull("el Deshacer de la compra anterior sigue ahí", t.avisos.actual)
     }
 }

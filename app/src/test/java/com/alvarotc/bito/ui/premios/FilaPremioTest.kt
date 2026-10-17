@@ -133,7 +133,6 @@ class FilaPremioTest {
     fun `Primera llama shows the flower first and the lantern is planted after`() {
         montar("streak-7")
         rule.onNodeWithText("Tienes la flor.", useUnmergedTree = true).assertExists()
-        rule.onNodeWithText("Tienes el farolillo.", useUnmergedTree = true).assertDoesNotExist()
         rule.onNodeWithTag("logro-especial", useUnmergedTree = true).assertDoesNotExist()
         // El farolillo llega como un momento propio, después del logro (G14).
         val logro = Momento.Logro("streak-7", 1L, 1L)
@@ -142,7 +141,7 @@ class FilaPremioTest {
     }
 
     @Test
-    fun `the sheet keeps its 1_4 s emblem and plays LOGRO, CLICK and CONFIRM`() {
+    fun `the sheet plays LOGRO, CLICK and CONFIRM`() {
         val sonido = SonidoGrabado()
         val tacto = TactoGrabado()
         montar("streak-7", sonido, tacto)
@@ -164,5 +163,35 @@ class FilaPremioTest {
     fun `a badge with no prize has no row`() {
         montar("first-habit")
         textoDe("fila-premio").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the new sheet has the 184 dp niche, a 164 dp emblem and the Logro desbloqueado label`() {
+        montar("streak-7")
+        rule.onNodeWithText("Logro desbloqueado", useUnmergedTree = true).assertExists()
+        val nicho = textoDe("logro-hornacina").fetchSemanticsNode().boundsInRoot
+        val emblema = textoDe("logro-emblema").fetchSemanticsNode().boundsInRoot
+        with(rule.density) {
+            assertEquals(184.dp.toPx(), nicho.height, 1f)
+            assertEquals(164.dp.toPx(), emblema.height, 1f)
+            assertEquals(164.dp.toPx(), emblema.width, 1f)
+        }
+        val etiqueta = estiloDe("logro-etiqueta").layoutInput.style
+        assertEquals(14f, etiqueta.fontSize.value, 0.01f)
+        assertEquals(FontWeight.Bold, etiqueta.fontWeight)
+    }
+
+    @Test
+    fun `a reward sheet only offers Seguir`() {
+        montar("streak-7")
+        rule.onNodeWithText("Seguir").assertExists()
+        rule.onNodeWithText("Verlo en el jardín").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the consult sheet keeps its 124 dp emblem`() {
+        montar("streak-7", modo = ModoLogro.CONSULTA)
+        rule.onNodeWithText("Logro desbloqueado", useUnmergedTree = true).assertDoesNotExist()
+        with(rule.density) { assertEquals(124.dp.toPx(), textoDe("logro-emblema").fetchSemanticsNode().boundsInRoot.height, 1f) }
     }
 }

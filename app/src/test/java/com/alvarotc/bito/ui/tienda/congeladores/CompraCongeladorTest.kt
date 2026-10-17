@@ -5,6 +5,7 @@ import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import org.junit.After
@@ -62,7 +63,7 @@ class CompraCongeladorTest {
         t.avanzarHasta { t.vuelo.activas.isNotEmpty() }
         val moneda = t.vuelo.activas.single()
         assertEquals("sale con el gasto", listOf(Snd.GASTAR), t.sonido.snds())
-        assertEquals(listOf(Haptica.CONFIRM), t.tacto.hapticas)
+        assertEquals("al salir no vibra: el confirm llega con la moneda", emptyList<Haptica>(), t.tacto.hapticas)
 
         t.avanzar(48)
         assertTrue("el saldo rueda: la cifra vieja y la nueva a la vez", t.textos("140").fetchSemanticsNodes().isNotEmpty())
@@ -71,7 +72,7 @@ class CompraCongeladorTest {
         val ms = 48 + volarHastaLlegar()
         assertTrue("vuela unos 520 ms y no $ms", ms in 496..560)
         assertEquals(listOf(Snd.GASTAR, Snd.CAMPANILLA), t.sonido.snds())
-        assertEquals("la campanilla no vibra", listOf(Haptica.CONFIRM), t.tacto.hapticas)
+        assertEquals("la campanilla lleva el confirm", listOf(Haptica.CONFIRM), t.tacto.hapticas)
         assertEquals(1, t.textos("40").fetchSemanticsNodes().size)
         assertEquals(0, t.textos("140").fetchSemanticsNodes().size)
 
@@ -253,5 +254,35 @@ class CompraCongeladorTest {
         val c = t.caja("tc-copo", 2)
         assertEquals("el copito no sube", t.caja("tc-copo", 0).top, c.top, 0.5f)
         assertEquals("ni se encoge", 44f, c.height / rule.density.density, 0.5f)
+    }
+
+    @Test
+    fun `the hint speaks with the voice of the state and not with a shortcut to settings`() {
+        t.abrir(saldo = 140, congeladores = 2, voz = Personality.SARGENTO)
+        rule.onNodeWithTag("tc-pista").assertTextEquals(recursos("es").getString(pistaDe(Personality.SARGENTO)))
+        assertEquals(
+            "el panel real no puede quedarse en Neutra",
+            false,
+            recursos("es").getString(pistaDe(Personality.NEUTRA)) == recursos("es").getString(pistaDe(Personality.SARGENTO)),
+        )
+    }
+
+    @Test
+    fun `the price and the line come from the economy of the state`() {
+        t.abrir(saldo = 140, congeladores = 2, transformar = { it.copy(economia = it.economia.copy(freezerPrice = 150)) })
+        rule.onNodeWithTag("tc-linea").assertTextEquals("Te faltan 10 bitos. Cada hábito hecho da 1 y un día completo, 3 más.")
+        rule.onNodeWithTag("tc-buy").performClick()
+        t.avanzar(1000)
+        assertEquals("con 150 de precio no alcanza", 2, t.compradas())
+        assertTrue(t.vuelo.activas.isEmpty())
+    }
+
+    @Test
+    fun `while the state is not loaded the body shows no false zero and takes no tap`() {
+        t.abrir(saldo = 140, congeladores = 2, transformar = { it.copy(cargado = false, saldo = 0, congeladores = 0) })
+        rule.onNodeWithTag("tc-pista").assertExists()
+        rule.onNodeWithTag("tc-buy").assertDoesNotExist()
+        assertEquals(0, t.textos("Aún no tienes ninguno.").fetchSemanticsNodes().size)
+        assertTrue(t.tacto.hapticas.isEmpty())
     }
 }

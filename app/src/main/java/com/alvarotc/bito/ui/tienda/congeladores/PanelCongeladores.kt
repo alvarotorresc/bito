@@ -13,14 +13,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
@@ -31,9 +29,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.alvarotc.bito.BitoApp
 import com.alvarotc.bito.R
-import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
@@ -47,8 +43,6 @@ import com.alvarotc.bito.ui.tienda.EscenaArmario
 import com.alvarotc.bito.ui.tienda.EventoTienda
 import com.alvarotc.bito.ui.tienda.PanelTienda
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 // (sin token) `.tc-sec` y `.tc-veta` de tienda-congeladores.css.
@@ -83,7 +77,7 @@ object PanelCongeladores : PanelTienda {
         ctx: ContextoPanel,
         modifier: Modifier,
     ) {
-        val precio = EconomyConfig().freezerPrice
+        val precio = ctx.estado.economia.freezerPrice
         val compra = remember { CompraCongelador() }
         val fila = remember { FilaCopitos() }
         val ambito = rememberCoroutineScope()
@@ -106,7 +100,6 @@ object PanelCongeladores : PanelTienda {
         fun comprar() {
             if (compra.ocupado) return
             compra.empezarCompra(estadoVivo.congeladores, estadoVivo.saldo)
-            aviso.retirar() // solo se deshace la última: el aviso viejo se va al empezar la nueva
             accionesVivas.comprarCongelador()
         }
 
@@ -116,11 +109,13 @@ object PanelCongeladores : PanelTienda {
                 when (evento) {
                     is EventoTienda.CongeladorComprado ->
                         if (compra.aceptarCompra()) {
+                            // Solo se deshace la última: el aviso viejo se va cuando la compra nueva es firme, no al tocar.
+                            aviso.retirar()
                             ambito.launch {
-                                gesto(Snd.GASTAR, Haptica.CONFIRM)
+                                gesto(Snd.GASTAR)
                                 ctx.vuelo.volar({ fila.centro(huecoDe(evento.cuantos), densidad) })
                                 compra.llegar(evento.cuantos, precio)
-                                gesto(Snd.CAMPANILLA)
+                                gesto(Snd.CAMPANILLA, Haptica.CONFIRM)
                                 aviso.mostrar(textoComprado, textoDeshacer, ::deshacer)
                                 delay(POSADO_MS)
                                 compra.posado()
@@ -151,9 +146,10 @@ object PanelCongeladores : PanelTienda {
         LaunchedEffect(ctx.estado.congeladores, compra.cuentaFija) { compra.soltarSiAlcanzada(ctx.estado.congeladores) }
 
         CatalogoCongeladores(
-            voz = vozDeAjustes(),
+            voz = ctx.estado.voz,
             congeladores = cuenta,
             saldo = compra.saldoFijo ?: ctx.estado.saldo,
+            cargado = ctx.estado.cargado,
             precio = precio,
             alComprar = ::comprar,
             modifier = modifier,
@@ -182,6 +178,7 @@ internal fun CatalogoCongeladores(
     entrando: Boolean = false,
     saliendo: Boolean = false,
     fila: FilaCopitos? = null,
+    cargado: Boolean = true,
 ) {
     val colores = BitoTema.colores
     Column(modifier.verticalScroll(rememberScrollState())) {
@@ -198,10 +195,13 @@ internal fun CatalogoCongeladores(
             color = colores.tintaSuave,
         )
         Spacer(Modifier.height(ARRIBA_VETA))
-        VetaFria { tintaSuave ->
-            Tienes(congeladores)
-            Copitos(congeladores, tintaSuave = tintaSuave, entrando = entrando, saliendo = saliendo, fila = fila)
-            BotonCongelador(precio, saldo, alComprar, tintaSuave = tintaSuave, comprando = comprando)
+        // Sin datos reales no hay veta: ni un «Aún no tienes ninguno» falso ni un botón que atienda sobre un saldo de relleno.
+        if (cargado) {
+            VetaFria { tintaSuave ->
+                Tienes(congeladores)
+                Copitos(congeladores, tintaSuave = tintaSuave, entrando = entrando, saliendo = saliendo, fila = fila)
+                BotonCongelador(precio, saldo, alComprar, tintaSuave = tintaSuave, comprando = comprando)
+            }
         }
         Spacer(Modifier.height(ABAJO_LISTA))
     }
@@ -230,15 +230,3 @@ private fun Tienes(cantidad: Int) {
 }
 
 private const val MARCA = -1
-
-/** La voz que eligió el usuario en Ajustes; Neutra mientras no llega. */
-@Composable
-private fun vozDeAjustes(): Personality {
-    val contexto = LocalContext.current
-    val flujo =
-        remember(contexto) {
-            runCatching { (contexto.applicationContext as BitoApp).container.settings.settings.map { it.personality } }
-                .getOrNull() ?: flowOf(Personality.NEUTRA)
-        }
-    return flujo.collectAsState(Personality.NEUTRA).value
-}
