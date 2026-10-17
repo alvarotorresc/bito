@@ -62,9 +62,9 @@
     <string name="habi_home_neutra_dramatic_sin_nombre">It\'s been a few days. Good to see you.</string>
 
 
-    <string name="freezer_info_sargento">One freezer, one habit, one day. See a red day on the calendar? Tap it and use it. They\'re bought in the store. Don\'t waste them, %1$s.</string>
+    <string name="freezer_info_sargento">One freezer, one habit, one day. See a missed day on the calendar? Tap it and use it. They\'re bought in the store. Don\'t waste them, %1$s.</string>
     <string name="freezer_info_sargento_sin_nombre">One freezer, one habit, one day. See a red day on the calendar? Tap it and use it. They\'re bought in the store. Don\'t waste them.</string>
-    <string name="freezer_info_cheerleader">A freezer saves your streak if you miss ONE day on ONE habit! Tap the red day on the calendar, hit \"Use a freezer\" and done. They\'re waiting in the store. If I were you, I\'d always keep one around, %1$s.</string>
+    <string name="freezer_info_cheerleader">A freezer saves your streak if you miss ONE day on ONE habit! Tap the missed day on the calendar, hit \"Use a freezer\" and done. They\'re waiting in the store. If I were you, I\'d always keep one around, %1$s.</string>
     <string name="freezer_info_cheerleader_sin_nombre">A freezer saves your streak if you miss ONE day on ONE habit! Tap the red day on the calendar, hit \"Use a freezer\" and done. They\'re waiting in the store. If I were you, I\'d always keep one around.</string>
     <string name="freezer_info_neutra">A freezer protects a failed day: the streak skips it instead of breaking. To use one, tap a red day on the calendar and pick \"Use a freezer\". They\'re bought in Habi\'s store, %1$s.</string>
     <string name="freezer_info_neutra_sin_nombre">A freezer protects a failed day: the streak skips it instead of breaking. To use one, tap a red day on the calendar and pick \"Use a freezer\". They\'re bought in Habi\'s store.</string>
