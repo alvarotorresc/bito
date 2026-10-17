@@ -108,6 +108,9 @@ private const val BUBBLE_MS = 2500L
 // El vaivén de un toque (G20): el muelle `planta` con este impulso inicial, en grados por segundo.
 private const val IMPULSO_PLANTA = 90f
 
+// El meceo de un objeto tocado en Hoy y Camino: `B.mecer(w, 70)` del mock (en la tienda, 60).
+internal const val IMPULSO_OBJETO_HOY = 70f
+
 // Reducido: en vez de mecerse o aplastarse, la pieza brilla 300 ms.
 private const val BRILLO_MS = 300
 private const val BRILLO_ALFA = 0.45f
@@ -256,6 +259,13 @@ data class PoseObjeto(
     val sombra: Float = 1f,
 )
 
+/** Un objeto de jardín que se mece una vez: [retrasoMs] después de pedirlo, con un impulso de [impulso] grados por segundo. */
+data class MeceoObjeto(
+    val clave: String,
+    val retrasoMs: Long = 0L,
+    val impulso: Float = IMPULSO_OBJETO_HOY,
+)
+
 /** Cómo llega cada especial al jardín (G15). */
 private enum class Llegada { CAE, BROTA, PIEDRAS, ASIENTA }
 
@@ -282,6 +292,9 @@ private class AnimCrece(inicio: Float) {
 
 /** El globito de una planta tocada en Camino; [tick] reinicia sus 2,4 s en cada toque. */
 private class GlobitoDePlanta(val plot: Int, val tick: Int)
+
+/** El globito de un objeto de jardín tocado en Hoy o Camino. */
+private class GlobitoDeObjeto(val clave: String, val tick: Int)
 
 private class Efectos(
     val balanceo: Map<Int, Animatable<Float, AnimationVector1D>>,
@@ -365,6 +378,14 @@ fun GardenScene(
     objetos: List<ObjetoJardin> = emptyList(),
     // La pose de este fotograma de un objeto o especial por su clave (la caída y el meceo de la tienda), leída al dibujar.
     poseObjeto: ((String) -> PoseObjeto?)? = null,
+    // El tinte de luz multiplicado sobre el jardín (arriba, abajo), leído al dibujar. Con él, [noche] ya no oscurece: solo enciende el farolillo.
+    tinteLuz: (() -> Pair<Color, Color>)? = null,
+    // La tienda recoge el toque en un objeto o un especial (por su clave de arte) en vez de mecerlo o abrir su globito.
+    alTocarElemento: ((String) -> Unit)? = null,
+    // Hoy y Camino: tocar un objeto lo mece y abre su globito, y el globito de un especial dice con qué logro llegó.
+    globitoObjetos: Boolean = false,
+    // Un objeto que se mece una vez, pasado su retraso (el recién comprado al volver de la tienda).
+    meceObjeto: MeceoObjeto? = null,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -388,6 +409,9 @@ fun GardenScene(
     var bubbleTick by remember { mutableIntStateOf(0) }
     var globo by remember { mutableStateOf<GlobitoDePlanta?>(null) }
     var globoTick by remember { mutableIntStateOf(0) }
+    var globoObjeto by remember { mutableStateOf<GlobitoDeObjeto?>(null) }
+    val giroObjeto = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
+    val brilloObjeto = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
     var habiNudge by remember { mutableIntStateOf(0) }
     var habiAmplitud by remember { mutableStateOf<Float?>(null) }
     var habiTouch by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
@@ -427,6 +451,42 @@ fun GardenScene(
                 a.animateTo(1f, Muelles.nodulo<Float>())
             }
         }
+    }
+
+    // Un objeto de jardín tocado se mece desde el pie con el muelle `planta`; reducido, brilla 300 ms.
+    fun mecerObjeto(
+        clave: String,
+        impulso: Float,
+    ) {
+        if (reducido) {
+            val b = brilloObjeto.getOrPut(clave) { Animatable(0f) }
+            scope.launch {
+                b.snapTo(1f)
+                b.animateTo(0f, tween(BRILLO_MS))
+            }
+        } else {
+            val a = giroObjeto.getOrPut(clave) { Animatable(0f) }
+            scope.launch { a.animateTo(0f, Muelles.planta<Float>(), initialVelocity = impulso) }
+        }
+    }
+
+    // La pose de fuera (la caída de la tienda) manda; si no hay, la del meceo propio de un objeto.
+    val poseFinal: ((String) -> PoseObjeto?)? =
+        remember(poseObjeto) {
+            { clave: String ->
+                poseObjeto?.invoke(clave) ?: run {
+                    val giro = giroObjeto[clave]?.value ?: 0f
+                    val brillo = brilloObjeto[clave]?.value ?: 0f
+                    if (giro == 0f && brillo == 0f) null else PoseObjeto(giro = giro, brillo = brillo)
+                }
+            }
+        }
+    val meceAhora by rememberUpdatedState(meceObjeto)
+    LaunchedEffect(meceObjeto) {
+        val m = meceAhora ?: return@LaunchedEffect
+        delay(m.retrasoMs)
+        gesto(Snd.PLANTA, Haptica.TICK)
+        mecerObjeto(m.clave, m.impulso)
     }
 
     // El jardín que revive: el mustio que se dibuja baja animado; si sube (el jardín se mustia) cambia sin animar.
@@ -634,8 +694,10 @@ fun GardenScene(
         val habiBody = habiBodyRect(sceneW, sceneH)
         val currentOnHabiTap by rememberUpdatedState(onHabiTap)
         val currentAlTocarFondo by rememberUpdatedState(alTocarFondo)
+        val currentAlTocarElemento by rememberUpdatedState(alTocarElemento)
+        val currentGlobitoObjetos by rememberUpdatedState(globitoObjetos)
         val efectos =
-            Efectos(balanceo, brillo, aplaste, llegada, crece, creciendo, vieja, reducido, colores.tAlta, colores.hielo, poseObjeto)
+            Efectos(balanceo, brillo, aplaste, llegada, crece, creciendo, vieja, reducido, colores.tAlta, colores.hielo, poseFinal)
 
         // Las anclas, en coordenadas de la raíz y aunque la escena vaya escalada por su padre.
         val registrar: (LayoutCoordinates) -> Unit = { c ->
@@ -783,12 +845,30 @@ fun GardenScene(
                                 if (globitoPlanta) globo = GlobitoDePlanta(action.plot, ++globoTick)
                             }
                             is SceneTap.Bubble -> {
-                                gesto(Snd.PLANTA, Haptica.TICK)
-                                aplastar(action.item.special.key)
-                                bubble = action.item
-                                bubbleTick++
+                                val alElemento = currentAlTocarElemento
+                                if (alElemento != null) {
+                                    alElemento(action.item.special.key)
+                                } else {
+                                    gesto(Snd.PLANTA, Haptica.TICK)
+                                    aplastar(action.item.special.key)
+                                    bubble = action.item
+                                    bubbleTick++
+                                }
                             }
-                            SceneTap.Fondo -> currentAlTocarFondo?.invoke()
+                            SceneTap.Fondo -> {
+                                // Un objeto de jardín: la tienda lo recoge; en Hoy y Camino se mece y abre su globito.
+                                val objeto = hitTest(items, down.position.x, down.position.y) as? SceneItem.Objeto
+                                val alElemento = currentAlTocarElemento
+                                when {
+                                    objeto != null && alElemento != null -> alElemento(objeto.clave)
+                                    objeto != null && currentGlobitoObjetos -> {
+                                        gesto(Snd.PLANTA, Haptica.TICK)
+                                        mecerObjeto(objeto.clave, IMPULSO_OBJETO_HOY)
+                                        globoObjeto = GlobitoDeObjeto(objeto.clave, ++globoTick)
+                                    }
+                                    else -> currentAlTocarFondo?.invoke()
+                                }
+                            }
                         }
                     }
                 },
@@ -802,7 +882,13 @@ fun GardenScene(
             if (luzFiesta.value > 0f) drawRect(Color.White.copy(alpha = FIESTA_LUZ_MAX * luzFiesta.value), blendMode = BlendMode.Plus)
             // G40: el tinte de la noche, multiplicado encima de la luz del reloj. Con 0 no se pinta nada.
             val n = nocheAhora().coerceIn(0f, 1f)
-            if (n > 0f) drawRect(Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO)), alpha = n, blendMode = BlendMode.Multiply)
+            val tinte = tinteLuz?.invoke()
+            if (tinte != null) {
+                // Con tinte de luz propio (la tienda) la noche ya va en él: aquí solo enciende el farolillo.
+                drawRect(Brush.verticalGradient(listOf(tinte.first, tinte.second)), blendMode = BlendMode.Multiply)
+            } else if (n > 0f) {
+                drawRect(Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO)), alpha = n, blendMode = BlendMode.Multiply)
+            }
             drawFiltracion(filtracion.value)
             overLight.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
             val brillo = brilloFarolillo(GardenLook.nightness(garden.light), n)
@@ -810,7 +896,24 @@ fun GardenScene(
             if (GardenSpecial.LANTERN in garden.specials && lantern != null && brillo > 0f) drawLanternGlow(lantern, brillo)
         }
 
-        bubble?.let { SpecialBubble(it, sceneW, conOrigen = globitoPlanta) }
+        bubble?.let { SpecialBubble(it, sceneW, conOrigen = globitoPlanta || globitoObjetos) }
+        globoObjeto?.let { g ->
+            val objeto = items.firstOrNull { it is SceneItem.Objeto && it.clave == g.clave }
+            if (objeto != null) {
+                val texto = textoObjeto(g.clave)
+                key(g.tick) {
+                    // El globito se posa sobre el objeto, como el de una planta.
+                    Box(
+                        Modifier
+                            .offset { IntOffset(objeto.rect.left.roundToInt(), objeto.rect.top.roundToInt()) }
+                            .size(with(density) { objeto.rect.width.toDp() }, with(density) { objeto.rect.height.toDp() })
+                            .testTag("garden-bubble-${g.clave}"),
+                    ) {
+                        Globito(visible = true, texto = texto, alIrse = { if (globoObjeto?.tick == g.tick) globoObjeto = null })
+                    }
+                }
+            }
+        }
         globo?.let { g ->
             val plant = items.firstOrNull { it is SceneItem.Plant && it.plot == g.plot }
             if (plant != null) {
@@ -874,6 +977,13 @@ internal fun recursosDelJardin(
     )
         .distinct()
         .map { it to 1 }
+
+/** Lo que dice el globito de un objeto comprado: su nombre y de dónde salió. */
+@Composable
+private fun textoObjeto(clave: String): String {
+    val nombre = stringResource(if (clave == "banco") R.string.store_garden_bench else R.string.store_garden_can)
+    return nombre + " \u00b7 " + stringResource(R.string.store_garden_bubble_bought)
+}
 
 @Composable
 private fun textoPlanta(

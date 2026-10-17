@@ -6,6 +6,7 @@ import android.view.View
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
@@ -14,10 +15,13 @@ import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.assertHeightIsEqualTo
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.domain.model.EquippedSet
@@ -32,6 +36,7 @@ import com.alvarotc.bito.ui.tienda.estadoTienda
 import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -112,5 +117,91 @@ class EscenaJardinTest {
         assertNotEquals("a mitad", colores.tintaClara, colorDelTitulo())
         compose.mainClock.advanceTimeBy(200)
         assertEquals(colores.tintaClara, colorDelTitulo())
+    }
+
+    // Dos escenas del jardín de la tienda, con luces distintas, en una captura; devuelve la media de cada una.
+    private fun mediasConLuz(vararg luces: Float): List<FloatArray> {
+        val sondas = List(luces.size) { SondaEscenaJardin() }
+        lateinit var vista: View
+        compose.setContent {
+            vista = LocalView.current
+            ConSistema {
+                androidx.compose.foundation.layout.Column {
+                    luces.forEachIndexed { i, l ->
+                        val estado = remember { EscenaJardinEstado().also { it.sonda = sondas[i] } }
+                        EscenaJardin(
+                            GardenState.INITIAL,
+                            EquippedSet(),
+                            Personality.NEUTRA,
+                            null,
+                            { l },
+                            estado,
+                            Modifier.size(412.dp, 300.dp),
+                            animated = false,
+                        )
+                    }
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(500)
+        val captura = Bitmap.createBitmap(vista.width, vista.height, Bitmap.Config.ARGB_8888)
+        vista.draw(Canvas(captura))
+        val cajas = compose.onAllNodesWithTag("tj-escena").fetchSemanticsNodes().map { it.boundsInRoot }
+        return cajas.map { c ->
+            val suma = FloatArray(3)
+            var n = 0
+            for (y in (c.top.toInt() + 120) until c.bottom.toInt() step 6) {
+                for (x in c.left.toInt() until c.right.toInt() step 6) {
+                    val px = captura.getPixel(x, y)
+                    suma[0] += android.graphics.Color.red(px)
+                    suma[1] += android.graphics.Color.green(px)
+                    suma[2] += android.graphics.Color.blue(px)
+                    n++
+                }
+            }
+            FloatArray(3) { suma[it] / n }
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the afternoon of the store is orange and the night is a single multiply`() {
+        val (dia, tarde, noche) = mediasConLuz(0f, 0.5f, 1f)
+        assertEquals("el rojo se queda", dia[0], tarde[0], 3f)
+        assertTrue("la tarde baja el azul: ${dia[2]} ${tarde[2]}", tarde[2] < dia[2] * 0.82f)
+        // La noche (#31406E / #4B5A8A) multiplica una sola vez: el azul de la noche no baja de su tinte.
+        assertTrue("la noche es azul oscuro, no negra: ${noche[2]}", noche[2] > dia[2] * 0.30f && noche[2] < dia[2] * 0.62f)
+    }
+
+    @Test
+    fun `a tap on an object of the scene reaches the catalog gesture`() {
+        val estado = EscenaJardinEstado()
+        val tocados = mutableListOf<String>()
+        compose.setContent {
+            ConSistema {
+                EscenaJardin(
+                    GardenState.INITIAL.copy(objects = setOf("banco")),
+                    EquippedSet(),
+                    Personality.NEUTRA,
+                    null,
+                    { 0f },
+                    estado,
+                    Modifier.size(412.dp, 300.dp),
+                    animated = false,
+                    alTocar = { tocados += it },
+                )
+            }
+        }
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(500)
+        // El banco va al 69 % del ancho y al 72,5 % del alto de la escena (la de 412 x 307,7 apoyada abajo).
+        val vistaH = 300f * compose.density.density
+        val escenaH = 412f / com.alvarotc.bito.ui.garden.GardenArt.SCENE_ASPECT * compose.density.density
+        val x = 0.69f * 412f * compose.density.density
+        val y = (vistaH - escenaH) + (0.725f - 0.12f) * escenaH
+        compose.onNodeWithTag("tj-escena").performTouchInput { click(androidx.compose.ui.geometry.Offset(x, y)) }
+        compose.waitForIdle()
+        assertEquals(listOf("banco"), tocados)
     }
 }

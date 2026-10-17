@@ -23,6 +23,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
@@ -41,7 +43,9 @@ import com.alvarotc.bito.ui.garden.sceneItems
 import com.alvarotc.bito.ui.habi.HabiSpec
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.rememberGesto
+import com.alvarotc.bito.ui.tienda.LuzArmario
 import com.alvarotc.bito.ui.tienda.PruebaTienda
+import com.alvarotc.bito.ui.tienda.VueloMoneda
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -80,8 +84,12 @@ internal class SondaEscenaJardin {
     var pintados: List<String> = emptyList()
 }
 
-/** Un toque en algo que ya es tuyo; [vez] cuenta los toques para que el mismo objeto se mezca otra vez. */
-internal class PedidoTuyo(val clave: String, val vez: Int)
+/**
+ * Un toque en algo que ya es tuyo (o una compra): [vez] cuenta los pedidos para que el mismo objeto se mezca otra vez,
+ * [retrasoMs] es lo que tarda en mecerse y [enfoque] lo que estaba a prueba al pedirlo, para distinguir la prueba que se
+ * va de una prueba nueva.
+ */
+internal class PedidoTuyo(val clave: String, val vez: Int, val retrasoMs: Long, val enfoque: String?)
 
 /**
  * Lo que la escena del jardín guarda entre fotogramas: la cámara, la caída y el meceo. El catálogo de la pestaña lo
@@ -96,10 +104,25 @@ class EscenaJardinEstado {
     private var veces = 0
     internal var mecidas = 0
 
+    // Lo que la escena tiene a prueba ahora (su clave de arte) y adónde llega una moneda a [clave], en píxeles de la raíz.
+    internal var enfoqueActual: String? = null
+    internal var destinoDe: (String) -> Offset? = { null }
+
     /** Algo ya tuyo (por su clave de arte, «banco» o «farolillo»): la cámara va a su sitio y se mece a los 260 ms. No abre barra. */
     fun tocarTuyo(clave: String) {
-        pedido = PedidoTuyo(clave, ++veces)
+        pedido = PedidoTuyo(clave, ++veces, MedidasEscenaJardin.MECER_TUYO_MS, enfoqueActual)
     }
+
+    /** Se acaba de comprar [clave]: la cámara se queda en ella y se mece al cabo de [retrasoMs] (lo que tarda la moneda). */
+    fun comprado(
+        clave: String,
+        retrasoMs: Long,
+    ) {
+        pedido = PedidoTuyo(clave, ++veces, retrasoMs, enfoqueActual)
+    }
+
+    /** Adónde llega la moneda que paga [clave] (centro del objeto, con la cámara ya en su sitio), o null si la escena no lo pinta. */
+    fun destinoMoneda(clave: String): Offset? = destinoDe(clave)
 }
 
 @Composable
@@ -122,6 +145,8 @@ fun EscenaJardin(
     modifier: Modifier = Modifier,
     // Habi con sus gestos propios (parpadeo, mirada); las pruebas de píxeles lo paran.
     animated: Boolean = true,
+    // Un toque en un objeto o un especial de la escena (por su clave de arte): lo mismo que tocarlo en el catálogo.
+    alTocar: ((String) -> Unit)? = null,
 ) {
     val reducido = BitoTema.reducido
     val colores = BitoTema.colores
@@ -150,8 +175,12 @@ fun EscenaJardin(
     val pose = remember(estado) { { clave: String -> estado.caida.pose(clave) } }
     val luzActual = luz
     val noche = remember(luzActual) { { tinteDeNoche(luzActual()) } }
+    // El tinte multiplicado de Día, Tarde y Noche (`LUZ_A`/`LUZ_B`): una sola vez; la noche solo enciende el farolillo.
+    val tinte = remember(luzActual) { { LuzArmario.arriba(luzActual()) to LuzArmario.abajo(luzActual()) } }
+    var origenRaiz by remember { mutableStateOf(Offset.Zero) }
 
     SideEffect {
+        estado.enfoqueActual = claveEnfoque
         if (claveCae == null) estado.caida.quitar()
         estado.sonda?.let { s ->
             s.recomposiciones++
@@ -159,7 +188,9 @@ fun EscenaJardin(
         }
     }
 
-    BoxWithConstraints(modifier.fillMaxSize().clipToBounds().testTag("tj-escena")) {
+    BoxWithConstraints(
+        modifier.fillMaxSize().clipToBounds().onGloballyPositioned { origenRaiz = it.positionInRoot() }.testTag("tj-escena"),
+    ) {
         val vistaW = constraints.maxWidth.toFloat()
         val vistaH = constraints.maxHeight.toFloat()
         val escenaW = vistaW
@@ -176,25 +207,37 @@ fun EscenaJardin(
             return encuadreDe(cajaConSombra(r), escenaW, escenaH, vistaW, vistaH, margen, libreArriba)
         }
 
+        // Adónde llega una moneda: el centro del objeto con la cámara en su sitio, en la raíz.
+        SideEffect {
+            estado.destinoDe = { clave ->
+                rectDe(clave)?.let { r ->
+                    val e = encuadrePara(clave)
+                    origenRaiz + Offset((r.left + r.width / 2f) * e.escala + e.tx, (r.top + r.height / 2f) * e.escala + e.ty)
+                }
+            }
+        }
+
         // La primera vez la cámara se pone donde toca sin moverse; después va con el muelle `camara`.
         val colocada = remember { booleanArrayOf(false) }
         val pedido = estado.pedido
         LaunchedEffect(claveEnfoque, pedido, vistaW, vistaH) {
-            // Probar algo nuevo deja atrás el último toque a lo tuyo.
-            if (claveEnfoque != null && pedido != null) {
+            // Una prueba nueva, posterior al toque, lo deja atrás. La que ya estaba al pedirlo (o la del propio objeto) se
+            // está yendo: el pedido sigue en pie y el estado la quita cuando llegue.
+            if (pedido != null && claveEnfoque != null && claveEnfoque != pedido.enfoque && claveEnfoque != pedido.clave) {
                 estado.pedido = null
                 return@LaunchedEffect
             }
-            val destino = encuadrePara(claveEnfoque ?: pedido?.clave)
+            val foco = pedido?.clave ?: claveEnfoque
+            val destino = encuadrePara(foco)
             if (!colocada[0]) {
                 colocada[0] = true
                 estado.camara.fijar(destino)
             } else {
                 launch { estado.camara.ir(destino, reducido) }
             }
-            if (claveEnfoque == null && pedido != null && pedido.vez > estado.mecidas) {
+            if (pedido != null && pedido.vez > estado.mecidas) {
+                if (!reducido) delay(pedido.retrasoMs)
                 estado.mecidas = pedido.vez
-                if (!reducido) delay(MedidasEscenaJardin.MECER_TUYO_MS)
                 estado.caida.mecer(pedido.clave, reducido, gesto)
             }
         }
@@ -219,6 +262,8 @@ fun EscenaJardin(
                 noche = noche,
                 objetos = objetos,
                 poseObjeto = pose,
+                tinteLuz = tinte,
+                alTocarElemento = alTocar,
             )
             Canvas(Modifier.matchParentSize()) { with(estado.caida) { pintarGranos(colores.tMedia2) } }
         }
@@ -239,3 +284,12 @@ fun EscenaJardin(
         )
     }
 }
+
+private val escenasPorPantalla = java.util.WeakHashMap<VueloMoneda, EscenaJardinEstado>()
+
+/**
+ * La escena de jardín de una pantalla de tienda. La pantalla recuerda su [vuelo] pero rehace el contexto de los paneles
+ * en cada recomposición: atar la escena al vuelo la hace sobrevivir, y compartir la misma entre la escena y el catálogo.
+ */
+fun escenaJardinDe(vuelo: VueloMoneda): EscenaJardinEstado =
+    synchronized(escenasPorPantalla) { escenasPorPantalla.getOrPut(vuelo) { EscenaJardinEstado() } }

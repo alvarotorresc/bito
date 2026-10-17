@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.garden.GardenLook
 import com.alvarotc.bito.ui.garden.GardenScene
+import com.alvarotc.bito.ui.garden.MeceoObjeto
 import com.alvarotc.bito.ui.garden.NOCHE_ABAJO
 import com.alvarotc.bito.ui.garden.NOCHE_ARRIBA
 import com.alvarotc.bito.ui.habi.HabiSpec
@@ -61,6 +63,9 @@ internal object MedidasInicio {
     val ARRIBA_CAMINO = 150.dp
     val ASTRO = 46.dp
 }
+
+// Al volver de la tienda, lo recién comprado se mece una vez a los 420 ms (tienda-jardin.md «Volver a Hoy»).
+private const val MECE_AL_VOLVER_MS = 420L
 
 internal fun lerpF(
     a: Float,
@@ -190,10 +195,14 @@ fun JardinCompartido(
     respiracion: (() -> Float)? = null,
     // La amplitud del salto de cada incremento de [saltoHabi]; null = el salto de siempre.
     saltoAmplitud: Float? = null,
+    // El objeto recién comprado: se mece una vez a los 420 ms de aparecer Hoy (al volver de la tienda).
+    recienComprado: String? = null,
 ) {
     val densidad = LocalDensity.current
     val colores = BitoTema.colores
     val luz by rememberUpdatedState(garden.light)
+    // Lo recién comprado se mece una vez a los 420 ms de aparecer Hoy (al volver de la tienda, que se hunde sin rebote).
+    val meceObjeto = remember(recienComprado) { recienComprado?.let { MeceoObjeto(it, retrasoMs = MECE_AL_VOLVER_MS) } }
     BoxWithConstraints(modifier) {
         val alto = constraints.maxHeight.toFloat()
         val ancho = constraints.maxWidth.toFloat()
@@ -293,6 +302,8 @@ fun JardinCompartido(
                 dormido = dormido,
                 respiracion = respiracion,
                 saltoAmplitud = saltoAmplitud,
+                globitoObjetos = true,
+                meceObjeto = meceObjeto,
             )
         }
     }

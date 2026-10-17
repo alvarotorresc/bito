@@ -12,6 +12,7 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.sistema.ConSistema
+import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
@@ -221,5 +222,39 @@ class CaidaObjetoTest {
         assertTrue("sin salto: $antes -> $despues", abs(despues.tx - antes.tx) < 6f * dp)
         assertNull("el banco se va", estado.caida.pose("banco"))
         assertTrue("el farolillo empieza su caída", poses.last().second!!.dy < -130f * dp)
+    }
+
+    @Test
+    fun `asking to rock an owned one while another is on trial waits for the trial to go and then rocks`() {
+        montar(GardenState.INITIAL.copy(objects = setOf("banco")))
+        poner { prueba = PruebaTienda.Objeto("garden-regadera") }
+        compose.mainClock.advanceTimeBy(400)
+        poner { estado.tocarTuyo("banco") }
+        compose.mainClock.advanceTimeBy(100)
+        // La prueba tarda en irse (el estado llega por un flujo): el pedido no se pierde.
+        poner { prueba = null }
+        compose.mainClock.advanceTimeBy(1500)
+        assertEquals(1, sonido.snds().count { it == Snd.PLANTA })
+        assertEquals(1, tacto.hapticas.count { it == Haptica.TICK })
+    }
+
+    @Test
+    fun `a trial that starts after the request does discard it`() {
+        montar(GardenState.INITIAL.copy(objects = setOf("banco")))
+        poner { estado.tocarTuyo("banco") }
+        poner { prueba = PruebaTienda.Objeto("garden-regadera") }
+        compose.mainClock.advanceTimeBy(1500)
+        assertFalse(Snd.PLANTA in sonido.snds())
+    }
+
+    @Test
+    fun `a purchase keeps the camera on the object and rocks it when the coin lands`() {
+        montar(GardenState.INITIAL.copy(objects = setOf("banco")))
+        poner { estado.comprado("banco", Duraciones.GASTAR.toLong()) }
+        compose.mainClock.advanceTimeBy(300)
+        assertEquals(1.12f, estado.camara.actual.escala, 0.01f)
+        assertFalse(Snd.PLANTA in sonido.snds())
+        compose.mainClock.advanceTimeBy(300)
+        assertEquals(1, sonido.snds().count { it == Snd.PLANTA })
     }
 }
