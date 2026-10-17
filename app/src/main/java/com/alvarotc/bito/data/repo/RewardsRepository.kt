@@ -145,6 +145,22 @@ class RewardsRepository(private val db: BitoDatabase) {
             true
         }
 
+    /** Compra [item] y, en la misma transacción, quita el disfraz que tapaba su ranura. */
+    suspend fun purchaseOverCostume(
+        item: CatalogItem,
+        day: LogicalDay,
+        nowMillis: Long,
+    ): Boolean =
+        db.withTransaction {
+            val comprada = purchase(item, day, nowMillis)
+            if (comprada && item.category != CustomizationCategory.COSTUME) {
+                db.customizationItemDao().unequipCategory(
+                    CustomizationCategory.COSTUME,
+                )
+            }
+            comprada
+        }
+
     /** Los objetos de jardín no se quitan: la categoría entera no se desequipa. */
     suspend fun unequip(category: CustomizationCategory) {
         if (category != CustomizationCategory.GARDEN_OBJECT) db.customizationItemDao().unequipCategory(category)

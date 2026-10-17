@@ -4,6 +4,8 @@ import androidx.annotation.StringRes
 import com.alvarotc.bito.domain.Movimiento
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.GardenState
+import com.alvarotc.bito.domain.model.Personality
 import java.time.LocalDate
 
 /** La nota de la barra, ya como clave y argumentos: la barra la resuelve con los textos del idioma. */
@@ -75,7 +77,7 @@ data class TiendaUiState(
     /** Lo que se ve en Habi: [puestos] con la prueba encima. */
     val look: EquippedSet,
     val poseidos: Set<String>,
-    /** Claves de `GARDEN_OBJECT` poseídos. */
+    /** Ids de catálogo (`garden-banco`) de los `GARDEN_OBJECT` poseídos; la clave de arte sale de [jardin]`.objects`. */
     val objetosJardin: Set<String>,
     val congeladores: Int,
     val mejorRacha: Int,
@@ -84,6 +86,10 @@ data class TiendaUiState(
     /** Los últimos movimientos y la economía, para «Tus bitos» dentro de la tienda. */
     val movimientos: List<Movimiento> = emptyList(),
     val economia: EconomyConfig = EconomyConfig(),
+    /** El jardín de Hoy con lo colocado y los especiales ganados: lo que pinta la pestaña Jardín. Sus objetos son claves de arte. */
+    val jardin: GardenState = GardenState.INITIAL,
+    /** La personalidad elegida en Ajustes: la pista de los congeladores habla con ella. */
+    val voz: Personality = Personality.NEUTRA,
 )
 
 sealed interface EventoTienda {

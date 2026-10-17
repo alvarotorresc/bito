@@ -19,6 +19,7 @@ import com.alvarotc.bito.domain.LogicalDays
 import com.alvarotc.bito.domain.Movimientos
 import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.Sealing
+import com.alvarotc.bito.domain.StatsEngine
 import com.alvarotc.bito.domain.Streaks
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.DomainState
@@ -30,25 +31,29 @@ import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.domain.model.PointsLedgerEntry
 import com.alvarotc.bito.domain.model.equippedSetOf
 import com.alvarotc.bito.ui.habi.minuteTicks
+import com.alvarotc.bito.ui.sistema.Duraciones
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -78,10 +83,20 @@ class TiendaViewModel(
     // Un solo cobro por toque: comprar y comprarCongelador ignoran otro toque mientras uno escribe.
     private val ocupado = AtomicBoolean(false)
     private val ultimoCongelador = AtomicReference<String?>(null)
-    private val canalEventos = Channel<EventoTienda>(Channel.BUFFERED)
+    private val canalEventos = MutableSharedFlow<EventoTienda>(replay = 0, extraBufferCapacity = EVENTOS_EN_COLA)
 
-    /** Flujo de un solo uso: cada evento lo recibe quien esté recogiendo, o el siguiente que lo haga. */
-    val eventos: Flow<EventoTienda> = canalEventos.receiveAsFlow()
+    // Un toque en «Comprar» tras la medianoche no escribe nada: este pulso hace que la barra se rehaga al instante.
+    private val refresco = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    // El momento (reloj de la tienda) a partir del cual otro toque en «Un congelador» es otra compra y no un rebote.
+    private val congeladorLibreDesde = AtomicLong(Long.MIN_VALUE)
+
+    /**
+     * Flujo compartido: cada evento llega a TODOS los que estén recogiendo en ese momento (la escena y el catálogo de
+     * un panel, dos paneles durante el cambio de pestaña). Sin repetición: un evento sin nadie recogiendo se pierde,
+     * y es seguro porque cada compra nace de un toque en un panel que ya está compuesto.
+     */
+    val eventos: Flow<EventoTienda> = canalEventos.asSharedFlow()
 
     private data class Datos(
         val estado: DomainState,
@@ -89,6 +104,7 @@ class TiendaViewModel(
         val saldo: Int,
         val ajustes: Settings,
         val recientes: List<PointsLedgerEntry>,
+        val logros: Set<String>,
     )
 
     val uiState: StateFlow<TiendaUiState> =
@@ -98,13 +114,17 @@ class TiendaViewModel(
                 rewards.observeOwnedItems(),
                 rewards.observeBalance(),
                 settings.settings,
-                rewards.observeRecentMovements(MOVIMIENTOS),
-                ::Datos,
-            ),
+                combine(
+                    rewards.observeRecentMovements(MOVIMIENTOS),
+                    rewards.observeBadges(),
+                ) { r, b -> r to b.mapTo(mutableSetOf()) { it.badgeId } },
+            ) { estado, filas, saldo, ajustes, (recientes, logros) ->
+                Datos(estado, filas, saldo, ajustes, recientes, logros)
+            },
             pestana,
             luz.filterNotNull(),
             pruebaElegida,
-            clockTicks,
+            merge(clockTicks, refresco),
         ) { datos, pestana, luz, prueba, _ -> construir(datos, pestana, luz, prueba) }
             .flowOn(defaultDispatcher)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), relleno())
@@ -142,8 +162,24 @@ class TiendaViewModel(
             hoy = hoy,
             movimientos = Movimientos.de(datos.recientes, datos.estado, dia),
             economia = economy,
+            jardin = jardinDe(datos, dia),
+            voz = datos.ajustes.personality,
         )
     }
+
+    /** El jardín de Hoy (mismo cálculo que `TodayViewModel`): lo colocado y los especiales ganados. */
+    private fun jardinDe(
+        datos: Datos,
+        dia: Int,
+    ) = GardenEngine.gardenOf(
+        datos.estado,
+        dia,
+        Instant.ofEpochMilli(reloj.ahora()).atZone(reloj.zona()).toLocalDateTime(),
+        StatsEngine.lastActivityDay(datos.estado),
+        datos.logros,
+        datos.ajustes.gardenWaterHighMark,
+        datos.filas.filter { it.category == CustomizationCategory.GARDEN_OBJECT && it.equipped }.map { it.itemId },
+    )
 
     /** El valor de antes del primero real. Nada se decide con él: [TiendaUiState.cargado] es falso. */
     private fun relleno(): TiendaUiState =
@@ -266,11 +302,22 @@ class TiendaViewModel(
         if (!ocupado.compareAndSet(false, true)) return
         viewModelScope.launch {
             try {
-                if (rewards.purchase(item, diaLogico(), reloj.ahora())) {
+                val dia = diaLogico()
+                val tapada =
+                    item.category in TAPADAS_POR_DISFRAZ &&
+                        rewards.observeOwnedItems().first().any { it.category == CustomizationCategory.COSTUME && it.equipped }
+                val comprada =
+                    if (tapada) rewards.purchaseOverCostume(item, dia, reloj.ahora()) else rewards.purchase(item, dia, reloj.ahora())
+                if (comprada) {
+                    // La prueba se suelta cuando la fila ya está en el estado: quitarla antes enseñaría un instante a Habi
+                    // sin la pieza (o al jardín sin el banco). El tope evita quedarse esperando si nadie recoge el estado.
+                    withTimeoutOrNull(ESPERA_FILA_MS) { uiState.first { itemId in it.poseidos } }
                     fijarPrueba(null)
-                    canalEventos.send(EventoTienda.Comprado(itemId))
+                    canalEventos.emit(EventoTienda.Comprado(itemId))
+                } else {
+                    // La barra se queda: el saldo llega solo por el estado (H6); la ventana de venta, con este pulso.
+                    refresco.tryEmit(Unit)
                 }
-                // Si falla, la barra se queda: el saldo y la ventana llegan solos por el estado (H6).
             } finally {
                 ocupado.set(false)
             }
@@ -278,14 +325,17 @@ class TiendaViewModel(
     }
 
     override fun comprarCongelador() {
+        // Un rebote de dedo (80 a 200 ms) llega con la compra anterior ya escrita: se ignora mientras dura su vuelo.
+        if (reloj.ahora() < congeladorLibreDesde.get()) return
         if (!ocupado.compareAndSet(false, true)) return
         viewModelScope.launch {
             try {
                 val antes = PointsEngine.freezersOwned(domainState.snapshot())
                 val refId = rewards.buyFreezer(economy.freezerPrice, diaLogico(), reloj.ahora())
                 if (refId != null) {
+                    congeladorLibreDesde.set(reloj.ahora() + Duraciones.GASTAR)
                     ultimoCongelador.set(refId)
-                    canalEventos.send(EventoTienda.CongeladorComprado(refId, antes + 1))
+                    canalEventos.emit(EventoTienda.CongeladorComprado(refId, antes + 1))
                 }
             } finally {
                 ocupado.set(false)
@@ -297,7 +347,7 @@ class TiendaViewModel(
         // Solo la última compra, y una vez: quien llega después con el aviso ya vencido no encuentra nada.
         val refId = ultimoCongelador.getAndSet(null) ?: return
         viewModelScope.launch {
-            if (rewards.undoFreezerPurchase(refId)) canalEventos.send(EventoTienda.CongeladorDeshecho)
+            if (rewards.undoFreezerPurchase(refId)) canalEventos.emit(EventoTienda.CongeladorDeshecho)
         }
     }
 
@@ -334,6 +384,11 @@ class TiendaViewModel(
     companion object {
         const val CLAVE_PESTANA = "tienda_pestana"
         const val CLAVE_PRUEBA = "tienda_prueba"
+
+        /** Cuánto espera «Comprar» a que la fila comprada llegue al estado antes de soltar la prueba igualmente. */
+        private const val ESPERA_FILA_MS = 1_000L
+
+        private const val EVENTOS_EN_COLA = 16
 
         /** Los últimos movimientos que enseña «Tus bitos». */
         private const val MOVIMIENTOS = 5

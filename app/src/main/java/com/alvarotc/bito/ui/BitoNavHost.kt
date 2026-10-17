@@ -8,6 +8,7 @@ import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.core.FiniteAnimationSpec
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.VisibilityThreshold
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -29,9 +30,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.SemanticsPropertyKey
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -191,6 +196,18 @@ fun BitoNavHost(
     }
 
     val camara = Muelles.camara<IntOffset>(umbral = IntOffset.VisibilityThreshold)
+    // Hoy baja al 65 % de brillo mientras la tienda está encima y vuelve al hundirse; el velo sigue a la ruta actual.
+    val tiendaAbierta = currentRoute == RUTA_TIENDA
+    val velo by animateFloatAsState(
+        targetValue = if (tiendaAbierta) VELO_HOY else 0f,
+        animationSpec =
+            when {
+                reducido -> tween(Duraciones.REDUCIDO)
+                tiendaAbierta -> Muelles.hoja<Float>()
+                else -> Muelles.hundir<Float>()
+            },
+        label = "velo-hoy",
+    )
     // La tienda brota desde abajo y Hoy sube 40 dp por detrás (tienda-habi.js, `entraSp`).
     val subeHoy = with(LocalDensity.current) { SUBE_HOY.roundToPx() }
     val globalEnter: AnimatedContentTransitionScope<NavBackStackEntry>.(Int) -> EnterTransition = { signo ->
@@ -303,32 +320,34 @@ fun BitoNavHost(
                         val cierre = entry.arguments?.getBoolean("cierre") == true && !cierreVisto
                         val gordo = entry.arguments?.getBoolean("gordo") == true && !gordoVisto
                         val ciclo by entry.lifecycle.currentStateAsState()
-                        CompositionLocalProvider(LocalAnimacionRuta provides this) {
-                            InicioScreen(
-                                hoy = viewModel(factory = TodayViewModel.factory(container)),
-                                camino = caminoViewModel,
-                                celebraciones = celebracionesViewModel,
-                                navegar =
-                                    NavegacionInicio(
-                                        abrirFicha = { nav.navigate("detail/$it") },
-                                        abrirAjustes = { nav.navigate("settings") },
-                                        abrirTienda = { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } },
-                                        // El Inicio lo sustituye: el cierre del día se abre dentro de él, sin ruta.
-                                        abrirRepaso = {},
-                                        abrirTareas = { nav.navigate("tasks") },
-                                        crearHabito = { nav.navigate("habit") },
-                                        crearTarea = { nav.navigate("task") },
-                                    ),
-                                creado = creado,
-                                alCreadoVisto = { entry.savedStateHandle["creado"] = null },
-                                enPrimerPlano = ciclo.isAtLeast(Lifecycle.State.RESUMED),
-                                cierre = cierre,
-                                alCierreVisto = { entry.savedStateHandle[CIERRE_VISTO] = true },
-                                cierreViewModel = viewModel(factory = CierreViewModel.factory(container)),
-                                gordo = gordo,
-                                alGordoVisto = { entry.savedStateHandle[GORDO_VISTO] = true },
-                                sesion = remember(container) { sesionInicioDe(container) },
-                            )
+                        VeloBajoLaTienda({ velo }) {
+                            CompositionLocalProvider(LocalAnimacionRuta provides this) {
+                                InicioScreen(
+                                    hoy = viewModel(factory = TodayViewModel.factory(container)),
+                                    camino = caminoViewModel,
+                                    celebraciones = celebracionesViewModel,
+                                    navegar =
+                                        NavegacionInicio(
+                                            abrirFicha = { nav.navigate("detail/$it") },
+                                            abrirAjustes = { nav.navigate("settings") },
+                                            abrirTienda = { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } },
+                                            // El Inicio lo sustituye: el cierre del día se abre dentro de él, sin ruta.
+                                            abrirRepaso = {},
+                                            abrirTareas = { nav.navigate("tasks") },
+                                            crearHabito = { nav.navigate("habit") },
+                                            crearTarea = { nav.navigate("task") },
+                                        ),
+                                    creado = creado,
+                                    alCreadoVisto = { entry.savedStateHandle["creado"] = null },
+                                    enPrimerPlano = ciclo.isAtLeast(Lifecycle.State.RESUMED),
+                                    cierre = cierre,
+                                    alCierreVisto = { entry.savedStateHandle[CIERRE_VISTO] = true },
+                                    cierreViewModel = viewModel(factory = CierreViewModel.factory(container)),
+                                    gordo = gordo,
+                                    alGordoVisto = { entry.savedStateHandle[GORDO_VISTO] = true },
+                                    sesion = remember(container) { sesionInicioDe(container) },
+                                )
+                            }
                         }
                     }
                     composable(
@@ -365,14 +384,16 @@ fun BitoNavHost(
                     ) { entry ->
                         val habitId = entry.arguments?.getString("habitId") ?: return@composable
                         val lectura = entry.arguments?.getBoolean("lectura") ?: false
-                        CompositionLocalProvider(LocalAnimacionRuta provides this) {
-                            DetailScreen(
-                                viewModel = viewModel(factory = DetailViewModel.factory(container, habitId, lectura)),
-                                onBack = { nav.popBackStack() },
-                                onEdit = { nav.navigate("habit?id=$it") },
-                                onOpenHabi = { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } },
-                                alEditarConObjetivo = { id, objetivo -> nav.navigate("habit?id=$id&objetivo=$objetivo") },
-                            )
+                        VeloBajoLaTienda({ velo }) {
+                            CompositionLocalProvider(LocalAnimacionRuta provides this) {
+                                DetailScreen(
+                                    viewModel = viewModel(factory = DetailViewModel.factory(container, habitId, lectura)),
+                                    onBack = { nav.popBackStack() },
+                                    onEdit = { nav.navigate("habit?id=$it") },
+                                    onOpenHabi = { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } },
+                                    alEditarConObjetivo = { id, objetivo -> nav.navigate("habit?id=$id&objetivo=$objetivo") },
+                                )
+                            }
                         }
                     }
                     composable("settings") {
@@ -574,6 +595,30 @@ private const val CIERRE_VISTO = "cierre-visto"
 private const val GORDO_VISTO = "gordo-visto"
 
 private val SUBE_HOY = 40.dp
+
+/** Hoy se queda al 65 % de brillo bajo la tienda: un velo negro del 35 %. */
+internal const val VELO_HOY = 0.35f
+
+/** Lo que valga el velo ahora, para que un test lo lea sin pintar píxeles. */
+internal val VeloHoyAlpha = SemanticsPropertyKey<Float>("VeloHoyAlpha")
+
+/** Oscurece [contenido] con [velo] (0 a 1), leído en la fase de dibujo. */
+@Composable
+internal fun VeloBajoLaTienda(
+    velo: () -> Float,
+    contenido: @Composable () -> Unit,
+) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .semantics { this[VeloHoyAlpha] = velo() }
+            .drawWithContent {
+                drawContent()
+                val v = velo()
+                if (v > 0f) drawRect(Color.Black.copy(alpha = v))
+            },
+    ) { contenido() }
+}
 
 /** La tienda sube desde abajo con el muelle de las hojas; en modo reducido, un fundido. */
 private fun tiendaBrota(reducido: Boolean): EnterTransition =
