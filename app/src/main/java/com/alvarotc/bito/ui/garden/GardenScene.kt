@@ -241,6 +241,21 @@ internal fun estiramientoRespiracion(
 
 internal val LocalSondaJardin = staticCompositionLocalOf<SondaJardin?> { null }
 
+/**
+ * Cómo se pinta este fotograma un objeto o un especial, por encima de su sitio: lo pide quien lo anima (la caída
+ * y el meceo de la tienda) y la escena lo lee al dibujar. [dy] va en píxeles, [giro] en grados desde el pie y
+ * [sombra] es la opacidad de la sombra de un objeto.
+ */
+data class PoseObjeto(
+    val dy: Float = 0f,
+    val escalaX: Float = 1f,
+    val escalaY: Float = 1f,
+    val alpha: Float = 1f,
+    val giro: Float = 0f,
+    val brillo: Float = 0f,
+    val sombra: Float = 1f,
+)
+
 /** Cómo llega cada especial al jardín (G15). */
 private enum class Llegada { CAE, BROTA, PIEDRAS, ASIENTA }
 
@@ -279,6 +294,7 @@ private class Efectos(
     val reducido: Boolean,
     val polvo: Color,
     val salpicadura: Color,
+    val poseObjeto: ((String) -> PoseObjeto?)?,
 )
 
 /** Cómo se pinta una pieza este fotograma: desplazamiento, escala, opacidad, recorte horizontal y brillo. */
@@ -347,6 +363,8 @@ fun GardenScene(
     saltoAmplitud: Float? = null,
     // Objetos de jardín que se pintan además de los de [garden] (el que se prueba en la tienda).
     objetos: List<ObjetoJardin> = emptyList(),
+    // La pose de este fotograma de un objeto o especial por su clave (la caída y el meceo de la tienda), leída al dibujar.
+    poseObjeto: ((String) -> PoseObjeto?)? = null,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -617,7 +635,7 @@ fun GardenScene(
         val currentOnHabiTap by rememberUpdatedState(onHabiTap)
         val currentAlTocarFondo by rememberUpdatedState(alTocarFondo)
         val efectos =
-            Efectos(balanceo, brillo, aplaste, llegada, crece, creciendo, vieja, reducido, colores.tAlta, colores.hielo)
+            Efectos(balanceo, brillo, aplaste, llegada, crece, creciendo, vieja, reducido, colores.tAlta, colores.hielo, poseObjeto)
 
         // Las anclas, en coordenadas de la raíz y aunque la escena vaya escalada por su padre.
         val registrar: (LayoutCoordinates) -> Unit = { c ->
@@ -1042,7 +1060,18 @@ private fun DrawScope.drawItem(
         val llegada = fx.llegada?.takeIf { it.especial == special.special }
         if (llegada != null) posarLlegada(llegada, r, base, fx.reducido, pose)
     }
-    if (item is SceneItem.Objeto) drawSombraObjeto(r)
+    // La pose que pide quien anima el objeto o el especial (la tienda): encima de la suya.
+    val clave = (item as? SceneItem.Objeto)?.clave ?: special?.special?.key
+    val extra = clave?.let { fx.poseObjeto?.invoke(it) }
+    if (extra != null) {
+        pose.dy += extra.dy
+        pose.escalaX *= extra.escalaX
+        pose.escalaY *= extra.escalaY
+        pose.alpha *= extra.alpha
+        pose.brillo = maxOf(pose.brillo, extra.brillo)
+        if (plant == null) giro = extra.giro
+    }
+    if (item is SceneItem.Objeto) drawSombraObjeto(r, extra?.sombra ?: 1f)
     drawPieza(image, r, plant != null, wilt, filtro, giro, pose)
     val llegada = fx.llegada
     if (special != null && llegada != null && llegada.especial == special.special && !fx.reducido) {
@@ -1061,7 +1090,11 @@ private const val SOMBRA_OBJETO_ALTO = 0.18f
 private val SOMBRA_OBJETO = Color(red = 60, green = 40, blue = 20, alpha = 77)
 
 /** La sombra que cae bajo el pie de un objeto de jardín de caja [r]. */
-private fun DrawScope.drawSombraObjeto(r: SceneRect) {
+private fun DrawScope.drawSombraObjeto(
+    r: SceneRect,
+    alpha: Float = 1f,
+) {
+    if (alpha <= 0f) return
     val ancho = r.width * SOMBRA_OBJETO_ANCHO
     val centro = Offset(r.left + r.width / 2f, r.top + r.height)
     withTransform({ scale(1f, SOMBRA_OBJETO_ALTO / SOMBRA_OBJETO_ANCHO, pivot = centro) }) {
@@ -1069,6 +1102,7 @@ private fun DrawScope.drawSombraObjeto(r: SceneRect) {
             brush = Brush.radialGradient(listOf(SOMBRA_OBJETO, SOMBRA_OBJETO.copy(alpha = 0f)), center = centro, radius = ancho / 2f),
             radius = ancho / 2f,
             center = centro,
+            alpha = alpha.coerceIn(0f, 1f),
         )
     }
 }
@@ -1125,7 +1159,7 @@ private fun DrawScope.drawPieza(
             clipRect(top = pose.recorteArriba, bottom = pose.recorteAbajo.coerceAtMost(size.height))
         }
         if (pose.dy != 0f) translate(0f, pose.dy)
-        if (planta && giro != 0f) rotate(giro, pivot)
+        if (giro != 0f) rotate(giro, pivot)
         if (pose.escalaX != 1f || pose.escalaY != 1f) scale(pose.escalaX, pose.escalaY, pivot)
         if (planta) {
             // Orden CSS: el último se aplica primero, así que el punto se cizalla y luego encoge.
