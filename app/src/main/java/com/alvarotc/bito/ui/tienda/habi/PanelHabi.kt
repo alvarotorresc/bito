@@ -6,7 +6,7 @@ import com.alvarotc.bito.ui.tienda.ContextoPanel
 import com.alvarotc.bito.ui.tienda.EscenaArmario
 import com.alvarotc.bito.ui.tienda.PanelTienda
 
-/** La pestaña Habi: el armario con lo que lleva y lo que se prueba. El catálogo lo trae el carril de Habi. */
+/** La pestaña Habi: el armario con lo que lleva y lo que se prueba, y la tira de piezas por ranuras. */
 object PanelHabi : PanelTienda {
     @Composable
     override fun Escena(
@@ -20,5 +20,12 @@ object PanelHabi : PanelTienda {
     override fun Catalogo(
         ctx: ContextoPanel,
         modifier: Modifier,
-    ) = Unit
+    ) {
+        TiraHabi(
+            estado = ctx.estado,
+            alTocar = ctx.acciones::tocarPieza,
+            modifier = modifier,
+            ranuraVaciada = rememberRanuraVaciada(ctx.estado.puestos),
+        )
+    }
 }
