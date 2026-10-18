@@ -2,10 +2,14 @@ package com.alvarotc.bito.ui.tienda
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -15,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -24,13 +29,14 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
+import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Medidas
-import com.alvarotc.bito.ui.sistema.cifra
 import com.alvarotc.bito.ui.sistema.componentes.CifraRodillo
 import com.alvarotc.bito.ui.sistema.componentes.Monedita
 
@@ -164,21 +170,42 @@ fun CapaMoneda(
     }
 }
 
-/** El saldo de la cabecera: monedita y cifra que rueda en 240 ms (reducido: fundido de 150 ms). */
+/**
+ * El saldo de la cabecera: la cápsula de `.saldo` (sistema.css), con monedita de 24 dp y la cifra que rueda en 240 ms
+ * (reducido: fundido de 150 ms). Alto 36 dp, borde de 1,5 dp, relleno `0 12 0 6` dentro del borde y 6 dp entre moneda y cifra.
+ */
 @Composable
 fun SaldoConRodillo(
     saldo: Int,
     modifier: Modifier = Modifier,
 ) {
+    val colores = BitoTema.colores
     val descripcion = pluralStringResource(R.plurals.sistema_saldo, saldo, saldo)
     Row(
         modifier
             .testTag("saldo")
-            .semantics(mergeDescendants = true) { contentDescription = descripcion },
+            .semantics(mergeDescendants = true) { contentDescription = descripcion }
+            .height(ALTO_CAPSULA)
+            .clip(BitoFormas.canto)
+            .background(colores.canto.copy(alpha = FONDO_CAPSULA))
+            .border(Medidas.linea, colores.contorno, BitoFormas.canto)
+            .padding(start = Medidas.linea + RELLENO_CAPSULA_INICIO, end = Medidas.linea + RELLENO_CAPSULA_FIN),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Monedita(18.dp)
-        Spacer(Modifier.width(Medidas.e4))
-        CifraRodillo(saldo, estilo = BitoTema.tipos.t19.cifra(), color = BitoTema.colores.oroTexto)
+        Monedita(MONEDA_CAPSULA)
+        Spacer(Modifier.width(HUECO_CAPSULA))
+        CifraRodillo(
+            saldo,
+            estilo = BitoTema.tipos.t16.copy(fontWeight = FontWeight.Bold, fontFeatureSettings = "tnum"),
+            color = colores.tinta,
+        )
     }
 }
+
+// `.saldo` y `.coin` de sistema.css.
+private val ALTO_CAPSULA = 36.dp
+private val MONEDA_CAPSULA = 24.dp
+private val RELLENO_CAPSULA_INICIO = 6.dp
+private val RELLENO_CAPSULA_FIN = 12.dp
+private val HUECO_CAPSULA = 6.dp
+private const val FONDO_CAPSULA = 0.92f

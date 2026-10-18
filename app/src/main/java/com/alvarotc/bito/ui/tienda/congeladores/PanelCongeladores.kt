@@ -35,6 +35,7 @@ import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.cifra
+import com.alvarotc.bito.ui.sistema.comoCss
 import com.alvarotc.bito.ui.sistema.componentes.CifraRodillo
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -191,7 +192,7 @@ internal fun CatalogoCongeladores(
         Text(
             stringResource(pistaDe(voz)),
             Modifier.padding(start = LATERAL, end = LATERAL, top = ARRIBA_PISTA).testTag("tc-pista"),
-            style = BitoTema.tipos.t14.copy(lineHeight = 19.6.sp),
+            style = BitoTema.tipos.t14.copy(lineHeight = 19.6.sp).comoCss(),
             color = colores.tintaSuave,
         )
         Spacer(Modifier.height(ARRIBA_VETA))
