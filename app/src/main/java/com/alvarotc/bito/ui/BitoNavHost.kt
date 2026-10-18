@@ -17,7 +17,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -220,18 +220,20 @@ fun BitoNavHost(
         fadeOut(tween(150, easing = LinearOutSlowInEasing))
     }
 
+    // Sin insets: cada ruta decide qué pinta bajo las barras del sistema (la escena y el cielo, bajo la de estado) y
+    // qué se aparta de ellas (textos y controles). Así no queda una franja de papel arriba ni abajo.
     Scaffold(
         containerColor = Papel,
+        contentWindowInsets = WindowInsets(0),
     ) { padding ->
         SharedTransitionLayout {
             CompositionLocalProvider(LocalTransicionCompartida provides this) {
                 NavHost(
                     nav,
                     startDestination = startDestination,
-                    // Consume the outer Scaffold's insets, not just offset for them — otherwise Today's
-                    // and Settings' own Scaffolds (default contentWindowInsets = systemBars) re-apply
-                    // the status bar gap on top of this padding under edge-to-edge.
-                    modifier = Modifier.padding(padding).consumeWindowInsets(padding),
+                    // El Scaffold exterior no consume insets: las pantallas con su propio Scaffold (formularios)
+                    // aplican las barras del sistema por su cuenta y el resto se las pone con sus *Padding.
+                    modifier = Modifier.padding(padding),
                     // Quiet global motion (motion spec §8: 150-250ms, ease-out) — every route change,
                     // bottom-bar tab switches included, gets a subtle fade + 1/12-width slide instead of
                     // the default hard cut. Every tween below carries LinearOutSlowInEasing explicitly —

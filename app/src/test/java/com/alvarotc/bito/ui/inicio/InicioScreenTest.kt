@@ -34,11 +34,13 @@ import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.domain.model.GardenLight
 import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.GrowthStage
+import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.habi.HabiVoice
@@ -342,6 +344,25 @@ class InicioScreenTest {
         assertEquals(450f, bordeJardin(1f, 0f, 600f, escena, extra, 0f), 0.01f)
         assertEquals(1f, escalaJardin(1f, 0f, alto, escena), 0.001f)
         assertEquals(0.88f * (400f / 300f), escalaJardin(0f, 1f, alto, escena), 0.001f)
+    }
+
+    @Test
+    fun `the garden scale also covers the status bar gap above the Hoy box`() {
+        val alto = 1000f
+        val escena = 300f
+        // Sin barra, cubre el 40 % del alto (400 px); con 66 px de barra, esos 400 más los 66 de encima.
+        assertEquals(400f / 300f, escalaJardin(0f, 0f, alto, escena, 0f), 0.001f)
+        assertEquals(466f / 300f, escalaJardin(0f, 0f, alto, escena, 66f), 0.001f)
+        // En Camino la escena mide 1 y no crece por la barra.
+        assertEquals(1f, escalaJardin(1f, 0f, alto, escena, 66f), 0.001f)
+    }
+
+    @Test
+    fun `the sky ends in the colour that fades into the art top and the night darkens it`() {
+        val dia = GardenLight(LightPhase.DIA, LightPhase.DIA, LightPhase.DIA, 0f)
+        assertEquals(cieloDe(dia).second, colorEnLaCostura(dia, 0f))
+        val noche = colorEnLaCostura(dia, 1f)
+        assertTrue(noche.red < cieloDe(dia).second.red && noche.blue < cieloDe(dia).second.blue)
     }
 
     // ---- Extremo a extremo: lo que ningún carril podía probar solo (Tarea 27) ----

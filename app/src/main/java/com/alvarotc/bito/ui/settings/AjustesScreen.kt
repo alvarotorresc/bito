@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -131,7 +132,7 @@ fun AjustesScreen(
             ContenidoCopias(backupViewModel)
         }
         EstratoAjustes(ACERCA, R.string.ajustes_estrato_acerca, resumenAcerca(), abierto, { abierto = it }) { ContenidoAcerca() }
-        Box(Modifier.height(48.dp))
+        Box(Modifier.height(48.dp).navigationBarsPadding())
     }
 }
 

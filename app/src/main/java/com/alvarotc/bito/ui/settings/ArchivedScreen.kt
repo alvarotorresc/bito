@@ -50,6 +50,7 @@ import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.componentes.AvisoHost
 import com.alvarotc.bito.ui.sistema.componentes.Boton
 import com.alvarotc.bito.ui.sistema.componentes.Fila
+import com.alvarotc.bito.ui.sistema.componentes.masBarras
 import com.alvarotc.bito.ui.sistema.componentes.rememberAvisoEstado
 import com.alvarotc.bito.ui.sistema.rememberGesto
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -90,7 +91,7 @@ fun ArchivedScreen(
             } else {
                 LazyColumn(
                     Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(horizontal = Medidas.margen, vertical = Medidas.e8),
+                    contentPadding = PaddingValues(horizontal = Medidas.margen, vertical = Medidas.e8).masBarras(arriba = false),
                 ) {
                     item(key = "nota") {
                         Text(

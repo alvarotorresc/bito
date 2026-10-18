@@ -10,10 +10,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
@@ -88,12 +92,15 @@ fun CabeceraSesion(
 ) {
     val colores = BitoTema.colores
     val gesto = rememberGesto()
+    // El fundido nace en el borde de arriba de la pantalla: sube por detrás de la barra de estado.
+    val barra = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
     Box(modifier.fillMaxWidth()) {
         Box(
             Modifier
                 .testTag("ses-cielo")
                 .fillMaxWidth()
-                .height(ALTO_CIELO)
+                .offset(y = -barra)
+                .height(ALTO_CIELO + barra)
                 .background(Brush.verticalGradient(listOf(colores.cielo.copy(alpha = CIELO_ARRIBA), colores.cielo.copy(alpha = 0f)))),
         )
         Row(

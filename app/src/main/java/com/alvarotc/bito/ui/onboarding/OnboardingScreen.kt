@@ -20,8 +20,10 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -192,7 +194,7 @@ private fun WelcomeScene(
     onStart: () -> Unit,
 ) {
     Column(
-        Modifier.fillMaxSize().background(Papel).padding(horizontal = 24.dp),
+        Modifier.fillMaxSize().background(Papel).statusBarsPadding().navigationBarsPadding().padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Spacer(Modifier.height(56.dp))
@@ -348,7 +350,7 @@ private fun StoryPagerScaffold(
     // Survives the key(pageIndex) remount below on purpose — see OnboardingSwipeFadeLatch's KDoc.
     val swipeFadeLatch = remember { OnboardingSwipeFadeLatch() }
 
-    Column(Modifier.fillMaxSize().background(Papel)) {
+    Column(Modifier.fillMaxSize().background(Papel).statusBarsPadding().navigationBarsPadding()) {
         Box(Modifier.fillMaxWidth().padding(top = 12.dp, end = 12.dp), contentAlignment = Alignment.TopEnd) {
             if (step in STORY_STEPS) {
                 TextButton(onClick = onSkip, colors = ButtonDefaults.textButtonColors(contentColor = TintaSuave)) {

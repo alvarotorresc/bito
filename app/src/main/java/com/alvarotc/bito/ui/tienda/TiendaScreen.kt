@@ -26,10 +26,12 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -210,7 +212,8 @@ private fun Cuerpo(
         )
     val reducido = BitoTema.reducido
 
-    BoxWithConstraints(Modifier.fillMaxSize()) {
+    // La tienda es papel con su cabecera: se aparta de las barras del sistema (el Scaffold exterior no consume insets).
+    BoxWithConstraints(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         val altoEscena = altoEscenaTienda(maxHeight, estado.barra != null)
         Column(Modifier.fillMaxSize()) {
             EscenaConCabecera(estado, ctx, luzEstado, altoEscena, paneles, reducido, atras) { saldoAbierto = true }

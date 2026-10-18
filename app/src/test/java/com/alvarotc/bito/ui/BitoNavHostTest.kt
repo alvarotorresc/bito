@@ -15,10 +15,12 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -28,6 +30,10 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
 import androidx.navigation.NavHostController
@@ -269,6 +275,41 @@ class BitoNavHostTest {
         compose.onNodeWithTag("inicio").assertExists()
         compose.onNodeWithTag("pildora-hoy").assertIsSelected()
         compose.onAllNodesWithTag("bottom-bar").assertCountEquals(0)
+    }
+
+    private fun actividad() = (compose as AndroidComposeTestRule<*, *>).activity as android.app.Activity
+
+    /** Simula las barras del sistema: [estado] px arriba y [navegacion] px abajo, como las daría un móvil con gestos. */
+    private fun ponerBarras(
+        estado: Int,
+        navegacion: Int,
+    ) {
+        compose.runOnUiThread {
+            val vista = actividad().window.decorView
+            val insets =
+                WindowInsetsCompat
+                    .Builder()
+                    .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, estado, 0, 0))
+                    .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, navegacion))
+                    .build()
+            ViewCompat.dispatchApplyWindowInsets(vista, insets)
+        }
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun `the bars are applied once and Inicio places its own header below the status bar`() {
+        WindowCompat.setDecorFitsSystemWindows(actividad().window, false)
+        setContent()
+        ponerBarras(estado = 66, navegacion = 66)
+        val densidad = actividad().resources.displayMetrics.density
+        val bordeEstado = 66f / densidad
+        // Las barras se aplican una sola vez: Inicio arranca bajo la de estado (no a 132 px) y la cabecera cae debajo.
+        // Que ese hueco lo pinte la escena y no el papel del Scaffold lo fija `escalaJardin` (InicioScreenTest).
+        val inicio = compose.onNodeWithTag("inicio").getBoundsInRoot()
+        assertEquals(bordeEstado, inicio.top.value, 1f)
+        val saldo = compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).getBoundsInRoot()
+        assertTrue("el saldo queda bajo la barra de estado", saldo.top.value >= bordeEstado - 1f)
     }
 
     @Test
