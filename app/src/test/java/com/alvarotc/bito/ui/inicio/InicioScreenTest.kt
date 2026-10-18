@@ -442,17 +442,15 @@ class InicioScreenTest {
     }
 
     @Test
-    fun `see it in the garden from a new badge closes the sheet and takes you to Camino highlighting the special`() {
+    fun `a new badge sheet only offers Seguir and closes without going to Camino`() {
         montarVivo()
         runBlocking { banco.db.badgeDao().insert(BadgeEntity(GardenSpecial.LANTERN.badgeId, 500)) }
         avanzarHasta("hoja-logro")
-        rule.onNodeWithText(contexto.getString(R.string.camino_verlo)).performClick()
-        avanzar(40)
-        assertTrue("la hoja aún se está cerrando", hay("hoja-logro"))
+        rule.onNodeWithText(contexto.getString(R.string.camino_verlo)).assertDoesNotExist()
+        rule.onNodeWithText(contexto.getString(R.string.store_reward_done)).performClick()
         avanzar(Duraciones.CERRAR_HOJA * 2L + 800L)
         assertTrue("en la cola: ${banco.celebraciones.actual.value}", !hay("hoja-logro"))
-        rule.onNodeWithTag("pildora-camino").assertIsSelected()
-        assertEquals(listOf(GardenSpecial.LANTERN.key), banco.sonda.destacados)
+        assertTrue(banco.sonda.destacados.isEmpty())
     }
 
     @Test

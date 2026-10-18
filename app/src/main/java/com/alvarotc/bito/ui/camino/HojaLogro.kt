@@ -30,6 +30,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.GardenSpecial
+import com.alvarotc.bito.ui.premios.FilaPremio
+import com.alvarotc.bito.ui.premios.premioDeLogro
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
@@ -47,6 +49,12 @@ import java.time.LocalDate
 enum class ModoLogro { NUEVO, CONSULTA }
 
 private val EMBLEMA_HOJA = 124.dp
+
+// (sin token) `.tc-big` y `.tc-emb` de tienda-congeladores.css: la hoja de un logro nuevo es más alta que la de consulta.
+private val HORNACINA_NUEVA = 184.dp
+private val EMBLEMA_NUEVA = 164.dp
+private val FORMA_NUEVA = RoundedCornerShape(topStart = 80.dp, topEnd = 80.dp, bottomStart = 18.dp, bottomEnd = 18.dp)
+private val ABAJO_NUEVA = 14.dp
 private const val ENTRADA_RETRASO_MS = 60
 private const val ENTRADA_MS = 320
 
@@ -87,14 +95,24 @@ private fun HojaScope.ContenidoLogro(
         Box(
             Modifier
                 .fillMaxWidth()
-                .clip(BitoFormas.hornacina)
+                .then(if (nuevo) Modifier.height(HORNACINA_NUEVA) else Modifier)
+                .clip(if (nuevo) FORMA_NUEVA else BitoFormas.hornacina)
                 .background(colores.hornacina)
-                .padding(vertical = Medidas.e16),
+                .then(if (nuevo) Modifier else Modifier.padding(vertical = Medidas.e16))
+                .testTag("logro-hornacina"),
             contentAlignment = Alignment.Center,
         ) {
             EmblemaGrande(logro, nuevo)
         }
-        Spacer(Modifier.height(Medidas.e12))
+        Spacer(Modifier.height(if (nuevo) ABAJO_NUEVA else Medidas.e12))
+        if (nuevo) {
+            Text(
+                stringResource(R.string.store_reward_title),
+                Modifier.testTag("logro-etiqueta"),
+                style = BitoTema.tipos.t14.fuerte(),
+                color = colores.tintaSuave,
+            )
+        }
         Text(stringResource(BadgeStrings.badgeNameRes(logro.def.id)), style = BitoTema.tipos.t24.fuerte(), color = colores.tinta)
         Text(
             stringResource(R.string.camino_como_se_gana, stringResource(BadgeStrings.badgeHowRes(logro.def.id))),
@@ -116,7 +134,11 @@ private fun HojaScope.ContenidoLogro(
                 )
             }
         }
-        if (especial != null) FilaEspecial(especial, plantado = conseguido || nuevo)
+        val premio = if (nuevo) premioDeLogro(logro.def.id) else null
+        when {
+            premio != null -> FilaPremio(premio)
+            especial != null -> FilaEspecial(especial, plantado = conseguido || nuevo)
+        }
         Spacer(Modifier.height(Medidas.e16))
         val verlo = stringResource(R.string.camino_verlo)
         val irAlJardin = {
@@ -126,13 +148,11 @@ private fun HojaScope.ContenidoLogro(
         when {
             nuevo ->
                 BotonesHoja(
-                    principal = stringResource(R.string.camino_seguir),
+                    principal = stringResource(R.string.store_reward_done),
                     alPrincipal = {
                         gesto(null, Haptica.CONFIRM)
                         cerrar()
                     },
-                    suave = if (especial != null) verlo else null,
-                    alSuave = irAlJardin,
                 )
             especial != null && conseguido ->
                 BotonesHoja(
@@ -147,7 +167,7 @@ private fun HojaScope.ContenidoLogro(
     }
 }
 
-/** El emblema de 124 dp. En consulta sube 10 dp desde .94; en nuevo se enciende con su propia secuencia. */
+/** El emblema de 124 dp (164 en la hoja de un logro nuevo). En consulta sube 10 dp desde .94; en nuevo se enciende con su propia secuencia. */
 @Composable
 private fun EmblemaGrande(
     logro: LogroUi,
@@ -165,8 +185,8 @@ private fun EmblemaGrande(
     }
     EmblemaDeLogro(
         logro,
-        EMBLEMA_HOJA,
-        Modifier.graphicsLayer {
+        if (nuevo) EMBLEMA_NUEVA else EMBLEMA_HOJA,
+        Modifier.testTag("logro-emblema").graphicsLayer {
             val t = entrada.value
             alpha = 0.4f + 0.6f * t
             if (!reducido) {
