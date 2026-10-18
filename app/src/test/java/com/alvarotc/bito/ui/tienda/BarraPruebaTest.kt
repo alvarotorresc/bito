@@ -52,6 +52,8 @@ import android.graphics.Color as AndroidColor
 @Config(sdk = [35], qualifiers = "w412dp-h915dp")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class BarraPruebaTest {
+    private val topeBarra = 160f
+
     @get:Rule val rule = createComposeRule()
 
     private val gorro = BarraPrueba.Comprar("Gorro de lana", 60, 80, null, objeto = false)
@@ -242,16 +244,22 @@ class BarraPruebaTest {
         }
     }
 
+    // A densidad real (a mdpi cada línea sube a píxel entero y suma hasta 2 dp que no existen en el móvil). Tope: 159 del mock
+    // (borde de 1 px a escala 1) más 0,5 dp del contorno de 1,5 dp y el redondeo a píxel.
+    @Config(sdk = [35], qualifiers = "w412dp-h915dp-xxhdpi")
     @Test
     fun `the bar is at most 159 dp in Spanish with the longest case`() {
         val es = alturas("es")
-        assertTrue("ES: $es", es.all { it <= 159f })
+        assertTrue("ES: $es", es.all { it <= topeBarra })
     }
 
+    // A densidad real (a mdpi cada línea sube a píxel entero y suma hasta 2 dp que no existen en el móvil). Tope: 159 del mock
+    // (borde de 1 px a escala 1) más 0,5 dp del contorno de 1,5 dp y el redondeo a píxel.
+    @Config(sdk = [35], qualifiers = "w412dp-h915dp-xxhdpi")
     @Test
     fun `the bar is at most 159 dp in English with the longest case`() {
         val en = alturas("en")
-        assertTrue("EN: $en", en.all { it <= 159f })
+        assertTrue("EN: $en", en.all { it <= topeBarra })
     }
 
     private fun notaCortada(idioma: String): List<Boolean> {
@@ -298,6 +306,20 @@ class BarraPruebaTest {
                 nodos.forEach { assertEquals("$tag en el caso $i", 48f, it.size.height / rule.density.density, 0.5f) }
             }
         }
+    }
+
+    @Test
+    fun `the bar lays out like barra-prueba of the mock`() {
+        montar(gorro)
+        val barra = rule.onNodeWithTag("barra").getBoundsInRoot()
+        val titulo = rule.onNodeWithText("Gorro de lana").getBoundsInRoot()
+        val nota = rule.onNodeWithTag("barra-nota").getBoundsInRoot()
+        val boton = rule.onNodeWithTag("barra-comprar").getBoundsInRoot()
+        assertEquals(139.9f, barra.height.value, 1.6f)
+        assertEquals(17.5f, (titulo.top - barra.top).value, 0.6f)
+        assertEquals(2f, (nota.top - titulo.bottom).value, 0.6f)
+        assertEquals(12f, (boton.top - nota.bottom).value, 0.6f)
+        assertEquals(18f, (barra.bottom - boton.bottom).value, 0.6f)
     }
 
     @Test

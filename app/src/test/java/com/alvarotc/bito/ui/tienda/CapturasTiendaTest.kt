@@ -136,7 +136,16 @@ abstract class CapturasTiendaBase(private val idioma: String) {
         hasta { hay("item-$itemId") }
         pulsar("item-$itemId")
         // La barra y la prueba llegan cuando Room contesta por su hilo: se deja correr el bucle hasta que aparece.
-        if (conBarra) hasta { hay("barra") && hay("barra-nota") }
+        if (conBarra) {
+            hasta { hay("barra") && hay("barra-nota") }
+        } else {
+            // Poner o quitar escribe en Room por otro hilo: se deja correr el bucle para que el estado llegue.
+            repeat(100) {
+                shadowOf(Looper.getMainLooper()).idle()
+                fotogramas(16)
+                Thread.sleep(5)
+            }
+        }
         fotogramas(1_500)
     }
 
@@ -259,10 +268,18 @@ class CapturasTiendaTest : CapturasTiendaBase("es") {
     @Test fun `habi saltar pies`() = estado("tienda-habi-saltar-pies") { verRanura("pies") }
 
     @Test fun `habi luz tarde`() =
-        estado("tienda-habi-luz-tarde", poseidos = listOf("body-lavanda"), puesto = listOf("body-lavanda", "neck-bufanda")) { tocarTexto("Tarde") }
+        estado(
+            "tienda-habi-luz-tarde",
+            poseidos = listOf("body-lavanda"),
+            puesto = listOf("body-lavanda", "neck-bufanda"),
+        ) { tocarTexto("Tarde") }
 
     @Test fun `habi luz noche`() =
-        estado("tienda-habi-luz-noche", poseidos = listOf("body-lavanda"), puesto = listOf("body-lavanda", "neck-bufanda")) { tocarTexto("Noche") }
+        estado(
+            "tienda-habi-luz-noche",
+            poseidos = listOf("body-lavanda"),
+            puesto = listOf("body-lavanda", "neck-bufanda"),
+        ) { tocarTexto("Noche") }
 
     @Test fun `habi dia cerrado`() = estado("tienda-habi-dia-cerrado", hora = 23)
 
@@ -310,12 +327,22 @@ class CapturasTiendaTest : CapturasTiendaBase("es") {
         }
 
     @Test fun `habi compra tuyo`() =
-        estado("tienda-habi-compra-tuyo", saldo = 80, poseidos = listOf("head-gorro-lana"), puesto = listOf("head-gorro-lana", "neck-bufanda"))
+        estado(
+            "tienda-habi-compra-tuyo",
+            saldo = 80,
+            poseidos = listOf("head-gorro-lana"),
+            puesto = listOf("head-gorro-lana", "neck-bufanda"),
+        )
 
     @Test fun `habi tuyo quitado`() = estado("tienda-habi-tuyo-quitado", saldo = 80, poseidos = listOf("head-gorro-lana"))
 
-    @Test fun `habi puesto`() =
-        estado("tienda-habi-puesto", puesto = listOf("feet-botas-agua", "neck-bufanda")) { verRanura("pies") }
+    @Test fun `habi puesto`() = estado("tienda-habi-puesto", puesto = listOf("feet-botas-agua", "neck-bufanda")) { verRanura("pies") }
+
+    @Test fun `habi ranura vacia`() =
+        estado("tienda-habi-ranura-vacia", puesto = listOf("feet-botas-agua", "neck-bufanda")) {
+            verRanura("pies")
+            tocar("feet-botas-agua", conBarra = false)
+        }
 
     @Test fun `habi todo comprado`() =
         estado(
@@ -354,8 +381,7 @@ class CapturasTiendaTest : CapturasTiendaBase("es") {
 
     @Test fun `congeladores comprar`() = estado("tienda-congeladores-comprar", pestana = "ttab-congeladores")
 
-    @Test fun `congeladores comprado`() =
-        estado("tienda-congeladores-comprado", pestana = "ttab-congeladores") { tocarTag("tc-buy") }
+    @Test fun `congeladores comprado`() = estado("tienda-congeladores-comprado", pestana = "ttab-congeladores") { tocarTag("tc-buy") }
 
     @Test fun `congeladores muchos`() = estado("tienda-congeladores-muchos", congeladores = 11, pestana = "ttab-congeladores")
 

@@ -372,7 +372,7 @@ private fun Cabecera(
             Modifier
                 .height(Medidas.toqueMinimo)
                 .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null, onClick = abrirSaldo)
-                .padding(horizontal = Medidas.e8),
+                .padding(start = Medidas.e8),
             contentAlignment = Alignment.Center,
         ) {
             SaldoConRodillo(saldo, Modifier.origenMoneda(vuelo))

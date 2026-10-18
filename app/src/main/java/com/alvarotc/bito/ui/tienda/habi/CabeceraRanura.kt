@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
@@ -80,20 +79,21 @@ fun CabeceraRanura(
                     size = androidx.compose.ui.geometry.Size(size.width, linea.toPx()),
                 )
             }
-            .padding(start = AIRE_IZQUIERDA, top = AIRE_ARRIBA, end = AIRE_DERECHA, bottom = AIRE_ABAJO)
+            .padding(start = AIRE_IZQUIERDA, top = AIRE_ARRIBA, end = AIRE_DERECHA, bottom = AIRE_ABAJO + linea)
             .semantics { heading() },
         horizontalArrangement = Arrangement.spacedBy(HUECO_META),
-        verticalAlignment = Alignment.Top,
     ) {
+        // `align-items: baseline` de `.cseg h4`: nombre y meta comparten línea base.
         Text(
             stringResource(ranura.nombre),
+            Modifier.alignByBaseline(),
             style = tipos.t19.copy(fontWeight = FontWeight.Bold, lineHeight = ALTO_NOMBRE),
             color = colores.tinta,
             maxLines = 1,
         )
         Text(
             textoMeta,
-            Modifier.weight(1f).testTag("meta-${ranura.id}"),
+            Modifier.weight(1f).alignByBaseline().testTag("meta-${ranura.id}"),
             style =
                 tipos.t14.copy(
                     fontSize = LETRA_META,

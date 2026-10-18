@@ -33,6 +33,7 @@ import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.Muelles
+import com.alvarotc.bito.ui.sistema.comoCss
 import com.alvarotc.bito.ui.sistema.componentes.Boton
 import com.alvarotc.bito.ui.sistema.componentes.EstiloBoton
 import com.alvarotc.bito.ui.sistema.fuerte
@@ -124,7 +125,7 @@ fun BarraPruebaView(
     ) {
         Text(
             mostrada.nombre,
-            style = tipos.t16.fuerte().copy(fontSize = TITULO_BARRA, lineHeight = ALTO_TITULO),
+            style = tipos.t16.fuerte().copy(fontSize = TITULO_BARRA, lineHeight = ALTO_TITULO).comoCss(),
             color = colores.tinta,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -132,7 +133,7 @@ fun BarraPruebaView(
         Text(
             textoDe(mostrada),
             Modifier.padding(top = AIRE_NOTA).testTag("barra-nota"),
-            style = tipos.t14.copy(lineHeight = ALTO_NOTA),
+            style = tipos.t14.copy(lineHeight = ALTO_NOTA).comoCss(),
             color = colores.tintaSuave,
             maxLines = LINEAS_NOTA,
             overflow = TextOverflow.Ellipsis,
