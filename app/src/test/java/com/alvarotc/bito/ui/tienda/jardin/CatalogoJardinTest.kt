@@ -1,16 +1,22 @@
 package com.alvarotc.bito.ui.tienda.jardin
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.width
 import com.alvarotc.bito.domain.model.EquippedSet
@@ -21,6 +27,8 @@ import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
+import com.alvarotc.bito.ui.tienda.ContextoPanel
+import com.alvarotc.bito.ui.tienda.PanelTienda
 import com.alvarotc.bito.ui.tienda.PestanaTienda
 import com.alvarotc.bito.ui.tienda.PruebaTienda
 import com.alvarotc.bito.ui.tienda.TiendaContenido
@@ -28,6 +36,7 @@ import com.alvarotc.bito.ui.tienda.TiendaUiState
 import com.alvarotc.bito.ui.tienda.estadoTienda
 import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertSame
 import org.junit.Assert.assertTrue
@@ -37,6 +46,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
+import kotlin.math.abs
 
 /** El catálogo de la pestaña Jardín (tienda-jardin.css `.tj-sec`, `.tj-grid`, `.tj-item`; tienda-jardin.js `itemHTML`, `tocarItem`). */
 @RunWith(RobolectricTestRunner::class)
@@ -64,11 +74,27 @@ class CatalogoJardinTest {
             puestos = EquippedSet(),
         )
 
+    // Las demás pestañas no pintan nada: así se ve qué pasa con la escena del Jardín al irse y volver.
+    private val vacio =
+        object : PanelTienda {
+            @Composable
+            override fun Escena(
+                ctx: ContextoPanel,
+                modifier: Modifier,
+            ) = Unit
+
+            @Composable
+            override fun Catalogo(
+                ctx: ContextoPanel,
+                modifier: Modifier,
+            ) = Unit
+        }
+
     private fun montar() {
         compose.mainClock.autoAdvance = false
         compose.setContent {
             ConSistema(sonido, tacto) {
-                TiendaContenido(estado, acciones, emptyFlow(), {}, paneles = { panel })
+                TiendaContenido(estado, acciones, emptyFlow(), {}, paneles = { if (it == PestanaTienda.JARDIN) panel else vacio })
             }
         }
         compose.mainClock.advanceTimeBy(600)
@@ -192,12 +218,14 @@ class CatalogoJardinTest {
     fun `tapping an owned object rocks it without a bar and without trying anything`() {
         estado = base(jardin = GardenState.INITIAL.copy(objects = setOf("banco")))
         montar()
+        val ticksAntes = tacto.hapticas.count { it == Haptica.TICK }
         compose.onNodeWithTag("tj-banco").performClick()
         compose.mainClock.advanceTimeBy(2000)
         assertTrue(acciones.piezas.isEmpty())
         assertTrue(acciones.especiales.isEmpty())
         compose.onNodeWithTag("barra").assertDoesNotExist()
         assertEquals(1, sonido.snds().count { it == Snd.PLANTA })
+        assertEquals("un solo TICK, el del toque", 1, tacto.hapticas.count { it == Haptica.TICK } - ticksAntes)
         assertEquals(1.12f, panel.escenas.last().jardin.camara.actual.escala, 0.001f)
     }
 
@@ -243,5 +271,81 @@ class CatalogoJardinTest {
         listOf("item-cerezo-grande", "item-arbol-dorado", "item-estanque").forEach { compose.onNodeWithTag(it).assertIsDisplayed() }
         val tile = bounds("tj-cerezo-grande")
         assertTrue("el nombre cabe en 120 dp", tile.width <= 121.dp)
+        // Cada texto medible del catálogo (cabeceras y pistas; los nombres de las hornacinas no exponen su maquetación) se ve entero: sin recorte ni puntos suspensivos.
+        val conTexto = SemanticsMatcher("tiene texto medido") { it.config.getOrNull(SemanticsActions.GetTextLayoutResult) != null }
+        val nodos =
+            compose.onAllNodes(conTexto, useUnmergedTree = true).fetchSemanticsNodes().filter { n ->
+                generateSequence(n) { it.parent }.any { it.config.getOrNull(SemanticsProperties.TestTag) == "tj-catalogo" }
+            }
+        assertTrue("hay textos que medir: ${nodos.size}", nodos.size >= 12)
+        nodos.forEach { nodo ->
+            val resultados = mutableListOf<TextLayoutResult>()
+            nodo.config[SemanticsActions.GetTextLayoutResult].action?.invoke(resultados)
+            resultados.forEach { r ->
+                val texto = r.layoutInput.text.text
+                // `hasVisualOverflow` da falso positivo con un texto que se ajusta a su ancho: se miran las líneas una a una.
+                (0 until r.lineCount).forEach { l ->
+                    assertFalse("puntos suspensivos: $texto", r.isLineEllipsized(l))
+                    assertTrue("se sale por la derecha: $texto", r.getLineRight(l) <= r.size.width + 1f)
+                }
+                assertTrue("se corta por abajo: $texto", r.size.height >= r.multiParagraph.height.toInt())
+            }
+        }
+    }
+
+    @Test
+    fun `coming back to the garden tab shows the whole garden and rocks nothing`() {
+        val propios = GardenState.INITIAL.copy(objects = setOf("banco"))
+        estado = base(jardin = propios)
+        montar()
+        val jardin = panel.escenas.last().jardin
+        val entera = jardin.camara.actual
+        compose.onNodeWithTag("tj-banco").performClick()
+        compose.mainClock.advanceTimeBy(100)
+        assertTrue("la cámara va al banco", jardin.camara.actual.escala > entera.escala)
+        poner(base(jardin = propios).copy(pestana = PestanaTienda.HABI))
+        compose.mainClock.advanceTimeBy(600)
+        val mecidosAlIrse = sonido.snds().count { it == Snd.PLANTA }
+        poner(base(jardin = propios))
+        compose.mainClock.advanceTimeBy(2000)
+        val ahora = panel.escenas.last().jardin
+        assertEquals("el jardín entero, no lo último que se tocó", entera.escala, ahora.camara.actual.escala, 0.001f)
+        assertEquals("al volver no se mece nada", mecidosAlIrse, sonido.snds().count { it == Snd.PLANTA })
+        assertEquals(null, ahora.caida.pose("banco"))
+    }
+
+    @Test
+    fun `leaving the tab in the middle of the rock leaves nothing tilted and comes back to the whole garden`() {
+        val propios = GardenState.INITIAL.copy(objects = setOf("banco"))
+        estado = base(jardin = propios)
+        montar()
+        val jardin = panel.escenas.last().jardin
+        val entera = jardin.camara.actual
+        compose.onNodeWithTag("tj-banco").performClick()
+        compose.mainClock.advanceTimeBy(400)
+        assertTrue("se está meciendo", abs(jardin.caida.pose("banco")?.giro ?: 0f) > 0.5f)
+        poner(base(jardin = propios).copy(pestana = PestanaTienda.HABI))
+        compose.mainClock.advanceTimeBy(600)
+        poner(base(jardin = propios))
+        compose.mainClock.advanceTimeBy(2000)
+        val ahora = panel.escenas.last().jardin
+        assertEquals(null, ahora.caida.pose("banco"))
+        assertEquals(entera.escala, ahora.camara.actual.escala, 0.001f)
+        assertEquals("solo el meceo de antes", 1, sonido.snds().count { it == Snd.PLANTA })
+    }
+
+    @Test
+    fun `trying again the item that was on trial when an owned one was tapped moves the camera to it`() {
+        val propios = GardenState.INITIAL.copy(objects = setOf("banco"))
+        estado = base(prueba = PruebaTienda.Objeto("garden-regadera"), jardin = propios)
+        acciones.alQuitar = { estado = base(prueba = null, jardin = propios) }
+        montar()
+        compose.onNodeWithTag("tj-banco").performClick()
+        compose.mainClock.advanceTimeBy(800)
+        assertEquals("la cámara está en el banco", 1.12f, panel.escenas.last().jardin.camara.actual.escala, 0.001f)
+        // La regadera no cabe a 1,12: su encuadre es el de escala 1.
+        poner(base(prueba = PruebaTienda.Objeto("garden-regadera"), jardin = propios))
+        compose.mainClock.advanceTimeBy(800)
+        assertEquals("la cámara va a la regadera", 1f, panel.escenas.last().jardin.camara.actual.escala, 0.001f)
     }
 }

@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.view.View
 import androidx.compose.foundation.layout.size
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
@@ -25,8 +26,11 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.unit.dp
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.garden.LocalSondaJardin
+import com.alvarotc.bito.ui.garden.SondaJardin
 import com.alvarotc.bito.ui.sistema.BitoClaro
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.tienda.AccionesGrabadas
@@ -35,6 +39,7 @@ import com.alvarotc.bito.ui.tienda.TiendaContenido
 import com.alvarotc.bito.ui.tienda.estadoTienda
 import kotlinx.coroutines.flow.emptyFlow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -203,5 +208,65 @@ class EscenaJardinTest {
         compose.onNodeWithTag("tj-escena").performTouchInput { click(androidx.compose.ui.geometry.Offset(x, y)) }
         compose.waitForIdle()
         assertEquals(listOf("banco"), tocados)
+    }
+
+    private fun montarConSonda(
+        sonda: SondaJardin,
+        jardin: GardenState,
+        luz: () -> Float,
+    ) {
+        compose.setContent {
+            ConSistema {
+                CompositionLocalProvider(LocalSondaJardin provides sonda) {
+                    EscenaJardin(
+                        jardin,
+                        EquippedSet(),
+                        Personality.NEUTRA,
+                        null,
+                        luz,
+                        remember { EscenaJardinEstado() },
+                        Modifier.size(412.dp, 300.dp),
+                        animated = false,
+                    )
+                }
+            }
+        }
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
+    }
+
+    @Test
+    fun `going to night in the store never runs the water band`() {
+        val sonda = SondaJardin()
+        var luz by mutableFloatStateOf(0.5f)
+        montarConSonda(sonda, GardenState.INITIAL, { luz })
+        poner { luz = 0.7f }
+        compose.mainClock.advanceTimeByFrame()
+        poner { luz = 1f }
+        var maximo = 0f
+        repeat(190) {
+            compose.mainClock.advanceTimeByFrame()
+            maximo = maxOf(maximo, sonda.filtracion())
+        }
+        assertEquals("la franja de agua del cierre no cruza el jardín de la tienda", 0f, maximo, 0f)
+    }
+
+    @Test
+    fun `the lantern of the store follows the mock sky from light 0,6 and glows with the smoothstep`() {
+        val sonda = SondaJardin()
+        var luz by mutableFloatStateOf(0.55f)
+        montarConSonda(sonda, GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN)), { luz })
+        compose.mainClock.advanceTimeBy(100)
+        assertFalse("con luz 0,55 sigue bajo el tinte", sonda.farolEncima())
+        assertEquals(0f, sonda.brilloFarolillo(), 0f)
+        poner { luz = 0.65f }
+        compose.mainClock.advanceTimeBy(100)
+        assertTrue("con luz 0,65 ya va encima", sonda.farolEncima())
+        assertEquals(nocheDelCielo(0.65f), sonda.brilloFarolillo(), 0.001f)
+        assertTrue(sonda.brilloFarolillo() > 0.04f)
+        poner { luz = 0.775f }
+        assertEquals(0.5f, sonda.brilloFarolillo(), 0.001f)
+        poner { luz = 1f }
+        assertEquals(1f, sonda.brilloFarolillo(), 0.001f)
     }
 }

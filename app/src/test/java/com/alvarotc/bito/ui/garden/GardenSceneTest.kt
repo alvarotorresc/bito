@@ -1005,14 +1005,16 @@ class GardenSceneTest {
     @Test
     fun `in Today tapping an object rocks it and opens the bubble with its text`() {
         val todo = garden.copy(specials = emptySet(), objects = setOf("banco"))
+        var fondos = 0
         compose.setContent {
             ConSistema(sonido, tacto) {
-                GardenScene(todo, spec, Modifier.width(400.dp), animated = false, globitoObjetos = true)
+                GardenScene(todo, spec, Modifier.width(400.dp), animated = false, globitoObjetos = true, alTocarFondo = { fondos++ })
             }
         }
         compose.waitForIdle()
         tapCenter(rectOf(todo) { it is SceneItem.Objeto })
         compose.waitForIdle()
+        assertEquals("tocar un objeto ya no navega a Camino", 0, fondos)
         assertTrue(Snd.PLANTA in sonido.snds())
         assertTrue(Haptica.TICK in tacto.hapticas)
         compose.onNodeWithText("Bench \u00b7 You bought it with your bitos.").assertExists()

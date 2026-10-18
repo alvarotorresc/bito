@@ -42,6 +42,8 @@ class JardinCompartidoTest {
     private val tacto = TactoGrabado()
     private val spec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet())
 
+    private var fondos = 0
+
     private fun montar(
         garden: GardenState,
         recienComprado: String? = null,
@@ -58,6 +60,7 @@ class JardinCompartidoTest {
                     modifier = Modifier.size(412.dp, 700.dp),
                     animado = false,
                     recienComprado = recienComprado,
+                    alTocarFondo = { fondos++ },
                 )
             }
         }
@@ -81,6 +84,17 @@ class JardinCompartidoTest {
         assertTrue(Snd.PLANTA in sonido.snds())
         assertTrue(Haptica.TICK in tacto.hapticas)
         compose.onNodeWithText("Bench · You bought it with your bitos.").assertExists()
+        assertEquals("tocar un objeto ya no navega a Camino", 0, fondos)
+    }
+
+    @Test
+    @Config(sdk = [35], qualifiers = "es-w412dp-h915dp")
+    fun `a special in Spanish says Llego con and does not navigate`() {
+        garden = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN))
+        montar(garden)
+        tocar { it is SceneItem.Special }
+        compose.onNodeWithText("Farolillo \u00b7 Llegó con Primera llama.").assertExists()
+        assertEquals("tocar un especial ya no navega a Camino", 0, fondos)
     }
 
     @Test
@@ -96,14 +110,11 @@ class JardinCompartidoTest {
         garden = GardenState.INITIAL.copy(objects = setOf("banco"))
         sonido.sonados.clear()
         montar(garden, recienComprado = "banco")
-        val t0 = 300
-        compose.mainClock.advanceTimeBy(0)
         // 300 ms ya pasaron en `montar`: faltan 120 para los 420.
         assertTrue("aún no", Snd.PLANTA !in sonido.snds())
         compose.mainClock.advanceTimeBy(200)
         assertEquals(1, sonido.snds().count { it == Snd.PLANTA })
         compose.mainClock.advanceTimeBy(3000)
         assertEquals("una sola vez", 1, sonido.snds().count { it == Snd.PLANTA })
-        assertEquals(t0, 300)
     }
 }

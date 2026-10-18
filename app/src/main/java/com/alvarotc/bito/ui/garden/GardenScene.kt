@@ -170,11 +170,19 @@ private const val AGUA_FILTRA_ALFA = 0.42f
 private const val AGUA_FILTRA_PICO = 0.55f
 private const val AGUA_FILTRA_LLENA = 0.2f
 
-/** El brillo del farolillo: el de la noche del reloj ([night]) o el del anochecer del cierre ([noche]), el mayor. */
+/**
+ * El brillo del farolillo: el de la noche del reloj ([night]) o el del anochecer del cierre ([noche]), el mayor. Con
+ * [directo] (la tienda) [noche] ya es el brillo del farolillo.
+ */
 internal fun brilloFarolillo(
     night: Float,
     noche: Float,
-): Float = maxOf(night.coerceIn(0f, 1f), ((noche - FAROL_DESDE) / (1f - FAROL_DESDE)).coerceIn(0f, 1f))
+    directo: Boolean = false,
+): Float =
+    maxOf(
+        night.coerceIn(0f, 1f),
+        if (directo) noche.coerceIn(0f, 1f) else ((noche - FAROL_DESDE) / (1f - FAROL_DESDE)).coerceIn(0f, 1f),
+    )
 
 private val GlowMid = Color(0x38FFA050)
 
@@ -201,6 +209,9 @@ internal class SondaJardin {
 
     /** Por dónde va la franja de agua que se filtra al anochecer (0 o 1 cuando no se pinta). */
     var filtracion: () -> Float = { 0f }
+
+    /** Si el farolillo se pinta encima de la luz (no se oscurece). */
+    var farolEncima: () -> Boolean = { false }
 
     /** Si el arte del jardín ya está cargado y se dibuja. */
     var arteListo: () -> Boolean = { false }
@@ -614,13 +625,16 @@ fun GardenScene(
 
     // G40: la noche se lee al dibujar; solo recompone cuando el farolillo pasa a pintarse encima de la luz.
     val nocheAhora by rememberUpdatedState(noche)
-    val farolEncima by remember { derivedStateOf { nocheAhora() > FAROL_ENCIMA } }
+    // Con tinte de luz propio (la tienda) la noche que llega ya es la del farolillo: encima con cualquier valor.
+    val conTinte by rememberUpdatedState(tinteLuz != null)
+    val farolEncima by remember { derivedStateOf { nocheAhora() > (if (conTinte) 0f else FAROL_ENCIMA) } }
     // La filtración sale solo cuando el anochecer arranca desde el día; abrir de noche (Hoy de noche) no la pinta.
     val filtracion = remember { Animatable(0f) }
     LaunchedEffect(reducido) {
         var antes = nocheAhora()
         snapshotFlow { nocheAhora() }.collect { n ->
-            if (!reducido && antes <= 0f && n > 0f && n < 1f && !filtracion.isRunning) {
+            // Con tinte de luz propio no hay cierre del día: ni la franja de agua (la tienda cambia de luz a mano).
+            if (!reducido && !conTinte && antes <= 0f && n > 0f && n < 1f && !filtracion.isRunning) {
                 launch {
                     filtracion.snapTo(0f)
                     filtracion.animateTo(1f, tween(Duraciones.FILTRACION, easing = Curvas.io))
@@ -658,9 +672,14 @@ fun GardenScene(
         sonda?.aplastadosHabi = { aplastados }
         sonda?.noche = { nocheAhora() }
         sonda?.arteListo = { listoAhora }
+        sonda?.farolEncima = { farolEncima }
         sonda?.filtracion = { filtracion.value }
         sonda?.brilloFarolillo = {
-            if (GardenSpecial.LANTERN in pintado.specials) brilloFarolillo(GardenLook.nightness(garden.light), nocheAhora()) else 0f
+            if (GardenSpecial.LANTERN in pintado.specials) {
+                brilloFarolillo(GardenLook.nightness(garden.light), nocheAhora(), conTinte)
+            } else {
+                0f
+            }
         }
     }
 
@@ -889,9 +908,9 @@ fun GardenScene(
             } else if (n > 0f) {
                 drawRect(Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO)), alpha = n, blendMode = BlendMode.Multiply)
             }
-            drawFiltracion(filtracion.value)
+            if (tinteLuz == null) drawFiltracion(filtracion.value)
             overLight.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
-            val brillo = brilloFarolillo(GardenLook.nightness(garden.light), n)
+            val brillo = brilloFarolillo(GardenLook.nightness(garden.light), n, directo = tinteLuz != null)
             val lantern = GardenArt.specialSpots[GardenSpecial.LANTERN.key]
             if (GardenSpecial.LANTERN in garden.specials && lantern != null && brillo > 0f) drawLanternGlow(lantern, brillo)
         }
@@ -981,7 +1000,14 @@ internal fun recursosDelJardin(
 /** Lo que dice el globito de un objeto comprado: su nombre y de dónde salió. */
 @Composable
 private fun textoObjeto(clave: String): String {
-    val nombre = stringResource(if (clave == "banco") R.string.store_garden_bench else R.string.store_garden_can)
+    val nombre =
+        stringResource(
+            when (clave) {
+                "banco" -> R.string.store_garden_bench
+                "regadera" -> R.string.store_garden_can
+                else -> error("objeto de jardín sin nombre: $clave")
+            },
+        )
     return nombre + " \u00b7 " + stringResource(R.string.store_garden_bubble_bought)
 }
 

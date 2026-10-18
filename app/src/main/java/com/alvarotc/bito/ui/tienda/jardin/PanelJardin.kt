@@ -27,7 +27,8 @@ object PanelJardin : PanelTienda {
     ) {
         val estado = ctx.jardin
         val gesto = rememberGesto()
-        val reducido = BitoTema.reducido
+        val reducido by rememberUpdatedState(BitoTema.reducido)
+        val gestoVivo by rememberUpdatedState(gesto)
         val ctxVivo by rememberUpdatedState(ctx)
         val alcance = rememberCoroutineScope()
         // Una compra de un objeto de jardín: GASTAR y CONFIRM ya, la moneda del saldo al objeto y el meceo al llegar. Cada compra
@@ -38,7 +39,7 @@ object PanelJardin : PanelTienda {
                 if (clave != null) {
                     alcance.launch {
                         val espera = (if (reducido) Duraciones.REDUCIDO else Duraciones.GASTAR).toLong()
-                        gesto(Snd.GASTAR, Haptica.CONFIRM)
+                        gestoVivo(Snd.GASTAR, Haptica.CONFIRM)
                         estado.comprado(clave, espera)
                         estado.destinoMoneda(clave)?.let { destino -> ctxVivo.vuelo.volar(DestinoMoneda { destino }) }
                     }

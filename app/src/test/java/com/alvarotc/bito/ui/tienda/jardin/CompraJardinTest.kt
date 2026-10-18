@@ -121,7 +121,7 @@ class CompraJardinTest {
         compose.mainClock.advanceTimeBy(300)
         assertEquals("la moneda llegó", 0, panel.escenas.last().vuelo.activas.size)
         assertEquals("se mece al llegar", 1, sonido.snds().count { it == Snd.PLANTA })
-        assertEquals(1, tacto.hapticas.count { it == Haptica.TICK } - ticksAntes)
+        assertEquals("al llegar la moneda solo suena PLANTA, sin otro TICK", 0, tacto.hapticas.count { it == Haptica.TICK } - ticksAntes)
         compose.mainClock.advanceTimeBy(400)
         val saldo =
             compose.onNodeWithTag(

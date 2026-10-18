@@ -173,7 +173,7 @@ class CaidaObjetoTest {
         assertFalse(Snd.PLANTA in sonido.snds())
         compose.mainClock.advanceTimeBy(100)
         assertEquals(1, sonido.snds().count { it == Snd.PLANTA })
-        assertEquals(1, tacto.hapticas.count { it == Haptica.TICK })
+        assertEquals("el TICK es del toque, no del meceo", 0, tacto.hapticas.count { it == Haptica.TICK })
         assertTrue("se mece", abs(estado.caida.pose("banco")?.giro ?: 0f) > 0.5f)
         compose.mainClock.advanceTimeBy(2000)
         assertEquals(1.12f, estado.camara.actual.escala, 0.001f)
@@ -235,7 +235,7 @@ class CaidaObjetoTest {
         poner { prueba = null }
         compose.mainClock.advanceTimeBy(1500)
         assertEquals(1, sonido.snds().count { it == Snd.PLANTA })
-        assertEquals(1, tacto.hapticas.count { it == Haptica.TICK })
+        assertEquals("el TICK es del toque, no del meceo", 0, tacto.hapticas.count { it == Haptica.TICK })
     }
 
     @Test

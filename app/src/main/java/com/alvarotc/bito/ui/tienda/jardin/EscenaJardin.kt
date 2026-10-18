@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
@@ -60,9 +61,6 @@ internal object MedidasEscenaJardin {
     const val NOCHE_DESDE = 0.6f
     const val NOCHE_HASTA = 0.95f
 
-    // El tinte de noche del jardín entra de la Tarde (0,5) a la Noche (1), como el tramo final de `LUZ_A`/`LUZ_B`.
-    const val TINTE_DESDE = 0.5f
-
     // Lo ya tuyo que se toca se mece a los 260 ms, cuando la cámara ya va de camino.
     const val MECER_TUYO_MS = 260L
 }
@@ -72,10 +70,6 @@ internal fun nocheDelCielo(luz: Float): Float {
     val q = ((luz - MedidasEscenaJardin.NOCHE_DESDE) / (MedidasEscenaJardin.NOCHE_HASTA - MedidasEscenaJardin.NOCHE_DESDE)).coerceIn(0f, 1f)
     return q * q * (3f - 2f * q)
 }
-
-/** El tinte de noche que se multiplica sobre el jardín con la luz [luz]: 0 hasta la Tarde y 1 de Noche. */
-internal fun tinteDeNoche(luz: Float): Float =
-    ((luz - MedidasEscenaJardin.TINTE_DESDE) / (1f - MedidasEscenaJardin.TINTE_DESDE)).coerceIn(0f, 1f)
 
 /** Lo que las pruebas miran de la escena sin cambiar su firma. */
 internal class SondaEscenaJardin {
@@ -87,9 +81,9 @@ internal class SondaEscenaJardin {
 /**
  * Un toque en algo que ya es tuyo (o una compra): [vez] cuenta los pedidos para que el mismo objeto se mezca otra vez,
  * [retrasoMs] es lo que tarda en mecerse y [enfoque] lo que estaba a prueba al pedirlo, para distinguir la prueba que se
- * va de una prueba nueva.
+ * va de una prueba nueva. El [enfoque] caduca (pasa a null) cuando esa prueba ya se fue.
  */
-internal class PedidoTuyo(val clave: String, val vez: Int, val retrasoMs: Long, val enfoque: String?)
+internal class PedidoTuyo(val clave: String, val vez: Int, val retrasoMs: Long, var enfoque: String?)
 
 /**
  * Lo que la escena del jardín guarda entre fotogramas: la cámara, la caída y el meceo. El catálogo de la pestaña lo
@@ -173,8 +167,16 @@ fun EscenaJardin(
     val objetos = remember(objetoNuevo) { listOfNotNull(objetoNuevo?.let { ObjetoJardin(it, efimero = true) }) }
     val spec = remember(voz, puestos) { HabiSpec(Mood.NORMAL, voz, puestos) }
     val pose = remember(estado) { { clave: String -> estado.caida.pose(clave) } }
+    // Cambiar de pestaña quita la escena y con ella el estado de lo último que se tocó: al volver se ve el jardín entero.
+    DisposableEffect(estado) {
+        onDispose {
+            estado.pedido = null
+            estado.caida.parar()
+        }
+    }
     val luzActual = luz
-    val noche = remember(luzActual) { { tinteDeNoche(luzActual()) } }
+    // Con el tinte propio, `noche` solo enciende el farolillo: la del cielo (`smooth(1.2, 1.9, v)` del mock), no la del tinte.
+    val noche = remember(luzActual) { { nocheDelCielo(luzActual()) } }
     // El tinte multiplicado de Día, Tarde y Noche (`LUZ_A`/`LUZ_B`): una sola vez; la noche solo enciende el farolillo.
     val tinte = remember(luzActual) { { LuzArmario.arriba(luzActual()) to LuzArmario.abajo(luzActual()) } }
     var origenRaiz by remember { mutableStateOf(Offset.Zero) }
@@ -222,7 +224,8 @@ fun EscenaJardin(
         val pedido = estado.pedido
         LaunchedEffect(claveEnfoque, pedido, vistaW, vistaH) {
             // Una prueba nueva, posterior al toque, lo deja atrás. La que ya estaba al pedirlo (o la del propio objeto) se
-            // está yendo: el pedido sigue en pie y el estado la quita cuando llegue.
+            // está yendo: el pedido sigue en pie y el estado la quita cuando llegue. Cuando ya se fue, su enfoque caduca.
+            if (pedido?.enfoque != null && claveEnfoque != pedido.enfoque) pedido.enfoque = null
             if (pedido != null && claveEnfoque != null && claveEnfoque != pedido.enfoque && claveEnfoque != pedido.clave) {
                 estado.pedido = null
                 return@LaunchedEffect

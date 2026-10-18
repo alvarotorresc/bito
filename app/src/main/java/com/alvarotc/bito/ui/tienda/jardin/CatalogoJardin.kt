@@ -221,7 +221,12 @@ private fun Celda(
 
 private fun nombreDe(e: Elemento): Int =
     when (e.especial) {
-        null -> if (e.clave == "banco") R.string.store_garden_bench else R.string.store_garden_can
+        null ->
+            when (e.clave) {
+                "banco" -> R.string.store_garden_bench
+                "regadera" -> R.string.store_garden_can
+                else -> error("objeto de jardín sin nombre: ${e.clave}")
+            }
         GardenSpecial.LANTERN -> R.string.jardin_especial_farolillo
         GardenSpecial.STONE_PATH -> R.string.jardin_especial_caminito
         GardenSpecial.POND -> R.string.jardin_especial_estanque

@@ -72,6 +72,7 @@ class CaidaObjeto {
     private var meciendo by mutableStateOf<String?>(null)
     private var granos by mutableStateOf<List<Grano>>(emptyList())
     private var origen = Offset.Zero
+    private var meceos = 0
 
     // El avance de la caída ya con su curva: 0 arriba, 1 en tierra.
     private val caida = Animatable(1f)
@@ -156,15 +157,28 @@ class CaidaObjeto {
         reducido: Boolean,
         gesto: Gesto,
     ) {
+        val mio = ++meceos
         meciendo = clave
-        gesto(Snd.PLANTA, Haptica.TICK)
-        if (reducido) {
-            brillo.snapTo(1f)
-            brillo.animateTo(0f, tween(MedidasCaida.BRILLO_MS))
-        } else {
-            giro.snapTo(0f)
-            giro.animateTo(0f, Muelles.planta(), initialVelocity = MedidasCaida.IMPULSO_MECER)
+        gesto(Snd.PLANTA)
+        try {
+            if (reducido) {
+                brillo.snapTo(1f)
+                brillo.animateTo(0f, tween(MedidasCaida.BRILLO_MS))
+            } else {
+                giro.snapTo(0f)
+                giro.animateTo(0f, Muelles.planta(), initialVelocity = MedidasCaida.IMPULSO_MECER)
+            }
+        } finally {
+            // Un meceo cortado (cambio de pestaña) nunca deja el objeto torcido; uno más nuevo no se toca.
+            if (meceos == mio && meciendo == clave) meciendo = null
         }
+    }
+
+    /** La escena se va: nada queda cayendo, mecido ni con granos. */
+    fun parar() {
+        cayendo = null
+        meciendo = null
+        granos = emptyList()
     }
 
     /** La prueba se va: el objeto desaparece sin animación. */
