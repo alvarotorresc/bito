@@ -71,6 +71,8 @@ class EscenaJardinTest {
         estado.sonda = sonda
         var luz by mutableFloatStateOf(0f)
         lateinit var vista: View
+        // Reloj a mano: con el automático, en la suite entera el sandbox deja de quedar en reposo.
+        compose.mainClock.autoAdvance = false
         compose.setContent {
             vista = LocalView.current
             ConSistema {
@@ -86,8 +88,11 @@ class EscenaJardinTest {
                 )
             }
         }
+        repeat(4) {
+            compose.mainClock.advanceTimeBy(250)
+            compose.runOnIdle { Snapshot.sendApplyNotifications() }
+        }
         compose.onNodeWithTag("tj-cielo").assertHeightIsEqualTo(104.dp)
-        compose.waitForIdle()
         assertEquals(0f, sonda.cieloNoche, 0f)
         // `smooth(1.2, 1.9, v)` del mock con la luz de 0 a 2: aquí de 0,6 a 0,95.
         assertEquals(0f, nocheDelCielo(0.5f), 0f)
