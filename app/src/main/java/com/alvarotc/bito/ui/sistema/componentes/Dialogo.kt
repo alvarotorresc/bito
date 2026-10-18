@@ -21,12 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.window.DialogWindowProvider
 import com.alvarotc.bito.R
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
@@ -75,7 +73,7 @@ fun Dialogo(
                 dismissOnBackPress = true,
             ),
     ) {
-        (LocalView.current.parent as? DialogWindowProvider)?.window?.setDimAmount(0f)
+        VentanaAPantallaCompleta()
         val dentro = (1f - posicion.value).coerceIn(0f, 1f)
         Box(Modifier.fillMaxSize()) {
             Box(

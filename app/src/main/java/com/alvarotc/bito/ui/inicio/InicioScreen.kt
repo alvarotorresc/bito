@@ -24,13 +24,17 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -655,6 +659,10 @@ fun InicioScreen(
         Modifier
             .fillMaxSize()
             .background(BitoTema.colores.tAlta)
+            // Las barras del sistema se quedan fuera de la geometría de Inicio (el alto no cambia); la escena sí
+            // sube bajo la de estado (JardinCompartido, `arriba`).
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .onGloballyPositioned { origen = it.positionInRoot() }
             .testTag("inicio"),
     ) {
@@ -840,6 +848,7 @@ fun InicioScreen(
                     respiracion = respiracion.value,
                     saltoAmplitud = saltoAmplitud,
                     recienComprado = recienComprado,
+                    bajoBarra = WindowInsets.statusBars.getTop(densidad).toFloat(),
                 )
                 if (caminoVisible) {
                     TituloCamino(
