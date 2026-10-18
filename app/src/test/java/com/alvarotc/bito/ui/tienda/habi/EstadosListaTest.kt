@@ -20,7 +20,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabiCatalog
-import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.tienda.AroHornacina
 import com.alvarotc.bito.ui.tienda.EtiquetaHornacina
 import com.alvarotc.bito.ui.tienda.PruebaTienda
@@ -58,8 +57,17 @@ class EstadosListaTest {
     private fun tira(
         estado: TiendaUiState,
         vaciada: RanuraHabi? = null,
-    ) = rule.setContent {
-        ConSistema { Box(Modifier.fillMaxSize()) { TiraHabi(estado, alTocar = {}, ranuraVaciada = vaciada) } }
+    ) {
+        // Reloj a mano: con el automático, en la suite entera el sandbox de estas pruebas deja de quedar en reposo.
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            ConSistemaLigero { Box(Modifier.fillMaxSize()) { TiraHabi(estado, alTocar = {}, ranuraVaciada = vaciada) } }
+        }
+        // varias vueltas: medir, escribir el estado y recomponer con él no cabe en un solo fotograma
+        repeat(4) {
+            rule.mainClock.advanceTimeBy(250)
+            rule.runOnIdle { androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications() }
+        }
     }
 
     @Test
@@ -220,7 +228,7 @@ class EstadosListaEnglishTest {
         val ctx = base.createConfigurationContext(cfg)
         rule.setContent {
             CompositionLocalProvider(LocalContext provides ctx, LocalConfiguration provides cfg) {
-                ConSistema { CabeceraRanura(RanuraHabi.CUELLO, MetaRanura.Puesta("neck-collar-flores"), Modifier) }
+                ConSistemaLigero { CabeceraRanura(RanuraHabi.CUELLO, MetaRanura.Puesta("neck-collar-flores"), Modifier) }
             }
         }
         rule.onNodeWithText("Wearing: flower garland").assertIsDisplayed()

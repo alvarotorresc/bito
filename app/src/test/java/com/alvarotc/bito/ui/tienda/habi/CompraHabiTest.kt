@@ -51,6 +51,7 @@ import com.alvarotc.bito.ui.tienda.PruebaTienda
 import com.alvarotc.bito.ui.tienda.RelojTienda
 import com.alvarotc.bito.ui.tienda.SaldoConRodillo
 import com.alvarotc.bito.ui.tienda.TiendaAcciones
+import com.alvarotc.bito.ui.tienda.TiendaContenido
 import com.alvarotc.bito.ui.tienda.TiendaUiState
 import com.alvarotc.bito.ui.tienda.TiendaViewModel
 import com.alvarotc.bito.ui.tienda.VueloMoneda
@@ -92,6 +93,7 @@ private fun MiniTienda(
     sonido: SonidoGrabado,
     tacto: TactoGrabado,
     barraVista: Boolean = false,
+    escenaVisible: Boolean = true,
 ) {
     val ctx =
         ContextoPanel(
@@ -108,7 +110,7 @@ private fun MiniTienda(
     Box(Modifier.fillMaxSize()) {
         Column {
             SaldoConRodillo(estado.saldo, Modifier.origenMoneda(vuelo))
-            PanelHabi.Escena(ctx, Modifier)
+            if (escenaVisible) PanelHabi.Escena(ctx, Modifier)
         }
         if (barraVista) {
             BarraPruebaView(
@@ -140,6 +142,7 @@ class CompraHabiTest {
     private val armario = EscenaArmarioEstado()
 
     private var mostrada by mutableStateOf(true)
+    private var enHabi by mutableStateOf(true)
 
     // El banco de eventos: un flujo compartido como el del ViewModel.
     private val eventos = MutableSharedFlow<EventoTienda>(replay = 0, extraBufferCapacity = 16)
@@ -163,7 +166,7 @@ class CompraHabiTest {
     private fun montarFalso(reducido: Boolean = false) {
         rule.setContent {
             ConSistema(sonido, tacto, reducido) {
-                if (mostrada) MiniTienda(estadoFalso, AccionesGrabadas(), eventos, vuelo, armario, sonido, tacto)
+                if (mostrada) MiniTienda(estadoFalso, AccionesGrabadas(), eventos, vuelo, armario, sonido, tacto, escenaVisible = enHabi)
             }
         }
         rule.waitForIdle()
@@ -214,17 +217,92 @@ class CompraHabiTest {
         assertTrue(Snd.HABI in sonido.snds())
         assertTrue("GASTAR suena antes que HABI", sonido.snds().indexOf(Snd.GASTAR) < sonido.snds().indexOf(Snd.HABI))
 
-        // Habi se aplasta un 12 % al llegar
+        // el 12 % del salto ya va en su agachada: el panel no aplasta aparte por el canal del armario
         val escalas = mutableListOf<Float>()
-        repeat(12) {
+        repeat(40) {
             avanzar(16)
             escalas += armario.escalaY
         }
-        assertEquals(0.88f, escalas.min(), 0.015f)
-        avanzar(600)
-        assertEquals(1f, armario.escalaY, 0.001f)
+        assertEquals(1f, escalas.min(), 0f)
         rule.mainClock.autoAdvance = true
         rule.onNodeWithTag("saldo").assertContentDescriptionContains("20 bitos")
+    }
+
+    @Test
+    fun `switching tab mid-celebration leaves Habi unsquashed`() {
+        montarFalso()
+        // el look no cambia: así solo se ve lo que hace la compra, sin la caída de la pieza
+        comprar("head-copa", EquippedSet(), saldoTras = 20)
+        // hasta que Habi se esté aplastando (si algo la aplastara) o, si no, hasta pasado el vuelo
+        var t = 0
+        while (armario.escalaY >= 1f && t < 900) {
+            avanzar(16)
+            t += 16
+        }
+        rule.runOnIdle { enHabi = false }
+        rule.mainClock.advanceTimeByFrame()
+        avanzar(400)
+        assertEquals(1f, armario.escalaY, 0.001f)
+        assertEquals(0, vuelo.activas.size)
+    }
+
+    @Test
+    fun `the bar sinks when the coin leaves and a tap on it does nothing`() {
+        montarTienda()
+        sembrarSaldo(140)
+        esperarCargado()
+        rule.runOnUiThread { vm.tocarPieza("head-gorro-lana") }
+        esperar { rule.onAllBarra("barra-comprar") }
+        rule.onNodeWithTag("barra-comprar").performClick()
+        esperar { sonido.snds().contains(Snd.GASTAR) }
+        assertEquals("la barra se hunde: ya no hay barra en el estado", null, vm.uiState.value.barra)
+        rule.mainClock.autoAdvance = false
+        rule.mainClock.advanceTimeBy(48)
+        assertTrue("sigue pintada mientras se hunde", rule.onAllBarra("barra-comprar"))
+        rule.onNodeWithTag("barra-comprar").performClick()
+        rule.mainClock.autoAdvance = true
+        esperar { !rule.onAllBarra("barra") }
+        esperar { sonido.snds().contains(Snd.HABI) }
+        val compras = runBlocking { db.pointsLedgerDao().all() }.filter { it.reason == PointsReason.BUY_ITEM }
+        assertEquals(1, compras.size)
+        assertEquals(1, sonido.snds().count { it == Snd.GASTAR })
+    }
+
+    @Test
+    fun `Not now plays HUNDIR once`() {
+        montarTienda()
+        sembrarSaldo(140)
+        esperarCargado()
+        rule.runOnUiThread { vm.tocarPieza("head-gorro-lana") }
+        esperar { rule.onAllBarra("barra-ahora-no") }
+        pasar(1500)
+        sonido.sonados.clear()
+        tacto.hapticas.clear()
+        rule.onNodeWithTag("barra-ahora-no").performClick()
+        esperar { vm.uiState.value.prueba == null }
+        pasar(800)
+        assertEquals(1, sonido.snds().count { it == Snd.HUNDIR })
+        assertEquals(1, tacto.hapticas.count { it == Haptica.LOW })
+    }
+
+    @Test
+    fun `taking off a worn piece plays HUNDIR once`() {
+        montarTienda()
+        sembrarSaldo(140)
+        esperarCargado()
+        rule.runOnUiThread { vm.tocarPieza("head-gorro-lana") }
+        esperar { rule.onAllBarra("barra-comprar") }
+        rule.onNodeWithTag("barra-comprar").performClick()
+        esperar { vm.uiState.value.puestos.head == "head-gorro-lana" }
+        esperar { sonido.snds().contains(Snd.HABI) }
+        pasar(2000)
+        sonido.sonados.clear()
+        tacto.hapticas.clear()
+        rule.runOnUiThread { vm.tocarPieza("head-gorro-lana") }
+        esperar { vm.uiState.value.puestos.head == null }
+        pasar(800)
+        assertEquals(1, sonido.snds().count { it == Snd.HUNDIR })
+        assertEquals(1, tacto.hapticas.count { it == Haptica.LOW })
     }
 
     @Test
@@ -336,7 +414,36 @@ class CompraHabiTest {
     private fun androidx.compose.ui.test.junit4.ComposeContentTestRule.onAllBarra(tag: String): Boolean =
         onAllNodesWithTag(tag).fetchSemanticsNodes().isNotEmpty()
 
+    /** Deja correr [ms] del reloj de Compose y vuelve al reloj automático. */
+    private fun pasar(ms: Long) {
+        rule.mainClock.autoAdvance = false
+        rule.mainClock.advanceTimeBy(ms)
+        rule.mainClock.autoAdvance = true
+    }
+
+    /** La tienda entera (barra de la pantalla y panel real de Habi) con el ViewModel real. */
+    private fun montarTienda() {
+        crearVm()
+        rule.setContent {
+            ConSistemaLigero(sonido, tacto) {
+                val estado by vm.uiState.collectAsState()
+                if (mostrada) TiendaContenido(estado, vm, vm.eventos, alSalir = {})
+            }
+        }
+    }
+
     private fun montarReal(): RewardsRepository {
+        val rewards = crearVm()
+        rule.setContent {
+            ConSistema(sonido, tacto) {
+                val estado by vm.uiState.collectAsState()
+                if (mostrada) MiniTienda(estado, vm, vm.eventos, vuelo, armario, sonido, tacto, barraVista = true)
+            }
+        }
+        return rewards
+    }
+
+    private fun crearVm(): RewardsRepository {
         val rewards = RewardsRepository(db)
         val store: DataStore<Preferences> =
             PreferenceDataStoreFactory.create(scope = CoroutineScope(Dispatchers.IO + Job())) {
@@ -352,12 +459,6 @@ class CompraHabiTest {
                 recursos = { contexto.resources },
                 saved = SavedStateHandle(),
             )
-        rule.setContent {
-            ConSistema(sonido, tacto) {
-                val estado by vm.uiState.collectAsState()
-                if (mostrada) MiniTienda(estado, vm, vm.eventos, vuelo, armario, sonido, tacto, barraVista = true)
-            }
-        }
         return rewards
     }
 

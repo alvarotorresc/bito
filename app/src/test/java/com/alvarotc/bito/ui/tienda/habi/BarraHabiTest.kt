@@ -14,7 +14,6 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
-import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.tienda.AccionesGrabadas
 import com.alvarotc.bito.ui.tienda.BarrasTienda
 import com.alvarotc.bito.ui.tienda.PanelFalso
@@ -58,7 +57,7 @@ internal class BancoBarra(
         val estado = estadoTienda(prueba = prueba, barra = barra, saldo = saldo).copy(poseidos = poseidos, hoy = hoy)
         rule.setContent {
             CompositionLocalProvider(LocalContext provides ctx, LocalConfiguration provides cfg) {
-                ConSistema {
+                ConSistemaLigero {
                     TiendaContenido(estado, acciones, emptyFlow(), alSalir = {}, paneles = { PanelFalso(it.name) })
                 }
             }
@@ -76,6 +75,26 @@ internal class BancoBarra(
                 ?.joinToString("") { it.text }
         assertEquals(texto, real)
     }
+
+    /** Monta la tienda entera con el panel real de Habi, para leer los textos de los botones. */
+    fun montarReal(
+        prueba: PruebaTienda,
+        saldo: Int,
+    ) {
+        val barra = BarrasTienda.barraDe(prueba, emptySet(), saldo, 0, OCTUBRE, res)
+        val estado = estadoTienda(prueba = prueba, barra = barra, saldo = saldo).copy(hoy = OCTUBRE)
+        rule.setContent {
+            CompositionLocalProvider(LocalContext provides ctx, LocalConfiguration provides cfg) {
+                ConSistemaLigero { TiendaContenido(estado, acciones, emptyFlow(), alSalir = {}) }
+            }
+        }
+        rule.waitForIdle()
+    }
+
+    fun texto(tag: String): String? =
+        rule.onNodeWithTag(tag).fetchSemanticsNode().config
+            .getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+            ?.joinToString("") { it.text }
 
     fun hay(tag: String) = rule.onNodeWithTag(tag).assertIsDisplayed()
 
@@ -102,6 +121,21 @@ class BarraHabiTest {
         assertEquals(listOf("head-gorro-lana"), b.acciones.compras)
         rule.onNodeWithTag("barra-ahora-no").performClick()
         assertEquals(1, b.acciones.quitadas)
+    }
+
+    @Test
+    fun `the buttons read exactly Comprar por 60, Ahora no and Quitárselo on the real panel`() {
+        val b = banco
+        b.montarReal(PruebaTienda.Pieza("head-gorro-lana"), saldo = 140)
+        assertEquals("Comprar por 60", b.texto("barra-comprar"))
+        assertEquals("Ahora no", b.texto("barra-ahora-no"))
+    }
+
+    @Test
+    fun `Take it off reads Quitárselo on the real panel`() {
+        val b = banco
+        b.montarReal(PruebaTienda.Pieza("head-copa"), saldo = 50)
+        assertEquals("Quitárselo", b.texto("barra-quitar"))
     }
 
     @Test
@@ -179,6 +213,21 @@ class BarraHabiInglesTest {
         b.nota("60 bitos. You'd have 80 left.")
         b.hay("barra-comprar")
         b.hay("barra-ahora-no")
+    }
+
+    @Test
+    fun `the buttons read exactly Buy for 60, Not now and Take it off on the real panel`() {
+        val b = banco
+        b.montarReal(PruebaTienda.Pieza("head-gorro-lana"), saldo = 140)
+        assertEquals("Buy for 60", b.texto("barra-comprar"))
+        assertEquals("Not now", b.texto("barra-ahora-no"))
+    }
+
+    @Test
+    fun `Take it off reads exactly that on the real panel in English`() {
+        val b = banco
+        b.montarReal(PruebaTienda.Pieza("head-copa"), saldo = 50)
+        assertEquals("Take it off", b.texto("barra-quitar"))
     }
 
     @Test

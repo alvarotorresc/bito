@@ -9,7 +9,6 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
-import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.tienda.estadoTienda
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -27,10 +26,16 @@ class RielTest {
     @get:Rule val rule = createComposeRule()
 
     private fun tira(saldo: Int) {
+        // Reloj a mano: con el automático, en la suite entera el sandbox de estas pruebas deja de quedar en reposo.
+        rule.mainClock.autoAdvance = false
         rule.setContent {
-            ConSistema { Box(Modifier.fillMaxSize()) { TiraHabi(estadoTienda(saldo = saldo), alTocar = {}) } }
+            ConSistemaLigero { Box(Modifier.fillMaxSize()) { TiraHabi(estadoTienda(saldo = saldo), alTocar = {}) } }
         }
-        rule.waitForIdle()
+        // varias vueltas: medir, escribir el estado y recomponer con él no cabe en un solo fotograma
+        repeat(4) {
+            rule.mainClock.advanceTimeBy(250)
+            rule.runOnIdle { androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications() }
+        }
     }
 
     private fun alto(tag: String) = rule.onNodeWithTag(tag, useUnmergedTree = true).getBoundsInRoot()
@@ -38,11 +43,16 @@ class RielTest {
     @Test
     fun `rest padding-top is 56`() {
         assertEquals(56f, paddingRiel(null), 0f)
-        assertEquals(56f, paddingRiel(14f), 0f)
         assertEquals(56f, paddingRiel(60f), 0f)
+        assertEquals(56.3f, paddingRiel(60.3f), 0.001f)
+    }
+
+    @Test
+    fun `at rest the first node lines up with the first niche`() {
         tira(saldo = 140)
-        // la primera tecla del riel baja 56 dp desde su borde superior
-        assertEquals(56f, alto("raiz-cabeza").top.value - alto("raiz").top.value, 0.6f)
+        val hueco = rule.onAllNodesWithTag("hornacina-hueco", useUnmergedTree = true)[0].getBoundsInRoot()
+        assertEquals(hueco.top.value, alto("raiz-cabeza").top.value + 4f, 1f)
+        assertEquals("el riel empieza donde la tira", alto("tira-habi").top.value, alto("raiz").top.value, 0.5f)
     }
 
     @Test

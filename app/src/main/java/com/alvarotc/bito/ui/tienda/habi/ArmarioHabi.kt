@@ -13,7 +13,9 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.graphicsLayer
@@ -34,17 +36,13 @@ import com.alvarotc.bito.ui.habi.recursosDe
 import com.alvarotc.bito.ui.habi.rememberArte
 import com.alvarotc.bito.ui.habi.sampleSizeFor
 import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.tienda.EscenaArmario
 import com.alvarotc.bito.ui.tienda.EscenaArmarioEstado
 import com.alvarotc.bito.ui.tienda.MedidasArmario
 import com.alvarotc.bito.ui.tienda.PruebaTienda
-
-// Los granos de tierra del brote: radio, alcance y altura (movimiento.md §4).
-private val RADIO_GRANO = 2.5.dp
-private val ALCANCE_GRANO = 64.dp
-private val ALTURA_GRANO = 34.dp
 
 /** Lo último que se vio, para saber qué ha cambiado al llegar un estado nuevo. */
 private class Visto(
@@ -80,14 +78,17 @@ internal fun ArmarioHabi(
         animacion.cambio = cambio
     }
     LaunchedEffect(cambio) { cambio.reproducir(armario, sonido, tacto) }
-    EscenaArmario(
-        look = cambio.base,
-        luz = luz,
-        estado = armario,
-        capaSuperior = { CapasDelCambio(cambio, armario) },
-        modifier = modifier,
-        conCostra = false,
-    )
+    Box(modifier) {
+        EscenaArmario(
+            look = cambio.base,
+            luz = luz,
+            estado = armario,
+            capaSuperior = { CapasDelCambio(cambio, armario) },
+            conCostra = false,
+        )
+        // Fuera del recorte de la hornacina, como la capa `fx` del mock: los granos caen sobre la costra.
+        if (cambio.granos > 0 && !cambio.listo) GranosDeTierra(cambio, Modifier.matchParentSize())
+    }
 }
 
 /** Sobre Habi: la Habi que se funde y la pieza que cae o brota, con el mismo aplastamiento que ella. */
@@ -102,6 +103,9 @@ private fun BoxScope.CapasDelCambio(
         val pies = (HabiAtlas.BODY_HEIGHT - HabiAtlas.canvas.top) / HabiAtlas.canvas.height
         val densidad = LocalDensity.current
         val piesPx = with(densidad) { caja.height.dp.toPx() } * pies
+        // El suelo del recorte del brote, 156 unidades del lienzo por debajo de los pies.
+        val sueloPx = with(densidad) { caja.height.dp.toPx() } * (pies + SUELO_BAJO_PIES / HabiAtlas.canvas.height)
+        cambio.dpPorUnidad = caja.height / HabiAtlas.canvas.height
         val marco =
             Modifier
                 .offset(caja.left.dp, caja.top.dp)
@@ -119,7 +123,7 @@ private fun BoxScope.CapasDelCambio(
         val id = cambio.itemId
         if (!cambio.listo && id != null && (cambio.gesto == GestoPrueba.CAE || cambio.gesto == GestoPrueba.BROTA)) {
             val categoria = requireNotNull(HabiCatalog.byId(id)).category
-            val recorte = if (cambio.gesto == GestoPrueba.BROTA) piesPx else Float.MAX_VALUE
+            val recorte = if (cambio.gesto == GestoPrueba.BROTA) sueloPx else Float.MAX_VALUE
             Box(
                 marco.drawWithContent { clipRect(bottom = recorte) { this@drawWithContent.drawContent() } },
             ) {
@@ -129,11 +133,8 @@ private fun BoxScope.CapasDelCambio(
                         alpha = cambio.alfaPieza
                     },
                 ) {
-                    PiezaSuelta(HabiLayer(id, parteDe(categoria)), caja.height, Modifier.fillMaxSize())
+                    CapaSuelta(HabiLayer(id, parteDe(categoria)), caja.height, Modifier.fillMaxSize())
                 }
-            }
-            if (cambio.gesto == GestoPrueba.BROTA) {
-                GranosDeTierra(cambio, with(densidad) { caja.top.dp.toPx() } + piesPx, Modifier.matchParentSize())
             }
         }
     }
@@ -144,7 +145,7 @@ private const val ENSANCHA = 0.8f
 
 /** Una pieza del atlas sola, en el mismo marco y a la misma escala que Habi (de [altoDp] de alto). */
 @Composable
-private fun PiezaSuelta(
+private fun CapaSuelta(
     capa: HabiLayer,
     altoDp: Float,
     modifier: Modifier,
@@ -160,25 +161,36 @@ private fun PiezaSuelta(
     }
 }
 
-/** Los diez granos que salta la tierra al brotar la pieza: suben, se abren y se apagan en 420 ms. */
+/** Los diez granos que salta la tierra al brotar la pieza: salen del suelo, se abren y se apagan (ver [GranosBrote]). */
 @Composable
 private fun GranosDeTierra(
     cambio: CambioArmario,
-    suelo: Float,
     modifier: Modifier,
 ) {
-    val color = BitoTema.colores.costra
-    Canvas(modifier) {
-        val p = cambio.progresoGranos.coerceIn(0f, 1f)
-        if (p <= 0f || p >= 1f) return@Canvas
-        val n = cambio.granos
-        val centro = size.width / 2f
-        repeat(n) { i ->
-            val lado = (i - (n - 1) / 2f) / ((n - 1) / 2f)
-            val sube = ALTURA_GRANO.toPx() * (0.55f + 0.45f * ((i * 7) % n) / n)
-            val x = centro + lado * ALCANCE_GRANO.toPx() * p
-            val y = suelo - sube * 4f * p * (1f - p)
-            drawCircle(color, radius = RADIO_GRANO.toPx(), center = Offset(x, y), alpha = 1f - p)
+    val color = BitoTema.colores.tMedia2
+    BoxWithConstraints(modifier) {
+        // La hornacina dentro de la escena, y Habi dentro de la hornacina: los mismos números que `EscenaArmario`.
+        val nicho = MedidasArmario.cajaHabi(maxWidth.value - 2 * MedidasArmario.nichoLados.value, Medidas.hornacinaArmario.value)
+        val pies = (HabiAtlas.BODY_HEIGHT - HabiAtlas.canvas.top) / HabiAtlas.canvas.height
+        val dpPorUnidad = nicho.height / HabiAtlas.canvas.height
+        val x0 = MedidasArmario.nichoLados.value + nicho.left + nicho.width / 2f
+        val piesY = MedidasArmario.nichoArriba.value + nicho.top + nicho.height * pies
+        val y0 = GranosBrote.origenY(piesY, dpPorUnidad)
+        Canvas(Modifier.matchParentSize()) {
+            val t = cambio.progresoGranos.coerceIn(0f, 1f) * GranosBrote.TOTAL_MS
+            val ancho = GranosBrote.ancho.toPx()
+            val alto = GranosBrote.alto.toPx()
+            repeat(GranosBrote.N) { i ->
+                val p = GranosBrote.progreso(i, t)
+                if (p <= 0f || p >= 1f) return@repeat
+                drawRoundRect(
+                    color = color,
+                    topLeft = Offset(GranosBrote.x(i, p, x0).dp.toPx() - ancho / 2f, GranosBrote.y(i, p, y0).dp.toPx() - alto / 2f),
+                    size = Size(ancho, alto),
+                    cornerRadius = CornerRadius(ancho * GranosBrote.REDONDEO, alto * GranosBrote.REDONDEO),
+                    alpha = GranosBrote.alfa(p),
+                )
+            }
         }
     }
 }

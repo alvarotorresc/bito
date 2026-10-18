@@ -13,7 +13,6 @@ import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.unit.height
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabiCatalog
-import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.tienda.TiendaUiState
 import com.alvarotc.bito.ui.tienda.estadoTienda
 import org.junit.Assert.assertEquals
@@ -34,10 +33,16 @@ class TiraHabiTest {
     private val toques = mutableListOf<String>()
 
     private fun tira(estado: TiendaUiState = estadoTienda(saldo = 140)) {
+        // Reloj a mano: con el automático, en la suite entera el sandbox de estas pruebas deja de quedar en reposo.
+        rule.mainClock.autoAdvance = false
         rule.setContent {
-            ConSistema { Box(Modifier.fillMaxSize()) { TiraHabi(estado, alTocar = { toques += it }) } }
+            ConSistemaLigero { Box(Modifier.fillMaxSize()) { TiraHabi(estado, alTocar = { toques += it }) } }
         }
-        rule.waitForIdle()
+        // varias vueltas: medir, escribir el estado y recomponer con él no cabe en un solo fotograma
+        repeat(4) {
+            rule.mainClock.advanceTimeBy(250)
+            rule.runOnIdle { androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications() }
+        }
     }
 
     private fun caja(tag: String) = rule.onNodeWithTag(tag, useUnmergedTree = true).getBoundsInRoot()

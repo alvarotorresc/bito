@@ -42,7 +42,6 @@ import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Curvas
 import com.alvarotc.bito.ui.tienda.HornacinaPieza
 import com.alvarotc.bito.ui.tienda.TiendaUiState
-import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 
 // (sin token) `.tgrid`, `.nota-*`, `.fin-tira` de tienda-habi.css.
@@ -53,7 +52,6 @@ private val ENTRE_FILAS = 16.dp
 private val ENTRE_COLUMNAS = 10.dp
 private val FIN_TIRA = 200.dp
 private val RELLENO_ABAJO = 160.dp
-private val ARRIBA_RAIZ = 46.dp
 private val NOTA_INTRO = PaddingValues(start = 20.dp, top = 14.dp, end = 64.dp)
 private val NOTA_TIRA = PaddingValues(start = 20.dp, top = 12.dp, end = 64.dp, bottom = 4.dp)
 private val NOTA_VACIA = PaddingValues(start = 20.dp, top = 14.dp, end = 64.dp)
@@ -167,7 +165,6 @@ fun TiraHabi(
             modifier =
                 Modifier
                     .align(Alignment.TopEnd)
-                    .padding(top = ARRIBA_RAIZ)
                     .onGloballyPositioned { arribaRiel = it.positionInRoot().y },
         )
     }
@@ -249,12 +246,8 @@ private suspend fun bajarHasta(
         } else {
             0f
         }
-    try {
-        lista.animateScrollBy(distancia, androidx.compose.animation.core.tween(DURACION_SALTO, easing = Curvas.drawer))
-        if (lista.firstVisibleItemIndex != destino || lista.firstVisibleItemScrollOffset != 0) lista.scrollToItem(destino)
-    } catch (e: CancellationException) {
-        throw e
-    }
+    lista.animateScrollBy(distancia, androidx.compose.animation.core.tween(DURACION_SALTO, easing = Curvas.drawer))
+    if (lista.firstVisibleItemIndex != destino || lista.firstVisibleItemScrollOffset != 0) lista.scrollToItem(destino)
 }
 
 /** La ranura de la que el usuario acaba de quitar la pieza; se limpia sola al llenarse. */

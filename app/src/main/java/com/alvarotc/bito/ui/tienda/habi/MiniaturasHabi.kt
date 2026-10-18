@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -38,6 +39,12 @@ import kotlin.math.min
 private val OJO_ANCHO = 30.dp
 private val OJOS_HUECO = 4.dp
 private val OJOS_ALTO = 60.dp
+
+/**
+ * Para las pruebas de geometría: si no es nulo, cada miniatura se sustituye por esta caja y no se decodifica
+ * ningún webp. La app nunca lo fija.
+ */
+internal val LocalMiniaturaFalsa = staticCompositionLocalOf<(@Composable (Modifier) -> Unit)?> { null }
 
 /** Las piezas del atlas cuyo rectángulo es el del cuerpo entero: para la miniatura hay una capa recortada. */
 @DrawableRes
@@ -80,6 +87,10 @@ internal fun PiezaSuelta(
     id: String,
     modifier: Modifier,
 ) {
+    LocalMiniaturaFalsa.current?.let {
+        it(modifier)
+        return
+    }
     val limpia = miniaturaLimpia(id)
     if (limpia != null) {
         Image(painterResource(limpia), contentDescription = null, modifier = modifier, contentScale = ContentScale.Fit)
@@ -113,6 +124,10 @@ internal fun PiezaCapas(
     tinte: ColorTint?,
     modifier: Modifier,
 ) {
+    LocalMiniaturaFalsa.current?.let {
+        it(modifier)
+        return
+    }
     val context = LocalContext.current
     val arte = remember(context) { HabiArt.get(context) }
     val pieza = HabiAtlas.pieces[clave] ?: return

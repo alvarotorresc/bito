@@ -21,7 +21,6 @@ import androidx.compose.ui.unit.height
 import androidx.compose.ui.unit.width
 import com.alvarotc.bito.ui.sistema.BitoColores
 import com.alvarotc.bito.ui.sistema.BitoTema
-import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
@@ -51,8 +50,10 @@ class RaizRanurasTest {
     private val pulsadas = mutableListOf<RanuraHabi>()
 
     private fun raiz(reducido: Boolean = false) {
+        // Reloj a mano: con el automático, en la suite entera el sandbox de estas pruebas deja de quedar en reposo.
+        rule.mainClock.autoAdvance = false
         rule.setContent {
-            ConSistema(sonido, tacto, reducido) {
+            ConSistemaLigero(sonido, tacto, reducido) {
                 vista = LocalView.current
                 colores = BitoTema.colores
                 Box(Modifier.fillMaxSize()) {
@@ -60,11 +61,17 @@ class RaizRanurasTest {
                 }
             }
         }
-        rule.waitForIdle()
+        // varias vueltas: medir, escribir el estado y recomponer con él no cabe en un solo fotograma
+        repeat(4) {
+            rule.mainClock.advanceTimeBy(250)
+            rule.runOnIdle { androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications() }
+        }
     }
 
     private fun fotograma(): Bitmap {
+        rule.mainClock.advanceTimeByFrame()
         rule.waitForIdle()
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
         val foto = Bitmap.createBitmap(vista.width, vista.height, Bitmap.Config.ARGB_8888)
         vista.draw(Canvas(foto))
         return foto
@@ -109,7 +116,10 @@ class RaizRanurasTest {
         // a 6 dp del borde superior del nudo, dentro del círculo y fuera del dibujo de la pieza
         assertTrue(cerca(colores.agua.toArgb(), pixel(foto, "nudo-cabeza", 20f, 5f)))
         assertTrue(cerca(colores.tAlta.toArgb(), pixel(foto, "nudo-cara", 20f, 5f)))
-        activa.value = RanuraHabi.CUELLO
+        rule.runOnIdle {
+            activa.value = RanuraHabi.CUELLO
+            androidx.compose.runtime.snapshots.Snapshot.sendApplyNotifications()
+        }
         rule.mainClock.advanceTimeBy(400)
         val despues = fotograma()
         assertTrue(cerca(colores.tAlta.toArgb(), pixel(despues, "nudo-cabeza", 20f, 5f)))
@@ -152,7 +162,7 @@ class SaltoRaizTest {
     private fun tira(reducido: Boolean) {
         rule.mainClock.autoAdvance = false
         rule.setContent {
-            ConSistema(sonido, tacto, reducido) {
+            ConSistemaLigero(sonido, tacto, reducido) {
                 Box(Modifier.fillMaxSize()) { TiraHabi(estadoTienda(saldo = 140), alTocar = {}, lista = lista) }
             }
         }

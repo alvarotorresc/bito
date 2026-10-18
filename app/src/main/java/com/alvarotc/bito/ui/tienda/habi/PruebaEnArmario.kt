@@ -23,11 +23,16 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 // `prueba-cae`, `prueba-brota` y `movimiento.md` §4 (tienda-habi.js).
-private const val CAIDA_DP = 380f
+// La caída (`fall`) y el brote (`sprout`) están en píxeles del lienzo del arte: la pieza es hija del rig del mock,
+// que se escala por alto/1404. Aquí son unidades del lienzo de Habi y se pasan a dp con [CambioArmario.dpPorUnidad].
+internal const val CAIDA_LIENZO = 380f
+internal const val BROTE_LIENZO = 260f
+
+/** El suelo del recorte del brote: 156 unidades del lienzo por debajo de los pies (`G0 = 1860` del mock). */
+internal const val SUELO_BAJO_PIES = 156f
 private const val ALFA_INICIO = 0.2f
 private const val REBOTE_DP = 3f
-internal const val BROTE_DP = 260f
-internal const val GRANOS_BROTE = 10
+internal const val GRANOS_BROTE = GranosBrote.N
 private const val FUNDIDO_MS = 180
 
 // Cuánto se aplasta Habi (por ciento) y en cuánto va y vuelve.
@@ -71,8 +76,8 @@ internal sealed interface EventoArmario {
     /** Una pieza nueva a la vista: probada, o puesta porque ya era tuya. */
     data class Pone(val itemId: String, val categoria: CustomizationCategory) : EventoArmario
 
-    /** Se va la prueba o se quita lo puesto. */
-    data object Quita : EventoArmario
+    /** Se va la prueba ([dePrueba]: ya suena en la pantalla) o se quita lo puesto (no suena en ningún otro sitio). */
+    data class Quita(val dePrueba: Boolean) : EventoArmario
 }
 
 private fun EquippedSet.en(categoria: CustomizationCategory): String? =
@@ -98,16 +103,13 @@ private val EJES =
         CustomizationCategory.EYE_COLOR,
     )
 
-/** [nuevo] con la pieza de [categoria] como estaba en [previo]. */
-private fun EquippedSet.revertida(
-    categoria: CustomizationCategory,
-    previo: EquippedSet,
-): EquippedSet =
+/** Habi sin nada en la ranura de [categoria]: la pieza de antes se va en el acto y solo se mueve la nueva. */
+private fun EquippedSet.sinRanura(categoria: CustomizationCategory): EquippedSet =
     when (categoria) {
-        CustomizationCategory.HEAD -> copy(head = previo.head)
-        CustomizationCategory.FACE -> copy(face = previo.face)
-        CustomizationCategory.NECK -> copy(neck = previo.neck)
-        CustomizationCategory.FEET -> copy(feet = previo.feet)
+        CustomizationCategory.HEAD -> copy(head = null)
+        CustomizationCategory.FACE -> copy(face = null)
+        CustomizationCategory.NECK -> copy(neck = null)
+        CustomizationCategory.FEET -> copy(feet = null)
         else -> this
     }
 
@@ -123,9 +125,9 @@ internal fun clasificarCambio(
 ): EventoArmario {
     val distintos = EJES.filter { previo.en(it) != nuevo.en(it) }
     if (distintos.isEmpty()) return EventoArmario.Ninguno
-    if (habiaPrueba && !hayPrueba) return EventoArmario.Quita
+    if (habiaPrueba && !hayPrueba) return EventoArmario.Quita(dePrueba = true)
     val ganada = distintos.firstOrNull { nuevo.en(it) != null }
-    return if (ganada != null) EventoArmario.Pone(requireNotNull(nuevo.en(ganada)), ganada) else EventoArmario.Quita
+    return if (ganada != null) EventoArmario.Pone(requireNotNull(nuevo.en(ganada)), ganada) else EventoArmario.Quita(dePrueba = false)
 }
 
 /**
@@ -170,10 +172,13 @@ internal class CambioArmario(
     internal val granosAnim = Animatable(0f)
     internal val fundidoAnim = Animatable(if (evento is EventoArmario.Quita || disfrazSaliente != null) 1f else 0f)
 
-    val caidaDp: Float get() = if (gesto == GestoPrueba.CAE) CAIDA_DP * (1f - progreso.value) else 0f
+    /** Cuántos dp mide una unidad del lienzo de Habi. Lo fija la escena al componer, con la caja de Habi. */
+    var dpPorUnidad: Float = 0f
+
+    val caidaDp: Float get() = if (gesto == GestoPrueba.CAE) CAIDA_LIENZO * dpPorUnidad * (1f - progreso.value) else 0f
     val alfaPieza: Float get() = if (gesto == GestoPrueba.CAE) ALFA_INICIO + (1f - ALFA_INICIO) * progreso.value.coerceIn(0f, 1f) else 1f
     val reboteDp: Float get() = rebote.value
-    val brotarDp: Float get() = if (gesto == GestoPrueba.BROTA) BROTE_DP * (1f - progreso.value) else 0f
+    val brotarDp: Float get() = if (gesto == GestoPrueba.BROTA) BROTE_LIENZO * dpPorUnidad * (1f - progreso.value) else 0f
     val granos: Int get() = if (gesto == GestoPrueba.BROTA) GRANOS_BROTE else 0
     val progresoGranos: Float get() = granosAnim.value
     val fundido: Float get() = fundidoAnim.value
@@ -183,7 +188,7 @@ internal class CambioArmario(
         get() =
             when {
                 listo -> nuevo
-                gestoPropio == GestoPrueba.CAE || gestoPropio == GestoPrueba.BROTA -> nuevo.revertida(requireNotNull(categoria), previo)
+                gestoPropio == GestoPrueba.CAE || gestoPropio == GestoPrueba.BROTA -> nuevo.sinRanura(requireNotNull(categoria))
                 evento is EventoArmario.Pone -> previo
                 else -> nuevo
             }
@@ -222,7 +227,8 @@ internal class CambioArmario(
             coroutineScope {
                 when {
                     evento is EventoArmario.Quita -> {
-                        senal(sonido, tacto, Snd.HUNDIR, Haptica.LOW)
+                        // Quitar la prueba ya suena en la pantalla; quitar lo puesto solo suena aquí.
+                        if (!evento.dePrueba) senal(sonido, tacto, Snd.HUNDIR, Haptica.LOW)
                         fundidoAnim.animateTo(0f, tween(duracionFundido, easing = Curvas.out))
                         listo = true
                     }
@@ -248,7 +254,7 @@ internal class CambioArmario(
                     else -> {
                         senal(sonido, tacto, Snd.BROTE, Haptica.TICK)
                         saleElDisfraz()
-                        launch { granosAnim.animateTo(1f, tween(Duraciones.POLVO, easing = Curvas.out)) }
+                        launch { granosAnim.animateTo(1f, tween(GranosBrote.TOTAL_MS, easing = Curvas.lin)) }
                         launch { armario.aplastar(APLASTE_BROTE, APLASTE_IDA_MS, APLASTE_VUELTA_MS) }
                         progreso.animateTo(1f, Muelles.hoja<Float>())
                         llegada(gestoActual, sonido, tacto)
@@ -304,4 +310,5 @@ internal class AnimacionPrueba {
     val granos: Int get() = cambio?.granos ?: 0
     val progresoGranos: Float get() = cambio?.progresoGranos ?: 0f
     val fundido: Float get() = cambio?.fundido ?: 0f
+    val base: EquippedSet? get() = cambio?.base
 }

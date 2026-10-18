@@ -26,7 +26,6 @@ import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.ui.habi.SondaSalto
 import com.alvarotc.bito.ui.sistema.BitoTema
-import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.TactoGrabado
@@ -75,7 +74,7 @@ class DisfrazTapaTest {
         val tapada = mutableStateOf(false)
         var hornacina = Color.Unspecified
         rule.setContent {
-            ConSistema(sonido, tacto) {
+            ConSistemaLigero(sonido, tacto) {
                 vista = LocalView.current
                 hornacina = BitoTema.colores.hornacina
                 Box(Modifier.width(110.dp).height(130.dp)) {
@@ -156,7 +155,7 @@ class DisfrazTapaTest {
         lateinit var anim: AnimacionPrueba
         lateinit var armario: EscenaArmarioEstado
         rule.setContent {
-            ConSistema(sonido, tacto) {
+            ConSistemaLigero(sonido, tacto) {
                 armario = remember { EscenaArmarioEstado() }.also { it.sonda = sonda }
                 anim = remember { AnimacionPrueba() }
                 val e = estado.value
@@ -189,7 +188,7 @@ class DisfrazTapaTest {
         assertEquals("el disfraz que sale se ve fundirse", "costume-calabaza", anim.disfrazSaliente)
         assertEquals("y la pieza cae", GestoPrueba.CAE, anim.gesto)
         assertEquals("head-gorro-lana", anim.itemId)
-        assertTrue(anim.caidaDp > 300f)
+        assertTrue(anim.caidaDp > 35f)
         assertTrue(anim.fundido in 0.2f..1f)
         rule.mainClock.advanceTimeBy(100)
         assertTrue("el disfraz se funde mientras cae", anim.fundido < 0.8f)

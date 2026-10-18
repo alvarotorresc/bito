@@ -31,6 +31,9 @@ import org.robolectric.annotation.GraphicsMode
 
 private const val FOTOGRAMA = 16
 
+// 380 unidades del lienzo con Habi a 165,2 dp de cuerpo (0,7 de la hornacina de 236): 380 · 165,2 / 1404.
+private const val CAIDA_ESPERADA = 380f * (0.7f * 236f) / 1404f
+
 /** Monta [ArmarioHabi] con un reloj de Compose a mano y apunta lo que se ve fotograma a fotograma. */
 internal class BancoArmario(
     private val rule: ComposeContentTestRule,
@@ -112,11 +115,11 @@ class PruebaEnArmarioTest {
     fun `a hat falls 210 ms and then rebounds with the caida spring`() {
         val b = BancoArmario(rule)
         b.poner(EquippedSet(head = gorro), PruebaTienda.Pieza(gorro))
-        assertEquals(380f, b.anim.caidaDp, 12f)
+        assertEquals(CAIDA_ESPERADA, b.anim.caidaDp, 1f)
         assertEquals(0.2f, b.anim.alfaPieza, 0.1f)
         // t² a mitad de tiempo: un cuarto del recorrido.
         b.avanzar(100)
-        assertEquals(380f * (1f - 0.23f), b.anim.caidaDp, 45f)
+        assertEquals(CAIDA_ESPERADA * (1f - 0.23f), b.anim.caidaDp, 6f)
         assertTrue(b.anim.alfaPieza in 0.3f..0.9f)
         b.avanzar(130)
         assertEquals(0f, b.anim.caidaDp, 0.01f)
@@ -124,6 +127,23 @@ class PruebaEnArmarioTest {
         assertEquals(3f, rebote.maxOf { kotlin.math.abs(it) }, 0.6f)
         assertEquals(0f, b.anim.reboteDp, 0.05f)
         assertNull(b.anim.gesto)
+    }
+
+    @Test
+    fun `a hat starts 44_7 dp above where it lands, not 380`() {
+        val b = BancoArmario(rule)
+        b.poner(EquippedSet(head = gorro), PruebaTienda.Pieza(gorro))
+        assertEquals(44.7f, b.anim.caidaDp, 1f)
+    }
+
+    @Test
+    fun `a hat replaces the one worn in its slot at once`() {
+        val b = BancoArmario(rule, inicial = EquippedSet(head = "head-boina"))
+        b.poner(EquippedSet(head = gorro), PruebaTienda.Pieza(gorro))
+        assertEquals(GestoPrueba.CAE, b.anim.gesto)
+        assertNull("la boina ya no se ve mientras cae el gorro", b.anim.base?.head)
+        b.avanzar(1500)
+        assertEquals(gorro, b.anim.base?.head)
     }
 
     @Test
@@ -153,12 +173,12 @@ class PruebaEnArmarioTest {
     }
 
     @Test
-    fun `boots sprout with 260 dp clipped and 10 grains in 420 ms`() {
+    fun `boots sprout from 30_6 dp with 10 grains over 510 ms`() {
         val b = BancoArmario(rule)
         val escalaBrote = mutableListOf<Float>()
         b.poner(EquippedSet(feet = botas), PruebaTienda.Pieza(botas))
         assertEquals(GestoPrueba.BROTA, b.anim.gesto)
-        assertEquals(260f, b.anim.brotarDp, 6f)
+        assertEquals(30.6f, b.anim.brotarDp, 1f)
         assertEquals(10, GRANOS_BROTE)
         assertEquals(10, b.anim.granos)
         val granos =
@@ -166,14 +186,33 @@ class PruebaEnArmarioTest {
                 escalaBrote += b.armario.escalaY
                 b.anim.progresoGranos
             }
-        assertTrue("los granos aún vuelan a los 400 ms", granos.last() < 1f)
-        b.avanzar(60)
+        assertTrue("los granos aún vuelan a los 380 ms", granos.last() < 1f)
+        b.avanzar(150)
         assertEquals(1f, b.anim.progresoGranos, 0.001f)
         assertEquals(0.96f, escalaBrote.min(), 0.01f)
         b.avanzar(1500)
         assertEquals(0f, b.anim.brotarDp, 0.5f)
         assertEquals(listOf(Snd.BROTE, Snd.POSAR), b.sonido.snds())
         assertEquals(listOf(Haptica.TICK, Haptica.LOW), b.tacto.hapticas.toList())
+    }
+
+    @Test
+    fun `grains leave every 10 ms, last 420 ms and follow the mock path`() {
+        assertEquals(510, GranosBrote.TOTAL_MS)
+        assertEquals(0f, GranosBrote.progreso(9, 80f), 0f)
+        assertEquals(0.5f, GranosBrote.progreso(0, 210f), 0.0001f)
+        assertEquals(1f, GranosBrote.progreso(9, 510f), 0.0001f)
+        val y0 = 100f
+        val v0 = GranosBrote.velocidad(0)
+        assertEquals(y0 + kotlin.math.sin(GranosBrote.angulo(0)) * v0 * 0.8f + 17.5f, GranosBrote.y(0, 0.5f, y0), 0.001f)
+        assertEquals(1f, GranosBrote.alfa(0.6f), 0f)
+        assertEquals(0.5f, GranosBrote.alfa(0.8f), 0.0001f)
+        assertEquals(0f, GranosBrote.alfa(1f), 0f)
+        assertEquals(0.6f, GranosBrote.alfa(0.76f), 0.0001f)
+        // el origen queda 4,5 dp sobre los pies con Habi a 165 dp (0,032 · 1132 · 1,05 · 165/1404)
+        assertEquals(4.5f, 200f - GranosBrote.origenY(200f, 165f / 1404f), 0.1f)
+        assertEquals(6f, GranosBrote.ancho.value, 0f)
+        assertEquals(5f, GranosBrote.alto.value, 0f)
     }
 
     @Test
@@ -212,7 +251,7 @@ class PruebaEnArmarioTest {
     }
 
     @Test
-    fun `taking the trial off fades 180 ms and plays HUNDIR and LOW`() {
+    fun `taking the trial off fades 180 ms and is silent, the screen already plays it`() {
         val b = BancoArmario(rule)
         b.poner(EquippedSet(head = gorro), PruebaTienda.Pieza(gorro))
         b.avanzar(2000)
@@ -225,6 +264,19 @@ class PruebaEnArmarioTest {
         b.avanzar(210)
         assertNull(b.anim.gesto)
         b.avanzar(400)
+        assertEquals(emptyList<Snd>(), b.sonido.snds())
+        assertEquals(emptyList<Haptica>(), b.tacto.hapticas.toList())
+    }
+
+    @Test
+    fun `taking off a worn piece plays HUNDIR and LOW once`() {
+        val b = BancoArmario(rule)
+        b.poner(EquippedSet(head = gorro), null)
+        b.avanzar(2000)
+        b.sonido.sonados.clear()
+        b.tacto.hapticas.clear()
+        b.poner(EquippedSet(), null)
+        b.avanzar(600)
         assertEquals(listOf(Snd.HUNDIR), b.sonido.snds())
         assertEquals(listOf(Haptica.LOW), b.tacto.hapticas.toList())
     }
@@ -239,7 +291,7 @@ class PruebaEnArmarioTest {
         b.poner(EquippedSet(feet = botas, head = gorro), PruebaTienda.Pieza(gorro))
         assertEquals("la nueva es el gorro, que cae", GestoPrueba.CAE, b.anim.gesto)
         assertEquals(gorro, b.anim.itemId)
-        assertEquals(380f, b.anim.caidaDp, 12f)
+        assertEquals(CAIDA_ESPERADA, b.anim.caidaDp, 1f)
         assertTrue("el aplastamiento sigue donde estaba, no vuelve a cero", b.armario.escalaY <= aplastada + 0.02f)
         val escala = b.avanzar(900) { b.armario.escalaY }
         assertEquals("y acaba suelta", 1f, escala.last(), 0.001f)

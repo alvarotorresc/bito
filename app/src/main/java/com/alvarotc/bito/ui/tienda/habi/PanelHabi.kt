@@ -15,6 +15,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.HabiCatalog
+import com.alvarotc.bito.ui.habi.HabiAtlas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
@@ -26,17 +27,20 @@ import com.alvarotc.bito.ui.tienda.MedidasArmario
 import com.alvarotc.bito.ui.tienda.PanelTienda
 import kotlinx.coroutines.launch
 
-// Habi al comprar: se aplasta un 12 % (ida y vuelta) al llegar la moneda.
-private const val APLASTE_COMPRA = 0.12f
-private const val APLASTE_IDA_MS = 80
-private const val APLASTE_VUELTA_MS = 240
-
-// La moneda cae en el centro del cuerpo de Habi: pies al 90 % de la hornacina y cuerpo al 70 % de su alto.
+// La moneda cae en la sombra de los pies de Habi (`B.gastar(precio, habi.sh)` del mock): al 45 % de la sombra,
+// que mide 1132 · 1,05 unidades del lienzo y empieza 0,1 de su ancho por encima de los pies.
+private const val SOMBRA_LIENZO = 1132f * 1.05f
+private const val SOMBRA_ARRIBA = 0.1f
+private const val SOMBRA_ALTO = 0.17f
+private const val SOMBRA_PUNTO = 0.45f
 private val CENTRO_HABI_Y =
-    (
-        MedidasArmario.nichoArriba.value +
-            (MedidasArmario.sitioHabi.yPct - MedidasArmario.sitioHabi.heightPct / 2f) / 100f * Medidas.hornacinaArmario.value
-    ) / MedidasArmario.escenaAlto.value
+    run {
+        val nicho = Medidas.hornacinaArmario.value
+        val k = MedidasArmario.habiCuerpo(nicho) / HabiAtlas.BODY_HEIGHT
+        val pies = MedidasArmario.nichoArriba.value + MedidasArmario.sitioHabi.yPct / 100f * nicho
+        val sombra = SOMBRA_LIENZO * k
+        pies - SOMBRA_ARRIBA * sombra + SOMBRA_PUNTO * SOMBRA_ALTO * sombra
+    } / MedidasArmario.escenaAlto.value
 
 /** La pestaña Habi: el armario con lo que lleva y lo que se prueba, y la tira de piezas por ranuras. */
 object PanelHabi : PanelTienda {
@@ -48,14 +52,14 @@ object PanelHabi : PanelTienda {
         var caja by remember { mutableStateOf<Rect?>(null) }
         val cajaViva by rememberUpdatedState(caja)
         val estadoVivo by rememberUpdatedState(ctx.estado)
-        val reducido = BitoTema.reducido
+        val reducido by rememberUpdatedState(BitoTema.reducido)
         // El flujo es compartido y no se espera dentro de `collect`: cada compra celebra en su propia corrutina,
         // que muere con la escena (sin moneda a medias al cambiar de pestaña o salir).
         LaunchedEffect(ctx.eventos) {
             ctx.eventos.collect { evento ->
                 if (evento is EventoTienda.Comprado && esDeHabi(evento.itemId)) {
                     launch {
-                        celebrarCompra(ctx, reducido, { estadoVivo.look }, DestinoMoneda { centroDeHabi(cajaViva) })
+                        celebrarCompra(ctx, { reducido }, { estadoVivo.look }, DestinoMoneda { centroDeHabi(cajaViva) })
                     }
                 }
             }
@@ -94,18 +98,17 @@ private fun centroDeHabi(caja: Rect?): Offset = caja?.let { Offset(it.center.x, 
 
 /**
  * Lo que pasa al comprar: suena y vibra al soltarse la moneda, vuela del saldo a Habi en 520 ms (el saldo rueda a la vez)
- * y, al llegar, Habi salta con cara alegre y se aplasta, y suena su voz.
+ * y, al llegar, Habi salta con cara alegre (el salto ya lleva su agachada del 12 %) y suena su voz.
  */
 private suspend fun celebrarCompra(
     ctx: ContextoPanel,
-    reducido: Boolean,
+    reducido: () -> Boolean,
     look: () -> EquippedSet,
     destino: DestinoMoneda,
 ) {
     ctx.sonido.play(Snd.GASTAR, 1f)
     ctx.tacto.haptica(Haptica.CONFIRM)
     ctx.vuelo.volar(destino)
-    ctx.armario.saltar(SaltoCompra.enLienzo(SaltoCompra.amplitud(look(), reducido)))
+    ctx.armario.saltar(SaltoCompra.enLienzo(SaltoCompra.amplitud(look(), reducido())))
     ctx.sonido.play(Snd.HABI, 1f)
-    ctx.armario.aplastar(APLASTE_COMPRA, APLASTE_IDA_MS, APLASTE_VUELTA_MS)
 }
