@@ -45,6 +45,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
+import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -97,6 +98,12 @@ class TiendaVueltaAHoyTest {
         sembrar(140)
         montar()
         entrarEnLaTienda()
+        // Una visita larga: antes de comprar pasan más de los 5 s de WhileSubscribed y Hoy deja de recoger, con el estado de
+        // antes de comprar. El reloj de Compose no mueve ese temporizador: se avanza también el del looper.
+        repeat(10) {
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofSeconds(1))
+            fotogramas(1_000)
+        }
         pulsar("ttab-jardin")
         hasta { hay("item-garden-banco") }
         pulsar("item-garden-banco")

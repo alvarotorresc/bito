@@ -344,13 +344,9 @@ fun InicioScreen(
     // J31: lo comprado dentro de la tienda se mece al volver. Hoy se vuelve a componer al cerrarla, así que lo que se
     // recuerda entre una y otra vive en [compras] (arriba); el objeto se calcula una vez y esta composición lo guarda.
     var recienComprado by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(tiendaAbierta, estado.loading) {
-        if (estado.loading || compras == null) return@LaunchedEffect
-        if (tiendaAbierta) {
-            compras.alAbrir(estado.garden.objects)
-        } else {
-            compras.alCerrar(estado.garden.objects)?.let { recienComprado = it }
-        }
+    LaunchedEffect(tiendaAbierta, estado.loading, estado.garden.objects) {
+        if (estado.loading || tiendaAbierta || compras == null) return@LaunchedEffect
+        compras.alCerrar(estado.garden.objects)?.let { recienComprado = it }
     }
     val reducido = BitoTema.reducido
     val gesto = rememberGesto()
@@ -1083,20 +1079,27 @@ private fun Context.actividad(): Activity? {
 }
 
 /**
- * Lo que Hoy recuerda de una visita a la tienda (J31): los objetos del jardín al abrirla, para saber al cerrarla cuál es el
- * último que se compró dentro. Se compara con el estado real, nunca con el de relleno (C1), y se consume al leerlo.
+ * Lo que Hoy recuerda de una visita a la tienda (J31): el último objeto del jardín que se compró dentro, apuntado por la
+ * propia tienda al comprarlo. No depende del estado de Hoy (con `WhileSubscribed` puede ser viejo al volver, C1); solo se
+ * entrega cuando ese estado ya contiene el objeto, y se consume al entregarlo.
  */
 class ComprasDeTienda {
-    private var antes: Set<String>? = null
+    private var ultimo: String? = null
 
-    fun alAbrir(objetos: Set<String>) {
-        if (antes == null) antes = objetos
+    /** Se abre la tienda: empieza una visita nueva, sin compras. */
+    fun alAbrir() {
+        ultimo = null
     }
 
-    /** El último objeto nuevo desde que se abrió la tienda, una sola vez; null si no hubo visita o no se compró nada. */
+    /** La tienda compró el objeto de jardín [clave]. */
+    fun alComprar(clave: String) {
+        ultimo = clave
+    }
+
+    /** El objeto comprado en la visita, una sola vez y solo cuando [objetos] ya lo incluye; si no, sigue pendiente. */
     fun alCerrar(objetos: Set<String>): String? {
-        val previo = antes ?: return null
-        antes = null
-        return (objetos - previo).lastOrNull()
+        val clave = ultimo?.takeIf { it in objetos } ?: return null
+        ultimo = null
+        return clave
     }
 }

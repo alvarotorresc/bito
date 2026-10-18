@@ -341,34 +341,36 @@ class BitoNavHostTest {
     @Test
     fun `entering the store dims Today and leaving it clears the veil`() {
         val backOwner = FakeBackDispatcherOwner()
-        setContentWithBack(backOwner)
-        compose.mainClock.autoAdvance = false
+        var ultimo: Float? = null
+        sondaVeloHoy = { ultimo = it }
 
-        fun velo() =
-            compose
-                .onAllNodes(SemanticsMatcher.keyIsDefined(VeloHoyAlpha), useUnmergedTree = true)
-                .fetchSemanticsNodes()
-                .map { it.config[VeloHoyAlpha] }
-                .maxOrNull()
+        fun velo() = ultimo
 
-        assertEquals(0f, velo()!!, 0.001f)
+        try {
+            setContentWithBack(backOwner)
+            compose.mainClock.autoAdvance = false
+            compose.mainClock.advanceTimeBy(100)
+            assertEquals(0f, velo()!!, 0.001f)
 
-        compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
-        compose.mainClock.advanceTimeByFrame()
-        compose.mainClock.advanceTimeByFrame()
-        tapText(ApplicationProvider.getApplicationContext<Application>().getString(R.string.premios_ir_tienda))
-        compose.mainClock.advanceTimeBy(200)
-        compose.mainClock.advanceTimeByFrame()
-        compose.mainClock.advanceTimeByFrame()
-        compose.mainClock.advanceTimeBy(120)
-        val mitad = velo()
-        assertTrue("Hoy se está oscureciendo ($mitad)", mitad != null && mitad > 0f && mitad <= VELO_HOY + 0.001f)
-        assertEquals(0.35f, VELO_HOY, 0.0001f)
+            compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeByFrame()
+            tapText(ApplicationProvider.getApplicationContext<Application>().getString(R.string.premios_ir_tienda))
+            compose.mainClock.advanceTimeBy(200)
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeBy(120)
+            val mitad = velo()
+            assertTrue("Hoy se está oscureciendo ($mitad)", mitad != null && mitad > 0f && mitad <= VELO_HOY + 0.001f)
+            assertEquals(0.35f, VELO_HOY, 0.0001f)
 
-        compose.mainClock.advanceTimeBy(1_500)
-        compose.runOnUiThread { backOwner.onBackPressedDispatcher.onBackPressed() }
-        compose.mainClock.advanceTimeBy(1_500)
-        assertEquals("al hundirse la tienda el velo se va", 0f, velo()!!, 0.01f)
+            compose.mainClock.advanceTimeBy(1_500)
+            compose.runOnUiThread { backOwner.onBackPressedDispatcher.onBackPressed() }
+            compose.mainClock.advanceTimeBy(1_500)
+            assertEquals("al hundirse la tienda el velo se va", 0f, velo()!!, 0.01f)
+        } finally {
+            sondaVeloHoy = null
+        }
     }
 
     @Test

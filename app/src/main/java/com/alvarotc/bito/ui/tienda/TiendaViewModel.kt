@@ -82,7 +82,7 @@ class TiendaViewModel(
 
     // Un solo cobro por toque: comprar y comprarCongelador ignoran otro toque mientras uno escribe.
     private val ocupado = AtomicBoolean(false)
-    private val ultimoCongelador = AtomicReference<String?>(null)
+    private val ultimoCongelador = AtomicReference<Pair<String, Long>?>(null)
     private val canalEventos = MutableSharedFlow<EventoTienda>(replay = 0, extraBufferCapacity = EVENTOS_EN_COLA)
 
     // Un toque en «Comprar» tras la medianoche no escribe nada: este pulso hace que la barra se rehaga al instante.
@@ -303,11 +303,13 @@ class TiendaViewModel(
         viewModelScope.launch {
             try {
                 val dia = diaLogico()
-                val tapada =
-                    item.category in TAPADAS_POR_DISFRAZ &&
-                        rewards.observeOwnedItems().first().any { it.category == CustomizationCategory.COSTUME && it.equipped }
+                // Sin disfraz puesto, quitarlo no hace nada: se compra siempre en una sola transacción, sin leer antes.
                 val comprada =
-                    if (tapada) rewards.purchaseOverCostume(item, dia, reloj.ahora()) else rewards.purchase(item, dia, reloj.ahora())
+                    if (item.category in TAPADAS_POR_DISFRAZ) {
+                        rewards.purchaseOverCostume(item, dia, reloj.ahora())
+                    } else {
+                        rewards.purchase(item, dia, reloj.ahora())
+                    }
                 if (comprada) {
                     // La prueba se suelta cuando la fila ya está en el estado: quitarla antes enseñaría un instante a Habi
                     // sin la pieza (o al jardín sin el banco). El tope evita quedarse esperando si nadie recoge el estado.
@@ -334,7 +336,7 @@ class TiendaViewModel(
                 val refId = rewards.buyFreezer(economy.freezerPrice, diaLogico(), reloj.ahora())
                 if (refId != null) {
                     congeladorLibreDesde.set(reloj.ahora() + Duraciones.GASTAR)
-                    ultimoCongelador.set(refId)
+                    ultimoCongelador.set(refId to reloj.ahora())
                     canalEventos.emit(EventoTienda.CongeladorComprado(refId, antes + 1))
                 }
             } finally {
@@ -345,7 +347,8 @@ class TiendaViewModel(
 
     override fun deshacerCongelador() {
         // Solo la última compra, y una vez: quien llega después con el aviso ya vencido no encuentra nada.
-        val refId = ultimoCongelador.getAndSet(null) ?: return
+        val (refId, cuando) = ultimoCongelador.getAndSet(null) ?: return
+        if (reloj.ahora() - cuando > AVISO_DESHACER_MS) return
         viewModelScope.launch {
             if (rewards.undoFreezerPurchase(refId)) canalEventos.emit(EventoTienda.CongeladorDeshecho)
         }
@@ -387,6 +390,9 @@ class TiendaViewModel(
 
         /** Cuánto espera «Comprar» a que la fila comprada llegue al estado antes de soltar la prueba igualmente. */
         private const val ESPERA_FILA_MS = 1_000L
+
+        // Lo que vive el aviso «Deshacer»: pasado este tiempo la compra del congelador ya no se puede deshacer.
+        private const val AVISO_DESHACER_MS = 4_000L
 
         private const val EVENTOS_EN_COLA = 16
 

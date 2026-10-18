@@ -29,14 +29,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.SemanticsPropertyKey
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -200,6 +199,7 @@ fun BitoNavHost(
     // Hoy baja al 65 % de brillo mientras la tienda está encima y vuelve al hundirse; el velo sigue a la ruta actual.
     val tiendaAbierta = currentRoute == RUTA_TIENDA
     val comprasDeTienda = remember { ComprasDeTienda() }
+    LaunchedEffect(tiendaAbierta) { if (tiendaAbierta) comprasDeTienda.alAbrir() }
     val velo by animateFloatAsState(
         targetValue = if (tiendaAbierta) VELO_HOY else 0f,
         animationSpec =
@@ -432,6 +432,7 @@ fun BitoNavHost(
                         TiendaScreen(
                             viewModel = viewModel(factory = TiendaViewModel.factory(container)),
                             alSalir = { if (entry.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) nav.popBackStack() },
+                            alComprarObjeto = comprasDeTienda::alComprar,
                         )
                     }
                     // D12 revocado: crear y editar una tarea son ahora una pantalla completa, calcada de
@@ -603,8 +604,9 @@ private val SUBE_HOY = 40.dp
 /** Hoy se queda al 65 % de brillo bajo la tienda: un velo negro del 35 %. */
 internal const val VELO_HOY = 0.35f
 
-/** Lo que valga el velo ahora, para que un test lo lea sin pintar píxeles. */
-internal val VeloHoyAlpha = SemanticsPropertyKey<Float>("VeloHoyAlpha")
+/** Si no es nulo, recibe cada valor del velo: un test lo lee sin mirar píxeles ni invalidar la semántica en cada fotograma. */
+@Volatile
+internal var sondaVeloHoy: ((Float) -> Unit)? = null
 
 /** Oscurece [contenido] con [velo] (0 a 1), leído en la fase de dibujo. */
 @Composable
@@ -612,10 +614,10 @@ internal fun VeloBajoLaTienda(
     velo: () -> Float,
     contenido: @Composable () -> Unit,
 ) {
+    sondaVeloHoy?.let { sonda -> LaunchedEffect(sonda) { snapshotFlow(velo).collect(sonda) } }
     Box(
         Modifier
             .fillMaxSize()
-            .semantics { this[VeloHoyAlpha] = velo() }
             .drawWithContent {
                 drawContent()
                 val v = velo()
