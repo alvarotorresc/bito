@@ -30,6 +30,7 @@ import com.alvarotc.bito.domain.habla.Memoria
 import com.alvarotc.bito.domain.habla.RefGordo
 import com.alvarotc.bito.domain.habla.Situacion
 import com.alvarotc.bito.domain.habla.TipoMemoria
+import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.DomainState
 import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.GardenState
@@ -213,6 +214,7 @@ class TodayViewModel(
                         StatsEngine.lastActivityDay(entradas.state),
                         badges.mapTo(mutableSetOf()) { it.badgeId },
                         prefs.gardenWaterHighMark,
+                        entradas.owned.filter { it.category == CustomizationCategory.GARDEN_OBJECT && it.equipped }.map { it.itemId },
                     )
             buildTodayUiState(
                 entradas.state,

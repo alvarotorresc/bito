@@ -59,6 +59,18 @@ class HojaSaldoTest {
     }
 
     @Test
+    fun `a garden purchase is labelled with its name`() {
+        montar(
+            listOf(
+                Movimiento("1", -40, EtiquetaMovimiento.Articulo("garden-banco"), FechaMovimiento.HOY, hoy),
+                Movimiento("2", -25, EtiquetaMovimiento.Articulo("garden-regadera"), FechaMovimiento.HOY, hoy),
+            ),
+        )
+        rule.onNodeWithText("Banco").assertExists()
+        rule.onNodeWithText("Regadera").assertExists()
+    }
+
+    @Test
     fun `only the latest five movements are listed`() {
         montar(List(7) { Movimiento("$it", 1, EtiquetaMovimiento.Habito("Hábito $it"), FechaMovimiento.HOY, hoy) })
         rule.onNodeWithText("Hábito 4").assertExists()
@@ -95,5 +107,16 @@ class HojaSaldoTest {
         rule.mainClock.advanceTimeBy(500)
         assertEquals(1, cerrada)
         assertEquals(0, tienda)
+    }
+
+    @Test
+    fun `without alIrTienda there is no store button`() {
+        rule.mainClock.autoAdvance = false
+        rule.setContent {
+            ConSistema { HojaSaldo(true, 140, emptyList(), EconomyConfig(), alCerrar = { cerrada++ }) }
+        }
+        rule.mainClock.advanceTimeBy(600)
+        rule.onNodeWithTag("saldo-tienda").assertDoesNotExist()
+        rule.onNodeWithTag("saldo-cerrar").assertExists()
     }
 }

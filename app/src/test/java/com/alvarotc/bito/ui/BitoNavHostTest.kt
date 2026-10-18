@@ -15,10 +15,12 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onAllNodesWithText
@@ -28,6 +30,11 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.dp
+import androidx.core.graphics.Insets
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleRegistry
 import androidx.navigation.NavHostController
@@ -271,6 +278,41 @@ class BitoNavHostTest {
         compose.onAllNodesWithTag("bottom-bar").assertCountEquals(0)
     }
 
+    private fun actividad() = (compose as AndroidComposeTestRule<*, *>).activity as android.app.Activity
+
+    /** Simula las barras del sistema: [estado] px arriba y [navegacion] px abajo, como las daría un móvil con gestos. */
+    private fun ponerBarras(
+        estado: Int,
+        navegacion: Int,
+    ) {
+        compose.runOnUiThread {
+            val vista = actividad().window.decorView
+            val insets =
+                WindowInsetsCompat
+                    .Builder()
+                    .setInsets(WindowInsetsCompat.Type.statusBars(), Insets.of(0, estado, 0, 0))
+                    .setInsets(WindowInsetsCompat.Type.navigationBars(), Insets.of(0, 0, 0, navegacion))
+                    .build()
+            ViewCompat.dispatchApplyWindowInsets(vista, insets)
+        }
+        compose.waitForIdle()
+    }
+
+    @Test
+    fun `the bars are applied once and Inicio places its own header below the status bar`() {
+        WindowCompat.setDecorFitsSystemWindows(actividad().window, false)
+        setContent()
+        ponerBarras(estado = 66, navegacion = 66)
+        val densidad = actividad().resources.displayMetrics.density
+        val bordeEstado = 66f / densidad
+        // Las barras se aplican una sola vez: Inicio arranca bajo la de estado (no a 132 px) y la cabecera cae debajo.
+        // Que ese hueco lo pinte la escena y no el papel del Scaffold lo fija `escalaJardin` (InicioScreenTest).
+        val inicio = compose.onNodeWithTag("inicio").getBoundsInRoot()
+        assertEquals(bordeEstado, inicio.top.value, 1f)
+        val saldo = compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).getBoundsInRoot()
+        assertTrue("el saldo queda bajo la barra de estado", saldo.top.value >= bordeEstado - 1f)
+    }
+
     @Test
     fun `the pill opens Camino and back returns to Today`() {
         val backOwner = FakeBackDispatcherOwner()
@@ -316,11 +358,10 @@ class BitoNavHostTest {
 
     /** Antes: la pestaña Habi de la barra; ahora, el botón de la tienda de la hoja del saldo. */
     @Test
-    fun `the store button of the balance sheet navigates to the habi screen`() {
+    fun `the habi route shows the store`() {
         setContent()
-        // HabiAvatar's infinite bob/blink transitions never settle on their own — freeze the
-        // clock BEFORE navigating there, so the framework's post-click idle-sync doesn't spin
-        // forever trying to reach a steady state that never comes (T9 note).
+        // El armario de la tienda lleva el HabiAvatar, cuyas transiciones infinitas nunca se asientan: se
+        // congela el reloj ANTES de navegar, para que la espera de reposo del clic no gire sin fin (nota de T9).
         compose.mainClock.autoAdvance = false
 
         compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
@@ -333,11 +374,116 @@ class BitoNavHostTest {
         compose.mainClock.advanceTimeByFrame()
         compose.mainClock.advanceTimeByFrame()
 
-        // QA 2026-08-23: HabiScreen gates its first frame on `loading` (calm paper, tag
-        // "habi-loading") until the VM's combine emits, so arrival at the route is either tag.
+        // La tienda espera a su primer estado real (papel, tag «tienda-cargando») antes de pintar el contenido.
         compose
-            .onNode(hasTestTag("habi-loading") or hasTestTag("habi-screen"), useUnmergedTree = true)
+            .onNode(hasTestTag("tienda-cargando") or hasTestTag("ttab-habi"), useUnmergedTree = true)
             .assertExists()
+    }
+
+    @Test
+    fun `entering the store dims Today and leaving it clears the veil`() {
+        val backOwner = FakeBackDispatcherOwner()
+        var ultimo: Float? = null
+        sondaVeloHoy = { ultimo = it }
+
+        fun velo() = ultimo
+
+        try {
+            setContentWithBack(backOwner)
+            compose.mainClock.autoAdvance = false
+            compose.mainClock.advanceTimeBy(100)
+            assertEquals(0f, velo()!!, 0.001f)
+
+            compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeByFrame()
+            tapText(ApplicationProvider.getApplicationContext<Application>().getString(R.string.premios_ir_tienda))
+            compose.mainClock.advanceTimeBy(200)
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeBy(120)
+            val mitad = velo()
+            assertTrue("Hoy se está oscureciendo ($mitad)", mitad != null && mitad > 0f && mitad <= VELO_HOY + 0.001f)
+            assertEquals(0.35f, VELO_HOY, 0.0001f)
+
+            compose.mainClock.advanceTimeBy(1_500)
+            compose.runOnUiThread { backOwner.onBackPressedDispatcher.onBackPressed() }
+            compose.mainClock.advanceTimeBy(1_500)
+            assertEquals("al hundirse la tienda el velo se va", 0f, velo()!!, 0.01f)
+        } finally {
+            sondaVeloHoy = null
+        }
+    }
+
+    /** Lo alto (sin recortar por la pantalla) de la cabecera de Hoy, la que sube con la tienda encima; nulo si Hoy ya no está compuesto. */
+    private fun altoDeHoy(): Float? =
+        compose
+            .onAllNodesWithTag("cabecera-saldo", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .firstOrNull()
+            ?.positionInRoot
+            ?.y
+
+    @Test
+    fun `Today rises 40 dp under the store and the veil settles at 35 percent, which is 65 percent of brightness`() {
+        val backOwner = FakeBackDispatcherOwner()
+        var velo = 0f
+        sondaVeloHoy = { velo = it }
+        try {
+            setContentWithBack(backOwner)
+            compose.mainClock.autoAdvance = false
+            compose.mainClock.advanceTimeBy(300)
+            val inicial = altoDeHoy()!!
+
+            compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeByFrame()
+            tapText(ApplicationProvider.getApplicationContext<Application>().getString(R.string.premios_ir_tienda))
+            var ultimo = inicial
+            repeat(160) {
+                compose.mainClock.advanceTimeBy(16)
+                altoDeHoy()?.let {
+                    ultimo = it
+                }
+            }
+            val sube = inicial - ultimo
+            val cuarenta = with(compose.density) { 40.dp.toPx() }
+            assertEquals("Hoy sube 40 dp", cuarenta, sube, 2f)
+            assertEquals("el velo se asienta en el 35 %: Hoy queda al 65 %", 0.35f, velo, 0.01f)
+
+            compose.runOnUiThread { backOwner.onBackPressedDispatcher.onBackPressed() }
+            repeat(160) { compose.mainClock.advanceTimeBy(16) }
+            assertEquals("Hoy vuelve a su sitio", inicial, altoDeHoy()!!, 1f)
+            assertEquals(0f, velo, 0.01f)
+        } finally {
+            sondaVeloHoy = null
+        }
+    }
+
+    @Test
+    fun `opening the store while Camino is on screen lands on Habi with no trial`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        compose.mainClock.autoAdvance = false
+        tapTag("pildora-camino")
+        compose.mainClock.advanceTimeBy(1_500)
+        compose.onNodeWithTag("pildora-camino", useUnmergedTree = true).assertIsSelected()
+
+        // Es lo que hace `abrirTienda` del Inicio, venga de la hoja del saldo o de donde venga.
+        compose.runOnUiThread { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } }
+        compose.mainClock.advanceTimeBy(1_500)
+        assertEquals(RUTA_TIENDA, compose.runOnUiThread { nav.currentDestination?.route })
+        // La tienda espera a su primer estado real (hilos reales de Room y DataStore) antes de pintar las pestañas.
+        val limite = System.currentTimeMillis() + 10_000
+        while (compose.onAllNodesWithTag("ttab-habi", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) {
+            check(System.currentTimeMillis() < limite) { "La tienda no salió del estado de carga" }
+            compose.mainClock.advanceTimeBy(100)
+            Thread.sleep(50)
+        }
+        compose.onNodeWithTag("ttab-habi", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("ttab-jardin", useUnmergedTree = true).assertIsNotSelected()
+        compose.onNodeWithTag("ttab-congeladores", useUnmergedTree = true).assertIsNotSelected()
+        compose.onNodeWithTag("barra", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test
@@ -410,6 +556,32 @@ class BitoNavHostTest {
         assertEquals(true, compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getBoolean("lectura") })
         assertEquals("a1", compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getString("habitId") })
     }
+
+    /** Empuja [ruta] sobre Hoy, comprueba que hay una flecha de volver y que, al pulsarla, la pila vuelve a Hoy. */
+    private fun volverDesde(
+        ruta: String,
+        rutaNav: String,
+    ) {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        compose.runOnUiThread { nav.navigate(ruta) }
+        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == rutaNav }
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("volver") }
+        compose.onNodeWithTag("volver", useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+        esperarRuta(nav, RUTA_HOY)
+    }
+
+    @Test
+    fun `settings has a back arrow that returns to Today`() = volverDesde("settings", "settings")
+
+    @Test
+    fun `archived has a back arrow that returns to Today`() = volverDesde("archived", "archived")
+
+    @Test
+    fun `tasks has a back arrow that returns to Today`() = volverDesde("tasks", "tasks")
+
+    @Test
+    fun `the new habit form has a back arrow that returns to Today`() = volverDesde("habit", "habit?id={id}&objetivo={objetivo}")
 
     @Test
     fun `creating a habit leaves its id for Today`() {

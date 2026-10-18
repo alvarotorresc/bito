@@ -64,6 +64,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -107,6 +112,9 @@ private const val BUBBLE_MS = 2500L
 
 // El vaivén de un toque (G20): el muelle `planta` con este impulso inicial, en grados por segundo.
 private const val IMPULSO_PLANTA = 90f
+
+// El meceo de un objeto tocado en Hoy y Camino: `B.mecer(w, 70)` del mock (en la tienda, 60).
+internal const val IMPULSO_OBJETO_HOY = 70f
 
 // Reducido: en vez de mecerse o aplastarse, la pieza brilla 300 ms.
 private const val BRILLO_MS = 300
@@ -167,11 +175,19 @@ private const val AGUA_FILTRA_ALFA = 0.42f
 private const val AGUA_FILTRA_PICO = 0.55f
 private const val AGUA_FILTRA_LLENA = 0.2f
 
-/** El brillo del farolillo: el de la noche del reloj ([night]) o el del anochecer del cierre ([noche]), el mayor. */
+/**
+ * El brillo del farolillo: el de la noche del reloj ([night]) o el del anochecer del cierre ([noche]), el mayor. Con
+ * [directo] (la tienda) [noche] ya es el brillo del farolillo.
+ */
 internal fun brilloFarolillo(
     night: Float,
     noche: Float,
-): Float = maxOf(night.coerceIn(0f, 1f), ((noche - FAROL_DESDE) / (1f - FAROL_DESDE)).coerceIn(0f, 1f))
+    directo: Boolean = false,
+): Float =
+    maxOf(
+        night.coerceIn(0f, 1f),
+        if (directo) noche.coerceIn(0f, 1f) else ((noche - FAROL_DESDE) / (1f - FAROL_DESDE)).coerceIn(0f, 1f),
+    )
 
 private val GlowMid = Color(0x38FFA050)
 
@@ -198,6 +214,9 @@ internal class SondaJardin {
 
     /** Por dónde va la franja de agua que se filtra al anochecer (0 o 1 cuando no se pinta). */
     var filtracion: () -> Float = { 0f }
+
+    /** Si el farolillo se pinta encima de la luz (no se oscurece). */
+    var farolEncima: () -> Boolean = { false }
 
     /** Si el arte del jardín ya está cargado y se dibuja. */
     var arteListo: () -> Boolean = { false }
@@ -241,6 +260,28 @@ internal fun estiramientoRespiracion(
 
 internal val LocalSondaJardin = staticCompositionLocalOf<SondaJardin?> { null }
 
+/**
+ * Cómo se pinta este fotograma un objeto o un especial, por encima de su sitio: lo pide quien lo anima (la caída
+ * y el meceo de la tienda) y la escena lo lee al dibujar. [dy] va en píxeles, [giro] en grados desde el pie y
+ * [sombra] es la opacidad de la sombra de un objeto.
+ */
+data class PoseObjeto(
+    val dy: Float = 0f,
+    val escalaX: Float = 1f,
+    val escalaY: Float = 1f,
+    val alpha: Float = 1f,
+    val giro: Float = 0f,
+    val brillo: Float = 0f,
+    val sombra: Float = 1f,
+)
+
+/** Un objeto de jardín que se mece una vez: [retrasoMs] después de pedirlo, con un impulso de [impulso] grados por segundo. */
+data class MeceoObjeto(
+    val clave: String,
+    val retrasoMs: Long = 0L,
+    val impulso: Float = IMPULSO_OBJETO_HOY,
+)
+
 /** Cómo llega cada especial al jardín (G15). */
 private enum class Llegada { CAE, BROTA, PIEDRAS, ASIENTA }
 
@@ -268,6 +309,9 @@ private class AnimCrece(inicio: Float) {
 /** El globito de una planta tocada en Camino; [tick] reinicia sus 2,4 s en cada toque. */
 private class GlobitoDePlanta(val plot: Int, val tick: Int)
 
+/** El globito de un objeto de jardín tocado en Hoy o Camino. */
+private class GlobitoDeObjeto(val clave: String, val tick: Int)
+
 private class Efectos(
     val balanceo: Map<Int, Animatable<Float, AnimationVector1D>>,
     val brillo: Map<String, Animatable<Float, AnimationVector1D>>,
@@ -279,6 +323,7 @@ private class Efectos(
     val reducido: Boolean,
     val polvo: Color,
     val salpicadura: Color,
+    val poseObjeto: ((String) -> PoseObjeto?)?,
 )
 
 /** Cómo se pinta una pieza este fotograma: desplazamiento, escala, opacidad, recorte horizontal y brillo. */
@@ -345,6 +390,18 @@ fun GardenScene(
     respiracion: (() -> Float)? = null,
     // La amplitud (fracción del alto de Habi) del salto de cada incremento de [saltoHabi]; null = el salto de siempre.
     saltoAmplitud: Float? = null,
+    // Objetos de jardín que se pintan además de los de [garden] (el que se prueba en la tienda).
+    objetos: List<ObjetoJardin> = emptyList(),
+    // La pose de este fotograma de un objeto o especial por su clave (la caída y el meceo de la tienda), leída al dibujar.
+    poseObjeto: ((String) -> PoseObjeto?)? = null,
+    // El tinte de luz multiplicado sobre el jardín (arriba, abajo), leído al dibujar. Con él, [noche] ya no oscurece: solo enciende el farolillo.
+    tinteLuz: (() -> Pair<Color, Color>)? = null,
+    // La tienda recoge el toque en un objeto o un especial (por su clave de arte) en vez de mecerlo o abrir su globito.
+    alTocarElemento: ((String) -> Unit)? = null,
+    // Hoy y Camino: tocar un objeto lo mece y abre su globito, y el globito de un especial dice con qué logro llegó.
+    globitoObjetos: Boolean = false,
+    // Un objeto que se mece una vez, pasado su retraso (el recién comprado al volver de la tienda).
+    meceObjeto: MeceoObjeto? = null,
 ) {
     val context = LocalContext.current
     val art = remember(context) { HabiArt.get(context) }
@@ -358,7 +415,7 @@ fun GardenScene(
             if (llegando != null && llegando !in garden.specials) garden.copy(specials = garden.specials + llegando) else garden
         }
     val vieja = remember(garden, creciendo) { etapaVieja(garden, creciendo) }
-    val listo = rememberArte(art, remember(pintado, creciendo) { recursosDelJardin(pintado, creciendo) })
+    val listo = rememberArte(art, remember(pintado, creciendo, objetos) { recursosDelJardin(pintado, creciendo, objetos) })
 
     val balanceo = remember { mutableStateMapOf<Int, Animatable<Float, AnimationVector1D>>() }
     val brillo = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
@@ -368,6 +425,11 @@ fun GardenScene(
     var bubbleTick by remember { mutableIntStateOf(0) }
     var globo by remember { mutableStateOf<GlobitoDePlanta?>(null) }
     var globoTick by remember { mutableIntStateOf(0) }
+    var globoObjeto by remember { mutableStateOf<GlobitoDeObjeto?>(null) }
+    // El globito del objeto se queda en la escena hasta acabar su salida: `visible` baja y `alTerminar` lo retira.
+    var globoObjetoVisible by remember { mutableStateOf(true) }
+    val giroObjeto = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
+    val brilloObjeto = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
     var habiNudge by remember { mutableIntStateOf(0) }
     var habiAmplitud by remember { mutableStateOf<Float?>(null) }
     var habiTouch by remember { mutableStateOf(Offset(0.5f, 0.5f)) }
@@ -407,6 +469,42 @@ fun GardenScene(
                 a.animateTo(1f, Muelles.nodulo<Float>())
             }
         }
+    }
+
+    // Un objeto de jardín tocado se mece desde el pie con el muelle `planta`; reducido, brilla 300 ms.
+    fun mecerObjeto(
+        clave: String,
+        impulso: Float,
+    ) {
+        if (reducido) {
+            val b = brilloObjeto.getOrPut(clave) { Animatable(0f) }
+            scope.launch {
+                b.snapTo(1f)
+                b.animateTo(0f, tween(BRILLO_MS))
+            }
+        } else {
+            val a = giroObjeto.getOrPut(clave) { Animatable(0f) }
+            scope.launch { a.animateTo(0f, Muelles.planta<Float>(), initialVelocity = impulso) }
+        }
+    }
+
+    // La pose de fuera (la caída de la tienda) manda; si no hay, la del meceo propio de un objeto.
+    val poseFinal: ((String) -> PoseObjeto?)? =
+        remember(poseObjeto) {
+            { clave: String ->
+                poseObjeto?.invoke(clave) ?: run {
+                    val giro = giroObjeto[clave]?.value ?: 0f
+                    val brillo = brilloObjeto[clave]?.value ?: 0f
+                    if (giro == 0f && brillo == 0f) null else PoseObjeto(giro = giro, brillo = brillo)
+                }
+            }
+        }
+    val meceAhora by rememberUpdatedState(meceObjeto)
+    LaunchedEffect(meceObjeto) {
+        val m = meceAhora ?: return@LaunchedEffect
+        delay(m.retrasoMs)
+        gesto(Snd.PLANTA, Haptica.TICK)
+        mecerObjeto(m.clave, m.impulso)
     }
 
     // El jardín que revive: el mustio que se dibuja baja animado; si sube (el jardín se mustia) cambia sin animar.
@@ -534,13 +632,16 @@ fun GardenScene(
 
     // G40: la noche se lee al dibujar; solo recompone cuando el farolillo pasa a pintarse encima de la luz.
     val nocheAhora by rememberUpdatedState(noche)
-    val farolEncima by remember { derivedStateOf { nocheAhora() > FAROL_ENCIMA } }
+    // Con tinte de luz propio (la tienda) la noche que llega ya es la del farolillo: encima con cualquier valor.
+    val conTinte by rememberUpdatedState(tinteLuz != null)
+    val farolEncima by remember { derivedStateOf { nocheAhora() > (if (conTinte) 0f else FAROL_ENCIMA) } }
     // La filtración sale solo cuando el anochecer arranca desde el día; abrir de noche (Hoy de noche) no la pinta.
     val filtracion = remember { Animatable(0f) }
     LaunchedEffect(reducido) {
         var antes = nocheAhora()
         snapshotFlow { nocheAhora() }.collect { n ->
-            if (!reducido && antes <= 0f && n > 0f && n < 1f && !filtracion.isRunning) {
+            // Con tinte de luz propio no hay cierre del día: ni la franja de agua (la tienda cambia de luz a mano).
+            if (!reducido && !conTinte && antes <= 0f && n > 0f && n < 1f && !filtracion.isRunning) {
                 launch {
                     filtracion.snapTo(0f)
                     filtracion.animateTo(1f, tween(Duraciones.FILTRACION, easing = Curvas.io))
@@ -578,9 +679,14 @@ fun GardenScene(
         sonda?.aplastadosHabi = { aplastados }
         sonda?.noche = { nocheAhora() }
         sonda?.arteListo = { listoAhora }
+        sonda?.farolEncima = { farolEncima }
         sonda?.filtracion = { filtracion.value }
         sonda?.brilloFarolillo = {
-            if (GardenSpecial.LANTERN in pintado.specials) brilloFarolillo(GardenLook.nightness(garden.light), nocheAhora()) else 0f
+            if (GardenSpecial.LANTERN in pintado.specials) {
+                brilloFarolillo(GardenLook.nightness(garden.light), nocheAhora(), conTinte)
+            } else {
+                0f
+            }
         }
     }
 
@@ -603,7 +709,7 @@ fun GardenScene(
     ) {
         val sceneW = constraints.maxWidth.toFloat()
         val sceneH = constraints.maxHeight.toFloat()
-        val items = remember(pintado, sceneW, sceneH) { sceneItems(pintado, sceneW, sceneH) }
+        val items = remember(pintado, sceneW, sceneH, objetos) { sceneItems(pintado, sceneW, sceneH, objetos) }
         val habiDepth = GardenArt.habiSpot.yPct
         // De noche (la del reloj o la del cierre), el farolillo encendido se pinta encima de la luz y no se oscurece.
         val overLight =
@@ -614,8 +720,10 @@ fun GardenScene(
         val habiBody = habiBodyRect(sceneW, sceneH)
         val currentOnHabiTap by rememberUpdatedState(onHabiTap)
         val currentAlTocarFondo by rememberUpdatedState(alTocarFondo)
+        val currentAlTocarElemento by rememberUpdatedState(alTocarElemento)
+        val currentGlobitoObjetos by rememberUpdatedState(globitoObjetos)
         val efectos =
-            Efectos(balanceo, brillo, aplaste, llegada, crece, creciendo, vieja, reducido, colores.tAlta, colores.hielo)
+            Efectos(balanceo, brillo, aplaste, llegada, crece, creciendo, vieja, reducido, colores.tAlta, colores.hielo, poseFinal)
 
         // Las anclas, en coordenadas de la raíz y aunque la escena vaya escalada por su padre.
         val registrar: (LayoutCoordinates) -> Unit = { c ->
@@ -763,12 +871,37 @@ fun GardenScene(
                                 if (globitoPlanta) globo = GlobitoDePlanta(action.plot, ++globoTick)
                             }
                             is SceneTap.Bubble -> {
-                                gesto(Snd.PLANTA, Haptica.TICK)
-                                aplastar(action.item.special.key)
-                                bubble = action.item
-                                bubbleTick++
+                                val alElemento = currentAlTocarElemento
+                                if (alElemento != null) {
+                                    alElemento(action.item.special.key)
+                                } else if (currentGlobitoObjetos) {
+                                    // En Hoy y Camino el especial hace lo mismo que un objeto: se mece y abre su globito.
+                                    gesto(Snd.PLANTA, Haptica.TICK)
+                                    mecerObjeto(action.item.special.key, IMPULSO_OBJETO_HOY)
+                                    globoObjetoVisible = true
+                                    globoObjeto = GlobitoDeObjeto(action.item.special.key, ++globoTick)
+                                } else {
+                                    gesto(Snd.PLANTA, Haptica.TICK)
+                                    aplastar(action.item.special.key)
+                                    bubble = action.item
+                                    bubbleTick++
+                                }
                             }
-                            SceneTap.Fondo -> currentAlTocarFondo?.invoke()
+                            SceneTap.Fondo -> {
+                                // Un objeto de jardín: la tienda lo recoge; en Hoy y Camino se mece y abre su globito.
+                                val objeto = hitTest(items, down.position.x, down.position.y) as? SceneItem.Objeto
+                                val alElemento = currentAlTocarElemento
+                                when {
+                                    objeto != null && alElemento != null -> alElemento(objeto.clave)
+                                    objeto != null && currentGlobitoObjetos -> {
+                                        gesto(Snd.PLANTA, Haptica.TICK)
+                                        mecerObjeto(objeto.clave, IMPULSO_OBJETO_HOY)
+                                        globoObjetoVisible = true
+                                        globoObjeto = GlobitoDeObjeto(objeto.clave, ++globoTick)
+                                    }
+                                    else -> currentAlTocarFondo?.invoke()
+                                }
+                            }
                         }
                     }
                 },
@@ -782,15 +915,47 @@ fun GardenScene(
             if (luzFiesta.value > 0f) drawRect(Color.White.copy(alpha = FIESTA_LUZ_MAX * luzFiesta.value), blendMode = BlendMode.Plus)
             // G40: el tinte de la noche, multiplicado encima de la luz del reloj. Con 0 no se pinta nada.
             val n = nocheAhora().coerceIn(0f, 1f)
-            if (n > 0f) drawRect(Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO)), alpha = n, blendMode = BlendMode.Multiply)
-            drawFiltracion(filtracion.value)
+            val tinte = tinteLuz?.invoke()
+            if (tinte != null) {
+                // Con tinte de luz propio (la tienda) la noche ya va en él: aquí solo enciende el farolillo.
+                drawRect(Brush.verticalGradient(listOf(tinte.first, tinte.second)), blendMode = BlendMode.Multiply)
+            } else if (n > 0f) {
+                drawRect(Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO)), alpha = n, blendMode = BlendMode.Multiply)
+            }
+            if (tinteLuz == null) drawFiltracion(filtracion.value)
             overLight.forEach { drawItem(art, it, wilt, tintesPlanta, efectos) }
-            val brillo = brilloFarolillo(GardenLook.nightness(garden.light), n)
+            val brillo = brilloFarolillo(GardenLook.nightness(garden.light), n, directo = tinteLuz != null)
             val lantern = GardenArt.specialSpots[GardenSpecial.LANTERN.key]
             if (GardenSpecial.LANTERN in garden.specials && lantern != null && brillo > 0f) drawLanternGlow(lantern, brillo)
         }
 
         bubble?.let { SpecialBubble(it, sceneW, conOrigen = globitoPlanta) }
+        globoObjeto?.let { g ->
+            val objeto =
+                items.firstOrNull {
+                    (it is SceneItem.Objeto && it.clave == g.clave) || (it is SceneItem.Special && it.special.key == g.clave)
+                }
+            if (objeto != null) {
+                val texto = textoGlobo(g.clave)
+                key(g.tick) {
+                    // El globito se posa sobre el objeto, como el de una planta.
+                    Box(
+                        Modifier
+                            .offset { IntOffset(objeto.rect.left.roundToInt(), objeto.rect.top.roundToInt()) }
+                            .size(with(density) { objeto.rect.width.toDp() }, with(density) { objeto.rect.height.toDp() })
+                            .testTag("garden-bubble-${g.clave}"),
+                    ) {
+                        Globito(
+                            visible = globoObjetoVisible,
+                            texto = texto.text,
+                            alIrse = { if (globoObjeto?.tick == g.tick) globoObjetoVisible = false },
+                            textoRico = texto,
+                            alTerminar = { if (globoObjeto?.tick == g.tick) globoObjeto = null },
+                        )
+                    }
+                }
+            }
+        }
         globo?.let { g ->
             val plant = items.firstOrNull { it is SceneItem.Plant && it.plot == g.plot }
             if (plant != null) {
@@ -843,10 +1008,42 @@ internal fun etapaVieja(
 internal fun recursosDelJardin(
     garden: GardenState,
     creciendo: Int? = null,
+    objetos: List<ObjetoJardin> = emptyList(),
+    arte: FuenteObjetosJardin = ArteObjetosJardin,
 ): List<Pair<Int, Int>> =
-    (listOf(GardenArt.background) + sceneItems(garden, 1f, 1f).map { it.res } + listOfNotNull(etapaVieja(garden, creciendo)?.res))
+    (
+        listOf(GardenArt.background) +
+            sceneItems(garden, 1f, 1f, objetos, arte).map {
+                it.res
+            } + listOfNotNull(etapaVieja(garden, creciendo)?.res)
+    )
         .distinct()
         .map { it to 1 }
+
+/** Lo que dice el globito de un objeto comprado o de un especial: su nombre en negrita y de dónde salió. */
+@Composable
+private fun textoGlobo(clave: String): AnnotatedString {
+    val especial = GardenSpecial.entries.firstOrNull { it.key == clave }
+    val nombre =
+        stringResource(
+            when {
+                especial != null -> nombreDeEspecial(especial)
+                clave == "banco" -> R.string.store_garden_bench
+                clave == "regadera" -> R.string.store_garden_can
+                else -> error("objeto de jardín sin nombre: $clave")
+            },
+        )
+    val origen =
+        if (especial != null) {
+            stringResource(R.string.store_garden_bubble_special, stringResource(BadgeStrings.badgeNameRes(especial.badgeId)))
+        } else {
+            stringResource(R.string.store_garden_bubble_bought)
+        }
+    return buildAnnotatedString {
+        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(nombre) }
+        append(" \u00b7 $origen")
+    }
+}
 
 @Composable
 private fun textoPlanta(
@@ -1033,6 +1230,19 @@ private fun DrawScope.drawItem(
         val llegada = fx.llegada?.takeIf { it.especial == special.special }
         if (llegada != null) posarLlegada(llegada, r, base, fx.reducido, pose)
     }
+    // La pose que pide quien anima el objeto o el especial (la tienda): encima de la suya.
+    val clave = (item as? SceneItem.Objeto)?.clave ?: special?.special?.key
+    val extra = clave?.let { fx.poseObjeto?.invoke(it) }
+    if (extra != null) {
+        pose.dy += extra.dy
+        pose.escalaX *= extra.escalaX
+        pose.escalaY *= extra.escalaY
+        pose.alpha *= extra.alpha
+        pose.brillo = maxOf(pose.brillo, extra.brillo)
+        if (plant == null) giro = extra.giro
+    }
+    // Bajo todo lo que no es suelo ni plano (el caminito y el estanque no la llevan): objetos y especiales de pie.
+    if (item is SceneItem.Objeto || (special != null && special.special !in ESPECIALES_PLANOS)) drawSombraObjeto(r, extra?.sombra ?: 1f)
     drawPieza(image, r, plant != null, wilt, filtro, giro, pose)
     val llegada = fx.llegada
     if (special != null && llegada != null && llegada.especial == special.special && !fx.reducido) {
@@ -1041,6 +1251,31 @@ private fun DrawScope.drawItem(
             Llegada.ASIENTA -> drawSalpicadura(llegada.p.value, r, fx.salpicadura)
             else -> Unit
         }
+    }
+}
+
+// La sombra de un objeto de jardín (sin token), como `--sombra-objeto` del mock: una elipse del 110 % del ancho
+// y el 18 % del ancho de alto, centrada en el pie, con un degradado radial de rgba(60,40,20,.30) a transparente.
+private val ESPECIALES_PLANOS = setOf(GardenSpecial.STONE_PATH, GardenSpecial.POND)
+private const val SOMBRA_OBJETO_ANCHO = 1.1f
+private const val SOMBRA_OBJETO_ALTO = 0.18f
+private val SOMBRA_OBJETO = Color(red = 60, green = 40, blue = 20, alpha = 77)
+
+/** La sombra que cae bajo el pie de un objeto de jardín de caja [r]. */
+private fun DrawScope.drawSombraObjeto(
+    r: SceneRect,
+    alpha: Float = 1f,
+) {
+    if (alpha <= 0f) return
+    val ancho = r.width * SOMBRA_OBJETO_ANCHO
+    val centro = Offset(r.left + r.width / 2f, r.top + r.height)
+    withTransform({ scale(1f, SOMBRA_OBJETO_ALTO / SOMBRA_OBJETO_ANCHO, pivot = centro) }) {
+        drawCircle(
+            brush = Brush.radialGradient(listOf(SOMBRA_OBJETO, SOMBRA_OBJETO.copy(alpha = 0f)), center = centro, radius = ancho / 2f),
+            radius = ancho / 2f,
+            center = centro,
+            alpha = alpha.coerceIn(0f, 1f),
+        )
     }
 }
 
@@ -1096,7 +1331,7 @@ private fun DrawScope.drawPieza(
             clipRect(top = pose.recorteArriba, bottom = pose.recorteAbajo.coerceAtMost(size.height))
         }
         if (pose.dy != 0f) translate(0f, pose.dy)
-        if (planta && giro != 0f) rotate(giro, pivot)
+        if (giro != 0f) rotate(giro, pivot)
         if (pose.escalaX != 1f || pose.escalaY != 1f) scale(pose.escalaX, pose.escalaY, pivot)
         if (planta) {
             // Orden CSS: el último se aplica primero, así que el punto se cizalla y luego encoge.

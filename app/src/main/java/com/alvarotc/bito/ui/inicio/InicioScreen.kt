@@ -24,13 +24,17 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -331,6 +335,9 @@ fun InicioScreen(
     sesion: SesionInicio? = null,
     // El contenido de cada bloque de la tierra; las pruebas ponen uno suyo.
     contenidoSesion: @Composable (BloqueSesion) -> Unit = { BloqueDeSesion(it) },
+    // La tienda está encima de Hoy: al cerrarse, lo que se compró dentro se mece una vez (J31).
+    tiendaAbierta: Boolean = false,
+    compras: ComprasDeTienda? = null,
 ) {
     val estado by hoy.uiState.collectAsStateWithLifecycle()
     val estadoCamino by camino.uiState.collectAsStateWithLifecycle()
@@ -338,6 +345,13 @@ fun InicioScreen(
     val momento by celebraciones.actual.collectAsStateWithLifecycle()
     val vetaRachaDe = (momento as? Momento.Veta)?.takeIf { it.tipo == TipoVeta.RACHA }?.habitId
     val estadoActual = rememberUpdatedState(estado)
+    // J31: lo comprado dentro de la tienda se mece al volver. Hoy se vuelve a componer al cerrarla, así que lo que se
+    // recuerda entre una y otra vive en [compras] (arriba); el objeto se calcula una vez y esta composición lo guarda.
+    var recienComprado by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(tiendaAbierta, estado.loading, estado.garden.objects) {
+        if (estado.loading || tiendaAbierta || compras == null) return@LaunchedEffect
+        compras.alCerrar(estado.garden.objects)?.let { recienComprado = it }
+    }
     val reducido = BitoTema.reducido
     val gesto = rememberGesto()
     val scope = rememberCoroutineScope()
@@ -602,7 +616,7 @@ fun InicioScreen(
     }
     LaunchedEffect(Unit) { snapshotFlow { q.value == 0f }.collect { if (it) subidaPx.floatValue = 0f } }
 
-    // Tres caricias en 1,5 s alegran a Habi (el mismo cálculo que HabiScreen).
+    // Tres caricias en 1,5 s alegran a Habi (el mismo cálculo que tenía la pantalla de Habi antigua).
     val caricias = remember { ArrayDeque<Long>() }
     var contento by remember { mutableStateOf(false) }
     var pulso by remember { mutableIntStateOf(0) }
@@ -641,6 +655,10 @@ fun InicioScreen(
         Modifier
             .fillMaxSize()
             .background(BitoTema.colores.tAlta)
+            // Las barras del sistema se quedan fuera de la geometría de Inicio (el alto no cambia); la escena sí
+            // sube bajo la de estado (JardinCompartido, `arriba`).
+            .statusBarsPadding()
+            .navigationBarsPadding()
             .onGloballyPositioned { origen = it.positionInRoot() }
             .testTag("inicio"),
     ) {
@@ -825,6 +843,8 @@ fun InicioScreen(
                     altoContenido = altoContenido,
                     respiracion = respiracion.value,
                     saltoAmplitud = saltoAmplitud,
+                    recienComprado = recienComprado,
+                    bajoBarra = WindowInsets.statusBars.getTop(densidad).toFloat(),
                 )
                 if (caminoVisible) {
                     TituloCamino(
@@ -1065,4 +1085,30 @@ private fun Context.actividad(): Activity? {
         c = c.baseContext
     }
     return null
+}
+
+/**
+ * Lo que Hoy recuerda de una visita a la tienda (J31): el último objeto del jardín que se compró dentro, apuntado por la
+ * propia tienda al comprarlo. No depende del estado de Hoy (con `WhileSubscribed` puede ser viejo al volver, C1); solo se
+ * entrega cuando ese estado ya contiene el objeto, y se consume al entregarlo.
+ */
+class ComprasDeTienda {
+    private var ultimo: String? = null
+
+    /** Se abre la tienda: empieza una visita nueva, sin compras. */
+    fun alAbrir() {
+        ultimo = null
+    }
+
+    /** La tienda compró el objeto de jardín [clave]. */
+    fun alComprar(clave: String) {
+        ultimo = clave
+    }
+
+    /** El objeto comprado en la visita, una sola vez y solo cuando [objetos] ya lo incluye; si no, sigue pendiente. */
+    fun alCerrar(objetos: Set<String>): String? {
+        val clave = ultimo?.takeIf { it in objetos } ?: return null
+        ultimo = null
+        return clave
+    }
 }

@@ -34,11 +34,13 @@ import com.alvarotc.bito.data.db.PointsLedgerEntity
 import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.TasksRepository
 import com.alvarotc.bito.data.taskEntity
+import com.alvarotc.bito.domain.model.GardenLight
 import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.GardenSpecies
 import com.alvarotc.bito.domain.model.GardenState
 import com.alvarotc.bito.domain.model.GrowthStage
+import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.domain.model.PointsReason
 import com.alvarotc.bito.ui.habi.HabiVoice
@@ -344,6 +346,25 @@ class InicioScreenTest {
         assertEquals(0.88f * (400f / 300f), escalaJardin(0f, 1f, alto, escena), 0.001f)
     }
 
+    @Test
+    fun `the garden scale also covers the status bar gap above the Hoy box`() {
+        val alto = 1000f
+        val escena = 300f
+        // Sin barra, cubre el 40 % del alto (400 px); con 66 px de barra, esos 400 más los 66 de encima.
+        assertEquals(400f / 300f, escalaJardin(0f, 0f, alto, escena, 0f), 0.001f)
+        assertEquals(466f / 300f, escalaJardin(0f, 0f, alto, escena, 66f), 0.001f)
+        // En Camino la escena mide 1 y no crece por la barra.
+        assertEquals(1f, escalaJardin(1f, 0f, alto, escena, 66f), 0.001f)
+    }
+
+    @Test
+    fun `the sky ends in the colour that fades into the art top and the night darkens it`() {
+        val dia = GardenLight(LightPhase.DIA, LightPhase.DIA, LightPhase.DIA, 0f)
+        assertEquals(cieloDe(dia).second, colorEnLaCostura(dia, 0f))
+        val noche = colorEnLaCostura(dia, 1f)
+        assertTrue(noche.red < cieloDe(dia).second.red && noche.blue < cieloDe(dia).second.blue)
+    }
+
     // ---- Extremo a extremo: lo que ningún carril podía probar solo (Tarea 27) ----
 
     /** El Inicio de verdad en primer plano, con la marca del libro a cero para que lo que entre se celebre. */
@@ -442,17 +463,15 @@ class InicioScreenTest {
     }
 
     @Test
-    fun `see it in the garden from a new badge closes the sheet and takes you to Camino highlighting the special`() {
+    fun `a new badge sheet only offers Seguir and closes without going to Camino`() {
         montarVivo()
         runBlocking { banco.db.badgeDao().insert(BadgeEntity(GardenSpecial.LANTERN.badgeId, 500)) }
         avanzarHasta("hoja-logro")
-        rule.onNodeWithText(contexto.getString(R.string.camino_verlo)).performClick()
-        avanzar(40)
-        assertTrue("la hoja aún se está cerrando", hay("hoja-logro"))
+        rule.onNodeWithText(contexto.getString(R.string.camino_verlo)).assertDoesNotExist()
+        rule.onNodeWithText(contexto.getString(R.string.store_reward_done)).performClick()
         avanzar(Duraciones.CERRAR_HOJA * 2L + 800L)
         assertTrue("en la cola: ${banco.celebraciones.actual.value}", !hay("hoja-logro"))
-        rule.onNodeWithTag("pildora-camino").assertIsSelected()
-        assertEquals(listOf(GardenSpecial.LANTERN.key), banco.sonda.destacados)
+        assertTrue(banco.sonda.destacados.isEmpty())
     }
 
     @Test

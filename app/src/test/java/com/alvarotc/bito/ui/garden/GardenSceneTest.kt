@@ -15,6 +15,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.Snapshot
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -36,6 +37,7 @@ import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.test.core.app.ApplicationProvider
+import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.GardenPlot
 import com.alvarotc.bito.domain.model.GardenSpecial
@@ -56,6 +58,7 @@ import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.theme.BitoTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -741,5 +744,345 @@ class GardenSceneTest {
         val vacio = habi()
         assertEquals(0.946f, vacio.height / reposo.height, 0.001f)
         assertEquals(pies, vacio.top + origen * vacio.height, 0.5f)
+    }
+
+    private val arteFalso =
+        object : FuenteObjetosJardin {
+            override fun pieza(clave: String) =
+                if (clave == "banco") GardenPiece(R.drawable.garden_setas, aspect = 2f, heightRatio = 1f) else null
+
+            override fun sitio(clave: String) = if (clave == "banco") GardenSpot(70f, 72.5f, 10f) else null
+        }
+
+    @Test
+    fun `owned objects are drawn by key at their spot`() {
+        val widthPx = 1339f
+        val heightPx = widthPx / GardenArt.SCENE_ASPECT
+        val conBanco = garden.copy(objects = setOf("banco", "sin-arte"))
+
+        val items = sceneItems(conBanco, widthPx, heightPx, arte = arteFalso)
+
+        val banco = items.filterIsInstance<SceneItem.Objeto>().single()
+        assertEquals("banco", banco.clave)
+        assertEquals(R.drawable.garden_setas, banco.res)
+        assertEquals(72.5f, banco.depth, 1e-3f)
+        assertEquals(spotRect(GardenSpot(70f, 72.5f, 10f), 10f, 2f, widthPx, heightPx), banco.rect)
+        assertEquals("un objeto sin arte no pinta nada", 1, items.count { it is SceneItem.Objeto })
+        assertEquals(items.map { it.depth }.sorted(), items.map { it.depth })
+        assertTrue(R.drawable.garden_setas in recursosDelJardin(conBanco, arte = arteFalso).map { it.first })
+    }
+
+    @Test
+    fun `an ephemeral object joins the owned ones without duplicating`() {
+        val items =
+            sceneItems(
+                garden.copy(objects = setOf("banco")),
+                1000f,
+                800f,
+                objetos = listOf(ObjetoJardin("banco", efimero = true)),
+                arte = arteFalso,
+            )
+        assertEquals(1, items.count { it is SceneItem.Objeto })
+    }
+
+    @Test
+    fun `without objects nothing changes`() {
+        val sin = sceneItems(garden, 1339f, 1000f, arte = arteFalso)
+        assertTrue(sin.none { it is SceneItem.Objeto })
+        assertEquals(sceneItems(garden, 1339f, 1000f), sin)
+    }
+
+    @Test
+    fun `the scene composes with objects and Habi is still tappable`() {
+        var taps = 0
+        compose.setContent {
+            BitoTheme {
+                GardenScene(
+                    garden = garden.copy(objects = setOf("banco")),
+                    spec = spec,
+                    animated = false,
+                    onHabiTap = { taps++ },
+                    modifier = Modifier.width(400.dp),
+                    objetos = listOf(ObjetoJardin("regadera", efimero = true)),
+                )
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Habi, doing okay").performClick()
+        assertEquals(1, taps)
+    }
+
+    // Dos escenas una sobre otra (la primera sin variante, la segunda con ella) en una sola captura.
+    private fun capturaPareja(
+        garden: GardenState,
+        segunda: GardenState = garden,
+        nocheSegunda: Float = 0f,
+    ): Triple<Bitmap, List<androidx.compose.ui.geometry.Rect>, Int> {
+        val sondas = List(2) { SondaJardin() }
+        val arte = HabiArt.get(ApplicationProvider.getApplicationContext())
+        recursosDelJardin(segunda).forEach { (res, muestra) -> arte.image(res, muestra) }
+        lateinit var vista: View
+        compose.setContent {
+            vista = LocalView.current
+            val ancho = with(LocalDensity.current) { 300.toDp() }
+            val alto = with(LocalDensity.current) { 520.toDp() }
+            BitoTheme {
+                Box(Modifier.size(ancho, alto)) {
+                    listOf(garden to 0f, segunda to nocheSegunda).forEachIndexed { i, (g, n) ->
+                        val m = Modifier.offset { IntOffset(0, i * 250) }.width(ancho)
+                        CompositionLocalProvider(LocalSondaJardin provides sondas[i]) {
+                            GardenScene(g, spec, m, animated = false, noche = { n })
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitUntil(10_000) { sondas.all { it.arteListo() } }
+        compose.waitForIdle()
+        val captura = Bitmap.createBitmap(vista.width, vista.height, Bitmap.Config.ARGB_8888)
+        vista.draw(Canvas(captura))
+        val cajas = compose.onAllNodesWithTag("garden-scene").fetchSemanticsNodes().map { it.boundsInRoot }
+        return Triple(captura, cajas, 0)
+    }
+
+    private fun claridad(
+        b: Bitmap,
+        x: Int,
+        y: Int,
+    ): Int {
+        val c = b.getPixel(x, y)
+        return android.graphics.Color.red(c) + android.graphics.Color.green(c) + android.graphics.Color.blue(c)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `night darkens the bench and the watering can but not the lantern`() {
+        val todo = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN), objects = setOf("banco", "regadera"))
+        val (captura, cajas, _) = capturaPareja(todo, todo, nocheSegunda = 1f)
+        val w = cajas[0].width
+        val h = cajas[0].height
+        val items = sceneItems(todo, w, h)
+
+        fun oscurece(it: SceneItem): Boolean {
+            // Se mira un punto opaco del arte: el centro de su caja.
+            val x = (it.rect.left + it.rect.width / 2f).toInt()
+            val y = (it.rect.top + it.rect.height / 2f).toInt()
+            val dia = claridad(captura, cajas[0].left.toInt() + x, cajas[0].top.toInt() + y)
+            val noche = claridad(captura, cajas[1].left.toInt() + x, cajas[1].top.toInt() + y)
+            return noche < dia * 0.9f
+        }
+        assertTrue("el banco se oscurece", oscurece(items.filterIsInstance<SceneItem.Objeto>().first { it.clave == "banco" }))
+        assertTrue("la regadera se oscurece", oscurece(items.filterIsInstance<SceneItem.Objeto>().first { it.clave == "regadera" }))
+        assertTrue(
+            "el farolillo no se oscurece",
+            !oscurece(items.filterIsInstance<SceneItem.Special>().first { it.special == GardenSpecial.LANTERN }),
+        )
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `objects have a shadow`() {
+        val sin = GardenState.INITIAL
+        val con = sin.copy(objects = setOf("banco"))
+        val (captura, cajas, _) = capturaPareja(sin, con)
+        val w = cajas[0].width
+        val h = cajas[0].height
+        val banco = sceneItems(con, w, h).filterIsInstance<SceneItem.Objeto>().single().rect
+        // Justo bajo el pie del banco no hay arte, solo su sombra.
+        val x = (banco.left + banco.width / 2f).toInt()
+        val y = (banco.top + banco.height + banco.width * 0.03f).toInt()
+        val sinSombra = claridad(captura, cajas[0].left.toInt() + x, cajas[0].top.toInt() + y)
+        val conSombra = claridad(captura, cajas[1].left.toInt() + x, cajas[1].top.toInt() + y)
+        assertTrue("sin sombra $sinSombra, con sombra $conSombra", conSombra < sinSombra * 0.97f)
+    }
+
+    private fun claridadBajoElPie(especial: GardenSpecial): Pair<Int, Int> {
+        val sin = GardenState.INITIAL
+        val con = sin.copy(specials = setOf(especial))
+        val (captura, cajas, _) = capturaPareja(sin, con)
+        val r = sceneItems(con, cajas[0].width, cajas[0].height).filterIsInstance<SceneItem.Special>().single().rect
+        val x = (r.left + r.width / 2f).toInt()
+        val y = (r.top + r.height + r.width * 0.03f).toInt()
+        return claridad(captura, cajas[0].left.toInt() + x, cajas[0].top.toInt() + y) to
+            claridad(captura, cajas[1].left.toInt() + x, cajas[1].top.toInt() + y)
+    }
+
+    private fun hayRelieveBajoElPie(especial: GardenSpecial): Boolean {
+        val (sin, con) = claridadBajoElPie(especial)
+        return con < sin * 0.97f
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `mushrooms have a shadow`() = assertTrue(hayRelieveBajoElPie(GardenSpecial.MUSHROOMS))
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the lantern has a shadow`() = assertTrue(hayRelieveBajoElPie(GardenSpecial.LANTERN))
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the flat stone path has no shadow`() = assertFalse(hayRelieveBajoElPie(GardenSpecial.STONE_PATH))
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the flat pond has no shadow`() = assertFalse(hayRelieveBajoElPie(GardenSpecial.POND))
+
+    @Test
+    fun `the scene with all objects and the six specials draws without exceptions`() {
+        val todo = garden.copy(specials = GardenSpecial.entries.toSet(), objects = setOf("banco", "regadera"))
+        compose.setContent {
+            BitoTheme {
+                GardenScene(todo, spec, Modifier.width(400.dp), animated = false, noche = { 1f })
+            }
+        }
+        compose.waitForIdle()
+        compose.onNodeWithTag("garden-scene").assertExists()
+    }
+
+    private class Variante(
+        val tinte: (() -> Pair<Color, Color>)? = null,
+        val noche: Float = 0f,
+    )
+
+    // Dos escenas una sobre otra en una sola captura; devuelve la media (rojo, verde, azul) de cada una.
+    private fun mediasDe(
+        a: Variante,
+        b: Variante,
+    ): List<FloatArray> {
+        val sondas = List(2) { SondaJardin() }
+        val arte = HabiArt.get(ApplicationProvider.getApplicationContext())
+        recursosDelJardin(GardenState.INITIAL).forEach { (res, muestra) -> arte.image(res, muestra) }
+        lateinit var vista: View
+        compose.setContent {
+            vista = LocalView.current
+            val ancho = with(LocalDensity.current) { 300.toDp() }
+            val alto = with(LocalDensity.current) { 520.toDp() }
+            BitoTheme {
+                Box(Modifier.size(ancho, alto)) {
+                    listOf(a, b).forEachIndexed { i, v ->
+                        val m = Modifier.offset { IntOffset(0, i * 250) }.width(ancho)
+                        CompositionLocalProvider(LocalSondaJardin provides sondas[i]) {
+                            GardenScene(GardenState.INITIAL, spec, m, animated = false, noche = { v.noche }, tinteLuz = v.tinte)
+                        }
+                    }
+                }
+            }
+        }
+        compose.waitUntil(10_000) { sondas.all { it.arteListo() } }
+        compose.waitForIdle()
+        val captura = Bitmap.createBitmap(vista.width, vista.height, Bitmap.Config.ARGB_8888)
+        vista.draw(Canvas(captura))
+        val cajas = compose.onAllNodesWithTag("garden-scene").fetchSemanticsNodes().map { it.boundsInRoot }
+        return cajas.map { c ->
+            val suma = FloatArray(3)
+            var n = 0
+            for (y in c.top.toInt() until c.bottom.toInt() step 6) {
+                for (x in c.left.toInt() until c.right.toInt() step 6) {
+                    val px = captura.getPixel(x, y)
+                    suma[0] += android.graphics.Color.red(px)
+                    suma[1] += android.graphics.Color.green(px)
+                    suma[2] += android.graphics.Color.blue(px)
+                    n++
+                }
+            }
+            FloatArray(3) { suma[it] / n }
+        }
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the afternoon tint multiplies the whole scene orange`() {
+        // La Tarde del mock: de #FFCF9A (arriba) a #FFDDB8 (abajo).
+        val (sin, con) = mediasDe(Variante(), Variante(tinte = { Color(0xFFFFCF9A) to Color(0xFFFFDDB8) }))
+        assertEquals("el rojo entero", sin[0], con[0], 2f)
+        assertTrue("el verde baja: ${sin[1]} ${con[1]}", con[1] < sin[1] * 0.93f)
+        assertTrue("el azul baja más: ${sin[2]} ${con[2]}", con[2] < sin[2] * 0.8f)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `with a light tint the night is a single multiply and not two`() {
+        val blanco = { Color.White to Color.White }
+        val (sinNoche, conNoche) = mediasDe(Variante(blanco, 0f), Variante(blanco, 1f))
+        // El tinte manda: la noche solo enciende el farolillo y no vuelve a oscurecer.
+        assertEquals(sinNoche[2], conNoche[2], 1.5f)
+        assertEquals(sinNoche[0], conNoche[0], 1.5f)
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `without a tint the night darkens the scene as before`() {
+        val (dia, noche) = mediasDe(Variante(null, 0f), Variante(null, 1f))
+        assertTrue("la noche oscurece sin tinte: ${dia[2]} ${noche[2]}", noche[2] < dia[2] * 0.8f)
+    }
+
+    @Test
+    fun `the store takes the touch on an object and on a special by their art key and opens no bubble`() {
+        val tocados = mutableListOf<String>()
+        val todo = garden.copy(specials = setOf(GardenSpecial.MUSHROOMS), objects = setOf("banco"))
+        compose.setContent {
+            ConSistema(sonido, tacto) {
+                GardenScene(todo, spec, Modifier.width(400.dp), animated = false, alTocarElemento = { tocados += it })
+            }
+        }
+        compose.waitForIdle()
+        tapCenter(rectOf(todo) { it is SceneItem.Objeto })
+        tapCenter(rectOf(todo) { it is SceneItem.Special })
+        compose.waitForIdle()
+        assertEquals(listOf("banco", "setas"), tocados)
+        compose.onNodeWithTag("garden-bubble-setas").assertDoesNotExist()
+        assertTrue("no suena nada propio", Snd.PLANTA !in sonido.snds())
+    }
+
+    @Test
+    fun `in Today tapping an object rocks it and opens the bubble with its text`() {
+        val todo = garden.copy(specials = emptySet(), objects = setOf("banco"))
+        var fondos = 0
+        compose.setContent {
+            ConSistema(sonido, tacto) {
+                GardenScene(todo, spec, Modifier.width(400.dp), animated = false, globitoObjetos = true, alTocarFondo = { fondos++ })
+            }
+        }
+        compose.waitForIdle()
+        tapCenter(rectOf(todo) { it is SceneItem.Objeto })
+        compose.waitForIdle()
+        assertEquals("tocar un objeto ya no navega a Camino", 0, fondos)
+        assertTrue(Snd.PLANTA in sonido.snds())
+        assertTrue(Haptica.TICK in tacto.hapticas)
+        compose.onNodeWithText("Bench \u00b7 You bought it with your bitos.").assertExists()
+    }
+
+    @Test
+    fun `without the flag an object is just the background as before`() {
+        val todo = garden.copy(specials = emptySet(), objects = setOf("banco"))
+        var fondos = 0
+        compose.setContent {
+            ConSistema(sonido, tacto) {
+                GardenScene(todo, spec, Modifier.width(400.dp), animated = false, alTocarFondo = { fondos++ })
+            }
+        }
+        compose.waitForIdle()
+        tapCenter(rectOf(todo) { it is SceneItem.Objeto })
+        compose.waitForIdle()
+        assertEquals(1, fondos)
+    }
+
+    @Test
+    fun `an object asked to rock does it once after its delay with PLANTA and TICK`() {
+        val todo = garden.copy(specials = emptySet(), objects = setOf("banco"))
+        compose.mainClock.autoAdvance = false
+        compose.setContent {
+            ConSistema(sonido, tacto) {
+                GardenScene(todo, spec, Modifier.width(400.dp), animated = false, meceObjeto = MeceoObjeto("banco", retrasoMs = 420))
+            }
+        }
+        compose.mainClock.advanceTimeBy(380)
+        assertTrue("aún no", Snd.PLANTA !in sonido.snds())
+        compose.mainClock.advanceTimeBy(100)
+        assertEquals(1, sonido.snds().count { it == Snd.PLANTA })
+        assertEquals(1, tacto.hapticas.count { it == Haptica.TICK })
+        compose.mainClock.advanceTimeBy(3000)
+        assertEquals("una sola vez", 1, sonido.snds().count { it == Snd.PLANTA })
     }
 }

@@ -6,23 +6,12 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.alvarotc.bito.data.customizationItemEntity
 import com.alvarotc.bito.data.db.BitoDatabase
-import com.alvarotc.bito.data.pointsLedgerEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
-import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
-import com.alvarotc.bito.domain.EtiquetaMovimiento
-import com.alvarotc.bito.domain.FechaMovimiento
 import com.alvarotc.bito.domain.LogicalDays
-import com.alvarotc.bito.domain.model.CustomizationCategory
-import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.GardenSpecial
-import com.alvarotc.bito.domain.model.GardenState
-import com.alvarotc.bito.domain.model.HabiCatalog
-import com.alvarotc.bito.domain.model.PointsReason
-import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -37,8 +26,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -70,39 +57,21 @@ class HabiViewModelTest {
     private lateinit var domainStateRepo: DomainStateRepository
     private lateinit var rewardsRepo: RewardsRepository
     private lateinit var settingsRepo: SettingsRepository
-    private lateinit var reconciler: PointsReconciler
-    private lateinit var habiSounds: HabiSounds
 
     private fun settingsStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
             scope = CoroutineScope(UnconfinedTestDispatcher(dispatcher.scheduler) + Job()),
         ) { File(tmp.root, "habi-vm.preferences_pb") }
 
-    private fun newViewModel(economy: EconomyConfig = EconomyConfig()) =
+    private fun newViewModel() =
         HabiViewModel(
             domainStateRepo,
             rewardsRepo,
             settingsRepo,
-            reconciler,
-            habiSounds,
-            economy = economy,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
         )
-
-    /** Grants [points] via a ledger row no engine derivation could ever produce or reconcile away. */
-    private suspend fun seedBalance(points: Int) {
-        db.pointsLedgerDao().insert(
-            pointsLedgerEntity(
-                id = "seed-${System.nanoTime()}",
-                delta = points,
-                reason = PointsReason.HABIT_DONE,
-                refId = null,
-                logicalDay = today,
-            ),
-        )
-    }
 
     @Before
     fun setUp() {
@@ -117,8 +86,6 @@ class HabiViewModelTest {
         domainStateRepo = DomainStateRepository(db)
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore())
-        reconciler = PointsReconciler(domainStateRepo, rewardsRepo)
-        habiSounds = HabiSounds(MotorSonidoMudo)
     }
 
     @After
@@ -126,149 +93,6 @@ class HabiViewModelTest {
         Dispatchers.resetMain()
         db.close()
     }
-
-    @Test
-    fun `purchase succeeds, equips the item and clears the preview`() =
-        runTest {
-            seedBalance(20) // body-lavanda's exact price
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-
-            vm.preview("body-lavanda")
-            advanceUntilIdle()
-            assertEquals("body-lavanda", vm.uiState.value.previewItemId)
-
-            vm.purchase("body-lavanda")
-            advanceUntilIdle()
-
-            assertNull(vm.uiState.value.previewItemId)
-            val row = db.customizationItemDao().byId("body-lavanda")
-            assertTrue(row != null && row.equipped)
-            assertTrue(db.pointsLedgerDao().all().any { it.reason == PointsReason.BUY_ITEM && it.refId == "body-lavanda" })
-        }
-
-    @Test
-    fun `purchase without enough balance leaves the preview open and writes nothing`() =
-        runTest {
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-
-            vm.preview("head-copa") // price 120, balance 0
-            advanceUntilIdle()
-
-            vm.purchase("head-copa")
-            advanceUntilIdle()
-
-            assertEquals("head-copa", vm.uiState.value.previewItemId)
-            assertTrue(db.pointsLedgerDao().all().none { it.reason == PointsReason.BUY_ITEM })
-            assertNull(db.customizationItemDao().byId("head-copa"))
-        }
-
-    @Test
-    fun `buyFreezer moved from Detail spends points and grows the inventory`() =
-        runTest {
-            seedBalance(100)
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-
-            vm.buyFreezer()
-            advanceUntilIdle()
-
-            assertEquals(1, vm.uiState.value.freezersOwned)
-            assertEquals(0, vm.uiState.value.balance)
-        }
-
-    @Test
-    fun `uiState freezerPrice comes from the injected economy, not a hardcoded default`() =
-        runTest {
-            // 250, not EconomyConfig()'s default 100 — a discriminating value: this would only
-            // pass if buildHabiUiState actually threads the VM's injected economy through.
-            val vm = newViewModel(economy = EconomyConfig(freezerPrice = 250))
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-
-            assertEquals(250, vm.uiState.value.freezerPrice)
-        }
-
-    @Test
-    fun `buyFreezer refuses without balance`() =
-        runTest {
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-
-            vm.buyFreezer()
-            advanceUntilIdle()
-
-            assertTrue(db.pointsLedgerDao().all().none { it.reason == PointsReason.BUY_FREEZER })
-            assertEquals(0, vm.uiState.value.freezersOwned)
-        }
-
-    @Test
-    fun `unequipDefault clears the category so the default falls back in place of the tapped item`() =
-        runTest {
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-            db.customizationItemDao().upsert(customizationItemEntity("body-vainilla", CustomizationCategory.BODY_COLOR, equipped = true))
-            advanceUntilIdle()
-            assertEquals("body-vainilla", vm.uiState.value.spec.equipped.bodyColor)
-
-            vm.unequipDefault(HabiCatalog.byId("body-salvia")!!)
-            advanceUntilIdle()
-
-            assertEquals("body-salvia", vm.uiState.value.spec.equipped.bodyColor)
-            assertEquals(false, db.customizationItemDao().byId("body-vainilla")?.equipped)
-        }
-
-    @Test
-    fun `unequip takes off a worn optional, same write as unequipDefault`() =
-        runTest {
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-            db.customizationItemDao().upsert(customizationItemEntity("neck-collar-flores", CustomizationCategory.NECK, equipped = true))
-            advanceUntilIdle()
-            assertEquals("neck-collar-flores", vm.uiState.value.spec.equipped.neck)
-
-            vm.unequip(CustomizationCategory.NECK)
-            advanceUntilIdle()
-
-            assertNull(vm.uiState.value.spec.equipped.neck)
-        }
 
     @Test
     fun `the garden shows the unlocked specials and the stored high mark`() =
@@ -282,88 +106,5 @@ class HabiViewModelTest {
             val garden = vm.uiState.value.garden
             assertEquals(2, garden.plots.size)
             assertEquals(setOf(GardenSpecial.MUSHROOMS), garden.specials)
-        }
-
-    @Test
-    fun `forceGarden overrides the engine until it is cleared`() =
-        runTest {
-            val vm = newViewModel()
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-            val real = vm.uiState.value.garden
-
-            vm.forceGarden(GardenState.INITIAL.copy(wilt = 2))
-            advanceUntilIdle()
-            assertEquals(2, vm.uiState.value.garden.wilt)
-
-            vm.forceGarden(null)
-            advanceUntilIdle()
-            assertEquals(real, vm.uiState.value.garden)
-        }
-
-    @Test
-    fun `the five most recent movements come newest first, ties by id, with their labels`() =
-        runTest {
-            val ledger = db.pointsLedgerDao()
-            ledger.insertAll(
-                listOf(
-                    pointsLedgerEntity(id = "a", createdAtMillis = 10L, reason = PointsReason.HABIT_DONE, refId = null, logicalDay = today),
-                    pointsLedgerEntity(
-                        id = "b",
-                        createdAtMillis = 20L,
-                        reason = PointsReason.BUY_FREEZER,
-                        refId = null,
-                        logicalDay = today,
-                    ),
-                    pointsLedgerEntity(
-                        id = "c",
-                        createdAtMillis = 30L,
-                        reason = PointsReason.PERFECT_DAY,
-                        refId = "week:1",
-                        logicalDay = today - 1,
-                    ),
-                    pointsLedgerEntity(
-                        id = "d",
-                        createdAtMillis = 40L,
-                        reason = PointsReason.BUY_ITEM,
-                        refId = "body-lavanda",
-                        logicalDay = today,
-                    ),
-                    pointsLedgerEntity(
-                        id = "e",
-                        createdAtMillis = 50L,
-                        reason = PointsReason.PERFECT_DAY,
-                        refId = "day:1",
-                        logicalDay = today,
-                    ),
-                    pointsLedgerEntity(
-                        id = "f",
-                        createdAtMillis = 50L,
-                        reason = PointsReason.BUY_FREEZER,
-                        refId = null,
-                        logicalDay = today - 5,
-                    ),
-                ),
-            )
-            val vm = newViewModel()
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-
-            val movimientos = vm.uiState.value.movimientos
-            assertEquals(listOf("f", "e", "d", "c", "b"), movimientos.map { it.id })
-            assertEquals(
-                listOf(
-                    EtiquetaMovimiento.Congelador,
-                    EtiquetaMovimiento.DiaCompleto,
-                    EtiquetaMovimiento.Articulo("body-lavanda"),
-                    EtiquetaMovimiento.SemanaCompleta,
-                    EtiquetaMovimiento.Congelador,
-                ),
-                movimientos.map { it.etiqueta },
-            )
-            assertEquals(
-                listOf(FechaMovimiento.FECHA, FechaMovimiento.HOY, FechaMovimiento.HOY, FechaMovimiento.AYER, FechaMovimiento.HOY),
-                movimientos.map { it.fecha },
-            )
         }
 }

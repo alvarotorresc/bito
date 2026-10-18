@@ -8,6 +8,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.sp
 import com.alvarotc.bito.R
 
@@ -67,3 +68,9 @@ fun TextStyle.fuerte(): TextStyle = copy(fontWeight = FontWeight.Bold)
 fun TextStyle.cifra(): TextStyle = copy(fontWeight = FontWeight.Black, fontFeatureSettings = "tnum")
 
 val LocalBitoTipos = staticCompositionLocalOf { BitoTiposBase }
+
+/**
+ * El interlineado de CSS: el reparto sobrante de `line-height` va mitad arriba y mitad abajo y cuenta también en la primera y la
+ * última línea (Compose, por defecto, lo recorta ahí). Para las pantallas que van 1:1 con un mock.
+ */
+fun TextStyle.comoCss(): TextStyle = copy(lineHeightStyle = LineHeightStyle(LineHeightStyle.Alignment.Center, LineHeightStyle.Trim.None))

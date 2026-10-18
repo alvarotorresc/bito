@@ -27,6 +27,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
@@ -129,6 +133,8 @@ fun AvisoHost(
                 Row(
                     Modifier
                         .testTag("aviso")
+                        // Se anuncia al salir (TalkBack lee el texto y la acción sin que nadie lo toque).
+                        .semantics { liveRegion = LiveRegionMode.Polite }
                         .padding(Medidas.margen)
                         .background(colores.roca, BitoFormas.campo)
                         .border(BorderStroke(Medidas.linea, colores.tintaClaraSuave), BitoFormas.campo)
@@ -152,7 +158,7 @@ fun AvisoHost(
                                 Modifier
                                     .padding(start = Medidas.e12)
                                     .defaultMinSize(minHeight = Medidas.toqueMinimo)
-                                    .clickable {
+                                    .clickable(role = Role.Button) {
                                         gesto(Snd.BROTE, Haptica.TICK)
                                         aviso.alAccion?.invoke()
                                         estado.accionar()

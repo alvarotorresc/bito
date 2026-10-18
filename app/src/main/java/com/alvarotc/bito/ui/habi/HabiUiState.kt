@@ -2,19 +2,12 @@ package com.alvarotc.bito.ui.habi
 
 import com.alvarotc.bito.data.db.CustomizationItemEntity
 import com.alvarotc.bito.domain.GardenEngine
-import com.alvarotc.bito.domain.HabiEngine
 import com.alvarotc.bito.domain.MoodEngine
-import com.alvarotc.bito.domain.Movimiento
-import com.alvarotc.bito.domain.PointsEngine
 import com.alvarotc.bito.domain.StatsEngine
-import com.alvarotc.bito.domain.StoreItemState
-import com.alvarotc.bito.domain.model.CatalogItem
 import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.DomainState
-import com.alvarotc.bito.domain.model.EconomyConfig
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.GardenState
-import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.LogicalDay
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
@@ -22,108 +15,35 @@ import com.alvarotc.bito.domain.model.equippedSetOf
 import java.time.LocalDate
 import java.time.LocalDateTime
 
-/** One store card: a catalog entry paired with its derived purchase/equip state. */
-data class StoreEntry(val item: CatalogItem, val state: StoreItemState)
-
 /**
- * Snapshot the Habi screen renders: the avatar spec (mood + personality + what's worn), the points
- * balance, freezer inventory, and the store grouped by customization axis — T12 is the one that
- * actually renders [store]; T11 only derives it.
+ * Lo que leen los Ajustes de Habi: el espectro del avatar (ánimo, personalidad y lo puesto) y el
+ * jardín de la maqueta.
  */
 data class HabiUiState(
     val spec: HabiSpec = HabiSpec(Mood.NORMAL, Personality.NEUTRA, EquippedSet()),
-    val balance: Int = 0,
-    val freezersOwned: Int = 0,
-    val freezerPrice: Int = EconomyConfig().freezerPrice,
-    // The full economy behind that price — the points sheet renders every earn value from here so
-    // copy can never disagree with PointsEngine (QA 2026-08-23). Same source as freezerPrice.
-    val economy: EconomyConfig = EconomyConfig(),
-    val store: Map<CustomizationCategory, List<StoreEntry>> = emptyMap(),
-    // What Habi is trying on before buying it — ephemeral UI state, never written to the DB
-    // (docs/05 §4). Non-null both drives `spec.equipped` below AND opens the PurchaseSheet.
-    val previewItemId: String? = null,
-    // Settings.userName, may be blank until M9's onboarding writes it — callers resolve HabiVoice
-    // texts with HabiVoice.conNombre, which uses the nameless twin when it is blank.
-    val userName: String = "",
-    // Pieza 1: el jardín de Habi, deducido del historial (o forzado desde el panel de depuración).
+    // Pieza 1: el jardín de Habi, deducido del historial.
     val garden: GardenState = GardenState.INITIAL,
-    // Los últimos movimientos del libro de bitos (pieza 3, §9.1): la misma fuente que Hoy.
-    val movimientos: List<Movimiento> = emptyList(),
-    val loading: Boolean = true,
 )
 
-/** Orden de las pestañas de la tienda (pieza 1 §4.1 y §7). */
-private val StoreAxisOrder =
-    listOf(
-        CustomizationCategory.BODY_COLOR,
-        CustomizationCategory.EYE_COLOR,
-        CustomizationCategory.HEAD,
-        CustomizationCategory.FACE,
-        CustomizationCategory.NECK,
-        CustomizationCategory.FEET,
-        CustomizationCategory.COSTUME,
-    )
-
 /**
- * Derives the Habi screen state from [state] as seen on [today]. Pure — no side effects, no
- * storage, no clock reads — so it is trivially testable and safe to call on every state change.
+ * Derives the Habi state from [state] as seen on [today]. Pure: no side effects, no storage, no
+ * clock reads, so it is trivially testable and safe to call on every state change.
  */
 fun buildHabiUiState(
     state: DomainState,
     owned: List<CustomizationItemEntity>,
-    balance: Int,
     personality: Personality,
     today: LogicalDay,
-    previewItemId: String? = null,
-    userName: String = "",
-    // Defaults to the same EconomyConfig() the field's own default resolves to — callers that
-    // don't pass one (every pre-existing test) are unaffected. HabiViewModel passes its injected
-    // economy.freezerPrice so the store card and buyFreezer() can never disagree on the price.
-    freezerPrice: Int = EconomyConfig().freezerPrice,
-    economy: EconomyConfig = EconomyConfig(),
     // Pieza 1. Por defecto, mediodía del día lógico, sin logros ni marca: los tests que no miran el
     // jardín no cambian. HabiViewModel pasa el reloj, los logros y la marca de DataStore.
     now: LocalDateTime = LocalDate.ofEpochDay(today.toLong()).atTime(12, 0),
     unlockedBadges: Set<String> = emptySet(),
     waterHighMark: Double = 0.0,
-    gardenOverride: GardenState? = null,
-    movimientos: List<Movimiento> = emptyList(),
 ): HabiUiState {
     val lastActivityDay = StatsEngine.lastActivityDay(state)
     val mood = MoodEngine.moodOf(state, today, lastActivityDay)
-    val garden = gardenOverride ?: GardenEngine.gardenOf(state, today, now, lastActivityDay, unlockedBadges, waterHighMark)
-    val equippedIds = owned.filter { it.equipped }.map { it.itemId }
-    val equipped = equippedSetOf(equippedIds)
-    val ownedIds = owned.mapTo(mutableSetOf()) { it.itemId }
-
-    val date = LocalDate.ofEpochDay(today.toLong())
-    val itemsByCategory = HabiCatalog.all.groupBy { it.category }
-    val store =
-        StoreAxisOrder.associateWith { category ->
-            // sortedByDescending is a stable sort, so this only promotes the default item to the
-            // front of its axis — the rest of the catalog's own order is left untouched. Store
-            // entries always derive from the REAL equipped set, never the preview below — the
-            // grid must never claim an item is "equipped" just because it's being tried on.
-            (itemsByCategory[category] ?: emptyList())
-                .sortedByDescending { it.default }
-                .map { item -> StoreEntry(item, HabiEngine.storeStateOf(item, ownedIds, equipped, balance, date)) }
-        }
-
-    // The avatar wears the preview on top of what's really equipped; appending it last means it
-    // wins its axis (equippedSetOf keeps the last id per category), same as a real equip would.
-    val displayEquipped = if (previewItemId != null) equippedSetOf(equippedIds + previewItemId) else equipped
-
-    return HabiUiState(
-        spec = HabiSpec(mood, personality, displayEquipped),
-        balance = balance,
-        freezersOwned = PointsEngine.freezersOwned(state),
-        freezerPrice = freezerPrice,
-        economy = economy,
-        store = store,
-        previewItemId = previewItemId,
-        userName = userName,
-        garden = garden,
-        movimientos = movimientos,
-        loading = false,
-    )
+    val placedObjects = owned.filter { it.category == CustomizationCategory.GARDEN_OBJECT && it.equipped }.map { it.itemId }
+    val garden = GardenEngine.gardenOf(state, today, now, lastActivityDay, unlockedBadges, waterHighMark, placedObjects)
+    val equipped = equippedSetOf(owned.filter { it.equipped }.map { it.itemId })
+    return HabiUiState(spec = HabiSpec(mood, personality, equipped), garden = garden)
 }

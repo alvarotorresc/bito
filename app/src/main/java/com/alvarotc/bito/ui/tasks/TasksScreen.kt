@@ -67,6 +67,7 @@ import com.alvarotc.bito.ui.sistema.componentes.MenuFila
 import com.alvarotc.bito.ui.sistema.componentes.OpcionMenu
 import com.alvarotc.bito.ui.sistema.componentes.Plegable
 import com.alvarotc.bito.ui.sistema.componentes.TonoOpcion
+import com.alvarotc.bito.ui.sistema.componentes.masBarras
 import com.alvarotc.bito.ui.sistema.componentes.rememberAvisoEstado
 import com.alvarotc.bito.ui.sistema.fuerte
 import com.alvarotc.bito.ui.sistema.rememberGesto
@@ -158,7 +159,7 @@ fun TasksScreen(
     Box(Modifier.fillMaxSize().background(colores.tAlta)) {
         LazyColumn(
             Modifier.fillMaxSize().testTag("tasks-list"),
-            contentPadding = PaddingValues(Medidas.margen),
+            contentPadding = PaddingValues(Medidas.margen).masBarras(),
             verticalArrangement = Arrangement.spacedBy(Medidas.entreFilas),
         ) {
             item(key = "cabecera") { CabeceraTareas(stringResource(R.string.tasks_screen_title), onBack) }

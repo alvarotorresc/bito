@@ -59,7 +59,7 @@ data class DetailUiState(
     val today: LogicalDay,
     // Both source from Settings, threaded through so the freezers ⓘ sheet can speak in the
     // user's chosen personality and address them by name (HabiVoice.freezerInfoRes) — the same
-    // sheet the Habi screen's store opens (StoreSection.kt's FreezerCard), so both call sites
+    // sheet the store's freezers tab opens (ui/tienda/congeladores), so both call sites
     // need these two fields even though most of DetailUiState has nothing to do with Habi.
     val personality: Personality = Personality.NEUTRA,
     val userName: String = "",

@@ -315,4 +315,20 @@ class GardenEngineTest {
         assertEquals(2, garden.wilt)
         assertEquals(setOf(GardenSpecial.LANTERN), garden.specials)
     }
+
+    @Test
+    fun `placed garden objects reach the garden by key and anything else is ignored`() {
+        val garden =
+            GardenEngine.gardenOf(
+                domainState(),
+                TODAY,
+                noon,
+                null,
+                emptySet(),
+                waterHighMark = 0.0,
+                placedObjectIds = listOf("garden-regadera", "head-boina", "garden-desconocido"),
+            )
+        assertEquals(setOf("regadera"), garden.objects)
+        assertTrue(GardenEngine.gardenOf(domainState(), TODAY, noon, null, emptySet(), waterHighMark = 0.0).objects.isEmpty())
+    }
 }

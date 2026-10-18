@@ -80,6 +80,13 @@ internal object GardenArt {
             "arbol-dorado" to GardenPiece(R.drawable.garden_arbol_dorado, aspect = 0.4943f, heightRatio = 1.0000f),
         )
 
+    /** Objetos de jardín de la tienda (banco, regadera): se compran y se colocan. */
+    val objectPieces: Map<String, GardenPiece> =
+        mapOf(
+            "banco" to GardenPiece(R.drawable.garden_banco, aspect = 1.3194f, heightRatio = 1.0000f),
+            "regadera" to GardenPiece(R.drawable.garden_regadera, aspect = 0.9789f, heightRatio = 1.0000f),
+        )
+
     val habiSpot = GardenSpot(50.0f, 88.0f, 40.0f)
 
     val plotSpots: List<GardenSpot> =
@@ -97,8 +104,14 @@ internal object GardenArt {
             "farolillo" to GardenSpot(36.0f, 58.0f, 21.7f),
             "caminito" to GardenSpot(34.0f, 99.0f, 22.0f),
             "estanque" to GardenSpot(68.0f, 84.0f, 12.0f),
-            "setas" to GardenSpot(86.0f, 95.0f, 13.2f),
+            "setas" to GardenSpot(71.0f, 97.0f, 13.2f),
             "cerezo-grande" to GardenSpot(60.0f, 43.0f, 21.0f),
             "arbol-dorado" to GardenSpot(44.0f, 41.0f, 20.0f),
+        )
+
+    val objectSpots: Map<String, GardenSpot> =
+        mapOf(
+            "banco" to GardenSpot(69.0f, 72.5f, 17.3f),
+            "regadera" to GardenSpot(44.0f, 99.0f, 12.3f),
         )
 }

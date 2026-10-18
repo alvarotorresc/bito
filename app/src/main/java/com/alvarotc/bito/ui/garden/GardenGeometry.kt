@@ -36,6 +36,46 @@ sealed interface SceneItem {
         override val rect: SceneRect,
         override val depth: Float,
     ) : SceneItem
+
+    /** Un objeto de jardín comprado (banco, regadera) o a prueba, por su [clave] del arte. */
+    data class Objeto(
+        val clave: String,
+        override val res: Int,
+        override val rect: SceneRect,
+        override val depth: Float,
+    ) : SceneItem
+}
+
+/**
+ * Un objeto de jardín que la escena pinta. [clave] es la del arte («banco», «regadera»); [efimero] es
+ * el objeto a prueba en la tienda (cae y no se guarda), que no es del [GardenState].
+ */
+data class ObjetoJardin(
+    val clave: String,
+    val efimero: Boolean = false,
+)
+
+/** De dónde sale el arte de los objetos. Un test puede sustituirlo por [ArteObjetosJardin.fuente]. */
+internal interface FuenteObjetosJardin {
+    fun pieza(clave: String): GardenPiece?
+
+    fun sitio(clave: String): GardenSpot?
+}
+
+/** Lo que [GardenArt] genera, y el punto por el que un test sustituye el arte. */
+internal object ArteObjetosJardin : FuenteObjetosJardin {
+    @Volatile
+    internal var fuente: FuenteObjetosJardin = DesdeGardenArt
+
+    override fun pieza(clave: String): GardenPiece? = fuente.pieza(clave)
+
+    override fun sitio(clave: String): GardenSpot? = fuente.sitio(clave)
+
+    private object DesdeGardenArt : FuenteObjetosJardin {
+        override fun pieza(clave: String): GardenPiece? = GardenArt.objectPieces[clave]
+
+        override fun sitio(clave: String): GardenSpot? = GardenArt.objectSpots[clave]
+    }
 }
 
 /** Lo que pide un toque en la escena. */
@@ -86,6 +126,8 @@ internal fun sceneItems(
     garden: GardenState,
     sceneW: Float,
     sceneH: Float,
+    objetos: List<ObjetoJardin> = emptyList(),
+    arte: FuenteObjetosJardin = ArteObjetosJardin,
 ): List<SceneItem> {
     val items = mutableListOf<SceneItem>()
     garden.plots.forEachIndexed { index, plot ->
@@ -104,8 +146,20 @@ internal fun sceneItems(
         val rect = spotRect(spot, spot.heightPct * piece.heightRatio, piece.aspect, sceneW, sceneH)
         items += SceneItem.Special(special, piece.res, rect, spot.yPct)
     }
+    for (clave in clavesDeObjetos(garden, objetos)) {
+        val spot = arte.sitio(clave) ?: continue
+        val piece = arte.pieza(clave) ?: continue
+        val rect = spotRect(spot, spot.heightPct * piece.heightRatio, piece.aspect, sceneW, sceneH)
+        items += SceneItem.Objeto(clave, piece.res, rect, spot.yPct)
+    }
     return items.sortedBy { it.depth }
 }
+
+/** Los objetos que hay que pintar: los del jardín y los de prueba, sin repetir. */
+internal fun clavesDeObjetos(
+    garden: GardenState,
+    objetos: List<ObjetoJardin>,
+): List<String> = (garden.objects + objetos.map { it.clave }).toList()
 
 /** La caja de [com.alvarotc.bito.ui.habi.HabiAvatar] en la escena: los pies en [spot] y el cuerpo con [spot]`.heightPct` de alto. */
 internal fun habiRect(

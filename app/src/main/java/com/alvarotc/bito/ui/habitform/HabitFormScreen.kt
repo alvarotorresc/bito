@@ -82,6 +82,7 @@ import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.cifra
 import com.alvarotc.bito.ui.sistema.componentes.Boton
+import com.alvarotc.bito.ui.sistema.componentes.BotonVolver
 import com.alvarotc.bito.ui.sistema.componentes.Campo
 import com.alvarotc.bito.ui.sistema.componentes.CifraRodillo
 import com.alvarotc.bito.ui.sistema.componentes.Dialogo
@@ -235,15 +236,7 @@ private fun Cabecera(
 ) {
     val colores = BitoTema.colores
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
-        Box(
-            Modifier
-                .size(Medidas.toqueMinimo)
-                .clip(CircleShape)
-                .clickable(role = Role.Button, onClick = alVolver),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(IconosSistema.ArrowLeft, contentDescription = stringResource(R.string.back), tint = colores.tinta)
-        }
+        BotonVolver(alVolver)
         Text(
             stringResource(if (editando) R.string.form_title_edit else R.string.form_title_new),
             style = BitoTema.tipos.t24.fuerte(),

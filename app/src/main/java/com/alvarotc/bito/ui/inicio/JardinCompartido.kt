@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,7 @@ import com.alvarotc.bito.domain.model.LightPhase
 import com.alvarotc.bito.ui.garden.GardenArt
 import com.alvarotc.bito.ui.garden.GardenLook
 import com.alvarotc.bito.ui.garden.GardenScene
+import com.alvarotc.bito.ui.garden.MeceoObjeto
 import com.alvarotc.bito.ui.garden.NOCHE_ABAJO
 import com.alvarotc.bito.ui.garden.NOCHE_ARRIBA
 import com.alvarotc.bito.ui.habi.HabiSpec
@@ -61,6 +63,9 @@ internal object MedidasInicio {
     val ARRIBA_CAMINO = 150.dp
     val ASTRO = 46.dp
 }
+
+// Al volver de la tienda, lo recién comprado se mece una vez a los 420 ms (tienda-jardin.md «Volver a Hoy»).
+private const val MECE_AL_VOLVER_MS = 420L
 
 internal fun lerpF(
     a: Float,
@@ -91,14 +96,37 @@ internal fun bordeJardin(
     subida: Float,
 ): Float = lerpF(altoJardinHoy(alto, encogido), altoJardinCamino(alto, escenaAlto, extra) - subida, q)
 
+private val FUNDIDO_COSTURA = 104.dp
+private const val FUNDIDO_ALFA = 0.94f
+
+/** El color con el que acaba el cielo de Camino en el borde de arriba del arte: el de abajo, con la luz y la noche encima. */
+internal fun colorEnLaCostura(
+    light: GardenLight,
+    noche: Float,
+): Color {
+    fun multiplica(
+        base: Color,
+        tinte: Color,
+        cuanto: Float,
+    ) = lerp(base, Color(base.red * tinte.red, base.green * tinte.green, base.blue * tinte.blue, base.alpha), cuanto)
+    var c = cieloDe(light).second
+    val tinte = luzDe(light)
+    if (tinte.alpha > 0f) c = multiplica(c, tinte, tinte.alpha)
+    val n = noche.coerceIn(0f, 1f)
+    if (n > 0f) c = multiplica(c, NOCHE_ABAJO, n)
+    return c
+}
+
 /** La escala del escenario: en Hoy cubre el hueco (y encoge a 0,88 con [encogido]); en Camino mide 1. */
 internal fun escalaJardin(
     q: Float,
     encogido: Float,
     alto: Float,
     escenaAlto: Float,
+    bajoBarra: Float = 0f,
 ): Float {
-    val cubrir = max(1f, MedidasInicio.ALTO_HOY * alto / escenaAlto)
+    // Cubre el hueco de Hoy y, además, el de la barra de estado que queda por encima.
+    val cubrir = max(1f, (MedidasInicio.ALTO_HOY * alto + bajoBarra) / escenaAlto)
     return lerpF(cubrir * lerpF(1f, MedidasInicio.ESCALA_MIN, encogido), 1f, q)
 }
 
@@ -190,10 +218,16 @@ fun JardinCompartido(
     respiracion: (() -> Float)? = null,
     // La amplitud del salto de cada incremento de [saltoHabi]; null = el salto de siempre.
     saltoAmplitud: Float? = null,
+    // El objeto recién comprado: se mece una vez a los 420 ms de aparecer Hoy (al volver de la tienda).
+    recienComprado: String? = null,
+    // Lo que sube la escena por encima de su caja (px): el hueco de la barra de estado, que Inicio deja fuera de su geometría.
+    bajoBarra: Float = 0f,
 ) {
     val densidad = LocalDensity.current
     val colores = BitoTema.colores
     val luz by rememberUpdatedState(garden.light)
+    // Lo recién comprado se mece una vez a los 420 ms de aparecer Hoy (al volver de la tienda, que se hunde sin rebote).
+    val meceObjeto = remember(recienComprado) { recienComprado?.let { MeceoObjeto(it, retrasoMs = MECE_AL_VOLVER_MS) } }
     BoxWithConstraints(modifier) {
         val alto = constraints.maxHeight.toFloat()
         val ancho = constraints.maxWidth.toFloat()
@@ -224,7 +258,24 @@ fun JardinCompartido(
                 .height(with(densidad) { altoCamino.toDp() })
                 .drawWithContent {
                     val b = borde()
-                    clipRect(bottom = b) { this@drawWithContent.drawContent() }
+                    clipRect(top = -bajoBarra, bottom = b) {
+                        this@drawWithContent.drawContent()
+                        // `#cskyfade` del mock: sobre el arte, el color del cielo en su borde de arriba se funde en 104 dp, sin costura.
+                        val qq = q()
+                        if (camara == null && qq > 0f) {
+                            val arteArriba = b - escenaAlto * escalaJardin(qq, encogido(), alto, escenaAlto, bajoBarra)
+                            val fondo = colorEnLaCostura(luz, noche())
+                            val alto104 = FUNDIDO_COSTURA.toPx()
+                            val velo =
+                                Brush.verticalGradient(
+                                    listOf(fondo.copy(alpha = FUNDIDO_ALFA), fondo.copy(alpha = 0f)),
+                                    arteArriba - 2f,
+                                    arteArriba + alto104,
+                                )
+                            // 2 px por encima del borde: la fila de arriba del arte no deja una línea clara.
+                            drawRect(velo, Offset(0f, arteArriba - 2f), Size(size.width, alto104 + 2f), alpha = qq)
+                        }
+                    }
                     drawRect(colores.costra, topLeft = Offset(0f, b), size = Size(size.width, costra))
                 }.drawBehind {
                     val qq = q()
@@ -232,15 +283,20 @@ fun JardinCompartido(
                     val b = borde()
                     val (arriba, abajo) = cieloDe(luz)
                     val inicio = b - altoCamino
-                    val cielo = Brush.verticalGradient(listOf(arriba, abajo), startY = inicio, endY = b)
-                    drawRect(cielo, size = Size(size.width, b), alpha = qq)
+                    // El cielo llega al color de fondo justo en el borde de arriba del arte (`#csky` del mock), no al pie del jardín.
+                    val arteArriba = b - escenaAlto * escalaJardin(qq, encogido(), alto, escenaAlto, bajoBarra)
+                    val finCielo = max(arteArriba, inicio + 1f)
+                    val cielo = Brush.verticalGradient(listOf(arriba, abajo), startY = inicio, endY = finCielo)
+                    val sube = Offset(0f, -bajoBarra)
+                    val hasta = Size(size.width, b + bajoBarra)
+                    drawRect(cielo, topLeft = sube, size = hasta, alpha = qq)
                     val tinte = luzDe(luz)
-                    if (tinte.alpha > 0f) drawRect(tinte, size = Size(size.width, b), alpha = qq, blendMode = BlendMode.Multiply)
+                    if (tinte.alpha > 0f) drawRect(tinte, topLeft = sube, size = hasta, alpha = qq, blendMode = BlendMode.Multiply)
                     // El anochecer del cierre (G40) también oscurece este cielo, con el mismo tinte que la escena.
                     val n = noche().coerceIn(0f, 1f)
                     if (n > 0f) {
-                        val oscuro = Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO), startY = inicio, endY = b)
-                        drawRect(oscuro, size = Size(size.width, b), alpha = qq * n, blendMode = BlendMode.Multiply)
+                        val oscuro = Brush.verticalGradient(listOf(NOCHE_ARRIBA, NOCHE_ABAJO), startY = inicio, endY = finCielo)
+                        drawRect(oscuro, topLeft = sube, size = hasta, alpha = qq * n, blendMode = BlendMode.Multiply)
                     }
                     val a = astroDe(luz)
                     val centro = Offset(size.width * a.x, inicio + (altoCamino - escenaAlto) * a.y)
@@ -268,7 +324,7 @@ fun JardinCompartido(
                     Modifier
                         .align(Alignment.BottomCenter)
                         .graphicsLayer {
-                            val s = escalaJardin(q(), encogido(), alto, escenaAlto)
+                            val s = escalaJardin(q(), encogido(), alto, escenaAlto, bajoBarra)
                             val pivote = pieY * escenaAlto
                             transformOrigin = TransformOrigin(0.5f, pieY)
                             scaleX = s
@@ -293,6 +349,8 @@ fun JardinCompartido(
                 dormido = dormido,
                 respiracion = respiracion,
                 saltoAmplitud = saltoAmplitud,
+                globitoObjetos = true,
+                meceObjeto = meceObjeto,
             )
         }
     }

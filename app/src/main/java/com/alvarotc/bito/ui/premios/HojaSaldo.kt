@@ -44,7 +44,8 @@ private const val MOVIMIENTOS_VISIBLES = 5
 
 /**
  * «Tus bitos» (§6.5): el saldo grande, las reglas con las cifras de la economía, lo que se ha ganado y gastado
- * últimamente y, lado a lado, «Tienda» y «Cerrar». «Tienda» cierra la hoja y navega a los 160 ms (`cerrarY`).
+ * últimamente y, lado a lado, «Tienda» y «Cerrar». «Tienda» cierra la hoja y navega a los 160 ms (`cerrarY`). Con [alIrTienda] nulo
+ * (dentro de la tienda) no hay botón de tienda y «Cerrar» ocupa el ancho.
  */
 @Composable
 fun HojaSaldo(
@@ -52,7 +53,7 @@ fun HojaSaldo(
     saldo: Int,
     movimientos: List<Movimiento>,
     economia: EconomyConfig,
-    alIrTienda: () -> Unit,
+    alIrTienda: (() -> Unit)? = null,
     alCerrar: () -> Unit,
 ) {
     val colores = BitoTema.colores
@@ -90,13 +91,15 @@ fun HojaSaldo(
         }
         Spacer(Modifier.height(Medidas.e16))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(Medidas.e12)) {
-            Boton(
-                stringResource(R.string.premios_ir_tienda),
-                { cerrarY(alIrTienda) },
-                Modifier.weight(1f).testTag("saldo-tienda"),
-                estilo = EstiloBoton.PRINCIPAL,
-                alto = Medidas.botonHoja,
-            )
+            if (alIrTienda != null) {
+                Boton(
+                    stringResource(R.string.premios_ir_tienda),
+                    { cerrarY(alIrTienda) },
+                    Modifier.weight(1f).testTag("saldo-tienda"),
+                    estilo = EstiloBoton.PRINCIPAL,
+                    alto = Medidas.botonHoja,
+                )
+            }
             Boton(
                 stringResource(R.string.sistema_cerrar),
                 { cerrar() },

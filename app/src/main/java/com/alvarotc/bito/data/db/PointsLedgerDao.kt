@@ -4,6 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
+import com.alvarotc.bito.domain.model.PointsReason
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -27,6 +28,13 @@ interface PointsLedgerDao {
 
     @Query("SELECT * FROM points_ledger")
     suspend fun all(): List<PointsLedgerEntity>
+
+    /** Borra los asientos de [reason] con ese [refId] (el Deshacer del congelador). Devuelve cuántos. */
+    @Query("DELETE FROM points_ledger WHERE reason = :reason AND refId = :refId")
+    suspend fun deleteByReasonRef(
+        reason: PointsReason,
+        refId: String,
+    ): Int
 
     @Query("DELETE FROM points_ledger")
     suspend fun deleteAll()

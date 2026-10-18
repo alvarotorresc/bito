@@ -1,5 +1,7 @@
 package com.alvarotc.bito.ui.sistema.componentes
 
+import android.view.Window
+import android.view.WindowManager
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Text
@@ -7,6 +9,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,6 +19,7 @@ import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogWindowProvider
 import com.alvarotc.bito.ui.sistema.ConSistema
 import com.alvarotc.bito.ui.sistema.SonidoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
@@ -140,5 +144,24 @@ class HojaTest {
         }
         rule.onNodeWithText("Guardar").performScrollTo().assertIsDisplayed().performClick()
         assertEquals(1, guardado)
+    }
+
+    // La ventana del Dialog pedía el alto de la pantalla, pero sin LAYOUT_NO_LIMITS el sistema la recortaba a la
+    // franja entre barras: el contenido se salía por abajo lo que miden las barras (152 + 62 px en el Pixel).
+    @Test
+    fun `the sheet window covers the whole screen, bars included`() {
+        var ventana: Window? = null
+        rule.setContent {
+            ConSistema(sonido = sonido) {
+                Hoja(abierta = true, alCerrar = {}) {
+                    ventana = (LocalView.current.parent as DialogWindowProvider).window
+                    Text("dentro")
+                }
+            }
+        }
+        rule.waitForIdle()
+        val atributos = ventana!!.attributes
+        assertTrue(atributos.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0)
+        assertEquals(0f, atributos.dimAmount)
     }
 }

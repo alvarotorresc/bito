@@ -2,6 +2,7 @@ package com.alvarotc.bito
 
 import android.app.AlarmManager
 import android.content.Context
+import android.content.res.Resources
 import android.os.Build
 import androidx.core.app.NotificationManagerCompat
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
@@ -53,6 +54,7 @@ import com.alvarotc.bito.ui.sistema.Tacto
 import com.alvarotc.bito.ui.sistema.crearTacto
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.sistema.sonido.crearMotorSonido
+import com.alvarotc.bito.ui.tienda.RelojTienda
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -161,6 +163,12 @@ class AppContainer(context: Context) {
     val catalogoHabla: CatalogoRecursos by lazy { CatalogoRecursos { appContext.resources } }
 
     private val appContext = context.applicationContext
+
+    /** El reloj de la tienda (ahora y zona); los tests lo sustituyen antes de componer. */
+    var relojTienda: RelojTienda = RelojTienda()
+
+    /** Los recursos de la aplicación, leídos en el momento: la tienda redacta con el idioma de ahora. */
+    val recursosTienda: () -> Resources = { appContext.resources }
 
     val propuestas: FuentePropuestas by lazy {
         FuentePropuestasHabi(

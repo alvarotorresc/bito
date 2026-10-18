@@ -3,6 +3,7 @@ package com.alvarotc.bito.domain
 import com.alvarotc.bito.domain.model.Direction
 import com.alvarotc.bito.domain.model.Entry
 import com.alvarotc.bito.domain.model.EquippedSet
+import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.domain.model.Habit
 import com.alvarotc.bito.domain.model.LogicalDay
@@ -102,5 +103,51 @@ class HabiEngineTest {
         val beret = HabiCatalog.byId("head-boina")!!
         val dressed = EquippedSet(head = "head-boina", costume = "costume-reno")
         assertEquals(StoreItemState.Equipped, HabiEngine.storeStateOf(beret, setOf("head-boina", "costume-reno"), dressed, 0, august))
+    }
+
+    @Test
+    fun `an owned garden object is OwnedInGarden and never Equipped`() {
+        val banco = HabiCatalog.byId("garden-banco")!!
+        // Comprado = colocado, y aun así nunca se lee como «puesto» de Habi.
+        assertEquals(StoreItemState.OwnedInGarden, HabiEngine.storeStateOf(banco, setOf("garden-banco"), EquippedSet(), 0, august))
+        assertEquals(
+            StoreItemState.OwnedInGarden,
+            HabiEngine.storeStateOf(banco, setOf("garden-banco"), EquippedSet(head = "garden-banco"), 0, august),
+        )
+    }
+
+    @Test
+    fun `an unowned garden object is Affordable or MissingPoints with the exact missing amount`() {
+        val regadera = HabiCatalog.byId("garden-regadera")!!
+        assertEquals(StoreItemState.Affordable, HabiEngine.storeStateOf(regadera, emptySet(), EquippedSet(), 25, august))
+        assertEquals(StoreItemState.MissingPoints(1), HabiEngine.storeStateOf(regadera, emptySet(), EquippedSet(), 24, august))
+        assertEquals(StoreItemState.MissingPoints(25), HabiEngine.storeStateOf(regadera, emptySet(), EquippedSet(), 0, august))
+    }
+
+    @Test
+    fun `a special is FromBadge`() {
+        assertEquals(StoreItemState.FromBadge("streak-7"), HabiEngine.storeStateOfEspecial(GardenSpecial.LANTERN))
+        assertEquals(StoreItemState.FromBadge("resurrection"), HabiEngine.storeStateOfEspecial(GardenSpecial.MUSHROOMS))
+    }
+
+    @Test
+    fun `the costume window with a fixed date`() {
+        val calabaza = HabiCatalog.byId("costume-calabaza")!!
+        val reno = HabiCatalog.byId("costume-reno")!!
+        val dinosaurio = HabiCatalog.byId("costume-dinosaurio")!!
+
+        fun estado(
+            item: com.alvarotc.bito.domain.model.CatalogItem,
+            fecha: LocalDate,
+        ) = HabiEngine.storeStateOf(item, emptySet(), EquippedSet(), 999, fecha)
+
+        assertEquals(StoreItemState.Affordable, estado(calabaza, LocalDate.of(2026, 10, 16)))
+        assertEquals(StoreItemState.OutOfSeason, estado(calabaza, LocalDate.of(2026, 11, 3)))
+        assertEquals(StoreItemState.Affordable, estado(reno, LocalDate.of(2026, 12, 1)))
+        // Pascua de 2026: 5 de abril. Carnaval = 14 días antes del Miércoles de Ceniza (18 de febrero).
+        assertEquals(StoreItemState.OutOfSeason, estado(dinosaurio, LocalDate.of(2026, 2, 3)))
+        assertEquals(StoreItemState.Affordable, estado(dinosaurio, LocalDate.of(2026, 2, 4)))
+        assertEquals(StoreItemState.Affordable, estado(dinosaurio, LocalDate.of(2026, 2, 17)))
+        assertEquals(StoreItemState.OutOfSeason, estado(dinosaurio, LocalDate.of(2026, 2, 18)))
     }
 }
