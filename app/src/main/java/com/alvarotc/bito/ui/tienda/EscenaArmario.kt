@@ -125,8 +125,8 @@ class EscenaArmarioEstado {
 /**
  * El armario de la tienda: una hornacina de 332 x 236 dp con Habi de pie (165 dp) y la luz multiplicada solo
  * sobre ella, en una escena de 300 dp. La costra de 6 dp de debajo ([conCostra]) es de la pantalla y la pinta ella
- * una sola vez; solo se pide aquí para pintar el armario suelto. [luz] (0 a 1) se lee en la fase de dibujo, nunca en composición. [capaSuperior] se pinta dentro del recorte,
- * encima de Habi y bajo la luz.
+ * una sola vez; solo se pide aquí para pintar el armario suelto. [luz] (0 a 1) se lee en la fase de dibujo, nunca en
+ * composición. [capaSuperior] se pinta dentro del recorte, encima de Habi y bajo la luz.
  */
 @Composable
 fun EscenaArmario(

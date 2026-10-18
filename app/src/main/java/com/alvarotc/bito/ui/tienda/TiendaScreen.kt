@@ -69,6 +69,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
+import com.alvarotc.bito.domain.GardenEngine
 import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.premios.HojaSaldo
 import com.alvarotc.bito.ui.sistema.BitoTema
@@ -124,8 +125,17 @@ fun TiendaScreen(
     viewModel: TiendaViewModel,
     alSalir: () -> Unit,
     modifier: Modifier = Modifier,
+    alComprarObjeto: (String) -> Unit = {},
 ) {
     val estado by viewModel.uiState.collectAsStateWithLifecycle()
+    // J31: cada objeto de jardín comprado se avisa fuera (Hoy lo mece al volver); no depende del estado de Hoy.
+    val aviso by rememberUpdatedState(alComprarObjeto)
+    LaunchedEffect(viewModel) {
+        viewModel.eventos.collect { evento ->
+            val clave = (evento as? EventoTienda.Comprado)?.let { GardenEngine.objectKeysOf(listOf(it.itemId)).firstOrNull() }
+            if (clave != null) aviso(clave)
+        }
+    }
     TiendaContenido(estado, viewModel, viewModel.eventos, alSalir, modifier)
 }
 

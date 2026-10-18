@@ -439,6 +439,23 @@ class TiendaViewModelTest {
         }
 
     @Test
+    fun `undo expires after four seconds`() =
+        runTest {
+            saldo(100)
+            val vm = arrancar(nuevo())
+            val eventos = recoger(vm)
+            vm.comprarCongelador()
+            advanceUntilIdle()
+            ahora += 4_001
+            vm.deshacerCongelador()
+            advanceUntilIdle()
+
+            assertEquals("pasado el aviso no se deshace", 0, vm.uiState.value.saldo)
+            assertEquals(1, vm.uiState.value.congeladores)
+            assertEquals(1, eventos.size)
+        }
+
+    @Test
     fun `a second purchase replaces the undo of the first`() =
         runTest {
             saldo(200)
@@ -606,6 +623,30 @@ class TiendaViewModelTest {
             assertEquals("head-gorro-lana", vm.uiState.value.puestos.head)
             assertEquals("head-gorro-lana", vm.uiState.value.look.head)
             assertFalse(fila("costume-calabaza")!!.equipped)
+        }
+
+    @Test
+    fun `buying over a costume is one write, never the piece and the costume together`() =
+        runTest {
+            saldo(100)
+            tener("costume-calabaza", puesto = true)
+            val vm = arrancar(nuevo())
+            vm.tocarPieza("head-gorro-lana")
+            advanceUntilIdle()
+            val emisiones = mutableListOf<TiendaUiState>()
+            backgroundScope.launch { vm.uiState.collect { emisiones += it } }
+            advanceUntilIdle()
+            val desde = emisiones.size
+            vm.comprar("head-gorro-lana")
+            advanceUntilIdle()
+
+            assertTrue("hubo emisiones tras comprar", emisiones.size > desde)
+            assertTrue(
+                "ninguna emisión con la pieza puesta y el disfraz todavía",
+                emisiones.drop(desde).none { it.puestos.head == "head-gorro-lana" && it.puestos.costume != null },
+            )
+            assertEquals("head-gorro-lana", emisiones.last().puestos.head)
+            assertNull(emisiones.last().puestos.costume)
         }
 
     @Test
