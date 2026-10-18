@@ -32,7 +32,6 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -55,6 +54,7 @@ import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
@@ -65,6 +65,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -227,10 +228,9 @@ private fun Cuerpo(
         val altoEscena = altoEscenaTienda(maxHeight, estado.barra != null)
         Column(Modifier.fillMaxSize()) {
             EscenaConCabecera(estado, ctx, luzEstado, altoEscena, paneles, reducido, atras) { saldoAbierto = true }
-            SelectorLuz(estado.luz, luzEstado, acciones::cambiarLuz, Modifier.height(ALTO_LUZ))
-            Box(Modifier.height(ALTO_PESTANAS)) {
-                PestanasTienda(estado.pestana, acciones::cambiarPestana, Modifier.wrapContentHeight(Alignment.Top, unbounded = true))
-            }
+            SelectorLuz(estado.luz, luzEstado, acciones::cambiarLuz)
+            // 46 dp (o lo que pida la letra) y la raya de 1 px cuelga por debajo, sobre el catálogo.
+            PestanasTienda(estado.pestana, acciones::cambiarPestana, Modifier.colgarRaya())
             Catalogo(estado.pestana, ctx, paneles, reducido, Modifier.weight(1f).fillMaxWidth())
         }
         val txtComprar = (estado.barra as? BarraPrueba.Comprar)?.let { stringResource(R.string.store_buy, it.precio) }.orEmpty()
@@ -392,6 +392,14 @@ private fun Cabecera(
         }
     }
 }
+
+/** Mide el contenido entero y se queda con su alto menos la raya inferior: la raya se pinta sobre lo que viene después. */
+private fun Modifier.colgarRaya(): Modifier =
+    layout { medible, restricciones ->
+        val colgante = Medidas.linea.roundToPx()
+        val colocable = medible.measure(restricciones.copy(minHeight = 0, maxHeight = Constraints.Infinity))
+        layout(colocable.width, (colocable.height - colgante).coerceAtLeast(0)) { colocable.place(0, 0) }
+    }
 
 @Composable
 private fun Catalogo(

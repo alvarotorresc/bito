@@ -9,14 +9,14 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -148,7 +148,7 @@ fun SelectorLuz(
         modifier
             .testTag("tluz")
             .fillMaxWidth()
-            .height(ALTO_FILA)
+            .heightIn(min = ALTO_FILA)
             .padding(start = RELLENO_INICIO, end = RELLENO_FIN),
         horizontalArrangement = Arrangement.spacedBy(ENTRE_ETIQUETA_Y_RIEL),
         verticalAlignment = Alignment.CenterVertically,
@@ -160,7 +160,7 @@ fun SelectorLuz(
         Box(
             Modifier
                 .weight(1f)
-                .height(ALTO_FILA)
+                .heightIn(min = ALTO_FILA)
                 .testTag("luzriel")
                 .onSizeChanged { ancho = it.width }
                 .selectableGroup()
@@ -283,7 +283,7 @@ fun SelectorLuz(
                             IntOffset((i / PARADAS_MAX * recorrido).roundToInt(), 0)
                         }
                         .width(BOTON_ANCHO)
-                        .height(ALTO_FILA)
+                        .heightIn(min = ALTO_FILA)
                         .focusRequester(focos[i])
                         .focusProperties { canFocus = i == estado.destino.ordinal }
                         .onFocusChanged { if (it.isFocused) botonConFoco = i }
@@ -297,17 +297,24 @@ fun SelectorLuz(
                             }
                         },
                 ) {
-                    // Un `<button>` centra su texto en lo que deja `padding-top: 26px`.
-                    BasicText(
-                        text = nombres[i],
-                        modifier = Modifier.fillMaxSize().padding(top = BOTON_TEXTO_ARRIBA).wrapContentHeight(Alignment.CenterVertically),
-                        style =
-                            tipos.t14.copy(
-                                color = color,
-                                fontWeight = if (activo) FontWeight.Bold else FontWeight.Medium,
-                                textAlign = TextAlign.Center,
-                            ),
-                    )
+                    // Un `<button>` centra su texto en lo que deja `padding-top: 26px`. Con la letra grande (H2) la fila
+                    // crece en alto y el rótulo no se parte: sobresale por los lados antes que cortarse.
+                    Box(
+                        Modifier.fillMaxWidth().padding(top = BOTON_TEXTO_ARRIBA).heightIn(min = ALTO_FILA - BOTON_TEXTO_ARRIBA),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        BasicText(
+                            text = nombres[i],
+                            modifier = Modifier.wrapContentWidth(Alignment.CenterHorizontally, unbounded = true),
+                            softWrap = false,
+                            style =
+                                tipos.t14.copy(
+                                    color = color,
+                                    fontWeight = if (activo) FontWeight.Bold else FontWeight.Medium,
+                                    textAlign = TextAlign.Center,
+                                ),
+                        )
+                    }
                 }
             }
         }

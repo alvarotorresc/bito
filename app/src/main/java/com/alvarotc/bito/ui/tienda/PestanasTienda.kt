@@ -7,9 +7,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -89,7 +92,8 @@ fun PestanasTienda(
 
     Box(modifier.padding(horizontal = Medidas.margen).fillMaxWidth().onSizeChanged { ancho = it.width }) {
         Column {
-            Row(Modifier.selectableGroup().fillMaxWidth()) {
+            // Con la letra grande (H2) las pestañas crecen en alto, todas a la vez: la más alta manda.
+            Row(Modifier.selectableGroup().fillMaxWidth().height(IntrinsicSize.Min)) {
                 PestanaTienda.entries.forEachIndexed { i, p ->
                     val activa = p == pestana
                     val color by animateColorAsState(
@@ -100,7 +104,8 @@ fun PestanasTienda(
                     Box(
                         Modifier
                             .weight(1f)
-                            .height(ALTO_PESTANA)
+                            .heightIn(min = ALTO_PESTANA)
+                            .fillMaxHeight()
                             .testTag(tags[i])
                             .selectable(
                                 selected = activa,
@@ -123,7 +128,8 @@ fun PestanasTienda(
         }
         Box(
             Modifier
-                .offset(x = AIRE_INDICADOR, y = ALTO_PESTANA + Medidas.linea - ALTO_INDICADOR)
+                .align(Alignment.BottomStart)
+                .offset(x = AIRE_INDICADOR)
                 .width((anchoPestana - AIRE_INDICADOR * 2).coerceAtLeast(0.dp))
                 .height(ALTO_INDICADOR)
                 .graphicsLayer { translationX = posicion.value * (ancho / PestanaTienda.entries.size.toFloat()) }
