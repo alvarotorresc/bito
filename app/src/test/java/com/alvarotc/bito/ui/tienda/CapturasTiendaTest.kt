@@ -155,6 +155,8 @@ abstract class CapturasTiendaBase(private val idioma: String) {
     }
 
     protected fun tocarTag(tag: String) {
+        // En una máquina lenta el panel puede no haber llegado aún: se espera a que el nodo exista.
+        hasta { hay(tag) }
         pulsar(tag)
         // La compra escribe en Room por otro hilo: se deja correr el bucle un buen rato.
         repeat(400) {
