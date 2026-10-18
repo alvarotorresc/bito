@@ -19,7 +19,6 @@ import com.alvarotc.bito.data.backup.BackupRepository
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
-import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.ui.habi.HabiSounds
@@ -109,7 +108,6 @@ class CamaraAjustesTest {
                 domainState,
                 rewards,
                 repository,
-                PointsReconciler(domainState, rewards),
                 HabiSounds(MotorSonidoMudo),
                 defaultDispatcher = dispatcher,
             ),

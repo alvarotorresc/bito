@@ -102,25 +102,6 @@
     <string name="habi_task_done_neutra">Hecha, %1$s.</string>
     <string name="habi_task_done_neutra_sin_nombre">Hecha.</string>
 
-    <string name="store_axis_colors">Colores</string>
-    <string name="store_axis_eyes">Ojos</string>
-    <string name="store_axis_head">Cabeza</string>
-    <string name="store_axis_face">Cara</string>
-    <string name="store_axis_neck">Cuello</string>
-    <string name="store_axis_feet">Pies</string>
-    <string name="store_axis_costumes">Disfraces</string>
-    <string name="store_out_of_season">fuera de temporada</string>
-    <string name="store_equipped">equipado</string>
-    <string name="store_tap_to_equip">tocar para equipar</string>
-    <string name="store_pts_label">bitos</string>
-    <string name="store_locked_streak">racha %1$d</string>
-    <string name="store_trying">probando: %1$s</string>
-    <string name="store_buy_title">¿Comprar %1$s?</string>
-    <string name="store_buy_button">Comprar</string>
-    <string name="store_balance_after">saldo después: %1$d bitos</string>
-    <string name="store_your_balance">tu saldo: %1$d bitos</string>
-    <string name="store_missing_pts">te faltan %1$d bitos</string>
-
     <string name="item_body_salvia">Salvia</string>
     <string name="item_body_vainilla">Vainilla</string>
     <string name="item_body_melocoton">Melocotón</string>
