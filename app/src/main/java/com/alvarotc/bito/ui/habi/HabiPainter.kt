@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
@@ -109,7 +110,13 @@ fun rememberArte(
     val yaEstaban = piezas.all { (res, s) -> art.enCache(res, s) }
     var cargadas by remember(art) { mutableStateOf<List<Pair<Int, Int>>?>(null) }
     LaunchedEffect(art, piezas) {
-        if (!yaEstaban) art.precargar(piezas)
+        if (!yaEstaban) {
+            art.precargar(piezas)
+            // Vuelve al reloj de la composición antes de escribir: nunca se escribe estado desde IO
+            // (en tests el dispatcher no confinado seguiría en el hilo IO y reanudaría el recomposer
+            // allí mientras el principal mide).
+            withFrameNanos { }
+        }
         cargadas = piezas
     }
     return yaEstaban || cargadas == piezas
