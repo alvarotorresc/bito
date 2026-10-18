@@ -30,6 +30,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.unit.dp
 import androidx.core.graphics.Insets
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -412,6 +413,77 @@ class BitoNavHostTest {
         } finally {
             sondaVeloHoy = null
         }
+    }
+
+    /** Lo alto (sin recortar por la pantalla) de la cabecera de Hoy, la que sube con la tienda encima; nulo si Hoy ya no está compuesto. */
+    private fun altoDeHoy(): Float? =
+        compose
+            .onAllNodesWithTag("cabecera-saldo", useUnmergedTree = true)
+            .fetchSemanticsNodes()
+            .firstOrNull()
+            ?.positionInRoot
+            ?.y
+
+    @Test
+    fun `Today rises 40 dp under the store and the veil settles at 35 percent, which is 65 percent of brightness`() {
+        val backOwner = FakeBackDispatcherOwner()
+        var velo = 0f
+        sondaVeloHoy = { velo = it }
+        try {
+            setContentWithBack(backOwner)
+            compose.mainClock.autoAdvance = false
+            compose.mainClock.advanceTimeBy(300)
+            val inicial = altoDeHoy()!!
+
+            compose.onNodeWithTag("cabecera-saldo", useUnmergedTree = true).performClick()
+            compose.mainClock.advanceTimeByFrame()
+            compose.mainClock.advanceTimeByFrame()
+            tapText(ApplicationProvider.getApplicationContext<Application>().getString(R.string.premios_ir_tienda))
+            var ultimo = inicial
+            repeat(160) {
+                compose.mainClock.advanceTimeBy(16)
+                altoDeHoy()?.let {
+                    ultimo = it
+                }
+            }
+            val sube = inicial - ultimo
+            val cuarenta = with(compose.density) { 40.dp.toPx() }
+            assertEquals("Hoy sube 40 dp", cuarenta, sube, 2f)
+            assertEquals("el velo se asienta en el 35 %: Hoy queda al 65 %", 0.35f, velo, 0.01f)
+
+            compose.runOnUiThread { backOwner.onBackPressedDispatcher.onBackPressed() }
+            repeat(160) { compose.mainClock.advanceTimeBy(16) }
+            assertEquals("Hoy vuelve a su sitio", inicial, altoDeHoy()!!, 1f)
+            assertEquals(0f, velo, 0.01f)
+        } finally {
+            sondaVeloHoy = null
+        }
+    }
+
+    @Test
+    fun `opening the store while Camino is on screen lands on Habi with no trial`() {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        compose.mainClock.autoAdvance = false
+        tapTag("pildora-camino")
+        compose.mainClock.advanceTimeBy(1_500)
+        compose.onNodeWithTag("pildora-camino", useUnmergedTree = true).assertIsSelected()
+
+        // Es lo que hace `abrirTienda` del Inicio, venga de la hoja del saldo o de donde venga.
+        compose.runOnUiThread { nav.navigate(RUTA_TIENDA) { launchSingleTop = true } }
+        compose.mainClock.advanceTimeBy(1_500)
+        assertEquals(RUTA_TIENDA, compose.runOnUiThread { nav.currentDestination?.route })
+        // La tienda espera a su primer estado real (hilos reales de Room y DataStore) antes de pintar las pestañas.
+        val limite = System.currentTimeMillis() + 10_000
+        while (compose.onAllNodesWithTag("ttab-habi", useUnmergedTree = true).fetchSemanticsNodes().isEmpty()) {
+            check(System.currentTimeMillis() < limite) { "La tienda no salió del estado de carga" }
+            compose.mainClock.advanceTimeBy(100)
+            Thread.sleep(50)
+        }
+        compose.onNodeWithTag("ttab-habi", useUnmergedTree = true).assertIsSelected()
+        compose.onNodeWithTag("ttab-jardin", useUnmergedTree = true).assertIsNotSelected()
+        compose.onNodeWithTag("ttab-congeladores", useUnmergedTree = true).assertIsNotSelected()
+        compose.onNodeWithTag("barra", useUnmergedTree = true).assertDoesNotExist()
     }
 
     @Test

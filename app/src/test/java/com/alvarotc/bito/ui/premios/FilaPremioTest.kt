@@ -70,6 +70,23 @@ class FilaPremioTest {
         assertEquals(FontWeight.Medium, debajo.fontWeight)
     }
 
+    // El `testTag` de la fila va dentro de su relleno: el ancho del nicho (que ocupa todo el ancho de la hoja) menos el de la
+    // fila da los dos rellenos laterales. El de 10 dp de arriba y abajo no se puede medir por semántica.
+    @Test
+    fun `the reward row has 12 dp of side padding around its 52 dp image`() {
+        montar("streak-7")
+        val hoja = textoDe("logro-hornacina").fetchSemanticsNode().boundsInRoot
+        val fila = textoDe("fila-premio").fetchSemanticsNode().boundsInRoot
+        val imagen = textoDe("store-thumb-head-flor").fetchSemanticsNode().boundsInRoot
+        with(rule.density) {
+            assertEquals(12.dp.toPx(), fila.left - hoja.left, 0.5f)
+            assertEquals(24.dp.toPx(), hoja.width - fila.width, 0.5f)
+            assertEquals(0f, imagen.left - fila.left, 0.5f)
+            assertEquals(52.dp.toPx(), imagen.height, 0.5f)
+            assertEquals((fila.height - imagen.height) / 2f, imagen.top - fila.top, 0.5f)
+        }
+    }
+
     private fun comprobar(
         id: String,
         linea: String,
