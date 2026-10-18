@@ -17,8 +17,7 @@ import org.robolectric.annotation.Config
 /**
  * [HabiAvatar]'s `contentDescription` used to be a single static "Habi" string regardless of
  * [Mood] — the [D]/[E] a11y finding this closes. `animated = false` avoids fighting the idle
- * bob/blink infinite transitions, same reasoning [StoreSectionTest]'s own kdoc gives for skipping
- * a full [HabiScreen] render.
+ * bob/blink infinite transitions, so the test stays a still picture.
  */
 @OptIn(ExperimentalTestApi::class)
 @RunWith(RobolectricTestRunner::class)

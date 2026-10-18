@@ -27,11 +27,7 @@
     <string name="relapsed_that_day">I slipped that day</string>
     <string name="stayed_clean">I stayed clean</string>
 
-    <string name="freezer_sheet_title">Freezers</string>
-    <string name="freezer_sheet_body">A freezer protects one failed day without breaking your streak.</string>
     <string name="freezers_owned_label">You have %1$d</string>
-    <string name="buy_freezer_action">Buy for %1$d bitos</string>
-    <string name="buy_freezer_missing">%1$d bitos short</string>
 
     <string name="freezer_info_hint">Freezer info</string>
     <string name="freezer_info_sheet_title">Freezers</string>

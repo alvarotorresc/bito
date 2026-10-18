@@ -31,7 +31,6 @@ import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.habitEntity
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.HabitsRepository
-import com.alvarotc.bito.data.repo.PointsReconciler
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.model.HabitStatus
@@ -127,7 +126,6 @@ class AjustesScreenTest {
                 domainState,
                 rewards,
                 repository,
-                PointsReconciler(domainState, rewards),
                 HabiSounds(MotorSonidoMudo),
                 defaultDispatcher = dispatcher,
             )

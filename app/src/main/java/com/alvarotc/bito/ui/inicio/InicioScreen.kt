@@ -602,7 +602,7 @@ fun InicioScreen(
     }
     LaunchedEffect(Unit) { snapshotFlow { q.value == 0f }.collect { if (it) subidaPx.floatValue = 0f } }
 
-    // Tres caricias en 1,5 s alegran a Habi (el mismo cálculo que HabiScreen).
+    // Tres caricias en 1,5 s alegran a Habi (el mismo cálculo que tenía la pantalla de Habi antigua).
     val caricias = remember { ArrayDeque<Long>() }
     var contento by remember { mutableStateOf(false) }
     var pulso by remember { mutableIntStateOf(0) }

@@ -24,11 +24,11 @@ import com.alvarotc.bito.domain.model.GardenSpecial
 import com.alvarotc.bito.domain.model.HabiCatalog
 import com.alvarotc.bito.ui.camino.arteDeEspecial
 import com.alvarotc.bito.ui.camino.nombreDeEspecial
-import com.alvarotc.bito.ui.habi.StoreItemThumb
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.fuerte
+import com.alvarotc.bito.ui.tienda.StoreItemThumb
 
 private val IMAGEN_PREMIO = 52.dp
 private val ARRIBA_PREMIO = 14.dp

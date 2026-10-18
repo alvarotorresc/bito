@@ -1,4 +1,4 @@
-package com.alvarotc.bito.ui.habi
+package com.alvarotc.bito.ui.tienda
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -13,6 +13,9 @@ import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.EquippedSet
 import com.alvarotc.bito.domain.model.Mood
 import com.alvarotc.bito.domain.model.Personality
+import com.alvarotc.bito.ui.habi.HabiAvatar
+import com.alvarotc.bito.ui.habi.HabiPieceImage
+import com.alvarotc.bito.ui.habi.HabiSpec
 
 /**
  * La miniatura de 36 dp de cada artículo (pieza 1 §7): los colores, con Habi en pequeño teñido; los
