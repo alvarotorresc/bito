@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.IntSize
@@ -56,6 +57,10 @@ fun Globito(
     alIrse: () -> Unit = {},
     autoOcultar: Boolean = true,
     cola: Float = 0.5f,
+    // El mismo texto con estilo (p. ej. el nombre en negrita); si está, se pinta en vez de [texto].
+    textoRico: AnnotatedString? = null,
+    // Se llama cuando el globito ya acabó su salida y no se ve.
+    alTerminar: () -> Unit = {},
 ) {
     val reducido = BitoTema.reducido
     val colores = BitoTema.colores
@@ -74,7 +79,10 @@ fun Globito(
             }
         }
     }
-    if (!estado.currentState && !estado.targetState) return
+    val alTerminarActual = rememberUpdatedState(alTerminar)
+    val terminado = !estado.currentState && !estado.targetState
+    LaunchedEffect(terminado) { if (terminado) alTerminarActual.value() }
+    if (terminado) return
     val subida = with(densidad) { 6.dp.roundToPx() }
     Popup(popupPositionProvider = remember(cola) { SobreElAncla(cola) }) {
         AnimatedVisibility(
@@ -97,7 +105,7 @@ fun Globito(
         ) {
             Column(modifier.testTag("globito")) {
                 Text(
-                    texto,
+                    textoRico ?: AnnotatedString(texto),
                     style = BitoTema.tipos.t14,
                     color = colores.tinta,
                     modifier =

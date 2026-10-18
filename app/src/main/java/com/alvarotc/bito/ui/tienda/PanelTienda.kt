@@ -7,7 +7,9 @@ import com.alvarotc.bito.ui.sistema.componentes.AvisoEstado
 import com.alvarotc.bito.ui.sistema.sonido.MotorSonido
 import com.alvarotc.bito.ui.tienda.congeladores.PanelCongeladores
 import com.alvarotc.bito.ui.tienda.habi.PanelHabi
+import com.alvarotc.bito.ui.tienda.jardin.EscenaJardinEstado
 import com.alvarotc.bito.ui.tienda.jardin.PanelJardin
+import com.alvarotc.bito.ui.tienda.jardin.escenaJardinDe
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -24,6 +26,8 @@ class ContextoPanel(
     val avisos: AvisoEstado,
     val sonido: MotorSonido,
     val tacto: Tacto,
+    // La escena del jardín que comparten su escena y su catálogo (el toque en lo tuyo). Sale del vuelo, que la pantalla recuerda.
+    val jardin: EscenaJardinEstado = escenaJardinDe(vuelo),
 )
 
 /**
