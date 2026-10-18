@@ -19,6 +19,7 @@ import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.tienda.EscenaArmarioEstado
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -31,6 +32,12 @@ internal const val BROTE_LIENZO = 260f
 /** El suelo del recorte del brote: 156 unidades del lienzo por debajo de los pies (`G0 = 1860` del mock). */
 internal const val SUELO_BAJO_PIES = 156f
 private const val ALFA_INICIO = 0.2f
+
+// La caída (`fall`) es opaca a mitad de la curva: min(1, 0,2 + p · 1,4).
+private const val ALFA_PENDIENTE = 1.4f
+
+// El brote (`sprout`) posa, vibra y aplasta a los 230 ms.
+private const val BROTE_POSA_MS = 230L
 private const val REBOTE_DP = 3f
 internal const val GRANOS_BROTE = GranosBrote.N
 private const val FUNDIDO_MS = 180
@@ -176,7 +183,15 @@ internal class CambioArmario(
     var dpPorUnidad: Float = 0f
 
     val caidaDp: Float get() = if (gesto == GestoPrueba.CAE) CAIDA_LIENZO * dpPorUnidad * (1f - progreso.value) else 0f
-    val alfaPieza: Float get() = if (gesto == GestoPrueba.CAE) ALFA_INICIO + (1f - ALFA_INICIO) * progreso.value.coerceIn(0f, 1f) else 1f
+    val alfaPieza: Float get() =
+        if (gesto == GestoPrueba.CAE) {
+            minOf(
+                1f,
+                ALFA_INICIO + ALFA_PENDIENTE * progreso.value.coerceIn(0f, 1f),
+            )
+        } else {
+            1f
+        }
     val reboteDp: Float get() = rebote.value
     val brotarDp: Float get() = if (gesto == GestoPrueba.BROTA) BROTE_LIENZO * dpPorUnidad * (1f - progreso.value) else 0f
     val granos: Int get() = if (gesto == GestoPrueba.BROTA) GRANOS_BROTE else 0
@@ -229,20 +244,21 @@ internal class CambioArmario(
                     evento is EventoArmario.Quita -> {
                         // Quitar la prueba ya suena en la pantalla; quitar lo puesto solo suena aquí.
                         if (!evento.dePrueba) senal(sonido, tacto, Snd.HUNDIR, Haptica.LOW)
+                        launch { armario.aplastar(APLASTE_FUNDE, APLASTE_IDA_MS, APLASTE_VUELTA_MS) }
                         fundidoAnim.animateTo(0f, tween(duracionFundido, easing = Curvas.out))
                         listo = true
                     }
                     gestoPropio == GestoPrueba.FUNDE -> {
                         val categoriaPropia = requireNotNull(categoria)
                         val real = gestoDe(categoriaPropia)
-                        senal(sonido, tacto, if (real == GestoPrueba.CAE) Snd.POSAR else Snd.BROTE, Haptica.TICK)
+                        senal(sonido, tacto, if (real == GestoPrueba.CAE) null else Snd.BROTE, Haptica.TICK)
                         launch { armario.aplastar(real.aplaste(), APLASTE_IDA_MS, APLASTE_VUELTA_MS) }
                         fundidoAnim.animateTo(1f, tween(duracionFundido, easing = Curvas.out))
                         listo = true
                         llegada(real, sonido, tacto)
                     }
                     gestoPropio == GestoPrueba.CAE -> {
-                        senal(sonido, tacto, Snd.POSAR, Haptica.TICK)
+                        senal(sonido, tacto, null, Haptica.TICK)
                         saleElDisfraz()
                         progreso.animateTo(1f, tween(Duraciones.CAER, easing = Curvas.cae))
                         llegada(gestoActual, sonido, tacto)
@@ -255,9 +271,12 @@ internal class CambioArmario(
                         senal(sonido, tacto, Snd.BROTE, Haptica.TICK)
                         saleElDisfraz()
                         launch { granosAnim.animateTo(1f, tween(GranosBrote.TOTAL_MS, easing = Curvas.lin)) }
-                        launch { armario.aplastar(APLASTE_BROTE, APLASTE_IDA_MS, APLASTE_VUELTA_MS) }
+                        launch {
+                            delay(BROTE_POSA_MS)
+                            llegada(gestoActual, sonido, tacto)
+                            armario.aplastar(APLASTE_BROTE, APLASTE_IDA_MS, APLASTE_VUELTA_MS)
+                        }
                         progreso.animateTo(1f, Muelles.hoja<Float>())
-                        llegada(gestoActual, sonido, tacto)
                         listo = true
                     }
                 }
@@ -286,7 +305,7 @@ internal class CambioArmario(
         tacto: Tacto,
     ) {
         when (gesto) {
-            GestoPrueba.CAE -> senal(sonido, tacto, null, Haptica.LOW)
+            GestoPrueba.CAE -> senal(sonido, tacto, Snd.POSAR, Haptica.LOW)
             GestoPrueba.BROTA -> senal(sonido, tacto, Snd.POSAR, Haptica.LOW)
             GestoPrueba.FUNDE -> Unit
         }

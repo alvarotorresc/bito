@@ -161,15 +161,49 @@ class PruebaEnArmarioTest {
     }
 
     @Test
-    fun `a hat plays POSAR and TICK then LOW`() {
+    fun `a hat plays TICK on touch, then POSAR and LOW on landing at 210 ms`() {
         val b = BancoArmario(rule)
         b.poner(EquippedSet(head = gorro), PruebaTienda.Pieza(gorro))
-        b.avanzar(100)
-        assertEquals(listOf(Snd.POSAR), b.sonido.snds())
+        b.avanzar(160)
+        assertEquals(emptyList<Snd>(), b.sonido.snds())
         assertEquals(listOf(Haptica.TICK), b.tacto.hapticas.toList())
-        b.avanzar(200)
-        assertEquals(listOf(Haptica.TICK, Haptica.LOW), b.tacto.hapticas.toList())
+        b.avanzar(80)
         assertEquals(listOf(Snd.POSAR), b.sonido.snds())
+        assertEquals(listOf(Haptica.TICK, Haptica.LOW), b.tacto.hapticas.toList())
+    }
+
+    @Test
+    fun `a hat is opaque by the middle of the fall`() {
+        val b = BancoArmario(rule)
+        b.poner(EquippedSet(head = gorro), PruebaTienda.Pieza(gorro))
+        val alfas = b.avanzar(200) { b.anim.alfaPieza }
+        assertTrue(alfas.any { it == 1f })
+        assertTrue("antes de llegar ya es opaca", alfas.indexOfFirst { it == 1f } < alfas.size - 1)
+    }
+
+    @Test
+    fun `boots land at 230 ms with POSAR LOW and the 4 percent squash`() {
+        val b = BancoArmario(rule)
+        b.poner(EquippedSet(feet = botas), PruebaTienda.Pieza(botas))
+        val antes = b.avanzar(200) { b.armario.escalaY }
+        assertTrue("sin aplastar antes de los 230 ms", antes.all { it == 1f })
+        assertEquals(listOf(Snd.BROTE), b.sonido.snds())
+        assertEquals(listOf(Haptica.TICK), b.tacto.hapticas.toList())
+        b.avanzar(60)
+        assertEquals(listOf(Snd.BROTE, Snd.POSAR), b.sonido.snds())
+        assertEquals(listOf(Haptica.TICK, Haptica.LOW), b.tacto.hapticas.toList())
+        val escala = b.avanzar(200) { b.armario.escalaY }
+        assertEquals(0.96f, escala.min(), 0.01f)
+    }
+
+    @Test
+    fun `taking the trial off squashes 6 percent`() {
+        val b = BancoArmario(rule)
+        b.poner(EquippedSet(head = gorro), PruebaTienda.Pieza(gorro))
+        b.avanzar(2000)
+        b.poner(EquippedSet(), null)
+        val escala = b.avanzar(400) { b.armario.escalaY }
+        assertEquals(0.94f, escala.min(), 0.01f)
     }
 
     @Test
@@ -285,7 +319,7 @@ class PruebaEnArmarioTest {
     fun `changing the trial mid-fall restarts from the current state`() {
         val b = BancoArmario(rule)
         b.poner(EquippedSet(feet = botas), PruebaTienda.Pieza(botas))
-        b.avanzar(40)
+        b.avanzar(260)
         val aplastada = b.armario.escalaY
         assertTrue("las botas ya la aplastan", aplastada < 1f)
         b.poner(EquippedSet(feet = botas, head = gorro), PruebaTienda.Pieza(gorro))
@@ -295,8 +329,8 @@ class PruebaEnArmarioTest {
         assertTrue("el aplastamiento sigue donde estaba, no vuelve a cero", b.armario.escalaY <= aplastada + 0.02f)
         val escala = b.avanzar(900) { b.armario.escalaY }
         assertEquals("y acaba suelta", 1f, escala.last(), 0.001f)
-        assertEquals(listOf(Snd.BROTE, Snd.POSAR), b.sonido.snds())
-        assertEquals("solo el aterrizaje del gorro", 1, b.tacto.hapticas.count { it == Haptica.LOW })
+        assertEquals(listOf(Snd.BROTE, Snd.POSAR, Snd.POSAR), b.sonido.snds())
+        assertEquals("el aterrizaje de las botas y el del gorro", 2, b.tacto.hapticas.count { it == Haptica.LOW })
     }
 
     @Test
