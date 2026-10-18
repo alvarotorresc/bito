@@ -161,7 +161,12 @@ class HojaTest {
         }
         rule.waitForIdle()
         val atributos = ventana!!.attributes
-        assertTrue(atributos.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS != 0)
+        // LAYOUT_NO_LIMITS deja la ventana sin insets (navegación 0): el pie se metía bajo la barra de gestos.
+        assertTrue(atributos.flags and WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS == 0)
         assertEquals(0f, atributos.dimAmount)
+        // Con NO_LIMITS no basta: la ventana (gravedad CENTER, alto de pantalla) se centraba en la franja entre barras
+        // y con barras desiguales (152 arriba, 63 abajo en el Pixel) bajaba (152 - 63) / 2 = 45 px.
+        assertEquals(0, atributos.fitInsetsTypes)
+        assertEquals(WindowManager.LayoutParams.LAYOUT_IN_DISPLAY_CUTOUT_MODE_ALWAYS, atributos.layoutInDisplayCutoutMode)
     }
 }
