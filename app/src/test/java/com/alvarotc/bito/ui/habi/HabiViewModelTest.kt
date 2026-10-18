@@ -6,16 +6,12 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
-import com.alvarotc.bito.data.customizationItemEntity
 import com.alvarotc.bito.data.db.BitoDatabase
 import com.alvarotc.bito.data.repo.DomainStateRepository
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.LogicalDays
-import com.alvarotc.bito.domain.model.CustomizationCategory
 import com.alvarotc.bito.domain.model.GardenSpecial
-import com.alvarotc.bito.domain.model.HabiCatalog
-import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -30,7 +26,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -62,7 +57,6 @@ class HabiViewModelTest {
     private lateinit var domainStateRepo: DomainStateRepository
     private lateinit var rewardsRepo: RewardsRepository
     private lateinit var settingsRepo: SettingsRepository
-    private lateinit var habiSounds: HabiSounds
 
     private fun settingsStore(): DataStore<Preferences> =
         PreferenceDataStoreFactory.create(
@@ -74,7 +68,6 @@ class HabiViewModelTest {
             domainStateRepo,
             rewardsRepo,
             settingsRepo,
-            habiSounds,
             now = { fixedNow },
             zone = { utc },
             defaultDispatcher = dispatcher,
@@ -93,7 +86,6 @@ class HabiViewModelTest {
         domainStateRepo = DomainStateRepository(db)
         rewardsRepo = RewardsRepository(db)
         settingsRepo = SettingsRepository(settingsStore())
-        habiSounds = HabiSounds(MotorSonidoMudo)
     }
 
     @After
@@ -101,49 +93,6 @@ class HabiViewModelTest {
         Dispatchers.resetMain()
         db.close()
     }
-
-    @Test
-    fun `unequipDefault clears the category so the default falls back in place of the tapped item`() =
-        runTest {
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-            db.customizationItemDao().upsert(customizationItemEntity("body-vainilla", CustomizationCategory.BODY_COLOR, equipped = true))
-            advanceUntilIdle()
-            assertEquals("body-vainilla", vm.uiState.value.spec.equipped.bodyColor)
-
-            vm.unequipDefault(HabiCatalog.byId("body-salvia")!!)
-            advanceUntilIdle()
-
-            assertEquals("body-salvia", vm.uiState.value.spec.equipped.bodyColor)
-            assertEquals(false, db.customizationItemDao().byId("body-vainilla")?.equipped)
-        }
-
-    @Test
-    fun `unequip takes off a worn optional, same write as unequipDefault`() =
-        runTest {
-            val vm = newViewModel()
-            // uiState is a WhileSubscribed StateFlow: without a live collector the combine above
-            // never runs, so `.value` would stay frozen at the seeded HabiUiState() forever —
-            // same reason DetailViewModelTest asserts against the DB directly instead. A
-            // background collector on the TestScope's own backgroundScope (auto-cancelled when
-            // the test ends) is enough to keep it live for `.value` reads below.
-            backgroundScope.launch { vm.uiState.collect {} }
-            advanceUntilIdle()
-            db.customizationItemDao().upsert(customizationItemEntity("neck-collar-flores", CustomizationCategory.NECK, equipped = true))
-            advanceUntilIdle()
-            assertEquals("neck-collar-flores", vm.uiState.value.spec.equipped.neck)
-
-            vm.unequip(CustomizationCategory.NECK)
-            advanceUntilIdle()
-
-            assertNull(vm.uiState.value.spec.equipped.neck)
-        }
 
     @Test
     fun `the garden shows the unlocked specials and the stored high mark`() =

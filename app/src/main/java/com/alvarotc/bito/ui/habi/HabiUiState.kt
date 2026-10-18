@@ -26,8 +26,8 @@ data class HabiUiState(
 )
 
 /**
- * Derives the Habi state from [state] as seen on [today]. Pure — no side effects, no storage, no
- * clock reads — so it is trivially testable and safe to call on every state change.
+ * Derives the Habi state from [state] as seen on [today]. Pure: no side effects, no storage, no
+ * clock reads, so it is trivially testable and safe to call on every state change.
  */
 fun buildHabiUiState(
     state: DomainState,

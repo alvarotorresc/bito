@@ -34,10 +34,8 @@ import com.alvarotc.bito.data.repo.HabitsRepository
 import com.alvarotc.bito.data.repo.RewardsRepository
 import com.alvarotc.bito.data.settings.SettingsRepository
 import com.alvarotc.bito.domain.model.HabitStatus
-import com.alvarotc.bito.ui.habi.HabiSounds
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.sistema.ConSistema
-import com.alvarotc.bito.ui.sistema.sonido.MotorSonidoMudo
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -126,7 +124,6 @@ class AjustesScreenTest {
                 domainState,
                 rewards,
                 repository,
-                HabiSounds(MotorSonidoMudo),
                 defaultDispatcher = dispatcher,
             )
         rule.setContent {
