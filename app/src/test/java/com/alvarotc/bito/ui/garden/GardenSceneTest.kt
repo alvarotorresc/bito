@@ -58,6 +58,7 @@ import com.alvarotc.bito.ui.sistema.TactoGrabado
 import com.alvarotc.bito.ui.sistema.sonido.Snd
 import com.alvarotc.bito.ui.theme.BitoTheme
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -894,6 +895,38 @@ class GardenSceneTest {
         val conSombra = claridad(captura, cajas[1].left.toInt() + x, cajas[1].top.toInt() + y)
         assertTrue("sin sombra $sinSombra, con sombra $conSombra", conSombra < sinSombra * 0.97f)
     }
+
+    private fun claridadBajoElPie(especial: GardenSpecial): Pair<Int, Int> {
+        val sin = GardenState.INITIAL
+        val con = sin.copy(specials = setOf(especial))
+        val (captura, cajas, _) = capturaPareja(sin, con)
+        val r = sceneItems(con, cajas[0].width, cajas[0].height).filterIsInstance<SceneItem.Special>().single().rect
+        val x = (r.left + r.width / 2f).toInt()
+        val y = (r.top + r.height + r.width * 0.03f).toInt()
+        return claridad(captura, cajas[0].left.toInt() + x, cajas[0].top.toInt() + y) to
+            claridad(captura, cajas[1].left.toInt() + x, cajas[1].top.toInt() + y)
+    }
+
+    private fun hayRelieveBajoElPie(especial: GardenSpecial): Boolean {
+        val (sin, con) = claridadBajoElPie(especial)
+        return con < sin * 0.97f
+    }
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `mushrooms have a shadow`() = assertTrue(hayRelieveBajoElPie(GardenSpecial.MUSHROOMS))
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the lantern has a shadow`() = assertTrue(hayRelieveBajoElPie(GardenSpecial.LANTERN))
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the flat stone path has no shadow`() = assertFalse(hayRelieveBajoElPie(GardenSpecial.STONE_PATH))
+
+    @Test
+    @GraphicsMode(GraphicsMode.Mode.NATIVE)
+    fun `the flat pond has no shadow`() = assertFalse(hayRelieveBajoElPie(GardenSpecial.POND))
 
     @Test
     fun `the scene with all objects and the six specials draws without exceptions`() {

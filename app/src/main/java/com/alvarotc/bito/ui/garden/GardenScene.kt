@@ -64,6 +64,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
@@ -421,6 +426,8 @@ fun GardenScene(
     var globo by remember { mutableStateOf<GlobitoDePlanta?>(null) }
     var globoTick by remember { mutableIntStateOf(0) }
     var globoObjeto by remember { mutableStateOf<GlobitoDeObjeto?>(null) }
+    // El globito del objeto se queda en la escena hasta acabar su salida: `visible` baja y `alTerminar` lo retira.
+    var globoObjetoVisible by remember { mutableStateOf(true) }
     val giroObjeto = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
     val brilloObjeto = remember { mutableStateMapOf<String, Animatable<Float, AnimationVector1D>>() }
     var habiNudge by remember { mutableIntStateOf(0) }
@@ -867,6 +874,12 @@ fun GardenScene(
                                 val alElemento = currentAlTocarElemento
                                 if (alElemento != null) {
                                     alElemento(action.item.special.key)
+                                } else if (currentGlobitoObjetos) {
+                                    // En Hoy y Camino el especial hace lo mismo que un objeto: se mece y abre su globito.
+                                    gesto(Snd.PLANTA, Haptica.TICK)
+                                    mecerObjeto(action.item.special.key, IMPULSO_OBJETO_HOY)
+                                    globoObjetoVisible = true
+                                    globoObjeto = GlobitoDeObjeto(action.item.special.key, ++globoTick)
                                 } else {
                                     gesto(Snd.PLANTA, Haptica.TICK)
                                     aplastar(action.item.special.key)
@@ -883,6 +896,7 @@ fun GardenScene(
                                     objeto != null && currentGlobitoObjetos -> {
                                         gesto(Snd.PLANTA, Haptica.TICK)
                                         mecerObjeto(objeto.clave, IMPULSO_OBJETO_HOY)
+                                        globoObjetoVisible = true
                                         globoObjeto = GlobitoDeObjeto(objeto.clave, ++globoTick)
                                     }
                                     else -> currentAlTocarFondo?.invoke()
@@ -915,11 +929,14 @@ fun GardenScene(
             if (GardenSpecial.LANTERN in garden.specials && lantern != null && brillo > 0f) drawLanternGlow(lantern, brillo)
         }
 
-        bubble?.let { SpecialBubble(it, sceneW, conOrigen = globitoPlanta || globitoObjetos) }
+        bubble?.let { SpecialBubble(it, sceneW, conOrigen = globitoPlanta) }
         globoObjeto?.let { g ->
-            val objeto = items.firstOrNull { it is SceneItem.Objeto && it.clave == g.clave }
+            val objeto =
+                items.firstOrNull {
+                    (it is SceneItem.Objeto && it.clave == g.clave) || (it is SceneItem.Special && it.special.key == g.clave)
+                }
             if (objeto != null) {
-                val texto = textoObjeto(g.clave)
+                val texto = textoGlobo(g.clave)
                 key(g.tick) {
                     // El globito se posa sobre el objeto, como el de una planta.
                     Box(
@@ -928,7 +945,13 @@ fun GardenScene(
                             .size(with(density) { objeto.rect.width.toDp() }, with(density) { objeto.rect.height.toDp() })
                             .testTag("garden-bubble-${g.clave}"),
                     ) {
-                        Globito(visible = true, texto = texto, alIrse = { if (globoObjeto?.tick == g.tick) globoObjeto = null })
+                        Globito(
+                            visible = globoObjetoVisible,
+                            texto = texto.text,
+                            alIrse = { if (globoObjeto?.tick == g.tick) globoObjetoVisible = false },
+                            textoRico = texto,
+                            alTerminar = { if (globoObjeto?.tick == g.tick) globoObjeto = null },
+                        )
                     }
                 }
             }
@@ -997,18 +1020,29 @@ internal fun recursosDelJardin(
         .distinct()
         .map { it to 1 }
 
-/** Lo que dice el globito de un objeto comprado: su nombre y de dónde salió. */
+/** Lo que dice el globito de un objeto comprado o de un especial: su nombre en negrita y de dónde salió. */
 @Composable
-private fun textoObjeto(clave: String): String {
+private fun textoGlobo(clave: String): AnnotatedString {
+    val especial = GardenSpecial.entries.firstOrNull { it.key == clave }
     val nombre =
         stringResource(
-            when (clave) {
-                "banco" -> R.string.store_garden_bench
-                "regadera" -> R.string.store_garden_can
+            when {
+                especial != null -> nombreDeEspecial(especial)
+                clave == "banco" -> R.string.store_garden_bench
+                clave == "regadera" -> R.string.store_garden_can
                 else -> error("objeto de jardín sin nombre: $clave")
             },
         )
-    return nombre + " \u00b7 " + stringResource(R.string.store_garden_bubble_bought)
+    val origen =
+        if (especial != null) {
+            stringResource(R.string.store_garden_bubble_special, stringResource(BadgeStrings.badgeNameRes(especial.badgeId)))
+        } else {
+            stringResource(R.string.store_garden_bubble_bought)
+        }
+    return buildAnnotatedString {
+        withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(nombre) }
+        append(" \u00b7 $origen")
+    }
 }
 
 @Composable
@@ -1207,7 +1241,8 @@ private fun DrawScope.drawItem(
         pose.brillo = maxOf(pose.brillo, extra.brillo)
         if (plant == null) giro = extra.giro
     }
-    if (item is SceneItem.Objeto) drawSombraObjeto(r, extra?.sombra ?: 1f)
+    // Bajo todo lo que no es suelo ni plano (el caminito y el estanque no la llevan): objetos y especiales de pie.
+    if (item is SceneItem.Objeto || (special != null && special.special !in ESPECIALES_PLANOS)) drawSombraObjeto(r, extra?.sombra ?: 1f)
     drawPieza(image, r, plant != null, wilt, filtro, giro, pose)
     val llegada = fx.llegada
     if (special != null && llegada != null && llegada.especial == special.special && !fx.reducido) {
@@ -1221,6 +1256,7 @@ private fun DrawScope.drawItem(
 
 // La sombra de un objeto de jardín (sin token), como `--sombra-objeto` del mock: una elipse del 110 % del ancho
 // y el 18 % del ancho de alto, centrada en el pie, con un degradado radial de rgba(60,40,20,.30) a transparente.
+private val ESPECIALES_PLANOS = setOf(GardenSpecial.STONE_PATH, GardenSpecial.POND)
 private const val SOMBRA_OBJETO_ANCHO = 1.1f
 private const val SOMBRA_OBJETO_ALTO = 0.18f
 private val SOMBRA_OBJETO = Color(red = 60, green = 40, blue = 20, alpha = 77)

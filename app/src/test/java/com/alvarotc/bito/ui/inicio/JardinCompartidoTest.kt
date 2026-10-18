@@ -5,6 +5,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performTouchInput
@@ -103,6 +104,33 @@ class JardinCompartidoTest {
         montar(garden)
         tocar { it is SceneItem.Special }
         compose.onNodeWithText("Lantern · Came with First flame.").assertExists()
+    }
+
+    @Test
+    fun `a special in Today rocks and uses the system bubble`() {
+        garden = GardenState.INITIAL.copy(specials = setOf(GardenSpecial.LANTERN))
+        montar(garden)
+        tocar { it is SceneItem.Special }
+        assertTrue(Snd.PLANTA in sonido.snds())
+        assertTrue(Haptica.TICK in tacto.hapticas)
+        compose.onNodeWithTag("globito").assertExists()
+        compose.onNodeWithText("Lantern \u00b7 Came with First flame.").assertExists()
+    }
+
+    @Test
+    fun `the object bubble leaves with its exit`() {
+        garden = GardenState.INITIAL.copy(objects = setOf("banco"))
+        montar(garden)
+        val t0 = compose.mainClock.currentTime
+        tocar { it is SceneItem.Objeto }
+        compose.onNodeWithTag("globito").assertExists()
+        // A los 2,4 s empieza la salida (180 ms con `hundir`): no desaparece de golpe, sigue ahí un rato más.
+        while (compose.onAllNodesWithTag("globito").fetchSemanticsNodes().isNotEmpty() && compose.mainClock.currentTime - t0 < 5000) {
+            compose.mainClock.advanceTimeByFrame()
+        }
+        val duro = compose.mainClock.currentTime - t0
+        assertTrue("el globito se va con su salida, no antes de 2,4 s + 80 ms: $duro", duro >= 2480)
+        assertTrue("y se retira al acabar: $duro", duro < 3500)
     }
 
     @Test
