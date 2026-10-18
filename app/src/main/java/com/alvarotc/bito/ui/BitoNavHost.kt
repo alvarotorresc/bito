@@ -64,6 +64,7 @@ import com.alvarotc.bito.ui.detail.DetailViewModel
 import com.alvarotc.bito.ui.habi.HabiViewModel
 import com.alvarotc.bito.ui.habitform.HabitFormScreen
 import com.alvarotc.bito.ui.habitform.HabitFormViewModel
+import com.alvarotc.bito.ui.inicio.ComprasDeTienda
 import com.alvarotc.bito.ui.inicio.EntradaSesion
 import com.alvarotc.bito.ui.inicio.InicioScreen
 import com.alvarotc.bito.ui.inicio.LocalAnimacionRuta
@@ -198,6 +199,7 @@ fun BitoNavHost(
     val camara = Muelles.camara<IntOffset>(umbral = IntOffset.VisibilityThreshold)
     // Hoy baja al 65 % de brillo mientras la tienda está encima y vuelve al hundirse; el velo sigue a la ruta actual.
     val tiendaAbierta = currentRoute == RUTA_TIENDA
+    val comprasDeTienda = remember { ComprasDeTienda() }
     val velo by animateFloatAsState(
         targetValue = if (tiendaAbierta) VELO_HOY else 0f,
         animationSpec =
@@ -346,6 +348,8 @@ fun BitoNavHost(
                                     gordo = gordo,
                                     alGordoVisto = { entry.savedStateHandle[GORDO_VISTO] = true },
                                     sesion = remember(container) { sesionInicioDe(container) },
+                                    tiendaAbierta = tiendaAbierta,
+                                    compras = comprasDeTienda,
                                 )
                             }
                         }

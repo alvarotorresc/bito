@@ -331,6 +331,9 @@ fun InicioScreen(
     sesion: SesionInicio? = null,
     // El contenido de cada bloque de la tierra; las pruebas ponen uno suyo.
     contenidoSesion: @Composable (BloqueSesion) -> Unit = { BloqueDeSesion(it) },
+    // La tienda está encima de Hoy: al cerrarse, lo que se compró dentro se mece una vez (J31).
+    tiendaAbierta: Boolean = false,
+    compras: ComprasDeTienda? = null,
 ) {
     val estado by hoy.uiState.collectAsStateWithLifecycle()
     val estadoCamino by camino.uiState.collectAsStateWithLifecycle()
@@ -338,6 +341,17 @@ fun InicioScreen(
     val momento by celebraciones.actual.collectAsStateWithLifecycle()
     val vetaRachaDe = (momento as? Momento.Veta)?.takeIf { it.tipo == TipoVeta.RACHA }?.habitId
     val estadoActual = rememberUpdatedState(estado)
+    // J31: lo comprado dentro de la tienda se mece al volver. Hoy se vuelve a componer al cerrarla, así que lo que se
+    // recuerda entre una y otra vive en [compras] (arriba); el objeto se calcula una vez y esta composición lo guarda.
+    var recienComprado by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(tiendaAbierta, estado.loading) {
+        if (estado.loading || compras == null) return@LaunchedEffect
+        if (tiendaAbierta) {
+            compras.alAbrir(estado.garden.objects)
+        } else {
+            compras.alCerrar(estado.garden.objects)?.let { recienComprado = it }
+        }
+    }
     val reducido = BitoTema.reducido
     val gesto = rememberGesto()
     val scope = rememberCoroutineScope()
@@ -825,6 +839,7 @@ fun InicioScreen(
                     altoContenido = altoContenido,
                     respiracion = respiracion.value,
                     saltoAmplitud = saltoAmplitud,
+                    recienComprado = recienComprado,
                 )
                 if (caminoVisible) {
                     TituloCamino(
@@ -1065,4 +1080,23 @@ private fun Context.actividad(): Activity? {
         c = c.baseContext
     }
     return null
+}
+
+/**
+ * Lo que Hoy recuerda de una visita a la tienda (J31): los objetos del jardín al abrirla, para saber al cerrarla cuál es el
+ * último que se compró dentro. Se compara con el estado real, nunca con el de relleno (C1), y se consume al leerlo.
+ */
+class ComprasDeTienda {
+    private var antes: Set<String>? = null
+
+    fun alAbrir(objetos: Set<String>) {
+        if (antes == null) antes = objetos
+    }
+
+    /** El último objeto nuevo desde que se abrió la tienda, una sola vez; null si no hubo visita o no se compró nada. */
+    fun alCerrar(objetos: Set<String>): String? {
+        val previo = antes ?: return null
+        antes = null
+        return (objetos - previo).lastOrNull()
+    }
 }
