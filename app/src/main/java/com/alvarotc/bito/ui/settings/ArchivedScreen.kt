@@ -3,7 +3,6 @@ package com.alvarotc.bito.ui.settings
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,7 +29,6 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.alvarotc.bito.R
@@ -41,7 +38,6 @@ import com.alvarotc.bito.domain.model.Personality
 import com.alvarotc.bito.ui.components.formatDayMedium
 import com.alvarotc.bito.ui.habi.HabiAvatar
 import com.alvarotc.bito.ui.habi.HabiSpec
-import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.sistema.BitoFormas
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Duraciones
@@ -49,6 +45,7 @@ import com.alvarotc.bito.ui.sistema.Haptica
 import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.componentes.AvisoHost
 import com.alvarotc.bito.ui.sistema.componentes.Boton
+import com.alvarotc.bito.ui.sistema.componentes.BotonVolver
 import com.alvarotc.bito.ui.sistema.componentes.Fila
 import com.alvarotc.bito.ui.sistema.componentes.masBarras
 import com.alvarotc.bito.ui.sistema.componentes.rememberAvisoEstado
@@ -139,15 +136,7 @@ private fun ArchivedHeader(onBack: () -> Unit) {
         Modifier.fillMaxWidth().padding(horizontal = Medidas.e8, vertical = Medidas.e8),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Box(
-            Modifier
-                .size(Medidas.toqueMinimo)
-                .clip(BitoFormas.canto)
-                .clickable(role = Role.Button, onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(IconosSistema.ArrowLeft, contentDescription = stringResource(R.string.back), Modifier.size(22.dp), tint = colores.tinta)
-        }
+        BotonVolver(onBack)
         Text(
             stringResource(R.string.archived_title),
             style = BitoTema.tipos.t24,

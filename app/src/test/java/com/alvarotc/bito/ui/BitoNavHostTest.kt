@@ -483,6 +483,32 @@ class BitoNavHostTest {
         assertEquals("a1", compose.runOnUiThread { nav.currentBackStackEntry?.arguments?.getString("habitId") })
     }
 
+    /** Empuja [ruta] sobre Hoy, comprueba que hay una flecha de volver y que, al pulsarla, la pila vuelve a Hoy. */
+    private fun volverDesde(
+        ruta: String,
+        rutaNav: String,
+    ) {
+        lateinit var nav: NavHostController
+        setContentWithNav { nav = it }
+        compose.runOnUiThread { nav.navigate(ruta) }
+        compose.waitUntil(timeoutMillis = 5_000) { compose.runOnUiThread { nav.currentDestination?.route } == rutaNav }
+        compose.waitUntil(timeoutMillis = 5_000) { hayTag("volver") }
+        compose.onNodeWithTag("volver", useUnmergedTree = true).fetchSemanticsNode().config[SemanticsActions.OnClick].action?.invoke()
+        esperarRuta(nav, RUTA_HOY)
+    }
+
+    @Test
+    fun `settings has a back arrow that returns to Today`() = volverDesde("settings", "settings")
+
+    @Test
+    fun `archived has a back arrow that returns to Today`() = volverDesde("archived", "archived")
+
+    @Test
+    fun `tasks has a back arrow that returns to Today`() = volverDesde("tasks", "tasks")
+
+    @Test
+    fun `the new habit form has a back arrow that returns to Today`() = volverDesde("habit", "habit?id={id}&objetivo={objetivo}")
+
     @Test
     fun `creating a habit leaves its id for Today`() {
         lateinit var nav: NavHostController

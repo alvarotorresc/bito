@@ -1,23 +1,18 @@
 package com.alvarotc.bito.ui.tasks
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import com.alvarotc.bito.R
 import com.alvarotc.bito.domain.model.LogicalDay
-import com.alvarotc.bito.ui.icons.IconosSistema
 import com.alvarotc.bito.ui.sistema.BitoTema
 import com.alvarotc.bito.ui.sistema.Medidas
+import com.alvarotc.bito.ui.sistema.componentes.BotonVolver
 import com.alvarotc.bito.ui.sistema.componentes.Dialogo
 import com.alvarotc.bito.ui.sistema.fuerte
 import java.time.LocalDate
@@ -36,14 +31,7 @@ internal fun CabeceraTareas(
 ) {
     val colores = BitoTema.colores
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(Medidas.e8)) {
-        Box(
-            Modifier
-                .defaultMinSize(Medidas.toqueMinimo, Medidas.toqueMinimo)
-                .clickable(role = Role.Button, onClick = onBack),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(IconosSistema.CaretLeft, contentDescription = stringResource(R.string.back), tint = colores.tinta)
-        }
+        BotonVolver(onBack)
         Text(titulo, style = BitoTema.tipos.t32.fuerte(), color = colores.tinta, modifier = Modifier.padding(vertical = Medidas.e4))
     }
 }

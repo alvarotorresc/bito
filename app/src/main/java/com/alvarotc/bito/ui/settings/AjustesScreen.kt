@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
@@ -25,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -43,7 +45,9 @@ import com.alvarotc.bito.ui.settings.estratos.resumenCopias
 import com.alvarotc.bito.ui.settings.estratos.resumenGeneral
 import com.alvarotc.bito.ui.settings.estratos.resumenSonido
 import com.alvarotc.bito.ui.sistema.BitoTema
+import com.alvarotc.bito.ui.sistema.Medidas
 import com.alvarotc.bito.ui.sistema.Muelles
+import com.alvarotc.bito.ui.sistema.componentes.BotonVolver
 import com.alvarotc.bito.ui.sistema.componentes.EstratoPlegable
 import kotlinx.coroutines.delay
 
@@ -76,9 +80,8 @@ private fun escalaCamaraEntrada(
 /**
  * Ajustes de la Bito 2 (spec §5.1): la maqueta del jardín arriba y cinco estratos de tierra debajo, uno abierto
  * cada vez. [habiViewModel] es el de la actividad: da el jardín de la maqueta y la personalidad de Habi.
- * [onBack] se conserva porque Ajustes es una pestaña y la llama el `NavHost`; aquí no hay flecha.
+ * [onBack] lo llaman la flecha de volver y el `NavHost`.
  */
-@Suppress("UNUSED_PARAMETER")
 @Composable
 fun AjustesScreen(
     backupViewModel: BackupViewModel,
@@ -98,41 +101,60 @@ fun AjustesScreen(
     var abierto by rememberSaveable { mutableStateOf<Int?>(null) }
     val escala = escalaCamaraEntrada(entrada, BitoTema.reducido)
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(colores.roca)
-            .verticalScroll(scroll),
-    ) {
-        Box(Modifier.background(colores.estratos.general.fondo)) {
-            MaquetaJardin(garden = habi.garden, spec = habi.spec, scroll = scroll, modifier = Modifier.statusBarsPadding(), escala = escala)
-        }
-        settings?.let { actual ->
-            EstratoAjustes(GENERAL, R.string.ajustes_estrato_general, resumenGeneral(actual, habi.spec.personality, resources), abierto, {
-                abierto = it
-            }) {
-                ContenidoGeneral(
-                    settings = actual,
-                    personalidad = habi.spec.personality,
-                    alElegirPersonalidad = habiViewModel::setPersonality,
-                    archivados = archivados.size,
-                    settingsViewModel = settingsViewModel,
-                    alAbrirIntro = onOpenIntro,
-                    alAbrirArchivados = onOpenArchived,
+    Box(Modifier.fillMaxSize()) {
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(colores.roca)
+                .verticalScroll(scroll),
+        ) {
+            Box(Modifier.background(colores.estratos.general.fondo)) {
+                MaquetaJardin(
+                    garden = habi.garden,
+                    spec = habi.spec,
+                    scroll = scroll,
+                    modifier = Modifier.statusBarsPadding(),
+                    escala = escala,
                 )
             }
-            EstratoAjustes(AVISOS, R.string.ajustes_estrato_avisos, resumenAvisos(actual, resources), abierto, { abierto = it }) {
-                ContenidoAvisos(settings = actual, settingsViewModel = settingsViewModel)
+            settings?.let { actual ->
+                EstratoAjustes(
+                    GENERAL,
+                    R.string.ajustes_estrato_general,
+                    resumenGeneral(
+                        actual,
+                        habi.spec.personality,
+                        resources,
+                    ),
+                    abierto,
+                    {
+                        abierto = it
+                    },
+                ) {
+                    ContenidoGeneral(
+                        settings = actual,
+                        personalidad = habi.spec.personality,
+                        alElegirPersonalidad = habiViewModel::setPersonality,
+                        archivados = archivados.size,
+                        settingsViewModel = settingsViewModel,
+                        alAbrirIntro = onOpenIntro,
+                        alAbrirArchivados = onOpenArchived,
+                    )
+                }
+                EstratoAjustes(AVISOS, R.string.ajustes_estrato_avisos, resumenAvisos(actual, resources), abierto, { abierto = it }) {
+                    ContenidoAvisos(settings = actual, settingsViewModel = settingsViewModel)
+                }
+                EstratoAjustes(SONIDO, R.string.ajustes_estrato_sonido, resumenSonido(actual, resources), abierto, { abierto = it }) {
+                    ContenidoSonido(settings = actual, settingsViewModel = settingsViewModel)
+                }
             }
-            EstratoAjustes(SONIDO, R.string.ajustes_estrato_sonido, resumenSonido(actual, resources), abierto, { abierto = it }) {
-                ContenidoSonido(settings = actual, settingsViewModel = settingsViewModel)
+            EstratoAjustes(COPIAS, R.string.ajustes_estrato_copias, resumenCopias(backupViewModel), abierto, { abierto = it }) {
+                ContenidoCopias(backupViewModel)
             }
+            EstratoAjustes(ACERCA, R.string.ajustes_estrato_acerca, resumenAcerca(), abierto, { abierto = it }) { ContenidoAcerca() }
+            Box(Modifier.height(48.dp).navigationBarsPadding())
         }
-        EstratoAjustes(COPIAS, R.string.ajustes_estrato_copias, resumenCopias(backupViewModel), abierto, { abierto = it }) {
-            ContenidoCopias(backupViewModel)
-        }
-        EstratoAjustes(ACERCA, R.string.ajustes_estrato_acerca, resumenAcerca(), abierto, { abierto = it }) { ContenidoAcerca() }
-        Box(Modifier.height(48.dp).navigationBarsPadding())
+        BotonVolver(onBack, Modifier.align(Alignment.TopStart).statusBarsPadding().padding(start = Medidas.e4, top = Medidas.e4))
     }
 }
 
